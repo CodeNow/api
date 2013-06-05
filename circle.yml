@@ -1,0 +1,7 @@
+machine:
+  environment:
+    NODE_ENV: production
+dependencies:
+  override:
+    - nvm install 0.10.7
+    - nvm alias default 0.10.7
