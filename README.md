@@ -15,6 +15,14 @@ deployment
 * run make image to create a deployment-ready docker image
 * this image can then be pushed to any running docker daemon
 
+code coverage
+=============
+
+* you can build a code coverage report into ./coverage/index.html
+* first build and install this specific version of jscoverage:
+  * https://github.com/visionmedia/node-jscoverage.git
+* then run make clean, make build, make coverage
+
 api spec
 ========
 

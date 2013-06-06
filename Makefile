@@ -4,10 +4,12 @@ ifdef grep
 else
 		@NODE_ENV=testing ./node_modules/.bin/mocha --reporter spec
 endif
+install:
+	@npm install
 build:
 	@./node_modules/.bin/coffee -o lib src
 start:
-	node server.js
+	@node server.js
 image:
 	@docker build .
 watch:
@@ -19,11 +21,12 @@ else
 		@./node_modules/.bin/coffee -w -o lib src & NODE_ENV=testing ./node_modules/.bin/nodemon -w lib -w test  -w configs -q ./node_modules/.bin/mocha --reporter spec
 endif
 coverage:
-	@jscoverage lib lib-cov; rm -rf lib; mv lib-cov lib; mkdir coverage; ./node_modules/.bin/mocha --reporter html-cov > ./coverage/index.html
+	@jscoverage lib lib-cov; rm -rf lib; mv lib-cov lib; mkdir ./coverage; ./node_modules/.bin/mocha -t 10000 --reporter html-cov > ./coverage/index.html
 clean:
 	@rm -rf ./lib; rm -rf ./coverage
 
 .PHONY: test
+.PHONY: install
 .PHONY: build
 .PHONY: image
 .PHONY: watch

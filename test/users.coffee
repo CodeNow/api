@@ -62,8 +62,8 @@ describe 'Our User system', ->
 
   it 'should create a new session after the old one expires', (done) ->
     user = sa.agent()
-    oldExpires = apiserver.configs.expires
-    apiserver.configs.expires = 150
+    oldExpires = apiserver.configs.cookieExpires
+    apiserver.configs.cookieExpires = 250
     user.get("http://localhost:#{configs.port}/users/me")
       .end (err, res) ->
         if err then done err else
@@ -75,10 +75,10 @@ describe 'Our User system', ->
                 if err then done err else
                   res.should.have.status 200
                   should.exist res.header['set-cookie']
-                  apiserver.configs.expires = oldExpires
+                  apiserver.configs.cookieExpires = oldExpires
                   res.body._id.should.not.equal userId
                   done()
-          , 300
+          , 500
 
   it 'should be able to access user info through canonical path', (done) ->
     user = sa.agent()

@@ -1,7 +1,7 @@
 {
   "cookieKey": "runnable.sid",
   "cookieSecret": "$up3r,$3<r3t",
-  "cookieExpires": "2 minutes",
+  "cookieExpires": "5 seconds",
   "passwordSalt" : "$up3r,$3<r3t",
   "fbloginId": "417553381675504",
   "fbloginSecret": "67020f3812ff6f4ff03ef78812cd9280",
