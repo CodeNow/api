@@ -1,6 +1,7 @@
 configs = require 'configs'
 express = require 'express'
 http = require 'http'
+util = require 'util'
 
 app = express()
 server = http.createServer app
@@ -10,7 +11,3 @@ module.exports =
     server.listen configs.port, cb
   stop: (cb) ->
     server.close cb
-
-process.on 'uncaughtException', (err) ->
-  console.inspect err
-  process.exit 1
