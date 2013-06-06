@@ -41,35 +41,51 @@ putuser = (req, res, next) ->
           if err then res.json 400, new errors.ValidationError 'User already exists', 'confirmPassword', 'Blah' else
             res.json user.toJSON()
 
-app.get '/api/users', (req, res, next) ->
+app.get '/users', (req, res, next) ->
   if not req.query.username and not req.query.email then res.json 400, { message: 'must provide a query' } else
     users.findUser req.query, (err, users) ->
       if err then next err else
         if not users then res.json 404, { message: 'user not found' } else
           res.json 200, users
 
-app.get '/api/users/me', getuser
-app.get '/api/users/:userid', (req, res, next) ->
-  if req.params.userid.toString() isnt req.session.user_id.toString() then res.json 401, { error: 'no authorization' } else
-    getuser req, res, next
+app.get '/users/me', getuser
+app.get '/users/:userid', (req, res, next) ->
+  users.findUser { _id: req.params.userid }, (err, user) ->
+    if err then next err else
+      if not user then res.json 404, { error: 'user not found' } else
+        if req.params.userid.toString() isnt req.session.user_id.toString()
+          res.json 403, { error: 'no authorization' }
+        else
+          getuser req, res, next
 
-app.del '/api/users/me', deluser
-app.del '/api/users/:userid', (req, res, next) ->
-  if req.params.userid.toString() isnt req.session.user_id.toString() then res.json 401, { error: 'no authroization' } else
-    deluser req, res, next
+app.del '/users/me', deluser
+app.del '/users/:userid', (req, res, next) ->
+  users.findUser { _id: req.params.userid }, (err, user) ->
+    if err then next err else
+      if not user then res.json 404, { error: 'user not found' } else
+        if req.params.userid.toString() isnt req.session.user_id.toString()
+          res.json 403, { error: 'no authroization' }
+        else
+          deluser req, res, next
 
-app.put '/api/users/me', putuser
-app.put '/api/users/:userid', (req, res, next) ->
-  if req.params.userid.toString() isnt req.session.user_id.toString() then res.json 401, { error: 'no authorization' } else
-    putuser(req, res, next);
+app.put '/users/me', putuser
+app.put '/users/:userid', (req, res, next) ->
+  users.findUser { _id: req.params.userid }, (err, user) ->
+    if err then next err else
+      if not user then res.json 404, { error: 'user not found' } else
+        if req.params.userid.toString() isnt req.session.user_id.toString()
+          res.json 403, { error: 'no authorization' }
+        else
+          putuser(req, res, next);
 
-app.post '/api/users/:userid/email', (req, res, next) ->
+app.post '/users/:userid/email', (req, res, next) ->
   users.set req.user._id, 'email', req.body.email, (err, user) ->
     if err then next err else
       res.json user.toJSON()
 
-app.post '/api/users/auth', (req, res, next) ->
+app.post '/users/auth', (req, res, next) ->
 
+  err = null
   createRequiredError = (field) ->
     if not req.body[field]
       if err
@@ -125,5 +141,13 @@ app.post '/api/users/auth', (req, res, next) ->
           else
             next err
         else
-          req.session.user_id = user._id
-          res.json user.toJSON()
+          users.isRegisteredUser req.session.user_id, (err, registered) ->
+            if err then next err else
+              if not registered
+                users.removeUser req.session.user_id, (err) ->
+                  if err then next err else
+                    req.session.user_id = user._id
+                    res.json user.toJSON()
+              else
+                req.session.user_id = user._id
+                res.json user.toJSON()

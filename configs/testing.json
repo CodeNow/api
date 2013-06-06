@@ -1,4 +1,10 @@
 {
+  "cookieKey": "runnable.sid",
+  "cookieSecret": "$up3r,$3<r3t",
+  "cookieExpires": "2 minutes",
+  "passwordSalt" : "$up3r,$3<r3t",
+  "fbloginId": "417553381675504",
+  "fbloginSecret": "67020f3812ff6f4ff03ef78812cd9280",
   "mongo": "mongodb://127.0.0.1:27017/runnable_{RAND_NUM}",
   "port": 3000
 }

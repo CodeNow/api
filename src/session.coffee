@@ -1,10 +1,11 @@
-configs = require 'configs'
+configs = require './configs'
 express = require 'express'
 users = require './models/users'
 
 app = module.exports = express()
 
 app.all '/*', (req, res, next) ->
+
   create_user = () ->
     users.createUser (err, user) ->
       if err then res.json 500, err.message else

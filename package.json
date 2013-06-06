@@ -16,7 +16,11 @@
     "node-uuid": "~1.4.0",
     "superagent": "~0.14.6",
     "async": "~0.2.9",
-    "docker.js": "git://github.com/EnosFeedler/docker.js.git"
+    "docker.js": "git://github.com/EnosFeedler/docker.js.git",
+    "bcrypt": "~0.7.5",
+    "mongoose": "~3.6.11",
+    "base64url": "0.0.4",
+    "connect-redis": "~1.4.5"
   },
   "devDependencies": {
     "mocha": "~1.10.0",

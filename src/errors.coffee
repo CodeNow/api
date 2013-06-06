@@ -1,5 +1,8 @@
 configs = require './configs'
 
+errors = { }
+module.exports = errors
+
 errors.ValidationError = () ->
 
   if arguments.length is 2

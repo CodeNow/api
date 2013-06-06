@@ -1,5 +1,9 @@
 test:
-	@NODE_ENV=testing ./node_modules/.bin/mocha --reporter spec
+ifdef grep
+		@NODE_ENV=testing ./node_modules/.bin/mocha --reporter spec --grep ${grep}
+else
+		@NODE_ENV=testing ./node_modules/.bin/mocha --reporter spec
+endif
 build:
 	@./node_modules/.bin/coffee -o lib src
 start:
@@ -9,7 +13,11 @@ image:
 watch:
 	@./node_modules/.bin/coffee -w -o lib src & ./node_modules/.bin/nodemon -w lib -w configs -q lib/index.js
 testwatch:
-	@./node_modules/.bin/coffee -w -o lib src & NODE_ENV=testing ./node_modules/.bin/nodemon -w lib -w test  -w configs -q ./node_modules/.bin/mocha --reporter spec
+ifdef grep
+		@./node_modules/.bin/coffee -w -o lib src & NODE_ENV=testing ./node_modules/.bin/nodemon -w lib -w test  -w configs -q ./node_modules/.bin/mocha --reporter spec --grep ${grep}
+else
+		@./node_modules/.bin/coffee -w -o lib src & NODE_ENV=testing ./node_modules/.bin/nodemon -w lib -w test  -w configs -q ./node_modules/.bin/mocha --reporter spec
+endif
 coverage:
 	@jscoverage lib lib-cov; rm -rf lib; mv lib-cov lib; mkdir coverage; ./node_modules/.bin/mocha --reporter html-cov > ./coverage/index.html
 clean:

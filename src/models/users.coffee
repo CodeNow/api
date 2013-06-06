@@ -39,7 +39,7 @@ userSchema.set 'toJSON', { virtuals: true }
 
 userSchema.statics.createUser = (cb) ->
   user = new @
-  user.save (err) ->
+  user.save (err, user) ->
     if err then cb err else
       cb null, user
 
