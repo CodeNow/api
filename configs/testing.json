@@ -1,0 +1,4 @@
+{
+  "mongo": "mongodb://127.0.0.1:27017/runnable_{RAND_NUM}",
+  "port": 3000
+}

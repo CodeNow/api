@@ -1,0 +1,43 @@
+{
+  "Users": [
+    {
+      "email": "test@testing.com",
+      "username": "test@testing.com",
+      "password": "testing"
+    },
+    {
+      "email": "test4@testing.com",
+      "username": "test4@testing.com",
+      "password": "testing"
+    },
+    {
+      "email": "email4@doesnot.com",
+      "username": "matchusername",
+      "password": "testing"
+    },
+    {
+      "email": "email5@doesnot.com",
+      "username": "matchusername5",
+      "password": "testing"
+    }
+  ],
+
+  "Projects": [ ],
+
+  "Gears": [ ],
+
+  "Invites": [
+    {
+      "type": "beta",
+      "code": "12345"
+    },
+    {
+      "type": "beta",
+      "code": "blah"
+    },
+    {
+      "type": "beta",
+      "code": "abc123"
+    }
+  ]
+}
