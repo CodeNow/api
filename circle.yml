@@ -5,4 +5,3 @@ dependencies:
   override:
     - nvm install 0.10.9
     - nvm alias default 0.10.9
-    - docker version
