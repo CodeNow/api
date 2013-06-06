@@ -5,4 +5,4 @@ dependencies:
   override:
     - nvm install 0.10.9
     - nvm alias default 0.10.9
-    - npm install
+    - NODE_ENV=development npm install
