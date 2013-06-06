@@ -97,25 +97,23 @@ userSchema.statics.loginUser = (emailOrUsername, password, cb) ->
 userSchema.statics.registerUser = (userId, data, cb) ->
   self = @
   if configs.passwordSalt
-    bcrypt.genSalt 10, (err, salt) ->
+    bcrypt.hash data.password + configs.passwordSalt, 10, (err, hash) ->
       if err then cb err else
-        bcrypt.hash data.password + configs.passwordSalt, salt, (err, hash) ->
+        self.findOne { email: data.email }, (err, user) ->
           if err then cb err else
-            self.findOne { email: data.email }, (err, user) ->
-              if err then cb err else
-                if user then  cb new Error 'User already exists' else
-                  self.findOne { username: data.username }, (err, user) ->
-                    if err then cb err else
-                      if user then cb new Error 'User already exists' else
-                        self.findByIdAndUpdate userId,
-                          $set:
-                            email: data.email
-                            username: data.username
-                            password: hash
-                            permission_level: 1
-                        , (err, user) ->
-                          if err then cb err else
-                            cb null, user
+            if user then  cb new Error 'User already exists' else
+              self.findOne { username: data.username }, (err, user) ->
+                if err then cb err else
+                  if user then cb new Error 'User already exists' else
+                    self.findByIdAndUpdate userId,
+                      $set:
+                        email: data.email
+                        username: data.username
+                        password: hash
+                        permission_level: 1
+                    , (err, user) ->
+                      if err then cb err else
+                        cb null, user
   else
     self.findByIdAndUpdate userId,
       $set:
