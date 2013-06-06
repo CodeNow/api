@@ -27,7 +27,7 @@ app.use users
 app.use app.router
 
 app.get '/', (req, res) ->
-  res.json { message: 'hello from runnable api!' }
+  res.json { message: 'hello!' }
 
 server = http.createServer app
 
