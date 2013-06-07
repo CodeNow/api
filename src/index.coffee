@@ -3,6 +3,7 @@ connect_redis = require 'connect-redis'
 express = require 'express'
 http = require 'http'
 mongoose = require 'mongoose'
+runnables = require './rest/runnables'
 session = require './session'
 users = require './rest/users'
 util = require 'util'
@@ -24,6 +25,7 @@ app.use express.session
     maxAge: configs.cookieExpires
 app.use session
 app.use users
+app.use runnables
 app.use app.router
 
 app.get '/', (req, res) ->

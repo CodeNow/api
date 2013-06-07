@@ -23,7 +23,7 @@ app.all '/*', (req, res, next) ->
             req.user = user
             next()
 
-app.post '/login', (req, res, next) ->
+app.post '/login', (req, res) ->
   if not req.body.username and not req.body.email then res.json 400, { message: 'username or email required' } else
     if not req.body.password then res.json 400, { message: 'password required' } else
       login = req.body.email or req.body.username
@@ -38,7 +38,7 @@ app.post '/login', (req, res, next) ->
               if err then res.json err.code, { message: err.msg } else
                 switch_user()
 
-app.get '/logout', (req, res, next) ->
+app.get '/logout', (req, res) ->
   logout_user = () ->
     req.session.destroy (err) ->
       if err then res.json 500, { message: 'error destroying user session' } else
