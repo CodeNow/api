@@ -3,21 +3,25 @@
     {
       "email": "test@testing.com",
       "username": "test@testing.com",
+      "permission_level": 1,
       "password": "testing"
     },
     {
       "email": "test4@testing.com",
       "username": "test4@testing.com",
+      "permission_level": 1,
       "password": "testing"
     },
     {
       "email": "email4@doesnot.com",
       "username": "matchusername",
+      "permission_level": 1,
       "password": "testing"
     },
     {
       "email": "email5@doesnot.com",
       "username": "matchusername5",
+      "permission_level": 1,
       "password": "testing"
     }
   ],

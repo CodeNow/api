@@ -26,4 +26,5 @@ code coverage
 api spec
 ========
 
-* TODO
+* the mocha tests are this api's living specification
+*

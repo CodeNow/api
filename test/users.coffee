@@ -1,33 +1,9 @@
-async = require 'async'
-configs = require '../lib/configs'
-mongodb = require 'mongodb'
-redis = require 'redis'
-should = require 'should'
-sa = require 'superagent'
-
 apiserver = require '../lib'
-state = require './state'
-db = mongodb.Db
+configs = require '../lib/configs'
+sa = require 'superagent'
+should = require 'should'
 
-beforeEach (done) ->
-  db.connect configs.mongo, (err, test_db) ->
-    test_db.collection 'users', (err, users) ->
-      async.forEachSeries state.Users, (user, cb) ->
-        users.insert user, cb
-      , () ->
-        test_db.close () ->
-          apiserver.start done
-
-afterEach (done) ->
-  redis_client = redis.createClient()
-  redis_client.flushall () ->
-    db.connect configs.mongo, (err, test_db) ->
-      test_db.dropDatabase () ->
-        test_db.close () ->
-          apiserver.stop () ->
-            done()
-
-describe 'Our User system', ->
+describe 'Our user system', ->
 
   it 'should create an anonymous user when cookie does not exist', (done) ->
     user = sa.agent()
@@ -38,7 +14,26 @@ describe 'Our User system', ->
           res.header['x-powered-by'].should.equal 'Express'
           res.type.should.equal 'application/json'
           should.exist res.header['set-cookie']
-          oldUserId = res.body._id
+          done()
+
+  it 'should return error when user id is not a valid mongo objectid', (done) ->
+    user = sa.agent()
+    user.get("http://localhost:#{configs.port}/users/1235")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 500
+          should.exist res.body.message
+          res.body.message.should.equal 'error looking up user'
+          done()
+
+  it 'should return user not found when user id is not a valid mongo objectid', (done) ->
+    user = sa.agent()
+    user.get("http://localhost:#{configs.port}/users/51b2347626201e421a000002")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 404
+          should.exist res.body.message
+          res.body.message.should.equal 'user not found'
           done()
 
   it 'should load the existing anonymous user on subsequent accesses', (done) ->
@@ -122,6 +117,8 @@ describe 'Our User system', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 200
+                  should.exist res.body.message
+                  res.body.message.should.equal 'user logged out'
                   process.nextTick ->
                     user.get("http://localhost:#{configs.port}/users/me")
                       .end (err, res) ->
@@ -166,11 +163,11 @@ describe 'Our User system', ->
                       res.should.have.status 403
                       done()
 
-  it 'should be able to login an existing user with valid username and password', (done) ->
+  it 'should be able to ::login an existing user with valid username and password', (done) ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
     delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/users/auth")
+    user.post("http://localhost:#{configs.port}/login")
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
       .end (err, res) ->
@@ -179,11 +176,26 @@ describe 'Our User system', ->
           apiserver.configs.passwordSalt = oldSalt
           done()
 
+  it 'should return an error when we ::login with a username that doesnt exist', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/login")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ username: 'doesntexit', password: 'testing' }))
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 404
+          should.exist res.body
+          res.body.message.should.equal 'user not found'
+          apiserver.configs.passwordSalt = oldSalt
+          done()
+
   it 'should transistion an anonymous user into a registered one with provided email', (done) ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
     delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/users/auth")
+    user.post("http://localhost:#{configs.port}/login")
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({ email: 'email4@doesnot.com', password: 'testing' }))
       .end (err, res) ->
@@ -193,7 +205,7 @@ describe 'Our User system', ->
           apiserver.configs.passwordSalt = oldSalt
           done()
 
-  it 'should remove the current anonymous user when signing into registered one', (done) ->
+  it 'should remove the current anonymous user when we ::login to a registered one', (done) ->
     user = sa.agent()
     user.get("http://localhost:#{configs.port}/users/me")
       .end (err, res) ->
@@ -203,7 +215,7 @@ describe 'Our User system', ->
           oldSalt = apiserver.configs.passwordSalt
           delete apiserver.configs.passwordSalt
           process.nextTick ->
-            user.post("http://localhost:#{configs.port}/users/auth")
+            user.post("http://localhost:#{configs.port}/login")
               .set('Content-Type', 'application/json')
               .send(JSON.stringify({ email: 'email4@doesnot.com', password: 'testing' }))
               .end (err, res) ->
@@ -221,13 +233,96 @@ describe 'Our User system', ->
 
   it 'should filter out the users password field on return data', (done) ->
     user = sa.agent()
+    userEmail = 'another_test@user.com'
+    data = JSON.stringify
+      email: userEmail
+      username: userEmail
+      password: 'this_should_be_hashed'
+    user.put("http://localhost:#{configs.port}/users/me")
+      .set('Content-Type', 'application/json')
+      .send(data)
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 200
+          res.body.email.should.equal userEmail
+          res.body.password.should.not.equal 'this_should_be_hashed'
+          user.get("http://localhost:#{configs.port}/users/me")
+            .end (err, res) ->
+              if err then done err else
+                should.not.exist res.body.password
+                done()
+
+  it 'should store a password as plaintext when ::passhashing is disabled', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    userEmail = 'another_test@user.com'
+    data = JSON.stringify
+      email: userEmail
+      username: userEmail
+      password: 'this_should_be_hashed'
+    user.put("http://localhost:#{configs.port}/users/me")
+      .set('Content-Type', 'application/json')
+      .send(data)
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 200
+          res.body.email.should.equal userEmail
+          res.body.password.should.equal 'this_should_be_hashed'
+          user.get("http://localhost:#{configs.port}/users/me")
+            .end (err, res) ->
+              if err then done err else
+                should.not.exist res.body.password
+                apiserver.configs.passwordSalt = oldSalt
+                done()
+
+  it 'should not allow a user to ::login with an invalid password', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/login")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ username: 'matchusername5', password: 'notpassword' }))
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 403
+          should.exist res.body.message
+          res.body.message.should.equal 'invalid password'
+          apiserver.configs.passwordSalt = oldSalt
+          done()
+
+  it 'should not allow a user to ::login with an invalid password with hashing enabled', (done) ->
+    user = sa.agent()
     user.get("http://localhost:#{configs.port}/users/me")
       .end (err, res) ->
         if err then done err else
-          should.not.exist res.body.password
-          done()
+          userEmail = 'another_test@user.com'
+          data = JSON.stringify
+            email: userEmail
+            password: 'mypassword'
+          userId = res.body._id
+          process.nextTick () ->
+            user.put("http://localhost:#{configs.port}/users/me")
+              .set('Content-Type', 'application/json')
+              .send(data)
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body._id.should.equal userId
+                  res.body.email.should.equal userEmail
+                  res.body.password.should.not.equal 'mypassword'
+                  user2 = sa.agent()
+                  user2.post("http://localhost:#{configs.port}/login")
+                    .set('Content-Type', 'application/json')
+                    .send(JSON.stringify({ email: 'another_test@user.com', password: 'notmypassword' }))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 403
+                        should.exist res.body.message
+                        res.body.message.should.equal 'invalid password'
+                        done()
 
-  it 'should hash a users password when registering a user with hashing is enabled', (done) ->
+  it 'should hash a users password when we ::register a user with ::passhashing is enabled', (done) ->
     user = sa.agent()
     user.get("http://localhost:#{configs.port}/users/me")
       .end (err, res) ->
@@ -250,7 +345,201 @@ describe 'Our User system', ->
                   res.body.password.should.not.equal 'this_should_be_hashed'
                   done()
 
-  it 'should allow a user to login with their correct password with hashing enabled', (done) ->
+  it 'should not allow a user to double register', (done) ->
+    user = sa.agent()
+    user.get("http://localhost:#{configs.port}/users/me")
+      .end (err, res) ->
+        if err then done err else
+          userEmail = 'another_test@user.com'
+          data = JSON.stringify
+            email: userEmail
+            username: userEmail
+            password: 'mypassword'
+          userId = res.body._id
+          process.nextTick () ->
+            user.put("http://localhost:#{configs.port}/users/me")
+              .set('Content-Type', 'application/json')
+              .send(data)
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body._id.should.equal userId
+                  res.body.email.should.equal userEmail
+                  user.put("http://localhost:#{configs.port}/users/me")
+                    .set('Content-Type', 'application/json')
+                    .send(data)
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 403
+                        should.exist res.body.message
+                        res.body.message.should.equal 'you are already registered'
+                        done()
+
+  it 'should not allow a user to ::register without a password', (done) ->
+    user = sa.agent()
+    user.get("http://localhost:#{configs.port}/users/me")
+      .end (err, res) ->
+        if err then done err else
+          userEmail = 'another_test@user.com'
+          data = JSON.stringify
+            email: userEmail
+            username: userEmail
+          userId = res.body._id
+          process.nextTick () ->
+            user.put("http://localhost:#{configs.port}/users/me")
+              .set('Content-Type', 'application/json')
+              .send(data)
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 400
+                  should.exist res.body.message
+                  res.body.message.should.equal 'must provide a password to user in the future'
+                  done()
+
+  it 'should not allow a user to ::register without an email address', (done) ->
+    user = sa.agent()
+    user.get("http://localhost:#{configs.port}/users/me")
+      .end (err, res) ->
+        if err then done err else
+          userEmail = 'another_test@user.com'
+          data = JSON.stringify
+            username: userEmail
+            password: 'mypassword'
+          userId = res.body._id
+          process.nextTick () ->
+            user.put("http://localhost:#{configs.port}/users/me")
+              .set('Content-Type', 'application/json')
+              .send(data)
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 400
+                  should.exist res.body.message
+                  res.body.message.should.equal 'must provide an email to register with'
+                  done()
+
+  it 'should not allow a user to ::login without a username or password', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/login")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({password: 'testing' }))
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 400
+          should.exist res.body.message
+          res.body.message.should.equal 'username or email required'
+          apiserver.configs.passwordSalt = oldSalt
+          done()
+
+  it 'should not allow a user to ::login without a password', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/login")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ username: 'matchusername5' }))
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 400
+          should.exist res.body.message
+          res.body.message.should.equal 'password required'
+          apiserver.configs.passwordSalt = oldSalt
+          done()
+
+  it 'should not allow us to ::register a user that already exists', (done) ->
+    user = sa.agent()
+    user.get("http://localhost:#{configs.port}/users/me")
+      .end (err, res) ->
+        if err then done err else
+          userEmail = 'another_test@user.com'
+          data = JSON.stringify
+            email: userEmail
+            username: userEmail
+            password: 'mypassword'
+          userId = res.body._id
+          process.nextTick () ->
+            user.put("http://localhost:#{configs.port}/users/me")
+              .set('Content-Type', 'application/json')
+              .send(data)
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body._id.should.equal userId
+                  res.body.email.should.equal userEmail
+                  user2 = sa.agent()
+                  user2.put("http://localhost:#{configs.port}/users/me")
+                    .set('Content-Type', 'application/json')
+                    .send(data)
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 403
+                        should.exist res.body.message
+                        res.body.message.should.equal 'user already exists'
+                        done()
+
+  it 'should not destroy the user when ::logout of a registered users session', (done) ->
+    user = sa.agent()
+    data = JSON.stringify
+      email: 'my@email.com'
+      password: 'password'
+    user.put("http://localhost:#{configs.port}/users/me")
+      .set('Content-Type', 'application/json')
+      .send(data)
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 200
+          res.body.email.should.equal 'my@email.com'
+          userId = res.body._id
+          process.nextTick ->
+            user.get("http://localhost:#{configs.port}/logout")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  should.exist res.body.message
+                  res.body.message.should.equal 'user logged out'
+                  process.nextTick ->
+                    user2 = sa.agent()
+                    user2.post("http://localhost:#{configs.port}/login")
+                      .set('Content-Type', 'application/json')
+                      .send(JSON.stringify({ email: 'my@email.com', password: 'password' }))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body._id.should.equal userId
+                          done()
+
+  it 'should allow a logged in user to ::switch to another logged in user', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/login")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 200
+          userId = res.body._id
+          process.nextTick ->
+            user.post("http://localhost:#{configs.port}/login")
+              .set('Content-Type', 'application/json')
+              .send(JSON.stringify({ email: 'test4@testing.com', password: 'testing' }))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body._id.should.not.equal userId
+                  process.nextTick ->
+                    user.post("http://localhost:#{configs.port}/login")
+                      .set('Content-Type', 'application/json')
+                      .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body._id.should.equal userId
+                          apiserver.configs.passwordSalt = oldSalt
+                          done()
+
+  it 'should allow a user to ::login with their correct password with hashing enabled', (done) ->
     user = sa.agent()
     user.get("http://localhost:#{configs.port}/users/me")
       .end (err, res) ->
@@ -271,7 +560,7 @@ describe 'Our User system', ->
                   res.body._id.should.equal userId
                   res.body.email.should.equal userEmail
                   user2 = sa.agent()
-                  user2.post("http://localhost:#{configs.port}/users/auth")
+                  user2.post("http://localhost:#{configs.port}/login")
                     .set('Content-Type', 'application/json')
                     .send(JSON.stringify({ username: 'another_test@user.com', password: 'this_should_be_hashed' }))
                     .end (err, res) ->

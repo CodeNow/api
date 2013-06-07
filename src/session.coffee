@@ -8,32 +8,42 @@ app.all '/*', (req, res, next) ->
 
   create_user = () ->
     users.createUser (err, user) ->
-      if err then res.json 500, err.message else
-        if not user then res.json 500, { message: 'could not create user' } else
-          req.session.regenerate (err) ->
-            if err then res.json 500, { message: 'error regenerating session' } else
-              req.session.user_id = user._id
-              req.user = user
-              delete req.user.password
-              next()
+      if err then res.json err.code, { messsage: err.msg } else
+        req.session.regenerate (err) ->
+          if err then res.json 500, { message: 'error regenerating session' } else
+            req.session.user_id = user._id
+            req.user = user
+            next()
 
-  if not req.session then res.json 500, { message: 'session object does not exist' } else
+  if not req.session then res.json 500, { message: 'no session attached to this request' } else
     if not req.session.user_id then create_user() else
       users.findUser { _id: req.session.user_id }, (err, user) ->
-        if err then next err else
+        if err then res.json err.code, { message: err.msg } else
           if not user then create_user() else
-            userLifetime = ((new Date()).getTime() - user.created.getTime())
-            if userLifetime >= configs.cookieExpires and not user.email then create_user() else
-              req.user = user
-              delete req.user.password
-              next()
+            req.user = user
+            next()
+
+app.post '/login', (req, res, next) ->
+  if not req.body.username and not req.body.email then res.json 400, { message: 'username or email required' } else
+    if not req.body.password then res.json 400, { message: 'password required' } else
+      login = req.body.email or req.body.username
+      users.loginUser login, req.body.password, (err, user) ->
+        if err then res.json err.code, { message: err.msg } else
+          switch_user = () ->
+            req.session.regenerate () ->
+              req.session.user_id = user._id
+              res.json user.toJSON()
+          if req.user.permission_level isnt 0 then switch_user() else
+            users.removeUser req.session.user_id, (err) ->
+              if err then res.json err.code, { message: err.msg } else
+                switch_user()
 
 app.get '/logout', (req, res, next) ->
-  if not req.user.email
+  logout_user = () ->
+    req.session.destroy (err) ->
+      if err then res.json 500, { message: 'error destroying user session' } else
+        res.json { message: 'user logged out' }
+  if req.user.permission_level isnt 0 then logout_user() else
     users.removeUser req.session.user_id, (err) ->
-      if err then res.json 500, err.message else
-        req.session.destroy()
-        res.json 200, { message: 'successfully logged out' }
-  else
-    req.session.destroy()
-    res.json 200, { message: 'successfully logged out' }
+      if err then res.json err.code, { message: err.msg } else
+      logout_user()
