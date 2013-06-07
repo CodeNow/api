@@ -4,18 +4,14 @@ runnable = require '../models/runnables'
 
 channelApp = module.exports = express()
 
-getchannels = (req, res, next) ->
+getchannels = (req, res) ->
   runnable.listChannels (err, channels) ->
-    if err
-      next err
-    else
+    if err then res.json err.code { message: err.msg } else
       res.json channels
 
-getchannelrepos = (req, res, next) ->
+getchannelrepos = (req, res) ->
   runnable.listChannelProjects req.params.channelid, (err, projects) ->
-    if err
-      next err
-    else
+    if err then res.json err.code { message: err.msg } else
       res.json projects
 
 channelApp.get '/channels', getchannels
