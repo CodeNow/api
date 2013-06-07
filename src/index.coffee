@@ -66,6 +66,7 @@ app.get '/', (req, res) ->
 server = http.createServer app
 
 module.exports =
+  app: app
   configs: configs
   start: (cb) ->
     server.listen configs.port, cb
