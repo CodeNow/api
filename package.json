@@ -15,7 +15,7 @@
     "eson": "~0.4.1",
     "node-uuid": "~1.4.0",
     "async": "~0.2.9",
-    "docker.js": "git://github.com/EnosFeedler/docker.js.git",
+    "docker.js": "git://github.com/CodeNow/docker.js.git",
     "bcrypt": "~0.7.5",
     "mongoose": "~3.6.11",
     "connect-redis": "~1.4.5"
