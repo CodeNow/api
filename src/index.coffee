@@ -6,6 +6,7 @@ mongoose = require 'mongoose'
 runnables = require './rest/runnables'
 session = require './session'
 users = require './rest/users'
+channels = require './rest/channels'
 util = require 'util'
 domain = require 'domain'
 
@@ -56,6 +57,7 @@ app.use express.session
 app.use session
 app.use users
 app.use runnables
+app.use channels
 app.use app.router
 
 app.get '/', (req, res) ->
