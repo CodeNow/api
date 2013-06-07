@@ -34,7 +34,7 @@ app.use (req, res, next) ->
       res.statusCode = 500
       res.setHeader('content-type', 'text/plain')
       res.end(':-(\n')
-    catch (err2)
+    catch err2
       console.error('Error sending 500!', err2.stack)
 
   d.add req
