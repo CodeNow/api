@@ -1,3 +1,5 @@
+build:
+	@./node_modules/.bin/coffee -o lib src
 test:
 ifdef grep
 		@NODE_ENV=testing ./node_modules/.bin/mocha --reporter spec --grep ${grep}
@@ -6,8 +8,6 @@ else
 endif
 install:
 	@npm install
-build:
-	@./node_modules/.bin/coffee -o lib src
 start:
 	@node server.js
 image:
