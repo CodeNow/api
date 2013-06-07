@@ -59,7 +59,7 @@ projectSchema.index
 
 projectSchema.statics.create = (owner, framework, cb) ->
 
-  if not configs.images?[framework] then cb { code: 403, message: 'framework does not exist' } else
+  if not configs.images?[framework] then cb { code: 403, msg: 'framework does not exist' } else
     project = new @
       owner: owner
       id: configs.images[framework].id

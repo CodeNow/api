@@ -18,20 +18,19 @@ describe 'Our runnable system', ->
 
   it 'should be able to create a new node.js ::runnable', (done) ->
     user = sa.agent()
-    user.post("http://localhost:#{configs.port}/runnables")
+    user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
       .end (err, res) ->
         if err then done err else
           res.should.have.status 201
           should.exist res.body
-          console.log res.body
           done()
 
   it 'should report error if the ::runnable framework does not exist', (done) ->
     user = sa.agent()
-    user.post("http://localhost:#{configs.port}/runnables")
+    user.post("http://localhost:#{configs.port}/runnables?framework=notfound")
       .end (err, res) ->
         if err then done err else
-          res.should.have.status 201
-          should.exist res.body
-          console.log res.body
+          res.should.have.status 403
+          should.exist res.body.message
+          res.body.message.should.equal 'framework does not exist'
           done()
