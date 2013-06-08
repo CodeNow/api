@@ -15,5 +15,3 @@ describe 'domains', ->
         if err then done err else
           res.should.have.status 500
           done()
-
-
