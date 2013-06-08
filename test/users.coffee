@@ -3,7 +3,7 @@ configs = require '../lib/configs'
 sa = require 'superagent'
 should = require 'should'
 
-describe 'Our user system', ->
+describe 'user api', ->
 
   it 'should create an anonymous user when cookie does not exist', (done) ->
     user = sa.agent()

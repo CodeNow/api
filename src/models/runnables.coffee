@@ -1,36 +1,26 @@
-mongoose = require 'mongoose'
 projects = require './projects'
-users = require './users'
 
-query = mongoose.Query
+Runnables =
 
-create = (userId, framework, cb) ->
-  projects.create userId, framework, cb
+  create: (userId, framework, cb) ->
+    projects.create userId, framework, cb
 
-list = (userId, query, cb) ->
+  listPublished: (cb) ->
+    projects.find tags: $not: $size: 0, (err, results) ->
+      if err then cb { code: 500, msg: 'error querying mongodb' } else
+        cb null, results
 
-listChannels = (cb) ->
-  projects.listTags cb
+  listChannel: (tag, cb) ->
+    projects.find tags: tag, (err, results) ->
+      if err then cb { code: 500, msg: 'error querying mongodb' } else
+        cb null, results
 
-listPublishedProjects = (cb) ->
-  listProjects
-    tags:
-      $not:
-        $size: 0
-  ,
-    sort:'sortOrder'
-  , cb
+  listOwn: (userId, cb) ->
+    projects.find().where('owner').equals(userId).exec (err, results) ->
+      if err then cb { code: 500, msg: 'error querying mongodb' } else
+        cb null, results
 
-listChannelProjects = (name, cb) ->
-  listProjects({
-    tags: { $in : [channelName] },
-  }, {
-    sort:'sortOrder'
-  }, cb);
+  listChannels: (cb) ->
+    projects.listTags cb
 
-module.exports =
-  create: create
-  list: list
-  listChannels: listChannels
-  listPublishedProjects: listPublishedProjects
-  listChannelProjects: listChannelProjects
+module.exports = Runnables

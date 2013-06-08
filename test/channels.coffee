@@ -3,7 +3,7 @@ configs = require '../lib/configs'
 sa = require 'superagent'
 should = require 'should'
 
-describe 'Our channel system', ->
+describe 'channels api', ->
 
   it 'should list out the ::channels', (done) ->
     user = sa.agent()

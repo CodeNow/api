@@ -58,10 +58,15 @@ app.use (err, req, res, next) ->
 app.get '/', (req, res) ->
   res.json { message: 'hello!' }
 
+app.get '/throws', ->
+  throw new Error 'zomg'
+
+app.all '*', (req, res) ->
+  res.json 404, { message: 'operation not found' }
+
 server = http.createServer app
 
 module.exports =
-  app: app
   configs: configs
   start: (cb) ->
     server.listen configs.port, cb

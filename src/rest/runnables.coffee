@@ -11,6 +11,15 @@ runnableApp.post '/runnables', (req, res) ->
       res.json 201, runnable
 
 runnableApp.get '/runnables', (req, res) ->
-  runnables.list req.session.user_id, req.query, (err, runnables) ->
-    if err then res.json err.code, { message: err.msg } else
-      res.json 200, runnables
+  if req.query.published
+    runnables.listPublished (err, results) ->
+      if err then res.json err.code { message: err.msg } else
+        res.json results
+  else if req.query.channel
+    runnables.listChannel req.query.channel, (err, results) ->
+      if err then res.json err.code { message: err.msg } else
+        res.json results
+  else
+    runnables.listOwn req.session.user_id, (err, results) ->
+      if err then res.json err.code { message: err.msg } else
+        res.json results
