@@ -24,7 +24,7 @@ app.use (req, res, next) ->
     d.dispose()
 
   d.on 'error', (err) ->
-    console.error 'error', err.stack
+    console.error 'Error:', err.stack
     try
       killtimer = setTimeout ->
         process.exit(1)
@@ -34,8 +34,8 @@ app.use (req, res, next) ->
       server.close()
 
       res.statusCode = 500
-      res.setHeader('content-type', 'text/plain')
-      res.end(':-(\n')
+      res.setHeader 'content-type', 'text/plain'
+      res.end ':-(\n'
     catch err2
       console.error('Error sending 500!', err2.stack)
 
@@ -59,6 +59,10 @@ app.use users
 app.use runnables
 app.use channels
 app.use app.router
+app.use (err, req, res, next) ->
+  res.statusCode = 500
+  res.setHeader 'content-type', 'text/plain'
+  res.end ':-(\n'
 
 app.get '/', (req, res) ->
   res.json { message: 'hello!' }
