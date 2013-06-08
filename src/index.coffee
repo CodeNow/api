@@ -17,12 +17,8 @@ app = express()
 
 app.use (req, res, next) ->
   d = domain.create()
-  res.on 'close', ->
-    d.dispose()
-  res.on 'finish', ->
-    d.dispose()
+  res.on 'finish', -> d.dispose()
   d.on 'error', (err) ->
-    console.error 'Error:', err.stack
     try
       killtimer = setTimeout ->
         process.exit(1)

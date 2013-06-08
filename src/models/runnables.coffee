@@ -23,7 +23,4 @@ Runnables =
       if err then cb { code: 500, msg: 'error querying mongodb' } else
         cb null, postProcess results
 
-  listChannels: (cb) ->
-    projects.listTags cb
-
 module.exports = Runnables
