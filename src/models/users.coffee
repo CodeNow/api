@@ -36,11 +36,12 @@ userSchema.index
 
 userSchema.set 'toJSON', { virtuals: true }
 
-userSchema.virtual('email_md5').get () ->
-  if not @email then null else
+userSchema.virtual('gravitar').get () ->
+  if not @email then undefined else
     hash = crypto.createHash 'md5'
     hash.update @email
-    hash.digest 'hex'
+    ghash = hash.digest 'hex'
+    "http://www.gravatar.com/avatar/#{ghash}"
 
 userSchema.statics.createUser = (cb) ->
   user = new @

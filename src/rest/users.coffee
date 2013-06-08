@@ -31,7 +31,7 @@ putuser = (req, res) ->
       if not req.body.password then res.json 400,  { message: 'must provide a password to user in the future' } else
         users.registerUser req.session.user_id, req.body, (err, user) ->
           if err then res.json err.code, { message: err.msg } else
-            res.json user.toJSON()
+            res.json user
 
 usersApp.get '/users/me', getuser
 usersApp.get '/users/:userid', fetchuser, getuser

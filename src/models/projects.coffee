@@ -74,14 +74,4 @@ projectSchema.statics.listTags = (cb) ->
     if err then cb { code: 500, msg: 'error retrieving project tags' } else
       cb null, tags
 
-projectSchema.static.listPublishedProjects = (cb) ->
-  listProjects
-    tags:
-      $not:
-        $size: 0
-  ,
-    sort:'sortOrder'
-  , cb
-  @
-
 module.exports = mongoose.model 'Projects', projectSchema

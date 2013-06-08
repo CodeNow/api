@@ -205,6 +205,20 @@ describe 'user api', ->
           apiserver.configs.passwordSalt = oldSalt
           done()
 
+  it 'should include a ::gravitar url in user model', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/login")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ email: 'email4@doesnot.com', password: 'testing' }))
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 200
+          res.body.should.have.property 'gravitar', 'http://www.gravatar.com/avatar/c7f9034f0263d811384e9b3f09099779'
+          apiserver.configs.passwordSalt = oldSalt
+          done()
+
   it 'should remove the current anonymous user when we ::login to a registered one', (done) ->
     user = sa.agent()
     user.get("http://localhost:#{configs.port}/users/me")
