@@ -60,6 +60,7 @@ app.use runnables
 app.use channels
 app.use app.router
 app.use (err, req, res, next) ->
+  # console.error 'Error:', err.stack
   res.statusCode = 500
   res.setHeader 'content-type', 'text/plain'
   res.end ':-(\n'
