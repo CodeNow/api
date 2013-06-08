@@ -17,3 +17,6 @@ getchannelrepos = (req, res) ->
 channelApp.get '/channels', getchannels
 channelApp.get '/channels/:channelid', getchannelrepos
 channelApp.get '/channelRepos', getchannelrepos
+
+channelApp.get '/zomg', (req, res, next) ->
+    throw new Error 'zomg'
