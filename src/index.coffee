@@ -14,15 +14,13 @@ redis_store = connect_redis express
 mongoose.connect configs.mongo
 
 app = express()
+
 app.use (req, res, next) ->
   d = domain.create()
-
   res.on 'close', ->
     d.dispose()
-
   res.on 'finish', ->
     d.dispose()
-
   d.on 'error', (err) ->
     console.error 'Error:', err.stack
     try
@@ -30,19 +28,14 @@ app.use (req, res, next) ->
         process.exit(1)
       , 30000
       killtimer.unref()
-
       server.close()
-
-      res.statusCode = 500
-      res.setHeader 'content-type', 'text/plain'
-      res.end ':-(\n'
+      res.json 500, { message: 'something bad happened' }
     catch err2
       console.error('Error sending 500!', err2.stack)
-
   d.add req
   d.add res
-
   d.run(next)
+
 app.use express.bodyParser()
 app.use express.cookieParser()
 app.use express.session
@@ -60,10 +53,7 @@ app.use runnables
 app.use channels
 app.use app.router
 app.use (err, req, res, next) ->
-  # console.error 'Error:', err.stack
-  res.statusCode = 500
-  res.setHeader 'content-type', 'text/plain'
-  res.end ':-(\n'
+  res.json 500, { message: 'something bad happened' }
 
 app.get '/', (req, res) ->
   res.json { message: 'hello!' }

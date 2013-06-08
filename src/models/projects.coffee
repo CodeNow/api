@@ -58,7 +58,6 @@ projectSchema.index
   name: 1
 
 projectSchema.statics.create = (owner, framework, cb) ->
-
   if not configs.images?[framework] then cb { code: 403, msg: 'framework does not exist' } else
     project = new @
       owner: owner
@@ -69,5 +68,20 @@ projectSchema.statics.create = (owner, framework, cb) ->
     project.save (err) ->
       if err then cb { code: 500, msg: 'error saving project to mongodb' } else
         cb null, project
+
+projectSchema.statics.listTags = (cb) ->
+  @find().distinct 'tags', (err, tags) ->
+    if err then cb { code: 500, msg: 'error retrieving project tags' } else
+      cb null, tags
+
+projectSchema.static.listPublishedProjects = (cb) ->
+  listProjects
+    tags:
+      $not:
+        $size: 0
+  ,
+    sort:'sortOrder'
+  , cb
+  @
 
 module.exports = mongoose.model 'Projects', projectSchema

@@ -26,7 +26,20 @@
     }
   ],
 
-  "Projects": [ ],
+  "Projects": [
+    {
+      "tags": [
+        "twitter",
+        "facebook"
+      ]
+    },
+    {
+      "tags": [
+        "google",
+        "jquery"
+      ]
+    }
+  ],
 
   "Gears": [ ],
 

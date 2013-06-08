@@ -9,3 +9,8 @@ runnableApp.post '/runnables', (req, res) ->
   runnables.create req.session.user_id, framework, (err, runnable) ->
     if err then res.json err.code, { message: err.msg } else
       res.json 201, runnable
+
+runnableApp.get '/runnables', (req, res) ->
+  runnables.list req.session.user_id, req.query, (err, runnables) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json 200, runnables
