@@ -20,11 +20,33 @@ error handling
 * any errors that bubble up from within our repo just propagate upwards
 * this error structure is always passed to client as res.json err.code, { message: err.msg }
 
-deployment
-==========
+local development
+=================
 
-* run make image to create a deployment-ready docker image
-* this image can then be pushed to any running docker daemon
+* the api server depends on a docker daemon and therefore requires a linux kernel
+* you can spin up a local enivronment using vagrant + virtual box
+* simply run 'vagrant up' from the root of your repo directory
+
+PaaS deployment
+===============
+
+* vagrant can also be used to deploy to an ec2 server
+* simply setup EC2 as a vagrant provider and then push via vagrant
+
+database mirgration
+===================
+
+* this api requires some changes to the way to the database is laid out
+* a published project is any project that contains tags
+* this means all projects with tags will show up in the tagged list
+* this means projects which are forks of published projects do not inheret its tags
+* you can figure out which tags the project is derived from by looking at the root tags
+
+* the comment schema includes a pointe to a user instead of gravitar/email directly
+* this allows us to associate a real user with the emails here
+* it also means if a user is marked as deleted their comments will disappear
+
+* simply run scripts/migrate.js to covert your existing database
 
 code coverage
 =============

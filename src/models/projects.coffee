@@ -6,16 +6,8 @@ Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
 commentsSchema = new Schema
-  name: String
+  user: ObjectId
   text: String
-  email: String
-
-commentsSchema.set 'toJSON', virtuals: true
-commentsSchema.virtual('email_md5').get () ->
-  if not @email then null else
-    hash = crypto.createHash 'md5'
-    hash.update @email
-    hash.digest 'hex'
 
 projectSchema = new Schema
   name:
