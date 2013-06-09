@@ -11,6 +11,9 @@ commentsSchema = new Schema
     ref: 'Users'
   text: String
 
+tagsSchema = new Schema
+  name: String
+
 projectSchema = new Schema
   name:
     type: String
@@ -26,21 +29,21 @@ projectSchema = new Schema
     type: Date
     default: Date.now
   defaultFile:
-    type: [String]
+    type: [ String ]
     default: [ ]
   framework:
     type: String
   edited:
     type: Boolean
   tags:
-    type: [String]
+    type: [ tagsSchema ]
     default: [ ]
     index: true
   sortOrder:
     type: Number
     index: true
   comments:
-    type: [commentsSchema]
+    type: [ commentsSchema ]
     default: [ ]
 
 projectSchema.set 'toJSON', virtuals: true

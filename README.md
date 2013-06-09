@@ -46,6 +46,9 @@ database mirgration
 * this allows us to associate a real user with the emails here
 * it also means if a user is marked as deleted their comments will disappear
 
+* make the tags field more than just a name, give it an id as well
+* this allows us to refer to the tag by id in the url, eliminating any constraints on the name field
+
 * simply run scripts/migrate.js to covert your existing database
 
 code coverage
@@ -60,4 +63,11 @@ api spec
 ========
 
 * the mocha tests are this api's living specification
-*
+
+TODO
+====
+
+* tags, files, terminal, image export, image import (admins), objectId conversion
+* start/start cmd, state tracking, tail logging
+* try to do as much as possible using http, without websockets
+* document the api, separate the tested vs. untested parts

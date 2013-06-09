@@ -11,8 +11,8 @@ describe 'channels api', ->
         if err then done err else
           res.should.have.status 200
           res.body.should.be.a.array
-          res.body.should.include 'facebook'
-          res.body.should.include 'google'
-          res.body.should.include 'twitter'
-          res.body.should.include 'jquery'
+          res.body.should.includeEql name: 'facebook'
+          res.body.should.includeEql name: 'google'
+          res.body.should.includeEql name: 'twitter'
+          res.body.should.includeEql name: 'jquery'
           done()

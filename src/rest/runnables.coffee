@@ -48,7 +48,35 @@ runnableApp.post '/runnables/:id/comments', (req, res) ->
         if err then res.json err.code, { message: err.msg } else
           res.json 201, comment
 
+runnableApp.get '/runnables/:id/comments/:commentId', (req, res) ->
+  fetchUser = req.query.user?
+  runnables.getComment req.params.id, fetchUser, req.params.commentId, (err, comments) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json comments
+
 runnableApp.del '/runnables/:id/comments/:commentId', (req, res) ->
   runnables.removeComment req.session.user_id, req.params.id, req.params.commentId, (err) ->
     if err then res.json err.code, { message: err.msg } else
       res.json 200, { message: 'comment deleted' }
+
+runnableApp.get '/runnables/:id/tags', (req, res) ->
+  runnables.getTags req.params.id, (err, tags) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json tags
+
+runnableApp.post '/runnables/:id/tags', (req, res) ->
+  if not req.body.name then res.json 400, { message: 'tag must include a name field' } else
+    if req.user.permission_level < 1 then res.json 403, { message: 'permission denied' } else
+      runnables.addTag req.session.user_id, req.params.id, req.body.name, (err, tag) ->
+        if err then res.json err.code, { message: err.msg } else
+          res.json 201, tag
+
+runnableApp.get '/runnables/:id/tags/:tagId', (req, res) ->
+  runnables.getTag req.params.id, req.params.tagId, (err, tag) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json 200, tag
+
+runnableApp.del '/runnables/:id/tags/:tagId', (req, res) ->
+  runnables.removeTag req.session.user_id, req.params.id, req.params.tagId, (err) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json 200, { message: 'tag deleted' }

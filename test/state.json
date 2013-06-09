@@ -29,14 +29,22 @@
   "Projects": [
     {
       "tags": [
-        "twitter",
-        "facebook"
+        {
+          "name": "twitter"
+        },
+        {
+          "name": "facebook"
+        }
       ]
     },
     {
       "tags": [
-        "google",
-        "jquery"
+        {
+          "name": "google"
+        },
+        {
+          "name": "jquery"
+        }
       ]
     },
     {

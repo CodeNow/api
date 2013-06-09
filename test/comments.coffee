@@ -114,6 +114,69 @@ describe 'comments api', ->
                               apiserver.configs.passwordSalt = oldSalt
                               done()
 
+  it 'should be able to retrieve a single ::comment by its id', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/login")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
+      .end (err, res) ->
+        res.should.have.status 200
+        process.nextTick ->
+          user.post("http://localhost:#{configs.port}/runnables")
+            .end (err, res) ->
+              if err then done err else
+                res.should.have.status 201
+                userId = res.body.owner
+                runnableId = res.body._id
+                commentText = 'this is a comment'
+                process.nextTick ->
+                  user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/comments")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify(text: commentText))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        res.should.have.property 'body'
+                        res.body.should.have.property 'user', userId
+                        res.body.should.have.property 'text', commentText
+                        res.body.should.have.property '_id'
+                        commentId = res.body._id
+                        user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/comments/#{commentId}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.should.have.property 'body'
+                              res.body.text.should.equal commentText
+                              res.body.user.should.equal userId
+                              apiserver.configs.passwordSalt = oldSalt
+                              done()
+
+  it 'should report comment not found if ::comment id does not exist', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/login")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
+      .end (err, res) ->
+        res.should.have.status 200
+        process.nextTick ->
+          user.post("http://localhost:#{configs.port}/runnables")
+            .end (err, res) ->
+              if err then done err else
+                res.should.have.status 201
+                runnableId = res.body._id
+                user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/comments/12345")
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 404
+                      res.should.have.property 'body'
+                      res.body.should.have.property 'message', 'comment not found'
+                      apiserver.configs.passwordSalt = oldSalt
+                      done()
+
   it 'should be able to list all ::comments associated with a runnable with user lookup', (done) ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
