@@ -1,7 +1,6 @@
 apiserver = require '../lib'
 configs = require '../lib/configs'
 sa = require 'superagent'
-should = require 'should'
 
 describe 'channels api', ->
 

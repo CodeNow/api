@@ -6,7 +6,9 @@ Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
 commentsSchema = new Schema
-  user: ObjectId
+  user:
+    type: ObjectId
+    ref: 'Users'
   text: String
 
 projectSchema = new Schema

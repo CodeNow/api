@@ -9,7 +9,7 @@
     {
       "email": "test4@testing.com",
       "username": "test4@testing.com",
-      "permission_level": 1,
+      "permission_level": 5,
       "password": "testing"
     },
     {

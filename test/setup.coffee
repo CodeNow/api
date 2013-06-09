@@ -6,6 +6,8 @@ redis = require 'redis'
 state = require './state'
 db = mongodb.Db
 
+redis_client = redis.createClient()
+
 beforeEach (done) ->
   db.connect configs.mongo, (err, test_db) ->
     async.parallel [
@@ -24,7 +26,6 @@ beforeEach (done) ->
         apiserver.start done
 
 afterEach (done) ->
-  redis_client = redis.createClient()
   redis_client.flushall () ->
     db.connect configs.mongo, (err, test_db) ->
       test_db.dropDatabase () ->
