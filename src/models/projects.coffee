@@ -25,6 +25,8 @@ projectSchema = new Schema
     index: true
   rootParent:
     type: ObjectId
+  image:
+    type: String
   created:
     type: Date
     default: Date.now
@@ -58,7 +60,7 @@ projectSchema.statics.create = (owner, framework, cb) ->
   if not configs.images?[framework] then cb { code: 403, msg: 'framework does not exist' } else
     project = new @
       owner: owner
-      id: configs.images[framework].id
+      image: configs.images[framework].id
       name: configs.images[framework].name
       defaultFile: configs.images[framework].files
       framework: framework

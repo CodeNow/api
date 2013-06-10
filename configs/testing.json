@@ -7,6 +7,7 @@
   "fbloginSecret": "67020f3812ff6f4ff03ef78812cd9280",
   "mongo": "mongodb://127.0.0.1:27017/runnable_{RAND_NUM}",
   "port": 3000,
+  "shortProjectIds": true,
   "images":  {
     "node.js": {
       "id": "image_here",

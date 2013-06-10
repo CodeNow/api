@@ -13,6 +13,11 @@ describe 'runnables api', ->
           res.should.have.status 201
           res.should.have.property 'body'
           res.body.should.have.property 'framework', 'node.js'
+          res.body.should.have.property '_id'
+          if apiserver.configs.shortProjectIds
+            res.body._id.length.should.equal 16
+          else
+            res.body._id.length.should.equal 24
           done()
 
   it 'should be able to create a new node.js ::runnable', (done) ->
@@ -216,7 +221,7 @@ describe 'runnables api', ->
                         apiserver.configs.passwordSalt = oldSalt
                         done()
 
-  it 'should be possible to list all ::runnable which are published', (done) ->
+  it 'should be possible to list all ::runnables which are published', (done) ->
     user = sa.agent()
     user.get("http://localhost:#{configs.port}/runnables?published=true")
       .end (err, res) ->
@@ -228,7 +233,7 @@ describe 'runnables api', ->
             elem.tags.length.should.be.above 0
           done()
 
-  it 'should be possible to list all ::runnable which belong to a channel', (done) ->
+  it 'should be possible to list all ::runnables which belong to a channel', (done) ->
     user = sa.agent()
     user.get("http://localhost:#{configs.port}/runnables?channel=facebook")
       .end (err, res) ->

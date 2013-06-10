@@ -67,7 +67,9 @@ api spec
 TODO
 ====
 
-* tags, files, terminal, image export, image import (admins), objectId conversion
+NEXT: objectId conversion
+
+* files, terminal, image export, image import (admins)
 * start/start cmd, state tracking, tail logging
 * try to do as much as possible using http, without websockets
 * document the api, separate the tested vs. untested parts

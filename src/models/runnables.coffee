@@ -1,30 +1,22 @@
+configs = require '../configs'
 projects = require './projects'
 users = require './users'
-
-arrayToJSON = (res) ->
-  result = (item.toJSON() for item in res)
-
-commentsToJSON = (res) ->
-  result = [ ]
-  res.forEach (item) ->
-    comment = item.user.toJSON()
-    comment.text = item.text
-    delete comment.email
-    result.push comment
-  result
 
 Runnables =
 
   create: (userId, framework, cb) ->
-    projects.create userId, framework, cb
+    projects.create userId, framework, (err, project) ->
+      if err then cb err else
+        json_project = project.toJSON()
+        json_project._id = encodeId json_project._id
+        cb null, json_project
 
   delete: (userId, runnableId, cb) ->
-
+    runnableId = decodeId runnableId
     removeProject = () ->
       projects.remove _id: runnableId, (err) ->
         if err then cb { code: 500, msg: 'error deleting runnable from database' } else
           cb()
-
     projects.findOne _id: runnableId, (err, project) ->
       if err then cb { code: 500, msg: 'error querying mongodb' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
@@ -36,18 +28,22 @@ Runnables =
                     removeProject()
 
   get: (runnableId, fetchComments, cb) ->
+    runnableId = decodeId runnableId
     if fetchComments
       projects.findOne(_id: runnableId).populate('comments.user', 'email username').exec (err, project) ->
         if err then cb { code: 500, msg: 'error looking up runnable' } else
           if not project then cb { code: 404, msg: 'runnable not found' } else
             json_project = project.toJSON()
             json_project.comments = commentsToJSON project.comments
+            json_project._id = encodeId json_project._id
             cb null, json_project
     else
       projects.findOne _id: runnableId, (err, project) ->
         if err then cb { code: 500, msg: 'error looking up runnable' } else
           if not project then cb { code: 404, msg: 'runnable not found' } else
-            cb null, project.toJSON()
+            json_project = project.toJSON()
+            json_project._id = encodeId json_project._id
+            cb null, json_project
 
   listPublished: (cb) ->
     projects.find tags: $not: $size: 0, (err, results) ->
@@ -65,6 +61,7 @@ Runnables =
         cb null, arrayToJSON results
 
   getComments: (runnableId, fetchUsers, cb) ->
+    runnableId = decodeId runnableId
     if fetchUsers
       projects.findOne(_id: runnableId).populate('comments.user', 'email username').exec (err, project) ->
         if err then cb { code: 500, msg: 'error looking up runnable' } else
@@ -77,6 +74,7 @@ Runnables =
             cb null, project.comments
 
   getComment: (runnableId, fetchUser, commentId, cb) ->
+    runnableId = decodeId runnableId
     if fetchUser
       projects.findOne(_id: runnableId).populate('comments.user', 'email username').exec (err, project) ->
         if err then cb { code: 500, msg: 'error looking up runnable' } else
@@ -96,6 +94,7 @@ Runnables =
               cb null, comment
 
   addComment: (userId, runnableId, text, cb) ->
+    runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
@@ -108,6 +107,7 @@ Runnables =
               cb null, { user: userId, text: text, _id: commentId }
 
   removeComment: (userId, runnableId, commentId, cb) ->
+    runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
@@ -123,12 +123,14 @@ Runnables =
                   cb { code: 403, msg: 'permission denied' }
 
   getTags: (runnableId, cb) ->
+    runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
           cb null, project.tags
 
   getTag: (runnableId, tagId, cb) ->
+    runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
@@ -137,6 +139,7 @@ Runnables =
             cb null, tag
 
   addTag: (userId, runnableId, text, cb) ->
+    runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
@@ -158,6 +161,7 @@ Runnables =
                 cb null, { name: text, _id: tagId }
 
   removeTag: (userId, runnableId, tagId, cb) ->
+    runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
@@ -175,3 +179,30 @@ Runnables =
               if err then cb { code: 500, msg: 'error removing tag from mongodb' } else cb()
 
 module.exports = Runnables
+
+arrayToJSON = (res) ->
+  result = for item in res
+    json = item.toJSON()
+    json._id = encodeId json._id
+    json
+
+commentsToJSON = (res) ->
+  result = [ ]
+  res.forEach (item) ->
+    comment = item.user.toJSON()
+    comment.text = item.text
+    delete comment.email
+    result.push comment
+  result
+
+plus = /\+/g
+slash = /\//g
+minus = /-/g
+underscore = /_/g
+
+encodeId = (id) -> id
+decodeId = (id) -> id
+
+if configs.shortProjectIds
+  encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
+  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');
