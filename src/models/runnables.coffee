@@ -195,6 +195,30 @@ Runnables =
           if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
             project.updateFile fileId, content, cb
 
+  defaultFile: (userId, runnableId, fileId, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, project) ->
+      if err then cb { code: 500, msg: 'error looking up runnable' } else
+        if not project then cb { code: 404, msg: 'runnable not found' } else
+          if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
+            project.tagFile fileId, cb
+
+  renameFile: (userId, runnableId, fileId, name, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, project) ->
+      if err then cb { code: 500, msg: 'error looking up runnable' } else
+        if not project then cb { code: 404, msg: 'runnable not found' } else
+          if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
+            project.renameFile fileId, name, cb
+
+  moveFile: (userId, runnableId, fileId, path, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, project) ->
+      if err then cb { code: 500, msg: 'error looking up runnable' } else
+        if not project then cb { code: 404, msg: 'runnable not found' } else
+          if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
+            project.moveFile fileId, path, cb
+
   createDirectory: (userId, runnableId, name, path, cb) ->
     runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->
@@ -211,6 +235,23 @@ Runnables =
           file = project.files.id fileId
           if not file then cb { code: 404, msg: 'file not found' } else
             project.readFile fileId, cb
+
+  deleteFile: (runnableId, fileId, recursive, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, project) ->
+      if err then cb { code: 500, msg: 'error looking up runnable' } else
+        if not project then cb { code: 404, msg: 'runnable not found' } else
+          file = project.files.id fileId
+          if not file then cb { code: 404, msg: 'file not found' } else
+            project.deleteFile fileId, recursive, cb
+
+  deleteAllFiles: (runnableId, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, project) ->
+      if err then cb { code: 500, msg: 'error looking up runnable' } else
+        if not project then cb { code: 404, msg: 'runnable not found' } else
+          project.deleteAllFiles cb
+
 
 module.exports = Runnables
 

@@ -103,7 +103,35 @@ runnableApp.get '/runnables/:id/files/:fileid', (req, res) ->
       res.json 200, file
 
 runnableApp.put '/runnables/:id/files/:fileid', (req, res) ->
-  if not req.body.content then res.json 400, { message: 'must provide file content' } else
+  if not req.body.content
+    if not req.body.path
+      if not req.body.name
+        if not req.body.default
+          res.json 400, { message: 'must provide content, name, path or tag to update operation' }
+        else
+          runnables.defaultFile req.session.user_id, req.params.id, req.params.fileid, (err, file) ->
+            if err then res.json err.code, { message: err.msg } else
+              res.json 200, file
+      else
+        runnables.renameFile req.session.user_id, req.params.id, req.params.fileid, req.body.name, (err, file) ->
+          if err then res.json err.code, { message: err.msg } else
+            res.json 200, file
+    else
+      runnables.moveFile req.session.user_id, req.params.id, req.params.fileid, req.body.path, (err, file) ->
+        if err then res.json err.code, { message: err.msg } else
+          res.json 200, file
+  else
     runnables.updateFile req.session.user_id, req.params.id, req.params.fileid, req.body.content, (err, file) ->
       if err then res.json err.code, { message: err.msg } else
         res.json 200, file
+
+runnableApp.del '/runnables/:id/files', (req, res) ->
+  runnables.deleteAllFiles req.params.id, (err) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json 200, { message: 'deleted all files' }
+
+runnableApp.del '/runnables/:id/files/:fileid', (req, res) ->
+  recursive = req.query.recursive?
+  runnables.deleteFile req.params.id, req.params.fileid, recursive, (err) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json 200, { message: 'file deleted' }
