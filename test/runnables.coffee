@@ -244,3 +244,18 @@ describe 'runnables api', ->
             elem.tags.length.should.be.above 0
             elem.tags.should.include 'facebook'
           done()
+
+  it 'should be possible to check the ::running status of a stopped runnable', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          res.body.should.have.property 'running', false
+          runnableId = res.body._id
+          user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+            .end (err, res) ->
+              if err then done err else
+                res.should.have.status 200
+                res.body.should.have.property 'running', false
+                done()

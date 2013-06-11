@@ -12,10 +12,7 @@
   "images":  {
     "node.js": {
       "id": "image_here",
-      "name": "hello node.js",
-      "defaultFiles": [
-        "server.js"
-      ]
+      "name": "hello node.js"
     }
   }
 }

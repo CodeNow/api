@@ -9,6 +9,7 @@ Runnables =
     projects.create userId, framework, (err, project) ->
       if err then cb err else
         json_project = project.toJSON()
+        json_project.running = false
         json_project._id = encodeId json_project._id
         cb null, json_project
 
@@ -43,6 +44,7 @@ Runnables =
         if err then cb { code: 500, msg: 'error looking up runnable' } else
           if not project then cb { code: 404, msg: 'runnable not found' } else
             json_project = project.toJSON()
+            json_project.running = false
             json_project._id = encodeId json_project._id
             cb null, json_project
 
