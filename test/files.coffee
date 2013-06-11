@@ -965,8 +965,54 @@ describe 'files api', ->
                         res.body.should.have.property 'message', 'cannot tag directory as default'
                         done()
 
-  it 'should list all ::file resources, without contents'
-  it 'should list all ::file resources, including contents'
+  it 'should ::list all ::file resources, without contents', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          runnableId = res.body._id
+          process.nextTick ->
+            user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello.js', path: '/', dir: true))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        res.body.length.should.equal 1
+                        res.body[0].should.not.have.property 'content'
+                        done()
+
+  it 'should ::list all ::file resources, including contents', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          runnableId = res.body._id
+          process.nextTick ->
+            content = 'console.log("Hello, World!");'
+            encodedContent = (new Buffer(content)).toString('base64')
+            user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/files?content=true")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        res.body.length.should.equal 1
+                        res.body[0].should.have.property 'content', encodedContent
+                        done()
+
   it 'should list only ::file directories'
   it 'should list only ::files with default tags, but all directories, with contents'
   it 'should list all ::files but only content from files that are tagged with default'

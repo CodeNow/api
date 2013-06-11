@@ -97,6 +97,12 @@ runnableApp.post '/runnables/:id/files', (req, res) ->
             if err then res.json err.code, { message: err.msg } else
               res.json 201, file
 
+runnableApp.get '/runnables/:id/files', (req, res) ->
+  content = req.query.content?
+  runnables.listFiles req.params.id, content, (err, files) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json 200, files
+
 runnableApp.get '/runnables/:id/files/:fileid', (req, res) ->
   runnables.readFile req.params.id, req.params.fileid, (err, file) ->
     if err then res.json err.code, { message: err.msg } else
