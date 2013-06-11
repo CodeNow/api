@@ -276,3 +276,68 @@ describe 'files api', ->
                         res.should.have.status 403
                         res.body.should.have.property 'message', 'resource already exists'
                         done()
+
+  it 'should be able to update an existing ::file', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          runnableId = res.body._id
+          content = 'console.log("Hello, World!");'
+          encodedContent = (new Buffer(content)).toString('base64')
+          process.nextTick ->
+            user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  fileId = res.body._id
+                  newContent = 'console.log("Hello, Second World!");'
+                  encodedNewContent = (new Buffer(content)).toString('base64')
+                  process.nextTick ->
+                    user.put("http://localhost:#{configs.port}/runnables/#{runnableId}/files/#{fileId}")
+                      .set('content-type', 'application/json')
+                      .send(JSON.stringify(content: encodedNewContent))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body.should.have.property 'name', 'hello.js'
+                          res.body.should.have.property 'path', '/'
+                          res.body.should.have.property '_id'
+                          done()
+
+  it 'should be able to read back an update to an existing ::file', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          runnableId = res.body._id
+          content = 'console.log("Hello, World!");'
+          encodedContent = (new Buffer(content)).toString('base64')
+          process.nextTick ->
+            user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  fileId = res.body._id
+                  newContent = 'console.log("Hello, Second World!");'
+                  encodedNewContent = (new Buffer(content)).toString('base64')
+                  process.nextTick ->
+                    user.put("http://localhost:#{configs.port}/runnables/#{runnableId}/files/#{fileId}")
+                      .set('content-type', 'application/json')
+                      .send(JSON.stringify(content: encodedNewContent))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/files/#{fileId}")
+                            .end (err, res) ->
+                              res.should.have.status 200
+                              res.body.should.have.property 'name', 'hello.js'
+                              res.body.should.have.property 'path', '/'
+                              res.body.should.have.property 'content', encodedNewContent
+                              done()

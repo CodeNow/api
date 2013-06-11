@@ -101,3 +101,9 @@ runnableApp.get '/runnables/:id/files/:fileid', (req, res) ->
   runnables.readFile req.params.id, req.params.fileid, (err, file) ->
     if err then res.json err.code, { message: err.msg } else
       res.json 200, file
+
+runnableApp.put '/runnables/:id/files/:fileid', (req, res) ->
+  if not req.body.content then res.json 400, { message: 'must provide file content' } else
+    runnables.updateFile req.session.user_id, req.params.id, req.params.fileid, req.body.content, (err, file) ->
+      if err then res.json err.code, { message: err.msg } else
+        res.json 200, file

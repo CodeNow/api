@@ -187,6 +187,14 @@ Runnables =
           if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
             project.createFile name, path, content, cb
 
+  updateFile: (userId, runnableId, fileId, content, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, project) ->
+      if err then cb { code: 500, msg: 'error looking up runnable' } else
+        if not project then cb { code: 404, msg: 'runnable not found' } else
+          if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
+            project.updateFile fileId, content, cb
+
   createDirectory: (userId, runnableId, name, path, cb) ->
     runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->

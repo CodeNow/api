@@ -30,6 +30,14 @@ Volumes =
             if err then cb { code: 500, msg: 'error writing file to volume' } else
               cb()
 
+  updateFile: (id, name, path, content, cb) ->
+    filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
+    fs.exists filePath, (exists) ->
+      if not exists then cb { code: 500, msg: 'mongodb and volume out of sync' } else
+        fs.writeFile filePath, content, 'utf8', (err) ->
+          if err then cb { code: 500, msg: 'error writing file to volume' } else
+            cb()
+
   createDirectory: (id, name, path, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
     fs.exists filePath, (exists) ->

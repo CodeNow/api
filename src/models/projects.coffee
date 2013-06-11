@@ -96,6 +96,13 @@ projectSchema.methods.createFile = (name, path, content, cb) ->
         if err then { code: 500, msg: 'error saving file meta-data to mongodb' } else
           cb null, { _id: file._id, name: name, path: path }
 
+projectSchema.methods.updateFile = (fileId, content, cb) ->
+  file = @files.id fileId
+  if not file then cb { code: 404, msg: 'file not found' } else
+    volumes.updateFile @_id, file.name, file.path, content, (err) ->
+      if err then cb err else
+        cb null, file
+
 projectSchema.methods.createDirectory = (name, path, cb) ->
   volumes.createDirectory @_id, name, path, (err) =>
     if err then cb err else
