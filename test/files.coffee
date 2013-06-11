@@ -1,6 +1,7 @@
 apiserver = require '../lib'
 configs = require '../lib/configs'
 sa = require 'superagent'
+qs = require 'querystring'
 
 describe 'files api', ->
 
@@ -1013,7 +1014,122 @@ describe 'files api', ->
                         res.body[0].should.have.property 'content', encodedContent
                         done()
 
-  it 'should list only ::file directories'
-  it 'should list only ::files with default tags, but all directories, with contents'
-  it 'should list all ::files but only content from files that are tagged with default'
-  it 'should list only ::files belonging to a particular path'
+  it 'should ::list only ::file directories', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          runnableId = res.body._id
+          process.nextTick ->
+            content = 'console.log("Hello, World!");'
+            encodedContent = (new Buffer(content)).toString('base64')
+            user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify(name: 'newdir', path: '/', dir: true))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/files?dir=true")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.be.a.array
+                              res.body.length.should.equal 1
+                              res.body[0].should.not.have.property 'content'
+                              done()
+
+  it 'should ::list only ::files with default tags with contents', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          runnableId = res.body._id
+          content = 'console.log("Hello, World!");'
+          encodedContent = (new Buffer(content)).toString('base64')
+          process.nextTick ->
+            user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  fileId = res.body._id
+                  content2 = 'console.log("Hello, World2!");'
+                  encodedContent2 = (new Buffer(content)).toString('base64')
+                  user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify(name: 'hello2.js', path: '/', content: encodedContent2))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        user.put("http://localhost:#{configs.port}/runnables/#{runnableId}/files/#{fileId}")
+                          .set('content-type','application/json')
+                          .send(JSON.stringify(default: true))
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.have.property 'default', true
+                              user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/files?default=true")
+                                .end (err, res) ->
+                                  res.should.have.status 200
+                                  res.body.should.be.a.array
+                                  res.body.length.should.equal 2
+                                  res.body[0].should.have.property 'default', true
+                                  res.body[0].should.have.property 'content', encodedContent
+                                  res.body[1].should.have.property 'default', false
+                                  res.body[1].should.not.have.property 'content'
+                                  done()
+
+  it 'should ::list only ::files belonging to a particular path', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          runnableId = res.body._id
+          process.nextTick ->
+            user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'subdir', path: '/', dir: true))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify(name: 'subdir2', path: '/', dir: true))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        fileId = res.body._id
+                        content = 'console.log("Hello, World!");'
+                        encodedContent = (new Buffer(content)).toString('base64')
+                        user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+                          .set('content-type', 'application/json')
+                          .send(JSON.stringify(name: 'hello1.js', path: '/subdir', content: encodedContent))
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 201
+                              content2 = 'console.log("Hello, World2!");'
+                              encodedContent2 = (new Buffer(content)).toString('base64')
+                              user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
+                                .set('content-type', 'application/json')
+                                .send(JSON.stringify(name: 'hello2.js', path: '/subdir2', content: encodedContent2))
+                                .end (err, res) ->
+                                  if err then done err else
+                                    res.should.have.status 201
+                                    query = qs.stringify path: '/subdir', content: true
+                                    user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/files?#{query}")
+                                      .end (err, res) ->
+                                        res.should.have.status 200
+                                        res.body.should.be.a.array
+                                        res.body.length.should.equal 1
+                                        res.body[0].should.have.property 'content', encodedContent
+                                        done()

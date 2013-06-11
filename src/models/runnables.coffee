@@ -179,12 +179,12 @@ Runnables =
             project.save (err) ->
               if err then cb { code: 500, msg: 'error removing tag from mongodb' } else cb()
 
-  listFiles: (runnableId, content, cb) ->
+  listFiles: (runnableId, content, dir, default_tag, path, cb) ->
     runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
-          project.listFiles content, cb
+          project.listFiles content, dir, default_tag, path, cb
 
   createFile: (userId, runnableId, name, path, content, cb) ->
     runnableId = decodeId runnableId

@@ -99,7 +99,10 @@ runnableApp.post '/runnables/:id/files', (req, res) ->
 
 runnableApp.get '/runnables/:id/files', (req, res) ->
   content = req.query.content?
-  runnables.listFiles req.params.id, content, (err, files) ->
+  dir = req.query.dir?
+  default_tag = req.query.default?
+  path = req.query.path
+  runnables.listFiles req.params.id, content, dir, default_tag, path, (err, files) ->
     if err then res.json err.code, { message: err.msg } else
       res.json 200, files
 

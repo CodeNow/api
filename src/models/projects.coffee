@@ -87,19 +87,50 @@ projectSchema.statics.listTags = (cb) ->
     if err then cb { code: 500, msg: 'error retrieving project tags' } else
       cb null, tags
 
-projectSchema.methods.listFiles = (content, cb) ->
-  if not content then cb null, (file.toJSON() for file in @files) else
+projectSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
+  if default_tag
     files = [ ]
     async.forEachSeries @files, (file, cb) =>
-      volumes.readFile @_id, file.name, file.path, (err, content) ->
-        if err then cb err else
-          file = file.toJSON()
-          file.content = content
-          files.push file
-          cb()
+      if not file.default
+        if not path or file.path is path
+          files.push file.toJSON()
+        cb()
+      else
+        volumes.readFile @_id, file.name, file.path, (err, content) ->
+          if err then cb err else
+            if not path or file.path is path
+              file = file.toJSON()
+              file.content = content
+              files.push file
+            cb()
     , (err) ->
       if err then cb err else
         cb null, files
+  else
+    if not content
+      if dir
+        if path
+          cb null, (file.toJSON() for file in @files when file.dir and file.path is path)
+        else
+          cb null, (file.toJSON() for file in @files when file.dir)
+      else
+        if path
+          cb null, (file.toJSON() for file in @files when file.path is path)
+        else
+          cb null, (file.toJSON() for file in @files)
+    else
+      files = [ ]
+      async.forEachSeries @files, (file, cb) =>
+        if path and file.path isnt path then cb() else
+          volumes.readFile @_id, file.name, file.path, (err, content) ->
+            if err then cb err else
+              file = file.toJSON()
+              file.content = content
+              files.push file
+              cb()
+      , (err) ->
+        if err then cb err else
+          cb null, files
 
 projectSchema.methods.createFile = (name, path, content, cb) ->
   volumes.createFile @_id, name, path, content, (err) =>
