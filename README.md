@@ -49,6 +49,9 @@ database mirgration
 * make the tags field more than just a name, give it an id as well
 * this allows us to refer to the tag by id in the url, eliminating any constraints on the name field
 
+* we no longer attach a default file list to the project model
+* instead, we tag file resources as being default or not
+
 * simply run scripts/migrate.js to covert your existing database
 
 code coverage
@@ -64,12 +67,18 @@ api spec
 
 * the mocha tests are this api's living specification
 
+using docker.io
+===============
+
+* we are using docker.io for spinning up lightweight processes
+* we store the persistent state
+
 TODO
 ====
 
-NEXT: objectId conversion
-
-* files, terminal, image export, image import (admins)
+NEXT: files api
+* terminal, image export, image import (admins)
 * start/start cmd, state tracking, tail logging
+* coalesce data into view-level requests
 * try to do as much as possible using http, without websockets
 * document the api, separate the tested vs. untested parts

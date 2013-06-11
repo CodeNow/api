@@ -18,7 +18,9 @@
     "docker.js": "git://github.com/CodeNow/docker.js.git",
     "bcrypt": "~0.7.5",
     "mongoose": "~3.6.11",
-    "connect-redis": "~1.4.5"
+    "connect-redis": "~1.4.5",
+    "rimraf": "~2.1.4",
+    "mkdirp": "~0.3.5"
   },
   "devDependencies": {
     "mocha": "~1.10.0",

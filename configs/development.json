@@ -8,6 +8,7 @@
   "mongo": "mongodb://127.0.0.1:27017/runnable",
   "port": 3000,
   "shortProjectIds": true,
+  "volumesPath": "{HOME_DIR}/.runnable/volumes",
   "images":  {
     "node.js": {
       "id": "image_here",

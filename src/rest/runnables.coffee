@@ -1,4 +1,5 @@
 express = require 'express'
+path = require 'path'
 users = require '../models/users'
 runnables = require '../models/runnables'
 
@@ -80,3 +81,23 @@ runnableApp.del '/runnables/:id/tags/:tagId', (req, res) ->
   runnables.removeTag req.session.user_id, req.params.id, req.params.tagId, (err) ->
     if err then res.json err.code, { message: err.msg } else
       res.json 200, { message: 'tag deleted' }
+
+runnableApp.post '/runnables/:id/files', (req, res) ->
+  if req.body.dir
+    if not req.body.name then res.json 400, { message: 'dir must include a name field' } else
+      if not req.body.path then res.json 400, { message: 'dir must include a path field' } else
+        runnables.createDirectory req.session.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
+          if err then res.json err.code, { message: err.msg } else
+            res.json 201, dir
+  else
+    if not req.body.name then res.json 400, { message: 'file must include a name field' } else
+      if not req.body.content then res.json 400, { message: 'file must include a content field' } else
+        if not req.body.path then res.json 400, { message: 'file must include a path field' } else
+          runnables.createFile req.session.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
+            if err then res.json err.code, { message: err.msg } else
+              res.json 201, file
+
+runnableApp.get '/runnables/:id/files/:fileid', (req, res) ->
+  runnables.readFile req.params.id, req.params.fileid, (err, file) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json 200, file
