@@ -91,6 +91,22 @@ Runnables =
                     if err then cb { code: 500, msg: 'error starting docker container' } else
                       cb()
 
+  stop: (userId, runnableId, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, project) ->
+      if err then cb { code: 500, msg: 'error looking up runnable' } else
+        if not project then cb { code: 404, msg: 'runnable not found' } else
+          if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
+            red.get project._id, (err, container) ->
+              if err then cb { code: 500, msg: 'error fetching from redis store' } else
+                if not container then cb { code: 403, msg: 'runnable is already stopped' } else
+                  docker.stopContainer container, (err, result) ->
+                    if err then cb { code: 500, msg: 'error stopping docker container' } else
+                      project_json = project.toJSON()
+                      project_json._id = encodeId project_json._id
+                      project_json.running = false
+                      cb null, project_json
+
   listPublished: (cb) ->
     projects.find tags: $not: $size: 0, (err, results) ->
       if err then cb { code: 500, msg: 'error querying mongodb' } else
