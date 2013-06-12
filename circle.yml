@@ -9,4 +9,4 @@ dependencies:
     - make build
 test:
   override:
-    - ./node_modules/.bin/mocha --reporter spec
+    - NODE_ENV=circle ./node_modules/.bin/mocha --reporter spec
