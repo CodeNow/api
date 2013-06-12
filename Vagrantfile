@@ -49,7 +49,8 @@ Vagrant::Config.run do |config|
            "echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | tee /etc/apt/sources.list.d/10gen.list; " \
            "apt-get update; " \
            "apt-get install mongodb-10gen; " \
-           "apt-get install redis-server; "
+           "apt-get install redis-server; " \
+           "docker pull base; "
     config.vm.provision :shell, :inline => cmds
 
     # Activate new kernel
