@@ -7,6 +7,7 @@
   "fbloginSecret": "67020f3812ff6f4ff03ef78812cd9280",
   "mongo": "mongodb://127.0.0.1:27017/runnable",
   "port": 3000,
+  "docker": "http://localhost:4243",
   "shortProjectIds": true,
   "volumesPath": "{HOME_DIR}/.runnable/volumes",
   "images":  {
