@@ -79,13 +79,15 @@ Runnables =
                     ]
                   , (err, result) ->
                     if err then cb { code: 500, msg: 'error creating docker container' } else
-                      red.set project._id, result.Id
-                      docker.startContainer result.Id, (err, result) ->
-                        if err then cb { code: 500, msg: 'error starting docker container' } else
-                          project_json = project.toJSON()
-                          project_json._id = encodeId project_json._id
-                          project_json.running = true
-                          cb null, project_json
+                      red.set project._id, result.Id, (err) ->
+                        if err then cb { code: 500, msg: 'error writing to redis' } else
+                          docker.startContainer result.Id, (err, result) ->
+                            if err then cb { code: 500, msg: 'error starting docker container' } else
+                              console.log result
+                              project_json = project.toJSON()
+                              project_json._id = encodeId project_json._id
+                              project_json.running = true
+                              cb null, project_json
                 else
                   docker.startContainer container, (err, result) ->
                     if err then cb { code: 500, msg: 'error starting docker container' } else
