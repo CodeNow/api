@@ -10,8 +10,6 @@ install:
 	@npm install
 start:
 	@node server.js
-image:
-	@docker build .
 watch:
 	@./node_modules/.bin/coffee -w -o lib src & ./node_modules/.bin/nodemon -w lib -w configs -q lib/index.js
 testwatch:

@@ -1,0 +1,19 @@
+{
+  "cookieKey": "runnable.sid",
+  "cookieSecret": "$up3r,$3<r3t",
+  "cookieExpires": "5 seconds",
+  "passwordSalt" : "$up3r,$3<r3t",
+  "fbloginId": "417553381675504",
+  "fbloginSecret": "67020f3812ff6f4ff03ef78812cd9280",
+  "mongo": "mongodb://127.0.0.1:27017/runnable_{RAND_NUM}",
+  "port": 3000,
+  "docker": "http://54.215.13.96:4243",
+  "shortProjectIds": true,
+  "volumesPath": "{RAND_DIR}/volumes",
+  "images":  {
+    "node.js": {
+      "id": "image_here",
+      "name": "hello node.js"
+    }
+  }
+}
