@@ -260,6 +260,6 @@ describe 'runnables api', ->
                 res.body.should.have.property 'running', false
                 done()
 
-  it 'should be able to start a runnable', (done) ->
+  it 'should be able to start a runnable'
 
-  it 'should be possible to check the ::running status of a started runnable', (done) ->
+  it 'should be possible to check the ::running status of a started runnable'
