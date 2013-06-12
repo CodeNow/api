@@ -1,7 +1,12 @@
 configs = require '../configs'
+dockerjs = require 'docker.js'
 projects = require './projects'
+redis = require 'redis'
 users = require './users'
 volumes = require './volumes'
+
+docker = dockerjs host: configs.docker
+red = redis.createClient()
 
 Runnables =
 
@@ -44,9 +49,47 @@ Runnables =
         if err then cb { code: 500, msg: 'error looking up runnable' } else
           if not project then cb { code: 404, msg: 'runnable not found' } else
             json_project = project.toJSON()
-            json_project.running = false
             json_project._id = encodeId json_project._id
-            cb null, json_project
+            red.get project._id, (err, container) ->
+              if err then cb { code: 500, msg: 'error fetching from redis store' } else
+                if not container
+                  json_project.running = false
+                  cb null, json_project
+                else
+                  docker.inspectContainer container, (err, result) ->
+                    if err then cb { code: 500, msg: 'error fetching container status' } else
+                      json_project.running = result.State.Running
+                      cb null, json_project
+
+
+  start: (userId, runnableId, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, project) ->
+      if err then cb { code: 500, msg: 'error looking up runnable' } else
+        if not project then cb { code: 404, msg: 'runnable not found' } else
+          if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
+            red.get project._id, (err, container) ->
+              if err then cb { code: 500, msg: 'error fetching from redis store' } else
+                if not container
+                  docker.createContainer
+                    Hostname: project._id.toString()
+                    Image: 'base'
+                    Cmd: [
+                      '/bin/bash'
+                    ]
+                  , (err, result) ->
+                    if err then cb { code: 500, msg: 'error creating docker container' } else
+                      red.set project._id, result.Id
+                      docker.startContainer result.Id, (err, result) ->
+                        if err then cb { code: 500, msg: 'error starting docker container' } else
+                          project_json = project.toJSON()
+                          project_json._id = encodeId project_json._id
+                          project_json.running = true
+                          cb null, project_json
+                else
+                  docker.startContainer container, (err, result) ->
+                    if err then cb { code: 500, msg: 'error starting docker container' } else
+                      cb()
 
   listPublished: (cb) ->
     projects.find tags: $not: $size: 0, (err, results) ->

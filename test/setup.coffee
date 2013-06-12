@@ -1,6 +1,7 @@
 apiserver = require '../lib'
 async = require 'async'
 configs = require '../lib/configs'
+dockerjs = require 'docker.js'
 fs = require 'fs'
 mkdirp = require 'mkdirp'
 mongodb = require 'mongodb'
@@ -11,6 +12,7 @@ state = require './state'
 db = mongodb.Db
 
 redis_client = redis.createClient()
+docker = dockerjs host: configs.docker
 
 beforeEach (done) ->
   db.connect configs.mongo, (err, test_db) ->
@@ -45,8 +47,21 @@ afterEach (done) ->
             test_db.close () ->
               rimraf configs.volumesPath, (err) ->
                 if err then done err else
-                  apiserver.stop () ->
-                    done()
+                  docker.listContainers queryParams: all: true, (err, containers) ->
+                    if err then done err else
+                      async.forEachSeries containers, (container, cb) ->
+                        docker.removeContainer container.Id, cb
+                      , (err) ->
+                        if err then done err else
+                          apiserver.stop () ->
+                            done()
+
+before (done) ->
+  docker.listContainers queryParams: all: true, (err, containers) ->
+    if err then done err else
+      async.forEachSeries containers, (container, cb) ->
+        docker.removeContainer container.Id, cb
+      , done
 
 after (done) ->
   redis_client.flushall () ->

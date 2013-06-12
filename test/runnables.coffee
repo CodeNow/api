@@ -260,6 +260,27 @@ describe 'runnables api', ->
                 res.body.should.have.property 'running', false
                 done()
 
-  it 'should be able to start a runnable'
+  it 'should be able to start a ::runnable from a stopped state', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          res.body.should.have.property 'running', false
+          runnableId = res.body._id
+          process.nextTick ->
+            user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify({ running: true }))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body.should.have.property 'running', true
+                  user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.have.property 'running', true
+                        done()
 
   it 'should be possible to check the ::running status of a started runnable'

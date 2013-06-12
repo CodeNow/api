@@ -31,6 +31,17 @@ runnableApp.get '/runnables/:id', (req, res) ->
     if err then res.json err.code, { message: err.msg } else
       res.json runnable
 
+runnableApp.put '/runnables/:id', (req, res) ->
+  if not req.body.running? then res.json 403, { msg: 'must provide a running parameter' } else
+    if req.body.running
+      runnables.start req.session.user_id, req.params.id, (err, runnable) ->
+        if err then res.json err.code, { message: err.msg } else
+          res.json runnable
+    else
+      runnables.stop req.session.user_id, req.params.id, (err, runnable) ->
+        if err then res.json err.code, { message: err.msg } else
+          res.json runnable
+
 runnableApp.del '/runnables/:id', (req, res) ->
   runnables.delete req.session.user_id, req.params.id, (err) ->
     if err then res.json err.code, { message: err.msg } else
@@ -112,10 +123,10 @@ runnableApp.get '/runnables/:id/files/:fileid', (req, res) ->
       res.json 200, file
 
 runnableApp.put '/runnables/:id/files/:fileid', (req, res) ->
-  if not req.body.content
-    if not req.body.path
-      if not req.body.name
-        if not req.body.default
+  if not req.body.content?
+    if not req.body.path?
+      if not req.body.name?
+        if not req.body.default?
           res.json 400, { message: 'must provide content, name, path or tag to update operation' }
         else
           runnables.defaultFile req.session.user_id, req.params.id, req.params.fileid, (err, file) ->
