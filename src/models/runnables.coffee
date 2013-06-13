@@ -50,17 +50,20 @@ Runnables =
           if not project then cb { code: 404, msg: 'runnable not found' } else
             json_project = project.toJSON()
             json_project._id = encodeId json_project._id
-            red.get project._id, (err, container) ->
+            red.hmget project._id, 'container_id', 'port_mapping', (err, fields) ->
               if err then cb { code: 500, msg: 'error fetching from redis store' } else
-                if not container
+                container_id = fields[0]
+                port_mapping = fields[1]
+                if not container_id
                   json_project.running = false
+                  json_project.web_url = null
                   cb null, json_project
                 else
-                  docker.inspectContainer container, (err, result) ->
+                  docker.inspectContainer container_id, (err, result) ->
                     if err then cb { code: 500, msg: 'error fetching container status' } else
                       json_project.running = result.State.Running
+                      json_project.web_url = port_mapping
                       cb null, json_project
-
 
   start: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -68,9 +71,9 @@ Runnables =
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
           if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
-            red.get project._id, (err, container) ->
+            red.hget project._id, 'container_id', (err, container_id) ->
               if err then cb { code: 500, msg: 'error fetching from redis store' } else
-                if not container
+                if not container_id
                   docker.createContainer
                     Hostname: project._id.toString()
                     Image: 'base'
@@ -79,19 +82,27 @@ Runnables =
                     ]
                   , (err, result) ->
                     if err then cb { code: 500, msg: 'error creating docker container' } else
-                      red.set project._id, result.Id, (err) ->
+                      container_id = result.Id
+                      red.hset project._id, 'container_id', container_id, (err) ->
                         if err then cb { code: 500, msg: 'error writing to redis' } else
-                          docker.startContainer result.Id, (err, result) ->
-                            if err then cb { code: 500, msg: 'error starting docker container' } else
-                              console.log result
-                              project_json = project.toJSON()
-                              project_json._id = encodeId project_json._id
-                              project_json.running = true
-                              cb null, project_json
+                          docker.inspectContainer container_id, (err, result) ->
+                            port_mapping = result.NetworkSettings.PortMapping
+                            if err then cb { code: 500, msg: 'error inspecting docker container' } else
+                              red.hset project._id, 'port_mapping', port_mapping, (err) ->
+                                if err then cb { code: 500 , msg: 'error writing to redis' } else
+                                  docker.startContainer container_id, (err, result) ->
+                                    if err then cb { code: 500, msg: 'error starting docker container' } else
+                                      project_json = project.toJSON()
+                                      project_json._id = encodeId project_json._id
+                                      project_json.running = true
+                                      project_json.web_url = port_mapping
+                                      cb null, project_json
                 else
-                  docker.startContainer container, (err, result) ->
-                    if err then cb { code: 500, msg: 'error starting docker container' } else
-                      cb()
+                  red.hget project._id, 'port_mapping', (err, port_mapping) ->
+                    if err then cb { code: 500, msg: 'error fetching port mapping from redis' } else
+                      docker.startContainer container_id, (err) ->
+                        if err then cb { code: 500, msg: 'error starting docker container' } else
+                          cb null, web_url: port_mapping
 
   stop: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -99,14 +110,15 @@ Runnables =
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
           if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
-            red.get project._id, (err, container) ->
+            red.hget project._id, 'container_id', (err, container_id) ->
               if err then cb { code: 500, msg: 'error fetching from redis store' } else
-                if not container then cb { code: 403, msg: 'runnable is already stopped' } else
-                  docker.stopContainer container, (err, result) ->
+                if not container_id then cb { code: 403, msg: 'runnable is already stopped' } else
+                  docker.stopContainer container_id, (err) ->
                     if err then cb { code: 500, msg: 'error stopping docker container' } else
                       project_json = project.toJSON()
                       project_json._id = encodeId project_json._id
                       project_json.running = false
+                      project_json.web_url = null
                       cb null, project_json
 
   listPublished: (cb) ->

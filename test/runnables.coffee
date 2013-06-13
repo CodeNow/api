@@ -317,3 +317,29 @@ describe 'runnables api', ->
                                     res.should.have.status 200
                                     res.body.should.have.property 'running', false
                                     done()
+
+  it 'should pass back a service url that the client can hit when a ::runnable is started', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          res.body.should.have.property 'running', false
+          runnableId = res.body._id
+          process.nextTick ->
+            user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify({ running: true }))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body.should.have.property 'running', true
+                  res.body.should.have.property 'web_url', null
+                  done()
+
+  it 'should pass back a terminal url that the client can talk to when a ::runnable is started'
+  it 'should pass back a tail log url that the client can talk to when a ::runnable is started'
+
+  it 'should be able to create a new runnable from a public base image + source files + metadata'
+  it 'should be able to create a new runnable from a dockerfile + source files + metadata'
+  it 'should be able to create a new runnable from an existing runnable'
