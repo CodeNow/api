@@ -1,0 +1,14 @@
+{
+  "image": "./Dockerfile",
+  "mount": "/root",
+  "source": [
+    {
+      "name": "./src/server.js",
+      "default": true
+    },
+    {
+      "name": "./src/package.json",
+      "default": false
+    }
+  ]
+}

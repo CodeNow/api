@@ -4,7 +4,7 @@ sa = require 'superagent'
 
 describe 'runnables api', ->
 
-  it 'should be able to create a new default ::runnable', (done) ->
+  it 'should be able to create a new ::runnable with default image', (done) ->
     user = sa.agent()
     user.post("http://localhost:#{configs.port}/runnables")
       .end (err, res) ->
@@ -245,19 +245,21 @@ describe 'runnables api', ->
             elem.tags.should.include 'facebook'
           done()
 
-  it 'should be possible to check the ::running status of a stopped runnable', (done) ->
+  it 'should be possible to check the state of a stopped ::runnable', (done) ->
     user = sa.agent()
     user.post("http://localhost:#{configs.port}/runnables")
       .end (err, res) ->
         if err then done err else
           res.should.have.status 201
-          res.body.should.have.property 'running', false
+          res.body.should.have.property 'state'
+          res.body.state.should.have.property 'running', false
           runnableId = res.body._id
           user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
             .end (err, res) ->
               if err then done err else
                 res.should.have.status 200
-                res.body.should.have.property 'running', false
+                res.body.should.have.property 'state'
+                res.body.state.should.have.property 'running', false
                 done()
 
   it 'should be able to start a ::runnable from a stopped state', (done) ->
@@ -266,7 +268,8 @@ describe 'runnables api', ->
       .end (err, res) ->
         if err then done err else
           res.should.have.status 201
-          res.body.should.have.property 'running', false
+          res.body.should.have.property 'state'
+          res.body.state.should.have.property 'running', false
           runnableId = res.body._id
           process.nextTick ->
             user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
@@ -275,12 +278,14 @@ describe 'runnables api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 200
-                  res.body.should.have.property 'running', true
+                  res.body.should.have.property 'state'
+                  res.body.state.should.have.property 'running', true
                   user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
-                        res.body.should.have.property 'running', true
+                        res.body.should.have.property 'state'
+                        res.body.state.should.have.property 'running', true
                         done()
 
   it 'should be able to stop a ::runnable from a started state', (done) ->
@@ -289,7 +294,8 @@ describe 'runnables api', ->
       .end (err, res) ->
         if err then done err else
           res.should.have.status 201
-          res.body.should.have.property 'running', false
+          res.body.should.have.property 'state'
+          res.body.state.should.have.property 'running', false
           runnableId = res.body._id
           process.nextTick ->
             user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
@@ -298,24 +304,28 @@ describe 'runnables api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 200
-                  res.body.should.have.property 'running', true
+                  res.body.should.have.property 'state'
+                  res.body.state.should.have.property 'running', true
                   user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
-                        res.body.should.have.property 'running', true
+                        res.body.should.have.property 'state'
+                        res.body.state.should.have.property 'running', true
                         user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
                           .set('content-type', 'application/json')
                           .send(JSON.stringify({ running: false }))
                           .end (err, res) ->
                             if err then done err else
                               res.should.have.status 200
-                              res.body.should.have.property 'running', false
+                              res.body.should.have.property 'state'
+                              res.body.state.should.have.property 'running', false
                               user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
                                 .end (err, res) ->
                                   if err then done err else
                                     res.should.have.status 200
-                                    res.body.should.have.property 'running', false
+                                    res.body.should.have.property 'state'
+                                    res.body.state.should.have.property 'running', false
                                     done()
 
   it 'should pass back a service url that the client can hit when a ::runnable is started', (done) ->
@@ -324,7 +334,8 @@ describe 'runnables api', ->
       .end (err, res) ->
         if err then done err else
           res.should.have.status 201
-          res.body.should.have.property 'running', false
+          res.body.should.have.property 'state'
+          res.body.state.should.have.property 'running', false
           runnableId = res.body._id
           process.nextTick ->
             user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
@@ -333,13 +344,54 @@ describe 'runnables api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 200
-                  res.body.should.have.property 'running', true
-                  res.body.should.have.property 'web_url', null
+                  res.body.should.have.property 'state'
+                  res.body.state.should.have.property 'running', true
+                  res.body.state.should.have.property 'web_url'
                   done()
+
+  it 'should be able to create a new ::runnable from a dockerfile + metadata + source files', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          res.body.should.have.property 'state'
+          res.body.state.should.have.property 'running', false
+          runnableId = res.body._id
+          process.nextTick ->
+            user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify({ running: true }))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body.should.have.property 'state'
+                  res.body.state.should.have.property 'running', true
+                  done()
+
+  it 'should create a new ::runnable in a stopped state', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/runnables")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          res.body.should.have.property 'state'
+          res.body.state.should.have.property 'running', false
+          runnableId = res.body._id
+          setTimeout () ->
+            user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body.should.have.property 'state'
+                  res.body.state.should.have.property 'running', false
+                  res.body.state.should.not.have.property 'web_url'
+                  done()
+          , 1000
 
   it 'should pass back a terminal url that the client can talk to when a ::runnable is started'
   it 'should pass back a tail log url that the client can talk to when a ::runnable is started'
-
-  it 'should be able to create a new runnable from a public base image + source files + metadata'
-  it 'should be able to create a new runnable from a dockerfile + source files + metadata'
   it 'should be able to create a new runnable from an existing runnable'
+  it 'should create a ::runnable that can connect to a mongodb ::service'
+  it 'should create a ::runnable that can connect to a redis ::service'
+  it 'should create a ::runnable that cna connect to a mysql ::service'

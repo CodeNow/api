@@ -1,8 +1,11 @@
 async = require 'async'
 configs = require '../configs'
 crypto = require 'crypto'
+dockerjs = require 'docker.js'
 path = require 'path'
 mongoose = require 'mongoose'
+
+docker = dockerjs host: configs.docker
 
 volumes = { }
 if configs.dnode
@@ -19,20 +22,18 @@ projectSchema = new Schema
   owner:
     type: ObjectId
     index: true
+  container:
+    type: String
   parent:
     type: ObjectId
     index: true
   rootParent:
     type: ObjectId
-  image:
-    type: String
   created:
     type: Date
     default: Date.now
   framework:
     type: String
-  edited:
-    type: Boolean
   tags:
     type: [
       name: String
@@ -52,9 +53,6 @@ projectSchema = new Schema
         default: false
     ]
     default: [ ]
-  sortOrder:
-    type: Number
-    index: true
   comments:
     type: [
       user:
@@ -65,6 +63,7 @@ projectSchema = new Schema
     default: [ ]
 
 projectSchema.set 'toJSON', virtuals: true
+
 projectSchema.index
   tags: 1
   parent: 1
@@ -76,13 +75,52 @@ projectSchema.statics.create = (owner, framework, cb) ->
   if not configs.images?[framework] then cb { code: 403, msg: 'framework does not exist' } else
     project = new @
       owner: owner
-      image: configs.images[framework].id
       name: configs.images[framework].name
       framework: framework
-    project.save (err) ->
-      if err then cb { code: 500, msg: 'error saving project to mongodb' } else
-        volumes.create project._id.toString(), (err) ->
-          if err then cb err else cb null, project
+    docker.createContainer
+      Hostname: project._id.toString()
+      Image: configs.images[framework].image
+    , (err, result) ->
+      if err then cb { code: 500, msg: 'error creating docker container' } else
+        project.container = result.Id
+        project.save (err) ->
+          if err then cb { code: 500, msg: 'error saving project to mongodb' } else
+            volumes.create project._id.toString(), (err) ->
+              if err then cb err else cb null, project
+
+projectSchema.statics.destroy = (id, cb) ->
+  @findOne _id: id, (err, project) =>
+    if err then cb { code: 500, msg: 'error looking up project in mongodb' } else
+      if not project then cb { code: 404, msg: 'project not found' } else
+        volumes.remove project._id, (err) =>
+          if err then cb { code: 500, msg: 'error removing project volume' } else
+            docker.removeContainer project.container, (err) =>
+              if err then cb { code: 500, msg: 'error removing container from docker' } else
+                @remove id, (err) ->
+                  if err then cb { code: 500, msg: 'error removing project from mongodb' } else
+                    cb()
+
+projectSchema.methods.containerState = (cb) ->
+  docker.inspectContainer @container, (err, result) ->
+    if err then cb { code: 500, msg: 'error getting container state' } else
+      if result.NetworkSettings.PortMapping
+        port = result.NetworkSettings.PortMapping['80']
+        host = result.NetworkSettings.IpAddress
+        cb null,
+          running: result.State.Running
+          web_url: "http://#{host}:#{port}"
+      else
+        cb null, { running: result.State.Running }
+
+projectSchema.methods.start = (cb) ->
+  docker.startContainer @container, (err) ->
+    if err then cb { code: 500, msg: 'error starting docker container' } else
+      cb()
+
+projectSchema.methods.stop = (cb) ->
+  docker.stopContainer @container, (err) ->
+    if err then cb { code: 500, msg: 'error starting docker container' } else
+      cb()
 
 projectSchema.statics.listTags = (cb) ->
   @find().distinct 'tags', (err, tags) ->

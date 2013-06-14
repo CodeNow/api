@@ -1,28 +1,24 @@
 configs = require '../configs'
-dockerjs = require 'docker.js'
 projects = require './projects'
-redis = require 'redis'
 users = require './users'
-
-docker = dockerjs host: configs.docker
-red = redis.createClient()
 
 Runnables =
 
   create: (userId, framework, cb) ->
     projects.create userId, framework, (err, project) ->
       if err then cb err else
-        json_project = project.toJSON()
-        json_project.running = false
-        json_project._id = encodeId json_project._id
-        cb null, json_project
+        project.containerState (err, state) ->
+          if err then cb err else
+            json_project = project.toJSON()
+            json_project.state = state
+            json_project._id = encodeId json_project._id
+            cb null, json_project
 
   delete: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     removeProject = () ->
-      projects.remove _id: runnableId, (err) ->
-        if err then cb { code: 500, msg: 'error deleting runnable from database' } else
-          cb()
+      projects.destroy runnableId, (err) ->
+        if err then cb err else cb()
     projects.findOne _id: runnableId, (err, project) ->
       if err then cb { code: 500, msg: 'error querying mongodb' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
@@ -39,30 +35,23 @@ Runnables =
       projects.findOne(_id: runnableId).populate('comments.user', 'email username').exec (err, project) ->
         if err then cb { code: 500, msg: 'error looking up runnable' } else
           if not project then cb { code: 404, msg: 'runnable not found' } else
-            json_project = project.toJSON()
-            json_project.comments = commentsToJSON project.comments
-            json_project._id = encodeId json_project._id
-            cb null, json_project
+            project.containerState (err, state) ->
+              if err then cb err else
+                json_project = project.toJSON()
+                json_project.state = state
+                json_project.comments = commentsToJSON project.comments
+                json_project._id = encodeId json_project._id
+                cb null, json_project
     else
       projects.findOne _id: runnableId, (err, project) ->
         if err then cb { code: 500, msg: 'error looking up runnable' } else
           if not project then cb { code: 404, msg: 'runnable not found' } else
-            json_project = project.toJSON()
-            json_project._id = encodeId json_project._id
-            red.hmget project._id, 'container_id', 'port_mapping', (err, fields) ->
-              if err then cb { code: 500, msg: 'error fetching from redis store' } else
-                container_id = fields[0]
-                port_mapping = fields[1]
-                if not container_id
-                  json_project.running = false
-                  json_project.web_url = null
-                  cb null, json_project
-                else
-                  docker.inspectContainer container_id, (err, result) ->
-                    if err then cb { code: 500, msg: 'error fetching container status' } else
-                      json_project.running = result.State.Running
-                      json_project.web_url = port_mapping
-                      cb null, json_project
+            project.containerState (err, state) ->
+              if err then cb err else
+                json_project = project.toJSON()
+                json_project._id = encodeId json_project._id
+                json_project.state = state
+                cb null, json_project
 
   start: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -70,38 +59,14 @@ Runnables =
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
           if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
-            red.hget project._id, 'container_id', (err, container_id) ->
-              if err then cb { code: 500, msg: 'error fetching from redis store' } else
-                if not container_id
-                  docker.createContainer
-                    Hostname: project._id.toString()
-                    Image: 'base'
-                    Cmd: [
-                      '/bin/bash'
-                    ]
-                  , (err, result) ->
-                    if err then cb { code: 500, msg: 'error creating docker container' } else
-                      container_id = result.Id
-                      red.hset project._id, 'container_id', container_id, (err) ->
-                        if err then cb { code: 500, msg: 'error writing to redis' } else
-                          docker.inspectContainer container_id, (err, result) ->
-                            port_mapping = result.NetworkSettings.PortMapping
-                            if err then cb { code: 500, msg: 'error inspecting docker container' } else
-                              red.hset project._id, 'port_mapping', port_mapping, (err) ->
-                                if err then cb { code: 500 , msg: 'error writing to redis' } else
-                                  docker.startContainer container_id, (err, result) ->
-                                    if err then cb { code: 500, msg: 'error starting docker container' } else
-                                      project_json = project.toJSON()
-                                      project_json._id = encodeId project_json._id
-                                      project_json.running = true
-                                      project_json.web_url = port_mapping
-                                      cb null, project_json
-                else
-                  red.hget project._id, 'port_mapping', (err, port_mapping) ->
-                    if err then cb { code: 500, msg: 'error fetching port mapping from redis' } else
-                      docker.startContainer container_id, (err) ->
-                        if err then cb { code: 500, msg: 'error starting docker container' } else
-                          cb null, web_url: port_mapping
+            project.start (err) ->
+              if err then cb err else
+                project.containerState (err, state) ->
+                  if err then cb err else
+                    json_project = project.toJSON()
+                    json_project._id = encodeId json_project._id
+                    json_project.state = state
+                    cb null, json_project
 
   stop: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -109,16 +74,14 @@ Runnables =
       if err then cb { code: 500, msg: 'error looking up runnable' } else
         if not project then cb { code: 404, msg: 'runnable not found' } else
           if project.owner.toString() isnt userId.toString() then cb { code: 403, msg: 'permission denied' } else
-            red.hget project._id, 'container_id', (err, container_id) ->
-              if err then cb { code: 500, msg: 'error fetching from redis store' } else
-                if not container_id then cb { code: 403, msg: 'runnable is already stopped' } else
-                  docker.stopContainer container_id, (err) ->
-                    if err then cb { code: 500, msg: 'error stopping docker container' } else
-                      project_json = project.toJSON()
-                      project_json._id = encodeId project_json._id
-                      project_json.running = false
-                      project_json.web_url = null
-                      cb null, project_json
+            project.stop (err) ->
+              if err then cb err else
+                project.containerState (err, state) ->
+                  if err then cb err else
+                    json_project = project.toJSON()
+                    json_project._id = encodeId json_project._id
+                    json_project.state = state
+                    cb null, json_project
 
   listPublished: (cb) ->
     projects.find tags: $not: $size: 0, (err, results) ->

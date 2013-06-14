@@ -12,7 +12,7 @@
   "volumesPath": "{RAND_DIR}/volumes",
   "images":  {
     "node.js": {
-      "id": "image_here",
+      "image": "runnable",
       "name": "hello node.js"
     }
   }

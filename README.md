@@ -52,6 +52,10 @@ database mirgration
 * we no longer attach a default file list to the project model
 * instead, we tag file resources as being default or not
 
+* we no longer track whether a project is edited or not
+* if its not edited then we should never created, we should just run the parent
+* in the worst case the project can be deleted at the end of session, but not persisted
+
 * simply run scripts/migrate.js to covert your existing database
 
 code coverage
