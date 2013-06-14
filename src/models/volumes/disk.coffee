@@ -1,4 +1,4 @@
-configs = require '../configs'
+configs = require '../../configs'
 fs = require 'fs'
 mkdirp = require 'mkdirp'
 rimraf = require 'rimraf'

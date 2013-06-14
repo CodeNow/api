@@ -3,7 +3,6 @@ dockerjs = require 'docker.js'
 projects = require './projects'
 redis = require 'redis'
 users = require './users'
-volumes = require './volumes'
 
 docker = dockerjs host: configs.docker
 red = redis.createClient()

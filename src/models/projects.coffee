@@ -3,7 +3,12 @@ configs = require '../configs'
 crypto = require 'crypto'
 path = require 'path'
 mongoose = require 'mongoose'
-volumes = require './volumes'
+
+volumes = { }
+if configs.dnode
+  volumes = require './volumes/dnode'
+else
+  volumes = require './volumes/disk'
 
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
