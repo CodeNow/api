@@ -13,26 +13,6 @@ else
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
-commentsSchema = new Schema
-  user:
-    type: ObjectId
-    ref: 'Users'
-  text: String
-
-fileSchema = new Schema
-  name:
-    type: String
-  path:
-    type: String
-  dir:
-    type: Boolean
-  default:
-    type: Boolean
-    default: false
-
-tagsSchema = new Schema
-  name: String
-
 projectSchema = new Schema
   name:
     type: String
@@ -54,17 +34,34 @@ projectSchema = new Schema
   edited:
     type: Boolean
   tags:
-    type: [ tagsSchema ]
+    type: [
+      name: String
+    ]
     default: [ ]
     index: true
   files:
-    type: [ fileSchema ]
+    type: [
+      name:
+        type: String
+      path:
+        type: String
+      dir:
+        type: Boolean
+      default:
+        type: Boolean
+        default: false
+    ]
     default: [ ]
   sortOrder:
     type: Number
     index: true
   comments:
-    type: [ commentsSchema ]
+    type: [
+      user:
+        type: ObjectId
+        ref: 'Users'
+      text: String
+    ]
     default: [ ]
 
 projectSchema.set 'toJSON', virtuals: true
