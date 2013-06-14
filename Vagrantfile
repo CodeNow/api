@@ -37,21 +37,7 @@ Vagrant::Config.run do |config|
         "echo '\"vagrant reload\" can be used in about 2 minutes to activate the new guest additions.'; "
     end
 
-    cmds = "echo yes | apt-get install vim; " \
-           "echo yes | apt-get install curl; " \
-           "echo yes | apt-get install git; " \
-           "echo yes | apt-get update; " \
-           "echo yes | apt-get install python-software-properties python g++ make; " \
-           "echo \\r | add-apt-repository ppa:chris-lea/node.js; " \
-           "apt-get update; " \
-           "echo yes | apt-get install nodejs; " \
-           "apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10; " \
-           "echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | tee /etc/apt/sources.list.d/10gen.list; " \
-           "apt-get update; " \
-           "apt-get install mongodb-10gen; " \
-           "apt-get install redis-server; " \
-           "docker pull base; "
-    config.vm.provision :shell, :inline => cmds
+    config.vm.provision :shell, :path => "vagrant.sh"
 
     # Activate new kernel
     pkg_cmd << "shutdown -r +1; "
