@@ -10,7 +10,7 @@
   "docker": "http://localhost:4243",
   "shortProjectIds": true,
   "volumesPath": "{HOME_DIR}/.runnable/volumes",
-  "images":  {
+  "runnables":  {
     "node.js": {
       "image": "runnable",
       "name": "hello node.js"

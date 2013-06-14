@@ -72,14 +72,14 @@ projectSchema.index
   name: 1
 
 projectSchema.statics.create = (owner, framework, cb) ->
-  if not configs.images?[framework] then cb { code: 403, msg: 'framework does not exist' } else
+  if not configs.runnables?[framework] then cb { code: 403, msg: 'framework does not exist' } else
     project = new @
       owner: owner
-      name: configs.images[framework].name
+      name: configs.runnables[framework].name
       framework: framework
     docker.createContainer
       Hostname: project._id.toString()
-      Image: configs.images[framework].image
+      Image: configs.runnables[framework].image
     , (err, result) ->
       if err then cb { code: 500, msg: 'error creating docker container' } else
         project.container = result.Id
@@ -119,7 +119,7 @@ projectSchema.methods.start = (cb) ->
 
 projectSchema.methods.stop = (cb) ->
   docker.stopContainer @container, (err) ->
-    if err then cb { code: 500, msg: 'error starting docker container' } else
+    if err then cb { code: 500, msg: 'error stopping docker container' } else
       cb()
 
 projectSchema.statics.listTags = (cb) ->

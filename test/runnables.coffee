@@ -288,7 +288,7 @@ describe 'runnables api', ->
                         res.body.state.should.have.property 'running', true
                         done()
 
-  it 'should be able to stop a ::runnable from a started state', (done) ->
+  it 'should be able to ::stop a ::runnable from a started state', (done) ->
     user = sa.agent()
     user.post("http://localhost:#{configs.port}/runnables")
       .end (err, res) ->
@@ -298,35 +298,43 @@ describe 'runnables api', ->
           res.body.state.should.have.property 'running', false
           runnableId = res.body._id
           process.nextTick ->
-            user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
-              .set('content-type', 'application/json')
-              .send(JSON.stringify({ running: true }))
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body.should.have.property 'state'
-                  res.body.state.should.have.property 'running', true
-                  user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 200
-                        res.body.should.have.property 'state'
-                        res.body.state.should.have.property 'running', true
-                        user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                          .set('content-type', 'application/json')
-                          .send(JSON.stringify({ running: false }))
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 200
-                              res.body.should.have.property 'state'
-                              res.body.state.should.have.property 'running', false
-                              user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                                .end (err, res) ->
-                                  if err then done err else
-                                    res.should.have.status 200
-                                    res.body.should.have.property 'state'
-                                    res.body.state.should.have.property 'running', false
-                                    done()
+            setTimeout () ->
+              user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.have.property 'state'
+                    res.body.state.should.have.property 'running', false
+                    user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                      .set('content-type', 'application/json')
+                      .send(JSON.stringify({ running: true }))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body.should.have.property 'state'
+                          res.body.state.should.have.property 'running', true
+                          user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                            .end (err, res) ->
+                              if err then done err else
+                                res.should.have.status 200
+                                res.body.should.have.property 'state'
+                                res.body.state.should.have.property 'running', true
+                                user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                                  .set('content-type', 'application/json')
+                                  .send(JSON.stringify({ running: false }))
+                                  .end (err, res) ->
+                                    if err then done err else
+                                      res.should.have.status 200
+                                      res.body.should.have.property 'state'
+                                      res.body.state.should.have.property 'running', false
+                                      user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                                        .end (err, res) ->
+                                          if err then done err else
+                                            res.should.have.status 200
+                                            res.body.should.have.property 'state'
+                                            res.body.state.should.have.property 'running', false
+                                            done()
+            , 1000
 
   it 'should pass back a service url that the client can hit when a ::runnable is started', (done) ->
     user = sa.agent()
@@ -389,6 +397,7 @@ describe 'runnables api', ->
                   done()
           , 1000
 
+  it 'should pull down an image from the public repo if it cant find it'
   it 'should pass back a terminal url that the client can talk to when a ::runnable is started'
   it 'should pass back a tail log url that the client can talk to when a ::runnable is started'
   it 'should be able to create a new runnable from an existing runnable'
