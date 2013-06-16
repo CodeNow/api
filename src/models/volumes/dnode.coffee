@@ -10,6 +10,7 @@ d.on 'remote', (remote) ->
   console.log 'connected to dnode'
   if not remote.create then throw new Error 'volume does not implement create()'
   if not remote.remove then throw new Error 'volume does not implement remove()'
+  if not remote.copy then throw new Error 'volume does not implement copy()'
   if not remote.createFile then throw new Error 'volume does not implement createFile()'
   if not remote.updateFile then throw new Error 'volume does not implement updateFile()'
   if not remote.renameFile then throw new Error 'volume does not implement renameFile()'
@@ -22,6 +23,7 @@ d.on 'remote', (remote) ->
 
   Volumes.create = remote.create
   Volumes.remove = remote.remove
+  Volumes.copy = remote.copy
   Volumes.createFile = remote.createFile
   Volumes.updateFile = remote.updateFile
   Volumes.renameFile = remote.renameFile

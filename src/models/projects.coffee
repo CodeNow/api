@@ -4,6 +4,7 @@ crypto = require 'crypto'
 dockerjs = require 'docker.js'
 path = require 'path'
 mongoose = require 'mongoose'
+sa = require 'superagent'
 
 docker = dockerjs host: configs.docker
 
@@ -21,14 +22,13 @@ projectSchema = new Schema
     type: String
   owner:
     type: ObjectId
-    index: true
   container:
+    type: String
+  image:
     type: String
   parent:
     type: ObjectId
     index: true
-  rootParent:
-    type: ObjectId
   created:
     type: Date
     default: Date.now
@@ -67,9 +67,6 @@ projectSchema.set 'toJSON', virtuals: true
 projectSchema.index
   tags: 1
   parent: 1
-projectSchema.index
-  owner: 1
-  name: 1
 
 projectSchema.statics.create = (owner, framework, cb) ->
   if not configs.runnables?[framework] then cb { code: 403, msg: 'framework does not exist' } else
@@ -87,6 +84,45 @@ projectSchema.statics.create = (owner, framework, cb) ->
           if err then cb { code: 500, msg: 'error saving project to mongodb' } else
             volumes.create project._id.toString(), (err) ->
               if err then cb err else cb null, project
+
+projectSchema.statics.fork = (owner, parent, cb) ->
+  project = new @
+    parent: parent._id
+    name: parent.name
+    framework: parent.framework
+    owner: owner
+  docker.commit
+    queryParams:
+      container: parent.container
+      m: "#{parent._id} => #{project._id}"
+      author: parent.owner.toString()
+      run: JSON.stringify
+        Cmd: [
+          '/bin/sh'
+          '-c'
+          'cd root; npm start'
+        ]
+        PortSpecs: "80"
+  , (err, res) ->
+    if err then cb { code: 500, msg: 'error commiting parent container to image' } else
+      project.image = res.Id
+      docker.createContainer
+        Hostname: project._id.toString()
+        Image: res.Id
+        Cmd: [
+          '/bin/sh'
+          '-c'
+          'cd root; npm start'
+        ]
+      , (err, res) ->
+        if err then cb { code: 500, msg: 'error creating docker container from image' } else
+          project.container = res.Id
+          volumes.copy parent._id.toString(), project._id.toString(), (err) ->
+            if err then cb err else
+              project.files = parent.files
+              project.save (err) ->
+                if err then cb { code: 500, msg: 'error saving project to mongodb' } else
+                  cb null, project
 
 projectSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, project) =>

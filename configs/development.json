@@ -9,6 +9,7 @@
   "port": 3000,
   "docker": "http://localhost:4243",
   "shortProjectIds": true,
+  "logRequests": true,
   "volumesPath": "{HOME_DIR}/.runnable/volumes",
   "runnables":  {
     "node.js": {

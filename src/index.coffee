@@ -32,6 +32,7 @@ app.use (req, res, next) ->
   d.add res
   d.run(next)
 
+if configs.logRequests then app.use express.logger()
 app.use express.bodyParser()
 app.use express.cookieParser()
 app.use express.session

@@ -12,6 +12,12 @@ api-server
 * ability to fully control a user and their runnables via an api call
 * primarly a REST api, but web sockets enabled where required
 
+rendr requirements (dictates tests)
+===================================
+
+* the api server should handle date requests to support rendr's caching model
+* the api server should be able to handle bootstrap requests
+
 error handling
 ==============
 

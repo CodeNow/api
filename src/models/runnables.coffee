@@ -14,6 +14,21 @@ Runnables =
             json_project._id = encodeId json_project._id
             cb null, json_project
 
+  fork: (userId, runnableId, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, parent) ->
+      if err then cb { code: 500, msg: 'error querying mongodb' } else
+        if not parent then cb { code: 404, msg: 'parent runnable not found' } else
+          projects.fork userId, parent, (err, project) ->
+            if err then cb err else
+              project.containerState (err, state) ->
+                if err then cb err else
+                  json_project = project.toJSON()
+                  json_project.state = state
+                  json_project._id = encodeId json_project._id
+                  json_project.parent = encodeId json_project.parent
+                  cb null, json_project
+
   delete: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     removeProject = () ->
@@ -41,6 +56,7 @@ Runnables =
                 json_project.state = state
                 json_project.comments = commentsToJSON project.comments
                 json_project._id = encodeId json_project._id
+                if json_project.parent then json_project.parent = encodeId json_project.parent
                 cb null, json_project
     else
       projects.findOne _id: runnableId, (err, project) ->
@@ -50,6 +66,7 @@ Runnables =
               if err then cb err else
                 json_project = project.toJSON()
                 json_project._id = encodeId json_project._id
+                if json_project.parent then json_project.parent = encodeId json_project.parent
                 json_project.state = state
                 cb null, json_project
 
@@ -65,6 +82,7 @@ Runnables =
                   if err then cb err else
                     json_project = project.toJSON()
                     json_project._id = encodeId json_project._id
+                    if json_project.parent then json_project.parent = encodeId json_project.parent
                     json_project.state = state
                     cb null, json_project
 
@@ -80,6 +98,7 @@ Runnables =
                   if err then cb err else
                     json_project = project.toJSON()
                     json_project._id = encodeId json_project._id
+                    if json_project.parent then json_project.parent = encodeId json_project.parent
                     json_project.state = state
                     cb null, json_project
 
@@ -303,6 +322,7 @@ arrayToJSON = (res) ->
   result = for item in res
     json = item.toJSON()
     json._id = encodeId json._id
+    if json.parent then json.parent = encodeId json.parent
     json
 
 commentsToJSON = (res) ->

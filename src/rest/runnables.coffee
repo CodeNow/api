@@ -6,10 +6,15 @@ runnables = require '../models/runnables'
 runnableApp = module.exports = express()
 
 runnableApp.post '/runnables', (req, res) ->
-  framework = req.query.framework or 'node.js'
-  runnables.create req.session.user_id, framework, (err, runnable) ->
-    if err then res.json err.code, { message: err.msg } else
-      res.json 201, runnable
+  if req.body.parent
+    runnables.fork req.session.user_id, req.body.parent, (err, runnable) ->
+      if err then res.json err.code, { message: err.msg } else
+        res.json 201, runnable
+  else
+    framework = req.query.framework or 'node.js'
+    runnables.create req.session.user_id, framework, (err, runnable) ->
+      if err then res.json err.code, { message: err.msg } else
+        res.json 201, runnable
 
 runnableApp.get '/runnables', (req, res) ->
   if req.query.published

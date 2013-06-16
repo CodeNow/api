@@ -2,6 +2,7 @@ configs = require '../../configs'
 fs = require 'fs'
 mkdirp = require 'mkdirp'
 rimraf = require 'rimraf'
+wrench = require 'wrench'
 
 Volumes =
 
@@ -20,6 +21,13 @@ Volumes =
         rimraf volumePath, (err) ->
           if err then cb { code: 500, msg: 'error removing project volume' } else
             cb()
+
+  copy: (src, dst, cb) ->
+    srcPath = "#{configs.volumesPath}/#{src}"
+    dstPath = "#{configs.volumesPath}/#{dst}"
+    wrench.copyDirRecursive srcPath, dstPath, (err) ->
+      if err then cb { code: 500, msg: 'error copying existing volume to new volume' } else
+        cb()
 
   createFile: (id, name, path, content, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
