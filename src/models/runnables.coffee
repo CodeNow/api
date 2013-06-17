@@ -44,6 +44,13 @@ Runnables =
                   if user.permission_level <= 1 then cb { code: 403, msg: 'permission denied' } else
                     removeProject()
 
+  isOwner: (userId, runnableId, cb) ->
+    runnableId = decodeId runnableId
+    projects.findOne _id: runnableId, (err, project) ->
+      if err then cb { code: 500, msg: 'error looking up runnable' } else
+        if not project then cb { code: 404, msg: 'runnable not found' } else
+          cb null, project.owner.toString() is userId.toString()
+
   get: (runnableId, fetchComments, cb) ->
     runnableId = decodeId runnableId
     if fetchComments
@@ -101,6 +108,12 @@ Runnables =
                     if json_project.parent then json_project.parent = encodeId json_project.parent
                     json_project.state = state
                     cb null, json_project
+
+  getVotes: (runnableId, cb) ->
+    runnableId = decodeId runnableId
+    users.find('votes.runnable': runnableId).count().exec (err, count) ->
+      if err then cb { code: 500, msg: 'error counting votes in mongodb' } else
+        cb null, { count: count }
 
   listPublished: (cb) ->
     projects.find tags: $not: $size: 0, (err, results) ->

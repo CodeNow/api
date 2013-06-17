@@ -89,6 +89,21 @@ describe 'user api', ->
                   res.body.created.should.equal created
                   done()
 
+    user.get("http://localhost:#{configs.port}/users/me")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 200
+          userId = res.body._id
+          created = res.body.created
+          process.nextTick ->
+            user.get("http://localhost:#{configs.port}/users/#{userId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body._id.should.equal userId
+                  res.body.created.should.equal created
+                  done()
+
   it 'should not allow a ::user access to another users private data', (done) ->
     user = sa.agent()
     user.get("http://localhost:#{configs.port}/users/me")

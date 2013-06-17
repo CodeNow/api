@@ -52,6 +52,11 @@ runnableApp.del '/runnables/:id', (req, res) ->
     if err then res.json err.code, { message: err.msg } else
       res.json { message: 'runnable deleted' }
 
+runnableApp.get '/runnables/:id/votes', (req, res) ->
+  runnables.getVotes req.params.id, (err, votes) ->
+    if err then res.json err.code, { message: err.msg } else
+      res.json votes
+
 runnableApp.get '/runnables/:id/comments', (req, res) ->
   fetchUsers = req.query.users?
   runnables.getComments req.params.id, fetchUsers, (err, comments) ->

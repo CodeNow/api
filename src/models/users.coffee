@@ -25,6 +25,11 @@ userSchema = new Schema
   created:
     type: Date
     default: Date.now
+  votes:
+    type: [
+      runnable: ObjectId
+    ]
+    default: [ ]
 
 userSchema.index
   email:1
@@ -93,4 +98,39 @@ userSchema.statics.registerUser = (userId, data, cb) ->
       if err then cb { code: 500, msg: 'error computing password hash' } else
         setPassword hash
 
+userSchema.methods.vote = (runnableId, cb) ->
+  runnableId = decodeId runnableId
+  found = false
+  for vote in @votes
+    if vote.runnable.toString() is runnableId.toString()
+      found = true
+  if found then cb { code: 403, msg: 'cannot vote on runnable more than once' } else
+    @votes.push
+      runnable: runnableId
+    @save (err) =>
+      if err then cb { code: 500, msg: 'error saving vote in mongodb' } else
+        vote = @votes[@votes.length-1].toJSON()
+        vote.runnable = encodeId vote.runnable
+        cb null, vote
+
+userSchema.methods.removeVote = (voteId, cb) ->
+  vote = @votes.id voteId
+  if not vote then cb { code: 404, msg: 'vote not found' } else
+    vote.remove()
+    @save (err) ->
+      if err then cb { code: 500, msg: 'error saving vote in mongodb' } else
+        cb()
+
 module.exports = mongoose.model 'Users', userSchema
+
+plus = /\+/g
+slash = /\//g
+minus = /-/g
+underscore = /_/g
+
+encodeId = (id) -> id
+decodeId = (id) -> id
+
+if configs.shortProjectIds
+  encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
+  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');

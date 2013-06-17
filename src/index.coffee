@@ -42,7 +42,7 @@ app.use express.session
     ttl: configs.cookieExpires
   cookie:
     path: '/'
-    httpOnly: false,
+    httpOnly: false
     maxAge: configs.cookieExpires
 app.use session
 app.use users
