@@ -12,11 +12,37 @@ api-server
 * ability to fully control a user and their runnables via an api call
 * primarly a REST api, but web sockets enabled where required
 
-rendr requirements (dictates tests)
-===================================
+rendr is the client
+===================
 
-* the api server should handle date requests to support rendr's caching model
-* the api server should be able to handle bootstrap requests
+user who has never visited the site before does a full page load
+rendr generates a session and attaches it to the page load request
+session does not contain an api access token, therefore most api requests will fail at this point
+most api requests only make sense in the context of a particular user who is referenced
+we need to make sure that the application logic gracefully handles this condition
+it needs to check for 401 unauthorized access and respond by creating (posting) a new user
+and waiting for a successful response before continuiing forward
+at this point the server will have returned an access token for the new user and stored it in the
+session associated with the page load request (and fetched from redis on subsequent requests)
+our application logic can then safely make api requests (via model changes) and expect a successful response
+
+application responsibilities:
+
+1) get a request for /users/me (store the user_id)
+2) if response is 401 unauthorized, post a new anonymous user first
+3) wait for successful response, which includes the users id
+4) continue to load the application as normal
+
+is there a restful approach to performing this auth/user creation flow?
+the way to do it is define the user model without requiring the id (DONE)
+access it as if it exists and if it fails, post to /users/me to create a new one
+user = new User() // initialize a singleton user
+user.isNew = false // it already lives on the server, dont POST it
+user.fetch() // try and GET it first (to valid access token)
+if (failed) {
+  user.isNew = true; // this is actually a new model that doesn't live on the server yet
+  user.save() // post the user model there
+}
 
 error handling
 ==============
