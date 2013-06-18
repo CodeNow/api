@@ -1,3 +1,4 @@
+async = require 'async'
 configs = require '../configs'
 projects = require './projects'
 users = require './users'
@@ -7,12 +8,18 @@ Runnables =
   create: (userId, framework, cb) ->
     projects.create userId, framework, (err, project) ->
       if err then cb err else
-        project.containerState (err, state) ->
-          if err then cb err else
-            json_project = project.toJSON()
-            json_project.state = state
-            json_project._id = encodeId json_project._id
-            cb null, json_project
+        users.findUser _id: userId, (err, user) ->
+          if err then cb { code: 500, msg: 'error looking up user' } else
+            if not user then { code: 404, msg: 'user not found' } else
+              runnableId = encodeId project._id
+              user.vote runnableId, (err) ->
+                if err then { code: 500, msg: 'error updating vote count' } else
+                  project.containerState (err, state) ->
+                    if err then cb err else
+                      json_project = project.toJSON()
+                      json_project.state = state
+                      json_project._id = runnableId
+                      cb null, json_project
 
   fork: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -21,13 +28,19 @@ Runnables =
         if not parent then cb { code: 404, msg: 'parent runnable not found' } else
           projects.fork userId, parent, (err, project) ->
             if err then cb err else
-              project.containerState (err, state) ->
-                if err then cb err else
-                  json_project = project.toJSON()
-                  json_project.state = state
-                  json_project._id = encodeId json_project._id
-                  json_project.parent = encodeId json_project.parent
-                  cb null, json_project
+              users.findUser _id: userId, (err, user) ->
+                if err then cb { code: 500, msg: 'error looking up user' } else
+                  if not user then { code: 404, msg: 'user not found' } else
+                    runnableId = encodeId project._id
+                    user.vote runnableId, (err) ->
+                      if err then { code: 500, msg: 'error updating vote count' } else
+                        project.containerState (err, state) ->
+                          if err then cb err else
+                            json_project = project.toJSON()
+                            json_project.state = state
+                            json_project._id = runnableId
+                            json_project.parent = encodeId json_project.parent
+                            cb null, json_project
 
   delete: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -42,6 +55,10 @@ Runnables =
               if err then cb { code: 500, msg: 'error looking up user' } else
                 if not user then { code: 404, msg: 'user not found' } else
                   if user.permission_level <= 1 then cb { code: 403, msg: 'permission denied' } else
+                    for vote in user.votes
+                      if vote.runnable.toString() is project._id.toString()
+                        console.log 'removing self vote'
+                        vote.remove()
                     removeProject()
 
   isOwner: (userId, runnableId, cb) ->
@@ -113,22 +130,111 @@ Runnables =
     runnableId = decodeId runnableId
     users.find('votes.runnable': runnableId).count().exec (err, count) ->
       if err then cb { code: 500, msg: 'error counting votes in mongodb' } else
-        cb null, { count: count }
+        cb null, { count: count - 1 }
 
-  listPublished: (cb) ->
-    projects.find tags: $not: $size: 0, (err, results) ->
-      if err then cb { code: 500, msg: 'error querying mongodb' } else
-        cb null, arrayToJSON results
+  listAll: (sortByVotes, cb) ->
+    if not sortByVotes
+      projects.find { }, (err, results) ->
+        if err then cb { code: 500, msg: 'error querying mongodb' } else
+          cb null, arrayToJSON results
+    else
+      users.aggregate voteSortPipeline, (err, results) ->
+        if err then cb { code: 500, msg: 'error aggragating votes in mongodb' } else
+          async.map results, (result, cb) ->
+            projects.findOne _id: result._id, (err, runnable) ->
+              if err then cb { code: 500, msg: 'error retrieving project from mongodb' } else
+                runnable.votes = result.number - 1
+                cb null, runnable
+          , (err, results) ->
+            if err then cb err else
+              result = for item in results
+                json = item.toJSON()
+                json._id = encodeId json._id
+                json.votes = item.votes
+                if json.parent then json.parent = encodeId json.parent
+                json
+              cb null, result
 
-  listChannel: (tag, cb) ->
-    projects.find tags: tag, (err, results) ->
-      if err then cb { code: 500, msg: 'error querying mongodb' } else
-        cb null, arrayToJSON results
+  listPublished: (sortByVotes, cb) ->
+    if not sortByVotes
+      projects.find tags: $not: $size: 0, (err, results) ->
+        if err then cb { code: 500, msg: 'error querying mongodb' } else
+          cb null, arrayToJSON results
+    else
+      users.aggregate voteSortPipeline, (err, results) ->
+        if err then cb { code: 500, msg: 'error aggragating votes in mongodb' } else
+          async.map results, (result, cb) ->
+            projects.findOne { _id: result._id, tags: $not: $size: 0 }, (err, runnable) ->
+              if err then cb { code: 500, msg: 'error retrieving project from mongodb' } else
+                if runnable
+                  runnable.votes = result.number - 1
+                  cb null, runnable
+                else cb()
+          , (err, results) ->
+            if err then cb err else
+              result = [ ]
+              for item in results
+                if item
+                  json = item.toJSON()
+                  json._id = encodeId json._id
+                  json.votes = item.votes
+                  if json.parent then json.parent = encodeId json.parent
+                  result.push json
+              cb null, result
 
-  listOwn: (userId, cb) ->
-    projects.find owner: userId, (err, results) ->
-      if err then cb { code: 500, msg: 'error querying mongodb' } else
-        cb null, arrayToJSON results
+  listChannel: (tag, sortByVotes, cb) ->
+    if not sortByVotes
+      projects.find 'tags.name': tag, (err, results) ->
+        if err then cb { code: 500, msg: 'error querying mongodb' } else
+          cb null, arrayToJSON results
+    else
+      users.aggregate voteSortPipeline, (err, results) ->
+        if err then cb { code: 500, msg: 'error aggragating votes in mongodb' } else
+          async.map results, (result, cb) ->
+            projects.findOne { _id: result._id, 'tags.name': tag }, (err, runnable) ->
+              if err then cb { code: 500, msg: 'error retrieving project from mongodb' } else
+                if runnable
+                  runnable.votes = result.number - 1
+                  cb null, runnable
+                else cb()
+          , (err, results) ->
+            if err then cb err else
+              result = [ ]
+              for item in results
+                if item
+                  json = item.toJSON()
+                  json._id = encodeId json._id
+                  json.votes = item.votes
+                  if json.parent then json.parent = encodeId json.parent
+                  result.push json
+              cb null, result
+
+  listOwn: (userId, sortByVotes, cb) ->
+    if not sortByVotes
+      projects.find owner: userId, (err, results) ->
+        if err then cb { code: 500, msg: 'error querying mongodb' } else
+          cb null, arrayToJSON results
+    else
+      users.aggregate voteSortPipeline, (err, results) ->
+        if err then cb { code: 500, msg: 'error aggragating votes in mongodb' } else
+          async.map results, (result, cb) ->
+            projects.findOne { _id: result._id, owner: userId }, (err, runnable) ->
+              if err then cb { code: 500, msg: 'error retrieving project from mongodb' } else
+                if runnable
+                  runnable.votes = result.number - 1
+                  cb null, runnable
+                else cb()
+          , (err, results) ->
+            if err then cb err else
+              result = [ ]
+              for item in results
+                if item
+                  json = item.toJSON()
+                  json._id = encodeId json._id
+                  json.votes = item.votes
+                  if json.parent then json.parent = encodeId json.parent
+                  result.push json
+              cb null, result
 
   getComments: (runnableId, fetchUsers, cb) ->
     runnableId = decodeId runnableId
@@ -330,6 +436,23 @@ Runnables =
 
 
 module.exports = Runnables
+
+voteSortPipeline = [
+  {
+    $project:
+      _id: 0
+      votes: '$votes.runnable'
+  },
+  { $unwind: '$votes' },
+  { $group:
+    _id: '$votes'
+    number:
+      $sum: 1
+  },
+  {
+    $sort: number: -1
+  }
+]
 
 arrayToJSON = (res) ->
   result = for item in res

@@ -18,16 +18,24 @@ runnableApp.post '/runnables', (req, res) ->
 
 runnableApp.get '/runnables', (req, res) ->
   if req.query.published
-    runnables.listPublished (err, results) ->
-      if err then res.json err.code { message: err.msg } else
+    sortByVotes = req.query.sort is 'votes'
+    runnables.listPublished sortByVotes, (err, results) ->
+      if err then res.json err.code, { message: err.msg } else
         res.json results
   else if req.query.channel
-    runnables.listChannel req.query.channel, (err, results) ->
-      if err then res.json err.code { message: err.msg } else
+    sortByVotes = req.query.sort is 'votes'
+    runnables.listChannel req.query.channel, sortByVotes, (err, results) ->
+      if err then res.json err.code, { message: err.msg } else
+        res.json results
+  else if req.query.all? is true
+    sortByVotes = req.query.sort is 'votes'
+    runnables.listAll sortByVotes, (err, results) ->
+      if err then res.json err.code, { message: err.msg } else
         res.json results
   else
-    runnables.listOwn req.session.user_id, (err, results) ->
-      if err then res.json err.code { message: err.msg } else
+    sortByVotes = req.query.sort is 'votes'
+    runnables.listOwn req.session.user_id, sortByVotes, (err, results) ->
+      if err then res.json err.code, { message: err.msg } else
         res.json results
 
 runnableApp.get '/runnables/:id', (req, res) ->

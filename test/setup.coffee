@@ -47,21 +47,33 @@ afterEach (done) ->
             test_db.close () ->
               rimraf configs.volumesPath, (err) ->
                 if err then done err else
-                  docker.listContainers queryParams: all: true, (err, containers) ->
+                  docker.listContainers (err, containers) ->
                     if err then done err else
                       async.forEachSeries containers, (container, cb) ->
-                        docker.removeContainer container.Id, cb
+                        docker.stopContainer container.Id, cb
                       , (err) ->
                         if err then done err else
-                          apiserver.stop () ->
-                            done()
+                          docker.listContainers queryParams: all: true, (err, containers) ->
+                            if err then done err else
+                              async.forEachSeries containers, (container, cb) ->
+                                docker.removeContainer container.Id, cb
+                              , (err) ->
+                                if err then done err else
+                                  apiserver.stop () ->
+                                    done()
 
 before (done) ->
-  docker.listContainers queryParams: all: true, (err, containers) ->
+  docker.listContainers (err, containers) ->
     if err then done err else
       async.forEachSeries containers, (container, cb) ->
-        docker.removeContainer container.Id, cb
-      , done
+        docker.stopContainer container.Id, cb
+      , (err) ->
+        if err then done err else
+          docker.listContainers queryParams: all: true, (err, containers) ->
+            if err then done err else
+              async.forEachSeries containers, (container, cb) ->
+                docker.removeContainer container.Id, cb
+              , done
 
 after (done) ->
   redis_client.flushall () ->

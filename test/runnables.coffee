@@ -56,7 +56,7 @@ describe 'runnables api', ->
                         done()
   ###
 
-  it 'should be able to ::fork that is currently running', (done) ->
+  it 'should be able to ::fork a ::runnable that is currently running', (done) ->
     user = sa.agent()
     user.post("http://localhost:#{configs.port}/runnables")
       .end (err, res) ->
@@ -283,6 +283,7 @@ describe 'runnables api', ->
         if err then done err else
           res.should.have.status 200
           res.body.should.be.a.array
+          res.body.length.should.equal 2
           res.body.forEach (elem) ->
             elem.tags.should.be.a.array
             elem.tags.length.should.be.above 0
@@ -295,10 +296,11 @@ describe 'runnables api', ->
         if err then done err else
           res.should.have.status 200
           res.body.should.be.a.array
+          res.body.length.should.equal 1
           res.body.forEach (elem) ->
             elem.tags.should.be.a.array
             elem.tags.length.should.be.above 0
-            elem.tags.should.include 'facebook'
+            elem.tags.should.includeEql { name: 'facebook', id: null }
           done()
 
   it 'should be possible to check the state of a stopped ::runnable', (done) ->
@@ -390,26 +392,6 @@ describe 'runnables api', ->
                                           res.body.state.should.have.property 'running', false
                                           done()
 
-  it 'should be able to create a new ::runnable from a dockerfile + metadata + source files', (done) ->
-    user = sa.agent()
-    user.post("http://localhost:#{configs.port}/runnables")
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 201
-          res.body.should.have.property 'state'
-          res.body.state.should.have.property 'running', false
-          runnableId = res.body._id
-          process.nextTick ->
-            user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
-              .set('content-type', 'application/json')
-              .send(JSON.stringify({ running: true }))
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body.should.have.property 'state'
-                  res.body.state.should.have.property 'running', true
-                  done()
-
   it 'should create a new ::runnable in a stopped state', (done) ->
     user = sa.agent()
     user.post("http://localhost:#{configs.port}/runnables")
@@ -450,10 +432,3 @@ describe 'runnables api', ->
                   res.body.state.should.have.property 'running', true
                   res.body.state.should.have.property 'web_url'
                   done()
-
-  it 'should pass back a terminal url that the client can talk to when a ::runnable is started'
-  it 'should pass back a tail log url that the client can talk to when a ::runnable is started'
-  it 'should pull down an image from the public repo if it cant find it'
-  it 'should create a ::runnable that can connect to a mongodb ::service'
-  it 'should create a ::runnable that can connect to a redis ::service'
-  it 'should create a ::runnable that cna connect to a mysql ::service'

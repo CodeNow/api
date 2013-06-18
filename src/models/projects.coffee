@@ -130,11 +130,20 @@ projectSchema.statics.destroy = (id, cb) ->
       if not project then cb { code: 404, msg: 'project not found' } else
         volumes.remove project._id, (err) =>
           if err then cb { code: 500, msg: 'error removing project volume' } else
-            docker.removeContainer project.container, (err) =>
-              if err then cb { code: 500, msg: 'error removing container from docker' } else
-                @remove id, (err) ->
-                  if err then cb { code: 500, msg: 'error removing project from mongodb' } else
-                    cb()
+            project.containerState (err, state) =>
+              if err then cb err else
+                remove = () =>
+                  docker.removeContainer project.container, (err) =>
+                    if err then cb { code: 500, msg: 'error removing container from docker' } else
+                      @remove id, (err) ->
+                        if err then cb { code: 500, msg: 'error removing project from mongodb' } else
+                          cb()
+                if state.running
+                  project.stop (err) =>
+                    if err then cb err else
+                      remove()
+                else
+                  remove()
 
 projectSchema.methods.containerState = (cb) ->
   docker.inspectContainer @container, (err, result) ->
