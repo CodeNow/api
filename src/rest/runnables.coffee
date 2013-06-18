@@ -18,23 +18,47 @@ runnableApp.post '/runnables', (req, res) ->
 
 runnableApp.get '/runnables', (req, res) ->
   if req.query.published
+    limit = 200
+    if req.query.limit and req.query.limit < 200
+      limit = Number req.query.limit
+    page = 0
+    if req.query.page
+      page = Number req.query.page
     sortByVotes = req.query.sort is 'votes'
-    runnables.listPublished sortByVotes, (err, results) ->
+    runnables.listPublished sortByVotes, limit, page, (err, results) ->
       if err then res.json err.code, { message: err.msg } else
         res.json results
   else if req.query.channel
+    limit = 200
+    if req.query.limit and req.query.limit < 200
+      limit = Number req.query.limit
+    page = 0
+    if req.query.page
+      page = Number req.query.page
     sortByVotes = req.query.sort is 'votes'
-    runnables.listChannel req.query.channel, sortByVotes, (err, results) ->
+    runnables.listChannel req.query.channel, sortByVotes, limit, page, (err, results) ->
       if err then res.json err.code, { message: err.msg } else
         res.json results
   else if req.query.all? is true
+    limit = 200
+    if req.query.limit and req.query.limit < 200
+      limit = Number req.query.limit
+    page = 0
+    if req.query.page
+      page = Number req.query.page
     sortByVotes = req.query.sort is 'votes'
-    runnables.listAll sortByVotes, (err, results) ->
+    runnables.listAll sortByVotes, limit, page, (err, results) ->
       if err then res.json err.code, { message: err.msg } else
         res.json results
   else
     sortByVotes = req.query.sort is 'votes'
-    runnables.listOwn req.session.user_id, sortByVotes, (err, results) ->
+    limit = 200
+    if req.query.limit and req.query.limit < 200
+      limit = Number req.query.limit
+    page = 0
+    if req.query.page
+      page = Number req.query.page
+    runnables.listOwn req.session.user_id, sortByVotes, limit, page, (err, results) ->
       if err then res.json err.code, { message: err.msg } else
         res.json results
 

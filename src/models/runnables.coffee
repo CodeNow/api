@@ -57,7 +57,6 @@ Runnables =
                   if user.permission_level <= 1 then cb { code: 403, msg: 'permission denied' } else
                     for vote in user.votes
                       if vote.runnable.toString() is project._id.toString()
-                        console.log 'removing self vote'
                         vote.remove()
                     removeProject()
 
@@ -132,15 +131,15 @@ Runnables =
       if err then cb { code: 500, msg: 'error counting votes in mongodb' } else
         cb null, { count: count - 1 }
 
-  listAll: (sortByVotes, cb) ->
+  listAll: (sortByVotes, limit, page, cb) ->
     if not sortByVotes
-      projects.find { }, (err, results) ->
+      projects.find().skip(page*limit).limit(limit).exec (err, results) ->
         if err then cb { code: 500, msg: 'error querying mongodb' } else
           cb null, arrayToJSON results
     else
-      users.aggregate voteSortPipeline, (err, results) ->
+      users.aggregate voteSortPipelineLimited(limit, limit*page), (err, results) ->
         if err then cb { code: 500, msg: 'error aggragating votes in mongodb' } else
-          async.map results, (result, cb) ->
+          async.mapSeries results, (result, cb) ->
             projects.findOne _id: result._id, (err, runnable) ->
               if err then cb { code: 500, msg: 'error retrieving project from mongodb' } else
                 runnable.votes = result.number - 1
@@ -155,21 +154,30 @@ Runnables =
                 json
               cb null, result
 
-  listPublished: (sortByVotes, cb) ->
+  listPublished: (sortByVotes, limit, page, cb) ->
     if not sortByVotes
-      projects.find tags: $not: $size: 0, (err, results) ->
+      projects.find(tags: $not: $size: 0).skip(page*limit).limit(limit).exec (err, results) ->
         if err then cb { code: 500, msg: 'error querying mongodb' } else
           cb null, arrayToJSON results
     else
       users.aggregate voteSortPipeline, (err, results) ->
         if err then cb { code: 500, msg: 'error aggragating votes in mongodb' } else
-          async.map results, (result, cb) ->
+          skip = page*limit
+          count = 0
+          async.mapSeries results, (result, cb) ->
             projects.findOne { _id: result._id, tags: $not: $size: 0 }, (err, runnable) ->
               if err then cb { code: 500, msg: 'error retrieving project from mongodb' } else
-                if runnable
-                  runnable.votes = result.number - 1
-                  cb null, runnable
-                else cb()
+                if not runnable
+                  cb()
+                else
+                  if skip
+                    skip--
+                    cb()
+                  else
+                    if count is limit then cb() else
+                      count = count + 1
+                      runnable.votes = result.number - 1
+                      cb null, runnable
           , (err, results) ->
             if err then cb err else
               result = [ ]
@@ -182,21 +190,30 @@ Runnables =
                   result.push json
               cb null, result
 
-  listChannel: (tag, sortByVotes, cb) ->
+  listChannel: (tag, sortByVotes, limit, page, cb) ->
     if not sortByVotes
-      projects.find 'tags.name': tag, (err, results) ->
+      projects.find('tags.name': tag).skip(page*limit).limit(limit).exec (err, results) ->
         if err then cb { code: 500, msg: 'error querying mongodb' } else
           cb null, arrayToJSON results
     else
       users.aggregate voteSortPipeline, (err, results) ->
         if err then cb { code: 500, msg: 'error aggragating votes in mongodb' } else
-          async.map results, (result, cb) ->
+          skip = page*limit
+          count = 0
+          async.mapSeries results, (result, cb) ->
             projects.findOne { _id: result._id, 'tags.name': tag }, (err, runnable) ->
               if err then cb { code: 500, msg: 'error retrieving project from mongodb' } else
-                if runnable
-                  runnable.votes = result.number - 1
-                  cb null, runnable
-                else cb()
+                if not runnable
+                  cb()
+                else
+                  if skip
+                    skip--
+                    cb()
+                  else
+                    if count is limit then cb() else
+                      count = count + 1
+                      runnable.votes = result.number - 1
+                      cb null, runnable
           , (err, results) ->
             if err then cb err else
               result = [ ]
@@ -209,21 +226,30 @@ Runnables =
                   result.push json
               cb null, result
 
-  listOwn: (userId, sortByVotes, cb) ->
+  listOwn: (userId, sortByVotes, limit, page, cb) ->
     if not sortByVotes
-      projects.find owner: userId, (err, results) ->
+      projects.find(owner: userId).skip(page*limit).limit(limit).exec (err, results) ->
         if err then cb { code: 500, msg: 'error querying mongodb' } else
           cb null, arrayToJSON results
     else
       users.aggregate voteSortPipeline, (err, results) ->
         if err then cb { code: 500, msg: 'error aggragating votes in mongodb' } else
-          async.map results, (result, cb) ->
+          skip = page*limit
+          count = 0
+          async.mapSeries results, (result, cb) ->
             projects.findOne { _id: result._id, owner: userId }, (err, runnable) ->
               if err then cb { code: 500, msg: 'error retrieving project from mongodb' } else
-                if runnable
-                  runnable.votes = result.number - 1
-                  cb null, runnable
-                else cb()
+                if not runnable
+                  cb()
+                else
+                  if skip
+                    skip--
+                    cb()
+                  else
+                    if count is limit then cb() else
+                      count = count + 1
+                      runnable.votes = result.number - 1
+                      cb null, runnable
           , (err, results) ->
             if err then cb err else
               result = [ ]
@@ -445,14 +471,38 @@ voteSortPipeline = [
   },
   { $unwind: '$votes' },
   { $group:
-    _id: '$votes'
-    number:
-      $sum: 1
+      _id: '$votes'
+      number:
+        $sum: 1
   },
   {
     $sort: number: -1
   }
 ]
+
+voteSortPipelineLimited = (limit, skip) ->
+  [
+    {
+      $project:
+        _id: 0
+        votes: '$votes.runnable'
+    },
+    { $unwind: '$votes' },
+    { $group:
+        _id: '$votes'
+        number:
+          $sum: 1
+    },
+    {
+      $sort: number: -1
+    },
+    {
+      $skip: skip
+    },
+    {
+      $limit: limit
+    }
+  ]
 
 arrayToJSON = (res) ->
   result = for item in res

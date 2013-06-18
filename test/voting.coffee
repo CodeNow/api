@@ -198,7 +198,7 @@ describe 'voting api', ->
                               res.should.have.status 200
                               res.should.have.property 'body'
                               res.body.should.be.a.array
-                              res.body.length.should.equal 5
+                              res.body.length.should.equal 8
                               voted.should.include res.body[0]._id
                               voted.should.include res.body[1]._id
                               voted.should.include res.body[2]._id
@@ -207,6 +207,9 @@ describe 'voting api', ->
                               res.body[2].should.have.property 'votes', 1
                               res.body[3].should.have.property 'votes', 0
                               res.body[4].should.have.property 'votes', 0
+                              res.body[5].should.have.property 'votes', 0
+                              res.body[6].should.have.property 'votes', 0
+                              res.body[7].should.have.property 'votes', 0
                               done()
 
   it 'should be able to list channel ::runnables in descending order of ::votes', (done) ->
@@ -281,7 +284,7 @@ describe 'voting api', ->
                                           res.should.have.status 200
                                           res.should.have.property 'body'
                                           res.body.should.be.a.array
-                                          res.body.length.should.equal 5
+                                          res.body.length.should.equal 6
                                           voted.should.include res.body[0]._id
                                           voted.should.include res.body[1]._id
                                           voted.should.include res.body[2]._id
@@ -290,6 +293,8 @@ describe 'voting api', ->
                                           res.body[2].should.have.property 'votes', 1
                                           res.body[3].should.have.property 'votes', 0
                                           res.body[4].should.have.property 'votes', 0
+                                          res.body[5].should.have.property 'votes', 0
+                                          apiserver.configs.passwordSalt = oldSalt
                                           done()
 
   it 'should be able to list users ::runnables in descending order of ::votes', (done) ->
@@ -430,7 +435,7 @@ describe 'voting api', ->
                                           res.should.have.status 200
                                           res.should.have.property 'body'
                                           res.body.should.be.a.array
-                                          res.body.length.should.equal 6
+                                          res.body.length.should.equal 8
                                           voted.should.include res.body[0]._id
                                           voted.should.include res.body[1]._id
                                           voted.should.include res.body[2]._id
@@ -439,4 +444,7 @@ describe 'voting api', ->
                                           res.body[2].should.have.property 'votes', 1
                                           res.body[3].should.have.property 'votes', 0
                                           res.body[4].should.have.property 'votes', 0
+                                          res.body[5].should.have.property 'votes', 0
+                                          res.body[6].should.have.property 'votes', 0
+                                          apiserver.configs.passwordSalt = oldSalt
                                           done()

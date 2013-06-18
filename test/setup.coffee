@@ -17,17 +17,33 @@ docker = dockerjs host: configs.docker
 beforeEach (done) ->
   db.connect configs.mongo, (err, test_db) ->
     if err then done err else
-      async.parallel [
+      projectIds = [ ]
+      userId = null
+      async.series [
         (cb) ->
           test_db.collection 'projects', (err, projects) ->
             async.forEachSeries state.Projects, (project, cb) ->
-              projects.insert project, cb
+              projects.insert project, (err, project) ->
+                if err then cb err else
+                  projectIds.push project[0]._id
+                  cb()
             , cb
         (cb) ->
           test_db.collection 'users', (err, users) ->
+            state.Users[0].votes = [ ]
+            for id in projectIds
+              state.Users[0].votes.push
+                runnable: id
             async.forEachSeries state.Users, (user, cb) ->
-              users.insert user, cb
+              users.insert user, (err, user) ->
+                if not userId then userId = user[0]._id
+                if err then cb err else
+                  cb()
             , cb
+        (cb) ->
+          test_db.collection 'projects', (err, projects) ->
+            if err then cb err else
+              projects.update { }, { $set: owner: userId }, cb
       ], (err) ->
         if err then done err else
           test_db.close () ->

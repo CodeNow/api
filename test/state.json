@@ -55,22 +55,5 @@
       "name": "not published",
       "tags": [ ]
     }
-  ],
-
-  "Gears": [ ],
-
-  "Invites": [
-    {
-      "type": "beta",
-      "code": "12345"
-    },
-    {
-      "type": "beta",
-      "code": "blah"
-    },
-    {
-      "type": "beta",
-      "code": "abc123"
-    }
   ]
 }
