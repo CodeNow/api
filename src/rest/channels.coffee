@@ -4,11 +4,10 @@ express = require 'express'
 
 channelApp = module.exports = express()
 
-channelApp.get '/channels/:tag', (req, res) ->
-  # return information about a specific channel
-  res.json 400, { message: 'not implemented' }
+channelApp.get '/channels/:tag', (req, res, next) ->
+  next { code: 400, msg: 'not implemented' }
 
-channelApp.get '/channels', (req, res) ->
+channelApp.get '/channels', (req, res, next) ->
   channels.listChannels (err, channels) ->
-    if err then res.json err.code { message: err.msg } else
+    if err then next err else
       res.json channels

@@ -6,6 +6,7 @@
   "docker": "http://localhost:4243",
   "shortProjectIds": true,
   "logRequests": true,
+  "throwErrors": true,
   "volumesPath": "{HOME_DIR}/.runnable/volumes",
   "runnables":  {
     "node.js": {

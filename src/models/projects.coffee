@@ -78,7 +78,7 @@ projectSchema.statics.create = (owner, framework, cb) ->
       Hostname: project._id.toString()
       Image: configs.runnables[framework].image
     , (err, result) ->
-      if err then cb { code: 500, msg: 'error creating docker container' } else
+      if err then cb { code: 500, msg: 'error creating docker container', err: err } else
         project.container = result.Id
         project.save (err) ->
           if err then cb { code: 500, msg: 'error saving project to mongodb' } else
@@ -104,7 +104,7 @@ projectSchema.statics.fork = (owner, parent, cb) ->
         ]
         PortSpecs: "80"
   , (err, res) ->
-    if err then cb { code: 500, msg: 'error commiting parent container to image' } else
+    if err then cb { code: 500, msg: 'error commiting parent container to image', err: err } else
       project.image = res.Id
       docker.createContainer
         Hostname: project._id.toString()
@@ -115,28 +115,28 @@ projectSchema.statics.fork = (owner, parent, cb) ->
           'cd root; npm start'
         ]
       , (err, res) ->
-        if err then cb { code: 500, msg: 'error creating docker container from image' } else
+        if err then cb { code: 500, msg: 'error creating docker container from image', err: err } else
           project.container = res.Id
           volumes.copy parent._id.toString(), project._id.toString(), (err) ->
             if err then cb err else
               project.files = parent.files
               project.save (err) ->
-                if err then cb { code: 500, msg: 'error saving project to mongodb' } else
+                if err then cb { code: 500, msg: 'error saving project to mongodb', err: err } else
                   cb null, project
 
 projectSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, project) =>
-    if err then cb { code: 500, msg: 'error looking up project in mongodb' } else
+    if err then cb { code: 500, msg: 'error looking up project in mongodb', err: err } else
       if not project then cb { code: 404, msg: 'project not found' } else
         volumes.remove project._id, (err) =>
-          if err then cb { code: 500, msg: 'error removing project volume' } else
+          if err then cb { code: 500, msg: 'error removing project volume', err: err } else
             project.containerState (err, state) =>
               if err then cb err else
                 remove = () =>
                   docker.removeContainer project.container, (err) =>
-                    if err then cb { code: 500, msg: 'error removing container from docker' } else
+                    if err then cb { code: 500, msg: 'error removing container from docker', err: err } else
                       @remove id, (err) ->
-                        if err then cb { code: 500, msg: 'error removing project from mongodb' } else
+                        if err then cb { code: 500, msg: 'error removing project from mongodb', err: err } else
                           cb()
                 if state.running
                   project.stop (err) =>
@@ -147,7 +147,7 @@ projectSchema.statics.destroy = (id, cb) ->
 
 projectSchema.methods.containerState = (cb) ->
   docker.inspectContainer @container, (err, result) ->
-    if err then cb { code: 500, msg: 'error getting container state' } else
+    if err then cb { code: 500, msg: 'error getting container state', err: err } else
       if result.NetworkSettings.PortMapping
         port = result.NetworkSettings.PortMapping['80']
         host = result.NetworkSettings.IpAddress
@@ -159,17 +159,17 @@ projectSchema.methods.containerState = (cb) ->
 
 projectSchema.methods.start = (cb) ->
   docker.startContainer @container, (err) ->
-    if err then cb { code: 500, msg: 'error starting docker container' } else
+    if err then cb { code: 500, msg: 'error starting docker container', err: err } else
       cb()
 
 projectSchema.methods.stop = (cb) ->
   docker.stopContainer @container, (err) ->
-    if err then cb { code: 500, msg: 'error stopping docker container' } else
+    if err then cb { code: 500, msg: 'error stopping docker container', err: err } else
       cb()
 
 projectSchema.statics.listTags = (cb) ->
   @find().distinct 'tags', (err, tags) ->
-    if err then cb { code: 500, msg: 'error retrieving project tags' } else
+    if err then cb { code: 500, msg: 'error retrieving project tags', err: err } else
       cb null, tags
 
 projectSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
@@ -225,7 +225,7 @@ projectSchema.methods.createFile = (name, path, content, cb) ->
         name: name
       file = @files[@files.length-1]
       @save (err) ->
-        if err then { code: 500, msg: 'error saving file meta-data to mongodb' } else
+        if err then { code: 500, msg: 'error saving file meta-data to mongodb', err: err } else
           cb null, { _id: file._id, name: name, path: path }
 
 projectSchema.methods.updateFile = (fileId, content, cb) ->
