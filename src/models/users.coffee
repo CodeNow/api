@@ -48,8 +48,12 @@ userSchema.virtual('gravitar').get () ->
     ghash = hash.digest 'hex'
     "http://www.gravatar.com/avatar/#{ghash}"
 
-userSchema.statics.createUser = (cb) ->
+userSchema.statics.createUser = (credentials, cb) ->
   user = new @
+  if credentials?.username then user.username = credentials.username
+  if credentials?.password then user.password = credentials.password
+  if credentials?.email then user.email = credentials.email
+  if user.password then user.permission_level = 1
   user.save (err, user) ->
     if err then cb { code: 500, msg: 'error creating user' } else
       cb null, user
@@ -75,10 +79,10 @@ userSchema.statics.loginUser = (login, password, cb) ->
         if configs.passwordSalt
           bcrypt.compare password + configs.passwordSalt, user.password, (err, matches) ->
             if not matches then cb { code: 403, msg: 'invalid password' } else
-              cb null, user
+              cb null, user._id
         else
           if password isnt user.password then cb { code: 403, msg: 'invalid password' } else
-            cb null, user
+            cb null, user._id
 
 userSchema.statics.registerUser = (userId, data, cb) ->
   setPassword = (password) =>

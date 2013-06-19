@@ -1,182 +1,241 @@
 apiserver = require '../lib'
+helpers = require './helpers'
 configs = require '../lib/configs'
 sa = require 'superagent'
 
 describe 'user api', ->
 
-  it 'should create an anonymous ::user when cookie does not exist', (done) ->
+  it 'should create a new ::user', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/users")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          res.type.should.equal 'application/json'
+          res.body.should.have.property 'access_token'
+          res.body.should.have.property '_id'
+          userId = res.body._id
+          access_token = res.body.access_token
+          user.get("http://localhost:#{configs.port}/users/me")
+            .set('runnable-token', access_token)
+            .end (err, res) ->
+              if err then done err else
+                res.should.have.status 200
+                res.body.should.not.have.property 'access_token'
+                res.body.should.have.property '_id', userId
+                done()
+
+  it 'should return unauthorized if access token is not provided for ::user', (done) ->
+    user = sa.agent()
+    user.get("http://localhost:#{configs.port}/users/me")
+      .set('runnable-token', 'bad_token')
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 401
+          res.body.should.have.property 'message', 'must provide a valid access token'
+          res.body.should.not.have.property '_id'
+          done()
+
+  it 'should return unauthorized if access token is invalid for ::user', (done) ->
     user = sa.agent()
     user.get("http://localhost:#{configs.port}/users/me")
       .end (err, res) ->
         if err then done err else
-          res.should.have.status 200
-          res.header['x-powered-by'].should.equal 'Express'
-          res.type.should.equal 'application/json'
-          res.header.should.have.property 'set-cookie'
+          res.should.have.status 401
+          res.body.should.have.property 'message', 'access token required'
+          res.body.should.not.have.property '_id'
           done()
 
   it 'should return error when ::user id is not a valid mongo objectid', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/1235")
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 500
-          res.body.should.have.property 'message', 'error looking up user'
-          done()
+    helpers.createUser user, (err, access_token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/1235")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 500
+              res.body.should.have.property 'message', 'error looking up user'
+              done()
 
   it 'should return ::user not found when user id is not a valid mongo objectid', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/51b2347626201e421a000002")
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 404
-          res.body.should.have.property 'message', 'user not found'
-          done()
+    helpers.createUser user, (err, access_token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/51b2347626201e421a000002")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 404
+              res.body.should.have.property 'message', 'user not found'
+              done()
 
   it 'should load the existing anonymous ::user on subsequent accesses', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 200
-          res.header['x-powered-by'].should.equal 'Express'
-          res.type.should.equal 'application/json'
-          res.header.should.have.property 'set-cookie'
-          userId = res.body._id
-          process.nextTick () ->
-            user.get("http://localhost:#{configs.port}/users/me")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.header.should.not.have.property 'set-cookie'
-                  res.body._id.should.equal userId
-                  done()
+    helpers.createUser user, (err, access_token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              userId = res.body._id
+              user.get("http://localhost:#{configs.port}/users/me")
+                .set('runnable-token', access_token)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body._id.should.equal userId
+                    done()
 
-  it 'should create a new ::user session after the old one expires', (done) ->
+  it 'should invalidate the ::users access token after its time to live', (done) ->
     user = sa.agent()
-    oldExpires = apiserver.configs.cookieExpires
-    apiserver.configs.cookieExpires = 250
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 200
-          userId = res.body._id
-          setTimeout ->
-            user.get("http://localhost:#{configs.port}/users/me")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.header.should.have.property 'set-cookie'
-                  apiserver.configs.cookieExpires = oldExpires
-                  res.body._id.should.not.equal userId
-                  done()
-          , 500
+    oldExpires = apiserver.configs.tokenExpires
+    apiserver.configs.tokenExpires = 250
+    helpers.createUser user, (err, access_token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              setTimeout ->
+                user.get("http://localhost:#{configs.port}/users/me")
+                  .set('runnable-token', access_token)
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 401
+                      res.body.should.have.property 'message', 'must provide a valid access token'
+                      apiserver.configs.tokenExpires = oldExpires
+                      done()
+              , 300
 
   it 'should be able to access ::user info through canonical path', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 200
-          userId = res.body._id
-          created = res.body.created
-          process.nextTick ->
-            user.get("http://localhost:#{configs.port}/users/#{userId}")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body._id.should.equal userId
-                  res.body.created.should.equal created
-                  done()
+    helpers.createUser user, (err, access_token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              userId = res.body._id
+              created = res.body.created
+              process.nextTick ->
+                user.get("http://localhost:#{configs.port}/users/#{userId}")
+                  .set('runnable-token', access_token)
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 200
+                      res.body._id.should.equal userId
+                      res.body.created.should.equal created
+                      done()
 
   it 'should not allow a ::user access to another users private data', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          userId = res.body._id
-          user2 = sa.agent()
-          user2.get("http://localhost:#{configs.port}/users/#{userId}")
-            .end (err, res) ->
-              if err then done err else
-                res.should.have.status 403
-                done()
-
-  it 'should destroy the anonymous ::user if they logout of the system', (done) ->
-    user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 200
-          userId = res.body._id
-          process.nextTick ->
-            user.get("http://localhost:#{configs.port}/logout")
-              .end (err, res) ->
+    helpers.createUser user, (err, access_token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              userId = res.body._id
+              user2 = sa.agent()
+              helpers.createUser user, (err, access_token2) ->
                 if err then done err else
-                  res.should.have.status 200
-                  res.body.should.have.property 'message', 'user logged out'
-                  process.nextTick ->
-                    user.get("http://localhost:#{configs.port}/users/me")
-                      .end (err, res) ->
+                  user2.get("http://localhost:#{configs.port}/users/#{userId}")
+                    .set('runnable-token', access_token2)
+                    .end (err, res) ->
                         if err then done err else
-                          res.should.have.status 200
-                          res.body._id.should.not.equal userId
+                          res.should.have.status 403
                           done()
 
-  it 'should allow the anonymous ::user to delete his own account', (done) ->
+  it 'should allow ::user to delete their own account', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 200
-          userId = res.body._id
-          process.nextTick ->
-            user.del("http://localhost:#{configs.port}/users/#{userId}")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  process.nextTick ->
+    helpers.createUser user, (err, access_token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              userId = res.body._id
+              user.del("http://localhost:#{configs.port}/users/#{userId}")
+                .set('runnable-token', access_token)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
                     user.get("http://localhost:#{configs.port}/users/me")
+                      .set('runnable-token', access_token)
                       .end (err, res) ->
                         if err then done err else
-                          res.body._id.should.not.equal userId
+                          res.should.have.status 401
                           done()
 
   it 'should not allow another ::user to delete someone elses account', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 200
-          userId = res.body._id
-          user2 = sa.agent()
-          user2.get("http://localhost:#{configs.port}/users/me")
-            .end (err, res) ->
-              if err then done err else
-                user2.del("http://localhost:#{configs.port}/users/#{userId}")
-                  .end (err, res) ->
-                    if err then done err else
-                      res.should.have.status 403
-                      done()
+    helpers.createUser user, (err, access_token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              userId = res.body._id
+              user2 = sa.agent()
+              helpers.createUser user, (err, access_token2) ->
+                if err then done err else
+                  user2.get("http://localhost:#{configs.port}/users/me")
+                    .set('runnable-token', access_token2)
+                    .end (err, res) ->
+                      if err then done err else
+                        user2.del("http://localhost:#{configs.port}/users/#{userId}")
+                          .set('runnable-token', access_token2)
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 403
+                              done()
 
-  it 'should be able to ::login an existing ::user with valid username and password', (done) ->
+  it 'should be able to to fetch a new ::user token with username and password', (done) ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
     delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/login")
+    user.post("http://localhost:#{configs.port}/token")
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
       .end (err, res) ->
         if err then done err else
           res.should.have.status 200
+          res.body.should.have.property 'access_token'
           apiserver.configs.passwordSalt = oldSalt
           done()
+
+  it 'should be able to to login with a fetched ::user access token', (done) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/token")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 200
+          res.body.should.have.property 'access_token'
+          access_token = res.body.access_token
+          user.get("http://localhost:#{configs.port}/users/me")
+            .set('runnable-token', access_token)
+            .end (err, res) ->
+              if err then done err else
+                res.should.have.status 200
+                res.body.should.have.property 'username', 'matchusername5'
+                apiserver.configs.passwordSalt = oldSalt
+                done()
 
   it 'should return an error when we ::login with a ::user that doesnt exist', (done) ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
     delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/login")
+    user.post("http://localhost:#{configs.port}/token")
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({ username: 'doesntexit', password: 'testing' }))
       .end (err, res) ->
@@ -187,76 +246,77 @@ describe 'user api', ->
           apiserver.configs.passwordSalt = oldSalt
           done()
 
-  it 'should transistion an anonymous ::user into a registered one with provided email', (done) ->
-    user = sa.agent()
-    oldSalt = apiserver.configs.passwordSalt
-    delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/login")
-      .set('Content-Type', 'application/json')
-      .send(JSON.stringify({ email: 'email4@doesnot.com', password: 'testing' }))
-      .end (err, res) ->
-        if err then done err else
-          res.header.should.have.property 'set-cookie'
-          res.should.have.status 200
-          apiserver.configs.passwordSalt = oldSalt
-          done()
-
   it 'should include a ::gravitar url in ::user model', (done) ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
     delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/login")
+    user.post("http://localhost:#{configs.port}/token")
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({ email: 'email4@doesnot.com', password: 'testing' }))
       .end (err, res) ->
         if err then done err else
           res.should.have.status 200
-          res.body.should.have.property 'gravitar', 'http://www.gravatar.com/avatar/c7f9034f0263d811384e9b3f09099779'
-          apiserver.configs.passwordSalt = oldSalt
-          done()
+          access_token = res.body.access_token
+          user.get("http://localhost:#{configs.port}/users/me")
+            .set('runnable-token', access_token)
+            .end (err, res) ->
+              res.should.have.status 200
+              res.body.should.have.property 'gravitar', 'http://www.gravatar.com/avatar/c7f9034f0263d811384e9b3f09099779'
+              apiserver.configs.passwordSalt = oldSalt
+              done()
 
-  it 'should remove the current anonymous ::user when we ::login to a registered one', (done) ->
+  it 'should allow a ::user to be created with a username and password', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
+    user.post("http://localhost:#{configs.port}/users")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ email: 'email4@doesnot.com', password: 'testing' }))
       .end (err, res) ->
         if err then done err else
-          res.should.have.status 200
-          userId = res.body._id
-          oldSalt = apiserver.configs.passwordSalt
-          delete apiserver.configs.passwordSalt
-          process.nextTick ->
-            user.post("http://localhost:#{configs.port}/login")
-              .set('Content-Type', 'application/json')
-              .send(JSON.stringify({ email: 'email4@doesnot.com', password: 'testing' }))
-              .end (err, res) ->
-                if err then done err else
-                  res.header.should.have.property 'set-cookie'
-                  res.should.have.status 200
-                  apiserver.configs.passwordSalt = oldSalt
-                  process.nextTick ->
-                    user.get("http://localhost:#{configs.port}/users/#{userId}")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 404
-                          res.header.should.not.have.property 'set-cookie'
-                          done()
+          res.should.have.status 201
+          res.body.should.have.property 'access_token'
+          access_token = res.body.access_token
+          user.get("http://localhost:#{configs.port}/users/me")
+            .set('runnable-token', access_token)
+            .end (err, res) ->
+              if err then done err else
+                res.should.have.status 200
+                res.body.should.have.property 'permission_level', 1
+                done()
+
+  it 'should allow a ::user to upgrade to registered with a username and password', (done) ->
+    user = sa.agent()
+    user.post("http://localhost:#{configs.port}/users")
+      .end (err, res) ->
+        if err then done err else
+          res.should.have.status 201
+          access_token = res.body.access_token
+          user.put("http://localhost:#{configs.port}/users/me")
+            .set('runnable-token', access_token)
+            .set('Content-Type', 'application/json')
+            .send(JSON.stringify( email: 'jeff@runnable.com', password: 'notmyrealone'))
+            .end (err, res) ->
+              if err then done err else
+                res.should.have.status 200
+                res.body.should.have.property 'permission_level', 1
+                done()
 
   it 'should filter out the ::users password field on return data', (done) ->
     user = sa.agent()
     userEmail = 'another_test@user.com'
     data = JSON.stringify
       email: userEmail
-      username: userEmail
       password: 'this_should_be_hashed'
-    user.put("http://localhost:#{configs.port}/users/me")
+    user.post("http://localhost:#{configs.port}/users")
       .set('Content-Type', 'application/json')
       .send(data)
       .end (err, res) ->
         if err then done err else
-          res.should.have.status 200
+          res.should.have.status 201
+          access_token = res.body.access_token
           res.body.email.should.equal userEmail
-          res.body.password.should.not.equal 'this_should_be_hashed'
+          res.body.should.not.have.property 'password'
           user.get("http://localhost:#{configs.port}/users/me")
+            .set('runnable-token', access_token)
             .end (err, res) ->
               if err then done err else
                 res.should.have.status 200
@@ -272,15 +332,17 @@ describe 'user api', ->
       email: userEmail
       username: userEmail
       password: 'this_should_be_hashed'
-    user.put("http://localhost:#{configs.port}/users/me")
+    user.post("http://localhost:#{configs.port}/users")
       .set('Content-Type', 'application/json')
       .send(data)
       .end (err, res) ->
         if err then done err else
-          res.should.have.status 200
+          res.should.have.status 201
           res.body.email.should.equal userEmail
-          res.body.password.should.equal 'this_should_be_hashed'
+          res.body.should.not.have.property 'password'
+          access_token = res.body.access_token
           user.get("http://localhost:#{configs.port}/users/me")
+            .set('runnable-token', access_token)
             .end (err, res) ->
               if err then done err else
                 res.body.should.not.have.property 'password'
@@ -291,7 +353,7 @@ describe 'user api', ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
     delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/login")
+    user.post("http://localhost:#{configs.port}/token")
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({ username: 'matchusername5', password: 'notpassword' }))
       .end (err, res) ->
@@ -303,131 +365,151 @@ describe 'user api', ->
 
   it 'should not allow a ::user to ::login with an invalid password with hashing enabled', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
+    user.post("http://localhost:#{configs.port}/users")
       .end (err, res) ->
         if err then done err else
-          userEmail = 'another_test@user.com'
-          data = JSON.stringify
-            email: userEmail
-            password: 'mypassword'
-          userId = res.body._id
-          process.nextTick () ->
-            user.put("http://localhost:#{configs.port}/users/me")
-              .set('Content-Type', 'application/json')
-              .send(data)
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body._id.should.equal userId
-                  res.body.email.should.equal userEmail
-                  res.body.password.should.not.equal 'mypassword'
-                  user2 = sa.agent()
-                  user2.post("http://localhost:#{configs.port}/login")
-                    .set('Content-Type', 'application/json')
-                    .send(JSON.stringify({ email: 'another_test@user.com', password: 'notmypassword' }))
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 403
-                        res.body.should.have.property 'message', 'invalid password'
-                        done()
+          res.should.have.status 201
+          access_token = res.body.access_token
+          user.get("http://localhost:#{configs.port}/users/me")
+            .set('runnable-token', access_token)
+            .end (err, res) ->
+              if err then done err else
+                userEmail = 'another_test@user.com'
+                data = JSON.stringify
+                  email: userEmail
+                  password: 'mypassword'
+                userId = res.body._id
+                user.put("http://localhost:#{configs.port}/users/me")
+                  .set('runnable-token', access_token)
+                  .set('Content-Type', 'application/json')
+                  .send(data)
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 200
+                      res.body._id.should.equal userId
+                      res.body.email.should.equal userEmail
+                      res.body.password.should.not.equal 'mypassword'
+                      user2 = sa.agent()
+                      user2.post("http://localhost:#{configs.port}/token")
+                        .set('Content-Type', 'application/json')
+                        .send(JSON.stringify({ email: 'another_test@user.com', password: 'notmypassword' }))
+                        .end (err, res) ->
+                          if err then done err else
+                            res.should.have.status 403
+                            res.body.should.have.property 'message', 'invalid password'
+                            done()
 
   it 'should hash a ::users password when we ::register a user with ::passhashing is enabled', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          userEmail = 'another_test@user.com'
-          data = JSON.stringify
-            email: userEmail
-            username: userEmail
-            password: 'this_should_be_hashed'
-          userId = res.body._id
-          process.nextTick () ->
-            user.put("http://localhost:#{configs.port}/users/me")
-              .set('Content-Type', 'application/json')
-              .send(data)
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body._id.should.equal userId
-                  res.body.email.should.equal userEmail
-                  res.body.password.should.not.equal 'this_should_be_hashed'
-                  done()
+    helpers.createUser user, (err, token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', token)
+          .end (err, res) ->
+            if err then done err else
+              userEmail = 'another_test@user.com'
+              data = JSON.stringify
+                email: userEmail
+                username: userEmail
+                password: 'this_should_be_hashed'
+              userId = res.body._id
+              user.put("http://localhost:#{configs.port}/users/me")
+                .set('Content-Type', 'application/json')
+                .set('runnable-token', token)
+                .send(data)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body._id.should.equal userId
+                    res.body.email.should.equal userEmail
+                    res.body.password.should.not.equal 'this_should_be_hashed'
+                    done()
 
   it 'should not allow a ::user to double register', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          userEmail = 'another_test@user.com'
-          data = JSON.stringify
-            email: userEmail
-            username: userEmail
-            password: 'mypassword'
-          userId = res.body._id
-          process.nextTick () ->
-            user.put("http://localhost:#{configs.port}/users/me")
-              .set('Content-Type', 'application/json')
-              .send(data)
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body._id.should.equal userId
-                  res.body.email.should.equal userEmail
-                  user.put("http://localhost:#{configs.port}/users/me")
-                    .set('Content-Type', 'application/json')
-                    .send(data)
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 403
-                        res.body.should.have.property 'message', 'you are already registered'
-                        done()
+    helpers.createUser user, (err, access_token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              userEmail = 'another_test@user.com'
+              data = JSON.stringify
+                email: userEmail
+                username: userEmail
+                password: 'mypassword'
+              userId = res.body._id
+              user.put("http://localhost:#{configs.port}/users/me")
+                .set('runnable-token', access_token)
+                .set('Content-Type', 'application/json')
+                .send(data)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body._id.should.equal userId
+                    res.body.email.should.equal userEmail
+                    user.put("http://localhost:#{configs.port}/users/me")
+                      .set('runnable-token', access_token)
+                      .set('Content-Type', 'application/json')
+                      .send(data)
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 403
+                          res.body.should.have.property 'message', 'you are already registered'
+                          done()
 
   it 'should not allow a ::user to ::register without a password', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          userEmail = 'another_test@user.com'
-          data = JSON.stringify
-            email: userEmail
-            username: userEmail
-          userId = res.body._id
-          process.nextTick () ->
-            user.put("http://localhost:#{configs.port}/users/me")
-              .set('Content-Type', 'application/json')
-              .send(data)
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 400
-                  res.body.should.have.property 'message', 'must provide a password to user in the future'
-                  done()
+    helpers.createUser user, (err, token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', token)
+          .end (err, res) ->
+            if err then done err else
+              userEmail = 'another_test@user.com'
+              data = JSON.stringify
+                email: userEmail
+                username: userEmail
+              userId = res.body._id
+              user.put("http://localhost:#{configs.port}/users/me")
+                .set('runnable-token', token)
+                .set('Content-Type', 'application/json')
+                .send(data)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 400
+                    res.body.should.have.property 'message', 'must provide a password to user in the future'
+                    done()
 
   it 'should not allow a ::user to ::register without an email address', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          userEmail = 'another_test@user.com'
-          data = JSON.stringify
-            username: userEmail
-            password: 'mypassword'
-          userId = res.body._id
-          process.nextTick () ->
-            user.put("http://localhost:#{configs.port}/users/me")
-              .set('Content-Type', 'application/json')
-              .send(data)
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 400
-                  res.body.should.have.property 'message', 'must provide an email to register with'
-                  done()
+    helpers.createUser user, (err, token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', token)
+          .end (err, res) ->
+            if err then done err else
+              userEmail = 'another_test@user.com'
+              data = JSON.stringify
+                username: userEmail
+                password: 'mypassword'
+              userId = res.body._id
+              process.nextTick () ->
+                user.put("http://localhost:#{configs.port}/users/me")
+                  .set('runnable-token', token)
+                  .set('Content-Type', 'application/json')
+                  .send(data)
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 400
+                      res.body.should.have.property 'message', 'must provide an email to register with'
+                      done()
 
   it 'should not allow a ::user to ::login without a username or password', (done) ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
     delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/login")
+    user.post("http://localhost:#{configs.port}/token")
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({password: 'testing' }))
       .end (err, res) ->
@@ -441,7 +523,7 @@ describe 'user api', ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
     delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/login")
+    user.post("http://localhost:#{configs.port}/token")
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({ username: 'matchusername5' }))
       .end (err, res) ->
@@ -453,121 +535,80 @@ describe 'user api', ->
 
   it 'should not allow us to ::register a ::user that already exists', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          userEmail = 'another_test@user.com'
-          data = JSON.stringify
-            email: userEmail
-            username: userEmail
-            password: 'mypassword'
-          userId = res.body._id
-          process.nextTick () ->
-            user.put("http://localhost:#{configs.port}/users/me")
-              .set('Content-Type', 'application/json')
-              .send(data)
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body._id.should.equal userId
-                  res.body.email.should.equal userEmail
-                  user2 = sa.agent()
-                  user2.put("http://localhost:#{configs.port}/users/me")
-                    .set('Content-Type', 'application/json')
-                    .send(data)
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 403
-                        res.body.should.have.property 'message', 'user already exists'
-                        done()
-
-  it 'should not destroy the ::user when ::logout of a registered users session', (done) ->
-    user = sa.agent()
-    data = JSON.stringify
-      email: 'my@email.com'
-      password: 'password'
-    user.put("http://localhost:#{configs.port}/users/me")
-      .set('Content-Type', 'application/json')
-      .send(data)
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 200
-          res.body.email.should.equal 'my@email.com'
-          userId = res.body._id
-          process.nextTick ->
-            user.get("http://localhost:#{configs.port}/logout")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body.should.have.property 'message', 'user logged out'
-                  process.nextTick ->
+    helpers.createUser user, (err, token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', token)
+          .end (err, res) ->
+            if err then done err else
+              userEmail = 'another_test@user.com'
+              data = JSON.stringify
+                email: userEmail
+                username: userEmail
+                password: 'mypassword'
+              userId = res.body._id
+              user.put("http://localhost:#{configs.port}/users/me")
+                .set('Content-Type', 'application/json')
+                .set('runnable-token', token)
+                .send(data)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body._id.should.equal userId
+                    res.body.email.should.equal userEmail
                     user2 = sa.agent()
-                    user2.post("http://localhost:#{configs.port}/login")
-                      .set('Content-Type', 'application/json')
-                      .send(JSON.stringify({ email: 'my@email.com', password: 'password' }))
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 200
-                          res.body._id.should.equal userId
-                          done()
+                    helpers.createUser user, (err, token2) ->
+                      if err then done err else
+                        user2.put("http://localhost:#{configs.port}/users/me")
+                          .set('Content-Type', 'application/json')
+                          .set('runnable-token', token2)
+                          .send(data)
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 403
+                              res.body.should.have.property 'message', 'user already exists'
+                              done()
 
-  it 'should allow a logged in ::user to ::switch to another logged in user', (done) ->
-    user = sa.agent()
-    oldSalt = apiserver.configs.passwordSalt
-    delete apiserver.configs.passwordSalt
-    user.post("http://localhost:#{configs.port}/login")
-      .set('Content-Type', 'application/json')
-      .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
-      .end (err, res) ->
-        if err then done err else
-          res.should.have.status 200
-          userId = res.body._id
-          process.nextTick ->
-            user.post("http://localhost:#{configs.port}/login")
-              .set('Content-Type', 'application/json')
-              .send(JSON.stringify({ email: 'test4@testing.com', password: 'testing' }))
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body._id.should.not.equal userId
-                  process.nextTick ->
-                    user.post("http://localhost:#{configs.port}/login")
-                      .set('Content-Type', 'application/json')
-                      .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 200
-                          res.body._id.should.equal userId
-                          apiserver.configs.passwordSalt = oldSalt
-                          done()
 
   it 'should allow a ::user to ::login with their correct password with hashing enabled', (done) ->
     user = sa.agent()
-    user.get("http://localhost:#{configs.port}/users/me")
-      .end (err, res) ->
-        if err then done err else
-          userEmail = 'another_test@user.com'
-          data = JSON.stringify
-            email: userEmail
-            username: userEmail
-            password: 'this_should_be_hashed'
-          userId = res.body._id
-          process.nextTick () ->
-            user.put("http://localhost:#{configs.port}/users/me")
-              .set('Content-Type', 'application/json')
-              .send(data)
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body._id.should.equal userId
-                  res.body.email.should.equal userEmail
-                  user2 = sa.agent()
-                  user2.post("http://localhost:#{configs.port}/login")
-                    .set('Content-Type', 'application/json')
-                    .send(JSON.stringify({ username: 'another_test@user.com', password: 'this_should_be_hashed' }))
-                    .end (err, res) ->
+    helpers.createUser user, (err, token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', token)
+          .end (err, res) ->
+            if err then done err else
+              userEmail = 'another_test@user.com'
+              data = JSON.stringify
+                email: userEmail
+                username: userEmail
+                password: 'this_should_be_hashed'
+              userId = res.body._id
+              user.put("http://localhost:#{configs.port}/users/me")
+                .set('runnable-token', token)
+                .set('Content-Type', 'application/json')
+                .send(data)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body._id.should.equal userId
+                    res.body.email.should.equal userEmail
+                    user2 = sa.agent()
+                    helpers.createUser user, (err, token2) ->
                       if err then done err else
-                        res.header.should.have.property 'set-cookie'
-                        res.should.have.status 200
-                        res.body._id.should.equal userId
-                        done()
+                        user2.post("http://localhost:#{configs.port}/token")
+                          .set('Content-Type', 'application/json')
+                          .set('runnable-token', token2)
+                          .send(JSON.stringify({ username: 'another_test@user.com', password: 'this_should_be_hashed' }))
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.have.property 'access_token'
+                              token = res.body.access_token
+                              user.get("http://localhost:#{configs.port}/users/me")
+                                .set('runnable-token', token)
+                                .end (err, res) ->
+                                  if err then done err else
+                                    res.should.have.status 200
+                                    res.body.should.have.property '_id', userId
+                                    done()
