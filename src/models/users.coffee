@@ -48,13 +48,9 @@ userSchema.virtual('gravitar').get () ->
     ghash = hash.digest 'hex'
     "http://www.gravatar.com/avatar/#{ghash}"
 
-userSchema.statics.createUser = (credentials, cb) ->
+userSchema.statics.createUser = (cb) ->
   user = new @
-  if credentials?.username then user.username = credentials.username
-  if credentials?.password then user.password = credentials.password
-  if credentials?.email then user.email = credentials.email
-  if user.password then user.permission_level = 1
-  user.save (err, user) ->
+  user.save (err, user) =>
     if err then cb { code: 500, msg: 'error creating user' } else
       cb null, user
 

@@ -9,30 +9,21 @@ redis_client = redis.createClient()
 usersApp = module.exports = express()
 
 usersApp.post '/users', (req, res, next) ->
-  if (req.body.username or req.body.email) and not req.body.password then next { code: 400, msg: 'must provide password' } else
-    if req.body.username or req.body.email
-      users.createUser
-        username: req.body.username
-        email: req.body.email
-        password: req.body.password
-      , (err, user) ->
-        if err then next err else
-          access_token = uuid.v4()
-          redis_client.psetex [ access_token, configs.tokenExpires, user._id ], (err) ->
-            if err then next { code: 500, msg: 'error storing access token in redis' } else
-              json_user = user.toJSON()
-              delete json_user.password
-              json_user.access_token = access_token
-              res.json 201, json_user
-    else
-      users.createUser null, (err, user, next) ->
-        if err then next err else
-          access_token = uuid.v4()
-          redis_client.psetex [ access_token, configs.tokenExpires, user._id ], (err) ->
-            if err then next { code: 500, msg: 'error storing access token in redis' } else
-              json_user = user.toJSON()
-              json_user.access_token = access_token
-              res.json 201, json_user
+  users.createUser (err, user) ->
+    if err then next err else
+      access_token = uuid.v4()
+      redis_client.psetex [ access_token, configs.tokenExpires, user._id ], (err) ->
+        if err then next { code: 500, msg: 'error storing access token in redis' } else
+          json_user = user.toJSON()
+          json_user.access_token = access_token
+          if not req.body.email then res.json 201, json_user else
+            if not req.body.password then next { code: 400,  msg: 'must provide a password to register with' } else
+              users.registerUser user._id, req.body, (err, user) ->
+                if err then next err else
+                  json_user = user.toJSON()
+                  delete json_user.password
+                  json_user.access_token = access_token
+                  res.json 201, json_user
 
 usersApp.post '/token', (req, res, next) ->
   if not req.body.username and not req.body.email then next { code: 400, msg: 'username or email required' } else

@@ -269,7 +269,7 @@ describe 'user api', ->
     user = sa.agent()
     user.post("http://localhost:#{configs.port}/users")
       .set('Content-Type', 'application/json')
-      .send(JSON.stringify({ email: 'email4@doesnot.com', password: 'testing' }))
+      .send(JSON.stringify({ email: 'does@notexist.com', password: 'testing' }))
       .end (err, res) ->
         if err then done err else
           res.should.have.status 201
