@@ -199,7 +199,7 @@ describe 'voting api', ->
                                       cb()
                             , (err) ->
                               if err then done err else
-                                user.get("http://localhost:#{configs.port}/runnables?all=true&sort=votes")
+                                user.get("http://localhost:#{configs.port}/runnables?sort=votes")
                                   .end (err, res) ->
                                     if err then done err else
                                       res.should.have.status 200
@@ -315,68 +315,68 @@ describe 'voting api', ->
       if err then done err else
         user2.get("http://localhost:#{configs.port}/users/me")
           .end (err, res) ->
-            process.nextTick ->
-              user2.post("http://localhost:#{configs.port}/runnables?framework=node.js")
-                .end (err, res) ->
-                  if err then cb err else
-                    res.should.have.status 201
-                    res.body.should.have.property '_id'
-                    runnableId = res.body._id
-                    helpers.authedUser (err, user) ->
-                      if err then done err else
-                        user.get("http://localhost:#{configs.port}/users/me")
-                          .end (err, res) ->
-                            process.nextTick ->
-                              runnables = [ ]
-                              async.whilst () ->
-                                runnables.length < 5
-                              , (cb) ->
-                                user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
-                                  .end (err, res) ->
-                                    if err then cb err else
-                                      res.should.have.status 201
-                                      res.body.should.have.property '_id'
-                                      runnableId = res.body._id
-                                      runnables.push runnableId
-                                      cb()
+            user2.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+              .end (err, res) ->
+                if err then cb err else
+                  res.should.have.status 201
+                  res.body.should.have.property '_id'
+                  runnableId = res.body._id
+                  helpers.authedUser (err, user) ->
+                    if err then done err else
+                      user.get("http://localhost:#{configs.port}/users/me")
+                        .end (err, res) ->
+                          res.should.have.status 200
+                          owner = res.body._id
+                          runnables = [ ]
+                          async.whilst () ->
+                            runnables.length < 5
+                          , (cb) ->
+                            user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+                              .end (err, res) ->
+                                if err then cb err else
+                                  res.should.have.status 201
+                                  res.body.should.have.property '_id'
+                                  runnableId = res.body._id
+                                  runnables.push runnableId
+                                  cb()
+                          , (err) ->
+                            if err then done err else
+                              voted = [ ]
+                              index = 0
+                              async.eachSeries runnables, (runnableId, cb) ->
+                                if index%2 isnt 0
+                                  index++
+                                  cb()
+                                else
+                                  voted.push runnableId
+                                  index++
+                                  user2.post("http://localhost:#{configs.port}/users/me/votes")
+                                    .set('content-type', 'application/json')
+                                    .send(JSON.stringify( { runnable: runnableId } ))
+                                    .end (err, res) ->
+                                      if err then cb err else
+                                        res.should.have.status 201
+                                        res.body.should.have.property '_id'
+                                        res.body.should.have.property 'runnable', runnableId
+                                        cb()
                               , (err) ->
                                 if err then done err else
-                                  voted = [ ]
-                                  index = 0
-                                  async.eachSeries runnables, (runnableId, cb) ->
-                                    if index%2 isnt 0
-                                      index++
-                                      cb()
-                                    else
-                                      voted.push runnableId
-                                      index++
-                                      user2.post("http://localhost:#{configs.port}/users/me/votes")
-                                        .set('content-type', 'application/json')
-                                        .send(JSON.stringify( { runnable: runnableId } ))
-                                        .end (err, res) ->
-                                          if err then cb err else
-                                            res.should.have.status 201
-                                            res.body.should.have.property '_id'
-                                            res.body.should.have.property 'runnable', runnableId
-                                            cb()
-                                  , (err) ->
-                                    if err then done err else
-                                      user.get("http://localhost:#{configs.port}/runnables?sort=votes")
-                                        .end (err, res) ->
-                                          if err then done err else
-                                            res.should.have.status 200
-                                            res.should.have.property 'body'
-                                            res.body.should.be.a.array
-                                            res.body.length.should.equal 5
-                                            voted.should.include res.body[0]._id
-                                            voted.should.include res.body[1]._id
-                                            voted.should.include res.body[2]._id
-                                            res.body[0].should.have.property 'votes', 1
-                                            res.body[1].should.have.property 'votes', 1
-                                            res.body[2].should.have.property 'votes', 1
-                                            res.body[3].should.have.property 'votes', 0
-                                            res.body[4].should.have.property 'votes', 0
-                                            done()
+                                  user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}&sort=votes")
+                                    .end (err, res) ->
+                                      if err then done err else
+                                        res.should.have.status 200
+                                        res.should.have.property 'body'
+                                        res.body.should.be.a.array
+                                        res.body.length.should.equal 5
+                                        voted.should.include res.body[0]._id
+                                        voted.should.include res.body[1]._id
+                                        voted.should.include res.body[2]._id
+                                        res.body[0].should.have.property 'votes', 1
+                                        res.body[1].should.have.property 'votes', 1
+                                        res.body[2].should.have.property 'votes', 1
+                                        res.body[3].should.have.property 'votes', 0
+                                        res.body[4].should.have.property 'votes', 0
+                                        done()
 
   it 'should be able to list published ::runnables in descending order of ::votes', (done) ->
     user = sa.agent()

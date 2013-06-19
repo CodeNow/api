@@ -11,70 +11,72 @@ describe 'pagination api', ->
       if err then done err else
         user.get("http://localhost:#{configs.port}/users/me")
           .end (err, res) ->
-            process.nextTick ->
-              runnables = [ ]
-              async.whilst () ->
-                runnables.length < 5
-              , (cb) ->
-                user.post("http://localhost:#{configs.port}/runnables")
+            res.should.have.status 200
+            owner = res.body._id
+            runnables = [ ]
+            async.whilst () ->
+              runnables.length < 5
+            , (cb) ->
+              user.post("http://localhost:#{configs.port}/runnables")
+                .end (err, res) ->
+                  if err then cb err else
+                    res.should.have.status 201
+                    res.body.should.have.property '_id'
+                    runnables.push res.body._id
+                    cb()
+            , (err) ->
+              if err then done err else
+                user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}")
                   .end (err, res) ->
-                    if err then cb err else
-                      res.should.have.status 201
-                      res.body.should.have.property '_id'
-                      runnables.push res.body._id
-                      cb()
-              , (err) ->
-                if err then done err else
-                  user.get("http://localhost:#{configs.port}/runnables")
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 200
-                        res.body.should.be.a.array
-                        res.body.length.should.equal 5
-                        elem = res.body[2]._id
-                        user.get("http://localhost:#{configs.port}/runnables?page=2&limit=1")
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 200
-                              res.body.should.be.a.array
-                              res.body.length.should.equal 1
-                              res.body[0]._id.should.equal elem
-                              done()
+                    if err then done err else
+                      res.should.have.status 200
+                      res.body.should.be.a.array
+                      res.body.length.should.equal 5
+                      elem = res.body[2]._id
+                      user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}&page=2&limit=1")
+                        .end (err, res) ->
+                          if err then done err else
+                            res.should.have.status 200
+                            res.body.should.be.a.array
+                            res.body.length.should.equal 1
+                            res.body[0]._id.should.equal elem
+                            done()
 
   it 'should be able to ::paginate a users own runnable list sorted by votes', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
         user.get("http://localhost:#{configs.port}/users/me")
           .end (err, res) ->
-            process.nextTick ->
-              runnables = [ ]
-              async.whilst () ->
-                runnables.length < 5
-              , (cb) ->
-                user.post("http://localhost:#{configs.port}/runnables")
+            res.should.have.status 200
+            owner = res.body._id
+            runnables = [ ]
+            async.whilst () ->
+              runnables.length < 5
+            , (cb) ->
+              user.post("http://localhost:#{configs.port}/runnables")
+                .end (err, res) ->
+                  if err then cb err else
+                    res.should.have.status 201
+                    res.body.should.have.property '_id'
+                    runnables.push res.body._id
+                    cb()
+            , (err) ->
+              if err then done err else
+                user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}&sort=votes")
                   .end (err, res) ->
-                    if err then cb err else
-                      res.should.have.status 201
-                      res.body.should.have.property '_id'
-                      runnables.push res.body._id
-                      cb()
-              , (err) ->
-                if err then done err else
-                  user.get("http://localhost:#{configs.port}/runnables?sort=votes")
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 200
-                        res.body.should.be.a.array
-                        res.body.length.should.equal 5
-                        elem = res.body[2]._id
-                        user.get("http://localhost:#{configs.port}/runnables?sort=votes&page=2&limit=1")
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 200
-                              res.body.should.be.a.array
-                              res.body.length.should.equal 1
-                              res.body[0]._id.should.equal elem
-                              done()
+                    if err then done err else
+                      res.should.have.status 200
+                      res.body.should.be.a.array
+                      res.body.length.should.equal 5
+                      elem = res.body[2]._id
+                      user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}&sort=votes&page=2&limit=1")
+                        .end (err, res) ->
+                          if err then done err else
+                            res.should.have.status 200
+                            res.body.should.be.a.array
+                            res.body.length.should.equal 1
+                            res.body[0]._id.should.equal elem
+                            done()
 
   it 'should be able to ::paginate all runnable list', (done) ->
     helpers.authedUser (err, user) ->
@@ -95,14 +97,14 @@ describe 'pagination api', ->
                       cb()
               , (err) ->
                 if err then done err else
-                  user.get("http://localhost:#{configs.port}/runnables?all=true")
+                  user.get("http://localhost:#{configs.port}/runnables")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.be.a.array
                         res.body.length.should.equal 8
                         elem = res.body[2]._id
-                        user.get("http://localhost:#{configs.port}/runnables?all=true&page=2&limit=1")
+                        user.get("http://localhost:#{configs.port}/runnables?page=2&limit=1")
                           .end (err, res) ->
                             if err then done err else
                               res.should.have.status 200
@@ -130,13 +132,13 @@ describe 'pagination api', ->
                       cb()
               , (err) ->
                 if err then done err else
-                  user.get("http://localhost:#{configs.port}/runnables?all=true&sort=votes")
+                  user.get("http://localhost:#{configs.port}/runnables?sort=votes")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.be.a.array
                         res.body.length.should.equal 8
-                        user.get("http://localhost:#{configs.port}/runnables?all=true&sort=votes&page=2&limit=1")
+                        user.get("http://localhost:#{configs.port}/runnables?sort=votes&page=2&limit=1")
                           .end (err, res) ->
                             if err then done err else
                               res.should.have.status 200

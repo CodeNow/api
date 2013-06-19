@@ -39,7 +39,18 @@ runnableApp.get '/runnables', (req, res, next) ->
     runnables.listChannel req.query.channel, sortByVotes, limit, page, (err, results) ->
       if err then next err else
         res.json results
-  else if req.query.all? is true
+  else if req.query.owner?
+    sortByVotes = req.query.sort is 'votes'
+    limit = 200
+    if req.query.limit and req.query.limit < 200
+      limit = Number req.query.limit
+    page = 0
+    if req.query.page
+      page = Number req.query.page
+    runnables.listOwn req.query.owner, sortByVotes, limit, page, (err, results) ->
+      if err then next err else
+        res.json results
+  else
     limit = 200
     if req.query.limit and req.query.limit < 200
       limit = Number req.query.limit
@@ -48,17 +59,6 @@ runnableApp.get '/runnables', (req, res, next) ->
       page = Number req.query.page
     sortByVotes = req.query.sort is 'votes'
     runnables.listAll sortByVotes, limit, page, (err, results) ->
-      if err then next err else
-        res.json results
-  else
-    sortByVotes = req.query.sort is 'votes'
-    limit = 200
-    if req.query.limit and req.query.limit < 200
-      limit = Number req.query.limit
-    page = 0
-    if req.query.page
-      page = Number req.query.page
-    runnables.listOwn req.user_id, sortByVotes, limit, page, (err, results) ->
       if err then next err else
         res.json results
 

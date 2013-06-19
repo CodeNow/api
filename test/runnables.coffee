@@ -278,8 +278,10 @@ describe 'runnables api', ->
               if err then done err else
                 res.should.have.status 201
                 res.should.have.property 'body'
+                res.body.should.have.property 'owner'
+                owner = res.body.owner
                 projectId = res.body._id
-                user.get("http://localhost:#{configs.port}/runnables")
+                user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}")
                   .set('runnable-token', token)
                   .end (err, res) ->
                     if err then done err else
