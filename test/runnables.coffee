@@ -339,7 +339,7 @@ describe 'runnables api', ->
                     res.body.state.should.have.property 'running', false
                     done()
 
-  it 'should be able to start a ::runnable from a stopped state', (done) ->
+  it 'should be able to fasdfsafsd start a ::runnable from a stopped state', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
         user.post("http://localhost:#{configs.port}/runnables")
@@ -349,22 +349,21 @@ describe 'runnables api', ->
               res.body.should.have.property 'state'
               res.body.state.should.have.property 'running', false
               runnableId = res.body._id
-              process.nextTick ->
-                user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                  .set('content-type', 'application/json')
-                  .send(JSON.stringify({ running: true }))
-                  .end (err, res) ->
-                    if err then done err else
-                      res.should.have.status 200
-                      res.body.should.have.property 'state'
-                      res.body.state.should.have.property 'running', true
-                      user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                        .end (err, res) ->
-                          if err then done err else
-                            res.should.have.status 200
-                            res.body.should.have.property 'state'
-                            res.body.state.should.have.property 'running', true
-                            done()
+              user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                .set('content-type', 'application/json')
+                .send(JSON.stringify({ running: true }))
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.have.property 'state'
+                    res.body.state.should.have.property 'running', true
+                    user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body.should.have.property 'state'
+                          res.body.state.should.have.property 'running', true
+                          done()
 
   it 'should be able to ::stop a ::runnable from a started state', (done) ->
     helpers.authedUser (err, user) ->
