@@ -3,8 +3,8 @@ machine:
     NODE_ENV: circle
 dependencies:
   override:
-    - nvm install 0.10.10
-    - nvm alias default 0.10.10
+    - nvm install 0.10.12
+    - nvm alias default 0.10.12
     - npm install
     - make build
 test:

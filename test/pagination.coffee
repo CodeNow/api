@@ -59,7 +59,22 @@ describe 'pagination api', ->
                     res.should.have.status 201
                     res.body.should.have.property '_id'
                     runnables.push res.body._id
-                    cb()
+                    runnableId = res.body._id
+                    numVotes = 0
+                    async.whilst () ->
+                      numVotes < runnables.length
+                    , (cb) ->
+                      numVotes++
+                      helpers.authedUser (err, user2) ->
+                        if err then cb err else
+                          user2.post("http://localhost:#{configs.port}/users/me/votes")
+                            .set('content-type', 'application/json')
+                            .send(JSON.stringify(runnable: runnableId))
+                            .end (err, res) ->
+                              if err then cb err else
+                                res.should.have.status 201
+                                cb()
+                    , cb
             , (err) ->
               if err then done err else
                 user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}&sort=votes")
@@ -78,142 +93,160 @@ describe 'pagination api', ->
                             res.body[0]._id.should.equal elem
                             done()
 
-  it 'should be able to ::paginate all runnable list', (done) ->
+  it 'should be able to ::paginate all runnables', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.get("http://localhost:#{configs.port}/users/me")
-          .end (err, res) ->
-            process.nextTick ->
-              runnables = [ ]
-              async.whilst () ->
-                runnables.length < 5
-              , (cb) ->
-                user.post("http://localhost:#{configs.port}/runnables")
-                  .end (err, res) ->
-                    if err then cb err else
-                      res.should.have.status 201
-                      res.body.should.have.property '_id'
-                      runnables.push res.body._id
-                      cb()
-              , (err) ->
+        runnables = [ ]
+        async.whilst () ->
+          runnables.length < 5
+        , (cb) ->
+          user.post("http://localhost:#{configs.port}/runnables")
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 201
+                res.body.should.have.property '_id'
+                runnables.push res.body._id
+                cb()
+        , (err) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/runnables")
+              .end (err, res) ->
                 if err then done err else
-                  user.get("http://localhost:#{configs.port}/runnables")
+                  res.should.have.status 200
+                  res.body.should.be.a.array
+                  res.body.length.should.equal 8
+                  elem = res.body[2]._id
+                  user.get("http://localhost:#{configs.port}/runnables?page=2&limit=1")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.be.a.array
-                        res.body.length.should.equal 8
-                        elem = res.body[2]._id
-                        user.get("http://localhost:#{configs.port}/runnables?page=2&limit=1")
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 200
-                              res.body.should.be.a.array
-                              res.body.length.should.equal 1
-                              res.body[0]._id.should.equal elem
-                              done()
+                        res.body.length.should.equal 1
+                        res.body[0]._id.should.equal elem
+                        done()
 
   it 'should be able to ::paginate all runnables sorted by votes', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.get("http://localhost:#{configs.port}/users/me")
-          .end (err, res) ->
-            process.nextTick ->
-              runnables = [ ]
-              async.whilst () ->
-                runnables.length < 5
-              , (cb) ->
-                user.post("http://localhost:#{configs.port}/runnables")
-                  .end (err, res) ->
+        runnables = [ ]
+        async.whilst () ->
+          runnables.length < 5
+        , (cb) ->
+          user.post("http://localhost:#{configs.port}/runnables")
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 201
+                res.body.should.have.property '_id'
+                runnableId = res.body._id
+                runnables.push res.body._id
+                numVotes = 0
+                async.whilst () ->
+                  numVotes < runnables.length
+                , (cb) ->
+                  numVotes++
+                  helpers.authedUser (err, user2) ->
                     if err then cb err else
-                      res.should.have.status 201
-                      res.body.should.have.property '_id'
-                      runnables.push res.body._id
-                      cb()
-              , (err) ->
+                      user2.post("http://localhost:#{configs.port}/users/me/votes")
+                        .set('content-type', 'application/json')
+                        .send(JSON.stringify(runnable: runnableId))
+                        .end (err, res) ->
+                          if err then cb err else
+                            res.should.have.status 201
+                            cb()
+                , cb
+        , (err) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/runnables?sort=votes")
+              .end (err, res) ->
                 if err then done err else
-                  user.get("http://localhost:#{configs.port}/runnables?sort=votes")
+                  res.should.have.status 200
+                  res.body.should.be.a.array
+                  res.body.length.should.equal 8
+                  user.get("http://localhost:#{configs.port}/runnables?sort=votes&page=2&limit=1")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.be.a.array
-                        res.body.length.should.equal 8
-                        user.get("http://localhost:#{configs.port}/runnables?sort=votes&page=2&limit=1")
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 200
-                              res.body.should.be.a.array
-                              res.body.length.should.equal 1
-                              done()
+                        res.body.length.should.equal 1
+                        done()
 
   it 'should be able to ::paginate published runnable list', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.get("http://localhost:#{configs.port}/users/me")
-          .end (err, res) ->
-            process.nextTick ->
-              runnables = [ ]
-              async.whilst () ->
-                runnables.length < 5
-              , (cb) ->
-                user.post("http://localhost:#{configs.port}/runnables")
-                  .end (err, res) ->
-                    if err then cb err else
-                      res.should.have.status 201
-                      res.body.should.have.property '_id'
-                      runnables.push res.body._id
-                      cb()
-              , (err) ->
+        runnables = [ ]
+        async.whilst () ->
+          runnables.length < 5
+        , (cb) ->
+          user.post("http://localhost:#{configs.port}/runnables")
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 201
+                res.body.should.have.property '_id'
+                runnables.push res.body._id
+                cb()
+        , (err) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/runnables?published=true")
+              .end (err, res) ->
                 if err then done err else
-                  user.get("http://localhost:#{configs.port}/runnables?published=true")
+                  res.should.have.status 200
+                  res.body.should.be.a.array
+                  res.body.length.should.equal 2
+                  elem = res.body[1]._id
+                  user.get("http://localhost:#{configs.port}/runnables?published=true&page=1&limit=1")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.be.a.array
-                        res.body.length.should.equal 2
-                        elem = res.body[1]._id
-                        user.get("http://localhost:#{configs.port}/runnables?published=true&page=1&limit=1")
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 200
-                              res.body.should.be.a.array
-                              res.body.length.should.equal 1
-                              res.body[0]._id.should.equal elem
-                              done()
+                        res.body.length.should.equal 1
+                        res.body[0]._id.should.equal elem
+                        done()
 
   it 'should be able to ::paginate published sorted by votes', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.get("http://localhost:#{configs.port}/users/me")
-          .end (err, res) ->
-            process.nextTick ->
-              runnables = [ ]
-              async.whilst () ->
-                runnables.length < 5
-              , (cb) ->
-                user.post("http://localhost:#{configs.port}/runnables")
-                  .end (err, res) ->
+        runnables = [ ]
+        async.whilst () ->
+          runnables.length < 5
+        , (cb) ->
+          user.post("http://localhost:#{configs.port}/runnables")
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 201
+                res.body.should.have.property '_id'
+                runnables.push res.body._id
+                runnableId = res.body._id
+                numVotes = 0
+                async.whilst () ->
+                  numVotes < runnables.length
+                , (cb) ->
+                  numVotes++
+                  helpers.authedUser (err, user2) ->
                     if err then cb err else
-                      res.should.have.status 201
-                      res.body.should.have.property '_id'
-                      runnables.push res.body._id
-                      cb()
-              , (err) ->
+                      user2.post("http://localhost:#{configs.port}/users/me/votes")
+                        .set('content-type', 'application/json')
+                        .send(JSON.stringify(runnable: runnableId))
+                        .end (err, res) ->
+                          if err then cb err else
+                            res.should.have.status 201
+                            cb()
+                , cb
+        , (err) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/runnables?published=true&sort=votes")
+              .end (err, res) ->
                 if err then done err else
-                  user.get("http://localhost:#{configs.port}/runnables?published=true&sort=votes")
+                  res.should.have.status 200
+                  res.body.should.be.a.array
+                  res.body.length.should.equal 2
+                  elem = res.body[1]._id
+                  user.get("http://localhost:#{configs.port}/runnables?published=true&sort=votes&page=1&limit=1")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.be.a.array
-                        res.body.length.should.equal 2
-                        elem = res.body[1]._id
-                        user.get("http://localhost:#{configs.port}/runnables?published=true&sort=votes&page=1&limit=1")
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 200
-                              res.body.should.be.a.array
-                              res.body.length.should.equal 1
-                              done()
+                        res.body.length.should.equal 1
+                        done()
 
   it 'should be able to ::paginate channel runnable list', (done) ->
     user = sa.agent()
@@ -295,7 +328,21 @@ describe 'pagination api', ->
                   .end (err, res) ->
                     if err then done err else
                       res.should.have.status 201
-                      cb()
+                      numVotes = 0
+                      async.whilst () ->
+                        numVotes < runnables.length
+                      , (cb) ->
+                        numVotes++
+                        helpers.authedUser (err, user2) ->
+                          if err then cb err else
+                            user2.post("http://localhost:#{configs.port}/users/me/votes")
+                              .set('content-type', 'application/json')
+                              .send(JSON.stringify(runnable: runnableId))
+                              .end (err, res) ->
+                                if err then cb err else
+                                  res.should.have.status 201
+                                  cb()
+                      , cb
         , (err) ->
           if err then done err else
             user.get("http://localhost:#{configs.port}/runnables?channel=facebook&sort=votes")

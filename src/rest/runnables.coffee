@@ -1,3 +1,4 @@
+configs = require '../configs'
 express = require 'express'
 path = require 'path'
 users = require '../models/users'
@@ -17,47 +18,28 @@ runnableApp.post '/runnables', (req, res, next) ->
         res.json 201, runnable
 
 runnableApp.get '/runnables', (req, res, next) ->
+
+  limit = configs.maxPageLimit
+  if req.query.limit and req.query.limit < configs.maxPageLimit
+    limit = Number req.query.limit
+  page = 0
+  if req.query.page
+    page = Number req.query.page
+  sortByVotes = req.query.sort is 'votes'
+
   if req.query.published
-    limit = 200
-    if req.query.limit and req.query.limit < 200
-      limit = Number req.query.limit
-    page = 0
-    if req.query.page
-      page = Number req.query.page
-    sortByVotes = req.query.sort is 'votes'
-    runnables.listPublished sortByVotes, limit, page, (err, results) ->
+    runnables.listFiltered { tags: $not: $size: 0 }, sortByVotes, limit, page, (err, results) ->
       if err then next err else
         res.json results
   else if req.query.channel
-    limit = 200
-    if req.query.limit and req.query.limit < 200
-      limit = Number req.query.limit
-    page = 0
-    if req.query.page
-      page = Number req.query.page
-    sortByVotes = req.query.sort is 'votes'
-    runnables.listChannel req.query.channel, sortByVotes, limit, page, (err, results) ->
+    runnables.listFiltered {'tags.name': req.query.channel }, sortByVotes, limit, page, (err, results) ->
       if err then next err else
         res.json results
-  else if req.query.owner?
-    sortByVotes = req.query.sort is 'votes'
-    limit = 200
-    if req.query.limit and req.query.limit < 200
-      limit = Number req.query.limit
-    page = 0
-    if req.query.page
-      page = Number req.query.page
-    runnables.listOwn req.query.owner, sortByVotes, limit, page, (err, results) ->
+  else if req.query.owner
+    runnables.listFiltered { owner: req.query.owner }, sortByVotes, limit, page, (err, results) ->
       if err then next err else
         res.json results
   else
-    limit = 200
-    if req.query.limit and req.query.limit < 200
-      limit = Number req.query.limit
-    page = 0
-    if req.query.page
-      page = Number req.query.page
-    sortByVotes = req.query.sort is 'votes'
     runnables.listAll sortByVotes, limit, page, (err, results) ->
       if err then next err else
         res.json results
