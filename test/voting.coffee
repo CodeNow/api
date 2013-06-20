@@ -64,6 +64,34 @@ describe 'voting api', ->
                         res.body.should.have.property 'runnable', runnableId
                         done()
 
+  it 'should allow a user to retrieve a list of their ::votes', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              res.should.have.property 'body'
+              runnableId = res.body._id
+              helpers.authedUser (err, user2) ->
+                if err then done err else
+                  user2.post("http://localhost:#{configs.port}/users/me/votes")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify( { runnable: runnableId } ))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        res.body.should.have.property '_id'
+                        res.body.should.have.property 'runnable', runnableId
+                        user2.get("http://localhost:#{configs.port}/users/me/votes")
+                          .end (err, res) ->
+                            res.should.have.status 200
+                            res.body.should.be.a.array
+                            res.body.length.should.equal 1
+                            res.body[0].should.have.property 'runnable', runnableId
+                            done()
+
+
   it 'should not allow a user to ::vote twice for the same ::runnable', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else

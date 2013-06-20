@@ -60,6 +60,7 @@ getuser = (req, res, next) ->
     if err then next err else
       json_user = user.toJSON()
       delete json_user.password
+      delete json_user.votes
       res.json json_user
 
 deluser = (req, res, next) ->
@@ -78,6 +79,11 @@ putuser = (req, res, next) ->
             users.registerUser req.user_id, req.body, (err, user) ->
               if err then next err else
                 res.json user
+
+getvotes = (req, res, next) ->
+  users.findUser { _id: req.user_id }, (err, user) ->
+    if err then next err else
+      res.json user.getVotes()
 
 postvote = (req, res, next) ->
   if not req.body.runnable then next { code: 400, msg: 'must include runnable to vote on' } else
@@ -105,6 +111,9 @@ usersApp.del '/users/:userid', fetchuser, deluser
 
 usersApp.put '/users/me', putuser
 usersApp.put '/users/:userid', fetchuser, putuser
+
+usersApp.get '/users/me/votes', getvotes
+usersApp.get '/users/:userid/votes', fetchuser, getvotes
 
 usersApp.post '/users/me/votes', postvote
 usersApp.post '/users/:userid/votes', fetchuser, postvote

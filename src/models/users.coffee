@@ -98,6 +98,14 @@ userSchema.statics.registerUser = (userId, data, cb) ->
       if err then cb { code: 500, msg: 'error computing password hash' } else
         setPassword hash
 
+userSchema.methods.getVotes = () ->
+  votes = [ ]
+  for vote in @votes
+    json_vote = vote.toJSON()
+    json_vote.runnable = encodeId json_vote.runnable
+    votes.push json_vote
+  votes
+
 userSchema.methods.vote = (runnableId, cb) ->
   runnableId = decodeId runnableId
   found = false
