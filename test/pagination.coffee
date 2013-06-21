@@ -170,7 +170,7 @@ describe 'pagination api', ->
                         res.body.length.should.equal 1
                         done()
 
-  it 'should have a default ::pageinate ::pageLimit of 25 when listing when', (done) ->
+  it 'should have a default ::paginate of configs.defaultPageLimit when listing when', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
         runnables = [ ]
@@ -190,7 +190,7 @@ describe 'pagination api', ->
               if err then done err else
                 res.should.have.status 200
                 res.body.should.be.a.array
-                res.body.length.should.equal 25
+                res.body.length.should.equal configs.defaultPageLimit
                 done()
 
   it 'should be able to ::paginate published runnable list', (done) ->
