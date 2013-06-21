@@ -19,7 +19,7 @@ runnableApp.post '/runnables', (req, res, next) ->
 
 runnableApp.get '/runnables', (req, res, next) ->
 
-  limit = configs.maxPageLimit
+  limit = configs.defaultPageLimit
   if req.query.limit and req.query.limit < configs.maxPageLimit
     limit = Number req.query.limit
   page = 0

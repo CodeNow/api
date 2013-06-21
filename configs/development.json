@@ -4,6 +4,7 @@
   "mongo": "mongodb://127.0.0.1:27017/runnable",
   "port": 3000,
   "maxPageLimit": 200,
+  "defaultPageLimit": 25,
   "docker": "http://localhost:4243",
   "shortProjectIds": true,
   "logRequests": true,
