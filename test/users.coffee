@@ -269,7 +269,7 @@ describe 'user api', ->
     user = sa.agent()
     user.post("http://localhost:#{configs.port}/users")
       .set('Content-Type', 'application/json')
-      .send(JSON.stringify({ email: 'does@notexist.com', password: 'testing' }))
+      .send(JSON.stringify({ email: 'does@notexist.com', username: 'does@notexist.com', password: 'testing' }))
       .end (err, res) ->
         if err then done err else
           res.should.have.status 201
@@ -293,7 +293,7 @@ describe 'user api', ->
           user.put("http://localhost:#{configs.port}/users/me")
             .set('runnable-token', access_token)
             .set('Content-Type', 'application/json')
-            .send(JSON.stringify( email: 'jeff@runnable.com', password: 'notmyrealone'))
+            .send(JSON.stringify( email: 'jeff@runnable.com', username: 'jeff@runnable.com', password: 'notmyrealone'))
             .end (err, res) ->
               if err then done err else
                 res.should.have.status 200
@@ -305,6 +305,7 @@ describe 'user api', ->
     userEmail = 'another_test@user.com'
     data = JSON.stringify
       email: userEmail
+      username: userEmail
       password: 'this_should_be_hashed'
     user.post("http://localhost:#{configs.port}/users")
       .set('Content-Type', 'application/json')
@@ -377,6 +378,7 @@ describe 'user api', ->
                 userEmail = 'another_test@user.com'
                 data = JSON.stringify
                   email: userEmail
+                  username: userEmail
                   password: 'mypassword'
                 userId = res.body._id
                 user.put("http://localhost:#{configs.port}/users/me")
@@ -478,7 +480,30 @@ describe 'user api', ->
                 .end (err, res) ->
                   if err then done err else
                     res.should.have.status 400
-                    res.body.should.have.property 'message', 'must provide a password to user in the future'
+                    res.body.should.have.property 'message', 'must provide a password to register with'
+                    done()
+
+  it 'should not allow a ::user to ::register without a username', (done) ->
+    user = sa.agent()
+    helpers.createUser user, (err, token) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', token)
+          .end (err, res) ->
+            if err then done err else
+              userEmail = 'another_test@user.com'
+              data = JSON.stringify
+                email: userEmail
+                password: 'mypassword'
+              userId = res.body._id
+              user.put("http://localhost:#{configs.port}/users/me")
+                .set('runnable-token', token)
+                .set('Content-Type', 'application/json')
+                .send(data)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 400
+                    res.body.should.have.property 'message', 'must provide a username to register with'
                     done()
 
   it 'should not allow a ::user to ::register without an email address', (done) ->

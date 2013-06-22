@@ -4,6 +4,7 @@ users = require '../models/users'
 redis = require 'redis'
 runnables = require '../models/runnables'
 uuid = require 'node-uuid'
+_ = require 'lodash'
 
 redis_client = redis.createClient()
 usersApp = module.exports = express()
@@ -17,13 +18,15 @@ usersApp.post '/users', (req, res, next) ->
           json_user = user.toJSON()
           json_user.access_token = access_token
           if not req.body.email then res.json 201, json_user else
-            if not req.body.password then next { code: 400,  msg: 'must provide a password to register with' } else
-              users.registerUser user._id, req.body, (err, user) ->
-                if err then next err else
-                  json_user = user.toJSON()
-                  delete json_user.password
-                  json_user.access_token = access_token
-                  res.json 201, json_user
+            if not req.body.username then next { code: 400,  msg: 'must provide a username to register with' } else
+              if not req.body.password then next { code: 400,  msg: 'must provide a password to register with' } else
+                data = _.pick req.body, 'email', 'username', 'password'
+                users.registerUser user._id, req.body, (err, user) ->
+                  if err then next err else
+                    json_user = user.toJSON()
+                    delete json_user.password
+                    json_user.access_token = access_token
+                    res.json 201, json_user
 
 usersApp.post '/token', (req, res, next) ->
   if not req.body.username and not req.body.email then next { code: 400, msg: 'username or email required' } else
@@ -75,10 +78,12 @@ putuser = (req, res, next) ->
     if err then next err else
       if user.permission_level isnt 0 then next { code: 403, msg: 'you are already registered' } else
         if not req.body.email then next { code: 400, msg: 'must provide an email to register with' } else
-          if not req.body.password then next { code: 400,  msg: 'must provide a password to user in the future' } else
-            users.registerUser req.user_id, req.body, (err, user) ->
-              if err then next err else
-                res.json user
+          if not req.body.username then next { code: 400, msg: 'must provide a username to register with' } else
+            if not req.body.password then next { code: 400,  msg: 'must provide a password to register with' } else
+              data = _.pick req.body, 'email', 'username', 'password'
+              users.registerUser req.user_id, data, (err, user) ->
+                if err then next err else
+                  res.json user
 
 getvotes = (req, res, next) ->
   users.findUser { _id: req.user_id }, (err, user) ->
