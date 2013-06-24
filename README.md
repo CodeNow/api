@@ -14,6 +14,18 @@ api-server
 * ability to fully control a user and their runnables via an api call
 * primarly a REST api, but web sockets enabled where required
 
+
+forking model
+=============
+
+* no forking. there is a single create function that takes a runnable id to fork from
+* runnable to be forked from (parent) must have an image associated with it, if not error
+* new runnable does not have an image set initially defined
+* save will create an image from the runnable's container
+  * if image exists, it will overwrite it, otherwise it will create a new one
+* runnables without an image, that were not accessed within N days (configurable timeout) are deleted
+  * access includes a file operation, start/stop/restart operation.
+
 rendr is the client
 ===================
 
