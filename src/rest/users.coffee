@@ -57,7 +57,11 @@ fetchuser = (req, res, next) ->
 
 getuser = (req, res, next) ->
   users.findUser { _id: req.user_id }, (err, user) ->
-    if err then next err else
+    if err 
+      next err 
+    else if not user
+      next { code: 403, msg: 'User doesnt exist' }
+    else
       json_user = user.toJSON()
       delete json_user.password
       delete json_user.votes
