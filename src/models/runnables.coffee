@@ -5,8 +5,8 @@ users = require './users'
 
 Runnables =
 
-  create: (userId, framework, cb) ->
-    projects.create userId, framework, (err, project) ->
+  create: (userId, base, cb) ->
+    projects.create userId, base, (err, project) ->
       if err then cb err else
         users.findUser _id: userId, (err, user) ->
           if err then cb { code: 500, msg: 'error looking up user' } else

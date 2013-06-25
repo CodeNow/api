@@ -11,7 +11,14 @@
   "runnables":  {
     "node.js": {
       "image": "runnable",
-      "name": "hello node.js"
+      "name": "hello node.js",
+      "files" : [
+         {
+            "name": "server.js",
+            "path": "/",
+            "default": true
+         }
+      ]
     }
   }
 }

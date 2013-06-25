@@ -12,8 +12,8 @@ runnableApp.post '/runnables', (req, res, next) ->
       if err then next err else
         res.json 201, runnable
   else
-    framework = req.query.framework or 'node.js'
-    runnables.create req.user_id, framework, (err, runnable) ->
+    base = req.query.base or 'node.js'
+    runnables.create req.user_id, base, (err, runnable) ->
       if err then next err else
         res.json 201, runnable
 

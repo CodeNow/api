@@ -32,8 +32,6 @@ projectSchema = new Schema
   created:
     type: Date
     default: Date.now
-  framework:
-    type: String
   tags:
     type: [
       name: String
@@ -68,15 +66,20 @@ projectSchema.index
   tags: 1
   parent: 1
 
-projectSchema.statics.create = (owner, framework, cb) ->
-  if not configs.runnables?[framework] then cb { code: 403, msg: 'framework does not exist' } else
+projectSchema.statics.create = (owner, base, cb) ->
+  if not configs.runnables?[base] then cb { code: 403, msg: 'base does not exist' } else
+    runnable = configs.runnables[base]
     project = new @
       owner: owner
-      name: configs.runnables[framework].name
-      framework: framework
+      name: runnable.name
+    for file in runnable.files
+      project.files.push
+        name: file.name
+        default: file.default
+        path: file.path
     docker.createContainer
       Hostname: project._id.toString()
-      Image: configs.runnables[framework].image
+      Image: runnable.image
     , (err, result) ->
       if err then cb { code: 500, msg: 'error creating docker container', err: err } else
         project.container = result.Id
