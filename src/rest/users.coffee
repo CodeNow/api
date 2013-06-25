@@ -43,7 +43,6 @@ usersApp.all '*', (req, res, next) ->
       if err then next { code: 500, msg: 'error looking up access token in redis' } else
         if not user_id then next { code: 401, msg: 'must provide a valid access token' } else
           req.user_id = user_id
-          req.token = token
           next()
 
 fetchuser = (req, res, next) ->
@@ -67,9 +66,7 @@ getuser = (req, res, next) ->
 deluser = (req, res, next) ->
   users.removeUser req.user_id, (err) ->
     if err then next err else
-      redis_client.del req.token, (err) ->
-        if err then next { code: 500, msg: 'error removing access token' } else
-          res.json { message: 'user deleted' }
+      res.json { message: 'user deleted' }
 
 putuser = (req, res, next) ->
   users.findUser { _id: req.user_id }, (err, user) ->

@@ -185,7 +185,7 @@ describe 'user api', ->
                       .set('runnable-token', access_token)
                       .end (err, res) ->
                         if err then done err else
-                          res.should.have.status 401
+                          res.should.have.status 404
                           done()
 
   it 'should not allow another ::user to delete someone elses account', (done) ->
