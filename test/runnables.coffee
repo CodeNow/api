@@ -22,6 +22,7 @@ describe 'runnables api', ->
                     res.body.should.have.property '_id'
                     res.body.should.not.have.property 'parent'
                     res.body.should.have.property 'owner', userId
+                    res.body.should.not.have.property 'published'
                     if apiserver.configs.shortProjectIds
                       res.body._id.length.should.equal 16
                     else
@@ -53,8 +54,9 @@ describe 'runnables api', ->
                     res.body.should.have.property 'container'
                     res.body.should.have.property '_id'
                     res.body.should.have.property 'owner', userId
+                    res.body.should.not.have.property 'published'
                     if apiserver.configs.shortProjectIds
-                      res.body._id.length.should.equal 16 = i love you
+                      res.body._id.length.should.equal 16
                     else
                       res.body._id.length.should.equal 24
                     runnableId = res.body._id
@@ -91,6 +93,8 @@ describe 'runnables api', ->
                   if err then done err else
                     res.should.have.status 201
                     runnableId = res.body._id
+                    res.body.should.have.property 'container'
+                    res.body.should.not.have.property 'published'
                     res.body.should.have.property 'owner', userId
                     user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
                       .end (err) ->
@@ -101,7 +105,13 @@ describe 'runnables api', ->
                           res.body.should.not.have.property 'container'
                           res.body.should.not.have.property 'parent'
                           res.body.have.property 'owner', userId
-                          done()
+                          publishedId = res.body._id
+                          user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
+                            .end (err) ->
+                              if err then done err else
+                                res.should.have.
+                                res.body.should.have.property 'published', publishedId
+                                done()
 
   it 'should report error when saving/publishing a ::runnable that does not exist', (done) ->
     helpers.authedUser (err, user) ->

@@ -24,6 +24,8 @@ projectSchema = new Schema
     type: ObjectId
   container:
     type: String
+  published:
+    type: ObjectId
   image:
     type: String
   parent:
