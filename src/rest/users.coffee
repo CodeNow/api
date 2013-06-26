@@ -21,7 +21,7 @@ usersApp.post '/users', (req, res, next) ->
             if not req.body.username then next { code: 400,  msg: 'must provide a username to register with' } else
               if not req.body.password then next { code: 400,  msg: 'must provide a password to register with' } else
                 data = _.pick req.body, 'email', 'username', 'password'
-                users.registerUser user._id, req.body, (err, user) ->
+                users.registerUser user._id, data, (err, user) ->
                   if err then next err else
                     json_user = user.toJSON()
                     delete json_user.password
