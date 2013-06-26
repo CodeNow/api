@@ -20,7 +20,7 @@ describe 'runnables api', ->
                     res.should.have.property 'body'
                     res.body.should.have.property 'container'
                     res.body.should.have.property '_id'
-                    res.body.should.not.have.property 'parent'
+                    res.body.should.have.property 'parent', 'node.js'
                     res.body.should.have.property 'owner', userId
                     res.body.should.not.have.property 'published'
                     if apiserver.configs.shortProjectIds
@@ -38,7 +38,7 @@ describe 'runnables api', ->
                           res.body[0].should.have.property 'default', true
                           done()
 
-  it 'should be able to create a new ::runnable from a specific base', (done) ->
+  it 'should be able to create a new ::runnable from a named base', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
         user.get("http://localhost:#{configs.port}/users/me")
@@ -46,13 +46,16 @@ describe 'runnables api', ->
             if err then done err else
               res.should.have.status 200
               userId = res.body._id
-              user.post("http://localhost:#{configs.port}/users/me/runnables?base=node.js")
+              user.post("http://localhost:#{configs.port}/users/me/runnables")
+                .set('content-type', 'application/json')
+                .send(JSON.stringify(parent: 'node.js'))
                 .end (err, res) ->
                   if err then done err else
                     res.should.have.status 201
                     res.should.have.property 'body'
                     res.body.should.have.property 'container'
                     res.body.should.have.property '_id'
+                    res.body.should.have.property 'parent', 'node.js'
                     res.body.should.have.property 'owner', userId
                     res.body.should.not.have.property 'published'
                     if apiserver.configs.shortProjectIds
@@ -70,17 +73,86 @@ describe 'runnables api', ->
                           res.body[0].should.have.property 'default', true
                           done()
 
-  it 'should report error if the ::runnable provided base does not exist', (done) ->
+  it 'should report error if the ::runnable provided named base does not exist', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/users/me/runnables?base=notfound")
+        user.post("http://localhost:#{configs.port}/users/me/runnables")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(parent: 'notfound'))
           .end (err, res) ->
             if err then done err else
               res.should.have.status 403
               res.body.should.have.property 'message', 'base does not exist'
               done()
 
-  it 'should be able to save/publish an existing ::runnable', (done) ->
+  it 'should be able to query for an existing unsaved ::runnable', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              userId = res.body._id
+              user.post("http://localhost:#{configs.port}/users/me/runnables")
+                .set('content-type', 'application/json')
+                .send(JSON.stringify(parent: 'node.js'))
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 201
+                    runnableId = res.body._id
+                    user.get("http://localhost:#{configs.port}/users/me/runnables?parent=node.js")
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body.should.have.property '_id', runnableId
+                          done()
+
+  it 'should not be able to create a new ::runnable if an existing unsaved already exists', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              userId = res.body._id
+              user.post("http://localhost:#{configs.port}/users/me/runnables")
+                .set('content-type', 'application/json')
+                .send(JSON.stringify(parent: 'node.js'))
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 201
+                    user.post("http://localhost:#{configs.port}/users/me/runnables")
+                      .set('content-type', 'application/json')
+                      .send(JSON.stringify(parent: 'node.js'))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 403
+                          res.body.should.have.property 'message', 'already editing a project from this parent'
+                          done()
+
+  it 'should be able to discard/undo any unsaved changes made while editing a ::runnable', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              userId = res.body._id
+              user.post("http://localhost:#{configs.port}/users/me/runnables")
+                .set('content-type', 'application/json')
+                .send(JSON.stringify(parent: 'node.js'))
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 201
+                    runnableId = res.body._id
+                    user.del("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 403
+                          res.body.should.have.property 'message', 'deleted runnable'
+                          done()
+
+  it 'should be able to save a ::runnable', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
         user.get("http://localhost:#{configs.port}/users/me")
@@ -94,7 +166,6 @@ describe 'runnables api', ->
                     res.should.have.status 201
                     runnableId = res.body._id
                     res.body.should.have.property 'container'
-                    res.body.should.not.have.property 'published'
                     res.body.should.have.property 'owner', userId
                     user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
                       .end (err) ->
@@ -103,15 +174,75 @@ describe 'runnables api', ->
                           res.body.should.have.property '_id'
                           res.body.should.have.property 'image'
                           res.body.should.not.have.property 'container'
-                          res.body.should.not.have.property 'parent'
+                          res.body.should.have.property 'parent', 'node.js'
                           res.body.have.property 'owner', userId
+                          done()
+
+  it 'should be able to update a previously saved ::runnable', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              userId = res.body._id
+              user.post("http://localhost:#{configs.port}/users/me/runnables")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 201
+                    runnableId = res.body._id
+                    res.body.should.have.property 'container'
+                    res.body.should.have.property 'owner', userId
+                    user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+                      .end (err) ->
+                        if err then done err else
+                          res.should.have.status 201
+                          res.body.should.have.property '_id'
                           publishedId = res.body._id
-                          user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
-                            .end (err) ->
+                          res.body.should.have.property 'image'
+                          res.body.should.not.have.property 'container'
+                          res.body.should.have.property 'parent', 'node.js'
+                          res.body.should.have.property 'owner', userId
+                          user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
+                            .set('content-type', 'application/json')
+                            .send(JSON.stringify(name: 'updated project name'))
+                            .end (err, res) ->
                               if err then done err else
-                                res.should.have.
-                                res.body.should.have.property 'published', publishedId
-                                done()
+                                res.should.have.status 200
+                                res.body.should.have.property 'name', 'updated project name'
+                                user.put("http://localhost:#{configs.port}/runnables/#{publishedId}?from=#{runnableId}")
+                                  .end (err) ->
+                                    if err then done err else
+                                      res.should.have.status 200
+                                      res.body.should.have.property 'name', 'updated project name'
+                                      done()
+
+  it 'should not be able to save a ::runnable you do not own', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.post("http://localhost:#{configs.port}/users/me/runnables")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              runnableId = res.body._id
+              user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+                .end (err) ->
+                  if err then done err else
+                    res.should.have.status 201
+                    publishedId = res.body._id
+                    helpers.authedUser (err, user2) ->
+                      if err then done err else
+                        user2.post("http://localhost:#{configs.port}/users/me/runnables")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 201
+                              runnableId2 = res.body._id
+                              user2.put("http://localhost:#{configs.port}/runnables/#{publishedId}?from=#{runnableId2}")
+                                .end (err) ->
+                                  if err then done err else
+                                    res.should.have.status 403
+                                    res.body.should.have.property 'message', 'no permission to save'
+                                    done()
 
   it 'should report error when saving/publishing a ::runnable that does not exist', (done) ->
     helpers.authedUser (err, user) ->
