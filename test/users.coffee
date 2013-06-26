@@ -1,7 +1,9 @@
 apiserver = require '../lib'
 helpers = require './helpers'
 configs = require '../lib/configs'
+redis = require 'redis'
 sa = require 'superagent'
+uuid = require 'node-uuid'
 
 describe 'user api', ->
 
@@ -46,6 +48,20 @@ describe 'user api', ->
           res.body.should.not.have.property '_id'
           done()
 
+  it 'should return user not found when using a stale access token from an old ::user session', (done) ->
+    user = sa.agent()
+    redis_client = redis.createClient()
+    access_token = uuid.v4()
+    redis_client.psetex [ access_token, 1000, '51b2347626201e421a000002' ], (err) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .set('runnable-token', access_token)
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 404
+              res.body.should.have.property 'message', 'user doesnt exist'
+              done()
+
   it 'should return error when ::user id is not a valid mongo objectid', (done) ->
     user = sa.agent()
     helpers.createUser user, (err, access_token) ->
@@ -58,7 +74,7 @@ describe 'user api', ->
               res.body.should.have.property 'message', 'error looking up user'
               done()
 
-  it 'should return ::user not found when user id is not a valid mongo objectid', (done) ->
+  it 'should return ::user not found when user id does not exist in database', (done) ->
     user = sa.agent()
     helpers.createUser user, (err, access_token) ->
       if err then done err else
@@ -169,7 +185,7 @@ describe 'user api', ->
                       .set('runnable-token', access_token)
                       .end (err, res) ->
                         if err then done err else
-                          res.should.have.status 401
+                          res.should.have.status 404
                           done()
 
   it 'should not allow another ::user to delete someone elses account', (done) ->
