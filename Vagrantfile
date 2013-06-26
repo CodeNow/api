@@ -49,7 +49,7 @@ end
 
 # Providers were added on Vagrant >= 1.1.0
 Vagrant::VERSION >= "1.1.0" and Vagrant.configure("2") do |config|
-  config.vm.network :forwarded_port, guest:3000, host:3030
+  config.vm.network :forwarded_port, guest:3030, host:3030
   config.vm.provider :aws do |aws, override|
     aws.access_key_id = ENV["AWS_ACCESS_KEY_ID"]
     aws.secret_access_key = ENV["AWS_SECRET_ACCESS_KEY"]
