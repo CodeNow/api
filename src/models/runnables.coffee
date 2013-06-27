@@ -6,8 +6,12 @@ users = require './users'
 
 Runnables =
 
-  create: (userId, base, cb) ->
-    projects.create userId, base, (err, project) ->
+  createImage: (userId, from, cb) ->
+    if from is 'node.js'
+      create = images.createFromFile
+    else
+      create = images.create
+    create userId, from, (err, image) ->
       if err then cb err else
         users.findUser _id: userId, (err, user) ->
           if err then cb { code: 500, msg: 'error looking up user' } else
@@ -15,12 +19,19 @@ Runnables =
               runnableId = encodeId project._id
               user.vote runnableId, (err) ->
                 if err then { code: 500, msg: 'error updating vote count' } else
-                  project.containerState (err, state) ->
-                    if err then cb err else
-                      json_project = project.toJSON()
-                      json_project.state = state
-                      json_project._id = runnableId
-                      cb null, json_project
+                  json_project = project.toJSON()
+                  json_project._id = runnableId
+                  cb null, json_project
+
+  createContainer: (userId, from, cb) ->
+    containers.create userId, from, (err, container) ->
+      if err then cb err else
+        container.getProcessState (err, state) ->
+          if err then cb err else
+            json_project = project.toJSON()
+            json_project.state = state
+            json_project._id = encodeId project._id
+            cb null, json_project
 
   fork: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId

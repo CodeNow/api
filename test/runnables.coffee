@@ -5,6 +5,15 @@ sa = require 'superagent'
 
 describe 'runnables api', ->
 
+  it 'should be able to create a ::runnable image from name', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.post("http://localhost:#{configs.port}/runnables?from=node.js")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              done()
+
   it 'should be able to create a new ::runnable from a default base', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else

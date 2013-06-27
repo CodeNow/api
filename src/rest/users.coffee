@@ -7,9 +7,9 @@ uuid = require 'node-uuid'
 _ = require 'lodash'
 
 redis_client = redis.createClient()
-usersApp = module.exports = express()
+app = module.exports = express()
 
-usersApp.post '/users', (req, res, next) ->
+app.post '/users', (req, res, next) ->
   users.createUser (err, user) ->
     if err then next err else
       access_token = uuid.v4()
@@ -28,7 +28,7 @@ usersApp.post '/users', (req, res, next) ->
                     json_user.access_token = access_token
                     res.json 201, json_user
 
-usersApp.post '/token', (req, res, next) ->
+app.post '/token', (req, res, next) ->
   if not req.body.username and not req.body.email then next { code: 400, msg: 'username or email required' } else
     if not req.body.password then next { code: 400, msg: 'password required' } else
       identity = req.body.email or req.body.username
@@ -39,7 +39,7 @@ usersApp.post '/token', (req, res, next) ->
             if err then next { code: 500, msg: 'error storing access token in redis' } else
               res.json access_token: access_token
 
-usersApp.all '*', (req, res, next) ->
+app.all '*', (req, res, next) ->
   token = req.get('runnable-token');
   if not token then next { code: 401, msg: 'access token required' } else
     redis_client.get token, (err, user_id) ->
@@ -106,20 +106,29 @@ removevote = (req, res, next) ->
         if err then next err else
           res.json 200, { message: 'removed vote' }
 
-usersApp.get '/users/me', getuser
-usersApp.get '/users/:userid', fetchuser, getuser
+postrunnable = (req, res, next) ->
+  if not req.body.from then next { code: 400, msg: 'must provide a runnable to fork from' } else
+    runnables.createContainer req.user_id, req.body.from, (err, container) ->
+      if err then next err else
+        res.json 201, container
 
-usersApp.del '/users/me', deluser
-usersApp.del '/users/:userid', fetchuser, deluser
+app.get '/users/me', getuser
+app.get '/users/:userid', fetchuser, getuser
 
-usersApp.put '/users/me', putuser
-usersApp.put '/users/:userid', fetchuser, putuser
+app.del '/users/me', deluser
+app.del '/users/:userid', fetchuser, deluser
 
-usersApp.get '/users/me/votes', getvotes
-usersApp.get '/users/:userid/votes', fetchuser, getvotes
+app.put '/users/me', putuser
+app.put '/users/:userid', fetchuser, putuser
 
-usersApp.post '/users/me/votes', postvote
-usersApp.post '/users/:userid/votes', fetchuser, postvote
+app.get '/users/me/votes', getvotes
+app.get '/users/:userid/votes', fetchuser, getvotes
 
-usersApp.del '/users/me/votes/:voteid', removevote
-usersApp.del '/users/:userid/votes/:voteid', fetchuser, removevote
+app.post '/users/me/votes', postvote
+app.post '/users/:userid/votes', fetchuser, postvote
+
+app.del '/users/me/votes/:voteid', removevote
+app.del '/users/:userid/votes/:voteid', fetchuser, removevote
+
+app.post '/users/me/runnables', postrunnable
+app.post '/users/:id/runnables', fetchuser, postrunnable
