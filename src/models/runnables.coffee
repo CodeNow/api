@@ -4,6 +4,7 @@ containers = require './containers'
 error = require '../error'
 images = require './images'
 users = require './users'
+projects = require './projects'
 
 Runnables =
 
