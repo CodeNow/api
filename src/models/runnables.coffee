@@ -44,6 +44,19 @@ Runnables =
                   json_container._id = encodeId container._id
                   cb null, json_container
 
+
+  listContainers: (userId, parent, cb) ->
+    query = { owner: userId }
+    if parent then query.parent = decodeId parent
+    containers.find query, (err, containers) ->
+      if err then new error { code: 500, msg: 'error fetching containers from mongodb' } else
+        results = for item in containers
+          json = item.toJSON()
+          json._id = encodeId json._id
+          if json.parent then json.parent = encodeId json.parent
+          json
+        cb null, results
+
   delete: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     removeProject = () ->

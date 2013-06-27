@@ -48,74 +48,25 @@ describe 'runnables api', ->
                               res.body.length.should.equal 2
                               done()
 
-  it 'should be able to create a new ::runnable from a named base', (done) ->
-    helpers.authedUser (err, user) ->
-      if err then done err else
-        user.get("http://localhost:#{configs.port}/users/me")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 200
-              userId = res.body._id
-              user.post("http://localhost:#{configs.port}/users/me/runnables")
-                .set('content-type', 'application/json')
-                .send(JSON.stringify(parent: 'node.js'))
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    res.should.have.property 'body'
-                    res.body.should.have.property 'container'
-                    res.body.should.have.property '_id'
-                    res.body.should.have.property 'parent', 'node.js'
-                    res.body.should.have.property 'owner', userId
-                    res.body.should.not.have.property 'published'
-                    if apiserver.configs.shortProjectIds
-                      res.body._id.length.should.equal 16
-                    else
-                      res.body._id.length.should.equal 24
-                    runnableId = res.body._id
-                    user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 200
-                          res.body.should.be.a.array
-                          res.body.length.should.equal 1
-                          res.body[0].should.have.property 'name', 'server.js'
-                          res.body[0].should.have.property 'default', true
-                          done()
-
-  it 'should report error if the ::runnable provided named base does not exist', (done) ->
-    helpers.authedUser (err, user) ->
-      if err then done err else
-        user.post("http://localhost:#{configs.port}/users/me/runnables")
-          .set('content-type', 'application/json')
-          .send(JSON.stringify(parent: 'notfound'))
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 403
-              res.body.should.have.property 'message', 'base does not exist'
-              done()
+  it 'should report error if the ::runnable provided named base does not exist'
 
   it 'should be able to query for an existing unsaved ::runnable', (done) ->
-    helpers.authedUser (err, user) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
-        user.get("http://localhost:#{configs.port}/users/me")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 200
-              userId = res.body._id
-              user.post("http://localhost:#{configs.port}/users/me/runnables")
-                .set('content-type', 'application/json')
-                .send(JSON.stringify(parent: 'node.js'))
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    runnableId = res.body._id
-                    user.get("http://localhost:#{configs.port}/users/me/runnables?parent=node.js")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 200
-                          res.body.should.have.property '_id', runnableId
-                          done()
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  myRunnableId = res.body._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables?parent=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        res.body[0].should.have.property '_id', myRunnableId
+                        done()
 
   it 'should not be able to create a new ::runnable if an existing unsaved already exists', (done) ->
     helpers.authedUser (err, user) ->

@@ -106,6 +106,12 @@ removevote = (req, res, next) ->
         if err then next err else
           res.json 200, { message: 'removed vote' }
 
+getrunnables = (req, res, next) ->
+  parent = req.query.parent
+  runnables.listContainers req.user_id, parent, (err, containers) ->
+    if err then next err else
+      res.json 200, containers
+
 postrunnable = (req, res, next) ->
   if not req.query.from then next { code: 400, msg: 'must provide a runnable to fork from' } else
     runnables.createContainer req.user_id, req.query.from, (err, container) ->
@@ -141,6 +147,9 @@ app.del '/users/:userid/votes/:voteid', fetchuser, removevote
 
 app.post '/users/me/runnables', postrunnable
 app.post '/users/:userid/runnables', fetchuser, postrunnable
+
+app.get '/users/me/runnables', getrunnables
+app.get '/users/:userid/runnables', fetchuser, getrunnables
 
 app.get '/users/me/runnables/:runnableid/files', listfiles
 app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles
