@@ -1,12 +1,13 @@
 async = require 'async'
+cp = require 'child_process'
 configs = require '../configs'
 crypto = require 'crypto'
+error = require '../error'
 dockerjs = require 'docker.js'
-fstream = require 'fstream'
 path = require 'path'
 mongoose = require 'mongoose'
+request = require 'request'
 sa = require 'superagent'
-tar = require 'tar'
 
 docker = dockerjs host: configs.docker
 
@@ -28,6 +29,8 @@ imageSchema = new Schema
     default: Date.now
   cmd:
     type: String
+  port:
+    type: Number
   tags:
     type: [
       name: String
@@ -57,30 +60,33 @@ imageSchema.index
   parent: 1
 
 imageSchema.statics.createFromDisk = (owner, name, cb) ->
-  runnable = require "#{__dirname}/../../configs/runnables/#{name}/runnable.json"
-  if not runnable then cb { code: 500, msg: 'could not load image from disk' } else
+  runnablePath = "#{__dirname}/../../configs/runnables"
+  runnable = require "#{runnablePath}/#{name}/runnable.json"
+  if not runnable then cb new error { code: 500, msg: 'could not load image from disk' } else
     image = new @
       owner: owner
       name: runnable.name
       cmd: runnable.cmd
       file_root: runnable.file_root
+      port: runnable.port
     for file in runnable.files
       image.files.push file
     for tag in runnable.tags
       image.tags.push tag
-    reader = new fstream.Reader
-      path: "#{__dirname}/../../configs/runnables/#{name}"
-      filter: () -> not @path.match(/runnable.json/)
-    pack = tar.Pack() # pkg: null
-    req = sa.post "#{configs.docker}/build"
-    req.type 'application/tar'
-    pack.pipe req
-    req.end (err, res) ->
-      if err then cb { code: 500, msg: 'error building image from Dockerfile' } else
-        console.log res.body
-        image.docker_id = res.body.Id
-        image.save cb
-    reader.pipe pack
+    child = cp.spawn 'tar', [ '-c', '--directory', "#{runnablePath}/#{name}", '.' ]
+    req = request.post
+      url: "#{configs.docker}/v1.3/build"
+      headers:
+        'content-type': 'application/tar'
+      qs:
+        t: image._id.toString()
+    , (err, res, body) ->
+        if err then cb new error { code: 500, msg: 'error building image from Dockerfile' } else
+          if res.statusCode isnt 200 then cb new error { code: res.status, msg: body } else
+            if body.indexOf('Successfully built') is -1 then cb new error { code: 500, msg: 'could not build image from dockerfile' } else
+              image.docker_id = image._id.toString()
+              image.save cb
+    child.stdout.pipe req
 
 imageSchema.statics.create = (container, cb) ->
   image = new @
@@ -101,25 +107,25 @@ imageSchema.statics.create = (container, cb) ->
       author: image.owner.toString()
       run: image.cmd
   , (err, result) ->
-    if err then cb { code: 500, msg: 'error creating docker image', err: err } else
+    if err then cb new error { code: 500, msg: 'error creating docker image', err: err } else
       image.docker_id = result.Id
       image.save (err) ->
-        if err then cb { code: 500, msg: 'error saving image metadata to mongodb' } else
-          cb()
+        if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
+          cb null, image
 
 imageSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, image) =>
-    if err then cb { code: 500, msg: 'error looking up image in mongodb', err: err } else
-      if not image then cb { code: 404, msg: 'image not found' } else
+    if err then cb new error { code: 500, msg: 'error looking up image in mongodb', err: err } else
+      if not image then cb new error { code: 404, msg: 'image not found' } else
         docker.removeImage image.docker_id, (err) =>
-          if err then cb { code: 500, msg: 'error removing docker image', err: err } else
+          if err then cb new error { code: 500, msg: 'error removing docker image', err: err } else
             @remove id, (err) ->
-              if err then cb { code: 500, msg: 'error removing image metadata from mongodb', err: err } else
+              if err then cb new error { code: 500, msg: 'error removing image metadata from mongodb', err: err } else
                 cb()
 
 imageSchema.statics.listTags = (cb) ->
   @find().distinct 'tags', (err, tags) ->
-    if err then cb { code: 500, msg: 'error retrieving project tags', err: err } else
+    if err then cb new error { code: 500, msg: 'error retrieving project tags', err: err } else
       cb null, tags
 
 module.exports = mongoose.model 'Images', imageSchema

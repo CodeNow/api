@@ -107,10 +107,19 @@ removevote = (req, res, next) ->
           res.json 200, { message: 'removed vote' }
 
 postrunnable = (req, res, next) ->
-  if not req.body.from then next { code: 400, msg: 'must provide a runnable to fork from' } else
-    runnables.createContainer req.user_id, req.body.from, (err, container) ->
+  if not req.query.from then next { code: 400, msg: 'must provide a runnable to fork from' } else
+    runnables.createContainer req.user_id, req.query.from, (err, container) ->
       if err then next err else
         res.json 201, container
+
+listfiles = (req, res, next) ->
+  content = req.query.content?
+  dir = req.query.dir?
+  default_tag = req.query.default?
+  path = req.query.path
+  runnables.listFiles req.params.runnableid, content, dir, default_tag, path, (err, files) ->
+    if err then next err else
+      res.json 200, files
 
 app.get '/users/me', getuser
 app.get '/users/:userid', fetchuser, getuser
@@ -131,4 +140,63 @@ app.del '/users/me/votes/:voteid', removevote
 app.del '/users/:userid/votes/:voteid', fetchuser, removevote
 
 app.post '/users/me/runnables', postrunnable
-app.post '/users/:id/runnables', fetchuser, postrunnable
+app.post '/users/:userid/runnables', fetchuser, postrunnable
+
+app.get '/users/me/runnables/:runnableid/files', listfiles
+app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles
+
+###
+app.post '/runnables/:id/files', (req, res, next) ->
+  if req.body.dir
+    if not req.body.name then next new error { code: 400, msg: 'dir must include a name field' } else
+      if not req.body.path then next new error { code: 400, msg: 'dir must include a path field' } else
+        runnables.createDirectory req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
+          if err then next err else
+            res.json 201, dir
+  else
+    if not req.body.name then next new error { code: 400, msg: 'file must include a name field' } else
+      if not req.body.content then next new error { code: 400, msg: 'file must include a content field' } else
+        if not req.body.path then next new error { code: 400, msg: 'file must include a path field' } else
+          runnables.createFile req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
+            if err then next err else
+              res.json 201, file
+
+app.get '/runnables/:id/files/:fileid', (req, res, next) ->
+  runnables.readFile req.params.id, req.params.fileid, (err, file) ->
+    if err then next err else
+      res.json 200, file
+
+app.put '/runnables/:id/files/:fileid', (req, res, next) ->
+  if not req.body.content?
+    if not req.body.path?
+      if not req.body.name?
+        if not req.body.default?
+          next new error { code: 400, msg: 'must provide content, name, path or tag to update operation' }
+        else
+          runnables.defaultFile req.user_id, req.params.id, req.params.fileid, (err, file) ->
+            if err then next err else
+              res.json 200, file
+      else
+        runnables.renameFile req.user_id, req.params.id, req.params.fileid, req.body.name, (err, file) ->
+          if err then next err else
+            res.json 200, file
+    else
+      runnables.moveFile req.user_id, req.params.id, req.params.fileid, req.body.path, (err, file) ->
+        if err then next err else
+          res.json 200, file
+  else
+    runnables.updateFile req.user_id, req.params.id, req.params.fileid, req.body.content, (err, file) ->
+      if err then next err else
+        res.json 200, file
+
+app.del '/runnables/:id/files', (req, res, next) ->
+  runnables.deleteAllFiles req.params.id, (err) ->
+    if err then next err else
+      res.json 200, { message: 'deleted all files' }
+
+app.del '/runnables/:id/files/:fileid', (req, res, next) ->
+  recursive = req.query.recursive?
+  runnables.deleteFile req.params.id, req.params.fileid, recursive, (err) ->
+    if err then next err else
+      res.json 200, { message: 'file deleted' }
+###

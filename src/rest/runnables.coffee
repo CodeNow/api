@@ -1,4 +1,5 @@
 configs = require '../configs'
+error = require '../error'
 express = require 'express'
 path = require 'path'
 users = require '../models/users'
@@ -40,13 +41,13 @@ app.get '/runnables', (req, res, next) ->
         res.json results
 
 app.get '/runnables/:id', (req, res, next) ->
-  fetchComments = req.query.comments?
+  fetchComments = false
   runnables.get req.params.id, fetchComments, (err, runnable) ->
     if err then next err else
       res.json runnable
 
 app.put '/runnables/:id', (req, res, next) ->
-  if not req.body.running? then next { code: 400, msg: 'must provide a running parameter' } else
+  if not req.body.running? then next new error { code: 400, msg: 'must provide a running parameter' } else
     if req.body.running
       runnables.start req.user_id, req.params.id, (err, runnable) ->
         if err then next err else
@@ -66,42 +67,16 @@ app.get '/runnables/:id/votes', (req, res, next) ->
     if err then next err else
       res.json votes
 
-app.get '/runnables/:id/comments', (req, res, next) ->
-  fetchUsers = req.query.users?
-  runnables.getComments req.params.id, fetchUsers, (err, comments) ->
-    if err then next err else
-      res.json comments
-
-app.post '/runnables/:id/comments', (req, res, next) ->
-  if not req.body.text then next { code: 400, msg: 'comment must include a text field' } else
-    users.findUser _id: req.user_id, (err, user) ->
-      if err then res.json 500, msg: 'error looking up user' else
-        if user.permission_level < 1 then next { code: 403, msg: 'permission denied' } else
-          runnables.addComment req.user_id, req.params.id, req.body.text, (err, comment) ->
-            if err then next err else
-              res.json 201, comment
-
-app.get '/runnables/:id/comments/:commentId', (req, res, next) ->
-  fetchUser = req.query.user?
-  runnables.getComment req.params.id, fetchUser, req.params.commentId, (err, comments) ->
-    if err then next err else
-      res.json comments
-
-app.del '/runnables/:id/comments/:commentId', (req, res, next) ->
-  runnables.removeComment req.user_id, req.params.id, req.params.commentId, (err) ->
-    if err then next err else
-      res.json 200, { message: 'comment deleted' }
-
 app.get '/runnables/:id/tags', (req, res, next) ->
   runnables.getTags req.params.id, (err, tags) ->
     if err then next err else
       res.json tags
 
 app.post '/runnables/:id/tags', (req, res, next) ->
-  if not req.body.name then next { code: 400, msg: 'tag must include a name field' } else
+  if not req.body.name then next new error { code: 400, msg: 'tag must include a name field' } else
     users.findUser _id: req.user_id, (err, user) ->
-      if err then res.json 500, msg: 'error looking up user' else
-        if user.permission_level < 1 then next { code: 403, msg: 'permission denied' } else
+      if err then next err else
+        if user.permission_level < 1 then next new error { code: 403, msg: 'permission denied' } else
           runnables.addTag req.user_id, req.params.id, req.body.name, (err, tag) ->
             if err then next err else
               res.json 201, tag
@@ -115,66 +90,3 @@ app.del '/runnables/:id/tags/:tagId', (req, res, next) ->
   runnables.removeTag req.user_id, req.params.id, req.params.tagId, (err) ->
     if err then next err else
       res.json 200, { message: 'tag deleted' }
-
-app.post '/runnables/:id/files', (req, res, next) ->
-  if req.body.dir
-    if not req.body.name then next { code: 400, msg: 'dir must include a name field' } else
-      if not req.body.path then next { code: 400, msg: 'dir must include a path field' } else
-        runnables.createDirectory req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
-          if err then next err else
-            res.json 201, dir
-  else
-    if not req.body.name then next { code: 400, msg: 'file must include a name field' } else
-      if not req.body.content then next { code: 400, msg: 'file must include a content field' } else
-        if not req.body.path then next { code: 400, msg: 'file must include a path field' } else
-          runnables.createFile req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
-            if err then next err else
-              res.json 201, file
-
-app.get '/runnables/:id/files', (req, res, next) ->
-  content = req.query.content?
-  dir = req.query.dir?
-  default_tag = req.query.default?
-  path = req.query.path
-  runnables.listFiles req.params.id, content, dir, default_tag, path, (err, files) ->
-    if err then next err else
-      res.json 200, files
-
-app.get '/runnables/:id/files/:fileid', (req, res, next) ->
-  runnables.readFile req.params.id, req.params.fileid, (err, file) ->
-    if err then next err else
-      res.json 200, file
-
-app.put '/runnables/:id/files/:fileid', (req, res, next) ->
-  if not req.body.content?
-    if not req.body.path?
-      if not req.body.name?
-        if not req.body.default?
-          next { code: 400, msg: 'must provide content, name, path or tag to update operation' }
-        else
-          runnables.defaultFile req.user_id, req.params.id, req.params.fileid, (err, file) ->
-            if err then next err else
-              res.json 200, file
-      else
-        runnables.renameFile req.user_id, req.params.id, req.params.fileid, req.body.name, (err, file) ->
-          if err then next err else
-            res.json 200, file
-    else
-      runnables.moveFile req.user_id, req.params.id, req.params.fileid, req.body.path, (err, file) ->
-        if err then next err else
-          res.json 200, file
-  else
-    runnables.updateFile req.user_id, req.params.id, req.params.fileid, req.body.content, (err, file) ->
-      if err then next err else
-        res.json 200, file
-
-app.del '/runnables/:id/files', (req, res, next) ->
-  runnables.deleteAllFiles req.params.id, (err) ->
-    if err then next err else
-      res.json 200, { message: 'deleted all files' }
-
-app.del '/runnables/:id/files/:fileid', (req, res, next) ->
-  recursive = req.query.recursive?
-  runnables.deleteFile req.params.id, req.params.fileid, recursive, (err) ->
-    if err then next err else
-      res.json 200, { message: 'file deleted' }

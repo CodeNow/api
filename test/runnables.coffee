@@ -5,47 +5,48 @@ sa = require 'superagent'
 
 describe 'runnables api', ->
 
-  it 'should be able to create a ::runnable image from name', (done) ->
+  it 'should be able to create a published ::runnable from filesystem', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
         user.post("http://localhost:#{configs.port}/runnables?from=node.js")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
+              res.body.should.have.property '_id'
+              res.body.should.have.property 'docker_id'
               done()
 
-  it 'should be able to create a new ::runnable from a default base', (done) ->
-    helpers.authedUser (err, user) ->
+  it 'should be able to edit a published ::runnable', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
-        user.get("http://localhost:#{configs.port}/users/me")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 200
-              userId = res.body._id
-              user.post("http://localhost:#{configs.port}/users/me/runnables")
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    res.should.have.property 'body'
-                    res.body.should.have.property 'container'
-                    res.body.should.have.property '_id'
-                    res.body.should.have.property 'parent', 'node.js'
-                    res.body.should.have.property 'owner', userId
-                    res.body.should.not.have.property 'published'
-                    if apiserver.configs.shortProjectIds
-                      res.body._id.length.should.equal 16
-                    else
-                      res.body._id.length.should.equal 24
-                    runnableId = res.body._id
-                    user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 200
-                          res.body.should.be.a.array
-                          res.body.length.should.equal 1
-                          res.body[0].should.have.property 'name', 'server.js'
-                          res.body[0].should.have.property 'default', true
-                          done()
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/users/me")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  userId = res.body._id
+                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        res.should.have.property 'body'
+                        res.body.should.have.property 'docker_id'
+                        res.body.should.have.property '_id'
+                        res.body.should.have.property 'parent', runnableId
+                        res.body.should.have.property 'owner', userId
+                        if apiserver.configs.shortProjectIds
+                          res.body._id.length.should.equal 16
+                        else
+                          res.body._id.length.should.equal 24
+                        runnableId = res.body._id
+                        user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.be.a.array
+                              res.body.length.should.equal 2
+                              done()
 
   it 'should be able to create a new ::runnable from a named base', (done) ->
     helpers.authedUser (err, user) ->

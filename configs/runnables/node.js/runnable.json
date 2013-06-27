@@ -1,16 +1,9 @@
 {
   "name": "Hello node.js!",
-  "dockerfile": "./Dockerfile",
-  "cmd": {
-    "Cmd": [
-        "/bin/sh"
-        "-c"
-        "cd root; npm start"
-    ],
-    "PortSpecs": "80",
-  },
+  "cmd": "/usr/local/bin/npm start /root",
+  "port": 80,
   "file_root": "/root",
-  "files" : [
+  "files": [
     {
       "name": "server.js",
       "path": "/",

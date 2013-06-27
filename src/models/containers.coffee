@@ -29,6 +29,8 @@ containerSchema = new Schema
     default: false
   cmd:
     type: String
+  port:
+    type: Number
   tags:
     type: [
       name: String
@@ -66,6 +68,7 @@ containerSchema.statics.create = (owner, image, cb) ->
     parent: parent
     name: image.name
     owner: owner
+    port: image.port
     cmd: image.cmd
     file_root: image.file_root
   for file in image.files
@@ -74,8 +77,9 @@ containerSchema.statics.create = (owner, image, cb) ->
     container.tags.push tag.toJSON()
   docker.createContainer
     Hostname: container._id.toString()
-    Image: image.docker_id
-    Cmd: container.cmd
+    Image: image.docker_id.toString()
+    PortSpecs: [ container.port.toString() ]
+    Cmd: [ container.cmd ]
   , (err, res) ->
     if err then cb { code: 500, msg: 'error creating docker container', err: err } else
       container.docker_id = res.Id

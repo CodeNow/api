@@ -19,10 +19,11 @@ app.use channels
 app.use app.router
 app.use (err, req, res, next) ->
   if err.msg and err.code
-    if configs.throwErrors and err.error then throw err.error else
+    if configs.throwErrors and err.err then throw err.err else
       res.json err.code, message: err.msg
   else
-    res.json 500, { message: 'something bad happened' }
+    if err then throw err else
+      res.json 500, { message: 'something bad happened' }
 
 app.get '/', (req, res) -> res.json { message: 'hello!' }
 app.get '/throws', -> throw new Error 'zomg'
