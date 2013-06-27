@@ -56,7 +56,7 @@ imageSchema.index
   tags: 1
   parent: 1
 
-imageSchema.statics.createFromDisk = (name, cb) ->
+imageSchema.statics.createFromDisk = (owner, name, cb) ->
   runnable = require "#{__dirname}/../../configs/runnables/#{name}/runnable.json"
   if not runnable then cb { code: 500, msg: 'could not load image from disk' } else
     image = new @
@@ -71,7 +71,7 @@ imageSchema.statics.createFromDisk = (name, cb) ->
     reader = new fstream.Reader
       path: "#{__dirname}/../../configs/runnables/#{name}"
       filter: () -> not @path.match(/runnable.json/)
-    pack = tar.Pack pkg: null
+    pack = tar.Pack() # pkg: null
     req = sa.post "#{configs.docker}/build"
     req.type 'application/tar'
     pack.pipe req

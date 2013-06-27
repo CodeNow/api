@@ -6,7 +6,7 @@ wrench = require 'wrench'
 
 Volumes =
 
-  create: (id, cb) ->
+  create: (root, id, cb) ->
     volumePath = "#{configs.volumesPath}/#{id}"
     fs.exists volumePath, (exists) ->
       if exists then cb { code: 500, msg: 'project volume already exists' } else
@@ -14,7 +14,7 @@ Volumes =
           if err then cb { code: 500, msg: 'error creating project volume', err: err } else
             cb()
 
-  remove: (id, cb) ->
+  remove: (root, id, cb) ->
     volumePath = "#{configs.volumesPath}/#{id}"
     fs.exists volumePath, (exists) ->
       if not exists then cb { code: 500, msg: 'project volume does not exist' } else
@@ -22,14 +22,14 @@ Volumes =
           if err then cb { code: 500, msg: 'error removing project volume', err: err } else
             cb()
 
-  copy: (src, dst, cb) ->
+  copy: (root, src, dst, cb) ->
     srcPath = "#{configs.volumesPath}/#{src}"
     dstPath = "#{configs.volumesPath}/#{dst}"
     wrench.copyDirRecursive srcPath, dstPath, (err) ->
       if err then cb { code: 500, msg: 'error copying existing volume to new volume', err: err } else
         cb()
 
-  createFile: (id, name, path, content, cb) ->
+  createFile: (root, id, name, path, content, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
     fs.exists filePath, (exists) ->
       if exists then cb { code: 403, msg: 'resource already exists' } else
@@ -38,7 +38,7 @@ Volumes =
             if err then cb { code: 500, msg: 'error writing file to volume', err: err } else
               cb()
 
-  updateFile: (id, name, path, content, cb) ->
+  updateFile: (root, id, name, path, content, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
     fs.exists filePath, (exists) ->
       if not exists then cb { code: 500, msg: 'mongodb and volume out of sync' } else
@@ -47,7 +47,7 @@ Volumes =
             if err then cb { code: 500, msg: 'error writing file to volume', err: err } else
               cb()
 
-  renameFile: (id, name, path, newName, cb) ->
+  renameFile: (root, id, name, path, newName, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
     newFilePath = "#{configs.volumesPath}/#{id}#{path}/#{newName}"
     fs.exists filePath, (exists) ->
@@ -58,7 +58,7 @@ Volumes =
               if err then cb { code: 500, msg: 'error writing file to volume', err: err } else
                 cb()
 
-  moveFile: (id, name, path, newPath, cb) ->
+  moveFile: (root, id, name, path, newPath, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
     newFilePath = "#{configs.volumesPath}/#{id}#{newPath}/#{name}"
     fs.exists filePath, (exists) ->
@@ -72,7 +72,7 @@ Volumes =
                     if err then cb { code: 500, msg: 'error writing file to volume', err: err } else
                       cb()
 
-  createDirectory: (id, name, path, cb) ->
+  createDirectory: (root, id, name, path, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
     fs.exists filePath, (exists) ->
       if exists then cb { code: 403, msg: 'resource already exists' } else
@@ -81,7 +81,7 @@ Volumes =
             if err then cb { code: 500, msg: 'error writing directory to volume', err: err } else
               cb()
 
-  readFile: (id, name, path, cb) ->
+  readFile: (root, id, name, path, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
     fs.exists filePath, (exists) ->
       if not exists then cb { code: 500, msg: 'volume out of sync with mongodb' } else
@@ -89,7 +89,7 @@ Volumes =
           if err then cb { code: 500, msg: 'error reading project file from volume', err: err } else
             cb null, content
 
-  deleteFile: (id, name, path, cb) ->
+  deleteFile: (root, id, name, path, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
     fs.exists filePath, (exists) ->
       if not exists then cb { code: 500, msg: 'volume out of sync with mongodb' } else
@@ -97,12 +97,12 @@ Volumes =
           if err then cb { code: 500, msg: 'error deleting project file from volume', err: err } else
             cb()
 
-  deleteAllFiles: (id, cb) ->
+  deleteAllFiles: (root, id, cb) ->
     @remove id, (err) =>
       if err then cb err else
         @create id, cb
 
-  removeDirectory: (id, name, path, recursive, cb) ->
+  removeDirectory: (root, id, name, path, recursive, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"
     fs.exists filePath, (exists) ->
       if not exists then cb { code: 500, msg: 'volume out of sync with mongodb' } else
