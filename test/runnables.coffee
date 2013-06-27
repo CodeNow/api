@@ -68,28 +68,21 @@ describe 'runnables api', ->
                         res.body[0].should.have.property '_id', myRunnableId
                         done()
 
-  it 'should not be able to create a new ::runnable if an existing unsaved already exists', (done) ->
-    helpers.authedUser (err, user) ->
+  it 'should not be able to create a new ::runnable if an existing ::unsaved already exists', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
-        user.get("http://localhost:#{configs.port}/users/me")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 200
-              userId = res.body._id
-              user.post("http://localhost:#{configs.port}/users/me/runnables")
-                .set('content-type', 'application/json')
-                .send(JSON.stringify(parent: 'node.js'))
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    user.post("http://localhost:#{configs.port}/users/me/runnables")
-                      .set('content-type', 'application/json')
-                      .send(JSON.stringify(parent: 'node.js'))
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 403
-                          res.body.should.have.property 'message', 'already editing a project from this parent'
-                          done()
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 403
+                        res.body.should.have.property 'message', 'already editing a project from this parent'
+                        done()
 
   it 'should be able to discard/undo any unsaved changes made while editing a ::runnable', (done) ->
     helpers.authedUser (err, user) ->
