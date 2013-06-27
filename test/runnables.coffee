@@ -85,26 +85,21 @@ describe 'runnables api', ->
                         done()
 
   it 'should be able to discard/undo any unsaved changes made while editing a ::runnable', (done) ->
-    helpers.authedUser (err, user) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
-        user.get("http://localhost:#{configs.port}/users/me")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 200
-              userId = res.body._id
-              user.post("http://localhost:#{configs.port}/users/me/runnables")
-                .set('content-type', 'application/json')
-                .send(JSON.stringify(parent: 'node.js'))
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    runnableId = res.body._id
-                    user.del("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 403
-                          res.body.should.have.property 'message', 'deleted runnable'
-                          done()
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  containerId = res.body._id
+                  user.del("http://localhost:#{configs.port}/users/me/runnables/#{containerId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.have.property 'message', 'runnable deleted'
+                        done()
 
   it 'should be able to save a ::runnable', (done) ->
     helpers.authedUser (err, user) ->

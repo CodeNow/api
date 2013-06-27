@@ -112,6 +112,11 @@ getrunnables = (req, res, next) ->
     if err then next err else
       res.json 200, containers
 
+delrunnable = (req, res, next) ->
+  runnables.removeContainer req.user_id, req.params.runnableid, (err) ->
+    if err then next err else
+      res.json 200, { message : 'runnable deleted' }
+
 postrunnable = (req, res, next) ->
   if not req.query.from then next { code: 400, msg: 'must provide a runnable to fork from' } else
     runnables.createContainer req.user_id, req.query.from, (err, container) ->
@@ -150,6 +155,9 @@ app.post '/users/:userid/runnables', fetchuser, postrunnable
 
 app.get '/users/me/runnables', getrunnables
 app.get '/users/:userid/runnables', fetchuser, getrunnables
+
+app.del '/users/me/runnables/:runnableid', delrunnable
+app.del '/users/:userid/runnables/:runnableid', fetchuser, delrunnable
 
 app.get '/users/me/runnables/:runnableid/files', listfiles
 app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles

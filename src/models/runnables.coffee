@@ -59,6 +59,21 @@ Runnables =
           json
         cb null, results
 
+  removeContainer: (userId, runnableId, cb) ->
+    runnableId = decodeId runnableId
+    remove = () ->
+      containers.destroy runnableId, (err) ->
+        if err then cb err else cb()
+    containers.findOne _id: runnableId, (err, container) ->
+      if err then cb new error { code: 500, msg: 'error querying mongodb' } else
+        if not container then cb new error { code: 404, msg: 'runnable not found' } else
+          if container.owner.toString() is userId.toString() then remove() else
+            users.findUser _id: userId, (err, user) ->
+              if err then cb new error { code: 500, msg: 'error looking up user' } else
+                if not user then cb new error { code: 404, msg: 'user not found' } else
+                  if user.permission_level <= 1 then cb new error { code: 403, msg: 'permission denied' } else
+                    remove()
+
   delete: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     removeProject = () ->
