@@ -4,7 +4,7 @@ crypto = require 'crypto'
 dockerjs = require 'docker.js'
 path = require 'path'
 mongoose = require 'mongoose'
-volumes = require './volumes/disk'
+volumes = require './volumes/dnode'
 
 docker = dockerjs host: configs.docker
 
@@ -131,7 +131,16 @@ containerSchema.methods.stop = (cb) ->
     if err then cb { code: 500, msg: 'error stopping docker container', err: err } else
       cb()
 
+containerSchema.methods.readDir = (path, cb) ->
+   # readDirectory: function(containerId, srcDir, name, path, cb) {
+  volumes.readDirectory "facbc1bd0d9e", '/root/', "root", path, (err, data) ->
+    if err
+      cb err, null
+    else
+      cb null, data
+
 containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
+  console.log "in listFiles"
   if default_tag
     files = [ ]
     async.forEachSeries @files, (file, cb) =>
@@ -152,6 +161,7 @@ containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
         cb null, files
   else
     if not content
+      console.dir(@files);
       if dir
         if path
           cb null, (file.toJSON() for file in @files when file.dir and file.path is path)

@@ -123,6 +123,11 @@ postrunnable = (req, res, next) ->
       if err then next err else
         res.json 201, container
 
+readDir = (req, res, next) ->
+  runnables.readDir req.params.runnableid, req.query.path, (err, dirContents) ->
+    if err then next err else
+      res.json 200, dirContents
+
 listfiles = (req, res, next) ->
   content = req.query.content?
   dir = req.query.dir?
@@ -161,6 +166,11 @@ app.del '/users/:userid/runnables/:runnableid', fetchuser, delrunnable
 
 app.get '/users/me/runnables/:runnableid/files', listfiles
 app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles
+
+app.get '/users/me/runnables/:runnableid/readDir', readDir
+
+# app.get '/users/me/runnables/:runnableid/fileTree', getFileTree
+
 
 ###
 app.post '/runnables/:id/files', (req, res, next) ->

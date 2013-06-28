@@ -3,7 +3,7 @@ dnode = require 'dnode'
 
 Volumes = { }
 
-d = dnode.connect configs.dnode
+d = dnode.connect("http://harbourmaster.runnableapp.com", 13337);
 
 d.on 'remote', (remote) ->
   if not remote.create then throw new Error 'volume does not implement create()'
@@ -31,6 +31,8 @@ d.on 'remote', (remote) ->
   Volumes.deleteFile = remote.deleteFile
   Volumes.deleteAllFiles = remote.deleteAllFiles
   Volumes.removeDirectory = remote.removeDirectory
+  Volumes.readDirectory = remote.readDirectory
+
 
 d.on 'error', (err) ->
   console.log err

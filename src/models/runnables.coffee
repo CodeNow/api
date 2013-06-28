@@ -277,6 +277,15 @@ Runnables =
         if not container then cb new error { code: 404, msg: 'runnable not found' } else
           container.listFiles content, dir, default_tag, path, cb
 
+  readDir: (runnableId, path, cb) ->
+    runnableId = decodeId runnableId
+    containers.findOne (err, container) ->
+    # containers.findOne _id: runnableId, (err, container) ->
+      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+        if not container then cb new error { code: 404, msg: 'runnable not found' } else
+          container.readDir path, cb
+
+
   createFile: (userId, runnableId, name, path, content, cb) ->
     runnableId = decodeId runnableId
     projects.findOne _id: runnableId, (err, project) ->
