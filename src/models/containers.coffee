@@ -5,7 +5,7 @@ dockerjs = require 'docker.js'
 error = require '../error'
 path = require 'path'
 mongoose = require 'mongoose'
-volumes = require './volumes/dnode'
+volumes = require './volumes/disk'
 
 docker = dockerjs host: configs.docker
 
@@ -141,7 +141,6 @@ containerSchema.methods.readDir = (path, cb) ->
       cb null, data
 
 containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
-  console.log "in listFiles"
   if default_tag
     files = [ ]
     async.forEachSeries @files, (file, cb) =>
@@ -162,7 +161,6 @@ containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
         cb null, files
   else
     if not content
-      console.dir(@files);
       if dir
         if path
           cb null, (file.toJSON() for file in @files when file.dir and file.path is path)
