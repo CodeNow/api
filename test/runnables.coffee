@@ -168,104 +168,39 @@ describe 'runnables api', ->
                                           res.body.should.have.property 'name', 'updated project name'
                                           done()
 
-  it 'should not be able to save a ::runnable you do not own', (done) ->
-    helpers.authedUser (err, user) ->
-      if err then done err else
-        user.post("http://localhost:#{configs.port}/users/me/runnables")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              runnableId = res.body._id
-              user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    publishedId = res.body._id
-                    helpers.authedUser (err, user2) ->
-                      if err then done err else
-                        user2.post("http://localhost:#{configs.port}/users/me/runnables")
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 201
-                              runnableId2 = res.body._id
-                              user2.put("http://localhost:#{configs.port}/runnables/#{publishedId}?from=#{runnableId2}")
-                                .end (err, res) ->
-                                  if err then done err else
-                                    res.should.have.status 403
-                                    res.body.should.have.property 'message', 'no permission to save'
-                                    done()
+  it 'should not be able to save a ::runnable you do not own'
 
   it 'should report error when saving/publishing a ::runnable that does not exist', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?from=51b2347626201e421a000002")
+        user.post("http://localhost:#{configs.port}/runnables?from=Uc9q4lfuYfE_AAA-")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 403
-              res.body.should.have.property 'message', 'runnable does not exist'
+              res.body.should.have.property 'message', 'source runnable not found'
               done()
 
-  it 'should not be able to access files of published ::runnables', (done) ->
-    helpers.authedUser (err, user) ->
-      if err then done err else
-        user.post("http://localhost:#{configs.port}/users/me/runnables")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              runnableId = res.body._id
-              user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    runnableId = res.body._id
-                    user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/files")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 404
-                          done()
-
-  it 'should be able to update an existing published ::runnable', (done) ->
-    helpers.authedUser (err, user) ->
-      if err then done err else
-        user.post("http://localhost:#{configs.port}/users/me/runnables")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              newRunnableId = res.body._id
-              user.post("http://localhost:#{configs.port}/runnables?from=#{newRunnableId}")
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    res.body.should.have.property 'image'
-                    res.body.should.not.have.property 'container'
-                    runnableId = res.body._id
-                    user.put("http://localhost:#{configs.port}/runnables/#{runnableId}?from=#{newRunnableId}")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 200
-                          res.body.should.have.property 'image'
-                          res.body.should.not.have.property 'container'
-                          done()
-
   it 'should be able to delete a published ::runnable that you own', (done) ->
-    helpers.authedUser (err, user) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/users/me/runnables")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              runnableId = res.body._id
-              user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    publishedRunnableId = res.body._id
-                    user.del("http://localhost:#{configs.port}/runnables/#{publishedRunnableId}")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 200
-                          res.body.should.have.property 'message', 'runnable deleted'
-                          done()
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  runnableId = res.body._id
+                  user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        publishedRunnableId = res.body._id
+                        user.del("http://localhost:#{configs.port}/runnables/#{publishedRunnableId}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.have.property 'message', 'runnable deleted'
+                              done()
 
   it 'should create a ::runnable from an existing published one that someone else owns', (done) ->
     helpers.authedUser (err, user) ->
@@ -287,25 +222,6 @@ describe 'runnables api', ->
                           done()
 
   it 'should create a ::runnable from an existing published one that someone else owns and save to new', (done) ->
-    helpers.authedUser (err, user) ->
-      if err then done err else
-        user.post("http://localhost:#{configs.port}/users/me/runnables")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              runnableId = res.body._id
-              user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    publishedId = res.body._id
-                    user.post("http://localhost:#{configs.port}/users/me/runnables?base=#{publishedId}")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 201
-                          done()
-
-  it 'should create a ::runnable from an existing published one that you own and save as existing', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
         user.post("http://localhost:#{configs.port}/users/me/runnables")
@@ -376,44 +292,6 @@ describe 'runnables api', ->
                     res.should.have.property 'body'
                     res.body.should.have.property '_id', runnableId
                     done()
-
-  it 'should be able to retrieve a ::runnable with inline comments', (done) ->
-    helpers.authedUser (err, user) ->
-      if err then done err else
-        helpers.createPublishedProject user, (err, runnableId) ->
-          if err then done err else
-            oldSalt = apiserver.configs.passwordSalt
-            delete apiserver.configs.passwordSalt
-            user2 = sa.agent()
-            user2.post("http://localhost:#{configs.port}/token")
-              .set('Content-Type', 'application/json')
-              .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  token = res.body.access_token
-                  user2.post("http://localhost:#{configs.port}/runnables/#{runnableId}/comments")
-                    .set('content-type', 'application/json')
-                    .set('runnable-token', token)
-                    .send(JSON.stringify(text: "this is a comment"))
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 201
-                        res.should.have.property 'body'
-                        user.get("http://localhost:#{configs.port}/runnables/#{runnableId}?comments=true")
-                          .set('runnable-token', token)
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 200
-                              res.should.have.property 'body'
-                              res.body.should.have.property '_id', runnableId
-                              res.body.should.have.property 'comments'
-                              res.body.comments.should.be.a.array
-                              res.body.comments.length.should.be.above 0
-                              res.body.comments[0].should.have.property 'gravitar'
-                              res.body.comments[0].should.have.property 'username', 'matchusername5'
-                              apiserver.configs.passwordSalt = oldSalt
-                              done()
 
   it 'should return bad request if the ::runnable id is invalid', (done) ->
     helpers.authedUser (err, user) ->

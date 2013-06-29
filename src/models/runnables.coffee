@@ -26,7 +26,7 @@ Runnables =
       from = decodeId from
       containers.findOne { _id: from }, (err, container) ->
         if err then cb new error { code: 500, msg: 'error fetching container from mongodb'} else
-          if not container then cb new error { code: 400, msg: 'source runnable not found' } else
+          if not container then cb new error { code: 403, msg: 'source runnable not found' } else
             images.create container, handler
 
   createContainer: (userId, from, cb) ->
@@ -73,6 +73,24 @@ Runnables =
                 if not user then cb new error { code: 404, msg: 'user not found' } else
                   if user.permission_level <= 1 then cb new error { code: 403, msg: 'permission denied' } else
                     remove()
+
+  removeImage: (userId, runnableId, cb) ->
+    runnableId = decodeId runnableId
+    remove = () ->
+      images.destroy runnableId, (err) ->
+        if err then cb err else cb()
+    images.findOne _id: runnableId, (err, image) ->
+      if err then cb new error { code: 500, msg: 'error querying mongodb' } else
+        if not image then cb new error { code: 404, msg: 'runnable not found' } else
+          if image.owner.toString() is userId.toString() then remove() else
+            users.findUser _id: userId, (err, user) ->
+              if err then cb new error { code: 500, msg: 'error looking up user' } else
+                if not user then cb new error { code: 404, msg: 'user not found' } else
+                  if user.permission_level <= 1 then cb new error { code: 403, msg: 'permission denied' } else
+                    for vote in user.votes
+                      if vote.runnable.toString() is image._id.toString()
+                        vote.remove()
+                   remove()
 
   updateName: (userId, runnableId, newName, cb) ->
     runnableId = decodeId runnableId
@@ -135,24 +153,6 @@ Runnables =
                   container.stop (err) ->
                     if err then cb err else
                       response()
-
-  delete: (userId, runnableId, cb) ->
-    runnableId = decodeId runnableId
-    removeProject = () ->
-      projects.destroy runnableId, (err) ->
-        if err then cb err else cb()
-    projects.findOne _id: runnableId, (err, project) ->
-      if err then cb new error { code: 500, msg: 'error querying mongodb' } else
-        if not project then cb new error { code: 404, msg: 'runnable not found' } else
-          if project.owner.toString() is userId.toString() then removeProject() else
-            users.findUser _id: userId, (err, user) ->
-              if err then cb new error { code: 500, msg: 'error looking up user' } else
-                if not user then cb new error { code: 404, msg: 'user not found' } else
-                  if user.permission_level <= 1 then cb new error { code: 403, msg: 'permission denied' } else
-                    for vote in user.votes
-                      if vote.runnable.toString() is project._id.toString()
-                        vote.remove()
-                    removeProject()
 
   isOwner: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
