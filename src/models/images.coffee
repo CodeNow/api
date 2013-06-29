@@ -95,6 +95,7 @@ imageSchema.statics.create = (container, cb) ->
     parent: container.parent
     cmd: container.cmd
     file_root: container.file_root
+    port: container.port
   for file in container.files
     image.files.push file.toJSON()
   for tag in container.tags

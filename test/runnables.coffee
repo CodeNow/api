@@ -203,23 +203,27 @@ describe 'runnables api', ->
                               done()
 
   it 'should create a ::runnable from an existing published one that someone else owns', (done) ->
-    helpers.authedUser (err, user) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/users/me/runnables")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              runnableId = res.body._id
-              user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    publishedId = res.body._id
-                    user.post("http://localhost:#{configs.port}/users/me/runnables?base=#{publishedId}")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 201
-                          done()
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  privateRunnableId = res.body._id
+                  user.post("http://localhost:#{configs.port}/runnables?from=#{privateRunnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        publishedId = res.body._id
+                        helpers.authedUser (err, user2) ->
+                          if err then done err else
+                            user2.post("http://localhost:#{configs.port}/users/me/runnables?from=#{publishedId}")
+                              .end (err, res) ->
+                                if err then done err else
+                                  res.should.have.status 201
+                                  done()
 
   it 'should create a ::runnable from an existing published one that someone else owns and save to new', (done) ->
     helpers.authedUser (err, user) ->
