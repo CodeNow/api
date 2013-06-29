@@ -9,5 +9,6 @@
   "shortProjectIds": true,
   "logRequests": true,
   "throwErrors": true,
-  "volumesPath": "{HOME_DIR}/.runnable/volumes"
+  "volumesPath": "{HOME_DIR}/.runnable/volumes",
+  "showStack": true
 }

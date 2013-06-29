@@ -8,7 +8,7 @@ runnables = require '../models/runnables'
 app = module.exports = express()
 
 app.post '/runnables', (req, res, next) ->
-  from = req.body.from or 'node.js'
+  from = req.query.from or 'node.js'
   runnables.createImage req.user_id, from, (err, image) ->
     if err then next err else
       res.json 201, image
@@ -40,22 +40,17 @@ app.get '/runnables', (req, res, next) ->
       if err then next err else
         res.json results
 
+app.put '/runnables/:id', (req, res, next) ->
+  if not req.query.from then next new error { code: 400, msg: 'must provide a runnable to save from' } else
+    runnables.updateImage req.user_id, req.params.id, req.query.from, (err, image) ->
+      if err then next err else
+        res.json image
+
 app.get '/runnables/:id', (req, res, next) ->
   fetchComments = false
   runnables.get req.params.id, fetchComments, (err, runnable) ->
     if err then next err else
       res.json runnable
-
-app.put '/runnables/:id', (req, res, next) ->
-  if not req.body.running? then next new error { code: 400, msg: 'must provide a running parameter' } else
-    if req.body.running
-      runnables.start req.user_id, req.params.id, (err, runnable) ->
-        if err then next err else
-          res.json runnable
-    else
-      runnables.stop req.user_id, req.params.id, (err, runnable) ->
-        if err then next err else
-          res.json runnable
 
 app.del '/runnables/:id', (req, res, next) ->
   runnables.delete req.user_id, req.params.id, (err) ->

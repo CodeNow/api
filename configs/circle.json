@@ -7,5 +7,6 @@
   "defaultPageLimit": 25,
   "docker": "http://54.215.13.107",
   "shortProjectIds": true,
-  "volumesPath": "{RAND_DIR}/volumes"
+  "volumesPath": "{RAND_DIR}/volumes",
+  "showStack": true
 }

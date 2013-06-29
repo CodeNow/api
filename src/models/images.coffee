@@ -95,19 +95,17 @@ imageSchema.statics.create = (container, cb) ->
     parent: container.parent
     cmd: container.cmd
     file_root: container.file_root
-  for files in container.files
+  for file in container.files
     image.files.push file.toJSON()
   for tag in container.tags
     image.tags.push tag.toJSON()
-  # might have to check for changes, if none, create image from another image (instead of commit)
   docker.commit
     queryParams:
       container: container.docker_id
       m: "#{container.parent} => #{image._id}"
       author: image.owner.toString()
-      run: image.cmd
   , (err, result) ->
-    if err then cb new error { code: 500, msg: 'error creating docker image', err: err } else
+    if err then cb new error { code: 500, msg: 'error creating docker image' } else
       image.docker_id = result.Id
       image.save (err) ->
         if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
@@ -127,5 +125,29 @@ imageSchema.statics.listTags = (cb) ->
   @find().distinct 'tags', (err, tags) ->
     if err then cb new error { code: 500, msg: 'error retrieving project tags', err: err } else
       cb null, tags
+
+imageSchema.methods.updateFromContainer = (container, cb) ->
+  @owner = container.owner
+  @name = container.name
+  @parent = container.parent
+  @cmd = container.cmd
+  @file_root = container.file_root
+  @files = [ ]
+  for file in container.files
+    @files.push file.toJSON()
+  @tags = [ ]
+  for tag in container.tags
+    @tags.push tag.toJSON()
+  docker.commit
+    queryParams:
+      container: container.docker_id
+      m: "#{container.parent} => #{@_id}"
+      author: @owner.toString()
+  , (err, result) =>
+    if err then cb new error { code: 500, msg: 'error creating docker image' } else
+      @docker_id = result.Id
+      @save (err) =>
+        if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
+          cb null, @
 
 module.exports = mongoose.model 'Images', imageSchema

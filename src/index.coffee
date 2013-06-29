@@ -1,5 +1,7 @@
 require('source-map-support').install()
 configs = require './configs'
+domain = require 'domain'
+error = require './error'
 express = require 'express'
 http = require 'http'
 mongoose = require 'mongoose'
@@ -11,6 +13,10 @@ mongoose.connect configs.mongo
 
 app = express()
 
+app.use (req, res, next) ->
+  d = domain.create()
+  d.on 'error', next
+  d.run next
 if configs.logRequests then app.use express.logger()
 app.use express.bodyParser()
 app.use users
@@ -18,12 +24,15 @@ app.use runnables
 app.use channels
 app.use app.router
 app.use (err, req, res, next) ->
-  if err.msg and err.code
-    if configs.throwErrors and err.err then throw err.err else
-      res.json err.code, message: err.msg
+  json_err = { }
+  if configs.showStack
+    json_err.stack = err.stack
+  if err instanceof error
+    json_err.message = err.msg
+    res.json err.code, json_err
   else
-    if err then throw err else
-      res.json 500, { message: 'something bad happened' }
+    json_err.message = 'something bad happened'
+    res.json 500, json_err
 
 app.get '/', (req, res) -> res.json { message: 'hello!' }
 app.get '/throws', -> throw new Error 'zomg'

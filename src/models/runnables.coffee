@@ -26,7 +26,7 @@ Runnables =
     else
       from = decodeId from
       containers.findOne { _id: from }, (err, container) ->
-        if err then cb err else
+        if err then cb new error { code: 500, msg: 'error fetching container from mongodb'} else
           if not container then cb new error { code: 400, msg: 'source runnable not found' } else
             images.create container, handler
 
@@ -74,6 +74,68 @@ Runnables =
                 if not user then cb new error { code: 404, msg: 'user not found' } else
                   if user.permission_level <= 1 then cb new error { code: 403, msg: 'permission denied' } else
                     remove()
+
+  updateName: (userId, runnableId, newName, cb) ->
+    runnableId = decodeId runnableId
+    containers.findOne _id: runnableId, (err, container) ->
+      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+        if not container then cb new error { code: 404, msg: 'runnable not found' } else
+          if container.owner.toString() isnt userId.toString() then cb new error { code: 403, msg: 'permission denied' } else
+            container.name = newName;
+            container.save (err) ->
+              if err then cb new error { code: 500, msg: 'error saving runnable to mongodb'} else
+                cb();
+
+  updateImage: (userId, runnableId, from, cb) ->
+    runnableId = decodeId runnableId
+    from = decodeId from
+    images.findOne _id: runnableId, (err, image) ->
+      if err then cb new error { code: 500, msg: 'error looking up runnable in mongodb' } else
+        if not image then cb new error { code: 404, msg: 'Published runnable does not exist' } else
+          containers.findOne _id: from, (err, container) ->
+            if err then cb new error { code: 500, msg: 'Error looking up container to save from in mongodb' } else
+              if not container then new error { code: 403, msg: 'source container to copy from does not exist' } else
+                image.updateFromContainer container, (err, image) ->
+                  if err then cb err else
+                    cb null, image
+
+  startContainer: (userId, runnableId, cb) ->
+    runnableId = decodeId runnableId
+    containers.findOne _id: runnableId, (err, container) ->
+      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+        if not container then cb new error { code: 404, msg: 'runnable not found' } else
+          if container.owner.toString() isnt userId.toString() then cb new error { code: 403, msg: 'permission denied' } else
+            container.getProcessState (err, state) ->
+              if err then cb err else
+                response = () ->
+                  json_project = container.toJSON()
+                  json_project._id = encodeId json_project._id
+                  if json_project.parent then json_project.parent = encodeId json_project.parent
+                  json_project.state = state
+                  cb null, json_project
+                if state.running then response() else
+                  container.start (err) ->
+                    if err then cb err else
+                      response()
+
+  stopContainer: (userId, runnableId, cb) ->
+    runnableId = decodeId runnableId
+    containers.findOne _id: runnableId, (err, container) ->
+      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+        if not container then cb new error { code: 404, msg: 'runnable not found' } else
+          if container.owner.toString() isnt userId.toString() then cb new error { code: 403, msg: 'permission denied' } else
+            container.getProcessState (err, state) ->
+              if err then cb err else
+                response = () ->
+                  json_project = container.toJSON()
+                  json_project._id = encodeId json_project._id
+                  if json_project.parent then json_project.parent = encodeId json_project.parent
+                  json_project.state = state
+                  cb null, json_project
+                if not state.running then response() else
+                  container.stop (err) ->
+                    if err then cb err else
+                      response()
 
   delete: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -125,38 +187,6 @@ Runnables =
                 if json_project.parent then json_project.parent = encodeId json_project.parent
                 json_project.state = state
                 cb null, json_project
-
-  start: (userId, runnableId, cb) ->
-    runnableId = decodeId runnableId
-    projects.findOne _id: runnableId, (err, project) ->
-      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
-        if not project then cb new error { code: 404, msg: 'runnable not found' } else
-          if project.owner.toString() isnt userId.toString() then cb new error { code: 403, msg: 'permission denied' } else
-            project.start (err) ->
-              if err then cb err else
-                project.containerState (err, state) ->
-                  if err then cb err else
-                    json_project = project.toJSON()
-                    json_project._id = encodeId json_project._id
-                    if json_project.parent then json_project.parent = encodeId json_project.parent
-                    json_project.state = state
-                    cb null, json_project
-
-  stop: (userId, runnableId, cb) ->
-    runnableId = decodeId runnableId
-    projects.findOne _id: runnableId, (err, project) ->
-      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
-        if not project then cb new error { code: 404, msg: 'runnable not found' } else
-          if project.owner.toString() isnt userId.toString() then cb new error { code: 403, msg: 'permission denied' } else
-            project.stop (err) ->
-              if err then cb err else
-                project.containerState (err, state) ->
-                  if err then cb err else
-                    json_project = project.toJSON()
-                    json_project._id = encodeId json_project._id
-                    if json_project.parent then json_project.parent = encodeId json_project.parent
-                    json_project.state = state
-                    cb null, json_project
 
   getVotes: (runnableId, cb) ->
     runnableId = decodeId runnableId
