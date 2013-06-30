@@ -47,8 +47,7 @@ app.put '/runnables/:id', (req, res, next) ->
         res.json image
 
 app.get '/runnables/:id', (req, res, next) ->
-  fetchComments = false
-  runnables.get req.params.id, fetchComments, (err, runnable) ->
+  runnables.getImage req.params.id, (err, runnable) ->
     if err then next err else
       res.json runnable
 

@@ -38,15 +38,17 @@ Helpers =
               cb null, res.body._id
 
   createPublishedProject: (user, cb) ->
-    user.post("http://localhost:#{configs.port}/users/me/runnables")
-      .end (err, res) ->
-        if err then cb err else
-          res.should.have.status 201
-          runnableId = res.body._id
-          user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
-            .end (err, res) ->
-              if err then cb err else
-                res.should.have.status 201
-                cb null, res.body._id
+    @createImage 'node.js', (err, runnableId) ->
+      if err then cb err else
+        user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+          .end (err, res) ->
+            if err then cb err else
+              res.should.have.status 201
+              ownRunnableId = res.body._id
+              user.post("http://localhost:#{configs.port}/runnables?from=#{ownRunnableId}")
+                .end (err, res) ->
+                  if err then cb err else
+                    res.should.have.status 201
+                    cb null, res.body._id
 
 module.exports = Helpers

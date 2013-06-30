@@ -21,7 +21,7 @@ beforeEach (done) ->
       userId = null
       async.series [
         (cb) ->
-          test_db.collection 'projects', (err, projects) ->
+          test_db.collection 'images', (err, projects) ->
             async.forEachSeries state.Projects, (project, cb) ->
               projects.insert project, (err, project) ->
                 if err then cb err else
@@ -41,7 +41,7 @@ beforeEach (done) ->
                   cb()
             , cb
         (cb) ->
-          test_db.collection 'projects', (err, projects) ->
+          test_db.collection 'images', (err, projects) ->
             if err then cb err else
               projects.update { }, { $set: owner: userId }, cb
       ], (err) ->
