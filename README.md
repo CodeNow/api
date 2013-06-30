@@ -1,5 +1,15 @@
 ![Alt text](https://circleci.com/gh/CodeNow/api-server.png?circle-token=f2016db7bc53765c63d03a92fcfdf20330233a1f)
 
+Getting started
+==========
+
+* Setup harbourmaster, runnable-web and api-server
+* Create a username/password
+* Create your first Runnable like this
+	curl -X POST -H "runnable-token:2cfa32ca-a6ba-4113-857c-312b65b441b5" http://localhost:3030/runnables
+
+	You can find your access token in the console stream of runnable-web
+
 api-server
 ==========
 
