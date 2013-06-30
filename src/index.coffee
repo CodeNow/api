@@ -27,7 +27,7 @@ app.use (err, req, res, next) ->
   json_err = { }
   if configs.showStack
     json_err.stack = err.stack
-  if err instanceof error
+  if err.code and err.msg
     json_err.message = err.msg
     res.json err.code, json_err
   else
