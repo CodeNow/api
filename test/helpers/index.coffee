@@ -37,6 +37,20 @@ Helpers =
               res.should.have.status 201
               cb null, res.body._id
 
+  createContainer: (name, cb) ->
+    @authedUser (err, user) ->
+      if err then cb err else
+        user.post("http://localhost:#{configs.port}/runnables?from=node.js")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              runnableId = res.body._id
+              user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                .end (err, res) ->
+                  res.should.have.status 201
+                  if err then cb err else
+                    cb null, user, res.body._id
+
   createPublishedProject: (user, cb) ->
     @createImage 'node.js', (err, runnableId) ->
       if err then cb err else

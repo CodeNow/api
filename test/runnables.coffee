@@ -425,7 +425,6 @@ describe 'runnables api', ->
           if err then done err else
             user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
               .end (err, res) ->
-                console.log res.body
                 if err then done err else
                   res.should.have.status 201
                   res.body.should.have.property 'state'
@@ -450,6 +449,7 @@ describe 'runnables api', ->
                   res.should.have.status 201
                   res.body.should.have.property 'state'
                   res.body.state.should.have.property 'running', false
+                  res.body.should.have.property 'name'
                   name = res.body.name
                   runnableId = res.body._id
                   user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
@@ -479,6 +479,7 @@ describe 'runnables api', ->
                   res.should.have.status 201
                   res.body.should.have.property 'state'
                   res.body.state.should.have.property 'running', false
+                  name = res.body.name
                   runnableId = res.body._id
                   user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                     .end (err, res) ->
@@ -488,7 +489,7 @@ describe 'runnables api', ->
                         res.body.state.should.have.property 'running', false
                         user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                           .set('content-type', 'application/json')
-                          .send(JSON.stringify({ running: true }))
+                          .send(JSON.stringify({ running: true, name: name}))
                           .end (err, res) ->
                             if err then done err else
                               res.should.have.status 200
@@ -502,7 +503,7 @@ describe 'runnables api', ->
                                     res.body.state.should.have.property 'running', true
                                     user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                                       .set('content-type', 'application/json')
-                                      .send(JSON.stringify({ running: false }))
+                                      .send(JSON.stringify({ running: false, name: name }))
                                       .end (err, res) ->
                                         if err then done err else
                                           res.should.have.status 200
@@ -550,10 +551,11 @@ describe 'runnables api', ->
                   res.should.have.status 201
                   res.body.should.have.property 'state'
                   res.body.state.should.have.property 'running', false
+                  name = res.body.name
                   runnableId = res.body._id
                   user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                     .set('content-type', 'application/json')
-                    .send(JSON.stringify({ running: true }))
+                    .send(JSON.stringify({ running: true, name: name }))
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200

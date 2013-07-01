@@ -8,6 +8,7 @@ path = require 'path'
 mongoose = require 'mongoose'
 request = require 'request'
 sa = require 'superagent'
+volumes = require 'volumes'
 
 docker = dockerjs host: configs.docker
 
@@ -85,7 +86,12 @@ imageSchema.statics.createFromDisk = (owner, name, cb) ->
           if res.statusCode isnt 200 then cb new error { code: res.status, msg: body } else
             if body.indexOf('Successfully built') is -1 then cb new error { code: 500, msg: 'could not build image from dockerfile' } else
               image.docker_id = image._id.toString()
-              image.save cb
+              image.save (err) ->
+                if err then new error { code: 500, msg: 'error saving image to mongodb' } else
+                  volumes.create image._id, (err) ->
+                    if err then cb err else
+                    cb null, image
+
     child.stdout.pipe req
 
 imageSchema.statics.create = (container, cb) ->
@@ -126,6 +132,12 @@ imageSchema.statics.listTags = (cb) ->
   @find().distinct 'tags', (err, tags) ->
     if err then cb new error { code: 500, msg: 'error retrieving project tags', err: err } else
       cb null, tags
+
+imageSchema.statics.isOwner = (userId, runnableId, cb) ->
+  @findOne _id: runnableId, (err, image) ->
+    if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+      if not image then cb new error { code: 404, msg: 'runnable not found' } else
+        cb null, image.owner.toString() is userId.toString()
 
 imageSchema.methods.updateFromContainer = (container, cb) ->
   @owner = container.owner

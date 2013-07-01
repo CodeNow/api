@@ -68,12 +68,9 @@ app.get '/runnables/:id/tags', (req, res, next) ->
 
 app.post '/runnables/:id/tags', (req, res, next) ->
   if not req.body.name then next new error { code: 400, msg: 'tag must include a name field' } else
-    users.findUser _id: req.user_id, (err, user) ->
+    runnables.addTag req.user_id, req.params.id, req.body.name, (err, tag) ->
       if err then next err else
-        if user.permission_level < 1 then next new error { code: 403, msg: 'permission denied' } else
-          runnables.addTag req.user_id, req.params.id, req.body.name, (err, tag) ->
-            if err then next err else
-              res.json 201, tag
+        res.json 201, tag
 
 app.get '/runnables/:id/tags/:tagId', (req, res, next) ->
   runnables.getTag req.params.id, req.params.tagId, (err, tag) ->

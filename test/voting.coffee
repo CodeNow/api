@@ -9,26 +9,25 @@ describe 'voting api', ->
   it 'should not allow a user to ::vote without specifying runnable', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+        user.post("http://localhost:#{configs.port}/runnables?from=node.js")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
               res.should.have.property 'body'
               runnableId = res.body._id
-              process.nextTick () ->
-                user.post("http://localhost:#{configs.port}/users/me/votes")
-                  .set('content-type', 'application/json')
-                  .send(JSON.stringify( {  } ))
-                  .end (err, res) ->
-                    if err then done err else
-                      res.should.have.status 400
-                      res.body.should.have.property 'message', 'must include runnable to vote on'
-                      done()
+              user.post("http://localhost:#{configs.port}/users/me/votes")
+                .set('content-type', 'application/json')
+                .send(JSON.stringify( {  } ))
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 400
+                    res.body.should.have.property 'message', 'must include runnable to vote on'
+                    done()
 
   it 'should not allow a user to ::vote for their own ::runnable', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+        user.post("http://localhost:#{configs.port}/runnables?from=node.js")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
@@ -46,7 +45,7 @@ describe 'voting api', ->
   it 'should allow a user to ::vote for a ::runnable they do not own', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+        user.post("http://localhost:#{configs.port}/runnables?from=node.js")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
