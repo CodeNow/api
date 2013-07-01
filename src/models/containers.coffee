@@ -141,6 +141,11 @@ containerSchema.methods.readDir = (path, cb) ->
     else
       cb null, data
 
+containerSchema.methods.changeFile = (path, content, cb) ->
+  console.log("path is", path, "content is", content);
+#  updateFile: function(containerId, srcDir, path, content, cb)
+  volumes.updateFile("facbc1bd0d9e", '/root/', path, content, cb)
+
 containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
   if default_tag
     files = [ ]

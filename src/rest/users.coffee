@@ -147,6 +147,11 @@ readDir = (req, res, next) ->
     if err then next err else
       res.json 200, dirContents
 
+changeFile = (req, res, next) ->
+  runnables.changeFile req.params.runnableid, req.body.path, req.body.content, (err, updated) ->
+    if err then next err else
+      res.json 200, updated
+
 listfiles = (req, res, next) ->
   content = req.query.content?
   dir = req.query.dir?
@@ -193,6 +198,8 @@ app.get '/users/me/runnables/:runnableid/files', listfiles
 app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles
 
 app.get '/users/me/runnables/:runnableid/readDir', readDir
+
+app.post '/users/me/runnables/:runnableid/changeFile', changeFile
 
 # app.get '/users/me/runnables/:runnableid/fileTree', getFileTree
 
