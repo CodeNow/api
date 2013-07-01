@@ -137,7 +137,6 @@ Runnables =
           json_project = image.toJSON()
           json_project._id = encodeId json_project._id
           if json_project.parent then json_project.parent = encodeId json_project.parent
-          json_project.state = state
           cb null, json_project
 
   startContainer: (userId, runnableId, cb) ->
