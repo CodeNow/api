@@ -134,13 +134,11 @@ Runnables =
     images.findOne _id: runnableId, (err, image) ->
       if err then cb new error { code: 500, msg: 'error looking up runnable' } else
         if not image then cb new error { code: 404, msg: 'runnable not found' } else
-          image.getProcessState (err, state) ->
-            if err then cb err else
-              json_project = image.toJSON()
-              json_project._id = encodeId json_project._id
-              if json_project.parent then json_project.parent = encodeId json_project.parent
-              json_project.state = state
-              cb null, json_project
+          json_project = image.toJSON()
+          json_project._id = encodeId json_project._id
+          if json_project.parent then json_project.parent = encodeId json_project.parent
+          json_project.state = state
+          cb null, json_project
 
   startContainer: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
