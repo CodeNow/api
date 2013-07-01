@@ -1,3 +1,4 @@
+require('source-map-support').install()
 configs = require './configs'
 express = require 'express'
 http = require 'http'
