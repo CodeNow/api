@@ -175,7 +175,7 @@ Runnables =
                   json_project = container.toJSON()
                   json_project._id = encodeId json_project._id
                   if json_project.parent then json_project.parent = encodeId json_project.parent
-                  json_project.state = instanceofte
+                  json_project.state = state
                   cb null, json_project
                 if not state.running then response state else
                   container.stop (err) ->
