@@ -1,4 +1,3 @@
-require('source-map-support').install()
 configs = require './configs'
 domain = require 'domain'
 error = require './error'

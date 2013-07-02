@@ -2,8 +2,9 @@ async = require 'async'
 cp = require 'child_process'
 configs = require '../configs'
 crypto = require 'crypto'
-error = require '../error'
 dockerjs = require 'docker.js'
+error = require '../error'
+fs = require 'fs'
 path = require 'path'
 mongoose = require 'mongoose'
 request = require 'request'
@@ -89,9 +90,15 @@ imageSchema.statics.createFromDisk = (owner, name, cb) ->
               image.save (err) ->
                 if err then new error { code: 500, msg: 'error saving image to mongodb' } else
                   volumes.create image._id, (err) ->
-                    if err then cb err else
-                    cb null, image
-
+                    async.forEach runnable.files, (file, cb) ->
+                      fs.readFile "#{runnablePath}/#{name}/#{file.content}", 'base64', (err, content) ->
+                        if err then cb new error { code: 500, msg: 'error reading source file for building image' } else
+                          volumes.createFile image._id, file.name, file.path, content, (err) ->
+                            if err then cb new error { code: 500, msg: 'error writing source files to disk' } else
+                              cb()
+                    , (err) ->
+                      if err then cb err else
+                        cb null, image
     child.stdout.pipe req
 
 imageSchema.statics.create = (container, cb) ->
@@ -116,7 +123,9 @@ imageSchema.statics.create = (container, cb) ->
       image.docker_id = result.Id
       image.save (err) ->
         if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
-          cb null, image
+          volumes.copy container._id, image._id, (err) ->
+            if err then cb err else
+              cb null, image
 
 imageSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, image) =>

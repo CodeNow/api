@@ -1,3 +1,4 @@
+require('source-map-support').install()
 var api_server = require('./lib');
 var cluster = require('cluster');
 var os = require('os');

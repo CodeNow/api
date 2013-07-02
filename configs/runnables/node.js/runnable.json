@@ -17,9 +17,5 @@
       "default": false
     }
   ],
-  "tags": [
-    {
-      "name": "node.js"
-    }
-  ]
+  "tags": [ ]
 }

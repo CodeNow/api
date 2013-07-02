@@ -821,7 +821,6 @@ describe 'files api', ->
               res.should.have.status 201
               user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files?content=true")
                 .end (err, res) ->
-                  console.log res.body.message
                   if err then done err else
                     res.should.have.status 200
                     res.body.should.be.a.array

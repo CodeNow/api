@@ -86,7 +86,7 @@ containerSchema.statics.create = (owner, image, cb) ->
       container.docker_id = res.Id
       container.save (err) ->
         if err then cb new error { code: 500, msg: 'error saving container metadata to mongodb' } else
-          volumes.create container._id, (err) ->
+          volumes.copy image._id, container._id, (err) ->
             if err then cb err else
               cb null, container
 

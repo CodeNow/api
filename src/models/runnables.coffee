@@ -251,7 +251,7 @@ Runnables =
     runnableId = decodeId runnableId
     images.findOne _id: runnableId, (err, image) ->
       if err then cb new error { code: 500, msg: 'error looking up runnable' } else
-        if not project then cb new error { code: 404, msg: 'runnable not found' } else
+        if not image then cb new error { code: 404, msg: 'runnable not found' } else
           cb null, image.tags
 
   getTag: (runnableId, tagId, cb) ->

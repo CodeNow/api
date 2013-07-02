@@ -26,7 +26,7 @@ Volumes =
   copy: (src, dst, cb) ->
     srcPath = "#{configs.volumesPath}/#{src}"
     dstPath = "#{configs.volumesPath}/#{dst}"
-    wrench.copyDirRecursive srcPath, dstPath, (err) ->
+    wrench.copyDirRecursive srcPath, dstPath, { }, (err) ->
       if err then cb new error { code: 500, msg: 'error copying existing volume to new volume' } else
         cb()
 
