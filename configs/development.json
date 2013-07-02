@@ -9,18 +9,5 @@
   "shortProjectIds": true,
   "logRequests": true,
   "throwErrors": true,
-  "volumesPath": "{HOME_DIR}/.runnable/volumes",
-  "runnables":  {
-    "node.js": {
-      "image": "runnable",
-      "name": "hello node.js",
-      "files" : [
-         {
-            "name": "server.js",
-            "path": "/",
-            "default": true
-         }
-      ]
-    }
-  }
+  "volumesPath": "{HOME_DIR}/.runnable/volumes"
 }

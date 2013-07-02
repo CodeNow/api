@@ -7,18 +7,5 @@
   "defaultPageLimit": 25,
   "docker": "http://54.215.13.107",
   "shortProjectIds": true,
-  "volumesPath": "{RAND_DIR}/volumes",
-  "runnables":  {
-    "node.js": {
-      "image": "runnable",
-      "name": "hello node.js",
-      "files" : [
-         {
-            "name": "server.js",
-            "path": "/",
-            "default": true
-         }
-      ]
-    }
-  }
+  "volumesPath": "{RAND_DIR}/volumes"
 }

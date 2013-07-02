@@ -316,7 +316,45 @@ describe 'runnables api', ->
                           res.body.should.have.property 'message', 'runnable deleted'
                           done()
 
-  it 'should create a ::runnable from an existing published one', (done) ->
+  it 'should create a ::runnable from an existing published one that someone else owns', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.post("http://localhost:#{configs.port}/users/me/runnables")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              runnableId = res.body._id
+              user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+                .end (err) ->
+                  if err then done err else
+                    res.should.have.status 201
+                    publishedId = res.body._id
+                    user.post("http://localhost:#{configs.port}/users/me/runnables?base=#{publishedId}")
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 201
+                          done()
+
+  it 'should create a ::runnable from an existing published one that someone else owns and save to new', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.post("http://localhost:#{configs.port}/users/me/runnables")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              runnableId = res.body._id
+              user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+                .end (err) ->
+                  if err then done err else
+                    res.should.have.status 201
+                    publishedId = res.body._id
+                    user.post("http://localhost:#{configs.port}/users/me/runnables?base=#{publishedId}")
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 201
+                          done()
+
+  it 'should create a ::runnable from an existing published one that you own and save as existing', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
         user.post("http://localhost:#{configs.port}/users/me/runnables")
@@ -391,43 +429,40 @@ describe 'runnables api', ->
   it 'should be able to retrieve a ::runnable with inline comments', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              res.should.have.property 'body'
-              runnableId = res.body._id
-              oldSalt = apiserver.configs.passwordSalt
-              delete apiserver.configs.passwordSalt
-              user.post("http://localhost:#{configs.port}/token")
-                .set('Content-Type', 'application/json')
-                .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 200
-                    token = res.body.access_token
-                    user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/comments")
-                      .set('content-type', 'application/json')
-                      .set('runnable-token', token)
-                      .send(JSON.stringify(text: "this is a comment"))
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 201
-                          res.should.have.property 'body'
-                          user.get("http://localhost:#{configs.port}/runnables/#{runnableId}?comments=true")
-                            .set('runnable-token', token)
-                            .end (err, res) ->
-                              if err then done err else
-                                res.should.have.status 200
-                                res.should.have.property 'body'
-                                res.body.should.have.property '_id', runnableId
-                                res.body.should.have.property 'comments'
-                                res.body.comments.should.be.a.array
-                                res.body.comments.length.should.be.above 0
-                                res.body.comments[0].should.have.property 'gravitar'
-                                res.body.comments[0].should.have.property 'username', 'matchusername5'
-                                apiserver.configs.passwordSalt = oldSalt
-                                done()
+        helpers.createPublishedProject user, (err, runnableId) ->
+          if err then done err else
+            oldSalt = apiserver.configs.passwordSalt
+            delete apiserver.configs.passwordSalt
+            user2 = sa.agent()
+            user2.post("http://localhost:#{configs.port}/token")
+              .set('Content-Type', 'application/json')
+              .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  token = res.body.access_token
+                  user2.post("http://localhost:#{configs.port}/runnables/#{runnableId}/comments")
+                    .set('content-type', 'application/json')
+                    .set('runnable-token', token)
+                    .send(JSON.stringify(text: "this is a comment"))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        res.should.have.property 'body'
+                        user.get("http://localhost:#{configs.port}/runnables/#{runnableId}?comments=true")
+                          .set('runnable-token', token)
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.should.have.property 'body'
+                              res.body.should.have.property '_id', runnableId
+                              res.body.should.have.property 'comments'
+                              res.body.comments.should.be.a.array
+                              res.body.comments.length.should.be.above 0
+                              res.body.comments[0].should.have.property 'gravitar'
+                              res.body.comments[0].should.have.property 'username', 'matchusername5'
+                              apiserver.configs.passwordSalt = oldSalt
+                              done()
 
   it 'should return bad request if the ::runnable id is invalid', (done) ->
     helpers.authedUser (err, user) ->
@@ -440,96 +475,80 @@ describe 'runnables api', ->
               res.body.should.have.property 'message', 'error looking up runnable'
               done()
 
-  it 'should allow an owner to delete a ::runnable', (done) ->
+  it 'should allow an owner to delete a published ::runnable', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?base=node.js")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              res.should.have.property 'body'
-              runnableId = res.body._id
-              user.del("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 200
-                    res.should.have.property 'body'
-                    res.body.should.have.property 'message', 'runnable deleted'
-                    done()
-
-  it 'should deny a non-owner from deleting a ::runnable', (done) ->
-    helpers.authedUser (err, user) ->
-      if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?base=node.js")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              res.should.have.property 'body'
-              runnableId = res.body._id
-              helpers.authedUser (err, user2) ->
+        helpers.createPublishedProject user, (err, runnableId) ->
+          if err then done err else
+            user.del("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              .end (err, res) ->
                 if err then done err else
-                  user2.del("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 403
-                        res.should.have.property 'body'
-                        res.body.should.have.property 'message', 'permission denied'
-                        done()
+                  res.should.have.status 200
+                  res.should.have.property 'body'
+                  res.body.should.have.property 'message', 'runnable deleted'
+                  done()
+
+  it 'should deny a non-owner from deleting a published ::runnable', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        helpers.createPublishedProject user, (err, runnableId) ->
+          if err then done err else
+            helpers.authedUser (err, user2) ->
+              if err then done err else
+                user2.del("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 403
+                      res.should.have.property 'body'
+                      res.body.should.have.property 'message', 'permission denied'
+                      done()
 
   it 'should allow an admin to delete any ::runnable', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?base=node.js")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              res.should.have.property 'body'
-              runnableId = res.body._id
-              if err then done err else
-                user2 = sa.agent()
-                oldSalt = apiserver.configs.passwordSalt
-                delete apiserver.configs.passwordSalt
-                data = JSON.stringify
-                  email: 'test4@testing.com'
-                  password: 'testing'
-                user2.post("http://localhost:#{configs.port}/token")
-                  .set('Content-Type', 'application/json')
-                  .send(data)
-                  .end (err, res) ->
-                    if err then done err else
-                      res.should.have.status 200
-                      token = res.body.access_token
-                      user2.del("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                        .set('runnable-token', token)
-                        .end (err, res) ->
-                          if err then done err else
-                            res.should.have.status 200
-                            res.should.have.property 'body'
-                            res.body.should.have.property 'message', 'runnable deleted'
-                            apiserver.configs.passwordSalt = oldSalt
-                            done()
+        helpers.createPublishedProject user, (err, runnableId) ->
+          if err then done err else
+            user2 = sa.agent()
+            oldSalt = apiserver.configs.passwordSalt
+            delete apiserver.configs.passwordSalt
+            data = JSON.stringify
+              email: 'test4@testing.com'
+              password: 'testing'
+            user2.post("http://localhost:#{configs.port}/token")
+              .set('Content-Type', 'application/json')
+              .send(data)
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  token = res.body.access_token
+                  user2.del("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                    .set('runnable-token', token)
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.should.have.property 'body'
+                        res.body.should.have.property 'message', 'runnable deleted'
+                        apiserver.configs.passwordSalt = oldSalt
+                        done()
 
   it 'should return not found if a ::runnable cannot be found at a given id', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?base=node.js")
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              runnableId = res.body._id
-              user.del("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 200
-                    res.should.have.property 'body'
-                    res.body.should.have.property 'message', 'runnable deleted'
-                    user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 404
-                          res.should.have.property 'body'
-                          res.body.should.have.property 'message', 'runnable not found'
-                          done()
+        helpers.createPublishedProject user, (err, runnableId) ->
+          if err then done err else
+            user.del("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.should.have.property 'body'
+                  res.body.should.have.property 'message', 'runnable deleted'
+                  user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 404
+                        res.should.have.property 'body'
+                        res.body.should.have.property 'message', 'runnable not found'
+                        done()
 
   it 'should be possible to list all ::runnable owned by a given user', (done) ->
     user = sa.agent()
@@ -542,25 +561,18 @@ describe 'runnables api', ->
         if err then done err else
           res.should.have.status 200
           token = res.body.access_token
-          user.post("http://localhost:#{configs.port}/runnables?base=node.js")
-            .set('runnable-token', token)
-            .end (err, res) ->
-              if err then done err else
-                res.should.have.status 201
-                res.should.have.property 'body'
-                res.body.should.have.property 'owner'
-                owner = res.body.owner
-                projectId = res.body._id
-                user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}")
-                  .set('runnable-token', token)
-                  .end (err, res) ->
-                    if err then done err else
-                      res.should.have.status 200
-                      res.body.should.be.a.array
-                      res.body.length.should.equal 1
-                      res.body[0]._id.should.equal projectId
-                      apiserver.configs.passwordSalt = oldSalt
-                      done()
+          helpers.createPublishedProject user, (err, runnableId) ->
+            if err then done err else
+              user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}")
+                .set('runnable-token', token)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.be.a.array
+                    res.body.length.should.equal 1
+                    res.body[0]._id.should.equal runnableId
+                    apiserver.configs.passwordSalt = oldSalt
+                    done()
 
   it 'should be possible to list all ::runnables which are published', (done) ->
     helpers.authedUser (err, user) ->
@@ -594,14 +606,14 @@ describe 'runnables api', ->
   it 'should be possible to check the state of a stopped ::runnable', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables")
+        user.post("http://localhost:#{configs.port}/users/me/runnables")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
               res.body.should.have.property 'state'
               res.body.state.should.have.property 'running', false
               runnableId = res.body._id
-              user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                 .end (err, res) ->
                   if err then done err else
                     res.should.have.status 200
@@ -609,17 +621,17 @@ describe 'runnables api', ->
                     res.body.state.should.have.property 'running', false
                     done()
 
-  it 'should be able to fasdfsafsd start a ::runnable from a stopped state', (done) ->
+  it 'should be able to start a ::runnable from a stopped state', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables")
+        user.post("http://localhost:#{configs.port}/users/me/runnables")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
               res.body.should.have.property 'state'
               res.body.state.should.have.property 'running', false
               runnableId = res.body._id
-              user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                 .set('content-type', 'application/json')
                 .send(JSON.stringify({ running: true }))
                 .end (err, res) ->
@@ -627,7 +639,7 @@ describe 'runnables api', ->
                     res.should.have.status 200
                     res.body.should.have.property 'state'
                     res.body.state.should.have.property 'running', true
-                    user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                    user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                       .end (err, res) ->
                         if err then done err else
                           res.should.have.status 200
@@ -638,20 +650,20 @@ describe 'runnables api', ->
   it 'should be able to ::stop a ::runnable from a started state', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables")
+        user.post("http://localhost:#{configs.port}/users/me/runnables")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
               res.body.should.have.property 'state'
               res.body.state.should.have.property 'running', false
               runnableId = res.body._id
-              user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                 .end (err, res) ->
                   if err then done err else
                     res.should.have.status 200
                     res.body.should.have.property 'state'
                     res.body.state.should.have.property 'running', false
-                    user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                    user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                       .set('content-type', 'application/json')
                       .send(JSON.stringify({ running: true }))
                       .end (err, res) ->
@@ -659,13 +671,13 @@ describe 'runnables api', ->
                           res.should.have.status 200
                           res.body.should.have.property 'state'
                           res.body.state.should.have.property 'running', true
-                          user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                          user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                             .end (err, res) ->
                               if err then done err else
                                 res.should.have.status 200
                                 res.body.should.have.property 'state'
                                 res.body.state.should.have.property 'running', true
-                                user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                                user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                                   .set('content-type', 'application/json')
                                   .send(JSON.stringify({ running: false }))
                                   .end (err, res) ->
@@ -673,7 +685,7 @@ describe 'runnables api', ->
                                       res.should.have.status 200
                                       res.body.should.have.property 'state'
                                       res.body.state.should.have.property 'running', false
-                                      user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                                      user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                                         .end (err, res) ->
                                           if err then done err else
                                             res.should.have.status 200
@@ -684,7 +696,7 @@ describe 'runnables api', ->
   it 'should create a new ::runnable in a stopped state', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables")
+        user.post("http://localhost:#{configs.port}/users/me/runnables")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
@@ -692,7 +704,7 @@ describe 'runnables api', ->
               res.body.state.should.have.property 'running', false
               runnableId = res.body._id
               setTimeout () ->
-                user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                   .end (err, res) ->
                     if err then done err else
                       res.should.have.status 200
@@ -705,14 +717,14 @@ describe 'runnables api', ->
   it 'should pass back a service url that the client can hit when a ::runnable is started', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables")
+        user.post("http://localhost:#{configs.port}/users/me/runnables")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
               res.body.should.have.property 'state'
               res.body.state.should.have.property 'running', false
               runnableId = res.body._id
-              user.put("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                 .set('content-type', 'application/json')
                 .send(JSON.stringify({ running: true }))
                 .end (err, res) ->

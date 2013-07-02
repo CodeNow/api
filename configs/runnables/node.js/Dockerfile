@@ -22,8 +22,7 @@ RUN wget -N http://nodejs.org/dist/node-latest.tar.gz
 RUN tar xzvf node-latest.tar.gz && cd node-v* && ./configure && make && make install
 
 RUN mkdir /runnable
-ADD ./src/server.js /root/server.js
-ADD ./src/package.json /root/package.json
+ADD ./src /root
 RUN cd /root; npm install
 EXPOSE 80
 CMD cd /root; npm start

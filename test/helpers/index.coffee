@@ -28,4 +28,16 @@ Helpers =
             put: (url) -> user.put(url).set('runnable-token', token)
             del: (url) -> user.del(url).set('runnable-token', token)
 
+  createPublishedProject: (user, cb) ->
+    user.post("http://localhost:#{configs.port}/users/me/runnables")
+      .end (err, res) ->
+        if err then cb err else
+          res.should.have.status 201
+          runnableId = res.body._id
+          user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 201
+                cb null, res.body._id
+
 module.exports = Helpers

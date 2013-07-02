@@ -1,6 +1,7 @@
 async = require 'async'
 configs = require '../configs'
-projects = require './projects'
+containers = require './containers'
+images = require './images'
 users = require './users'
 
 Runnables =

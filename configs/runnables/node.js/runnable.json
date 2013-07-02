@@ -1,0 +1,30 @@
+{
+  "name": "Hello node.js!",
+  "dockerfile": "./Dockerfile",
+  "cmd": {
+    "Cmd": [
+        "/bin/sh"
+        "-c"
+        "cd root; npm start"
+    ],
+    "PortSpecs": "80",
+  },
+  "file_root": "/root",
+  "files" : [
+    {
+      "name": "server.js",
+      "path": "/",
+      "default": true
+    },
+    {
+      "name": "package.json",
+      "path": "/",
+      "default": false
+    }
+  ],
+  "tags": [
+    {
+      "name": "node.js"
+    }
+  ]
+}
