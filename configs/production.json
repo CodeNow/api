@@ -8,5 +8,6 @@
   "docker": "http://54.215.13.107",
   "shortProjectIds": true,
   "volumesPath": "{HOME_DIR}/.runnable/volumes",
+  "volume": "disk",
   "showStack": false
 }

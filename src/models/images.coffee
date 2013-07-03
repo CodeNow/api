@@ -9,7 +9,7 @@ path = require 'path'
 mongoose = require 'mongoose'
 request = require 'request'
 sa = require 'superagent'
-volumes = require './volumes/disk'
+volumes = require "./volumes/#{configs.volume}"
 
 docker = dockerjs host: configs.docker
 
