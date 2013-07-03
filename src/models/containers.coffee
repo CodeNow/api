@@ -25,9 +25,8 @@ containerSchema = new Schema
   created:
     type: Date
     default: Date.now
-  changed:
-    type: Boolean
-    default: false
+  target:
+    type: ObjectId
   cmd:
     type: String
   port:

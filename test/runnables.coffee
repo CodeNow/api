@@ -145,6 +145,37 @@ describe 'runnables api', ->
                               res.body.should.have.property 'owner', userId
                               done()
 
+  it 'should remember the last image id that a ::runnable was saved to', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/users/me")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  userId = res.body._id
+                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        userRunnableId = res.body._id
+                        user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 201
+                              res.body.should.have.property '_id'
+                              res.body.should.have.property 'docker_id'
+                              res.body.should.have.property 'parent', runnableId
+                              res.body.should.have.property 'owner', userId
+                              targetId = res.body._id
+                              user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                                .end (err, res) ->
+                                  if err then done err else
+                                  res.should.have.status 200
+                                  res.body.should.have.property 'target', targetId
+                                  done()
+
   it 'should be able to update a previously saved ::runnable', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else

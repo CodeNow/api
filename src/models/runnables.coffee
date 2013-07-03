@@ -26,7 +26,12 @@ Runnables =
       containers.findOne { _id: from }, (err, container) ->
         if err then cb new error { code: 500, msg: 'error fetching container from mongodb'} else
           if not container then cb new error { code: 403, msg: 'source runnable not found' } else
-            images.create container, handler
+            images.create container, (err, image) ->
+              if err then cb err else
+                container.target = image._id
+                container.save (err) ->
+                  if err then cb new error { code: 500, msg: 'error updating save target for container' } else
+                    handler null, image
 
   createContainer: (userId, from, cb) ->
     from = decodeId from
@@ -42,6 +47,7 @@ Runnables =
                       if err then cb err else
                         json_container = container.toJSON()
                         if json_container.parent then json_container.parent = encodeId json_container.parent
+                        if json_container.target then json_container.target = encodeId json_container.target
                         json_container.state = state
                         json_container._id = encodeId container._id
                         cb null, json_container
@@ -69,6 +75,7 @@ Runnables =
                 json = container.toJSON()
                 json._id = encodeId json._id
                 if json.parent then json.parent = encodeId json.parent
+                if json.target then json.target = encodeId json.target
                 json.state = state
                 cb null, json
 
@@ -114,7 +121,7 @@ Runnables =
             container.name = newName;
             container.save (err) ->
               if err then cb new error { code: 500, msg: 'error saving runnable to mongodb'} else
-                cb();
+                cb()
 
   updateImage: (userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
