@@ -19,6 +19,8 @@ containerSchema = new Schema
     type: ObjectId
   docker_id:
     type: String
+  long_docker_id:
+    type: String
   parent:
     type: ObjectId
     index: true
@@ -83,11 +85,14 @@ containerSchema.statics.create = (owner, image, cb) ->
   , (err, res) ->
     if err then cb new error { code: 500, msg: 'error creating docker container'} else
       container.docker_id = res.Id
-      container.save (err) ->
-        if err then cb new error { code: 500, msg: 'error saving container metadata to mongodb' } else
-          volumes.copy image._id, container._id, (err) ->
-            if err then cb err else
-              cb null, container
+      docker.inspectContainer container.docker_id, (err, result) ->
+        if err then cb new error { code: 500, msg: 'error getting container state' } else
+          container.long_docker_id = result.ID
+          container.save (err) ->
+            if err then cb new error { code: 500, msg: 'error saving container metadata to mongodb' } else
+              volumes.copy image._id, container._id, (err) ->
+                if err then cb err else
+                  cb null, container
 
 containerSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, container) =>
