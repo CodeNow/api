@@ -2,6 +2,7 @@
   "name": "Hello node.js!",
   "image": "runnable/base",
   "cmd": "/usr/local/bin/npm start /root",
+  "port": 80,
   "file_root": "/root",
   "files": [
     {
