@@ -1,0 +1,10 @@
+{
+  "folders":
+  [
+    {
+      "follow_symlinks": true,
+      "path": "../api-server",
+      "folder_exclude_patterns" : ["lib"]
+    }
+  ]
+}

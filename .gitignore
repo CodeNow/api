@@ -7,6 +7,7 @@
 *.out
 *.pid
 *.gz
+*.sublime-workspace
 
 pids
 logs
