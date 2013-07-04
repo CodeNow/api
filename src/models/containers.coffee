@@ -5,7 +5,7 @@ dockerjs = require 'docker.js'
 error = require '../error'
 path = require 'path'
 mongoose = require 'mongoose'
-volumes = require './volumes/disk'
+volumes = require  "./volumes/#{configs.volume}"
 
 docker = dockerjs host: configs.docker
 

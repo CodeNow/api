@@ -117,7 +117,7 @@ imageSchema.statics.create = (container, cb) ->
       image.docker_id = result.Id
       image.save (err) ->
         if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
-          volumes.copy container._id, image._id, (err) ->
+          volumes.copy container._id, image._id, image.file_root, (err) ->
             if err then cb err else
               cb null, image
 
