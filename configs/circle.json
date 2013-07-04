@@ -9,5 +9,5 @@
   "shortProjectIds": true,
   "volumesPath": "{RAND_DIR}/volumes",
   "volume": "disk",
-  "showStack": true
+  "showStack": false
 }

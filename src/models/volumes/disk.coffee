@@ -113,8 +113,8 @@ Volumes =
                 cb()
 
   deleteAllFiles: (id, root, cb) ->
-    @remove id, (err) =>
+    @remove id, root, (err) =>
       if err then cb err else
-        @create id, cb
+        @create id, root, cb
 
 module.exports = Volumes
