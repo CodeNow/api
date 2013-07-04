@@ -77,6 +77,7 @@ imageSchema.statics.createFromDisk = (owner, name, cb) ->
       image.tags.push tag
     child = cp.spawn 'tar', [ '-c', '--directory', "#{runnablePath}/#{name}", '.' ]
     req = request.post
+      timeout: 60000
       url: "#{configs.docker}/v1.3/build"
       headers:
         'content-type': 'application/tar'
