@@ -117,7 +117,7 @@ containerSchema.statics.destroy = (id, cb) ->
 
 containerSchema.methods.getProcessState = (cb) ->
   docker.inspectContainer @docker_id, (err, result) ->
-    if err then cb new error { code: 500, msg: 'error getting container state' } else
+    if err then cb new error { code: 500, msg: 'error getting container state', err:err } else
       if result.NetworkSettings.PortMapping
         port = result.NetworkSettings.PortMapping['80']
         host = result.NetworkSettings.IpAddress
