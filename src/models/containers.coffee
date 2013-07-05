@@ -117,15 +117,8 @@ containerSchema.statics.destroy = (id, cb) ->
 
 containerSchema.methods.getProcessState = (cb) ->
   docker.inspectContainer @docker_id, (err, result) ->
-    if err then cb new error { code: 500, msg: 'error getting container state', err:err } else
-      if result.NetworkSettings.PortMapping
-        port = result.NetworkSettings.PortMapping['80']
-        host = result.NetworkSettings.IpAddress
-        cb null,
-          running: result.State.Running
-          web_url: "http://#{host}:#{port}"
-      else
-        cb null, { running: result.State.Running }
+    if err then cb new error { code: 500, msg: 'error getting container state' } else
+      cb null, running: result.State.Running
 
 containerSchema.methods.start = (cb) ->
   docker.startContainer
@@ -140,19 +133,6 @@ containerSchema.methods.stop = (cb) ->
   docker.stopContainer @docker_id, (err) ->
     if err then cb new error { code: 500, msg: 'error stopping docker container' } else
       cb()
-
-containerSchema.methods.readDir = (path, cb) ->
-   # readDirectory: function(containerId, srcDir, name, path, cb) {
-  volumes.readDirectory "facbc1bd0d9e", '/root/', "root", path, (err, data) ->
-    if err
-      cb err, null
-    else
-      cb null, data
-
-containerSchema.methods.changeFile = (path, content, cb) ->
-  console.log("path is", path, "content is", content);
-#  updateFile: function(containerId, srcDir, path, content, cb)
-  volumes.updateFile("facbc1bd0d9e", '/root/', path, content, cb)
 
 containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
   if default_tag
@@ -315,5 +295,20 @@ containerSchema.methods.deleteFile = (fileId, recursive, cb) ->
           @save (err) ->
             if err then cb new error { code: 500, msg: 'error removing file from mongodb' } else
               cb()
+
+### HACKS ###
+
+containerSchema.methods.readDir = (path, cb) ->
+   # readDirectory: function(containerId, srcDir, name, path, cb) {
+  volumes.readDirectory "facbc1bd0d9e", '/root/', "root", path, (err, data) ->
+    if err
+      cb err, null
+    else
+      cb null, data
+
+containerSchema.methods.changeFile = (path, content, cb) ->
+  console.log("path is", path, "content is", content);
+#  updateFile: function(containerId, srcDir, path, content, cb)
+  volumes.updateFile("facbc1bd0d9e", '/root/', path, content, cb)
 
 module.exports = mongoose.model 'Containers', containerSchema

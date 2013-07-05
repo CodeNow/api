@@ -92,7 +92,19 @@ imageSchema.statics.createFromDisk = (owner, name, cb) ->
                 if err then new error { code: 500, msg: 'error saving image to mongodb' } else
                   volumes.create image._id, image.file_root, (err) ->
                     if err then cb err else
-                      cb null, image
+                      async.map runnable.files, (file, cb) ->
+                        fs.readFile "#{runnablePath}/#{name}/#{file.content}", 'base64', (err, content) ->
+                          if err then cb new error { code: 500, msg: 'error reading source file for building image' } else
+                            cb null,
+                              name: file.name
+                              path: file.path
+                              default: file.default
+                              content: content
+                      , (err, files) ->
+                        if err then cb err else
+                          volumes.createFiles image._id, image.file_root, files, (err) ->
+                            if err then cb new error { code: 500, msg: 'error writing source files to disk' } else
+                              cb null, image
     child.stdout.pipe req
 
 imageSchema.statics.create = (container, cb) ->
@@ -117,7 +129,7 @@ imageSchema.statics.create = (container, cb) ->
       image.docker_id = result.Id
       image.save (err) ->
         if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
-          volumes.copy container._id, image._id, image.file_root, (err) ->
+          volumes.copy container.long_docker_id, image._id, image.file_root, (err) ->
             if err then cb err else
               cb null, image
 

@@ -87,22 +87,6 @@ describe 'runnables api', ->
                         res.body[0].should.have.property '_id', myRunnableId
                         done()
 
-  it 'should not be able to create a new ::runnable if an existing ::unsaved already exists', (done) ->
-    helpers.createImage 'node.js', (err, runnableId) ->
-      if err then done err else
-        helpers.authedUser (err, user) ->
-          if err then done err else
-            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 403
-                        res.body.should.have.property 'message', 'already editing a project from this parent'
-                        done()
-
   it 'should store the long container id associated with a ::runnable', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
@@ -361,7 +345,7 @@ describe 'runnables api', ->
                   res.body.should.have.property 'message', 'permission denied'
                   done()
 
-  it 'should allow an admin to delete any ::runnable', (done) ->
+  it 'should allow an admin to ::delete any ::runnable', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
         user2 = sa.agent()
@@ -599,7 +583,6 @@ describe 'runnables api', ->
                           res.should.have.status 200
                           res.body.should.have.property 'state'
                           res.body.state.should.have.property 'running', false
-                          res.body.state.should.not.have.property 'web_url'
                           done()
                   , 1000
 
@@ -624,5 +607,4 @@ describe 'runnables api', ->
                         res.should.have.status 200
                         res.body.should.have.property 'state'
                         res.body.state.should.have.property 'running', true
-                        res.body.state.should.have.property 'web_url'
                         done()

@@ -1,3 +1,4 @@
+async = require 'async'
 configs = require '../../configs'
 error = require '../../error'
 fs = require 'fs'
@@ -29,6 +30,17 @@ Volumes =
     wrench.copyDirRecursive srcPath, dstPath, { }, (err) ->
       if err then cb new error { code: 500, msg: 'error copying existing volume to new volume' } else
         cb()
+
+  createFiles: (id, root, files, cb) ->
+    async.forEach files, (file, cb) ->
+      filePath = "#{configs.volumesPath}/#{id}#{file.path}/#{file.name}"
+      fs.exists filePath, (exists) ->
+        if exists then cb new error { code: 403, msg: 'resource already exists' } else
+          fs.writeFile filePath, file.content, 'utf8', (err) ->
+            if err and err.errno is 34 then cb new error { code: 403, msg: 'path does not exist' } else
+              if err then cb new error { code: 500, msg: 'error writing file to volume' } else
+                cb()
+    , cb
 
   createFile: (id, root, name, path, content, cb) ->
     filePath = "#{configs.volumesPath}/#{id}#{path}/#{name}"

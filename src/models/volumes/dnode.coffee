@@ -10,6 +10,7 @@ d.on 'remote', (remote) ->
   if not remote.remove then throw new Error 'volume does not implement remove()'
   if not remote.copy then throw new Error 'volume does not implement copy()'
   if not remote.createFile then throw new Error 'volume does not implement createFile()'
+  if not remote.createFiles then throw new Error 'volume does not implement createFiles()'
   if not remote.readFile then throw new Error 'volume does not implement readFile()'
   if not remote.updateFile then throw new Error 'volume does not implement updateFile()'
   if not remote.deleteFile then throw new Error 'volume does not implement deleteFile()'
@@ -22,6 +23,7 @@ d.on 'remote', (remote) ->
   Volumes.remove = remote.remove
   Volumes.copy = remote.copy
   Volumes.createFile = remote.createFile
+  Volumes.createFiles = remote.createFiles
   Volumes.readFile = remote.readFile
   Volumes.updateFile = remote.updateFile
   Volumes.deleteFile = remote.deleteFile
