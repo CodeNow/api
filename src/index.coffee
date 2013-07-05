@@ -27,8 +27,7 @@ app.use (err, req, res, next) ->
   if configs.showStack
     json_err.stack = err.stack
     console.log(err.stack, '\n')
-    if (err.err)
-      console.log(err.err.stack || err.err, '\n')
+    if (err.err) then console.log(err.err.stack || err.err, '\n')
   if err.code and err.msg
     json_err.message = err.msg
     res.json err.code, json_err
