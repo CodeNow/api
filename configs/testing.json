@@ -11,5 +11,5 @@
   "volumesPath": "{RAND_DIR}/volumes",
   "dnode_host": "http://harbourmaster.runnableapp.dev",
   "dnode_port": 13337,
-  "showStack": true
+  "showStack": false
 }
