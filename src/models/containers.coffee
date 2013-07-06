@@ -83,7 +83,7 @@ containerSchema.statics.create = (owner, image, cb) ->
     PortSpecs: [ container.port.toString() ]
     Cmd: [ container.cmd ]
   , (err, res) ->
-    if err then cb new error { code: 500, msg: 'error creating docker container'} else
+    if err then cb new error { code: 500, msg: 'error creating docker container', err:err } else
       container.docker_id = res.Id
       docker.inspectContainer container.docker_id, (err, result) ->
         if err then cb new error { code: 500, msg: 'error getting container state' } else
