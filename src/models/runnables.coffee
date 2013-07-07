@@ -107,7 +107,7 @@ Runnables =
                     for vote in user.votes
                       if vote.runnable.toString() is image._id.toString()
                         vote.remove()
-                   remove()
+                    remove()
 
   updateName: (userId, runnableId, newName, cb) ->
     runnableId = decodeId runnableId
