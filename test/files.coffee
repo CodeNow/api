@@ -858,7 +858,7 @@ describe 'files api', ->
                           res.body[0].should.not.have.property 'content'
                           done()
 
-  it 'should ::list only ::files with default tags with contents', (done) ->
+  it 'should only list ::files, including contents, with the default flag set to true', (done) ->
     helpers.createContainer 'node.js', (err, user, runnableId) ->
       if err then done err else
         contents = { }
@@ -890,14 +890,11 @@ describe 'files api', ->
                             .end (err, res) ->
                               res.should.have.status 200
                               res.body.should.be.a.array
-                              res.body.length.should.equal 4
+                              res.body.length.should.equal 2
                               for file in res.body
                                 file.should.have.property 'name'
                                 file.should.have.property 'default'
-                                if file.default
-                                  file.should.have.property 'content', contents[file.name]
-                                else
-                                  file.should.not.have.property 'content'
+                                file.should.have.property 'content', contents[file.name]
                               done()
 
   it 'should ::list only ::files belonging to a particular path', (done) ->

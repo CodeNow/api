@@ -215,16 +215,19 @@ Runnables =
           async.map results, (result, cb) ->
             images.findOne _id: result._id, (err, runnable) ->
               if err then cb new error { code: 500, msg: 'error retrieving image from mongodb' } else
-                runnable.votes = result.number - 1
-                cb null, runnable
+                if not runnable then cb() else
+                  runnable.votes = result.number - 1
+                  cb null, runnable
           , (err, results) ->
             if err then cb err else
-              result = for item in results
-                json = item.toJSON()
-                json._id = encodeId json._id
-                json.votes = item.votes
-                if json.parent then json.parent = encodeId json.parent
-                json
+              result = [ ]
+              for item in results
+                if item
+                  json = item.toJSON()
+                  json._id = encodeId json._id
+                  json.votes = item.votes
+                  if json.parent then json.parent = encodeId json.parent
+                  result.push json
               cb null, result
 
   listFiltered: (query, sortByVotes, limit, page, cb) ->
@@ -242,16 +245,19 @@ Runnables =
               async.map results, (result, cb) ->
                 images.findOne { _id: result._id }, (err, runnable) ->
                   if err then cb new error { code: 500, msg: 'error retrieving image from mongodb' } else
-                    runnable.votes = result.number - 1
-                    cb null, runnable
+                    if not runnable then cb() else
+                      runnable.votes = result.number - 1
+                      cb null, runnable
               , (err, results) ->
                 if err then cb err else
-                  result = for item in results
-                    json = item.toJSON()
-                    json._id = encodeId json._id
-                    json.votes = item.votes
-                    if json.parent then json.parent = encodeId json.parent
-                    json
+                  result = [ ]
+                  for item in results
+                    if item
+                      json = item.toJSON()
+                      json._id = encodeId json._id
+                      json.votes = item.votes
+                      if json.parent then json.parent = encodeId json.parent
+                      result.push json
                   cb null, result
 
   getTags: (runnableId, cb) ->
