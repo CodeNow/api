@@ -171,11 +171,13 @@ describe 'pagination api', ->
                         done()
 
   it 'should have a default ::paginate of configs.defaultPageLimit when listing when', (done) ->
+    oldLimit = apiserver.configs.defaultPageLimit
+    apiserver.configs.defaultPageLimit = 5
     helpers.authedUser (err, user) ->
       if err then done err else
         runnables = [ ]
         async.whilst () ->
-          runnables.length < 30
+          runnables.length < 7
         , (cb) ->
           user.post("http://localhost:#{configs.port}/runnables")
             .end (err, res) ->
@@ -190,7 +192,8 @@ describe 'pagination api', ->
               if err then done err else
                 res.should.have.status 200
                 res.body.should.be.a.array
-                res.body.length.should.equal configs.defaultPageLimit
+                res.body.length.should.equal apiserver.configs.defaultPageLimit
+                apiserver.configs.defaultPageLimit = oldLimit
                 done()
 
   it 'should be able to ::paginate published runnable list', (done) ->

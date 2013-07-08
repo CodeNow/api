@@ -8,7 +8,6 @@ fs = require 'fs'
 path = require 'path'
 mongoose = require 'mongoose'
 request = require 'request'
-sa = require 'superagent'
 volumes = require "./volumes/#{configs.volume}"
 
 docker = dockerjs host: configs.docker
@@ -137,11 +136,13 @@ imageSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, image) =>
     if err then cb new error { code: 500, msg: 'error looking up image in mongodb' } else
       if not image then cb new error { code: 404, msg: 'image not found' } else
-        docker.removeImage image.docker_id, (err, result) =>
-          if err then cb new error { code: 500, msg: 'error removing docker image' } else
-            @remove id, (err) ->
-              if err then cb new error { code: 500, msg: 'error removing image metadata from mongodb' } else
-                cb()
+        req = docker.removeImage { id: image.docker_id }
+        req.on 'error', (err) ->
+          cb new error { code: 500, msg: 'error removing docker image' }
+        req.on 'end', () =>
+          @remove id, (err) ->
+            if err then cb new error { code: 500, msg: 'error removing image metadata from mongodb' } else
+              cb()
 
 imageSchema.statics.listTags = (cb) ->
   @find().distinct 'tags', (err, tags) ->
