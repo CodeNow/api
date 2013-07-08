@@ -138,11 +138,7 @@ containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
   if default_tag
     files = [ ]
     async.forEachSeries @files, (file, cb) =>
-      if not file.default
-        if not path or file.path is path
-          files.push file.toJSON()
-        cb()
-      else
+      if not file.default then cb() else
         volumes.readFile @long_docker_id, @file_root, file.name, file.path, (err, content) ->
           if err then cb err else
             if not path or file.path is path
