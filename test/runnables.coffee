@@ -173,7 +173,7 @@ describe 'runnables api', ->
                                   res.body.should.have.property 'target', targetId
                                   done()
 
-  it 'should be able to update a previously saved ::runnable', (done) ->
+  it 'should be able to update a ::previously saved ::runnable', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
         helpers.authedUser (err, user) ->
@@ -485,7 +485,7 @@ describe 'runnables api', ->
                         res.body.state.should.have.property 'running', false
                         done()
 
-  it 'should be able to start a ::runnable from a stopped state', (done) ->
+  it 'should be able to ::start a ::runnable from a stopped state', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
         helpers.authedUser (err, user) ->

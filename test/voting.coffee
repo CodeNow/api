@@ -66,7 +66,7 @@ describe 'voting api', ->
   it 'should allow a user to retrieve a list of their ::votes', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+        user.post("http://localhost:#{configs.port}/runnables")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
@@ -94,7 +94,7 @@ describe 'voting api', ->
   it 'should not allow a user to ::vote twice for the same ::runnable', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+        user.post("http://localhost:#{configs.port}/runnables")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
@@ -122,7 +122,7 @@ describe 'voting api', ->
   it 'should increase the ::vote count of a ::runnable after the vote is applied', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+        user.post("http://localhost:#{configs.port}/runnables")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
@@ -148,7 +148,7 @@ describe 'voting api', ->
   it 'should decrease the ::vote count of a ::runnable after a vote is removed', (done) ->
     helpers.authedUser (err, user) ->
       if err then done err else
-        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+        user.post("http://localhost:#{configs.port}/runnables")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
@@ -191,7 +191,7 @@ describe 'voting api', ->
             async.whilst () ->
               runnables.length < 5
             , (cb) ->
-              user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+              user.post("http://localhost:#{configs.port}/runnables?from=node.js")
                 .end (err, res) ->
                   if err then cb err else
                     res.should.have.status 201
@@ -244,6 +244,69 @@ describe 'voting api', ->
                                   res.body[7].should.have.property 'votes', 0
                                   done()
 
+  it 'should be able to list all ::runnables in descending order of ::votes after runnable is deleted', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then done err else
+        user.get("http://localhost:#{configs.port}/users/me")
+          .end (err, res) ->
+            runnables = [ ]
+            async.whilst () ->
+              runnables.length < 5
+            , (cb) ->
+              user.post("http://localhost:#{configs.port}/runnables?from=node.js")
+                .end (err, res) ->
+                  if err then cb err else
+                    res.should.have.status 201
+                    res.body.should.have.property '_id'
+                    runnables.push res.body._id
+                    cb()
+            , (err) ->
+              if err then done err else
+                helpers.authedUser (err, user2) ->
+                  if err then done err else
+                    voted = [ ]
+                    user2.get("http://localhost:#{configs.port}/users/me")
+                      .end (err, res) ->
+                        index = 0
+                        async.eachSeries runnables, (runnableId, cb) ->
+                          if index%2 isnt 0
+                            index++
+                            cb()
+                          else
+                            voted.push runnableId
+                            index++
+                            user2.post("http://localhost:#{configs.port}/users/me/votes")
+                              .set('content-type', 'application/json')
+                              .send(JSON.stringify( { runnable: runnableId } ))
+                              .end (err, res) ->
+                                if err then cb err else
+                                  res.should.have.status 201
+                                  res.body.should.have.property '_id'
+                                  res.body.should.have.property 'runnable', runnableId
+                                  cb()
+                        , (err) ->
+                          if err then done err else
+                            user.del("http://localhost:#{configs.port}/runnables/#{voted[0]._id}")
+                              .end (err, res) ->
+                                if err then done err else
+                                  user.get("http://localhost:#{configs.port}/runnables?sort=votes")
+                                    .end (err, res) ->
+                                      if err then done err else
+                                        res.should.have.status 200
+                                        res.should.have.property 'body'
+                                        res.body.should.be.a.array
+                                        res.body.length.should.equal 8
+                                        voted.should.include res.body[0]._id
+                                        voted.should.include res.body[1]._id
+                                        res.body[0].should.have.property 'votes', 1
+                                        res.body[1].should.have.property 'votes', 1
+                                        res.body[3].should.have.property 'votes', 0
+                                        res.body[4].should.have.property 'votes', 0
+                                        res.body[5].should.have.property 'votes', 0
+                                        res.body[6].should.have.property 'votes', 0
+                                        res.body[7].should.have.property 'votes', 0
+                                        done()
+
   it 'should be able to list channel ::runnables in descending order of ::votes', (done) ->
     user = sa.agent()
     oldSalt = apiserver.configs.passwordSalt
@@ -254,7 +317,7 @@ describe 'voting api', ->
       .end (err, res) ->
         res.should.have.status 200
         token = res.body.access_token
-        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+        user.post("http://localhost:#{configs.port}/runnables")
           .set('runnable-token', token)
           .end (err, res) ->
             if err then cb err else
@@ -272,7 +335,7 @@ describe 'voting api', ->
                     async.whilst () ->
                       runnables.length < 5
                     , (cb) ->
-                      user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+                      user.post("http://localhost:#{configs.port}/runnables")
                         .set('runnable-token', token)
                         .end (err, res) ->
                           if err then cb err else
@@ -340,7 +403,7 @@ describe 'voting api', ->
       if err then done err else
         user2.get("http://localhost:#{configs.port}/users/me")
           .end (err, res) ->
-            user2.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+            user2.post("http://localhost:#{configs.port}/runnables")
               .end (err, res) ->
                 if err then cb err else
                   res.should.have.status 201
@@ -356,7 +419,7 @@ describe 'voting api', ->
                           async.whilst () ->
                             runnables.length < 5
                           , (cb) ->
-                            user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+                            user.post("http://localhost:#{configs.port}/runnables")
                               .end (err, res) ->
                                 if err then cb err else
                                   res.should.have.status 201
@@ -413,7 +476,7 @@ describe 'voting api', ->
       .end (err, res) ->
         res.should.have.status 200
         token = res.body.access_token
-        user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+        user.post("http://localhost:#{configs.port}/runnables")
           .set('runnable-token', token)
           .end (err, res) ->
             if err then cb err else
@@ -431,7 +494,7 @@ describe 'voting api', ->
                     async.whilst () ->
                       runnables.length < 5
                     , (cb) ->
-                      user.post("http://localhost:#{configs.port}/runnables?framework=node.js")
+                      user.post("http://localhost:#{configs.port}/runnables")
                         .set('runnable-token', token)
                         .end (err, res) ->
                           if err then cb err else
