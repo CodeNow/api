@@ -54,6 +54,9 @@ describe 'runnables api', ->
                         res.body.should.have.property '_id'
                         res.body.should.have.property 'parent', runnableId
                         res.body.should.have.property 'owner', userId
+                        res.body.should.have.property 'web'
+                        res.body.should.have.property 'logs'
+                        res.body.should.have.property 'terminal'
                         if apiserver.configs.shortProjectIds
                           res.body._id.length.should.equal 16
                         else
@@ -173,7 +176,7 @@ describe 'runnables api', ->
                                   res.body.should.have.property 'target', targetId
                                   done()
 
-  it 'should be able to update a previously saved ::runnable', (done) ->
+  it 'should be able to update a ::previously saved ::runnable', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
         helpers.authedUser (err, user) ->
@@ -485,7 +488,7 @@ describe 'runnables api', ->
                         res.body.state.should.have.property 'running', false
                         done()
 
-  it 'should be able to start a ::runnable from a stopped state', (done) ->
+  it 'should be able to ::start a ::runnable from a stopped state', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
         helpers.authedUser (err, user) ->
