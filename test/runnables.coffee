@@ -54,9 +54,6 @@ describe 'runnables api', ->
                         res.body.should.have.property '_id'
                         res.body.should.have.property 'parent', runnableId
                         res.body.should.have.property 'owner', userId
-                        res.body.should.have.property 'web'
-                        res.body.should.have.property 'logs'
-                        res.body.should.have.property 'terminal'
                         if apiserver.configs.shortProjectIds
                           res.body._id.length.should.equal 16
                         else
@@ -242,8 +239,7 @@ describe 'runnables api', ->
                                   if err then done err else
                                     res.should.have.status 200
                                     res.body.should.have.property 'name', 'updated project name'
-                                    res.body.should.have.property 'state'
-                                    res.body.state.should.have.property 'running', false
+                                    res.body.should.have.property 'running', false
                                     user.put("http://localhost:#{configs.port}/runnables/#{publishedId}?from=#{userRunnableId}")
                                       .end (err, res) ->
                                         if err then done err else
@@ -510,15 +506,13 @@ describe 'runnables api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 201
-                  res.body.should.have.property 'state'
-                  res.body.state.should.have.property 'running', false
+                  res.body.should.have.property 'running', false
                   runnableId = res.body._id
                   user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
-                        res.body.should.have.property 'state'
-                        res.body.state.should.have.property 'running', false
+                        res.body.should.have.property 'running', false
                         done()
 
   it 'should be able to ::start a ::runnable from a stopped state', (done) ->
@@ -530,8 +524,7 @@ describe 'runnables api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 201
-                  res.body.should.have.property 'state'
-                  res.body.state.should.have.property 'running', false
+                  res.body.should.have.property 'running', false
                   res.body.should.have.property 'name'
                   name = res.body.name
                   runnableId = res.body._id
@@ -541,14 +534,15 @@ describe 'runnables api', ->
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
-                        res.body.should.have.property 'state'
-                        res.body.state.should.have.property 'running', true
+                        res.body.should.have.property 'running', true
+                        res.body.should.have.property 'web'
+                        res.body.should.have.property 'logs'
+                        res.body.should.have.property 'terminal'
                         user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                           .end (err, res) ->
                             if err then done err else
                               res.should.have.status 200
-                              res.body.should.have.property 'state'
-                              res.body.state.should.have.property 'running', true
+                              res.body.should.have.property 'running', true
                               done()
 
   it 'should be able to ::stop a ::runnable from a started state', (done) ->
@@ -560,44 +554,38 @@ describe 'runnables api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 201
-                  res.body.should.have.property 'state'
-                  res.body.state.should.have.property 'running', false
+                  res.body.should.have.property 'running', false
                   name = res.body.name
                   runnableId = res.body._id
                   user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
-                        res.body.should.have.property 'state'
-                        res.body.state.should.have.property 'running', false
+                        res.body.should.have.property 'running', false
                         user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                           .set('content-type', 'application/json')
                           .send(JSON.stringify({ running: true, name: name}))
                           .end (err, res) ->
                             if err then done err else
                               res.should.have.status 200
-                              res.body.should.have.property 'state'
-                              res.body.state.should.have.property 'running', true
+                              res.body.should.have.property 'running', true
                               user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                                 .end (err, res) ->
                                   if err then done err else
                                     res.should.have.status 200
-                                    res.body.should.have.property 'state'
-                                    res.body.state.should.have.property 'running', true
+                                    res.body.should.have.property 'running', true
                                     user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                                       .set('content-type', 'application/json')
                                       .send(JSON.stringify({ running: false, name: name }))
                                       .end (err, res) ->
                                         if err then done err else
                                           res.should.have.status 200
-                                          res.body.should.have.property 'state'
-                                          res.body.state.should.have.property 'running', false
+                                          res.body.should.have.property 'running', false
                                           user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                                             .end (err, res) ->
                                               if err then done err else
                                                 res.should.have.status 200
-                                                res.body.should.have.property 'state'
-                                                res.body.state.should.have.property 'running', false
+                                                res.body.should.have.property 'running', false
                                                 done()
 
   it 'should create a new ::runnable in a stopped state', (done) ->
@@ -609,16 +597,14 @@ describe 'runnables api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 201
-                  res.body.should.have.property 'state'
-                  res.body.state.should.have.property 'running', false
+                  res.body.should.have.property 'running', false
                   runnableId = res.body._id
                   setTimeout () ->
                     user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                       .end (err, res) ->
                         if err then done err else
                           res.should.have.status 200
-                          res.body.should.have.property 'state'
-                          res.body.state.should.have.property 'running', false
+                          res.body.should.have.property 'running', false
                           done()
                   , 1000
 
@@ -631,8 +617,7 @@ describe 'runnables api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 201
-                  res.body.should.have.property 'state'
-                  res.body.state.should.have.property 'running', false
+                  res.body.should.have.property 'running', false
                   name = res.body.name
                   runnableId = res.body._id
                   user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
@@ -641,6 +626,8 @@ describe 'runnables api', ->
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 200
-                        res.body.should.have.property 'state'
-                        res.body.state.should.have.property 'running', true
+                        res.body.should.have.property 'running', true
+                        res.body.should.have.property 'web'
+                        res.body.should.have.property 'logs'
+                        res.body.should.have.property 'terminal'
                         done()

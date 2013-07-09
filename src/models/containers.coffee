@@ -33,12 +33,6 @@ containerSchema = new Schema
     type: String
   port:
     type: Number
-  web:
-    type: String
-  logs:
-    type: String
-  terminal:
-    type: String
   tags:
     type: [
       name: String
@@ -95,20 +89,9 @@ containerSchema.statics.create = (owner, image, cb) ->
   , (err, res) ->
     if err then cb new error { code: 500, msg: 'error creating docker container', err:err } else
       container.docker_id = res.Id
-      if res.web then container.web = res.web
-      if res.logs then container.logs = res.logs
-      if res.terminal then container.terminal = res.terminal
       docker.inspectContainer container.docker_id, (err, result) ->
         if err then cb new error { code: 500, msg: 'error getting container state' } else
           container.long_docker_id = result.ID
-          port = null
-          if result.NetworkSettings.PortMapping
-            port = result.NetworkSettings.PortMapping['80']
-          else
-            port = 80
-          if not container.web then container.web = "http://localhost:#{port}"
-          if not container.logs then container.logs = "http://localhost"
-          if not container.terminal then container.terminal = "http://localhost"
           container.save (err) ->
             if err then cb new error { code: 500, msg: 'error saving container metadata to mongodb' } else
               volumes.copy image._id, container.long_docker_id, container.file_root, (err) ->
@@ -151,9 +134,14 @@ containerSchema.methods.start = (cb) ->
     id: @docker_id
     Binds: [
       "#{configs.volumesPath}/#{@long_docker_id}:#{@file_root}"
-    ], (err, result) ->
+    ], (err, res) ->
       if err then cb new error { code: 500, msg: 'error starting docker container' } else
-        cb()
+        res = res or { }
+        services = { }
+        services.web = res.web or 'localhost'
+        services.logs = res.logs or 'localhost'
+        services.terminal = res.terminal or 'localhost'
+        cb null, services
 
 containerSchema.methods.stop = (cb) ->
   docker.stopContainer @docker_id, (err) ->

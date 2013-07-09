@@ -4,6 +4,7 @@ containers = require './containers'
 error = require '../error'
 images = require './images'
 users = require './users'
+_ = require 'lodash'
 
 Runnables =
 
@@ -45,7 +46,7 @@ Runnables =
                   json_container = container.toJSON()
                   if json_container.parent then json_container.parent = encodeId json_container.parent
                   if json_container.target then json_container.target = encodeId json_container.target
-                  json_container.state = state
+                  _.extend json_container, state
                   json_container._id = encodeId container._id
                   cb null, json_container
 
@@ -81,7 +82,7 @@ Runnables =
                 json._id = encodeId json._id
                 if json.parent then json.parent = encodeId json.parent
                 if json.target then json.target = encodeId json.target
-                json.state = state
+                _.extend json, state
                 cb null, json
 
   removeContainer: (userId, runnableId, cb) ->
@@ -166,13 +167,14 @@ Runnables =
                   json_project = container.toJSON()
                   json_project._id = encodeId json_project._id
                   if json_project.parent then json_project.parent = encodeId json_project.parent
-                  json_project.state = state
+                  _.extend json_project, state
                   cb null, json_project
                 if state.running then response state else
-                  container.start (err) ->
+                  container.start (err, services) ->
                     if err then cb err else
                       container.getProcessState (err, state) ->
                         if err then cb err else
+                          _.extend state, services
                           response state
 
   stopContainer: (userId, runnableId, cb) ->
@@ -187,7 +189,7 @@ Runnables =
                   json_project = container.toJSON()
                   json_project._id = encodeId json_project._id
                   if json_project.parent then json_project.parent = encodeId json_project.parent
-                  json_project.state = state
+                  _.extend json_project, state
                   cb null, json_project
                 if not state.running then response state else
                   container.stop (err) ->
