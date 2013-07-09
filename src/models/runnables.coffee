@@ -49,6 +49,14 @@ Runnables =
                   json_container._id = encodeId container._id
                   cb null, json_container
 
+  touchContainer: (userId, runnableId, cb) ->
+    runnableId = decodeId runnableId
+    containers.findOne _id: runnableId, (err, container) ->
+      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+        if not container then cb new error { code: 404, msg: 'runnable not found' } else
+          if container.owner.toString() isnt userId.toString() then cb new error { code: 403, msg: 'permission denied' } else
+            containers.touch runnableId, cb
+
   listContainers: (userId, parent, cb) ->
     query = { owner: userId }
     if parent then query.parent = decodeId parent

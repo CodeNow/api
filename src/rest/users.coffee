@@ -127,6 +127,11 @@ putrunnable = (req, res, next) ->
               if err then next err else
                 res.json runnable
 
+accessrunnable = (req, res, next) ->
+  runnables.touchContainer req.user_id, req.params.runnableid, (err) ->
+    if err then next err else
+      res.json 200, { message: 'runnable touched' }
+
 delrunnable = (req, res, next) ->
   runnables.removeContainer req.user_id, req.params.runnableid, (err) ->
     if err then next err else
@@ -243,6 +248,9 @@ app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
 
 app.del '/users/me/runnables/:runnableid', delrunnable
 app.del '/users/:userid/runnables/:runnableid', fetchuser, delrunnable
+
+app.get '/users/me/runnables/:runnableid/last_access', accessrunnable
+app.get '/users/:userid/runnables/:runnableid/last_access', fetchuser, accessrunnable
 
 app.get '/users/me/runnables/:runnableid/files', listfiles
 app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles
