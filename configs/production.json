@@ -2,6 +2,10 @@
   "tokenExpires": "1 year",
   "passwordSalt" : "$up3r,$3<r3t",
   "mongo": "mongodb://10.0.1.47:27017/runnable",
+  "redis": {
+    "ipaddress": "10.0.1.15",
+    "port": "6379"
+  },
   "port": 3000,
   "ipaddress": "10.0.1.54",
   "maxPageLimit": 200,
