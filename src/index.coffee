@@ -45,6 +45,6 @@ server = http.createServer app
 module.exports =
   configs: configs
   start: (cb) ->
-    server.listen configs.port, cb
+    server.listen configs.port, configs.ipaddress || "0.0.0.0", cb
   stop: (cb) ->
     server.close cb
