@@ -100,10 +100,17 @@ userSchema.statics.registerUser = (userId, data, cb) ->
       if err then cb new error { code: 500, msg: 'error computing password hash' } else
         setPassword hash
 
-userSchema.statics.listWithIds = (userIds, cb) ->
-  this.find _id: $in: userIds, (err, users) ->
+userSchema.statics.publicListWithIds = (userIds, cb) ->
+  fields =
+    username : 1
+    fb_userid: 1
+    email    : 1 # gravitar depends on email, email is removed before callback
+  this.find _id: $in: userIds, fields, (err, users) ->
     if err then cb new error { code: 500, msg: 'error looking up users' } else
-      cb null, users.map (user) -> user.toJSON()
+      cb null, users.map (user) ->
+        user = user.toJSON()
+        user.email = undefined
+        user
 
 userSchema.methods.getVotes = () ->
   votes = [ ]

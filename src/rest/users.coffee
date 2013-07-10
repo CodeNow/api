@@ -75,7 +75,7 @@ getusers = (req, res, next) ->
       msg: 'must provide a ids for users to get'
     }));
   else
-    users.listWithIds userIds, (err, users) ->
+    users.publicListWithIds userIds, (err, users) ->
       if err then next err else
         res.json users
 
