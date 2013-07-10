@@ -67,6 +67,18 @@ getuser = (req, res, next) ->
         delete json_user.votes
         res.json json_user
 
+getusers = (req, res, next) ->
+  userIds = req.query.ids
+  if (!req.query.ids || !req.query.ids.length == 0)
+    next(new error({
+      code: 400,
+      msg: 'must provide a ids for users to get'
+    }));
+  else
+    users.listWithIds userIds, (err, users) ->
+      if err then next err else
+        res.json users
+
 deluser = (req, res, next) ->
   users.removeUser req.user_id, (err) ->
     if err then next err else
@@ -215,6 +227,8 @@ deletefile = (req, res, next) ->
   runnables.deleteFile req.params.id, req.params.fileid, recursive, (err) ->
     if err then next err else
       res.json 200, { message: 'file deleted' }
+
+app.get '/users', getusers
 
 app.get '/users/me', getuser
 app.get '/users/:userid', fetchuser, getuser

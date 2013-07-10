@@ -4,6 +4,8 @@ configs = require '../lib/configs'
 redis = require 'redis'
 sa = require 'superagent'
 uuid = require 'node-uuid'
+async = require 'async'
+qs = require 'querystring'
 
 describe 'user api', ->
 
@@ -653,3 +655,39 @@ describe 'user api', ->
                                     res.should.have.status 200
                                     res.body.should.have.property '_id', userId
                                     done()
+
+  it 'should be possible to list ::users with ids specified in query param', (done) ->
+    count = 0
+    numUsers = 5
+    userIds = []
+    user = null
+    token = null
+    async.whilst () ->
+      count < numUsers
+    , (cb) ->
+        user = sa.agent()
+        helpers.createUser user, (err, userToken) ->
+          if err then done err else
+            token = userToken
+            user.get("http://localhost:#{configs.port}/users/me")
+              .set('runnable-token', token)
+              .end (err, res) ->
+                if err then done err else
+                  res.body.should.have.property '_id'
+                  userIds.push(res.body._id)
+                  count++
+                  cb()
+    , (err) ->
+        if err then done err else
+          userIds.pop() # so it's not all of the users
+          query = ids: userIds
+          user.get("http://localhost:#{configs.port}/users?#{qs.encode(query)}")
+            .set('runnable-token', token)
+            .end (err, res) ->
+              if err then done err else
+                res.should.have.status 200
+                res.body.should.be.a.array
+                res.body.length.should.equal numUsers-1
+                res.body.forEach (user) ->
+                  userIds.should.include user._id
+                done()

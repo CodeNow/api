@@ -100,6 +100,11 @@ userSchema.statics.registerUser = (userId, data, cb) ->
       if err then cb new error { code: 500, msg: 'error computing password hash' } else
         setPassword hash
 
+userSchema.statics.listWithIds = (userIds, cb) ->
+  this.find _id: $in: userIds, (err, users) ->
+    if err then cb new error { code: 500, msg: 'error looking up users' } else
+      cb null, users.map (user) -> user.toJSON()
+
 userSchema.methods.getVotes = () ->
   votes = [ ]
   for vote in @votes
