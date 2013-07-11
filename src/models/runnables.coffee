@@ -140,7 +140,10 @@ Runnables =
               if not container then cb new error { code: 403, msg: 'source container to copy from does not exist' } else
                 image.updateFromContainer container, (err, image) ->
                   if err then cb err else
-                    cb null, image
+                    json_project = image.toJSON()
+                    json_project._id = encodeId json_project._id
+                    if json_project.parent then json_project.parent = encodeId json_project.parent
+                    cb null, json_project
 
   getImage: (runnableId, cb) ->
     decodedRunnableId = decodeId runnableId
