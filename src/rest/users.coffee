@@ -139,11 +139,6 @@ putrunnable = (req, res, next) ->
               if err then next err else
                 res.json runnable
 
-accessrunnable = (req, res, next) ->
-  runnables.touchContainer req.user_id, req.params.runnableid, (err) ->
-    if err then next err else
-      res.json 200, { message: 'runnable touched' }
-
 delrunnable = (req, res, next) ->
   runnables.removeContainer req.user_id, req.params.runnableid, (err) ->
     if err then next err else
@@ -154,6 +149,27 @@ postrunnable = (req, res, next) ->
     runnables.createContainer req.user_id, req.query.from, (err, container) ->
       if err then next err else
         res.json 201, container
+
+gettags = (req, res, next) ->
+  runnables.getContainerTags req.params.id, (err, tags) ->
+    if err then next err else
+      res.json tags
+
+gettag = (req, res, next) ->
+  runnables.getContainerTag req.params.id, req.params.tagId, (err, tag) ->
+    if err then next err else
+      res.json 200, tag
+
+posttag = (req, res, next) ->
+  if not req.body.name then next new error { code: 400, msg: 'tag must include a name field' } else
+    runnables.addContainerTag req.user_id, req.params.id, req.body.name, (err, tag) ->
+      if err then next err else
+        res.json 201, tag
+
+deltag = (req, res, next) ->
+  runnables.removeContainerTag req.user_id, req.params.id, req.params.tagId, (err) ->
+    if err then next err else
+      res.json 200, { message: 'tag deleted' }
 
 readDir = (req, res, next) ->
   runnables.readDir req.params.runnableid, req.query.path, (err, dirContents) ->
@@ -263,8 +279,17 @@ app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
 app.del '/users/me/runnables/:runnableid', delrunnable
 app.del '/users/:userid/runnables/:runnableid', fetchuser, delrunnable
 
-app.get '/users/me/runnables/:runnableid/last_access', accessrunnable
-app.get '/users/:userid/runnables/:runnableid/last_access', fetchuser, accessrunnable
+app.get '/users/me/runnables/:id/tags', gettags
+app.get '/users/:userid/runnables/:id/tags', fetchuser, gettags
+
+app.post '/users/me/runnables/:id/tags', posttag
+app.post '/users/:userid/runnables/:id/tags', fetchuser, posttag
+
+app.get '/users/me/runnables/:id/tags/:tagId', gettag
+app.get '/users/:userid/runnables/:id/tags/:tagId', fetchuser, gettag
+
+app.del '/users/me/runnables/:id/tags/:tagId', deltag
+app.del '/users/:userid/runnables/:id/tags/:tagId', fetchuser, deltag
 
 app.get '/users/me/runnables/:runnableid/files', listfiles
 app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles

@@ -22,36 +22,6 @@ describe 'files api', ->
               res.body.should.have.property '_id'
               done()
 
-  it 'should update last_write when we write new ::files in the project', (done) ->
-    helpers.createContainer 'node.js', (err, user, runnableId) ->
-      if err then done err else
-        content = 'console.log("Hello, World!");'
-        encodedContent = (new Buffer(content)).toString('base64')
-        user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
-          .set('content-type', 'application/json')
-          .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
-                .end (err, res) ->
-                  if err then done err else
-                    res.body.should.have.property 'last_write'
-                    last_write = new Date(res.body.last_write)
-                    user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
-                      .set('content-type', 'application/json')
-                      .send(JSON.stringify(name: 'hello2.js', path: '/', content: encodedContent))
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 201
-                          user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
-                            .end (err, res) ->
-                              if err then done err else
-                                res.body.should.have.property 'last_write'
-                                new_last_write = new Date(res.body.last_write)
-                                new_last_write.getTime().should.be.above last_write.getTime()
-                                done()
-
   it 'should be able to read back a root ::file that was previously inserted', (done) ->
     helpers.createContainer 'node.js', (err, user, runnableId) ->
       if err then done err else

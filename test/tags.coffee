@@ -321,3 +321,104 @@ describe 'tagging api', ->
                         res.should.have.status 404
                         res.body.should.have.property 'message', 'tag not found'
                         done()
+
+  it 'should be able to ::tag a ::container that a user owns', (done) ->
+    helpers.createContainer 'node.js', (err, user, runnableId) ->
+      if err then done err else
+        tagText = 'mytag'
+        user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/tags")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(name: tagText))
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              res.should.have.property 'body'
+              res.body.should.have.property 'name', tagText
+              res.body.should.have.property '_id'
+              done()
+
+  it 'should be able to list ::tags of a ::container', (done) ->
+    helpers.createContainer 'node.js', (err, user, runnableId) ->
+      if err then done err else
+        tagText = 'mytag'
+        user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/tags")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(name: tagText))
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              res.should.have.property 'body'
+              res.body.should.have.property 'name', tagText
+              res.body.should.have.property '_id'
+              user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/tags")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.be.a.array
+                    res.body.length.should.equal 1
+                    res.body[0].should.have.property 'name', tagText
+                    res.body[0].should.have.property '_id'
+                    done()
+
+  it 'should be able to remove a ::tag in your own ::container', (done) ->
+    helpers.createContainer 'node.js', (err, user, runnableId) ->
+      if err then done err else
+        tagText = 'mytag'
+        user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/tags")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(name: tagText))
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              res.should.have.property 'body'
+              res.body.should.have.property 'name', tagText
+              res.body.should.have.property '_id'
+              tagId = res.body._id
+              user.del("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/tags/#{tagId}")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.have.property 'message', 'tag deleted'
+                    done()
+
+  it 'should be able to retrieve a ::containers ::tag by its own id', (done) ->
+    helpers.createContainer 'node.js', (err, user, runnableId) ->
+      if err then done err else
+        tagText = 'mytag'
+        user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/tags")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(name: tagText))
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              res.should.have.property 'body'
+              res.body.should.have.property 'name', tagText
+              res.body.should.have.property '_id'
+              tagId = res.body._id
+              user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/tags/#{tagId}")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.have.property 'name', tagText
+                    res.body.should.have.property '_id'
+                    done()
+
+  it 'should return tag not found if the ::tag id does not exist for a ::container', (done) ->
+    helpers.createContainer 'node.js', (err, user, runnableId) ->
+      if err then done err else
+        tagText = 'mytag'
+        user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/tags")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(name: tagText))
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              res.should.have.property 'body'
+              res.body.should.have.property 'name', tagText
+              res.body.should.have.property '_id'
+              user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/tags/12345")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 404
+                    res.body.should.have.property 'message', 'tag not found'
+                    done()

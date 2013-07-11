@@ -54,6 +54,7 @@ describe 'runnables api', ->
                         res.body.should.have.property '_id'
                         res.body.should.have.property 'parent', runnableId
                         res.body.should.have.property 'owner', userId
+                        res.body.should.have.property 'token'
                         if apiserver.configs.shortProjectIds
                           res.body._id.length.should.equal 16
                         else
@@ -67,38 +68,6 @@ describe 'runnables api', ->
                               res.body.length.should.equal 2
                               done()
 
-  it 'should be possible to touch a ::runnable to record the last access', (done) ->
-    helpers.createImage 'node.js', (err, runnableId) ->
-      if err then done err else
-        helpers.authedUser (err, user) ->
-          if err then done err else
-            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  userRunnableId = res.body._id
-                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/last_access")
-                    .end (err, res) ->
-                      if err then done err else
-                        res.body.should.have.property 'message', 'runnable touched'
-                        user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 200
-                              res.body.should.have.property 'last_access'
-                              last_access = new Date(res.body.last_access)
-                              user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/last_access")
-                                  .end (err, res) ->
-                                    if err then done err else
-                                      res.body.should.have.property 'message', 'runnable touched'
-                                      user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
-                                        .end (err, res) ->
-                                          if err then done err else
-                                            res.should.have.status 200
-                                            res.body.should.have.property 'last_access'
-                                            new_last_access = new Date(res.body.last_access)
-                                            new_last_access.getTime().should.be.above last_access.getTime()
-                                            done()
 
   it 'should report error if the ::runnable provided named base does not exist'
 
