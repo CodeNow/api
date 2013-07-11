@@ -37,6 +37,21 @@ Helpers =
               res.should.have.status 201
               cb null, res.body._id
 
+  createTaggedImage: (name, cb) ->
+    @authedUser (err, user) ->
+      if err then cb err else
+        user.post("http://localhost:#{configs.port}/runnables?from=node.js")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              runnableId = res.body._id
+              user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/tags")
+                .set('content-type', 'application/json')
+                .send(JSON.stringify({name: 'node.js'}))
+                .end (err, res) ->
+                  if err then cb err else
+                    cb null, runnableId
+
   createContainer: (name, cb) ->
     @authedUser (err, user) ->
       if err then cb err else

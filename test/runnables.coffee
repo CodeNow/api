@@ -68,6 +68,38 @@ describe 'runnables api', ->
                               res.body.length.should.equal 2
                               done()
 
+  it 'should be able to edit a tagged published ::runnable', (done) ->
+    helpers.createTaggedImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/users/me")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  userId = res.body._id
+                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        res.should.have.property 'body'
+                        res.body.should.have.property 'docker_id'
+                        res.body.should.have.property '_id'
+                        res.body.should.have.property 'parent', runnableId
+                        res.body.should.have.property 'owner', userId
+                        res.body.should.have.property 'token'
+                        if apiserver.configs.shortProjectIds
+                          res.body._id.length.should.equal 16
+                        else
+                          res.body._id.length.should.equal 24
+                        runnableId = res.body._id
+                        user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.be.a.array
+                              res.body.length.should.equal 2
+                              done()
 
   it 'should report error if the ::runnable provided named base does not exist'
 
