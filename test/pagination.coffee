@@ -186,7 +186,7 @@ describe 'pagination api', ->
                 res.body.should.have.property '_id'
                 runnables.push res.body._id
                 cb()
-        , (cb) ->
+        , (err) ->
             user.get("http://localhost:#{configs.port}/runnables")
             .end (err, res) ->
               if err then done err else
