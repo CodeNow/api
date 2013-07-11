@@ -7,7 +7,7 @@ runnables = require '../models/runnables'
 uuid = require 'node-uuid'
 _ = require 'lodash'
 
-redis_client = redis.createClient()
+redis_client = redis.createClient(configs.redis.port, configs.redis.ipaddress)
 app = module.exports = express()
 
 app.post '/users', (req, res, next) ->

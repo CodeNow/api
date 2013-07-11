@@ -1,11 +1,16 @@
 {
   "tokenExpires": "1 year",
   "passwordSalt" : "$up3r,$3<r3t",
-  "mongo": "mongodb://127.0.0.1:27017/runnable",
+  "mongo": "mongodb://10.0.1.47:27017/runnable",
+  "redis": {
+    "ipaddress": "10.0.1.15",
+    "port": "6379"
+  },
   "port": 3000,
+  "ipaddress": "10.0.1.54",
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
-  "docker": "http://54.215.13.107",
+  "docker": "http://10.0.2.232",
   "shortProjectIds": true,
   "volumesPath": "{HOME_DIR}/.runnable/volumes",
   "volume": "disk",
