@@ -47,8 +47,8 @@ Helpers =
               runnableId = res.body._id
               user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
                 .end (err, res) ->
-                  res.should.have.status 201
                   if err then cb err else
+                    res.should.have.status 201
                     cb null, user, res.body._id
 
   createPublishedProject: (user, cb) ->

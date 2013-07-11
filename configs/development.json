@@ -16,6 +16,5 @@
   "volume": "dnode",
   "dnode_host": "localhost",
   "dnode_port": 13337,
-  "showStack": true,
-  "logStack" : true
+  "showStack": true
 }

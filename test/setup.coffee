@@ -12,7 +12,7 @@ state = require './state'
 db = mongodb.Db
 
 redis_client = redis.createClient()
-docker = dockerjs host: configs.docker
+docker = dockerjs host: configs.direct_docker
 
 beforeEach (done) ->
   db.connect configs.mongo, (err, test_db) ->
