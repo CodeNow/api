@@ -504,9 +504,6 @@ describe 'runnables api', ->
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.have.property 'running', true
-                        res.body.should.have.property 'web'
-                        res.body.should.have.property 'logs'
-                        res.body.should.have.property 'terminal'
                         user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                           .end (err, res) ->
                             if err then done err else
@@ -596,7 +593,4 @@ describe 'runnables api', ->
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.have.property 'running', true
-                        res.body.should.have.property 'web'
-                        res.body.should.have.property 'logs'
-                        res.body.should.have.property 'terminal'
                         done()
