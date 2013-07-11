@@ -10,6 +10,7 @@
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
   "docker": "http://54.215.13.107:4243",
+  "direct_docker": "http://54.215.13.107:4243",
   "shortProjectIds": true,
   "volumesPath": "{RAND_DIR}/volumes",
   "volume": "disk",

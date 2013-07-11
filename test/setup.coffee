@@ -12,7 +12,7 @@ state = require './state'
 db = mongodb.Db
 
 redis_client = redis.createClient()
-docker = dockerjs host: configs.docker
+docker = dockerjs host: configs.direct_docker
 
 beforeEach (done) ->
   db.connect configs.mongo, (err, test_db) ->
@@ -61,43 +61,21 @@ afterEach (done) ->
         test_db.dropDatabase (err) ->
           if err then done err else
             test_db.close () ->
-              docker.listContainers (err, containers) ->
+              rimraf configs.volumesPath, (err) ->
                 if err then done err else
-                  async.forEachSeries containers, (container, cb) ->
-                    docker.stopContainer container.Id, cb
-                  , (err) ->
-                    if err then done err else
-                      docker.listContainers queryParams: all: true, (err, containers) ->
-                        if err then done err else
-                          async.forEachSeries containers, (container, cb) ->
-                            docker.removeContainer container.Id, cb
-                          , (err) ->
-                            if err then done err else
-                              rimraf configs.volumesPath, (err) ->
-                                if err then done err else
-                                  killed = false
-                                  setTimeout () ->
-                                    if not killed
-                                      killed = true
-                                      done()
-                                  , 1000
-                                  apiserver.stop () ->
-                                    if not killed
-                                      killed = true
-                                      done()
+                  killed = false
+                  setTimeout () ->
+                    if not killed
+                      killed = true
+                      done()
+                  , 1000
+                  apiserver.stop () ->
+                    if not killed
+                      killed = true
+                      done()
 
 before (done) ->
-  docker.listContainers (err, containers) ->
-    if err then done err else
-      async.forEachSeries containers, (container, cb) ->
-        docker.stopContainer container.Id, cb
-      , (err) ->
-        if err then done err else
-          docker.listContainers queryParams: all: true, (err, containers) ->
-            if err then done err else
-              async.forEachSeries containers, (container, cb) ->
-                docker.removeContainer container.Id, cb
-              , done
+  done()
 
 after (done) ->
   redis_client.flushall () ->
