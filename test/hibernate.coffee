@@ -43,7 +43,7 @@ describe 'hibernate feature', ->
                 done()
         , 5000
 
-  it 'should allow for a container to enter ::hibernate mode and then wake it up by reading a file', (done) ->
+  it 'should allow for a container to enter ::hibernate mode and then wake it up by reading a file twice', (done) ->
     helpers.createContainer 'node.js', (err, user, runnableId) ->
       if err then done err else
         setTimeout () ->
@@ -69,21 +69,3 @@ describe 'hibernate feature', ->
                       , 5000
         , 5000
 
-
-  it 'should allow for a container to enter ::hibernate mode and then wake it up by stopping the runnable', (done) ->
-    helpers.createContainer 'node.js', (err, user, runnableId) ->
-      if err then done err else
-        user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
-          .set('content-type', 'application/json')
-          .send(JSON.stringify({ name: 'new name', running: true }))
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 200
-              setTimeout () ->
-                user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
-                  .end (err, res) ->
-                    if err then done err else
-                      res.should.have.status 200
-                      res.body.should.have.property 'running', false
-                      done()
-              , 5000
