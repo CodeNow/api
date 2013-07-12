@@ -45,7 +45,6 @@ Runnables =
                   cb null, image
           else
             from = from
-            console.log('going here', from);
             fields = null #all fields
             options =
               sort: { _id:1 }
