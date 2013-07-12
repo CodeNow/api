@@ -10,9 +10,11 @@
   "ipaddress": "10.0.1.54",
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
-  "docker": "http://10.0.2.232",
+  "docker": "http://10.0.2.232:4243",
   "shortProjectIds": true,
   "volumesPath": "{HOME_DIR}/.runnable/volumes",
-  "volume": "disk",
+  "volume": "dnode",
+  "dnode_host": "10.0.2.232",
+  "dnode_port": 13337,
   "showStack": false
 }
