@@ -34,11 +34,27 @@ Runnables =
                   if err then cb new error { code: 500, msg: 'error updating save target for container' } else
                     handler null, image
 
-  createContainer: (userId, from, cb) ->
-    from = decodeId from
-    images.findOne _id: from, (err, image) ->
-      if err then cb err else
-        if not image then cb new error { code: 400, msg: 'could not find source image to fork from' } else
+  createContainer: (userId, from, callback) ->
+    async.waterfall [
+        (cb) ->
+          if isObjectId64 from
+            from = decodeId from
+            images.findOne _id: from, (err, image) ->
+              if err then cb { code: 500, msg: 'error fetching image from mongodb', err:err } else
+                if not image then cb new error { code: 400, msg: 'could not find source image to fork from' } else
+                  cb null, image
+          else
+            from = from
+            console.log('going here', from);
+            fields = null #all fields
+            options =
+              sort: { _id:1 }
+              limit: 1
+            images.find 'tags.name':from, fields, options, (err, images) ->
+              if err then cb { code: 500, msg: 'error fetching image from mongodb', err:err } else
+                if not images.length then cb new error { code: 400, msg: 'could not find source image to fork from' } else
+                  cb null, images[0]
+      , (image, cb)->
           containers.create userId, image, (err, container) ->
             if err then cb err else
               container.getProcessState (err, state) ->
@@ -49,6 +65,8 @@ Runnables =
                   _.extend json_container, state
                   json_container._id = encodeId container._id
                   cb null, json_container
+      ]
+    , callback
 
   touchContainer: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -564,3 +582,10 @@ decodeId = (id) -> id
 if configs.shortProjectIds
   encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
   decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');
+
+isObjectId = (str) ->
+  Boolean(str.match(/^[0-9a-fA-F]{24}$/))
+
+isObjectId64 = (str) ->
+  str = decodeId str
+  Boolean(str.match(/^[0-9a-fA-F]{24}$/))

@@ -305,7 +305,21 @@ describe 'runnables api', ->
                                   res.should.have.status 201
                                   done()
 
-  it 'should create a ::runnable from an existing published one that someone else owns and save to new', (done) ->
+  it 'should create a ::runnable from an existing published one from channel name', (done) ->
+    template = 'node.js'
+    tag      = 'node.js'
+    helpers.createTaggedImage template, (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{tag}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  done()
+
+  it 'should create a ::runnable from an existing published one that someone else owns, save to new, and is in channel', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
         helpers.authedUser (err, user) ->
@@ -333,7 +347,6 @@ describe 'runnables api', ->
                                         res.should.have.status 201
                                         res.body.should.have.property 'parent', publishedId
                                         done()
-
 
   it 'should be able to retrieve a users ::runnable by its id', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
