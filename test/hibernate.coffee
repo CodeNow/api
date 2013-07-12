@@ -30,6 +30,18 @@ describe 'hibernate feature', ->
                       done()
         , 5000
 
+  it 'should allow for a container to enter ::hibernate mode and then read its native state by getting container', (done) ->
+    helpers.createContainer 'node.js', (err, user, runnableId) ->
+      if err then done err else
+        setTimeout () ->
+          user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
+            .end (err, res) ->
+              if err then done err else
+                res.should.have.status 200
+                res.body.should.have.property 'running', false
+                done()
+        , 5000
+
   it 'should allow for a container to enter ::hibernate mode and then wake it up by starting a runnable', (done) ->
     helpers.createContainer 'node.js', (err, user, runnableId) ->
       if err then done err else
