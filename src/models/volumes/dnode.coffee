@@ -1,11 +1,11 @@
 configs = require '../../configs'
-dnode = require 'dnode'
+upnode = require 'upnode'
 
 Volumes = { }
 
-d = dnode.connect(configs.dnode_host, configs.dnode_port);
+d = upnode.connect(configs.dnode_host, configs.dnode_port);
 
-d.on 'remote', (remote) ->
+d (remote) ->
   if not remote.create then throw new Error 'volume does not implement create()'
   if not remote.remove then throw new Error 'volume does not implement remove()'
   if not remote.copy then throw new Error 'volume does not implement copy()'
