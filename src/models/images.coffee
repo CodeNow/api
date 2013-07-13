@@ -145,8 +145,10 @@ imageSchema.statics.destroy = (id, cb) ->
               cb()
 
 imageSchema.statics.listTags = (cb) ->
-  @find().distinct 'tags', (err, tags) ->
+  @find().distinct 'tags.name', (err, tagNames) ->
     if err then cb new error { code: 500, msg: 'error retrieving project tags', err: err } else
+      tags = tagNames.map (tag) ->
+        name: tag, _id: tag
       cb null, tags
 
 imageSchema.statics.isOwner = (userId, runnableId, cb) ->
