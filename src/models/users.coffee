@@ -29,7 +29,9 @@ userSchema = new Schema
     default: Date.now
   votes:
     type: [
-      runnable: ObjectId
+      runnable:
+        type: ObjectId
+        index: {sparse:true}
     ]
     default: [ ]
 
