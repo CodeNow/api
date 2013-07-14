@@ -34,10 +34,11 @@ imageSchema = new Schema
     type: Number
   tags:
     type: [
-      name: String
+      name:
+        type: String
+        index: true
     ]
     default: [ ]
-    index: true
   file_root:
     type: String
   files:
