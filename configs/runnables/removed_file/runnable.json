@@ -20,6 +20,11 @@
       "name": "package.json",
       "path": "/",
       "default": false
+    },
+    {
+      "name": "doesnt_exist.js",
+      "path": "/",
+      "default": false
     }
   ],
   "tags": [ ]

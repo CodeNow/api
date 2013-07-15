@@ -7,6 +7,7 @@ path = require 'path'
 mongoose = require 'mongoose'
 uuid = require 'node-uuid'
 volumes = require  "./volumes/#{configs.volume}"
+_ = require 'lodash'
 
 docker = dockerjs host: configs.docker
 
@@ -164,27 +165,43 @@ containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
 
 containerSchema.methods.syncFiles = (cb) ->
   ignores = [ ]
+  new_file_list = [ ]
   for file in @files
     if file.ignore
       ignores.push path.normalize "#{file.path}/#{file.name}"
+      new_file_list.push file
+  old_file_list = _.clone @files
   volumes.readAllFiles @long_docker_id, @file_root, ignores, (err, allFiles) =>
     if err then cb new error { code: 500, msg: 'error returning list of files from container' } else
       allFiles.forEach (file) =>
         found = false
-        # update existing entry
-        for existingFile in @files
+        for existingFile in old_file_list
           if file.path is existingFile.path and file.name is existingFile.name
-            existingFile.dir = file.dir
-            existingFile.content = file.content
             found = true
+            if file.dir
+              new_file_list.push
+                _id: existingFile._id
+                name: file.name
+                path: file.path
+                dir: true
+            else
+              new_file_list.push
+                _id: existingFile._id
+                name: file.name
+                path: file.path
+                content: file.content
         if not found
-          # create new entry
-          @files.push
-            name: file.name
-            path: file.path
-            dir: file.dir
-            content: file.content
-      # TODO: remove unreferenced entries
+          if file.dir
+            new_file_list.push
+              name: file.name
+              path: file.path
+              dir: true
+          else
+            new_file_list.push
+              name: file.name
+              path: file.path
+              content: file.content
+      @files = new_file_list
       @save (err) =>
         if err then new error { code: 500, msg: 'error saving container to mongodb' } else
           cb null, @

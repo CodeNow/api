@@ -83,6 +83,24 @@ describe 'file sync feature', ->
                         found.should.equal true
                         done()
 
+  it 'should ::sync files which are removed when building an image from dockerfile', (done) ->
+    helpers.createImage 'removed_file', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        res.body.length.should.equal 3
+                        done()
+
   it 'should not ::sync files inside ignored folders when building an image from dockerfile', (done) ->
     helpers.createImage 'node.js_express', (err, runnableId) ->
       if err then done err else
@@ -184,6 +202,54 @@ describe 'file sync feature', ->
                                                     res.body.should.have.property 'content'
                                                     encodedOverwrite = (new Buffer('overwrite\n')).toString('base64')
                                                     res.body.content.should.equal encodedOverwrite
+                                                    done()
+
+
+  it 'should ::sync a file that is removed out of ::band when a container sync() is called', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  res.body.should.have.property 'token'
+                  token = res.body.token
+                  terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        fileId = null
+                        for elem in res.body
+                          if elem.name is 'server.js'
+                            file_id = elem._id
+                        user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files/#{file_id}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.have.property 'content'
+                              content = res.body.content
+                              ### IMPORTANT - HIT THE DISK SO WE ACTIVATE THE CONTAINER ###
+                              user.post("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/sync")
+                                .end (err, res) ->
+                                  if err then done err else
+                                    res.should.have.status 201
+                                    terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
+                                    helpers.sendCommand terminalUrl, 'rm server.js', (err, output) ->
+                                      if err then done err else
+                                        user.post("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/sync")
+                                          .end (err, res) ->
+                                            if err then done err else
+                                              res.should.have.status 201
+                                              user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                                                .end (err, res) ->
+                                                  if err then done err else
+                                                    res.should.have.status 200
+                                                    res.body.should.be.a.array
+                                                    res.body.length.should.equal 2
                                                     done()
 
   ### NEXT ITERATION ###

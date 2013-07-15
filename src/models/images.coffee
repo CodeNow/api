@@ -10,6 +10,7 @@ mongoose = require 'mongoose'
 request = require 'request'
 uuid = require 'node-uuid'
 volumes = require "./volumes/#{configs.volume}"
+_ = require 'lodash'
 
 docker = dockerjs host: configs.docker
 
@@ -115,27 +116,43 @@ imageSchema.statics.createFromDisk = (owner, name, cb) ->
               if err then cb new error { code: 500, msg: 'error getting long container id to sync files from' } else
                 long_docker_id = result.ID
                 ignores = [ ]
+                ignored_files = [ ]
                 for file in image.files
                   if file.ignore
                     ignores.push path.normalize "#{file.path}/#{file.name}"
+                    ignored_files.push file
                 volumes.readAllFiles long_docker_id, image.file_root, ignores, (err, allFiles) ->
                   if err then cb new error { code: 500, msg: 'error returning list of files from container' } else
+                    old_file_list = _.clone image.files
+                    image.files = ignored_files
                     allFiles.forEach (file) ->
                       found = false
-                      # update existing entry
-                      for existingFile in image.files
+                      for existingFile in old_file_list
                         if file.path is existingFile.path and file.name is existingFile.name
-                          existingFile.dir = file.dir
-                          existingFile.content = file.content
                           found = true
+                          if file.dir
+                            image.files.push
+                              _id: existingFile._id
+                              name: file.name
+                              path: file.path
+                              dir: true
+                          else
+                            image.files.push
+                              _id: existingFile._id
+                              name: file.name
+                              path: file.path
+                              content: file.content
                       if not found
-                        # create new entry
-                        image.files.push
-                          name: file.name
-                          path: file.path
-                          dir: file.dir
-                          content: file.content
-                    # TODO: remove unreferenced entries
+                        if file.dir
+                          image.files.push
+                            name: file.name
+                            path: file.path
+                            dir: true
+                        else
+                          image.files.push
+                            name: file.name
+                            path: file.path
+                            content: file.content
                     docker.removeContainer containerId, (err) ->
                       if err then cb new error { code: 500, msg: 'error removing container files were synced from' } else
                         image.save (err) ->
