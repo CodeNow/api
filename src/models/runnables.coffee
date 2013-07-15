@@ -9,6 +9,7 @@ _ = require 'lodash'
 Runnables =
 
   createImage: (userId, from, cb) ->
+
     handler = (err, image) ->
       if err then cb err else
         users.findUser _id: userId, (err, user) ->
@@ -20,14 +21,13 @@ Runnables =
                   if json_image.parent then json_image.parent = encodeId json_image.parent
                   json_image._id = encodeId image._id
                   cb null, json_image
-    if from is 'node.js'
-      images.createFromDisk userId, from, handler
-    else
+
+    if not isObjectId64 from then images.createFromDisk userId, from, handler else
       from = decodeId from
       containers.findOne { _id: from }, (err, container) ->
         if err then cb new error { code: 500, msg: 'error fetching container from mongodb'} else
           if not container then cb new error { code: 403, msg: 'source runnable not found' } else
-            images.create container, (err, image) ->
+            images.createFromContainer container, (err, image) ->
               if err then cb err else
                 container.target = image._id
                 container.save (err) ->
@@ -66,14 +66,6 @@ Runnables =
                   cb null, json_container
       ]
     , callback
-
-  touchContainer: (userId, runnableId, cb) ->
-    runnableId = decodeId runnableId
-    containers.findOne _id: runnableId, (err, container) ->
-      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
-        if not container then cb new error { code: 404, msg: 'runnable not found' } else
-          if container.owner.toString() isnt userId.toString() then cb new error { code: 403, msg: 'permission denied' } else
-            containers.touch runnableId, cb
 
   listContainers: (userId, parent, cb) ->
     query = { owner: userId }
@@ -410,24 +402,12 @@ Runnables =
         if not container then cb new error { code: 404, msg: 'runnable not found' } else
           container.listFiles content, dir, default_tag, path, cb
 
-  # Praful: Both these methods are shimmmed to always get a running container
-  # this logic needs to be replaced to get the projects
-  # right container to interact with these files
-  readDir: (runnableId, path, cb) ->
+  syncFiles: (runnableId, cb) ->
     runnableId = decodeId runnableId
     containers.findOne (err, container) ->
-    # containers.findOne _id: runnableId, (err, container) ->
       if err then cb new error { code: 500, msg: 'error looking up runnable' } else
         if not container then cb new error { code: 404, msg: 'runnable not found' } else
-          container.readDir path, cb
-
-  changeFile: (runnableId, path, content, cb) ->
-    runnableId = decodeId runnableId
-    containers.findOne (err, container) ->
-    # containers.findOne _id: runnableId, (err, container) ->
-      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
-        if not container then cb new error { code: 404, msg: 'runnable not found' } else
-          container.changeFile path, content, cb
+          container.syncFiles cb
 
   createFile: (userId, runnableId, name, path, content, cb) ->
     runnableId = decodeId runnableId
@@ -494,14 +474,6 @@ Runnables =
           file = container.files.id fileId
           if not file then cb new error { code: 404, msg: 'file not found' } else
             container.deleteFile fileId, recursive, cb
-
-  deleteAllFiles: (runnableId, cb) ->
-    runnableId = decodeId runnableId
-    containers.findOne _id: runnableId, (err, container) ->
-      if err then cb new error { code: 500, msg: 'error looking up runnable' } else
-        if not container then cb new error { code: 404, msg: 'runnable not found' } else
-          container.deleteAllFiles cb
-
 
 module.exports = Runnables
 

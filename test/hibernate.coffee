@@ -99,3 +99,7 @@ describe 'hibernate feature', ->
                       , 10000
         , 10000
 
+
+  it 'should take container out of ::hibernate when the terminal is accessed'
+  it 'should take the container out of ::hibernate when the web service is accessed'
+  it 'should take the container out of ::hibernate when the tail log is accessed'

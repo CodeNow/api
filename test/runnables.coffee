@@ -65,7 +65,7 @@ describe 'runnables api', ->
                             if err then done err else
                               res.should.have.status 200
                               res.body.should.be.a.array
-                              res.body.length.should.equal 2
+                              res.body.length.should.equal 3
                               done()
 
   it 'should be able to edit a tagged published ::runnable', (done) ->
@@ -98,7 +98,7 @@ describe 'runnables api', ->
                             if err then done err else
                               res.should.have.status 200
                               res.body.should.be.a.array
-                              res.body.length.should.equal 2
+                              res.body.length.should.equal 3
                               done()
 
   it 'should report error if the ::runnable provided named base does not exist'

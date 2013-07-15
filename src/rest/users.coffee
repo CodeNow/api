@@ -178,11 +178,6 @@ readDir = (req, res, next) ->
     if err then next err else
       res.json 200, dirContents
 
-changeFile = (req, res, next) ->
-  runnables.changeFile req.params.runnableid, req.body.path, req.body.content, (err, updated) ->
-    if err then next err else
-      res.json 200, updated
-
 listfiles = (req, res, next) ->
   content = req.query.content?
   dir = req.query.dir?
@@ -191,6 +186,11 @@ listfiles = (req, res, next) ->
   runnables.listFiles req.params.runnableid, content, dir, default_tag, path, (err, files) ->
     if err then next err else
       res.json 200, files
+
+syncfiles = (req, res, next) ->
+  runnables.syncFiles req.params.id, (err) ->
+    if err then next err else
+      res.json 201, { message: 'files synced successfully', date: new Date }
 
 createfile = (req, res, next) ->
   if req.body.dir
@@ -234,11 +234,6 @@ updatefile = (req, res, next) ->
     runnables.updateFile req.user_id, req.params.id, req.params.fileid, req.body.content, (err, file) ->
       if err then next err else
         res.json 200, file
-
-deleteallfiles = (req, res, next) ->
-  runnables.deleteAllFiles req.params.id, (err) ->
-    if err then next err else
-      res.json 200, { message: 'deleted all files' }
 
 deletefile = (req, res, next) ->
   recursive = req.query.recursive?
@@ -296,6 +291,9 @@ app.del '/users/:userid/runnables/:id/tags/:tagId', fetchuser, deltag
 app.get '/users/me/runnables/:runnableid/files', listfiles
 app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles
 
+app.post '/users/me/runnables/:id/sync', syncfiles
+app.post '/users/:userid/runnables/:id/sync', fetchuser, syncfiles
+
 app.post '/users/me/runnables/:id/files', createfile
 app.post '/users/:userid/runnables/:id/files', fetchuser, createfile
 
@@ -305,12 +303,5 @@ app.get '/users/:userid/runnables/:id/files/:fileid', fetchuser, getfile
 app.put '/users/me/runnables/:id/files/:fileid', updatefile
 app.put '/users/:userid/runnables/:id/files/:fileid', fetchuser, updatefile
 
-app.del '/users/me/runnables/:id/files', deleteallfiles
-app.del '/users/:userid/runnables/:id/files', fetchuser, deleteallfiles
-
 app.del '/users/me/runnables/:id/files/:fileid', deletefile
 app.del '/users/:userid/runnables/:id/files/:fileid', fetchuser, deletefile
-
-app.get '/users/me/runnables/:runnableid/readDir', readDir
-
-# app.get '/users/me/runnables/:runnableid/fileTree', getFileTree

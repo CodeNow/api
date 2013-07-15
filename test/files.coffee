@@ -718,34 +718,6 @@ describe 'files api', ->
               res.body.should.have.property 'message', 'file not found'
               done()
 
-  it 'should be possible to delete the root directory (all ::files)', (done) ->
-    helpers.createContainer 'node.js', (err, user, runnableId) ->
-      if err then done err else
-        user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
-          .set('content-type', 'application/json')
-          .send(JSON.stringify(name: 'dir', path: '/', dir: true))
-          .end (err, res) ->
-            if err then done err else
-              res.should.have.status 201
-              dirId = res.body._id
-              user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
-                .set('content-type', 'application/json')
-                .send(JSON.stringify(name: 'dir2', path: '/dir', dir: true))
-                .end (err, res) ->
-                  if err then done err else
-                    res.should.have.status 201
-                    subDirId = res.body._id
-                    user.del("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
-                      .end (err, res) ->
-                        if err then done err else
-                          res.should.have.status 200
-                          res.body.should.have.property 'message', 'deleted all files'
-                          user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{subDirId}")
-                            .end (err, res) ->
-                              if err then done err else
-                                res.should.have.status 404
-                                done()
-
   it 'should be possible to tag a ::file as default', (done) ->
     helpers.createContainer 'node.js', (err, user, runnableId) ->
       if err then done err else
@@ -804,8 +776,9 @@ describe 'files api', ->
                   if err then done err else
                     res.should.have.status 200
                     res.body.should.be.a.array
-                    res.body.length.should.equal 3
-                    res.body[0].should.not.have.property 'content'
+                    res.body.length.should.equal 4
+                    for elem in res.body
+                      elem.should.not.have.property 'content'
                     done()
 
   it 'should ::list all ::file resources, including ::contents', (done) ->
@@ -824,10 +797,9 @@ describe 'files api', ->
                   if err then done err else
                     res.should.have.status 200
                     res.body.should.be.a.array
-                    res.body.length.should.equal 3
+                    res.body.length.should.equal 4
                     for file in res.body
                       file.should.have.property 'name'
-                      file.should.have.property 'content'
                       if file.name is 'hello.js'
                         file.should.have.property 'content', encodedContent
                     done()
@@ -854,8 +826,9 @@ describe 'files api', ->
                         if err then done err else
                           res.should.have.status 200
                           res.body.should.be.a.array
-                          res.body.length.should.equal 1
+                          res.body.length.should.equal 2
                           res.body[0].should.not.have.property 'content'
+                          res.body[1].should.not.have.property 'content'
                           done()
 
   it 'should only list ::files, including contents, with the default flag set to true', (done) ->

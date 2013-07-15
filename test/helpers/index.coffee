@@ -1,3 +1,4 @@
+cp = require 'child_process'
 configs = require '../../lib/configs'
 sa = require 'superagent'
 
@@ -51,7 +52,7 @@ Helpers =
   createImage: (name, cb) ->
     @authedUser (err, user) ->
       if err then cb err else
-        user.post("http://localhost:#{configs.port}/runnables?from=node.js")
+        user.post("http://localhost:#{configs.port}/runnables?from=#{name}")
           .end (err, res) ->
             if err then done err else
               res.should.have.status 201
@@ -100,5 +101,14 @@ Helpers =
                   if err then cb err else
                     res.should.have.status 201
                     cb null, res.body._id
+
+  sendCommand: (url, cmd, cb) ->
+    ptm = cp.spawn 'phantomjs', [ './term.js', url, cmd ], { cwd: __dirname }
+    output_buffer = ''
+    ptm.on 'close', (code, signal) ->
+      if code isnt 0 then cb new Error 'error calling phantomjs' else
+        cb null, output_buffer
+    ptm.stdout.on 'data', (data) ->
+      output_buffer += data.toString()
 
 module.exports = Helpers

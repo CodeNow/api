@@ -1,6 +1,6 @@
 {
   "name": "hello",
-  "description": "hello world using core http module",
+  "description": "hello world using express",
   "version": "0.1.0",
   "dependencies": {
   }

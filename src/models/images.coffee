@@ -8,6 +8,7 @@ fs = require 'fs'
 path = require 'path'
 mongoose = require 'mongoose'
 request = require 'request'
+uuid = require 'node-uuid'
 volumes = require "./volumes/#{configs.volume}"
 
 docker = dockerjs host: configs.docker
@@ -35,8 +36,8 @@ imageSchema = new Schema
   tags:
     type: [
       name:
-        type: String
         index: true
+        type: String
     ]
     default: [ ]
   file_root:
@@ -52,6 +53,10 @@ imageSchema = new Schema
       default:
         type: Boolean
         default: false
+      content:
+        type: String
+      ignore:
+        type: Boolean
     ]
     default: [ ]
 
@@ -61,53 +66,83 @@ imageSchema.index
   tags: 1
   parent: 1
 
+buildDockerImage = (fspath, tag, cb) ->
+  child = cp.spawn 'tar', [ '-c', '--directory', fspath, '.' ]
+  req = request.post
+    url: "#{configs.docker}/v1.3/build"
+    headers: { 'content-type': 'application/tar' }
+    qs:
+      t: tag
+  , (err, res, body) ->
+      if err then cb new error { code: 500, msg: 'error building image from Dockerfile' } else
+        if res.statusCode isnt 200 then cb new error { code: res.status, msg: body } else
+          if body.indexOf('Successfully built') is -1 then cb new error { code: 500, msg: 'could not build image from dockerfile' } else
+            cb null, tag
+  child.stdout.pipe req
+
 imageSchema.statics.createFromDisk = (owner, name, cb) ->
   runnablePath = "#{__dirname}/../../configs/runnables"
-  runnable = require "#{runnablePath}/#{name}/runnable.json"
+  try
+    runnable = require "#{runnablePath}/#{name}/runnable.json"
+  catch err
+    cb new error { code: 500, msg: "could not load image #{name} from disk" }
   if not runnable then cb new error { code: 500, msg: 'could not load image from disk' } else
-    image = new @
-      owner: owner
-      name: runnable.name
-      cmd: runnable.cmd
-      file_root: runnable.file_root
-      port: runnable.port
-    for file in runnable.files
-      image.files.push file
-    for tag in runnable.tags
-      image.tags.push tag
-    child = cp.spawn 'tar', [ '-c', '--directory', "#{runnablePath}/#{name}", '.' ]
-    req = request.post
-      timeout: 60000
-      url: "#{configs.docker}/v1.3/build"
-      headers:
-        'content-type': 'application/tar'
-      qs:
-        t: image._id.toString()
-    , (err, res, body) ->
-        if err then cb new error { code: 500, msg: 'error building image from Dockerfile' } else
-          if res.statusCode isnt 200 then cb new error { code: res.status, msg: body } else
-            if body.indexOf('Successfully built') is -1 then cb new error { code: 500, msg: 'could not build image from dockerfile' } else
-              image.docker_id = image._id.toString()
-              image.save (err) ->
-                if err then new error { code: 500, msg: 'error saving image to mongodb' } else
-                  volumes.create image._id, image.file_root, (err) ->
-                    if err then cb err else
-                      async.map runnable.files, (file, cb) ->
-                        fs.readFile "#{runnablePath}/#{name}/#{file.content}", 'base64', (err, content) ->
-                          if err then cb new error { code: 500, msg: 'error reading source file for building image' } else
-                            cb null,
-                              name: file.name
-                              path: file.path
-                              default: file.default
-                              content: content
-                      , (err, files) ->
-                        if err then cb err else
-                          volumes.createFiles image._id, image.file_root, files, (err) ->
-                            if err then cb new error { code: 500, msg: 'error writing source files to disk' } else
-                              cb null, image
-    child.stdout.pipe req
+    image = new @()
+    tag = image._id.toString()
+    buildDockerImage "#{runnablePath}/#{name}", tag, (err, docker_id) ->
+      if err then cb err else
+        image.docker_id = docker_id
+        image.owner = owner
+        image.name = runnable.name
+        image.cmd = runnable.cmd
+        image.file_root = runnable.file_root
+        image.port = runnable.port
+        for tag in runnable.tags
+          image.tags.push tag
+        for file in runnable.files
+          image.files.push file
+        token = uuid.v4()
+        docker.createContainer
+          Token: token
+          Hostname: image._id.toString()
+          Image: image.docker_id.toString()
+          PortSpecs: [ image.port.toString() ]
+          Cmd: [ image.cmd ]
+        , (err, res) ->
+          if err then cb new error { code: 500, msg: 'error creating container to sync files from' } else
+            containerId = res.Id
+            docker.inspectContainer containerId, (err, result) ->
+              if err then cb new error { code: 500, msg: 'error getting long container id to sync files from' } else
+                long_docker_id = result.ID
+                ignores = [ ]
+                for file in image.files
+                  if file.ignore
+                    ignores.push path.normalize "#{file.path}/#{file.name}"
+                volumes.readAllFiles long_docker_id, image.file_root, ignores, (err, allFiles) ->
+                  if err then cb new error { code: 500, msg: 'error returning list of files from container' } else
+                    allFiles.forEach (file) ->
+                      found = false
+                      # update existing entry
+                      for existingFile in image.files
+                        if file.path is existingFile.path and file.name is existingFile.name
+                          existingFile.dir = file.dir
+                          existingFile.content = file.content
+                          found = true
+                      if not found
+                        # create new entry
+                        image.files.push
+                          name: file.name
+                          path: file.path
+                          dir: file.dir
+                          content: file.content
+                    # TODO: remove unreferenced entries
+                    docker.removeContainer containerId, (err) ->
+                      if err then cb new error { code: 500, msg: 'error removing container files were synced from' } else
+                        image.save (err) ->
+                          if err then new error { code: 500, msg: 'error saving image to mongodb' } else
+                            cb null, image
 
-imageSchema.statics.create = (container, cb) ->
+imageSchema.statics.createFromContainer = (container, cb) ->
   image = new @
     owner: container.owner
     name: container.name
@@ -129,9 +164,7 @@ imageSchema.statics.create = (container, cb) ->
       image.docker_id = result.Id
       image.save (err) ->
         if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
-          volumes.copy container.long_docker_id, image._id, image.file_root, (err) ->
-            if err then cb err else
-              cb null, image
+          cb null, image
 
 imageSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, image) =>
