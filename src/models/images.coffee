@@ -8,8 +8,8 @@ fs = require 'fs'
 path = require 'path'
 mongoose = require 'mongoose'
 request = require 'request'
+sync = require './sync'
 uuid = require 'node-uuid'
-volumes = require "./volumes/#{configs.volume}"
 _ = require 'lodash'
 
 docker = dockerjs host: configs.docker
@@ -97,44 +97,8 @@ syncDockerImage = (image, cb) ->
       docker.inspectContainer containerId, (err, result) ->
         if err then cb new error { code: 500, msg: 'error getting long container id to sync files from' } else
           long_docker_id = result.ID
-          ignores = [ ]
-          ignored_files = [ ]
-          for file in image.files
-            if file.ignore
-              ignores.push path.normalize "#{file.path}/#{file.name}"
-              ignored_files.push file
-          volumes.readAllFiles long_docker_id, image.file_root, ignores, (err, allFiles) ->
-            if err then cb new error { code: 500, msg: 'error returning list of files from container' } else
-              old_file_list = _.clone image.files
-              image.files = ignored_files
-              allFiles.forEach (file) ->
-                found = false
-                for existingFile in old_file_list
-                  if file.path is existingFile.path and file.name is existingFile.name
-                    found = true
-                    if file.dir
-                      image.files.push
-                        _id: existingFile._id
-                        name: file.name
-                        path: file.path
-                        dir: true
-                    else
-                      image.files.push
-                        _id: existingFile._id
-                        name: file.name
-                        path: file.path
-                        content: file.content
-                if not found
-                  if file.dir
-                    image.files.push
-                      name: file.name
-                      path: file.path
-                      dir: true
-                  else
-                    image.files.push
-                      name: file.name
-                      path: file.path
-                      content: file.content
+          sync long_docker_id, image, (err) ->
+            if err then cb err else
               docker.removeContainer containerId, (err) ->
                 if err then cb new error { code: 500, msg: 'error removing container files were synced from' } else
                   cb()
