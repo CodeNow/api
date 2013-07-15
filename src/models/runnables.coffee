@@ -8,7 +8,7 @@ _ = require 'lodash'
 
 Runnables =
 
-  createImage: (userId, from, cb) ->
+  createImage: (userId, from, sync, cb) ->
 
     handler = (err, image) ->
       if err then cb err else
@@ -22,7 +22,7 @@ Runnables =
                   json_image._id = encodeId image._id
                   cb null, json_image
 
-    if not isObjectId64 from then images.createFromDisk userId, from, handler else
+    if not isObjectId64 from then images.createFromDisk userId, from, sync, handler else
       from = decodeId from
       containers.findOne { _id: from }, (err, container) ->
         if err then cb new error { code: 500, msg: 'error fetching container from mongodb'} else

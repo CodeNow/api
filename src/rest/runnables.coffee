@@ -9,7 +9,8 @@ app = module.exports = express()
 
 app.post '/runnables', (req, res, next) ->
   from = req.query.from or 'node.js'
-  runnables.createImage req.user_id, from, (err, image) ->
+  if req.query.sync is 'false' then sync = false else sync = true
+  runnables.createImage req.user_id, from, sync, (err, image) ->
     if err then next err else
       res.json 201, image
 

@@ -5,6 +5,60 @@ sa = require 'superagent'
 
 describe 'file sync feature', ->
 
+  it 'should not ::sync image when passing sync=false to the create command', (done) ->
+    helpers.createUnsyncedImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body.should.not.have.property 'synced'
+                  done()
+
+  it 'should ::sync when creating an image by default', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body.should.have.property 'synced', true
+                  done()
+
+  it 'should ::sync an unsynced image when creating a container from it for the first time', (done) ->
+    helpers.createUnsyncedImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body.should.not.have.property 'synced'
+                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        userRunnableId = res.body._id
+                        user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.have.property 'synced', true
+                              user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                                .end (err, res) ->
+                                  if err then done err else
+                                    res.should.have.status 200
+                                    res.body.should.be.a.array
+                                    for elem in res.body
+                                      elem.name.should.not.equal '.bashrc'
+                                      elem.name.should.not.equal '.profile'
+                                    done()
+
   it 'should not ::sync shell files when building an image from dockerfile', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
@@ -103,6 +157,121 @@ describe 'file sync feature', ->
 
   it 'should not ::sync files inside ignored folders when building an image from dockerfile', (done) ->
     helpers.createImage 'node.js_express', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        for elem in res.body
+                          elem.path.should.not.include 'node_modules'
+                        done()
+
+  it 'should not ::sync shell files when building an image from dockerfile (migration)', (done) ->
+    helpers.createUnsyncedImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        for elem in res.body
+                          elem.name.should.not.equal '.bashrc'
+                          elem.name.should.not.equal '.profile'
+                        done()
+
+  it 'should ::sync missing files when building an image from dockerfile (migration)', (done) ->
+    helpers.createUnsyncedImage 'missing_file', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        res.body.should.have.length 4
+                        done()
+
+  it 'should ::sync missing folders when building an image from dockerfile (migration)', (done) ->
+    helpers.createUnsyncedImage 'missing_folder', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        res.body.should.have.length 5
+                        done()
+
+  it 'should ::sync files inside folders when building an image from dockerfile (migration)', (done) ->
+    helpers.createUnsyncedImage 'file_in_folder', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        found = false
+                        for elem in res.body
+                          if elem.name is 'sub_file.js' and elem.path is '/sub_dir'
+                            found = true
+                        found.should.equal true
+                        done()
+
+  it 'should ::sync files which are removed when building an image from dockerfile (migration)', (done) ->
+    helpers.createUnsyncedImage 'removed_file', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.be.a.array
+                        res.body.length.should.equal 3
+                        done()
+
+  it 'should not ::sync files inside ignored folders when building an image from dockerfile (migration)', (done) ->
+    helpers.createUnsyncedImage 'node.js_express', (err, runnableId) ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else

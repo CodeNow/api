@@ -34,6 +34,8 @@ imageSchema = new Schema
     type: String
   port:
     type: Number
+  synced:
+    type: Boolean
   tags:
     type: [
       name:
@@ -81,7 +83,63 @@ buildDockerImage = (fspath, tag, cb) ->
             cb null, tag
   child.stdout.pipe req
 
-imageSchema.statics.createFromDisk = (owner, name, cb) ->
+syncDockerImage = (image, cb) ->
+  token = uuid.v4()
+  docker.createContainer
+    Token: token
+    Hostname: image._id.toString()
+    Image: image.docker_id.toString()
+    PortSpecs: [ image.port.toString() ]
+    Cmd: [ image.cmd ]
+  , (err, res) ->
+    if err then cb new error { code: 500, msg: 'error creating container to sync files from' } else
+      containerId = res.Id
+      docker.inspectContainer containerId, (err, result) ->
+        if err then cb new error { code: 500, msg: 'error getting long container id to sync files from' } else
+          long_docker_id = result.ID
+          ignores = [ ]
+          ignored_files = [ ]
+          for file in image.files
+            if file.ignore
+              ignores.push path.normalize "#{file.path}/#{file.name}"
+              ignored_files.push file
+          volumes.readAllFiles long_docker_id, image.file_root, ignores, (err, allFiles) ->
+            if err then cb new error { code: 500, msg: 'error returning list of files from container' } else
+              old_file_list = _.clone image.files
+              image.files = ignored_files
+              allFiles.forEach (file) ->
+                found = false
+                for existingFile in old_file_list
+                  if file.path is existingFile.path and file.name is existingFile.name
+                    found = true
+                    if file.dir
+                      image.files.push
+                        _id: existingFile._id
+                        name: file.name
+                        path: file.path
+                        dir: true
+                    else
+                      image.files.push
+                        _id: existingFile._id
+                        name: file.name
+                        path: file.path
+                        content: file.content
+                if not found
+                  if file.dir
+                    image.files.push
+                      name: file.name
+                      path: file.path
+                      dir: true
+                  else
+                    image.files.push
+                      name: file.name
+                      path: file.path
+                      content: file.content
+              docker.removeContainer containerId, (err) ->
+                if err then cb new error { code: 500, msg: 'error removing container files were synced from' } else
+                  cb()
+
+imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
   runnablePath = "#{__dirname}/../../configs/runnables"
   try
     runnable = require "#{runnablePath}/#{name}/runnable.json"
@@ -102,62 +160,17 @@ imageSchema.statics.createFromDisk = (owner, name, cb) ->
           image.tags.push tag
         for file in runnable.files
           image.files.push file
-        token = uuid.v4()
-        docker.createContainer
-          Token: token
-          Hostname: image._id.toString()
-          Image: image.docker_id.toString()
-          PortSpecs: [ image.port.toString() ]
-          Cmd: [ image.cmd ]
-        , (err, res) ->
-          if err then cb new error { code: 500, msg: 'error creating container to sync files from' } else
-            containerId = res.Id
-            docker.inspectContainer containerId, (err, result) ->
-              if err then cb new error { code: 500, msg: 'error getting long container id to sync files from' } else
-                long_docker_id = result.ID
-                ignores = [ ]
-                ignored_files = [ ]
-                for file in image.files
-                  if file.ignore
-                    ignores.push path.normalize "#{file.path}/#{file.name}"
-                    ignored_files.push file
-                volumes.readAllFiles long_docker_id, image.file_root, ignores, (err, allFiles) ->
-                  if err then cb new error { code: 500, msg: 'error returning list of files from container' } else
-                    old_file_list = _.clone image.files
-                    image.files = ignored_files
-                    allFiles.forEach (file) ->
-                      found = false
-                      for existingFile in old_file_list
-                        if file.path is existingFile.path and file.name is existingFile.name
-                          found = true
-                          if file.dir
-                            image.files.push
-                              _id: existingFile._id
-                              name: file.name
-                              path: file.path
-                              dir: true
-                          else
-                            image.files.push
-                              _id: existingFile._id
-                              name: file.name
-                              path: file.path
-                              content: file.content
-                      if not found
-                        if file.dir
-                          image.files.push
-                            name: file.name
-                            path: file.path
-                            dir: true
-                        else
-                          image.files.push
-                            name: file.name
-                            path: file.path
-                            content: file.content
-                    docker.removeContainer containerId, (err) ->
-                      if err then cb new error { code: 500, msg: 'error removing container files were synced from' } else
-                        image.save (err) ->
-                          if err then new error { code: 500, msg: 'error saving image to mongodb' } else
-                            cb null, image
+        if sync
+          syncDockerImage image, (err) ->
+            if err then cb err else
+              image.synced = true
+              image.save (err) ->
+                if err then new error { code: 500, msg: 'error saving image to mongodb' } else
+                  cb null, image
+        else
+          image.save (err) ->
+            if err then new error { code: 500, msg: 'error saving image to mongodb' } else
+              cb null, image
 
 imageSchema.statics.createFromContainer = (container, cb) ->
   image = new @
@@ -182,6 +195,28 @@ imageSchema.statics.createFromContainer = (container, cb) ->
       image.save (err) ->
         if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
           cb null, image
+
+imageSchema.methods.updateFromContainer = (container, cb) ->
+  @name = container.name
+  @cmd = container.cmd
+  @file_root = container.file_root
+  @files = [ ]
+  for file in container.files
+    @files.push file.toJSON()
+  @tags = [ ]
+  for tag in container.tags
+    @tags.push tag.toJSON()
+  docker.commit
+    queryParams:
+      container: container.docker_id
+      m: "#{container.parent} => #{@_id}"
+      author: @owner.toString()
+  , (err, result) =>
+    if err then cb new error { code: 500, msg: 'error creating docker image' } else
+      @docker_id = result.Id
+      @save (err) =>
+        if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
+          cb null, @
 
 imageSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, image) =>
@@ -208,28 +243,11 @@ imageSchema.statics.isOwner = (userId, runnableId, cb) ->
       if not image then cb new error { code: 404, msg: 'runnable not found' } else
         cb null, image.owner.toString() is userId.toString()
 
-imageSchema.methods.updateFromContainer = (container, cb) ->
-  @owner = container.owner
-  @name = container.name
-  @parent = container.parent
-  @cmd = container.cmd
-  @file_root = container.file_root
-  @files = [ ]
-  for file in container.files
-    @files.push file.toJSON()
-  @tags = [ ]
-  for tag in container.tags
-    @tags.push tag.toJSON()
-  docker.commit
-    queryParams:
-      container: container.docker_id
-      m: "#{container.parent} => #{@_id}"
-      author: @owner.toString()
-  , (err, result) =>
-    if err then cb new error { code: 500, msg: 'error creating docker image' } else
-      @docker_id = result.Id
-      @save (err) =>
-        if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
-          cb null, @
+imageSchema.methods.sync = (cb) ->
+  if @synced then cb() else
+    syncDockerImage @, (err) =>
+      if err then cb err else
+        @synced = true
+        @save cb
 
 module.exports = mongoose.model 'Images', imageSchema

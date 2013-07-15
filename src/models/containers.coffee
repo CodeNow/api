@@ -71,37 +71,35 @@ containerSchema.index
 
 containerSchema.statics.create = (owner, image, cb) ->
   if not image.docker_id then cb new error { code: 500, msg: 'image must have docker_id to create container from' } else
-    if owner is image.owner
-      parent = image.parent
-    else
-      parent = image._id
-    container = new @
-      parent: parent
-      name: image.name
-      owner: owner
-      port: image.port
-      cmd: image.cmd
-      file_root: image.file_root
-      token: uuid.v4()
-    for file in image.files
-      container.files.push file.toJSON()
-    for tag in image.tags
-      container.tags.push tag.toJSON()
-    docker.createContainer
-      Token: container.token
-      Hostname: container._id.toString()
-      Image: image.docker_id.toString()
-      PortSpecs: [ container.port.toString() ]
-      Cmd: [ container.cmd ]
-    , (err, res) ->
-      if err then cb new error { code: 500, msg: 'error creating docker container' } else
-        container.docker_id = res.Id
-        docker.inspectContainer container.docker_id, (err, result) ->
-          if err then cb new error { code: 500, msg: 'error getting container state' } else
-            container.long_docker_id = result.ID
-            container.save (err) ->
-              if err then cb new error { code: 500, msg: 'error saving container metadata to mongodb' } else
-                cb null, container
+    image.sync (err) =>
+      if err then cb { code: 500, msg: 'error syncing image from disk' } else
+        container = new @
+          parent: image
+          name: image.name
+          owner: owner
+          port: image.port
+          cmd: image.cmd
+          file_root: image.file_root
+          token: uuid.v4()
+        for file in image.files
+          container.files.push file.toJSON()
+        for tag in image.tags
+          container.tags.push tag.toJSON()
+        docker.createContainer
+          Token: container.token
+          Hostname: container._id.toString()
+          Image: image.docker_id.toString()
+          PortSpecs: [ container.port.toString() ]
+          Cmd: [ container.cmd ]
+        , (err, res) ->
+          if err then cb new error { code: 500, msg: 'error creating docker container' } else
+            container.docker_id = res.Id
+            docker.inspectContainer container.docker_id, (err, result) ->
+              if err then cb new error { code: 500, msg: 'error getting container state' } else
+                container.long_docker_id = result.ID
+                container.save (err) ->
+                  if err then cb new error { code: 500, msg: 'error saving container metadata to mongodb' } else
+                    cb null, container
 
 containerSchema.statics.destroy = (id, cb) ->
   @findOne { _id: id, deleted: undefined } , (err, container) =>

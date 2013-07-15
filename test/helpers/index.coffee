@@ -58,6 +58,15 @@ Helpers =
               res.should.have.status 201
               cb null, res.body._id
 
+  createUnsyncedImage: (name, cb) ->
+    @authedUser (err, user) ->
+      if err then cb err else
+        user.post("http://localhost:#{configs.port}/runnables?from=#{name}&sync=false")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              cb null, res.body._id
+
   createTaggedImage: (name, cb) ->
     @authedRegisteredUser (err, user) ->
       if err then cb err else
