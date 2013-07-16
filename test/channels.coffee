@@ -27,3 +27,23 @@ describe 'channels api', ->
               name: 'jquery'
               _id: 'jquery'
             done()
+
+  it 'should not list out blank ::channels', (done) ->
+    user = sa.agent()
+    helpers.authedRegisteredUser (err, user) ->
+      if err then cb err else
+        user.post("http://localhost:#{configs.port}/runnables?from=node.js")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              runnableId = res.body._id
+              user.get("http://localhost:#{configs.port}/channels")
+                .set('runnable-token', token)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.be.a.array
+                    console.log(res.body)
+                    res.body.should.not.includeEql
+                      name: ''
+                    done()
