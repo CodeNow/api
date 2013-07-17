@@ -41,7 +41,7 @@ Helpers =
             .set('Content-Type', 'application/json')
             .send(JSON.stringify( email: 'jeff@runnable.com', username: 'jeff@runnable.com', password: 'notmyrealone'))
             .end (err, res) ->
-              if err then done err else
+              if err then cb err else
                 res.should.have.status 200
                 cb null,
                   post: (url) -> user.post(url).set('runnable-token', token)
@@ -54,7 +54,7 @@ Helpers =
       if err then cb err else
         user.post("http://localhost:#{configs.port}/runnables?from=#{name}")
           .end (err, res) ->
-            if err then done err else
+            if err then cb err else
               res.should.have.status 201
               cb null, res.body._id
 
@@ -63,7 +63,7 @@ Helpers =
       if err then cb err else
         user.post("http://localhost:#{configs.port}/runnables?from=#{name}&sync=false")
           .end (err, res) ->
-            if err then done err else
+            if err then cb err else
               res.should.have.status 201
               cb null, res.body._id
 
@@ -72,7 +72,7 @@ Helpers =
       if err then cb err else
         user.post("http://localhost:#{configs.port}/runnables?from=node.js")
           .end (err, res) ->
-            if err then done err else
+            if err then cb err else
               res.should.have.status 201
               runnableId = res.body._id
               user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/tags")
@@ -88,7 +88,7 @@ Helpers =
       if err then cb err else
         user.post("http://localhost:#{configs.port}/runnables?from=node.js")
           .end (err, res) ->
-            if err then done err else
+            if err then cb err else
               res.should.have.status 201
               runnableId = res.body._id
               user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
