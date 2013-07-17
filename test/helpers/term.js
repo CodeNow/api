@@ -13,17 +13,21 @@ page.open(system.args[1], function (status) {
     console.log('error loading page');
     phantom.exit(-1);
   } else {
-    setTimeout(function () {
-      var command = system.args[2];
-      page.sendEvent('keypress', command, null, null, 0);
-      page.sendEvent('keypress', page.event.key.Enter, null, null, 0);
-      var title = page.evaluate( function() {
-        return document.title;
+    var wait = setInterval(function () {
+      // evaluate whether we have a stream connection
+      var isStreaming = page.evaluate( function() {
+        return window.isStreaming;
       });
-      setTimeout(function () {
-        phantom.exit(0);
-      }, 1000);
-    }, 2000);
+      if(isStreaming) {
+        var command = system.args[2];
+        page.sendEvent('keypress', command, null, null, 0);
+        page.sendEvent('keypress', page.event.key.Enter, null, null, 0);
+        setTimeout(function () {
+          phantom.exit(0);
+        }, 500);
+        clearInterval(wait);
+      }
+    }, 1000);
   }
 });
 

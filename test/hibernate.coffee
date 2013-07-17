@@ -26,7 +26,6 @@ describe 'hibernate feature', ->
                     if err then done err else
                       res.should.have.status 200
                       res.body.should.have.property 'name'
-                      res.body.should.have.property 'content'
                       done()
         , 10000
 
@@ -87,19 +86,43 @@ describe 'hibernate feature', ->
                     if err then done err else
                       res.should.have.status 200
                       res.body.should.have.property 'name'
-                      res.body.should.have.property 'content'
                       setTimeout () ->
                         user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
                           .end (err, res) ->
                             if err then done err else
                               res.should.have.status 200
                               res.body.should.have.property 'name'
-                              res.body.should.have.property 'content'
                               done()
                       , 10000
         , 10000
 
 
-  it 'should take container out of ::hibernate when the terminal is accessed'
+  it 'should take container out of ::hibernate when the ::terminal is accessed', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  userRunnableId = res.body._id
+                  res.body.should.have.property 'token'
+                  token = res.body.token
+                  terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
+                  helpers.sendCommand terminalUrl, 'rm server.js', (err, output) ->
+                    if err then done err else
+                      user.post("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/sync")
+                        .end (err, res) ->
+                          if err then done err else
+                            res.should.have.status 201
+                            user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
+                              .end (err, res) ->
+                                if err then done err else
+                                  res.should.have.status 200
+                                  res.body.should.be.a.array
+                                  res.body.length.should.equal 2
+                                  done()
+
   it 'should take the container out of ::hibernate when the web service is accessed'
   it 'should take the container out of ::hibernate when the tail log is accessed'
