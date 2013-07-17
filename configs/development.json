@@ -16,5 +16,6 @@
   "volume": "dnode",
   "dnode_host": "harbourmaster.runnableapp.dev",
   "dnode_port": 13337,
+  "verbose": true,
   "showStack": true
 }

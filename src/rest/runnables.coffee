@@ -1,4 +1,6 @@
 configs = require '../configs'
+debug = require('debug');
+domain = require('domain');
 error = require '../error'
 express = require 'express'
 path = require 'path'

@@ -19,5 +19,6 @@
   "showStack": true,
   "logRequests": true,
   "throwErrors": true,
+  "verbose": false,
   "logStack": true
 }

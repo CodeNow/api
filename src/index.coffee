@@ -14,6 +14,7 @@ app = express()
 
 app.use (req, res, next) ->
   d = domain.create()
+  req.domain = d
   d.on 'error', next
   d.run next
 if configs.logRequests then app.use express.logger()
