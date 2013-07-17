@@ -301,6 +301,7 @@ app.get '/users/me/runnables/:id/files/:fileid', getfile
 app.get '/users/:userid/runnables/:id/files/:fileid', fetchuser, getfile
 
 app.put '/users/me/runnables/:id/files/:fileid', updatefile
+app.patch '/users/me/runnables/:id/files/:fileid', updatefile
 app.put '/users/:userid/runnables/:id/files/:fileid', fetchuser, updatefile
 
 app.del '/users/me/runnables/:id/files/:fileid', deletefile
