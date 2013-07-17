@@ -26,7 +26,6 @@ describe 'hibernate feature', ->
                     if err then done err else
                       res.should.have.status 200
                       res.body.should.have.property 'name'
-                      res.body.should.have.property 'content'
                       done()
         , 10000
 
@@ -87,14 +86,12 @@ describe 'hibernate feature', ->
                     if err then done err else
                       res.should.have.status 200
                       res.body.should.have.property 'name'
-                      res.body.should.have.property 'content'
                       setTimeout () ->
                         user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
                           .end (err, res) ->
                             if err then done err else
                               res.should.have.status 200
                               res.body.should.have.property 'name'
-                              res.body.should.have.property 'content'
                               done()
                       , 10000
         , 10000

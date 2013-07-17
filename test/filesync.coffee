@@ -337,7 +337,6 @@ describe 'file sync feature', ->
                   userRunnableId = res.body._id
                   res.body.should.have.property 'token'
                   token = res.body.token
-                  terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
                   user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
                     .end (err, res) ->
                       if err then done err else
@@ -352,26 +351,20 @@ describe 'file sync feature', ->
                               res.should.have.status 200
                               res.body.should.have.property 'content'
                               content = res.body.content
-                              ### IMPORTANT - HIT THE DISK SO WE ACTIVATE THE CONTAINER ###
-                              user.post("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/sync")
-                                .end (err, res) ->
-                                  if err then done err else
-                                    res.should.have.status 201
-                                    terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
-                                    helpers.sendCommand terminalUrl, 'echo overwrite > server.js', (err, output) ->
+                              terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
+                              helpers.sendCommand terminalUrl, 'echo overwrite > server.js', (err, output) ->
+                                if err then done err else
+                                  user.post("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/sync")
+                                    .end (err, res) ->
                                       if err then done err else
-                                        user.post("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/sync")
+                                        res.should.have.status 201
+                                        user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files/#{file_id}")
                                           .end (err, res) ->
                                             if err then done err else
-                                              res.should.have.status 201
-                                              user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files/#{file_id}")
-                                                .end (err, res) ->
-                                                  if err then done err else
-                                                    res.should.have.status 200
-                                                    res.body.should.have.property 'content'
-                                                    encodedOverwrite = (new Buffer('overwrite\n')).toString('base64')
-                                                    res.body.content.should.equal encodedOverwrite
-                                                    done()
+                                              res.should.have.status 200
+                                              res.body.should.have.property 'content'
+                                              res.body.content.should.equal 'overwrite\n'
+                                              done()
 
 
   it 'should ::sync a file that is removed out of ::band when a container sync() is called', (done) ->
@@ -386,7 +379,6 @@ describe 'file sync feature', ->
                   userRunnableId = res.body._id
                   res.body.should.have.property 'token'
                   token = res.body.token
-                  terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
                   user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
                     .end (err, res) ->
                       if err then done err else
@@ -401,25 +393,20 @@ describe 'file sync feature', ->
                               res.should.have.status 200
                               res.body.should.have.property 'content'
                               content = res.body.content
-                              ### IMPORTANT - HIT THE DISK SO WE ACTIVATE THE CONTAINER ###
-                              user.post("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/sync")
-                                .end (err, res) ->
-                                  if err then done err else
-                                    res.should.have.status 201
-                                    terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
-                                    helpers.sendCommand terminalUrl, 'rm server.js', (err, output) ->
+                              terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
+                              helpers.sendCommand terminalUrl, 'rm server.js', (err, output) ->
+                                if err then done err else
+                                  user.post("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/sync")
+                                    .end (err, res) ->
                                       if err then done err else
-                                        user.post("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/sync")
+                                        res.should.have.status 201
+                                        user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
                                           .end (err, res) ->
                                             if err then done err else
-                                              res.should.have.status 201
-                                              user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
-                                                .end (err, res) ->
-                                                  if err then done err else
-                                                    res.should.have.status 200
-                                                    res.body.should.be.a.array
-                                                    res.body.length.should.equal 2
-                                                    done()
+                                              res.should.have.status 200
+                                              res.body.should.be.a.array
+                                              res.body.length.should.equal 2
+                                              done()
 
   ### NEXT ITERATION ###
 
