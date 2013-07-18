@@ -45,7 +45,7 @@ imageSchema = new Schema
     default: [ ]
   service_cmds:
     type: String
-    default: "''"
+    default: ''
   start_cmd:
     type: String
     default: 'date'
