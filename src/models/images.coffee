@@ -43,8 +43,15 @@ imageSchema = new Schema
         type: String
     ]
     default: [ ]
+  service_cmds:
+    type: String
+    default: "''"
+  start_cmd:
+    type: String
+    default: 'date'
   file_root:
     type: String
+    default: '/root'
   files:
     type: [
       name:
@@ -87,6 +94,11 @@ syncDockerImage = (image, cb) ->
   token = uuid.v4()
   docker.createContainer
     Token: token
+    Env: [
+      "RUNNABLE_USER_DIR=#{image.file_root}"
+      "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
+      "RUNNABLE_START_CMD=#{image.start_cmd}"
+    ]
     Hostname: image._id.toString()
     Image: image.docker_id.toString()
     PortSpecs: [ image.port.toString() ]
@@ -118,7 +130,9 @@ imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
         image.owner = owner
         image.name = runnable.name
         image.cmd = runnable.cmd
-        image.file_root = runnable.file_root
+        if runnable.file_root then image.file_root = runnable.file_root
+        if runnable.service_cmds then image.service_cmds = runnable.service_cmds
+        if runnable.start_cmd then image.start_cmd = runnable.start_cmd
         image.port = runnable.port
         for tag in runnable.tags
           image.tags.push tag
@@ -143,6 +157,8 @@ imageSchema.statics.createFromContainer = (container, cb) ->
     parent: container.parent
     cmd: container.cmd
     file_root: container.file_root
+    service_cmds: container.service_cmds
+    start_cmd: container.start_cmd
     port: container.port
   for file in container.files
     image.files.push file.toJSON()

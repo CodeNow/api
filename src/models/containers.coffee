@@ -44,8 +44,15 @@ containerSchema = new Schema
     ]
     default: [ ]
     index: true
+  service_cmds:
+    type: String
+    default: "''"
+  start_cmd:
+    type: String
+    default: 'date'
   file_root:
     type: String
+    default: '/root'
   files:
     type: [
       name:
@@ -81,6 +88,8 @@ containerSchema.statics.create = (owner, image, cb) ->
           port: image.port
           cmd: image.cmd
           file_root: image.file_root
+          service_cmds: image.service_cmds
+          start_cmd: image.start_cmd
           token: uuid.v4()
         for file in image.files
           container.files.push file.toJSON()
@@ -88,6 +97,11 @@ containerSchema.statics.create = (owner, image, cb) ->
           container.tags.push tag.toJSON()
         docker.createContainer
           Token: container.token
+          Env: [
+            "RUNNABLE_USER_DIR=#{container.file_root}"
+            "RUNNABLE_SERVICE_CMDS=#{container.service_cmds}"
+            "RUNNABLE_START_CMD=#{container.start_cmd}"
+          ]
           Hostname: container._id.toString()
           Image: image.docker_id.toString()
           PortSpecs: [ container.port.toString() ]
