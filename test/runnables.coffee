@@ -69,7 +69,7 @@ describe 'runnables api', ->
                               done()
 
   it 'should be able to edit a tagged published ::runnable', (done) ->
-    helpers.createTaggedImage 'node.js', (err, runnableId) ->
+    helpers.createTaggedImage 'node.js', 'node.js', (err, runnableId) ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
@@ -305,14 +305,12 @@ describe 'runnables api', ->
                                   res.should.have.status 201
                                   done()
 
-  it 'should create a ::runnable from an existing published one from channel name', (done) ->
-    template = 'node.js'
-    tag      = 'node.js'
-    helpers.createTaggedImage template, (err, runnableId) ->
+  it 'should create a ::runnable from an existing published one from channel', (done) ->
+    helpers.createTaggedImage 'node.js', 'tagname', (err, runnableId) ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{tag}")
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=tagname")
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 201
