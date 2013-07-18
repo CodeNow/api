@@ -1,3 +1,4 @@
+apiserver = require '../../lib'
 cp = require 'child_process'
 configs = require '../../lib/configs'
 sa = require 'superagent'
@@ -25,9 +26,9 @@ Helpers =
           token = res.body.access_token
           cb null,
             post: (url) -> user.post(url).set('runnable-token', token)
-            get: (url) -> user.get(url).set('runnable-token', token)
-            put: (url) -> user.put(url).set('runnable-token', token)
-            del: (url) -> user.del(url).set('runnable-token', token)
+            get: (url)  -> user.get(url).set('runnable-token', token)
+            put: (url)  -> user.put(url).set('runnable-token', token)
+            del: (url)  -> user.del(url).set('runnable-token', token)
 
   authedRegisteredUser: (cb) ->
     user = sa.agent()
@@ -45,9 +46,27 @@ Helpers =
                 res.should.have.status 200
                 cb null,
                   post: (url) -> user.post(url).set('runnable-token', token)
-                  get: (url) -> user.get(url).set('runnable-token', token)
-                  put: (url) -> user.put(url).set('runnable-token', token)
-                  del: (url) -> user.del(url).set('runnable-token', token)
+                  get:  (url) -> user.get(url).set('runnable-token', token)
+                  put:  (url) -> user.put(url).set('runnable-token', token)
+                  del:  (url) -> user.del(url).set('runnable-token', token)
+
+  authedAdminUser: (cb) ->
+    user = sa.agent()
+    oldSalt = apiserver.configs.passwordSalt
+    delete apiserver.configs.passwordSalt
+    user.post("http://localhost:#{configs.port}/token")
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify( email: 'test4@testing.com', password: 'testing'))
+      .end (err, res) ->
+        if err then cb err else
+          res.should.have.status 200
+          token = res.body.access_token
+          apiserver.configs.passwordSalt = oldSalt
+          cb null,
+            post: (url) -> user.post(url).set('runnable-token', token)
+            get:  (url) -> user.get(url).set('runnable-token', token)
+            put:  (url) -> user.put(url).set('runnable-token', token)
+            del:  (url) -> user.del(url).set('runnable-token', token)
 
   createImage: (name, cb) ->
     @authedUser (err, user) ->

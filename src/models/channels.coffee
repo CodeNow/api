@@ -23,7 +23,7 @@ channelSchema.statics.listChannels = (cb) ->
       async.map tags, (tag, cb) =>
         @findOne tag: tag, (err, channel) ->
           if err then cb new error { code: 500, msg: 'error looking up mongodb' } else
-            if not channel then cb null, tag else
+            if not channel then cb null, { name: tag, _id: tag } else
               cb null, channel
       , cb
 

@@ -101,8 +101,6 @@ describe 'runnables api', ->
                               res.body.length.should.equal 3
                               done()
 
-  it 'should report error if the ::runnable provided named base does not exist'
-
   it 'should be able to query for an existing unsaved ::runnable', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
@@ -176,6 +174,30 @@ describe 'runnables api', ->
                               res.body.should.have.property 'owner', userId
                               done()
 
+  it 'should not be able to save a ::runnable from a container you do not own', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/users/me")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  userId = res.body._id
+                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        userRunnableId = res.body._id
+                        helpers.authedUser (err, user2) ->
+                          if err then done err else
+                            user2.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
+                              .end (err, res) ->
+                                if err then done err else
+                                  res.should.have.status 403
+                                  res.body.should.have.property 'message', 'permission denied'
+                                  done()
+
   it 'should remember the last image id that a ::runnable was saved to', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
@@ -207,7 +229,7 @@ describe 'runnables api', ->
                                   res.body.should.have.property 'target', targetId
                                   done()
 
-  it 'should be able to update a ::previously saved ::runnable', (done) ->
+  it 'should be able to ::update a previously saved ::runnable', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
         helpers.authedUser (err, user) ->
@@ -248,7 +270,62 @@ describe 'runnables api', ->
                                           res.body.should.have.property 'name', 'updated project name'
                                           done()
 
-  it 'should not be able to save a ::runnable you do not own'
+  it 'should not be able to ::update a published ::runnable you do not own', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/users/me")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  userId = res.body._id
+                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        userRunnableId = res.body._id
+                        res.body.should.have.property 'docker_id'
+                        res.body.should.have.property 'owner', userId
+                        user.put("http://localhost:#{configs.port}/runnables/#{runnableId}?from=#{userRunnableId}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 403
+                              res.body.should.have.property 'message', 'permission denied'
+                              done()
+
+  it 'should be able to ::update a published ::runnable you do not own if your are an administrator', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedAdminUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/users/me")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  userId = res.body._id
+                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        userRunnableId = res.body._id
+                        user.put("http://localhost:#{configs.port}/runnables/#{runnableId}?from=#{userRunnableId}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.have.property 'owner'
+                              res.body.owner.should.not.equal userId
+                              done()
+
+  it 'should report error if the ::runnable provided named base does not exist', (done) ->
+    helpers.authedUser (err, user) ->
+      if err then cb err else
+        user.post("http://localhost:#{configs.port}/runnables?from=notfound")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 400
+              res.body.should.have.property 'message', 'image source not found: notfound'
+              done()
 
   it 'should report error when saving/publishing a ::runnable that does not exist', (done) ->
     helpers.authedUser (err, user) ->
