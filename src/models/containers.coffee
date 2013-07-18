@@ -46,7 +46,7 @@ containerSchema = new Schema
     index: true
   service_cmds:
     type: String
-    default: "''"
+    default: ''
   start_cmd:
     type: String
     default: 'date'
@@ -102,7 +102,7 @@ containerSchema.statics.create = (owner, image, cb) ->
             "RUNNABLE_SERVICE_CMDS=#{container.service_cmds}"
             "RUNNABLE_START_CMD=#{container.start_cmd}"
           ]
-          Hostname: container._id.toString()
+          Hostname: 'runnable'
           Image: image.docker_id.toString()
           PortSpecs: [ container.port.toString() ]
           Cmd: [ container.cmd ]
