@@ -262,34 +262,39 @@ Runnables =
               cb null, result
 
   listFiltered: (query, sortByVotes, limit, page, cb) ->
-      if not sortByVotes
-        images.find(query).skip(page*limit).limit(limit).exec (err, results) ->
-          if err then cb new error { code: 500, msg: 'error querying mongodb' } else
-            cb null, arrayToJSON results
-      else
-        images.find query, (err, selected) ->
-          filter = [ ]
-          for image in selected
-            filter.push image._id
-          users.aggregate voteSortPipelineFiltered(limit, limit*page, filter), (err, results) ->
-            if err then cb new error { code: 500, msg: 'error aggragating votes in mongodb' } else
-              async.map results, (result, cb) ->
-                images.findOne { _id: result._id }, (err, runnable) ->
-                  if err then cb new error { code: 500, msg: 'error retrieving image from mongodb' } else
-                    if not runnable then cb() else
-                      runnable.votes = result.number - 1
-                      cb null, runnable
-              , (err, results) ->
-                if err then cb err else
-                  result = [ ]
-                  for item in results
-                    if item
-                      json = item.toJSON()
-                      json._id = encodeId json._id
-                      json.votes = item.votes
-                      if json.parent then json.parent = encodeId json.parent
-                      result.push json
-                  cb null, result
+    if not sortByVotes
+      images.find(query).skip(page*limit).limit(limit).exec (err, results) ->
+        if err then cb new error { code: 500, msg: 'error querying mongodb' } else
+          cb null, arrayToJSON results
+    else
+      images.find query, (err, selected) ->
+        filter = [ ]
+        for image in selected
+          filter.push image._id
+        users.aggregate voteSortPipelineFiltered(limit, limit*page, filter), (err, results) ->
+          if err then cb new error { code: 500, msg: 'error aggragating votes in mongodb' } else
+            async.map results, (result, cb) ->
+              images.findOne { _id: result._id }, (err, runnable) ->
+                if err then cb new error { code: 500, msg: 'error retrieving image from mongodb' } else
+                  if not runnable then cb() else
+                    runnable.votes = result.number - 1
+                    cb null, runnable
+            , (err, results) ->
+              if err then cb err else
+                result = [ ]
+                for item in results
+                  if item
+                    json = item.toJSON()
+                    json._id = encodeId json._id
+                    json.votes = item.votes
+                    if json.parent then json.parent = encodeId json.parent
+                    result.push json
+                cb null, result
+
+  listNames: (cb) ->
+    images.find({ tags: $not: $size: 0 }, 'name').exec (err, results) ->
+      if err then cb new error { code: 500, msg: 'error querying mongodb' } else
+        cb null, arrayToJSON results
 
   getTags: (runnableId, cb) ->
     runnableId = decodeId runnableId

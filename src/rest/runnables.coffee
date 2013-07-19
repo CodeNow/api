@@ -36,6 +36,10 @@ app.get '/runnables', (req, res, next) ->
     runnables.listFiltered { owner: req.query.owner }, sortByVotes, limit, page, (err, results) ->
       if err then next err else
         res.json results
+  else if req.query.map
+    runnable.listNames (err, results) ->
+      if err then next err else
+        res.json results
   else
     runnables.listAll sortByVotes, limit, page, (err, results) ->
       if err then next err else
