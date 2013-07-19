@@ -37,7 +37,7 @@ app.get '/runnables', (req, res, next) ->
       if err then next err else
         res.json results
   else if req.query.map
-    runnable.listNames (err, results) ->
+    runnables.listNames (err, results) ->
       if err then next err else
         res.json results
   else
