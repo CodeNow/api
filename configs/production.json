@@ -10,7 +10,7 @@
   "ipaddress": "10.0.1.54",
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
-  "docker": "http://harbourmaster.runnableapp.com:3000",
+  "docker": "http://harbourmaster.runnable.com:3000",
   "shortProjectIds": true,
   "volumesPath": "{HOME_DIR}/.runnable/volumes",
   "volume": "dnode",
