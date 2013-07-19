@@ -40,6 +40,7 @@ imageSchema = new Schema
     type: [
       name:
         index: true
+        sparse: true
         type: String
     ]
     default: [ ]
@@ -120,8 +121,8 @@ imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
   try
     runnable = require "#{runnablePath}/#{name}/runnable.json"
   catch err
-    cb new error { code: 500, msg: "could not load image #{name} from disk" }
-  if not runnable then cb new error { code: 500, msg: 'could not load image from disk' } else
+    cb new error { code: 400, msg: "image source not found: #{name}" }
+  if not runnable then cb new error { code: 400, msg: "image source not found: #{name}" } else
     image = new @()
     tag = image._id.toString()
     buildDockerImage "#{runnablePath}/#{name}", tag, (err, docker_id) ->
@@ -152,9 +153,9 @@ imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
 
 imageSchema.statics.createFromContainer = (container, cb) ->
   image = new @
+    parent: container.parent
     owner: container.owner
     name: container.name
-    parent: container.parent
     cmd: container.cmd
     file_root: container.file_root
     service_cmds: container.service_cmds
@@ -180,6 +181,9 @@ imageSchema.methods.updateFromContainer = (container, cb) ->
   @name = container.name
   @cmd = container.cmd
   @file_root = container.file_root
+  @service_cmds = container.service_cmds
+  @start_cmd = container.start_cmd
+  @port = container.port
   @files = [ ]
   for file in container.files
     @files.push file.toJSON()
@@ -213,10 +217,7 @@ imageSchema.statics.destroy = (id, cb) ->
 imageSchema.statics.listTags = (cb) ->
   @find().distinct 'tags.name', (err, tagNames) ->
     if err then cb new error { code: 500, msg: 'error retrieving project tags', err: err } else
-      tagNames = tagNames.filter (name) -> (name != null && name != undefined)
-      tags = tagNames.map (name) ->
-        name: name, _id: name
-      cb null, tags
+      cb null, tagNames
 
 imageSchema.statics.isOwner = (userId, runnableId, cb) ->
   @findOne _id: runnableId, (err, image) ->

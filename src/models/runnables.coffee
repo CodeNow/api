@@ -27,12 +27,13 @@ Runnables =
       containers.findOne { _id: from }, (err, container) ->
         if err then cb new error { code: 500, msg: 'error fetching container from mongodb'} else
           if not container then cb new error { code: 403, msg: 'source runnable not found' } else
-            images.createFromContainer container, (err, image) ->
-              if err then cb err else
-                container.target = image._id
-                container.save (err) ->
-                  if err then cb new error { code: 500, msg: 'error updating save target for container' } else
-                    handler null, image
+            if container.owner.toString() isnt userId then cb new error { code: 403, msg: 'permission denied' } else
+              images.createFromContainer container, (err, image) ->
+                if err then cb err else
+                  container.target = image._id
+                  container.save (err) ->
+                    if err then cb new error { code: 500, msg: 'error updating save target for container' } else
+                      handler null, image
 
   createContainer: (userId, from, callback) ->
     async.waterfall [
@@ -143,16 +144,24 @@ Runnables =
     from = decodeId from
     images.findOne _id: runnableId, (err, image) ->
       if err then cb new error { code: 500, msg: 'error looking up runnable in mongodb' } else
-        if not image then cb new error { code: 404, msg: 'Published runnable does not exist' } else
-          containers.findOne _id: from, (err, container) ->
-            if err then cb new error { code: 500, msg: 'Error looking up container to save from in mongodb' } else
-              if not container then cb new error { code: 403, msg: 'source container to copy from does not exist' } else
-                image.updateFromContainer container, (err, image) ->
-                  if err then cb err else
-                    json_project = image.toJSON()
-                    json_project._id = encodeId json_project._id
-                    if json_project.parent then json_project.parent = encodeId json_project.parent
-                    cb null, json_project
+        if not image then cb new error { code: 404, msg: 'published runnable does not exist' } else
+          update = (su) ->
+            containers.findOne _id: from, (err, container) ->
+              if err then cb new error { code: 500, msg: 'error looking up container to save from in mongodb' } else
+                if not container then cb new error { code: 403, msg: 'source container to copy from does not exist' } else
+                  if ( not su ) and ( container.owner.toString() isnt image.owner.toString() ) then cb new error { code: 400, msg: 'source container owner does not match image owner' } else
+                    image.updateFromContainer container, (err, image) ->
+                      if err then cb err else
+                        json_project = image.toJSON()
+                        json_project._id = encodeId json_project._id
+                        if json_project.parent then json_project.parent = encodeId json_project.parent
+                        cb null, json_project
+          if image.owner.toString() is userId then update false else
+            users.findUser _id: userId, (err, user) ->
+              if err then cb new error { code: 500, msg: 'error looking up the current user' } else
+                if not user then cb new error { code: 404, msg: 'user not found' } else
+                  if user.permission_level < 5 then cb new error { code: 403, msg: 'permission denied' } else
+                    update true
 
   getImage: (runnableId, cb) ->
     decodedRunnableId = decodeId runnableId
