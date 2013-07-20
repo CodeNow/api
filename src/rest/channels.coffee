@@ -1,13 +1,14 @@
 configs = require '../configs'
 channels = require '../models/channels'
+error = require '../error'
 express = require 'express'
 
-channelApp = module.exports = express()
+app = module.exports = express()
 
-channelApp.get '/channels/:tag', (req, res, next) ->
-  next { code: 400, msg: 'not implemented' }
+app.get '/channels/:tag', (req, res) ->
+  res.json 400, { message: 'not implemented' }
 
-channelApp.get '/channels', (req, res, next) ->
+app.get '/channels', (req, res) ->
   channels.listChannels (err, channels) ->
-    if err then next err else
+    if err then res.json err.code, message: err.msg else
       res.json channels

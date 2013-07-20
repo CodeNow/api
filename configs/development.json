@@ -11,11 +11,9 @@
   "defaultPageLimit": 25,
   "docker": "http://harbourmaster.runnableapp.dev:4243",
   "shortProjectIds": true,
-  "logRequests": true,
-  "throwErrors": true,
-  "volume": "dnode",
   "dnode_host": "harbourmaster.runnableapp.dev",
   "dnode_port": 13337,
-  "verbose": true,
-  "showStack": true
-}
+  "logRequests": true,
+  "throwErrors": true,
+  "verbose": true
+  }

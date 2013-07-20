@@ -12,11 +12,10 @@
   "docker": "http://harbourmaster.runnableapp.dev:4243",
   "direct_docker": "http://docker.runnableapp.dev",
   "shortProjectIds": true,
-  "volume": "dnode",
-  "volumesPath": "{RAND_DIR}/volumes",
   "dnode_host": "harbourmaster.runnableapp.dev",
   "dnode_port": 13337,
-  "showStack": true,
+  "logExpress": false,
+  "throwErrors": true,
   "verbose": false,
   "logStack": false
 }

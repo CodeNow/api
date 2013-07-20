@@ -7,7 +7,7 @@ path = require 'path'
 mongoose = require 'mongoose'
 sync = require './sync'
 uuid = require 'node-uuid'
-volumes = require  "./volumes/#{configs.volume}"
+volumes = require  "./volumes/dnode"
 _ = require 'lodash'
 
 docker = dockerjs host: configs.docker
@@ -80,81 +80,73 @@ containerSchema.index
   parent: 1
 
 containerSchema.statics.create = (owner, image, cb) ->
-  if not image.docker_id then cb new error { code: 500, msg: 'image must have docker_id to create container from' } else
-    image.sync (err) =>
-      if err then cb { code: 500, msg: 'error syncing image from disk' } else
-        container = new @
-          parent: image
-          name: image.name
-          owner: owner
-          port: image.port
-          cmd: image.cmd
-          file_root: image.file_root
-          service_cmds: image.service_cmds
-          start_cmd: image.start_cmd
-          token: uuid.v4()
-        for file in image.files
-          container.files.push file.toJSON()
-        for tag in image.tags
-          container.tags.push tag.toJSON()
-        docker.createContainer
-          Token: container.token
-          Env: [
-            "RUNNABLE_USER_DIR=#{container.file_root}"
-            "RUNNABLE_SERVICE_CMDS=#{container.service_cmds}"
-            "RUNNABLE_START_CMD=#{container.start_cmd}"
-          ]
-          Hostname: 'runnable'
-          Image: image.docker_id.toString()
-          PortSpecs: [ container.port.toString() ]
-          Cmd: [ container.cmd ]
-        , (err, res) ->
-          if err then cb new error { code: 500, msg: 'error creating docker container' } else
-            container.docker_id = res.Id
-            docker.inspectContainer container.docker_id, (err, result) ->
-              if err then cb new error { code: 500, msg: 'error getting container state' } else
-                container.long_docker_id = result.ID
-                container.save (err) ->
-                  if err then cb new error { code: 500, msg: 'error saving container metadata to mongodb' } else
-                    cb null, container
+  image.sync () =>
+    container = new @
+      parent: image
+      name: image.name
+      owner: owner
+      port: image.port
+      cmd: image.cmd
+      file_root: image.file_root
+      service_cmds: image.service_cmds
+      start_cmd: image.start_cmd
+      token: uuid.v4()
+    for file in image.files
+      container.files.push file.toJSON()
+    for tag in image.tags
+      container.tags.push tag.toJSON()
+    docker.createContainer
+      Token: container.token
+      Env: [
+        "RUNNABLE_USER_DIR=#{container.file_root}"
+        "RUNNABLE_SERVICE_CMDS=#{container.service_cmds}"
+        "RUNNABLE_START_CMD=#{container.start_cmd}"
+      ]
+      Hostname: 'runnable'
+      Image: image.docker_id.toString()
+      PortSpecs: [ container.port.toString() ]
+      Cmd: [ container.cmd ]
+    , (err, res) ->
+      if err then throw err
+      container.docker_id = res.Id
+      docker.inspectContainer container.docker_id, (err, result) ->
+        if err then throw err
+        container.long_docker_id = result.ID
+        container.save (err) ->
+          if err then throw err
+          cb null, container
 
 containerSchema.statics.destroy = (id, cb) ->
-  @findOne { _id: id, deleted: undefined } , (err, container) =>
-    if err then cb new error { code: 500, msg: 'error looking up container metadata in mongodb' } else
-      if not container then cb new error { code: 404, msg: 'container metadata not found' } else
-        container.getProcessState (err, state) =>
-          if err then cb err else
-            remove = () =>
-              docker.removeContainer container.docker_id, (err) =>
-                if err then cb new error { code: 500, msg: 'error removing container from docker' } else
-                  @remove id, (err) ->
-                    if err then cb new error { code: 500, msg: 'error removing container metadata from mongodb' } else
-                      cb()
-            if state.running
-              container.stop (err) =>
-                if err then cb err else
-                  remove()
-            else
-              remove()
+  @findOne { _id: id } , (err, container) =>
+    if not container then cb error 404, 'container metadata not found' else
+      container.getProcessState (err, state) =>
+        if err then cb err else
+          remove = () =>
+            docker.removeContainer container.docker_id, (err) =>
+              if err then throw err
+              @remove id, (err) ->
+                if err then throw err else cb()
+          if state.running
+            container.stop (err) =>
+              if err then cb err else
+                remove()
+          else
+            remove()
 
 containerSchema.methods.getProcessState = (cb) ->
   docker.inspectContainer @docker_id, (err, result) ->
-    if err then cb new error { code: 500, msg: 'error getting container state' } else
-      cb null, running: result.State.Running
+    if err then throw err
+    cb null, running: result.State.Running
 
 containerSchema.methods.start = (cb) ->
-  docker.startContainer
-    id: @docker_id
-    Binds: [
-      "#{configs.volumesPath}/#{@long_docker_id}:#{@file_root}"
-    ], (err, res) ->
-      if err then cb new error { code: 500, msg: 'error starting docker container' } else
-        cb()
+  docker.startContainer @docker_id, (err) ->
+    if err then throw err
+    cb()
 
 containerSchema.methods.stop = (cb) ->
   docker.stopContainer @docker_id, (err) ->
-    if err then cb new error { code: 500, msg: 'error stopping docker container' } else
-      cb()
+    if err then throw err
+    cb()
 
 containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
   files = [ ]
@@ -183,132 +175,132 @@ containerSchema.methods.syncFiles = (cb) ->
     if err then cb err else
       @last_write = new Date()
       @save (err) =>
-        if err then new error { code: 500, msg: 'error saving container to mongodb' } else
-          cb null, @
+        if err then throw err
+        cb null, @
 
 containerSchema.methods.createFile = (name, path, content, cb) ->
   volumes.createFile @long_docker_id, @file_root, name, path, content, (err) =>
-    if err then cb err else
-      @files.push
-        path: path
-        name: name
-        content: content
-      file = @files[@files.length-1]
-      @last_write = new Date()
-      @save (err) ->
-        if err then cb new error { code: 500, msg: 'error saving file to mongodb' } else
-          cb null, { _id: file._id, name: name, path: path }
+    if err then throw err
+    @files.push
+      path: path
+      name: name
+      content: content
+    file = @files[@files.length-1]
+    @last_write = new Date()
+    @save (err) ->
+      if err then throw err
+      cb null, { _id: file._id, name: name, path: path }
 
 containerSchema.methods.updateFile = (fileId, content, cb) ->
   file = @files.id fileId
-  if not file then cb new error { code: 404, msg: 'file not found' } else
+  if not file then cb error 404, 'file not found' else
     volumes.updateFile @long_docker_id, @file_root, file.name, file.path, content, (err) =>
-      if err then cb err else
-        file.content = content
-        @last_write = new Date()
-        @save (err) ->
-          if err then cb new error { code: 500, msg: 'error saving file to mongodb' } else
-            cb null, file
+      if err then throw err
+      file.content = content
+      @last_write = new Date()
+      @save (err) ->
+        if err then throw err
+        cb null, file
 
 containerSchema.methods.renameFile = (fileId, newName, cb) ->
   file = @files.id fileId
-  if not file then cb new error { code: 404, msg: 'file not found' } else
+  if not file then cb error 404, 'file not found' else
     volumes.renameFile @long_docker_id, @file_root, file.name, file.path, newName, (err) =>
-      if err then cb err else
-        oldName = file.name
-        file.name = newName
-        if file.dir
-          oldPath = path.normalize "#{file.path}/#{oldName}"
-          newPath = path.normalize "#{file.path}/#{newName}"
-          for elem in @files
-            if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
-              elem.path = elem.path.replace oldPath, newPath
-        @last_write = new Date()
-        @save (err) ->
-          if err then cb new error { code: 500, msg: 'error updating filename in mongodb' } else
-            cb null, file
+      if err then throw err
+      oldName = file.name
+      file.name = newName
+      if file.dir
+        oldPath = path.normalize "#{file.path}/#{oldName}"
+        newPath = path.normalize "#{file.path}/#{newName}"
+        for elem in @files
+          if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
+            elem.path = elem.path.replace oldPath, newPath
+      @last_write = new Date()
+      @save (err) ->
+        if err then throw err
+        cb null, file
 
 containerSchema.methods.moveFile = (fileId, newPath, cb) ->
   file = @files.id fileId
-  if not file then cb new error { code: 404, msg: 'file not found' } else
+  if not file then cb error 404, 'file not found' else
     volumes.moveFile @long_docker_id, @file_root, file.name, file.path, newPath, (err) =>
-      if err then cb err else
-        oldPath = file.path
-        file.path = newPath
-        if file.dir
-          oldPath = path.normalize "#{oldPath}/#{file.name}"
-          newPath = path.normalize "#{newPath}/#{file.name}"
-          for elem in @files
-            if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
-              elem.path = elem.path.replace oldPath, newPath
-        @last_write = new Date()
-        @save (err) ->
-          if err then cb new error { code: 500, msg: 'error updating filename in mongodb' } else
-            cb null, file
+      if err then throw err
+      oldPath = file.path
+      file.path = newPath
+      if file.dir
+        oldPath = path.normalize "#{oldPath}/#{file.name}"
+        newPath = path.normalize "#{newPath}/#{file.name}"
+        for elem in @files
+          if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
+            elem.path = elem.path.replace oldPath, newPath
+      @last_write = new Date()
+      @save (err) ->
+        if err then throw err
+        cb null, file
 
 containerSchema.methods.createDirectory = (name, path, cb) ->
   volumes.createDirectory @long_docker_id, @file_root, name, path, (err) =>
-    if err then cb err else
-      @files.push
-        path: path
-        name: name
-        dir: true
-      file = @files[@files.length-1]
-      @last_write = new Date()
-      @save (err) ->
-        if err then cb new error { code: 500, msg: 'error saving file meta-data to mongodb' } else
-          cb null, file
+    if err then throw err
+    @files.push
+      path: path
+      name: name
+      dir: true
+    file = @files[@files.length-1]
+    @last_write = new Date()
+    @save (err) ->
+      if err then throw err
+      cb null, file
 
 containerSchema.methods.readFile = (fileId, cb) ->
   file = @files.id fileId
-  if not file then cb new error { code: 404, msg: 'file does not exist' } else
+  if not file then cb error 404, 'file does not exist' else
     cb null, file.toJSON()
 
 containerSchema.methods.tagFile = (fileId, cb) ->
   file = @files.id fileId
-  if not file then cb new error { code: 404, msg: 'file does not exist' } else
-    if file.dir then cb new error { code: 403, msg: 'cannot tag directory as default' } else
+  if not file then cb error 404, 'file does not exist' else
+    if file.dir then cb error 403, 'cannot tag directory as default' else
       file.default = true
       @save (err) ->
-        if err then cb new error { code: 500, msg: 'error writing to mongodb' } else
-         cb null, file
+        if err then throw err
+       cb null, file
 
 containerSchema.methods.deleteAllFiles = (cb) ->
   volumes.deleteAllFiles @long_docker_id, @file_root, (err) =>
-    if err then cb err else
-      @files = [ ]
-      @last_write = new Date()
-      @save (err) ->
-        if err then cb new error { code: 500, msg: 'error removing files from mongodb' } else
-          cb()
+    if err then throw err
+    @files = [ ]
+    @last_write = new Date()
+    @save (err) ->
+      if err then throw err
+      cb()
 
 containerSchema.methods.deleteFile = (fileId, recursive, cb) ->
   file = @files.id fileId
-  if not file then cb new error { code: 404, message: 'file does not exist' } else
+  if not file then cb error 404, 'file does not exist' else
     if not file.dir
-      if recursive then cb new error { code: 400, msg: 'cannot recursively delete a plain file'} else
+      if recursive then cb error 400, 'cannot recursively delete a plain file' else
         volumes.deleteFile @long_docker_id, @file_root, file.name, file.path, (err) =>
-          if err then cb err else
-            file.remove()
-            @last_write = new Date()
-            @save (err) ->
-              if err then cb new error { code: 500, msg: 'error removing file from mongodb' } else
-                cb()
-    else
-      volumes.removeDirectory @long_docker_id, @file_root, file.name, file.path, recursive, (err) =>
-        if err then cb err else
-          if recursive
-            toDelete = [ ]
-            match = path.normalize "#{file.path}/#{file.name}"
-            for elem in @files
-              if elem.path.indexOf(match) is 0
-                toDelete.push elem
-            for elem in toDelete
-              elem.remove()
+          if err then throw err
           file.remove()
           @last_write = new Date()
           @save (err) ->
-            if err then cb new error { code: 500, msg: 'error removing file from mongodb' } else
-              cb()
+            if err then throw err
+            cb()
+    else
+      volumes.removeDirectory @long_docker_id, @file_root, file.name, file.path, recursive, (err) =>
+        if err then throw err
+        if recursive
+          toDelete = [ ]
+          match = path.normalize "#{file.path}/#{file.name}"
+          for elem in @files
+            if elem.path.indexOf(match) is 0
+              toDelete.push elem
+          for elem in toDelete
+            elem.remove()
+        file.remove()
+        @last_write = new Date()
+        @save (err) ->
+          if err then throw err
+          cb()
 
 module.exports = mongoose.model 'Containers', containerSchema

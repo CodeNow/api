@@ -47,12 +47,7 @@ beforeEach (done) ->
       ], (err) ->
         if err then done err else
           test_db.close () ->
-            fs.exists configs.volumesPath, (exists) ->
-              if not exists then mkdirp configs.volumesPath, (err) ->
-                if err then done err else
-                  apiserver.start done
-              else
-                apiserver.start done
+            apiserver.start done
 
 afterEach (done) ->
   redis_client.flushall () ->
@@ -73,18 +68,16 @@ afterEach (done) ->
                             docker.removeContainer container.Id, cb
                           , (err) ->
                             if err then done err else
-                              rimraf configs.volumesPath, (err) ->
-                                if err then done err else
-                                  killed = false
-                                  setTimeout () ->
-                                    if not killed
-                                      killed = true
-                                      done()
-                                  , 1000
-                                  apiserver.stop () ->
-                                    if not killed
-                                      killed = true
-                                      done()
+                              killed = false
+                              setTimeout () ->
+                                if not killed
+                                  killed = true
+                                  done()
+                              , 1000
+                              apiserver.stop () ->
+                                if not killed
+                                  killed = true
+                                  done()
 
 before (done) ->
   docker.listContainers (err, containers) ->

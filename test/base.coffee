@@ -24,7 +24,7 @@ describe 'api', ->
           .end (err, res) ->
             if err then done err else
               res.should.have.status 200
-              res.body.message.should.equal 'hello!'
+              res.body.message.should.equal 'runnable api'
               res.type.should.equal 'application/json'
               done()
 
@@ -37,5 +37,5 @@ describe 'api', ->
           .end (err, res) ->
             if err then done err else
               res.should.have.status 404
-              res.body.message.should.equal 'operation not found'
+              res.body.message.should.equal 'resource not found'
               done()

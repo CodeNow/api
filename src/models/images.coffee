@@ -85,10 +85,10 @@ buildDockerImage = (fspath, tag, cb) ->
     qs:
       t: tag
   , (err, res, body) ->
-      if err then cb new error { code: 500, msg: 'error building image from Dockerfile' } else
-        if res.statusCode isnt 200 then cb new error { code: res.status, msg: body } else
-          if body.indexOf('Successfully built') is -1 then cb new error { code: 500, msg: 'could not build image from dockerfile' } else
-            cb null, tag
+    if err then throw err
+    if res.statusCode isnt 200 then cb error res.status, body else
+      if body.indexOf('Successfully built') is -1 then cb error 400, 'could not build image from dockerfile' else
+        cb null, tag
   child.stdout.pipe req
 
 syncDockerImage = (image, cb) ->
@@ -105,51 +105,54 @@ syncDockerImage = (image, cb) ->
     PortSpecs: [ image.port.toString() ]
     Cmd: [ image.cmd ]
   , (err, res) ->
-    if err then cb new error { code: 500, msg: 'error creating container to sync files from' } else
-      containerId = res.Id
-      docker.inspectContainer containerId, (err, result) ->
-        if err then cb new error { code: 500, msg: 'error getting long container id to sync files from' } else
-          long_docker_id = result.ID
-          sync long_docker_id, image, (err) ->
-            if err then cb err else
-              docker.removeContainer containerId, (err) ->
-                if err then cb new error { code: 500, msg: 'error removing container files were synced from' } else
-                  cb()
+    if err then throw err
+    containerId = res.Id
+    docker.inspectContainer containerId, (err, result) ->
+      if err then throw err
+      long_docker_id = result.ID
+      sync long_docker_id, image, (err) ->
+        if err then cb err else
+          docker.removeContainer containerId, (err) ->
+            if err then throw err
+            cb()
 
 imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
   runnablePath = "#{__dirname}/../../configs/runnables"
-  try
-    runnable = require "#{runnablePath}/#{name}/runnable.json"
-  catch err
-    cb new error { code: 400, msg: "image source not found: #{name}" }
-  if not runnable then cb new error { code: 400, msg: "image source not found: #{name}" } else
-    image = new @()
-    tag = image._id.toString()
-    buildDockerImage "#{runnablePath}/#{name}", tag, (err, docker_id) ->
-      if err then cb err else
-        image.docker_id = docker_id
-        image.owner = owner
-        image.name = runnable.name
-        image.cmd = runnable.cmd
-        if runnable.file_root then image.file_root = runnable.file_root
-        if runnable.service_cmds then image.service_cmds = runnable.service_cmds
-        if runnable.start_cmd then image.start_cmd = runnable.start_cmd
-        image.port = runnable.port
-        for tag in runnable.tags
-          image.tags.push tag
-        for file in runnable.files
-          image.files.push file
-        if sync
-          syncDockerImage image, (err) ->
+  fs.exists "#{runnablePath}/runnable.json", (err, exists) ->
+    if err then throw err else
+      if not exists then cb error 403, 'could not find runnable.json' else
+        try
+          runnable = require "#{runnablePath}/#{name}/runnable.json"
+        catch err2
+          cb error 403, 'could not parse runnable.json'
+        if not runnable then cb new error 400, "image source not found: #{name}" else
+          image = new @()
+          tag = image._id.toString()
+          buildDockerImage "#{runnablePath}/#{name}", tag, (err, docker_id) ->
             if err then cb err else
-              image.synced = true
-              image.save (err) ->
-                if err then new error { code: 500, msg: 'error saving image to mongodb' } else
+              image.docker_id = docker_id
+              image.owner = owner
+              image.name = runnable.name
+              image.cmd = runnable.cmd
+              if runnable.file_root then image.file_root = runnable.file_root
+              if runnable.service_cmds then image.service_cmds = runnable.service_cmds
+              if runnable.start_cmd then image.start_cmd = runnable.start_cmd
+              image.port = runnable.port
+              for tag in runnable.tags
+                image.tags.push tag
+              for file in runnable.files
+                image.files.push file
+              if sync
+                syncDockerImage image, (err) ->
+                  if err then cb err else
+                    image.synced = true
+                    image.save (err) ->
+                      if err then throw err
+                      cb null, image
+              else
+                image.save (err) ->
+                  if err then throw err
                   cb null, image
-        else
-          image.save (err) ->
-            if err then new error { code: 500, msg: 'error saving image to mongodb' } else
-              cb null, image
 
 imageSchema.statics.createFromContainer = (container, cb) ->
   image = new @
@@ -171,11 +174,11 @@ imageSchema.statics.createFromContainer = (container, cb) ->
       m: "#{container.parent} => #{image._id}"
       author: image.owner.toString()
   , (err, result) ->
-    if err then cb new error { code: 500, msg: 'error creating docker image' } else
-      image.docker_id = result.Id
-      image.save (err) ->
-        if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
-          cb null, image
+    if err then throw err
+    image.docker_id = result.Id
+    image.save (err) ->
+      if err then throw err
+      cb null, image
 
 imageSchema.methods.updateFromContainer = (container, cb) ->
   @name = container.name
@@ -196,40 +199,38 @@ imageSchema.methods.updateFromContainer = (container, cb) ->
       m: "#{container.parent} => #{@_id}"
       author: @owner.toString()
   , (err, result) =>
-    if err then cb new error { code: 500, msg: 'error creating docker image' } else
-      @docker_id = result.Id
-      @save (err) =>
-        if err then cb new error { code: 500, msg: 'error saving image metadata to mongodb' } else
-          cb null, @
+    @docker_id = result.Id
+    @save (err) =>
+      if err then throw err
+      cb null, @
 
 imageSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, image) =>
-    if err then cb new error { code: 500, msg: 'error looking up image in mongodb' } else
-      if not image then cb new error { code: 404, msg: 'image not found' } else
-        req = docker.removeImage { id: image.docker_id }
-        req.on 'error', (err) ->
-          cb new error { code: 500, msg: 'error removing docker image' }
-        req.on 'end', () =>
-          @remove id, (err) ->
-            if err then cb new error { code: 500, msg: 'error removing image metadata from mongodb' } else
-              cb()
+    if err then throw err
+    if not image then cb error 404, 'image not found' else
+      req = docker.removeImage { id: image.docker_id }
+      req.on 'end', () =>
+        @remove id, (err) ->
+          if err then throw err
 
 imageSchema.statics.listTags = (cb) ->
   @find().distinct 'tags.name', (err, tagNames) ->
-    if err then cb new error { code: 500, msg: 'error retrieving project tags', err: err } else
-      cb null, tagNames
+    if err then throw err
+    cb null, tagNames
 
 imageSchema.statics.isOwner = (userId, runnableId, cb) ->
   @findOne _id: runnableId, (err, image) ->
-    if err then cb new error { code: 500, msg: 'error looking up runnable' } else
-      if not image then cb new error { code: 404, msg: 'runnable not found' } else
-        cb null, image.owner.toString() is userId.toString()
+    if err then throw err
+    if not image then cb error 404, 'runnable not found' else
+      cb null, image.owner.toString() is userId.toString()
 
 imageSchema.methods.sync = (cb) ->
   if @synced then cb() else
     syncDockerImage @, (err) =>
       if err then cb err else
         @synced = true
-        @save cb
+        @save (err) ->
+          if err then throw err
+          cb()
 
 module.exports = mongoose.model 'Images', imageSchema

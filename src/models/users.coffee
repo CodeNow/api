@@ -54,65 +54,67 @@ userSchema.virtual('gravitar').get () ->
 
 userSchema.statics.createUser = (cb) ->
   user = new @
-  user.save (err, user) =>
-    if err then cb new error { code: 500, msg: 'error creating user' } else
-      cb null, user
+  user.save (err) =>
+    if err then throw err
+    cb null, user
 
 userSchema.statics.findUser = (params, cb) ->
   @findOne params, (err, user) ->
-    if err then cb new error { code: 500, msg: 'error looking up user' } else
-      if user
-        userLifetime = (new Date()).getTime() - user.created.getTime()
-        if userLifetime >= configs.cookieExpires and user.permission_level is 0
-          user = null
-      cb null, user
+    if err then throw err
+    if user
+      userLifetime = (new Date()).getTime() - user.created.getTime()
+      if userLifetime >= configs.cookieExpires and user.permission_level is 0
+        user = null
+    cb null, user
 
 userSchema.statics.removeUser = (userId, cb) ->
   @remove { _id: userId }, (err) ->
-    if err then cb new error { code: 500, msg: 'error removing user' } else cb()
+    if err then throw err
+    cb()
 
 userSchema.statics.loginUser = (login, password, cb) ->
   query = { $or: [ {username: login}, {email: login} ] }
-  @findOne query,  (err, user) ->
-    if err then cb new error { code: 500, msg: 'error looking up user' } else
-      if not user then cb new error { code: 404, msg: 'user not found' } else
-        if configs.passwordSalt
-          bcrypt.compare password + configs.passwordSalt, user.password, (err, matches) ->
-            if not matches then cb new error { code: 403, msg: 'invalid password' } else
-              cb null, user._id
-        else
-          if password isnt user.password then cb new error { code: 403, msg: 'invalid password' } else
+  @findOne query, (err, user) ->
+    if err then throw err
+    if not user then cb error 404, 'user not found' else
+      if configs.passwordSalt
+        bcrypt.compare password + configs.passwordSalt, user.password, (err, matches) ->
+          if err then throw err
+          if not matches then cb error 403, 'invalid password' else
             cb null, user._id
+      else
+        if password isnt user.password then cb error 403, 'invalid password' else
+          cb null, user._id
 
 userSchema.statics.registerUser = (userId, data, cb) ->
   setPassword = (password) =>
     @findOne { email: data.email }, (err, user) =>
-      if err then cb new error { code: 500, msg: 'error looking up user' } else
-        if user then cb new error { code: 403, msg: 'user already exists' } else
-          cmd = $set:
-            email: data.email
-            password: password
-            permission_level: 1
-          if data.username then cmd.$set.username = data.username
-          @findByIdAndUpdate userId, cmd, (err, user) ->
-            if err then cb new error { code: 500, msg: 'error updating user document' } else
-              cb null, user
+      if err then throw err
+      if user then cb error 403, 'user already exists' else
+        cmd = $set:
+          email: data.email
+          password: password
+          permission_level: 1
+        if data.username then cmd.$set.username = data.username
+        @findByIdAndUpdate userId, cmd, (err) ->
+          if err then throw err
+          cb()
   if not configs.passwordSalt then setPassword data.password else
     bcrypt.hash data.password + configs.passwordSalt, 10, (err, hash) ->
-      if err then cb new error { code: 500, msg: 'error computing password hash' } else
-        setPassword hash
+      if err then throw err
+      setPassword hash
 
 userSchema.statics.publicListWithIds = (userIds, cb) ->
   fields =
     username : 1
     fb_userid: 1
-    email    : 1 # gravitar depends on email, email is removed before callback
-  this.find _id: $in: userIds, fields, (err, users) ->
-    if err then cb new error { code: 500, msg: 'error looking up users' } else
-      cb null, users.map (user) ->
-        user = user.toJSON()
-        user.email = undefined
-        user
+    email    : 1
+  @find _id: $in: userIds, fields, (err, users) ->
+    if err then throw err
+    cb null, users.map (user) ->
+      user = user.toJSON()
+      user.email = undefined
+      user
 
 userSchema.methods.getVotes = () ->
   votes = [ ]
@@ -127,21 +129,21 @@ userSchema.methods.addVote = (runnableId, cb) ->
   for vote in @votes
     if vote.runnable.toString() is runnableId.toString()
       found = true
-  if found then cb new error { code: 403, msg: 'cannot vote on runnable more than once' } else
+  if found then cb error 403, 'cannot vote on runnable more than once' else
     @votes.push runnable: runnableId
     @save (err) =>
-      if err then cb new error { code: 500, msg: 'error saving vote in mongodb' } else
-        vote = @votes[@votes.length-1].toJSON()
-        vote.runnable = encodeId vote.runnable
-        cb null, vote
+      if err then throw err
+      vote = @votes[@votes.length-1].toJSON()
+      vote.runnable = encodeId vote.runnable
+      cb null, vote
 
 userSchema.methods.removeVote = (voteId, cb) ->
   vote = @votes.id voteId
-  if not vote then cb new error { code: 404, msg: 'vote not found' } else
+  if not vote then cb error 404, 'vote not found' else
     vote.remove()
     @save (err) ->
-      if err then cb new error { code: 500, msg: 'error saving vote in mongodb' } else
-        cb()
+      if err then throw err
+      cb()
 
 module.exports = mongoose.model 'Users', userSchema
 

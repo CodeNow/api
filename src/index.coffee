@@ -1,5 +1,7 @@
+cluster = require 'cluster'
 configs = require './configs'
-domain = require 'domain'
+debug = require('debug')('express')
+domains = require './domains'
 error = require './error'
 express = require 'express'
 http = require 'http'
@@ -11,41 +13,36 @@ channels = require './rest/channels'
 mongoose.connect configs.mongo
 
 app = express()
-
-app.use (req, res, next) ->
-  d = domain.create()
-  req.domain = d
-  d.on 'error', next
-  d.run next
-if configs.logRequests then app.use express.logger()
+app.use domains()
+if configs.logExpress then app.use express.logger()
 app.use express.bodyParser()
 app.use users
 app.use runnables
 app.use channels
 app.use app.router
 app.use (err, req, res, next) ->
-  json_err = { }
-  if configs.showStack
-    json_err.stack = err.stack
-  if configs.logStack
-    if (err) then console.log(err.stack || err, '\n')
-    if (err.err) then console.log(err.err.stack || err.err, '\n')
-  if err.code and err.msg
-    json_err.message = err.msg
-    res.json err.code, json_err
-  else
-    json_err.message = 'something bad happened'
-    res.json 500, json_err
+  if configs.throwErrors then throw err
+  debug err.stack
+  try
+    timer = setTimeout () ->
+      process.exit 1
+    , 30000
+    timer.unref()
+    server.close()
+    cluster.worker.disconnect()
+  catch err2
+    debug err.stack2
+  if not err.code then err.code = 500
+  if not err.msg then err.msg = 'boom!'
+  res.json err.code, message: err.msg
 
-app.get '/', (req, res) -> res.json { message: 'hello!' }
-app.get '/throws', -> throw new Error 'zomg'
-app.all '*', (req, res) -> res.json 404, { message: 'operation not found' }
+app.get '/throws', () -> throw new Error 'zomg!'
+app.get '/', (req, res) -> res.json { message: 'runnable api' }
+app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
 
 server = http.createServer app
 
 module.exports =
   configs: configs
-  start: (cb) ->
-    server.listen configs.port, configs.ipaddress || "0.0.0.0", cb
-  stop: (cb) ->
-    server.close cb
+  start: (cb) -> server.listen configs.port, configs.ipaddress || "0.0.0.0", cb
+  stop: (cb) -> server.close cb

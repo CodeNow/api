@@ -12,13 +12,10 @@
   "defaultPageLimit": 25,
   "docker": "http://harbourmaster.runnableapp.com:3000",
   "shortProjectIds": true,
-  "volumesPath": "{HOME_DIR}/.runnable/volumes",
-  "volume": "dnode",
   "dnode_host": "10.0.2.232",
   "dnode_port": 13337,
-  "showStack": true,
-  "logRequests": true,
-  "throwErrors": true,
+  "logExpress": false,
   "verbose": false,
+  "throwErrors": false,
   "logStack": true
 }
