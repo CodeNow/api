@@ -96,6 +96,7 @@ Runnables =
                 cb null, json
 
   removeContainer: (userId, runnableId, cb) ->
+    console.error((new Error('REMOVE')).stack)
     runnableId = decodeId runnableId
     remove = () ->
       containers.destroy runnableId, (err) ->
