@@ -80,7 +80,7 @@ describe 'files api', ->
         user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/12345")
           .end (err, res) ->
             res.should.have.status 404
-            res.body.should.have.property 'message', 'file not found'
+            res.body.should.have.property 'message', 'file does not exist'
             done()
 
   it 'should return runnable not found when reading a ::file from a runnable that doesnt exist', (done) ->
@@ -313,7 +313,7 @@ describe 'files api', ->
             .end (err, res) ->
               if err then done err else
                 res.should.have.status 404
-                res.body.should.have.property 'message', 'file not found'
+                res.body.should.have.property 'message', 'file does not exist'
                 done()
 
   it 'should not be able to update a ::file contents that is actually a directory', (done) ->
@@ -663,7 +663,7 @@ describe 'files api', ->
                     user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
                       .end (err, res) ->
                         res.should.have.status 404
-                        res.body.should.have.property 'message', 'file not found'
+                        res.body.should.have.property 'message', 'file does not exist'
                         done()
 
   it 'should be able to delete an existing ::file directory', (done) ->
@@ -684,7 +684,7 @@ describe 'files api', ->
                     user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{dirId}")
                       .end (err, res) ->
                         res.should.have.status 404
-                        res.body.should.have.property 'message', 'file not found'
+                        res.body.should.have.property 'message', 'file does not exist'
                         done()
 
   it 'should return an error when non-recurisvely deleting a non-empty ::file directory', (done) ->
@@ -745,7 +745,7 @@ describe 'files api', ->
           .end (err, res) ->
             if err then done err else
               res.should.have.status 404
-              res.body.should.have.property 'message', 'file not found'
+              res.body.should.have.property 'message', 'file does not exist'
               done()
 
   it 'should be possible to tag a ::file as default', (done) ->

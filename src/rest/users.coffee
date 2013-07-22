@@ -217,7 +217,7 @@ listfiles = (req, res) ->
   dir = req.query.dir?
   default_tag = req.query.default?
   path = req.query.path
-  runnables.listFiles req.params.runnableid, content, dir, default_tag, path, (err, files) ->
+  runnables.listFiles req.user_id, req.params.runnableid, content, dir, default_tag, path, (err, files) ->
     if err then res.json err.code, message: err.msg else
       res.json files
 
@@ -225,7 +225,7 @@ app.get '/users/me/runnables/:runnableid/files', listfiles
 app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles
 
 syncfiles = (req, res) ->
-  runnables.syncFiles req.params.id, (err) ->
+  runnables.syncFiles req.user_id, req.params.id, (err) ->
     if err then res.json err.code, message: err.msg else
       res.json 201, { message: 'files synced successfully', date: new Date }
 
@@ -234,22 +234,24 @@ app.post '/users/:userid/runnables/:id/sync', fetchuser, syncfiles
 
 createfile = (req, res) ->
   if req.body.dir
-    if not req.body.name then res.json 400, 'dir must include a name field' else
-      if not req.body.path then res.json 400, 'dir must include a path field'  else
-        runnables.createDirectory req.user_id, req.params.id, req.body.name, req.body.path, (dir) ->
-          res.json 201, dir
+    if not req.body.name then res.json 400, message: 'dir must include a name field' else
+      if not req.body.path then res.json 400, message: 'dir must include a path field'  else
+        runnables.createDirectory req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
+          if err then res.json err.code, message: err.msg else
+            res.json 201, dir
   else
-    if not req.body.name then res.json 400, 'file must include a name field' else
-      if not req.body.content then res.json 400, 'file must include a content field' else
-        if not req.body.path then res.json 400, 'file must include a path field' else
-          runnables.createFile req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (file) ->
-            res.json 201, file
+    if not req.body.name then res.json 400, message: 'file must include a name field' else
+      if not req.body.content then res.json 400, message: 'file must include a content field' else
+        if not req.body.path then res.json 400, message: 'file must include a path field' else
+          runnables.createFile req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
+            if err then res.json err.code, message: err.msg else
+              res.json 201, file
 
 app.post '/users/me/runnables/:id/files', createfile
 app.post '/users/:userid/runnables/:id/files', fetchuser, createfile
 
 getfile = (req, res) ->
-  runnables.readFile req.params.id, req.params.fileid, (err, file) ->
+  runnables.readFile req.user_id, req.params.id, req.params.fileid, (err, file) ->
     if err then res.json err.code, message: err.msg else
       res.json file
 
@@ -272,7 +274,7 @@ updatefile = (req, res) ->
         runnables.defaultFile req.user_id, req.params.id, req.params.fileid, cb
   ], (err, file) ->
     if err then res.json err.code, message: err.msg else
-      if not file then res.json 400, 'must provide content, name, path or tag to update operation' else
+      if not file then res.json 400, message: 'must provide content, name, path or tag to update operation' else
         res.json file
 
 app.put '/users/me/runnables/:id/files/:fileid', updatefile
@@ -282,7 +284,7 @@ app.patch '/users/:userid/runnables/:id/files/:fileid', fetchuser, updatefile
 
 deletefile = (req, res) ->
   recursive = req.query.recursive?
-  runnables.deleteFile req.params.id, req.params.fileid, recursive, (err) ->
+  runnables.deleteFile req.user_id, req.params.id, req.params.fileid, recursive, (err) ->
     if err then res.json err.code, message: err.msg else
       res.json { message: 'file deleted' }
 

@@ -180,76 +180,76 @@ containerSchema.methods.syncFiles = (cb) ->
 
 containerSchema.methods.createFile = (name, path, content, cb) ->
   volumes.createFile @long_docker_id, @file_root, name, path, content, (err) =>
-    if err then throw err
-    @files.push
-      path: path
-      name: name
-      content: content
-    file = @files[@files.length-1]
-    @last_write = new Date()
-    @save (err) ->
-      if err then throw err
-      cb null, { _id: file._id, name: name, path: path }
+    if err then cb err else
+      @files.push
+        path: path
+        name: name
+        content: content
+      file = @files[@files.length-1]
+      @last_write = new Date()
+      @save (err) ->
+        if err then throw err
+        cb null, { _id: file._id, name: name, path: path }
 
 containerSchema.methods.updateFile = (fileId, content, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file not found' else
     volumes.updateFile @long_docker_id, @file_root, file.name, file.path, content, (err) =>
-      if err then throw err
-      file.content = content
-      @last_write = new Date()
-      @save (err) ->
-        if err then throw err
-        cb null, file
+      if err then cb err else
+        file.content = content
+        @last_write = new Date()
+        @save (err) ->
+          if err then throw err
+          cb null, file
 
 containerSchema.methods.renameFile = (fileId, newName, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file not found' else
     volumes.renameFile @long_docker_id, @file_root, file.name, file.path, newName, (err) =>
-      if err then throw err
-      oldName = file.name
-      file.name = newName
-      if file.dir
-        oldPath = path.normalize "#{file.path}/#{oldName}"
-        newPath = path.normalize "#{file.path}/#{newName}"
-        for elem in @files
-          if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
-            elem.path = elem.path.replace oldPath, newPath
-      @last_write = new Date()
-      @save (err) ->
-        if err then throw err
-        cb null, file
+      if err then cb err else
+        oldName = file.name
+        file.name = newName
+        if file.dir
+          oldPath = path.normalize "#{file.path}/#{oldName}"
+          newPath = path.normalize "#{file.path}/#{newName}"
+          for elem in @files
+            if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
+              elem.path = elem.path.replace oldPath, newPath
+        @last_write = new Date()
+        @save (err) ->
+          if err then throw err
+          cb null, file
 
 containerSchema.methods.moveFile = (fileId, newPath, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file not found' else
     volumes.moveFile @long_docker_id, @file_root, file.name, file.path, newPath, (err) =>
-      if err then throw err
-      oldPath = file.path
-      file.path = newPath
-      if file.dir
-        oldPath = path.normalize "#{oldPath}/#{file.name}"
-        newPath = path.normalize "#{newPath}/#{file.name}"
-        for elem in @files
-          if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
-            elem.path = elem.path.replace oldPath, newPath
+      if err then cb err else
+        oldPath = file.path
+        file.path = newPath
+        if file.dir
+          oldPath = path.normalize "#{oldPath}/#{file.name}"
+          newPath = path.normalize "#{newPath}/#{file.name}"
+          for elem in @files
+            if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
+              elem.path = elem.path.replace oldPath, newPath
+        @last_write = new Date()
+        @save (err) ->
+          if err then throw err
+          cb null, file
+
+containerSchema.methods.createDirectory = (name, path, cb) ->
+  volumes.createDirectory @long_docker_id, @file_root, name, path, (err) =>
+    if err then cb err else
+      @files.push
+        path: path
+        name: name
+        dir: true
+      file = @files[@files.length-1]
       @last_write = new Date()
       @save (err) ->
         if err then throw err
         cb null, file
-
-containerSchema.methods.createDirectory = (name, path, cb) ->
-  volumes.createDirectory @long_docker_id, @file_root, name, path, (err) =>
-    if err then throw err
-    @files.push
-      path: path
-      name: name
-      dir: true
-    file = @files[@files.length-1]
-    @last_write = new Date()
-    @save (err) ->
-      if err then throw err
-      cb null, file
 
 containerSchema.methods.readFile = (fileId, cb) ->
   file = @files.id fileId
@@ -263,16 +263,16 @@ containerSchema.methods.tagFile = (fileId, cb) ->
       file.default = true
       @save (err) ->
         if err then throw err
-       cb null, file
+        cb null, file
 
 containerSchema.methods.deleteAllFiles = (cb) ->
   volumes.deleteAllFiles @long_docker_id, @file_root, (err) =>
-    if err then throw err
-    @files = [ ]
-    @last_write = new Date()
-    @save (err) ->
-      if err then throw err
-      cb()
+    if err then cb err else
+      @files = [ ]
+      @last_write = new Date()
+      @save (err) ->
+        if err then throw err
+        cb()
 
 containerSchema.methods.deleteFile = (fileId, recursive, cb) ->
   file = @files.id fileId
@@ -280,27 +280,27 @@ containerSchema.methods.deleteFile = (fileId, recursive, cb) ->
     if not file.dir
       if recursive then cb error 400, 'cannot recursively delete a plain file' else
         volumes.deleteFile @long_docker_id, @file_root, file.name, file.path, (err) =>
-          if err then throw err
+          if err then cb err else
+            file.remove()
+            @last_write = new Date()
+            @save (err) ->
+              if err then throw err
+              cb()
+    else
+      volumes.removeDirectory @long_docker_id, @file_root, file.name, file.path, recursive, (err) =>
+        if err then cb err else
+          if recursive
+            toDelete = [ ]
+            match = path.normalize "#{file.path}/#{file.name}"
+            for elem in @files
+              if elem.path.indexOf(match) is 0
+                toDelete.push elem
+            for elem in toDelete
+              elem.remove()
           file.remove()
           @last_write = new Date()
           @save (err) ->
             if err then throw err
             cb()
-    else
-      volumes.removeDirectory @long_docker_id, @file_root, file.name, file.path, recursive, (err) =>
-        if err then throw err
-        if recursive
-          toDelete = [ ]
-          match = path.normalize "#{file.path}/#{file.name}"
-          for elem in @files
-            if elem.path.indexOf(match) is 0
-              toDelete.push elem
-          for elem in toDelete
-            elem.remove()
-        file.remove()
-        @last_write = new Date()
-        @save (err) ->
-          if err then throw err
-          cb()
 
 module.exports = mongoose.model 'Containers', containerSchema

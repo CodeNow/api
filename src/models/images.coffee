@@ -212,6 +212,7 @@ imageSchema.statics.destroy = (id, cb) ->
       req.on 'end', () =>
         @remove id, (err) ->
           if err then throw err
+          cb()
 
 imageSchema.statics.listTags = (cb) ->
   @find().distinct 'tags.name', (err, tagNames) ->

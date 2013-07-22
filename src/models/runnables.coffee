@@ -9,7 +9,6 @@ _ = require 'lodash'
 Runnables =
 
   createImage: (userId, from, sync, cb) ->
-
     handler = (image) ->
       users.findUser _id: userId, (err, user) ->
         if err then throw err
@@ -20,13 +19,12 @@ Runnables =
               if json_image.parent then json_image.parent = encodeId json_image.parent
               json_image._id = encodeId image._id
               cb null, json_image
-
     if not isObjectId64 from
       images.createFromDisk userId, from, sync, (err, image) ->
         if err then cb err else
           handler image
     else
-      containers.findOne { _id: decodeId from }, (err, container) ->
+      containers.findOne _id: decodeId from, (err, container) ->
         if err then throw err
         if not container then cb error 403, 'source runnable not found' else
           if container.owner.toString() isnt userId then cb error 403, 'permission denied' else
@@ -39,33 +37,32 @@ Runnables =
 
   createContainer: (userId, from, cb) ->
     async.waterfall [
-        (cb) ->
-          if isObjectId64 from
-            images.findOne _id: decodeId from, (err, image) ->
-              if err then throw err
-              if not image then cb error 400, 'could not find source image to fork from' else
-                cb null, image
-          else
-            options =
-              sort: { _id: 1 }
-              limit: 1
-            images.find 'tags.name': from, null, options, (err, images) ->
-              if err then throw err
-              if not images.length then cb error 400, 'could not find source image to fork from' else
-                cb null, images[0]
-      , (image, cb)->
-          containers.create userId, image, (err, container) ->
-            if err then cb err else
-              container.getProcessState (err, state) ->
-                if err then cb err else
-                  json_container = container.toJSON()
-                  if json_container.parent then json_container.parent = encodeId json_container.parent
-                  if json_container.target then json_container.target = encodeId json_container.target
-                  _.extend json_container, state
-                  json_container._id = encodeId container._id
-                  cb null, json_container
-    ]
-    , cb
+      (cb) ->
+        if isObjectId64 from
+          images.findOne _id: decodeId(from), (err, image) ->
+            if err then throw err
+            if not image then cb error 400, 'could not find source image to fork from' else
+              cb null, image
+        else
+          options =
+            sort: { _id: 1 }
+            limit: 1
+          images.find 'tags.name': from, null, options, (err, images) ->
+            if err then throw err
+            if not images.length then cb error 400, 'could not find source image to fork from' else
+              cb null, images[0]
+      (image, cb)->
+        containers.create userId, image, (err, container) ->
+          if err then cb err else
+            container.getProcessState (err, state) ->
+              if err then cb err else
+                json_container = container.toJSON()
+                if json_container.parent then json_container.parent = encodeId json_container.parent
+                if json_container.target then json_container.target = encodeId json_container.target
+                _.extend json_container, state
+                json_container._id = encodeId container._id
+                cb null, json_container
+    ], cb
 
   listContainers: (userId, parent, cb) ->
     query = { owner: userId }
@@ -95,7 +92,6 @@ Runnables =
               cb null, json
 
   removeContainer: (userId, runnableId, cb) ->
-    console.error((new Error('REMOVE')).stack)
     runnableId = decodeId runnableId
     remove = () -> containers.destroy runnableId, cb
     containers.findOne _id: runnableId, (err, container) ->
@@ -410,12 +406,12 @@ Runnables =
             if err then throw err
             cb()
 
-  syncFiles: (runnableId, cb) ->
+  syncFiles: (userId, runnableId, cb) ->
     fetchContainer userId, runnableId, (err, container) ->
       if err then cb err else
         container.syncFiles cb
 
-  listFiles: (runnableId, content, dir, default_tag, path, cb) ->
+  listFiles: (userId, runnableId, content, dir, default_tag, path, cb) ->
     fetchContainer userId, runnableId, (err, container) ->
       if err then cb err else
         container.listFiles content, dir, default_tag, path, cb
@@ -423,9 +419,10 @@ Runnables =
   createFile: (userId, runnableId, name, path, content, cb) ->
     fetchContainer userId, runnableId, (err, container) ->
       if err then cb err else
-        container.createFile name, path, content, cb
+        container.createFile name, path, content, (err, file) ->
+          cb err, file
 
-  readFile: (runnableId, fileId, cb) ->
+  readFile: (userId, runnableId, fileId, cb) ->
     fetchContainer userId, runnableId, (err, container) ->
       if err then cb err else
         container.readFile fileId, cb
@@ -435,7 +432,7 @@ Runnables =
       if err then cb err else
         container.updateFile fileId, content, cb
 
-  deleteFile: (runnableId, fileId, recursive, cb) ->
+  deleteFile: (userId, runnableId, fileId, recursive, cb) ->
     fetchContainer userId, runnableId, (err, container) ->
       if err then cb err else
         container.deleteFile fileId, recursive, cb

@@ -1,6 +1,7 @@
 require('source-map-support').install()
 var api_server = require('./lib');
 var cluster = require('cluster');
+var configs = require('./lib/configs');
 var debug = require('debug')('process');
 var os = require('os');
 
@@ -21,5 +22,6 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else  {
-  api_server.start();
+  var worker = new api_server(configs, null);
+  worker.start(function () { });
 }

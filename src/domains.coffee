@@ -1,9 +1,13 @@
+configs = require './configs'
 domain = require 'domain'
 
-module.exports = () ->
+module.exports = (parentDomain) ->
   (req, res, next) ->
     d = domain.create()
-    d.on 'error', next
+    req.domain = d
     d.add req
     d.add res
+    d.on 'error', (e) ->
+      if parentDomain and configs.throwErrors then parentDomain.emit 'error', e else
+        next e
     d.run next

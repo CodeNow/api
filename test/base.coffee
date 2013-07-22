@@ -1,4 +1,6 @@
+apiserver = require '../lib'
 configs = require '../lib/configs'
+domain = require 'domain'
 helpers = require './helpers'
 sa = require 'superagent'
 
@@ -6,14 +8,24 @@ describe 'api', ->
 
   it 'should return a 500 on a thrown error ::base', (done) ->
     user = sa.agent()
-    helpers.createUser user, (err, token) ->
-      if err then done err else
-        user.get("http://localhost:#{configs.port}/throws")
-          .set('runnable-token', token)
-          .end (err, res) ->
+    d = domain.create()
+    d.on 'error', (err) ->
+      done err
+    d.run () ->
+      configs.throwErrors = false
+      instance = new apiserver configs, d
+      instance.start (err) ->
+        if err then done err else
+          helpers.createUser user, (err, token) ->
             if err then done err else
-              res.should.have.status 500
-              done()
+              user.get("http://localhost:#{configs.port}/throws")
+                .set('runnable-token', token)
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 500
+                    res.body.should.have.property 'message', 'boom!'
+                    configs.throwErrors = true
+                    instance.stop done
 
   it 'should respond with hello at the root path ::base', (done) ->
     user = sa.agent()

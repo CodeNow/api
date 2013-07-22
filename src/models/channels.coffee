@@ -25,8 +25,6 @@ channelSchema.statics.listChannels = (cb) ->
           if err then throw err
           if not channel then cb null, { name: tag, _id: tag } else
             cb null, channel
-      , (err, channels) ->
-        if err then throw err
-        cb null, channels
+      , cb
 
 module.exports = mongoose.model 'Channels', channelSchema

@@ -46,8 +46,7 @@ beforeEach (done) ->
               projects.update { }, { $set: owner: userId }, cb
       ], (err) ->
         if err then done err else
-          test_db.close () ->
-            apiserver.start done
+          test_db.close done
 
 afterEach (done) ->
   redis_client.flushall () ->
@@ -66,18 +65,7 @@ afterEach (done) ->
                         if err then done err else
                           async.forEachSeries containers, (container, cb) ->
                             docker.removeContainer container.Id, cb
-                          , (err) ->
-                            if err then done err else
-                              killed = false
-                              setTimeout () ->
-                                if not killed
-                                  killed = true
-                                  done()
-                              , 1000
-                              apiserver.stop () ->
-                                if not killed
-                                  killed = true
-                                  done()
+                          , done
 
 before (done) ->
   docker.listContainers (err, containers) ->
