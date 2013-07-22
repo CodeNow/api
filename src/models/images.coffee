@@ -32,6 +32,18 @@ imageSchema = new Schema
     default: Date.now
   cmd:
     type: String
+  copies:
+    type: Number
+    default: 0
+  pastes:
+    type: Number
+    default: 0
+  cuts:
+    type: Number
+    default: 0
+  runs:
+    type: Number
+    default: 0
   port:
     type: Number
   synced:
