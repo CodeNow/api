@@ -211,7 +211,7 @@ imageSchema.statics.destroy = (id, cb) ->
         req.on 'error', (err) ->
           cb new error { code: 500, msg: 'error removing docker image' }
         req.on 'end', () =>
-          @remove id, (err) ->
+          @remove { _id: id }, (err) ->
             if err then cb new error { code: 500, msg: 'error removing image metadata from mongodb' } else
               cb()
 

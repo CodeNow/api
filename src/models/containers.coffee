@@ -119,7 +119,7 @@ containerSchema.statics.create = (owner, image, cb) ->
                     cb null, container
 
 containerSchema.statics.destroy = (id, cb) ->
-  @findOne { _id: id, deleted: undefined } , (err, container) =>
+  @findOne { _id: id } , (err, container) =>
     if err then cb new error { code: 500, msg: 'error looking up container metadata in mongodb' } else
       if not container then cb new error { code: 404, msg: 'container metadata not found' } else
         container.getProcessState (err, state) =>
@@ -127,7 +127,7 @@ containerSchema.statics.destroy = (id, cb) ->
             remove = () =>
               docker.removeContainer container.docker_id, (err) =>
                 if err then cb new error { code: 500, msg: 'error removing container from docker' } else
-                  @remove id, (err) ->
+                  @remove { _id: id }, (err) ->
                     if err then cb new error { code: 500, msg: 'error removing container metadata from mongodb' } else
                       cb()
             if state.running
