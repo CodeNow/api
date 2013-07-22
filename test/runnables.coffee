@@ -149,6 +149,33 @@ describe 'runnables api', ->
                         res.body.should.have.property 'message', 'runnable deleted'
                         done()
 
+  it 'should be able to discard/undo any unsaved changes without removing all containers ::fix in the system ::runnable', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  firstContainerId = res.body._id
+                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        secondContainerId = res.body._id
+                        user.del("http://localhost:#{configs.port}/users/me/runnables/#{secondContainerId}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.have.property 'message', 'runnable deleted'
+                              user.get("http://localhost:#{configs.port}/users/me/runnables/#{firstContainerId}")
+                                .end (err, res) ->
+                                  if err then done err else
+                                    res.should.have.status 200
+                                    res.body.should.have.property '_id', firstContainerId
+                                    done()
+
   it 'should be able to save a ::runnable', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->
       if err then done err else
@@ -358,6 +385,38 @@ describe 'runnables api', ->
                               res.should.have.status 200
                               res.body.should.have.property 'message', 'runnable deleted'
                               done()
+
+  it 'should be able to delete a published ::runnable that you own without deleting every published image ::fix2', (done) ->
+    helpers.createImage 'node.js', (err, runnableId) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  runnableId = res.body._id
+                  user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        firstPublishedRunnableId = res.body._id
+                        user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 201
+                              secondPublishedRunnableId = res.body._id
+                              user.del("http://localhost:#{configs.port}/runnables/#{secondPublishedRunnableId}")
+                                .end (err, res) ->
+                                  if err then done err else
+                                    res.should.have.status 200
+                                    res.body.should.have.property 'message', 'runnable deleted'
+                                    user.get("http://localhost:#{configs.port}/runnables/#{firstPublishedRunnableId}")
+                                      .end (err, res) ->
+                                        if err then done err else
+                                          res.should.have.status 200
+                                          res.body.should.have.property '_id', firstPublishedRunnableId
+                                          done()
 
   it 'should create a ::runnable from an existing published one that someone else owns', (done) ->
     helpers.createImage 'node.js', (err, runnableId) ->

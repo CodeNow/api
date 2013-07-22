@@ -210,7 +210,7 @@ imageSchema.statics.destroy = (id, cb) ->
     if not image then cb error 404, 'image not found' else
       req = docker.removeImage { id: image.docker_id }
       req.on 'end', () =>
-        @remove id, (err) ->
+        @remove { _id: id }, (err) ->
           if err then throw err
           cb()
 

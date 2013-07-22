@@ -124,7 +124,7 @@ containerSchema.statics.destroy = (id, cb) ->
           remove = () =>
             docker.removeContainer container.docker_id, (err) =>
               if err then throw err
-              @remove id, (err) ->
+              @remove { _id: id }, (err) ->
                 if err then throw err else cb()
           if state.running
             container.stop (err) =>
