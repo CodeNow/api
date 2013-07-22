@@ -21,8 +21,9 @@ app.use runnables
 app.use channels
 app.use app.router
 app.use (err, req, res, next) ->
+  console.log err
   if configs.throwErrors then throw err
-  debug err.stack
+  if configs.logStack then debug err.stack
   try
     timer = setTimeout () ->
       process.exit 1
@@ -31,12 +32,12 @@ app.use (err, req, res, next) ->
     server.close()
     cluster.worker.disconnect()
   catch err2
-    debug err.stack2
+    debug err2.stack
   if not err.code then err.code = 500
   if not err.msg then err.msg = 'boom!'
   res.json err.code, message: err.msg
 
-app.get '/throws', () -> throw new Error 'zomg!'
+app.get '/throws', (req, res) -> throw new Error 'zomg!'
 app.get '/', (req, res) -> res.json { message: 'runnable api' }
 app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
 

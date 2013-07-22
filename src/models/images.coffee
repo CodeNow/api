@@ -118,41 +118,40 @@ syncDockerImage = (image, cb) ->
 
 imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
   runnablePath = "#{__dirname}/../../configs/runnables"
-  fs.exists "#{runnablePath}/runnable.json", (err, exists) ->
-    if err then throw err else
-      if not exists then cb error 403, 'could not find runnable.json' else
-        try
-          runnable = require "#{runnablePath}/#{name}/runnable.json"
-        catch err2
-          cb error 403, 'could not parse runnable.json'
-        if not runnable then cb new error 400, "image source not found: #{name}" else
-          image = new @()
-          tag = image._id.toString()
-          buildDockerImage "#{runnablePath}/#{name}", tag, (err, docker_id) ->
-            if err then cb err else
-              image.docker_id = docker_id
-              image.owner = owner
-              image.name = runnable.name
-              image.cmd = runnable.cmd
-              if runnable.file_root then image.file_root = runnable.file_root
-              if runnable.service_cmds then image.service_cmds = runnable.service_cmds
-              if runnable.start_cmd then image.start_cmd = runnable.start_cmd
-              image.port = runnable.port
-              for tag in runnable.tags
-                image.tags.push tag
-              for file in runnable.files
-                image.files.push file
-              if sync
-                syncDockerImage image, (err) ->
-                  if err then cb err else
-                    image.synced = true
-                    image.save (err) ->
-                      if err then throw err
-                      cb null, image
-              else
-                image.save (err) ->
-                  if err then throw err
-                  cb null, image
+  fs.exists "#{runnablePath}/#{name}/runnable.json", (exists) =>
+    if not exists then cb error 403, 'could not find runnable.json' else
+      try
+        runnable = require "#{runnablePath}/#{name}/runnable.json"
+      catch json_err
+        cb error 403, "could not parse runnable.json: #{json_err.message}"
+      if not runnable then cb error 400, "image source not found: #{name}" else
+        image = new @()
+        tag = image._id.toString()
+        buildDockerImage "#{runnablePath}/#{name}", tag, (err, docker_id) ->
+          if err then cb err else
+            image.docker_id = docker_id
+            image.owner = owner
+            image.name = runnable.name
+            image.cmd = runnable.cmd
+            if runnable.file_root then image.file_root = runnable.file_root
+            if runnable.service_cmds then image.service_cmds = runnable.service_cmds
+            if runnable.start_cmd then image.start_cmd = runnable.start_cmd
+            image.port = runnable.port
+            for tag in runnable.tags
+              image.tags.push tag
+            for file in runnable.files
+              image.files.push file
+            if sync
+              syncDockerImage image, (err) ->
+                if err then cb err else
+                  image.synced = true
+                  image.save (err) ->
+                    if err then throw err
+                    cb null, image
+            else
+              image.save (err) ->
+                if err then throw err
+                cb null, image
 
 imageSchema.statics.createFromContainer = (container, cb) ->
   image = new @
@@ -164,6 +163,7 @@ imageSchema.statics.createFromContainer = (container, cb) ->
     service_cmds: container.service_cmds
     start_cmd: container.start_cmd
     port: container.port
+    synced: true
   for file in container.files
     image.files.push file.toJSON()
   for tag in container.tags

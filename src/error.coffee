@@ -1,3 +1,3 @@
-module.export = (code, msg) ->
+module.exports = (code, msg) ->
   code: code
   msg: msg

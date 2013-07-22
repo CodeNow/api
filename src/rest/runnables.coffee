@@ -17,7 +17,7 @@ app.post '/runnables', (req, res) ->
 
 app.get '/runnables', (req, res) ->
   limit = configs.defaultPageLimit
-  if req.query.limit and req.query.limit < configs.maxPageLimit
+  if req.query.limit and req.query.limit <= configs.maxPageLimit
     limit = Number req.query.limit
   page = 0
   if req.query.page
@@ -34,6 +34,10 @@ app.get '/runnables', (req, res) ->
   else if req.query.owner
     runnables.listFiltered { owner: req.query.owner }, sortByVotes, limit, page, (err, results) ->
       if err then res.json err.code, message: err.msg else
+        res.json results
+  else if req.query.map
+    runnables.listNames (err, results) ->
+      if err then next err else
         res.json results
   else
     runnables.listAll sortByVotes, limit, page, (err, results) ->

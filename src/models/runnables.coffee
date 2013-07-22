@@ -10,17 +10,22 @@ Runnables =
 
   createImage: (userId, from, sync, cb) ->
 
-    handler = (err, image) ->
+    handler = (image) ->
       users.findUser _id: userId, (err, user) ->
         if err then throw err
         if not user then cb error 404, 'user not found' else
-          user.addVote image._id, () ->
-            json_image = image.toJSON()
-            if json_image.parent then json_image.parent = encodeId json_image.parent
-            json_image._id = encodeId image._id
-            cb null, json_image
+          user.addVote image._id, (err) ->
+            if err then cb err else
+              json_image = image.toJSON()
+              if json_image.parent then json_image.parent = encodeId json_image.parent
+              json_image._id = encodeId image._id
+              cb null, json_image
 
-    if not isObjectId64 from then images.createFromDisk userId, from, sync, handler else
+    if not isObjectId64 from
+      images.createFromDisk userId, from, sync, (err, image) ->
+        if err then cb err else
+          handler image
+    else
       containers.findOne { _id: decodeId from }, (err, container) ->
         if err then throw err
         if not container then cb error 403, 'source runnable not found' else
@@ -30,7 +35,7 @@ Runnables =
                 container.target = image._id
                 container.save (err) ->
                   if err then throw err
-                  handler null, image
+                  handler image
 
   createContainer: (userId, from, cb) ->
     async.waterfall [
@@ -90,6 +95,7 @@ Runnables =
               cb null, json
 
   removeContainer: (userId, runnableId, cb) ->
+    console.error((new Error('REMOVE')).stack)
     runnableId = decodeId runnableId
     remove = () -> containers.destroy runnableId, cb
     containers.findOne _id: runnableId, (err, container) ->
@@ -252,35 +258,40 @@ Runnables =
             cb null, result
 
   listFiltered: (query, sortByVotes, limit, page, cb) ->
-      if not sortByVotes
-        images.find(query).skip(page*limit).limit(limit).exec (err, results) ->
+    if not sortByVotes
+      images.find(query).skip(page*limit).limit(limit).exec (err, results) ->
+        if err then throw err
+        cb null, arrayToJSON results
+    else
+      images.find query, (err, selected) ->
+        if err then throw err
+        filter = [ ]
+        for image in selected
+          filter.push image._id
+        users.aggregate voteSortPipelineFiltered(limit, limit*page, filter), (err, results) ->
           if err then throw err
-          cb null, arrayToJSON results
-      else
-        images.find query, (err, selected) ->
-          if err then throw err
-          filter = [ ]
-          for image in selected
-            filter.push image._id
-          users.aggregate voteSortPipelineFiltered(limit, limit*page, filter), (err, results) ->
-            if err then throw err
-            async.map results, (result, cb) ->
-              images.findOne { _id: result._id }, (err, runnable) ->
-                if err then throw err
-                if not runnable then cb() else
-                  runnable.votes = result.number - 1
-                  cb null, runnable
-            , (err, results) ->
-              if err then cb err else
-                result = [ ]
-                for item in results
-                  if item
-                    json = item.toJSON()
-                    json._id = encodeId json._id
-                    json.votes = item.votes
-                    if json.parent then json.parent = encodeId json.parent
-                    result.push json
-                cb null, result
+          async.map results, (result, cb) ->
+            images.findOne { _id: result._id }, (err, runnable) ->
+              if err then throw err
+              if not runnable then cb() else
+                runnable.votes = result.number - 1
+                cb null, runnable
+          , (err, results) ->
+            if err then cb err else
+              result = [ ]
+              for item in results
+                if item
+                  json = item.toJSON()
+                  json._id = encodeId json._id
+                  json.votes = item.votes
+                  if json.parent then json.parent = encodeId json.parent
+                  result.push json
+              cb null, result
+
+  listNames: (cb) ->
+    images.find({ tags: $not: $size: 0 }, 'name').exec (err, results) ->
+      if err then throw err
+      cb null, arrayToJSON results
 
   getTags: (runnableId, cb) ->
     runnableId = decodeId runnableId
