@@ -1,3 +1,11 @@
+var configs = require('./lib/configs');
+if (configs.nodetime) {
+  var nodetime = require('nodetime');
+  nodetime.profile({
+    accountKey: configs.nodetime.accountKey,
+    appName: configs.nodetime.appName
+  });
+}
 require('source-map-support').install()
 var api_server = require('./lib');
 var cluster = require('cluster');

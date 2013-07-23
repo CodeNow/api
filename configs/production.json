@@ -14,6 +14,10 @@
   "shortProjectIds": true,
   "volumesPath": "{HOME_DIR}/.runnable/volumes",
   "volume": "dnode",
+  "nodetime": {
+    "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",
+    "appName": "Runnable.com API Server"
+  },
   "dnode_host": "10.0.2.232",
   "dnode_port": 13337,
   "showStack": true,
