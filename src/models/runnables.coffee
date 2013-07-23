@@ -489,8 +489,8 @@ Runnables =
           if not file then cb new error { code: 404, msg: 'file not found' } else
             container.deleteFile fileId, recursive, cb
 
-  getStat: (runnableId, stat, cb) ->
-    if !(stat in stats) then cb new error { code: 400, 'not a valid stat' } else
+  getStat: (userId, runnableId, stat, cb) ->
+    if not (stat in stats) then cb new error { code: 400, msg: 'not a valid stat' } else
       runnableId = decodeId runnableId
       async.parallel [
         (cb) ->
@@ -499,12 +499,12 @@ Runnables =
               cb null, image[stat]
         (cb) ->
           users.findOne _id: userId, (err, user) ->
+            console.log user
             if err then cb new error { code: 500, msg: 'error looking up user' } else
               cb null, user[stat]
-      ]
-      (err, results) ->
+      ], (err, results) ->
         if err then cb err else
-          cb null, 
+          cb null,
             image: results[0]
             user: results[1]
 
@@ -526,10 +526,9 @@ Runnables =
               user.save (err) ->
                 if err then cb new error { code: 500, msg: 'error updating user' } else
                   cb null, user[stat]
-      ]
-      (err, results) ->
+      ], (err, results) ->
         if err then cb err else
-          cb null, 
+          cb null,
             image: results[0]
             user: results[1]
 
@@ -606,12 +605,13 @@ slash = /\//g
 minus = /-/g
 underscore = /_/g
 
-stats =
-  copies: true
-  pastes: true
-  cuts: true
-  runs: true
-  views: true
+stats = [
+  'copies'
+  'pastes'
+  'cuts'
+  'runs'
+  'views'
+]
 
 encodeId = (id) -> id
 decodeId = (id) -> id

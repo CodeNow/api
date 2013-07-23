@@ -10,9 +10,9 @@ describe 'stats api', ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            console.log runnableId, 'runs'
             user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/stats/runs")
               .end (err, res) ->
+                console.log res.body.message
                 if err then done err else
                   res.should.have.status 200
                   res.body.user.should.equal 0
