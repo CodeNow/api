@@ -27,7 +27,8 @@
     "source-map-support": "~0.1.5",
     "request": "~2.21.0",
     "upnode": "~0.4.3",
-    "debug": "~0.7.2"
+    "debug": "~0.7.2",
+    "nodetime": "~0.8.13"
   },
   "devDependencies": {
     "mocha": "~1.9.0",

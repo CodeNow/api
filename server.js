@@ -1,13 +1,20 @@
+var configs = require('./lib/configs');
+var cluster = require('cluster');
+
+if (configs.nodetime && cluster.isWorker) {
+  var nodetime = require('nodetime');
+  nodetime.profile(configs.nodetime);
+}
+
+var debug = require('debug')('process');
 require('source-map-support').install()
 var api_server = require('./lib');
-var cluster = require('cluster');
-var configs = require('./lib/configs');
-var debug = require('debug')('process');
 var os = require('os');
 
-var numCPUs = os.cpus().length;
 if (cluster.isMaster) {
+
   debug('spawning', numCPUs, 'workers');
+  var numCPUs = os.cpus().length;
   for (var i = 0; i < numCPUs; i++) {
     cluster.fork();
   }
@@ -21,7 +28,10 @@ if (cluster.isMaster) {
     debug('worker died:', worker.process.pid);
     cluster.fork();
   });
+
 } else  {
+
   var worker = new api_server(configs, null);
   worker.start(function () { });
+
 }

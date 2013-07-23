@@ -6,6 +6,7 @@ error = require './error'
 express = require 'express'
 http = require 'http'
 mongoose = require 'mongoose'
+nodetime = require 'nodetime'
 runnables = require './rest/runnables'
 users = require './rest/users'
 channels = require './rest/channels'
@@ -41,10 +42,12 @@ class App
     app.use runnables
     app.use channels
     app.use app.router
+    if configs.nodetime then app.use nodetime.expressErrorHandler()
     app.use (err, req, res, next) =>
       if configs.logStack then debug err.stack
       if cluster.isWorker
         try
+          if configs.nodetime then nodetime.destroy()
           timer = setTimeout () ->
             process.exit 1
           , 30000
