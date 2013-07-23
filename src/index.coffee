@@ -4,6 +4,7 @@ error = require './error'
 express = require 'express'
 http = require 'http'
 mongoose = require 'mongoose'
+nodetime = require 'nodetime'
 runnables = require './rest/runnables'
 users = require './rest/users'
 channels = require './rest/channels'
@@ -22,6 +23,7 @@ app.use users
 app.use runnables
 app.use channels
 app.use app.router
+if configs.nodetime then app.use nodetime.expressErrorHandler()
 app.use (err, req, res, next) ->
   json_err = { }
   if configs.showStack

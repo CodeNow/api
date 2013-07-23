@@ -1,18 +1,12 @@
+var nodetime = require('nodetime');
 var configs = require('./lib/configs');
-if (configs.nodetime) {
-  var nodetime = require('nodetime');
-  nodetime.profile({
-    accountKey: configs.nodetime.accountKey,
-    appName: configs.nodetime.appName
-  });
-}
+var cluster = require('cluster');
 require('source-map-support').install()
 var api_server = require('./lib');
-var cluster = require('cluster');
 var os = require('os');
 
-var numCPUs = os.cpus().length;
 if (cluster.isMaster) {
+  var numCPUs = os.cpus().length;
   for (var i = 0; i < numCPUs; i++) {
     cluster.fork();
   }
@@ -20,6 +14,9 @@ if (cluster.isMaster) {
     console.log('worker ' + worker.process.pid + ' died');
     cluster.fork();
   });
-} else  {
+} else {
+  if (configs.nodetime) {
+    nodetime.profile(configs.nodetime);
+  }
   api_server.start();
 }

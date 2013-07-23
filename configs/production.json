@@ -16,7 +16,11 @@
   "volume": "dnode",
   "nodetime": {
     "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",
-    "appName": "Runnable.com API Server"
+    "appName": "Runnable.com API Server",
+    "namedTransactions": {
+      "Published Runnables": "/runnables",
+      "Draft Runnables": "/users/me/runnables"
+    }
   },
   "dnode_host": "10.0.2.232",
   "dnode_port": 13337,
