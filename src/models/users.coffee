@@ -27,6 +27,21 @@ userSchema = new Schema
   created:
     type: Date
     default: Date.now
+  copies:
+    type: Number
+    default: 0
+  pastes:
+    type: Number
+    default: 0
+  cuts:
+    type: Number
+    default: 0
+  runs:
+    type: Number
+    default: 0
+  views:
+    type: Number
+    default: 0
   votes:
     type: [
       runnable:
