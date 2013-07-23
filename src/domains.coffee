@@ -8,6 +8,8 @@ module.exports = (parentDomain) ->
     d.add req
     d.add res
     d.on 'error', (e) ->
-      if parentDomain and configs.throwErrors then parentDomain.emit 'error', e else
+      if parentDomain and configs.throwErrors
+        parentDomain.emit 'error', e
+      else
         next e
     d.run next

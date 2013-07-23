@@ -27,9 +27,10 @@ class App
 
   stop: (cb) ->
     if @started
-      @server.close () =>
-        @started = false
-        cb()
+      @server.close (err) =>
+        if err then cb err else
+          @started = false
+          cb()
 
   create: () ->
     app = express()

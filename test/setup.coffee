@@ -1,4 +1,3 @@
-apiserver = require '../lib'
 async = require 'async'
 configs = require '../lib/configs'
 dockerjs = require 'docker.js'

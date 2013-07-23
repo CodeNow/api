@@ -193,7 +193,7 @@ containerSchema.methods.createFile = (name, path, content, cb) ->
 
 containerSchema.methods.updateFile = (fileId, content, cb) ->
   file = @files.id fileId
-  if not file then cb error 404, 'file not found' else
+  if not file then cb error 404, 'file does not exist' else
     volumes.updateFile @long_docker_id, @file_root, file.name, file.path, content, (err) =>
       if err then cb err else
         file.content = content
@@ -204,7 +204,7 @@ containerSchema.methods.updateFile = (fileId, content, cb) ->
 
 containerSchema.methods.renameFile = (fileId, newName, cb) ->
   file = @files.id fileId
-  if not file then cb error 404, 'file not found' else
+  if not file then cb error 404, 'file does not exist' else
     volumes.renameFile @long_docker_id, @file_root, file.name, file.path, newName, (err) =>
       if err then cb err else
         oldName = file.name
@@ -222,7 +222,7 @@ containerSchema.methods.renameFile = (fileId, newName, cb) ->
 
 containerSchema.methods.moveFile = (fileId, newPath, cb) ->
   file = @files.id fileId
-  if not file then cb error 404, 'file not found' else
+  if not file then cb error 404, 'file does not exist' else
     volumes.moveFile @long_docker_id, @file_root, file.name, file.path, newPath, (err) =>
       if err then cb err else
         oldPath = file.path

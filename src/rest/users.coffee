@@ -261,7 +261,8 @@ app.get '/users/:userid/runnables/:id/files/:fileid', fetchuser, getfile
 updatefile = (req, res) ->
   async.waterfall [
     (cb) ->
-      if not req.body.content then cb() else
+      file = null
+      if not req.body.content then cb null, file else
         runnables.updateFile req.user_id, req.params.id, req.params.fileid, req.body.content, cb
     (file, cb) ->
       if not req.body.path then cb null, file else

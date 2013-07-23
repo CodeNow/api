@@ -1,9 +1,23 @@
 apiserver = require '../../lib'
 cp = require 'child_process'
 configs = require '../../lib/configs'
+domain = require 'domain'
 sa = require 'superagent'
 
 Helpers =
+
+  createServer: (configs, done, cb) ->
+    d = domain.create()
+    d.on 'error', (err) ->
+      instance.stop () ->
+        done err
+    instance = new apiserver configs, d
+    d.run () ->
+      console.log 'asdfasdf'
+      instance.start (err) ->
+        console.log err
+        if err then cb err else
+          cb null, instance
 
   createUser: (user, cb) ->
     user.post("http://localhost:#{configs.port}/users")

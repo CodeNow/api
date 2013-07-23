@@ -162,12 +162,13 @@ Runnables =
     images.findOne _id: decodedRunnableId, (err, image) =>
       if err then throw err
       if not image then cb error 404, 'runnable not found' else
-        @getVotes runnableId, (votes) ->
-          json_project = image.toJSON()
-          json_project.votes = votes.count
-          json_project._id = encodeId json_project._id
-          if json_project.parent then json_project.parent = encodeId json_project.parent
-          cb null, json_project
+        @getVotes runnableId, (err, votes) ->
+          if err then cb err else
+            json_project = image.toJSON()
+            json_project.votes = votes.count
+            json_project._id = encodeId json_project._id
+            if json_project.parent then json_project.parent = encodeId json_project.parent
+            cb null, json_project
 
   startContainer: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
