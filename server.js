@@ -1,6 +1,11 @@
-var nodetime = require('nodetime');
 var configs = require('./lib/configs');
 var cluster = require('cluster');
+
+if (configs.nodetime && cluster.isWorker) {
+  var nodetime = require('nodetime');
+  nodetime.profile(configs.nodetime);
+}
+
 require('source-map-support').install()
 var api_server = require('./lib');
 var os = require('os');
@@ -15,8 +20,5 @@ if (cluster.isMaster) {
     cluster.fork();
   });
 } else {
-  if (configs.nodetime) {
-    nodetime.profile(configs.nodetime);
-  }
   api_server.start();
 }
