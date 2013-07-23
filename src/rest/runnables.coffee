@@ -89,7 +89,6 @@ app.del '/runnables/:id/tags/:tagId', (req, res, next) ->
 
 app.get '/runnables/:id/stats/:stat', (req, res, next) ->
   runnables.getStat req.user_id, req.params.id, req.params.stat, (err, stats) ->
-    console.log err
     if err then next err else
       res.json 200, stats
 

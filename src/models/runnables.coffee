@@ -499,7 +499,6 @@ Runnables =
               cb null, image[stat]
         (cb) ->
           users.findOne _id: userId, (err, user) ->
-            console.log user
             if err then cb new error { code: 500, msg: 'error looking up user' } else
               cb null, user[stat]
       ], (err, results) ->
