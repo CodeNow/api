@@ -13,9 +13,7 @@ Helpers =
         done err
     instance = new apiserver configs, d
     d.run () ->
-      console.log 'asdfasdf'
       instance.start (err) ->
-        console.log err
         if err then cb err else
           cb null, instance
 
@@ -66,8 +64,8 @@ Helpers =
 
   authedAdminUser: (cb) ->
     user = sa.agent()
-    oldSalt = apiserver.configs.passwordSalt
-    delete apiserver.configs.passwordSalt
+    oldSalt = configs.passwordSalt
+    delete configs.passwordSalt
     user.post("http://localhost:#{configs.port}/token")
       .set('Content-Type', 'application/json')
       .send(JSON.stringify( email: 'test4@testing.com', password: 'testing'))
@@ -75,7 +73,7 @@ Helpers =
         if err then cb err else
           res.should.have.status 200
           token = res.body.access_token
-          apiserver.configs.passwordSalt = oldSalt
+          configs.passwordSalt = oldSalt
           cb null,
             post: (url) -> user.post(url).set('runnable-token', token)
             get:  (url) -> user.get(url).set('runnable-token', token)

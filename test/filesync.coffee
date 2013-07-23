@@ -5,8 +5,8 @@ sa = require 'superagent'
 
 describe 'file sync feature', ->
 
-  it 'should not ::sync image when passing sync=false to the create command',
-    helpers.createServer configs, (err, instance) ->
+  it 'should not ::sync image when passing sync=false to the create command', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createUnsyncedImage 'node.js', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -18,8 +18,8 @@ describe 'file sync feature', ->
                     res.body.should.not.have.property 'synced'
                     instance.stop done
 
-  it 'should ::sync when creating an image by default',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync when creating an image by default', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'node.js', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -31,8 +31,8 @@ describe 'file sync feature', ->
                     res.body.should.have.property 'synced', true
                     instance.stop done
 
-  it 'should ::sync an unsynced image when creating a container from it for the first time',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync an unsynced image when creating a container from it for the first time', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createUnsyncedImage 'node.js', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -62,8 +62,8 @@ describe 'file sync feature', ->
                                         elem.name.should.not.equal '.profile'
                                       instance.stop done
 
-  it 'should not ::sync shell files when building an image from dockerfile',
-    helpers.createServer configs, (err, instance) ->
+  it 'should not ::sync shell files when building an image from dockerfile', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'node.js', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -83,8 +83,8 @@ describe 'file sync feature', ->
                             elem.name.should.not.equal '.profile'
                           instance.stop done
 
-  it 'should ::sync missing files when building an image from dockerfile',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync missing files when building an image from dockerfile', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'missing_file', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -102,8 +102,8 @@ describe 'file sync feature', ->
                           res.body.should.have.length 4
                           instance.stop done
 
-  it 'should ::sync missing folders when building an image from dockerfile',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync missing folders when building an image from dockerfile', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'missing_folder', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -121,8 +121,8 @@ describe 'file sync feature', ->
                           res.body.should.have.length 5
                           instance.stop done
 
-  it 'should ::sync files inside folders when building an image from dockerfile',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync files inside folders when building an image from dockerfile', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'file_in_folder', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -144,8 +144,8 @@ describe 'file sync feature', ->
                           found.should.equal true
                           instance.stop done
 
-  it 'should ::sync files which are removed when building an image from dockerfile',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync files which are removed when building an image from dockerfile', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'removed_file', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -163,8 +163,8 @@ describe 'file sync feature', ->
                           res.body.length.should.equal 3
                           instance.stop done
 
-  it 'should not ::sync files inside ignored folders when building an image from dockerfile',
-    helpers.createServer configs, (err, instance) ->
+  it 'should not ::sync files inside ignored folders when building an image from dockerfile', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'node.js_express', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -183,8 +183,8 @@ describe 'file sync feature', ->
                             elem.path.should.not.include 'node_modules'
                           instance.stop done
 
-  it 'should not ::sync shell files when building an image from dockerfile (migration)',
-    helpers.createServer configs, (err, instance) ->
+  it 'should not ::sync shell files when building an image from dockerfile (migration)', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createUnsyncedImage 'node.js', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -204,8 +204,8 @@ describe 'file sync feature', ->
                             elem.name.should.not.equal '.profile'
                           instance.stop done
 
-  it 'should ::sync missing files when building an image from dockerfile (migration)',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync missing files when building an image from dockerfile (migration)', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createUnsyncedImage 'missing_file', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -223,8 +223,8 @@ describe 'file sync feature', ->
                           res.body.should.have.length 4
                           instance.stop done
 
-  it 'should ::sync missing folders when building an image from dockerfile (migration)',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync missing folders when building an image from dockerfile (migration)', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createUnsyncedImage 'missing_folder', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -242,8 +242,8 @@ describe 'file sync feature', ->
                           res.body.should.have.length 5
                           instance.stop done
 
-  it 'should ::sync files inside folders when building an image from dockerfile (migration)',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync files inside folders when building an image from dockerfile (migration)', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createUnsyncedImage 'file_in_folder', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -265,8 +265,8 @@ describe 'file sync feature', ->
                           found.should.equal true
                           instance.stop done
 
-  it 'should ::sync files which are removed when building an image from dockerfile (migration)',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync files which are removed when building an image from dockerfile (migration)', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createUnsyncedImage 'removed_file', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -284,8 +284,8 @@ describe 'file sync feature', ->
                           res.body.length.should.equal 3
                           instance.stop done
 
-  it 'should not ::sync files inside ignored folders when building an image from dockerfile (migration)',
-    helpers.createServer configs, (err, instance) ->
+  it 'should not ::sync files inside ignored folders when building an image from dockerfile (migration)', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createUnsyncedImage 'node.js_express', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -304,8 +304,8 @@ describe 'file sync feature', ->
                             elem.path.should.not.include 'node_modules'
                           instance.stop done
 
-  it 'should read ::synced file data from mongodb entry for the container',
-    helpers.createServer configs, (err, instance) ->
+  it 'should read ::synced file data from mongodb entry for the container', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'node.js', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -341,8 +341,8 @@ describe 'file sync feature', ->
                                           res.body.should.have.property 'content', content
                                           instance.stop done
 
-  it 'should ::sync out of ::band container file changes with an explicit sync() call',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync out of ::band container file changes with an explicit sync() call', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'node.js', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->
@@ -384,8 +384,8 @@ describe 'file sync feature', ->
                                                 instance.stop done
 
 
-  it 'should ::sync a file that is removed out of ::band when a container sync() is called',
-    helpers.createServer configs, (err, instance) ->
+  it 'should ::sync a file that is removed out of ::band when a container sync() is called', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
       helpers.createImage 'node.js', (err, runnableId) ->
         if err then done err else
           helpers.authedUser (err, user) ->

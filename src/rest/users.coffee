@@ -14,15 +14,16 @@ redis_client = redis.createClient(configs.redis.port, configs.redis.ipaddress)
 app = module.exports = express()
 
 fetchuser = (req, res, next) ->
-  users.findUser _id: req.params.userid, (err, user) ->
-    if err then res.json err.code, message: err.msg else
-      if not user then res.json err.code, message: 'user not found' else
-        if req.params.userid.toString() isnt req.user_id.toString() then res.json 403, message: 'permission denied' else
-          next()
+  if not req.params.userid.match /^[0-9a-fA-F]{24}$/ then res.json 404, message: 'user not found' else
+    users.findUser _id: req.params.userid, (err, user) ->
+      if err then res.json err.code, message: err.msg else
+        if not user then res.json 404, message: 'user not found' else
+          if req.params.userid.toString() isnt req.user_id.toString() then res.json 403, message: 'permission denied' else
+            next()
 
 app.post '/users', (req, res) ->
   users.createUser (err, user) ->
-    if err then cb err else
+    if err then res.json err.code, message: err.msg else
       access_token = uuid.v4()
       redis_client.psetex [ access_token, configs.tokenExpires, user._id ], (err) ->
         if err then throw err
@@ -33,7 +34,7 @@ app.post '/users', (req, res) ->
             if not req.body.password then res.json 400, message: 'must provide a password to register with' else
               data = _.pick req.body, 'email', 'username', 'password'
               users.registerUser user._id, data, (err, user) ->
-                if err then cb err else
+                if err then res.json err.code, message: err.msg else
                   json_user = user.toJSON()
                   delete json_user.password
                   json_user.access_token = access_token
@@ -44,6 +45,7 @@ app.post '/token', (req, res) ->
     if not req.body.password then res.json 400, message: 'password required' else
       identity = req.body.email or req.body.username
       users.loginUser identity, req.body.password, (err, user_id) ->
+        if err then res.json err.code, message: err.msg
         access_token = uuid.v4()
         redis_client.psetex [ access_token, configs.tokenExpires, user_id ], (err) ->
           if err then throw err
@@ -72,7 +74,7 @@ app.get '/users', getusers
 
 getuser = (req, res) ->
   users.findUser _id: req.user_id, (err, user) ->
-    if err then cb err else
+    if err then res.json err.code, message: err.msg else
       if not user then res.json 404, message: 'user doesnt exist' else
         json_user = user.toJSON()
         delete json_user.password
@@ -98,7 +100,7 @@ putuser = (req, res) ->
             if not req.body.password then res.json 400, message: 'must provide a password to register with' else
               data = _.pick req.body, 'email', 'username', 'password'
               users.registerUser req.user_id, data, (err, user) ->
-                if err then cb err else
+                if err then res.json err.code, message: err.msg else
                   res.json user
 
 app.put '/users/me', putuser

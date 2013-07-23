@@ -134,11 +134,8 @@ syncDockerImage = (image, cb) ->
 imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
   runnablePath = "#{__dirname}/../../configs/runnables"
   fs.exists "#{runnablePath}/#{name}/runnable.json", (exists) =>
-    if not exists then cb error 403, 'could not find runnable.json' else
-      try
-        runnable = require "#{runnablePath}/#{name}/runnable.json"
-      catch json_err
-        cb error 403, "could not parse runnable.json: #{json_err.message}"
+    if not exists then cb error 400, "image source not found: #{name}" else
+      runnable = require "#{runnablePath}/#{name}/runnable.json"
       if not runnable then cb error 400, "image source not found: #{name}" else
         image = new @()
         tag = image._id.toString()

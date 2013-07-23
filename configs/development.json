@@ -15,5 +15,6 @@
   "dnode_port": 13337,
   "logRequests": true,
   "throwErrors": true,
+  "logStack": true,
   "verbose": true
   }

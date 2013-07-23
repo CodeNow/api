@@ -111,9 +111,9 @@ userSchema.statics.registerUser = (userId, data, cb) ->
           password: password
           permission_level: 1
         if data.username then cmd.$set.username = data.username
-        @findByIdAndUpdate userId, cmd, (err) ->
+        @findByIdAndUpdate userId, cmd, (err, user) ->
           if err then throw err
-          cb()
+          cb null, user
   if not configs.passwordSalt then setPassword data.password else
     bcrypt.hash data.password + configs.passwordSalt, 10, (err, hash) ->
       if err then throw err

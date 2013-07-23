@@ -11,20 +11,20 @@ Runnables =
   createImage: (userId, from, sync, cb) ->
     handler = (image) ->
       users.findUser _id: userId, (err, user) ->
-        if err then throw err
-        if not user then cb error 404, 'user not found' else
-          user.addVote image._id, (err) ->
-            if err then cb err else
-              json_image = image.toJSON()
-              if json_image.parent then json_image.parent = encodeId json_image.parent
-              json_image._id = encodeId image._id
-              cb null, json_image
+        if err then cb err else
+          if not user then cb error 404, 'user not found' else
+            user.addVote image._id, (err) ->
+              if err then cb err else
+                json_image = image.toJSON()
+                if json_image.parent then json_image.parent = encodeId json_image.parent
+                json_image._id = encodeId image._id
+                cb null, json_image
     if not isObjectId64 from
       images.createFromDisk userId, from, sync, (err, image) ->
         if err then cb err else
           handler image
     else
-      containers.findOne _id: decodeId from, (err, container) ->
+      containers.findOne _id: decodeId(from), (err, container) ->
         if err then throw err
         if not container then cb error 403, 'source runnable not found' else
           if container.owner.toString() isnt userId then cb error 403, 'permission denied' else
@@ -129,7 +129,7 @@ Runnables =
           container.name = newName;
           container.save (err) ->
             if err then throw err
-            cb container
+            cb null, container
 
   updateImage: (userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -158,17 +158,18 @@ Runnables =
                   update true
 
   getImage: (runnableId, cb) ->
-    decodedRunnableId = decodeId runnableId
-    images.findOne _id: decodedRunnableId, (err, image) =>
-      if err then throw err
-      if not image then cb error 404, 'runnable not found' else
-        @getVotes runnableId, (err, votes) ->
-          if err then cb err else
-            json_project = image.toJSON()
-            json_project.votes = votes.count
-            json_project._id = encodeId json_project._id
-            if json_project.parent then json_project.parent = encodeId json_project.parent
-            cb null, json_project
+    if not isObjectId64 runnableId then cb error 404, 'runnable not found' else
+      decodedRunnableId = decodeId runnableId
+      images.findOne _id: decodedRunnableId, (err, image) =>
+        if err then throw err
+        if not image then cb error 404, 'runnable not found' else
+          @getVotes runnableId, (err, votes) ->
+            if err then cb err else
+              json_project = image.toJSON()
+              json_project.votes = votes.count
+              json_project._id = encodeId json_project._id
+              if json_project.parent then json_project.parent = encodeId json_project.parent
+              cb null, json_project
 
   startContainer: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -188,7 +189,6 @@ Runnables =
                 container.start (err) ->
                   if err then cb err else
                     container.getProcessState (err, state) ->
-                      _.extend state, services
                       response state
 
   stopContainer: (userId, runnableId, cb) ->
@@ -221,7 +221,7 @@ Runnables =
 
   vote: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    images.isOwner userId, runnableId, (owner) ->
+    images.isOwner userId, runnableId, (err, owner) ->
       if owner then cb error 403, 'cannot vote for own runnables' else
         users.findOne _id: userId, (err, user) ->
           if err then throw err
@@ -459,16 +459,16 @@ Runnables =
         container.tagFile fileId, cb
 
   getStat: (userId, runnableId, stat, cb) ->
-    if not (stat in stats) then cb new error { code: 400, msg: 'not a valid stat' } else
+    if not (stat in stats) then cb error 400, 'not a valid stat' else
       runnableId = decodeId runnableId
       async.parallel [
         (cb) ->
           images.findOne _id: runnableId, (err, image) ->
-            if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+            if err then cb error 500, 'error looking up runnable' else
               cb null, image[stat]
         (cb) ->
           users.findOne _id: userId, (err, user) ->
-            if err then cb new error { code: 500, msg: 'error looking up user' } else
+            if err then cb error 500, 'error looking up user' else
               cb null, user[stat]
       ], (err, results) ->
         if err then cb err else
@@ -477,22 +477,22 @@ Runnables =
             user: results[1]
 
   incrementStat: (userId, runnableId, stat, cb) ->
-    if !(stat in stats) then cb new error { code: 400, 'not a valid stat' } else
+    if !(stat in stats) then cb error 400, 'not a valid stat' else
       runnableId = decodeId runnableId
       async.parallel [
         (cb) ->
           images.findOne _id: runnableId, (err, image) ->
-            if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+            if err then cb error 500, 'error looking up runnable' else
               image[stat] = image[stat] + 1
               image.save (err) ->
-                if err then cb new error { code: 500, msg: 'error updating runnable' } else
+                if err then cb error 500, 'error updating runnable' else
                   cb null, image[stat]
         (cb) ->
           users.findOne _id: userId, (err, user) ->
-            if err then cb new error { code: 500, msg: 'error looking up user' } else
+            if err then cb error 500, 'error looking up user' else
               user[stat] = user[stat] + 1
               user.save (err) ->
-                if err then cb new error { code: 500, msg: 'error updating user' } else
+                if err then cb error 500, 'error updating user' else
                   cb null, user[stat]
       ], (err, results) ->
         if err then cb err else

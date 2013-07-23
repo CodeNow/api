@@ -19,14 +19,14 @@ class App
     @create()
 
   start: (cb) ->
-    if not @started
+    if @started then cb() else
       @server.listen @configs.port, @configs.ipaddress || "0.0.0.0", (err) =>
         if err then cb err else
           @started = true
           cb()
 
   stop: (cb) ->
-    if @started
+    if not @started then cb() else
       @server.close (err) =>
         if err then cb err else
           @started = false
@@ -41,17 +41,18 @@ class App
     app.use runnables
     app.use channels
     app.use app.router
-    app.use (err, req, res, next) ->
+    app.use (err, req, res, next) =>
       if configs.logStack then debug err.stack
-      try
-        timer = setTimeout () ->
-          process.exit 1
-        , 30000
-        timer.unref()
-        @stop () ->
-        cluster.worker.disconnect()
-      catch exception_err
-        debug exception_err.stack
+      if cluster.isWorker
+        try
+          timer = setTimeout () ->
+            process.exit 1
+          , 30000
+          timer.unref()
+          @stop () ->
+          cluster.worker.disconnect()
+        catch exception_err
+          debug exception_err.stack
       if not err.code then err.code = 500
       if not err.msg then err.msg = 'boom!'
       res.json err.code, message: err.msg

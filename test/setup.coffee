@@ -56,26 +56,26 @@ afterEach (done) ->
             test_db.close () ->
               docker.listContainers (err, containers) ->
                 if err then done err else
-                  async.forEachSeries containers, (container, cb) ->
+                  async.forEach containers, (container, cb) ->
                     docker.stopContainer container.Id, cb
                   , (err) ->
                     if err then done err else
                       docker.listContainers queryParams: all: true, (err, containers) ->
                         if err then done err else
-                          async.forEachSeries containers, (container, cb) ->
+                          async.forEach containers, (container, cb) ->
                             docker.removeContainer container.Id, cb
                           , done
 
 before (done) ->
   docker.listContainers (err, containers) ->
     if err then done err else
-      async.forEachSeries containers, (container, cb) ->
+      async.forEach containers, (container, cb) ->
         docker.stopContainer container.Id, cb
       , (err) ->
         if err then done err else
           docker.listContainers queryParams: all: true, (err, containers) ->
             if err then done err else
-              async.forEachSeries containers, (container, cb) ->
+              async.forEach containers, (container, cb) ->
                 docker.removeContainer container.Id, cb
               , done
 
