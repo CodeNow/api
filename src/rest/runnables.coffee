@@ -88,11 +88,12 @@ app.del '/runnables/:id/tags/:tagId', (req, res, next) ->
       res.json 200, { message: 'tag deleted' }
 
 app.get '/runnables/:id/stats/:stat', (req, res, next) ->
-  runnables.getStat req.params.id, req.params.stat, (err, stat) ->
+  console.log req.params.id, req.params.stat
+  runnables.getStat req.params.id, req.params.stat, (err, stats) ->
     if err then next err else
-      res.json 200, stat
+      res.json 200, stats
 
 app.post '/runnables/:id/stats/:stat', (req, res, next) ->
   runnables.incrementStat req.user_id, req.params.id, req.params.stat, (err, stats) ->
     if err then next err else
-      res.json 200, stats
+      res.json 201, stats
