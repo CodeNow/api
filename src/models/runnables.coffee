@@ -458,6 +458,49 @@ Runnables =
       if err then cb err else
         container.tagFile fileId, cb
 
+  getStat: (userId, runnableId, stat, cb) ->
+    if not (stat in stats) then cb new error { code: 400, msg: 'not a valid stat' } else
+      runnableId = decodeId runnableId
+      async.parallel [
+        (cb) ->
+          images.findOne _id: runnableId, (err, image) ->
+            if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+              cb null, image[stat]
+        (cb) ->
+          users.findOne _id: userId, (err, user) ->
+            if err then cb new error { code: 500, msg: 'error looking up user' } else
+              cb null, user[stat]
+      ], (err, results) ->
+        if err then cb err else
+          cb null,
+            image: results[0]
+            user: results[1]
+
+  incrementStat: (userId, runnableId, stat, cb) ->
+    if !(stat in stats) then cb new error { code: 400, 'not a valid stat' } else
+      runnableId = decodeId runnableId
+      async.parallel [
+        (cb) ->
+          images.findOne _id: runnableId, (err, image) ->
+            if err then cb new error { code: 500, msg: 'error looking up runnable' } else
+              image[stat] = image[stat] + 1
+              image.save (err) ->
+                if err then cb new error { code: 500, msg: 'error updating runnable' } else
+                  cb null, image[stat]
+        (cb) ->
+          users.findOne _id: userId, (err, user) ->
+            if err then cb new error { code: 500, msg: 'error looking up user' } else
+              user[stat] = user[stat] + 1
+              user.save (err) ->
+                if err then cb new error { code: 500, msg: 'error updating user' } else
+                  cb null, user[stat]
+      ], (err, results) ->
+        if err then cb err else
+          cb null,
+            image: results[0]
+            user: results[1]
+
+
 module.exports = Runnables
 
 voteSortPipeline = (limit, skip) ->
@@ -537,6 +580,14 @@ plus = /\+/g
 slash = /\//g
 minus = /-/g
 underscore = /_/g
+
+stats = [
+  'copies'
+  'pastes'
+  'cuts'
+  'runs'
+  'views'
+]
 
 encodeId = (id) -> id
 decodeId = (id) -> id
