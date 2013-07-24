@@ -26,5 +26,5 @@
   "dnode_sync_timeout": "20 seconds",
   "logExpress": true,
   "logErrorStack": true,
-  "throwErrors": false,
+  "throwErrors": false
 }
