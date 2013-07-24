@@ -48,27 +48,34 @@ class App
       if not err.msg then err.msg = 'something bad happened :('
       res.json err.code, message: err.msg
       if configs.logErrorStack then debug "threw exception: #{err.stack}"
-      if cluster.isWorker
-        debug 'sending exception message to master', cluster.worker.process.pid
-        setTimeout () =>
-          try
-            debug 'waiting for worker to shut down gracefully', cluster.worker.process.pid
-            timer = setTimeout () ->
-              debug 'forcefully shutting down worker', cluster.worker.process.pid
-              process.exit 1
-            , 30000
-            timer.unref()
-            if configs.nodetime then nodetime.destroy()
-          catch exception_err
-            if configs.logErrorStack then debug exception_err.stack
-        , 90000
-        @stop () ->
-          debug 'disconnecting worker', cluster.worker.process.pid
-          cluster.worker.disconnect()
+      debug 'stopping http server', cluster.worker.process.pid
+      @stop () =>
+        debug 'stopped http server', cluster.worker.process.pid
+        if cluster.isWorker
+          @cleanup_worker()
     app.get '/throws', (req, res) ->
       process.nextTick req.domain.bind () -> throw new Error 'zomg!'
     app.get '/', (req, res) -> res.json { message: 'runnable api' }
     app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
     @server = http.createServer app
+
+  cleanup_worker: () ->
+    workerId = cluster.worker.process.pid
+    debug 'sending exception message to master', workerId
+    cluster.worker.send 'exception'
+    setTimeout () =>
+      try
+        debug 'waiting for worker to shut down gracefully', workerId
+        timer = setTimeout () ->
+          debug 'forcefully shutting down worker', workerId
+          process.exit 1
+        , 30000
+        timer.unref()
+        if configs.nodetime then nodetime.destroy()
+      catch exception_err
+        if configs.logErrorStack then debug exception_err.stack
+      debug 'disconnecting worker', workerId
+      cluster.worker.disconnect()
+    , 90000
 
 module.exports = App

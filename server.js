@@ -16,9 +16,10 @@ if (cluster.isMaster) {
 
   var create_worker = function () {
     var worker = cluster.fork();
-    worker.on('disconnect', function () {
-      debug('worker threw exception, forking new worker to replace it', worker.process.pid);
-      create_worker();
+    worker.on('message', function (msg) {
+      if (msg === 'exception') {
+        create_worker();
+      }
     });
   }
 
