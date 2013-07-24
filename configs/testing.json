@@ -14,8 +14,17 @@
   "shortProjectIds": true,
   "dnode_host": "harbourmaster.runnableapp.dev",
   "dnode_port": 13337,
+  "dnode_access_timeout": "5 seconds",
+  "dnode_sync_timeout": "5 seconds",
+  "nodetime": {
+    "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",
+    "appName": "Runnable.com API Server (Development)",
+    "namedTransactions": {
+      "Published Runnables": "/runnables",
+      "Draft Runnables": "/users/me/runnables"
+    }
+  },
   "logExpress": false,
   "throwErrors": true,
-  "verbose": false,
   "logStack": false
 }

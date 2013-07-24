@@ -7,7 +7,7 @@ path = require 'path'
 mongoose = require 'mongoose'
 sync = require './sync'
 uuid = require 'node-uuid'
-volumes = require  "./volumes/dnode"
+volumes = require  "./volumes"
 _ = require 'lodash'
 
 docker = dockerjs host: configs.docker

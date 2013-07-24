@@ -17,7 +17,7 @@ describe 'api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 500
-                  res.body.should.have.property 'message', 'boom!'
+                  res.body.should.have.property 'message', 'something bad happened :('
                   configs.throwErrors = true
                   instance.stop done
 

@@ -44,11 +44,14 @@ class App
     app.use app.router
     if configs.nodetime then app.use nodetime.expressErrorHandler()
     app.use (err, req, res, next) =>
-      if configs.logStack then debug err.stack
+      if not err.code then err.code = 500
+      if not err.msg then err.msg = 'something bad happened :('
+      res.json err.code, message: err.msg
+      if configs.logErrorStack then debug err.stack
       if cluster.isWorker
         try
-          if configs.nodetime then nodetime.destroy()
           timer = setTimeout () ->
+            if configs.nodetime then nodetime.destroy()
             process.exit 1
           , 30000
           timer.unref()
@@ -56,9 +59,6 @@ class App
           cluster.worker.disconnect()
         catch exception_err
           debug exception_err.stack
-      if not err.code then err.code = 500
-      if not err.msg then err.msg = 'boom!'
-      res.json err.code, message: err.msg
     app.get '/throws', (req, res) ->
       process.nextTick req.domain.bind () -> throw new Error 'zomg!'
     app.get '/', (req, res) -> res.json { message: 'runnable api' }

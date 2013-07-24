@@ -2,15 +2,21 @@
   "tokenExpires": "5 minutes",
   "passwordSalt" : "$up3r,$3<r3t",
   "mongo": "mongodb://127.0.0.1:27017/runnable_{RAND_NUM}",
+  "port": 3000,
   "redis": {
     "ipaddress": "127.0.0.1",
     "port": "6379"
   },
-  "port": 3000,
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
   "docker": "http://54.215.13.107:4243",
   "direct_docker": "http://54.215.13.107:4243",
   "shortProjectIds": true,
-  "throwErrors": true
+  "dnode_host": "54.215.13.107",
+  "dnode_port": 13337,
+  "dnode_access_timeout": "5 seconds",
+  "dnode_sync_timeout": "20 seconds",
+  "logExpress": false,
+  "throwErrors": true,
+  "logStack": false
 }
