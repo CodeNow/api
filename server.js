@@ -18,6 +18,7 @@ if (cluster.isMaster) {
     var worker = cluster.fork();
     worker.on('message', function (msg) {
       if (msg === 'exception') {
+        debug('spawning new worker to replace existing');
         create_worker();
       }
     });
