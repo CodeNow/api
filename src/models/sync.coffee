@@ -12,20 +12,20 @@ module.exports = (containerId, target, cb) ->
       new_file_list.push file
   old_file_list = _.clone target.files
   volumes.readAllFiles containerId, target.file_root, ignores, (err, allFiles) ->
-    if err then throw err
-    allFiles.forEach (file) ->
-      new_file =
-        name: file.name
-        path: file.path
-      if file.dir
-        new_file.dir = true
-      else
-        new_file.content = file.content
-      found = false
-      for existingFile in old_file_list
-        if file.path is existingFile.path and file.name is existingFile.name
-          new_file._id = existingFile._id
-          break
-      new_file_list.push new_file
-    target.files = new_file_list
-    cb()
+    if err then cb err else
+      allFiles.forEach (file) ->
+        new_file =
+          name: file.name
+          path: file.path
+        if file.dir
+          new_file.dir = true
+        else
+          new_file.content = file.content
+        found = false
+        for existingFile in old_file_list
+          if file.path is existingFile.path and file.name is existingFile.name
+            new_file._id = existingFile._id
+            break
+        new_file_list.push new_file
+      target.files = new_file_list
+      cb()

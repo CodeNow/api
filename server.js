@@ -6,27 +6,34 @@ if (configs.nodetime && cluster.isWorker) {
   nodetime.profile(configs.nodetime);
 }
 
-var debug = require('debug')('process');
+var debug = require('debug')('master');
+
 require('source-map-support').install()
 var api_server = require('./lib');
 var os = require('os');
 
 if (cluster.isMaster) {
 
-  debug('spawning', numCPUs, 'workers');
-  var numCPUs = os.cpus().length;
-  for (var i = 0; i < numCPUs; i++) {
-    cluster.fork();
+  var create_worker = function () {
+    var worker = cluster.fork();
+    worker.on('disconnect', function () {
+      debug('worker threw exception, forking new worker to replace it', worker.process.pid);
+      create_worker();
+    });
   }
+
+  var numCPUs = os.cpus().length;
+  debug('spawning initial ' + numCPUs + ' workers');
+  for (var i = 0; i < numCPUs; i++) {
+    create_worker();
+  }
+
   cluster.on('fork', function (worker) {
     debug('worker forked:', worker.process.pid);
   });
+
   cluster.on('online', function (worker) {
     debug('worker online:', worker.process.pid);
-  });
-  cluster.on('disconnect', function (worker) {
-    debug('worker died:', worker.process.pid);
-    cluster.fork();
   });
 
 } else  {

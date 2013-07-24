@@ -1,6 +1,6 @@
 cluster = require 'cluster'
 configs = require './configs'
-debug = require('debug')('express')
+debug = require('debug')('worker')
 domains = require './domains'
 error = require './error'
 express = require 'express'
@@ -47,18 +47,24 @@ class App
       if not err.code then err.code = 500
       if not err.msg then err.msg = 'something bad happened :('
       res.json err.code, message: err.msg
-      if configs.logErrorStack then debug err.stack
+      if configs.logErrorStack then debug "threw exception: #{err.stack}"
       if cluster.isWorker
-        try
-          timer = setTimeout () ->
+        debug 'sending exception message to master', cluster.worker.process.pid
+        setTimeout () =>
+          try
+            debug 'waiting for worker to shut down gracefully', cluster.worker.process.pid
+            timer = setTimeout () ->
+              debug 'forcefully shutting down worker', cluster.worker.process.pid
+              process.exit 1
+            , 30000
+            timer.unref()
             if configs.nodetime then nodetime.destroy()
-            process.exit 1
-          , 30000
-          timer.unref()
-          @stop () ->
+          catch exception_err
+            if configs.logErrorStack then debug exception_err.stack
+        , 90000
+        @stop () ->
+          debug 'disconnecting worker', cluster.worker.process.pid
           cluster.worker.disconnect()
-        catch exception_err
-          debug exception_err.stack
     app.get '/throws', (req, res) ->
       process.nextTick req.domain.bind () -> throw new Error 'zomg!'
     app.get '/', (req, res) -> res.json { message: 'runnable api' }
