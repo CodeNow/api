@@ -110,7 +110,7 @@ containerSchema.statics.create = (owner, image, cb) ->
       if err then throw err
       container.docker_id = res.Id
       docker.inspectContainer container.docker_id, (err, result) ->
-        if err then throw err
+        if err then throw new Error err
         container.long_docker_id = result.ID
         container.save (err) ->
           if err then throw err
@@ -123,7 +123,7 @@ containerSchema.statics.destroy = (id, cb) ->
         if err then cb err else
           remove = () =>
             docker.removeContainer container.docker_id, (err) =>
-              if err then throw err
+              if err then throw new Error err
               @remove { _id: id }, (err) ->
                 if err then throw err else cb()
           if state.running
@@ -135,17 +135,17 @@ containerSchema.statics.destroy = (id, cb) ->
 
 containerSchema.methods.getProcessState = (cb) ->
   docker.inspectContainer @docker_id, (err, result) ->
-    if err then throw err
+    if err then throw new Error err
     cb null, running: result.State.Running
 
 containerSchema.methods.start = (cb) ->
   docker.startContainer @docker_id, (err) ->
-    if err then throw err
+    if err then throw new Error err
     cb()
 
 containerSchema.methods.stop = (cb) ->
   docker.stopContainer @docker_id, (err) ->
-    if err then throw err
+    if err then throw new Error err
     cb()
 
 containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->

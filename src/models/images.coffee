@@ -120,15 +120,15 @@ syncDockerImage = (image, cb) ->
     PortSpecs: [ image.port.toString() ]
     Cmd: [ image.cmd ]
   , (err, res) ->
-    if err then throw err
+    if err then throw new Error err
     containerId = res.Id
     docker.inspectContainer containerId, (err, result) ->
-      if err then throw err
+      if err then throw new Error err
       long_docker_id = result.ID
       sync long_docker_id, image, (err) ->
         if err then cb err else
           docker.removeContainer containerId, (err) ->
-            if err then throw err
+            if err then throw new Error err
             cb()
 
 imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
@@ -186,7 +186,7 @@ imageSchema.statics.createFromContainer = (container, cb) ->
       m: "#{container.parent} => #{image._id}"
       author: image.owner.toString()
   , (err, result) ->
-    if err then throw err
+    if err then throw new Error err
     image.docker_id = result.Id
     image.save (err) ->
       if err then throw err
@@ -211,6 +211,7 @@ imageSchema.methods.updateFromContainer = (container, cb) ->
       m: "#{container.parent} => #{@_id}"
       author: @owner.toString()
   , (err, result) =>
+    if err then throw new Error err
     @docker_id = result.Id
     @save (err) =>
       if err then throw err
@@ -221,6 +222,8 @@ imageSchema.statics.destroy = (id, cb) ->
     if err then throw err
     if not image then cb error 404, 'image not found' else
       req = docker.removeImage { id: image.docker_id }
+      req.on 'error', (err) ->
+        throw new Error err
       req.on 'end', () =>
         @remove { _id: id }, (err) ->
           if err then throw err
