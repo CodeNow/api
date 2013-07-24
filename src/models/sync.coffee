@@ -1,6 +1,6 @@
 configs = require '../configs'
 path = require 'path'
-volumes = require "./volumes"
+volumes = require './volumes'
 _ = require 'lodash'
 
 module.exports = (containerId, target, cb) ->

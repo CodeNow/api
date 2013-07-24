@@ -15,7 +15,7 @@ Volumes =
       debug 'calling remote function createFile()'
       remote.createFile containerId, srcDir, name, path, content, (err) ->
         clearTimeout dnode_timeout
-        if err.code is 500 then throw new Error err.msg
+        if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
   readFile: (containerId, srcDir, name, path, cb) ->
@@ -27,7 +27,7 @@ Volumes =
       debug 'calling remote function readFile()'
       remote.readFile containerId, srcDir, name, path, (err, content) ->
         clearTimeout dnode_timeout
-        if err.code is 500 then throw new Error err.msg
+        if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb null, content
 
   updateFile: (containerId, srcDir, name, path, content, cb) ->
@@ -39,7 +39,7 @@ Volumes =
       debug 'calling remote function updateFile()'
       remote.updateFile containerId, srcDir, name, path, content, (err) ->
         clearTimeout dnode_timeout
-        if err.code is 500 then throw new Error err.msg
+        if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
   deleteFile: (containerId, srcDir, name, path, cb) ->
@@ -51,7 +51,7 @@ Volumes =
       debug 'calling remote function deleteFile()'
       remote.deleteFile containerId, srcDir, name, path, (err) ->
         clearTimeout dnode_timeout
-        if err.code is 500 then throw new Error err.msg
+        if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
   renameFile: (containerId, srcDir, name, path, newName, cb) ->
@@ -63,7 +63,7 @@ Volumes =
       debug 'calling remote function renameFile()'
       remote.renameFile containerId, srcDir, name, path, newName, (err) ->
         clearTimeout dnode_timeout
-        if err.code is 500 then throw new Error err.msg
+        if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
   moveFile: (containerId, srcDir, name, path, newPath, cb) ->
@@ -75,7 +75,7 @@ Volumes =
       debug 'calling remote function moveFile()'
       remote.moveFile containerId, srcDir, name, path, newPath, (err) ->
         clearTimeout dnode_timeout
-        if err.code is 500 then throw new Error err.msg
+        if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
   readAllFiles: (containerId, srcDir, ignores, cb) ->
@@ -87,7 +87,7 @@ Volumes =
       debug 'calling remote function readAllFiles()'
       remote.readAllFiles containerId, srcDir, ignores, (err, files) ->
         clearTimeout dnode_timeout
-        if err.code is 500 then throw new Error err.msg
+        if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb null, files
 
   createDirectory: (containerId, srcDir, name, path, cb) ->
@@ -99,7 +99,7 @@ Volumes =
       debug 'calling remote function createDirectory()'
       remote.createDirectory containerId, srcDir, name, path, (err) ->
         clearTimeout dnode_timeout
-        if err.code is 500 then throw new Error err.msg
+        if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
   removeDirectory: (containerId, srcDir, name, path, recursive, cb) ->
@@ -111,7 +111,7 @@ Volumes =
       debug 'calling remote function removeDirectory()'
       remote.removeDirectory containerId, srcDir, name, path, recursive, (err) ->
         clearTimeout dnode_timeout
-        if err.code is 500 then throw new Error err.msg
+        if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
 module.exports = Volumes
