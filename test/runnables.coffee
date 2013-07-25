@@ -129,6 +129,27 @@ describe 'runnables api', ->
                             res.body[0].should.have.property '_id', myRunnableId
                             instance.stop done
 
+  it 'should not include file contentes when getting a draft ::runnable', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createImage 'node.js', (err, runnableId) ->
+          if err then done err else
+            helpers.authedUser (err, user) ->
+              if err then done err else
+                user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 201
+                      myRunnableId = res.body._id
+                      user.get("http://localhost:#{configs.port}/users/me/runnables?parent=#{runnableId}")
+                        .end (err, res) ->
+                          if err then done err else
+                            res.should.have.status 200
+                            res.body.should.be.a.array
+                            res.body[0].should.have.property '_id', myRunnableId
+                            res.body[0].should.not.have.property 'files'
+                            instance.stop done
+
   it 'should store the long container id associated with a ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
@@ -217,6 +238,7 @@ describe 'runnables api', ->
                                   res.body.should.have.property 'docker_id'
                                   res.body.should.have.property 'parent', runnableId
                                   res.body.should.have.property 'owner', userId
+                                  res.body.should.not.have.property 'files'
                                   instance.stop done
 
   it 'should not be able to save a ::runnable from a container you do not own', (done) ->

@@ -16,6 +16,7 @@ Runnables =
             user.addVote image._id, (err) ->
               if err then cb err else
                 json_image = image.toJSON()
+                delete json_image.files
                 if json_image.parent then json_image.parent = encodeId json_image.parent
                 json_image._id = encodeId image._id
                 cb null, json_image
@@ -57,6 +58,7 @@ Runnables =
             container.getProcessState (err, state) ->
               if err then cb err else
                 json_container = container.toJSON()
+                delete json_container.files
                 if json_container.parent then json_container.parent = encodeId json_container.parent
                 if json_container.target then json_container.target = encodeId json_container.target
                 _.extend json_container, state
@@ -71,6 +73,7 @@ Runnables =
       if err then cb err else
         results = for item in containers
           json = item.toJSON()
+          delete json.files
           json._id = encodeId json._id
           if json.parent then json.parent = encodeId json.parent
           json
@@ -85,6 +88,7 @@ Runnables =
           container.getProcessState (err, state) ->
             if err then cb err else
               json = container.toJSON()
+              delete json.files
               json._id = encodeId json._id
               if json.parent then json.parent = encodeId json.parent
               if json.target then json.target = encodeId json.target
@@ -129,6 +133,11 @@ Runnables =
           container.name = newName;
           container.save (err) ->
             if err then throw err
+            json = container.toJSON()
+            delete json.files
+            json._id = encodeId json._id
+            if json.parent then json.parent = encodeId json.parent
+            if json.target then json.target = encodeId json.target
             cb null, container
 
   updateImage: (userId, runnableId, from, cb) ->
@@ -147,6 +156,7 @@ Runnables =
                 image.updateFromContainer container, (err) ->
                   if err then cb err else
                     json_project = image.toJSON()
+                    delete json_project.files
                     json_project._id = encodeId json_project._id
                     if json_project.parent then json_project.parent = encodeId json_project.parent
                     cb null, json_project
@@ -166,6 +176,7 @@ Runnables =
           @getVotes runnableId, (err, votes) ->
             if err then cb err else
               json_project = image.toJSON()
+              delete json_project_files
               json_project.votes = votes.count
               json_project._id = encodeId json_project._id
               if json_project.parent then json_project.parent = encodeId json_project.parent
@@ -181,6 +192,7 @@ Runnables =
             if err then cb err else
               response = (state) ->
                 json_project = container.toJSON()
+                delete json_project.files
                 json_project._id = encodeId json_project._id
                 if json_project.parent then json_project.parent = encodeId json_project.parent
                 _.extend json_project, state
@@ -202,6 +214,7 @@ Runnables =
           container.getProcessState (err, state) ->
             response = (state) ->
               json_project = container.toJSON()
+              delete json_project.files
               json_project._id = encodeId json_project._id
               if json_project.parent then json_project.parent = encodeId json_project.parent
               _.extend json_project, state
@@ -249,6 +262,7 @@ Runnables =
               if item
                 json = item.toJSON()
                 json._id = encodeId json._id
+                delete json.files
                 json.votes = item.votes
                 if json.parent then json.parent = encodeId json.parent
                 result.push json
@@ -279,6 +293,7 @@ Runnables =
               for item in results
                 if item
                   json = item.toJSON()
+                  delete json.files
                   json._id = encodeId json._id
                   json.votes = item.votes
                   if json.parent then json.parent = encodeId json.parent
@@ -563,18 +578,10 @@ fetchContainer = (userId, runnableId, cb) ->
 arrayToJSON = (res) ->
   result = for item in res
     json = item.toJSON()
+    delete json.files
     json._id = encodeId json._id
     if json.parent then json.parent = encodeId json.parent
     json
-
-commentsToJSON = (res) ->
-  result = [ ]
-  res.forEach (item) ->
-    comment = item.user.toJSON()
-    comment.text = item.text
-    delete comment.email
-    result.push comment
-  result
 
 plus = /\+/g
 slash = /\//g

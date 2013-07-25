@@ -52,9 +52,7 @@ class App
       if not err.msg then err.msg = 'something bad happened :('
       res.json err.code, message: err.msg
       if configs.logErrorStack then debug "threw exception: #{err.stack}"
-      debug 'stopping http server', cluster.worker.process.pid
       @stop () =>
-        debug 'stopped http server', cluster.worker.process.pid
         if cluster.isWorker
           @cleanup_worker()
     app.get '/throws', (req, res) ->
