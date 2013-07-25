@@ -16,6 +16,7 @@ describe 'runnables api', ->
                   res.should.have.status 201
                   res.body.should.have.property '_id'
                   res.body.should.have.property 'docker_id'
+                  res.body.should.not.have.property 'files'
                   instance.stop done
 
   it 'should be able to read a published ::runnable from filesystem', (done) ->
@@ -29,6 +30,7 @@ describe 'runnables api', ->
                   res.should.have.status 201
                   res.body.should.have.property '_id'
                   res.body.should.have.property 'docker_id'
+                  res.body.should.not.have.property 'files'
                   runnableId = res.body._id
                   user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
                     .end (err, res) ->
@@ -37,6 +39,7 @@ describe 'runnables api', ->
                         res.body.should.have.property '_id', runnableId
                         res.body.should.have.property 'tags'
                         res.body.should.have.property 'votes', 0
+                        res.body.should.not.have.property 'files'
                         instance.stop done
 
   it 'should be able to edit a published ::runnable', (done) ->
@@ -60,6 +63,7 @@ describe 'runnables api', ->
                             res.body.should.have.property '_id'
                             res.body.should.have.property 'parent', runnableId
                             res.body.should.have.property 'owner', userId
+                            res.body.should.not.have.property 'files'
                             res.body.should.have.property 'token'
                             if instance.configs.shortProjectIds
                               res.body._id.length.should.equal 16
@@ -95,6 +99,7 @@ describe 'runnables api', ->
                             res.body.should.have.property '_id'
                             res.body.should.have.property 'parent', runnableId
                             res.body.should.have.property 'owner', userId
+                            res.body.should.not.have.property 'files'
                             res.body.should.have.property 'token'
                             if instance.configs.shortProjectIds
                               res.body._id.length.should.equal 16
@@ -121,6 +126,7 @@ describe 'runnables api', ->
                     if err then done err else
                       res.should.have.status 201
                       myRunnableId = res.body._id
+                      res.body.should.not.have.property 'files'
                       user.get("http://localhost:#{configs.port}/users/me/runnables?parent=#{runnableId}")
                         .end (err, res) ->
                           if err then done err else
@@ -211,6 +217,7 @@ describe 'runnables api', ->
                                       if err then done err else
                                         res.should.have.status 200
                                         res.body.should.have.property '_id', firstContainerId
+                                        res.body.should.not.have.property 'files'
                                         instance.stop done
 
   it 'should be able to save a ::runnable', (done) ->
@@ -237,6 +244,7 @@ describe 'runnables api', ->
                                   res.body.should.have.property '_id'
                                   res.body.should.have.property 'docker_id'
                                   res.body.should.have.property 'parent', runnableId
+                                  res.body.should.not.have.property 'files'
                                   res.body.should.have.property 'owner', userId
                                   res.body.should.not.have.property 'files'
                                   instance.stop done
@@ -298,6 +306,7 @@ describe 'runnables api', ->
                                       if err then done err else
                                       res.should.have.status 200
                                       res.body.should.have.property 'target', targetId
+                                      res.body.should.not.have.property 'files'
                                       instance.stop done
 
   it 'should be able to ::update a previously saved ::runnable', (done) ->
@@ -336,11 +345,13 @@ describe 'runnables api', ->
                                         res.should.have.status 200
                                         res.body.should.have.property 'name', 'updated project name'
                                         res.body.should.have.property 'running', false
+                                        res.body.should.not.have.property 'files'
                                         user.put("http://localhost:#{configs.port}/runnables/#{publishedId}?from=#{userRunnableId}")
                                           .end (err, res) ->
                                             if err then done err else
                                               res.should.have.status 200
                                               res.body.should.have.property 'name', 'updated project name'
+                                              res.body.should.not.have.property 'files'
                                               instance.stop done
 
   it 'should not be able to ::update a published ::runnable you do not own', (done) ->
@@ -391,6 +402,7 @@ describe 'runnables api', ->
                                 if err then done err else
                                   res.should.have.status 200
                                   res.body.should.have.property 'owner'
+                                  res.body.should.not.have.property 'files'
                                   res.body.owner.should.not.equal userId
                                   instance.stop done
 
@@ -473,6 +485,7 @@ describe 'runnables api', ->
                                           .end (err, res) ->
                                             if err then done err else
                                               res.should.have.status 200
+                                              res.body.should.not.have.property 'files'
                                               res.body.should.have.property '_id', firstPublishedRunnableId
                                               instance.stop done
 
@@ -512,6 +525,7 @@ describe 'runnables api', ->
                   .end (err, res) ->
                     if err then done err else
                       res.should.have.status 201
+                      res.body.should.not.have.property 'files'
                       userRunnableId = res.body._id
                       instance.stop done
 
@@ -756,6 +770,7 @@ describe 'runnables api', ->
                   .end (err, res) ->
                     if err then done err else
                       res.should.have.status 201
+                      res.body.should.not.have.property 'files'
                       res.body.should.have.property 'running', false
                       res.body.should.have.property 'name'
                       name = res.body.name
@@ -766,11 +781,13 @@ describe 'runnables api', ->
                         .end (err, res) ->
                           if err then done err else
                             res.should.have.status 200
+                            res.body.should.not.have.property 'files'
                             res.body.should.have.property 'running', true
                             user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                               .end (err, res) ->
                                 if err then done err else
                                   res.should.have.status 200
+                                  res.body.should.not.have.property 'files'
                                   res.body.should.have.property 'running', true
                                   instance.stop done
 

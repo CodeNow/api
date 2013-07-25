@@ -176,7 +176,7 @@ Runnables =
           @getVotes runnableId, (err, votes) ->
             if err then cb err else
               json_project = image.toJSON()
-              delete json_project_files
+              delete json_project.files
               json_project.votes = votes.count
               json_project._id = encodeId json_project._id
               if json_project.parent then json_project.parent = encodeId json_project.parent
