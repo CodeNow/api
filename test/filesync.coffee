@@ -31,6 +31,32 @@ describe 'file sync feature', ->
                     res.body.should.have.property 'synced', true
                     instance.stop done
 
+  it 'should ::sync an image based on cakephp framework', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      helpers.createImage 'cakephp', (err, runnableId) ->
+        if err then done err else
+          helpers.authedUser (err, user) ->
+            if err then done err else
+              user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.have.property 'synced', true
+                    instance.stop done
+
+  it 'should ::sync an image based on code igniter framework', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      helpers.createImage 'code_igniter', (err, runnableId) ->
+        if err then done err else
+          helpers.authedUser (err, user) ->
+            if err then done err else
+              user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.have.property 'synced', true
+                    instance.stop done
+
   it 'should ::sync an unsynced image when creating a container from it for the first time', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       helpers.createUnsyncedImage 'node.js', (err, runnableId) ->
@@ -181,6 +207,40 @@ describe 'file sync feature', ->
                           res.body.should.be.a.array
                           for elem in res.body
                             elem.path.should.not.include 'node_modules'
+                          instance.stop done
+
+  it 'should ::sync an image based on cakephp ::php framework using migration path', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      helpers.createUnsyncedImage 'cakephp', (err, runnableId) ->
+        if err then done err else
+          helpers.authedUser (err, user) ->
+            if err then done err else
+              user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 201
+                    user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body.should.have.property 'synced', true
+                          instance.stop done
+
+  it 'should ::sync an image based on code igniter ::php framework using migration path', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      helpers.createUnsyncedImage 'code_igniter', (err, runnableId) ->
+        if err then done err else
+          helpers.authedUser (err, user) ->
+            if err then done err else
+              user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 201
+                    user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body.should.have.property 'synced', true
                           instance.stop done
 
   it 'should not ::sync shell files when building an image from dockerfile (migration)', (done) ->
