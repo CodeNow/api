@@ -8,7 +8,7 @@ _ = require 'lodash'
 
 Runnables =
 
-  createImage: (userId, from, sync, cb) ->
+  createImage: (domain, userId, from, sync, cb) ->
     handler = (image) ->
       users.findUser _id: userId, (err, user) ->
         if err then cb err else
@@ -21,7 +21,7 @@ Runnables =
                 json_image._id = encodeId image._id
                 cb null, json_image
     if not isObjectId64 from
-      images.createFromDisk userId, from, sync, (err, image) ->
+      images.createFromDisk domain, userId, from, sync, (err, image) ->
         if err then cb err else
           handler image
     else
