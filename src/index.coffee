@@ -7,11 +7,14 @@ express = require 'express'
 http = require 'http'
 mongoose = require 'mongoose'
 nodetime = require 'nodetime'
+rollbar = require 'rollbar'
 runnables = require './rest/runnables'
 users = require './rest/users'
 channels = require './rest/channels'
 
 mongoose.connect configs.mongo
+if configs.rollbar
+  rollbar.handleUncaughtExceptions configs.rollbar
 
 class App
 
@@ -43,6 +46,7 @@ class App
     app.use channels
     app.use app.router
     if configs.nodetime then app.use nodetime.expressErrorHandler()
+    if configs.rollbar then app.use rollbar.errorHandler()
     app.use (err, req, res, next) =>
       if not err.code then err.code = 500
       if not err.msg then err.msg = 'something bad happened :('

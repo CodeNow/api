@@ -20,6 +20,7 @@
       "Draft Runnables": "/users/me/runnables"
     }
   },
+  "rollbar": "119509f9ba314df8a9ffbaf7b4812fb6",
   "dnode_host": "10.0.2.232",
   "dnode_port": 13337,
   "dnode_access_timeout": "5 seconds",

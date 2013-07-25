@@ -28,7 +28,8 @@
     "request": "~2.21.0",
     "upnode": "~0.4.3",
     "debug": "~0.7.2",
-    "nodetime": "0.8.12"
+    "nodetime": "0.8.12",
+    "rollbar": "~0.2.3"
   },
   "devDependencies": {
     "mocha": "~1.9.0",
