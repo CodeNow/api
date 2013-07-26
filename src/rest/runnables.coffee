@@ -56,7 +56,7 @@ app.get '/runnables/:id', (req, res) ->
       res.json runnable
 
 app.del '/runnables/:id', (req, res) ->
-  runnables.removeImage req.user_id, req.params.id, (err) ->
+  runnables.removeImage req.domain, req.user_id, req.params.id, (err) ->
     if err then res.json err.code, message: err.msg else
       res.json message: 'runnable deleted'
 

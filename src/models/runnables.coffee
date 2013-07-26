@@ -98,6 +98,7 @@ Runnables =
   removeContainer: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     remove = () -> containers.destroy runnableId, cb
+    throw new Error "WTTTTF"
     containers.findOne _id: runnableId, (err, container) ->
       if err then throw err
       if not container then cb error 404, 'runnable not found' else
@@ -108,11 +109,10 @@ Runnables =
                 if user.permission_level <= 1 then cb error 403, 'permission denied' else
                   remove()
 
-  removeImage: (userId, runnableId, cb) ->
+  removeImage: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     remove = () -> images.destroy runnableId, cb
-    images.findOne _id: runnableId, (err, image) ->
-      if err then throw err
+    images.findOne _id: runnableId, domain.intercept (err, image) ->
       if not image then cb error 404, 'runnable not found' else
         if image.owner.toString() is userId.toString() then remove() else
           users.findUser _id: userId, (err, user) ->
