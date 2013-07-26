@@ -81,19 +81,20 @@ Runnables =
 
   getContainer: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    containers.findOne _id: runnableId, (err, container) ->
-      if err then throw err
-      if not container then cb error 404, 'runnable not found' else
-        if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-          container.getProcessState (err, state) ->
-            if err then cb err else
-              json = container.toJSON()
-              delete json.files
-              json._id = encodeId json._id
-              if json.parent then json.parent = encodeId json.parent
-              if json.target then json.target = encodeId json.target
-              _.extend json, state
-              cb null, json
+    if not isObjectId runnableId then cb error, 404, 'runnable not found' else
+      containers.findOne _id: runnableId, (err, container) ->
+        if err then throw err
+        if not container then cb error 404, 'runnable not found' else
+          if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
+            container.getProcessState (err, state) ->
+              if err then cb err else
+                json = container.toJSON()
+                delete json.files
+                json._id = encodeId json._id
+                if json.parent then json.parent = encodeId json.parent
+                if json.target then json.target = encodeId json.target
+                _.extend json, state
+                cb null, json
 
   removeContainer: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
