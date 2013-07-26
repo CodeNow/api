@@ -35,9 +35,9 @@ module.exports = (parentDomain) ->
           if err then throw err
           json_user = user.toJSON()
           json_user.access_token = access_token
-          if not req.body.email then res.json 201, json_user else
-            if not req.body.username then res.json 400, message: 'must provide a username to register with' else
-              if not req.body.password then res.json 400, message: 'must provide a password to register with' else
+          if not req.body.email? then res.json 201, json_user else
+            if not req.body.username? then res.json 400, message: 'must provide a username to register with' else
+              if not req.body.password? then res.json 400, message: 'must provide a password to register with' else
                 data = _.pick req.body, 'email', 'username', 'password'
                 users.registerUser user._id, data, (err, user) ->
                   if err then res.json err.code, message: err.msg else
@@ -47,8 +47,8 @@ module.exports = (parentDomain) ->
                     res.json 201, json_user
 
   app.post '/token', (req, res) ->
-    if not req.body.username and not req.body.email then res.json 400, message: 'username or email required' else
-      if not req.body.password then res.json 400, message: 'password required' else
+    if not req.body.username? and not req.body.email? then res.json 400, message: 'username or email required' else
+      if not req.body.password ?then res.json 400, message: 'password required' else
         identity = req.body.email or req.body.username
         users.loginUser identity, req.body.password, (err, user_id) ->
           if err then res.json err.code, message: err.msg
@@ -101,9 +101,9 @@ module.exports = (parentDomain) ->
     users.findUser _id: req.user_id, (err, user) ->
       if err then res.json err.code, message: err.message else
         if user.permission_level isnt 0 then res.json 403, message: 'you are already registered' else
-          if not req.body.email then res.json 400, message: 'must provide an email to register with' else
-            if not req.body.username then res.json 400, message: 'must provide a username to register with' else
-              if not req.body.password then res.json 400, message: 'must provide a password to register with' else
+          if not req.body.email? then res.json 400, message: 'must provide an email to register with' else
+            if not req.body.username? then res.json 400, message: 'must provide a username to register with' else
+              if not req.body.password? then res.json 400, message: 'must provide a password to register with' else
                 data = _.pick req.body, 'email', 'username', 'password'
                 users.registerUser req.user_id, data, (err, user) ->
                   if err then res.json err.code, message: err.msg else
@@ -121,7 +121,7 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/votes', fetchuser, getvotes
 
   postvote = (req, res) ->
-    if not req.body.runnable then res.json 400, message: 'must include runnable to vote on' else
+    if not req.body.runnable? then res.json 400, message: 'must include runnable to vote on' else
       runnables.vote req.user_id, req.body.runnable, (err, vote) ->
         if err then res.json err.code, message: err.msg else
           res.json 201, vote
@@ -139,7 +139,7 @@ module.exports = (parentDomain) ->
   app.del '/users/:userid/votes/:voteid', fetchuser, removevote
 
   postrunnable = (req, res) ->
-    if not req.query.from then res.json 400, message: 'must provide a runnable to fork from' else
+    if not req.query.from? then res.json 400, message: 'must provide a runnable to fork from' else
       runnables.createContainer req.user_id, req.query.from, (err, container) ->
         if err then res.json err.code, message: err.msg else
           res.json 201, container
@@ -196,7 +196,7 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables/:id/tags', fetchuser, gettags
 
   posttag = (req, res) ->
-    if not req.body.name then res.json 400, message: 'tag must include a name field' else
+    if not req.body.name? then res.json 400, message: 'tag must include a name field' else
       runnables.addContainerTag req.user_id, req.params.id, req.body.name, (err, tag) ->
         if err then res.json err.code, message: err.msg else
           res.json 201, tag
@@ -241,16 +241,16 @@ module.exports = (parentDomain) ->
   app.post '/users/:userid/runnables/:id/sync', fetchuser, syncfiles
 
   createfile = (req, res) ->
-    if req.body.dir
-      if not req.body.name then res.json 400, message: 'dir must include a name field' else
-        if not req.body.path then res.json 400, message: 'dir must include a path field'  else
+    if req.body.dir?
+      if not req.body.name? then res.json 400, message: 'dir must include a name field' else
+        if not req.body.path? then res.json 400, message: 'dir must include a path field'  else
           runnables.createDirectory req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
             if err then res.json err.code, message: err.msg else
               res.json 201, dir
     else
-      if not req.body.name then res.json 400, message: 'file must include a name field' else
-        if not req.body.content then res.json 400, message: 'file must include a content field' else
-          if not req.body.path then res.json 400, message: 'file must include a path field' else
+      if not req.body.name? then res.json 400, message: 'file must include a name field' else
+        if not req.body.content? then res.json 400, message: 'file must include a content field' else
+          if not req.body.path? then res.json 400, message: 'file must include a path field' else
             runnables.createFile req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
               if err then res.json err.code, message: err.msg else
                 res.json 201, file
@@ -270,16 +270,16 @@ module.exports = (parentDomain) ->
     async.waterfall [
       (cb) ->
         file = null
-        if not req.body.content then cb null, file else
+        if not req.body.content? then cb null, file else
           runnables.updateFile req.user_id, req.params.id, req.params.fileid, req.body.content, cb
       (file, cb) ->
-        if not req.body.path then cb null, file else
+        if not req.body.path? then cb null, file else
           runnables.moveFile req.user_id, req.params.id, req.params.fileid, req.body.path, cb
       (file, cb) ->
-        if not req.body.name then cb null, file else
+        if not req.body.name? then cb null, file else
           runnables.renameFile req.user_id, req.params.id, req.params.fileid, req.body.name, cb
       (file, cb) ->
-        if not req.body.default then cb null, file else
+        if not req.body.default? then cb null, file else
           runnables.defaultFile req.user_id, req.params.id, req.params.fileid, cb
     ], (err, file) ->
       if err then res.json err.code, message: err.msg else

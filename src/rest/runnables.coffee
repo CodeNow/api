@@ -22,25 +22,25 @@ module.exports = (parentDomain) ->
 
   app.get '/runnables', (req, res) ->
     limit = configs.defaultPageLimit
-    if req.query.limit and req.query.limit <= configs.maxPageLimit
+    if req.query.limit? and req.query.limit <= configs.maxPageLimit
       limit = Number req.query.limit
     page = 0
-    if req.query.page
+    if req.query.page?
       page = Number req.query.page
     sortByVotes = req.query.sort is 'votes'
-    if req.query.published
+    if req.query.published?
       runnables.listFiltered { tags: $not: $size: 0 }, sortByVotes, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
-    else if req.query.channel
+    else if req.query.channel?
       runnables.listFiltered {'tags.name': req.query.channel }, sortByVotes, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
-    else if req.query.owner
+    else if req.query.owner?
       runnables.listFiltered { owner: req.query.owner }, sortByVotes, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
-    else if req.query.map
+    else if req.query.map?
       runnables.listNames (err, results) ->
         if err then next err else
           res.json results
@@ -50,7 +50,7 @@ module.exports = (parentDomain) ->
           res.json results
 
   app.put '/runnables/:id', (req, res) ->
-    if not req.query.from then res.json 400, message: 'must provide a runnable to save from' else
+    if not req.query.from? then res.json 400, message: 'must provide a runnable to save from' else
       runnables.updateImage req.user_id, req.params.id, req.query.from, (err, image) ->
         if err then res.json err.code, message: err.msg else
           res.json image
@@ -76,7 +76,7 @@ module.exports = (parentDomain) ->
         res.json tags
 
   app.post '/runnables/:id/tags', (req, res) ->
-    if not req.body.name then res.json 400, message: 'tag must include a name field' else
+    if not req.body.name? then res.json 400, message: 'tag must include a name field' else
       runnables.addTag req.user_id, req.params.id, req.body.name, (err, tag) ->
         if err then res.json err.code, message: err.msg else
           res.json 201, tag
