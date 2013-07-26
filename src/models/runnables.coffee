@@ -98,7 +98,6 @@ Runnables =
   removeContainer: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     remove = () -> containers.destroy runnableId, cb
-    throw new Error "WTTTTF"
     containers.findOne _id: runnableId, (err, container) ->
       if err then throw err
       if not container then cb error 404, 'runnable not found' else
