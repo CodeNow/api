@@ -41,9 +41,9 @@ class App
     app.use domains @domain
     if configs.logExpress then app.use express.logger()
     app.use express.bodyParser()
-    app.use users
-    app.use runnables
-    app.use channels
+    app.use users @domain
+    app.use runnables @domain
+    app.use channels @domain
     app.use app.router
     if configs.nodetime then app.use nodetime.expressErrorHandler()
     if configs.rollbar then app.use rollbar.errorHandler()

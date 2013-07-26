@@ -131,9 +131,9 @@ syncDockerImage = (image, cb) ->
             if err then cb err
             cb()
 
-imageSchema.statics.createFromDisk = (domain, owner, name, sync, cb) ->
+imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
   runnablePath = "#{__dirname}/../../configs/runnables"
-  fs.exists "#{runnablePath}/#{name}/runnable.json", domain.bind (exists) =>
+  fs.exists "#{runnablePath}/#{name}/runnable.json", (exists) =>
     if not exists then cb error 400, "image source not found: #{name}" else
       runnable = require "#{runnablePath}/#{name}/runnable.json"
       if not runnable then cb error 400, "image source not found: #{name}" else

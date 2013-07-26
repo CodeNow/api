@@ -8,7 +8,7 @@ _ = require 'lodash'
 
 Runnables =
 
-  createImage: (domain, userId, from, sync, cb) ->
+  createImage: (userId, from, sync, cb) ->
     handler = (image) ->
       users.findUser _id: userId, (err, user) ->
         if err then cb err else
@@ -21,7 +21,7 @@ Runnables =
                 json_image._id = encodeId image._id
                 cb null, json_image
     if not isObjectId64 from
-      images.createFromDisk domain, userId, from, sync, (err, image) ->
+      images.createFromDisk userId, from, sync, (err, image) ->
         if err then cb err else
           handler image
     else
@@ -108,10 +108,11 @@ Runnables =
                 if user.permission_level <= 1 then cb error 403, 'permission denied' else
                   remove()
 
-  removeImage: (domain, userId, runnableId, cb) ->
+  removeImage: (userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     remove = () -> images.destroy runnableId, cb
-    images.findOne _id: runnableId, domain.intercept (err, image) ->
+    images.findOne _id: runnableId, (err, image) ->
+      if err then throw err
       if not image then cb error 404, 'runnable not found' else
         if image.owner.toString() is userId.toString() then remove() else
           users.findUser _id: userId, (err, user) ->
