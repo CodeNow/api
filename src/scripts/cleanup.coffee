@@ -42,7 +42,7 @@ docker.listContainers
               cb true
   , (filtered) ->
     console.log 'filtered', filtered.length
-    async.eachLimit filtered, 10, (dockerContainer, cb) ->
+    async.eachLimit filtered, 3, (dockerContainer, cb) ->
       docker.removeContainer
         id: dockerContainer.Id
       , (err) ->
