@@ -70,6 +70,9 @@ userSchema.virtual('gravitar').get () ->
 userSchema.virtual('registered').get () ->
   this.permission_level >= 1
 
+userSchema.virtual('isModerator').get () ->
+  this.permission_level >= 5
+
 userSchema.statics.createUser = (cb) ->
   user = new @
   user.save (err) =>
