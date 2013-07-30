@@ -2,7 +2,6 @@ apiserver = require '../lib'
 configs = require '../lib/configs'
 helpers = require './helpers'
 sa = require 'superagent'
-require('source-map-support').install()
 
 describe 'channels api', ->
 
