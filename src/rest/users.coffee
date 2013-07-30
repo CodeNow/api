@@ -48,7 +48,7 @@ module.exports = (parentDomain) ->
 
   app.post '/token', (req, res) ->
     if not req.body.username? and not req.body.email? then res.json 400, message: 'username or email required' else
-      if not req.body.password ?then res.json 400, message: 'password required' else
+      if not req.body.password? then res.json 400, message: 'password required' else
         identity = req.body.email or req.body.username
         users.loginUser identity, req.body.password, (err, user_id) ->
           if err then res.json err.code, message: err.msg
