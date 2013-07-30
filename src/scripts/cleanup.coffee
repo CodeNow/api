@@ -21,12 +21,14 @@ docker.listContainers
   queryParams:
     all: true
 , domain.intercept (list) ->
-  async.filter list, (dockerContainer, cb) ->
+  console.log list.length
+  async.filterSeries list, (dockerContainer, cb) ->
+    docker_id = dockerContainer.Id.substring 0,12
     if /^Up /.test dockerContainer.Status
       cb false 
     else
       containers.findOne
-        docker_id: dockerContainer.Id.substring 0,12
+        docker_id: docker_id
       , domain.intercept (mongoContainer) ->
         if not mongoContainer? or mongoContainer.deleted 
           cb true
@@ -38,16 +40,20 @@ docker.listContainers
               cb false 
             else
               cb true
-  , domain.intercept (filtered) ->
-    console.log 'foo', filtered
-    process.exit 0
-    ###
-    async.each (filtered) ->
+  , (filtered) ->
+    console.log 'filtered', filtered.length
+    async.eachLimit filtered, 10, (dockerContainer, cb) ->
       docker.removeContainer
         id: dockerContainer.Id
-      , domain.intercept () ->
-        containers.remove
-          docker_id: dockerContainer.Id.substring(0,12)
-        , domain.intercept () ->
+      , (err) ->
+        if err?
+          console.error 'failed to remove', dockerContainer.Id
+          cb null
+        else
+          containers.remove
+            docker_id: dockerContainer.Id.substring(0,12)
+          , domain.intercept () ->
+            cb null
     , domain.intercept () ->
-    ###
+      console.log 'done'
+      process.exit 0
