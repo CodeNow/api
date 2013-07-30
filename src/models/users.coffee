@@ -67,6 +67,9 @@ userSchema.virtual('gravitar').get () ->
     ghash = hash.digest 'hex'
     "http://www.gravatar.com/avatar/#{ghash}"
 
+userSchema.virtual('isModerator').get () ->
+  this.permission_level >= 5
+
 userSchema.statics.createUser = (cb) ->
   user = new @
   user.save (err) =>

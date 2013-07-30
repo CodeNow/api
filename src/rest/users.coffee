@@ -48,7 +48,7 @@ module.exports = (parentDomain) ->
 
   app.post '/token', (req, res) ->
     if not req.body.username? and not req.body.email? then res.json 400, message: 'username or email required' else
-      if not req.body.password ?then res.json 400, message: 'password required' else
+      if not req.body.password? then res.json 400, message: 'password required' else
         identity = req.body.email or req.body.username
         users.loginUser identity, req.body.password, (err, user_id) ->
           if err then res.json err.code, message: err.msg
@@ -58,7 +58,7 @@ module.exports = (parentDomain) ->
             res.json access_token: access_token
 
   app.all '*', (req, res, next) ->
-    if (/\/runnables\?map=true|\/channels/.test(url.parse(req.url).path))
+    if (/\/runnables\?map=true/.test(url.parse(req.url).path))
       return next()
     token = req.get('runnable-token');
     if not token then res.json 401, message: 'access token required' else

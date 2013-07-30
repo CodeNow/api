@@ -14,8 +14,26 @@ module.exports = (parentDomain) ->
     res.json 400, { message: 'not implemented' }
 
   app.get '/channels', (req, res) ->
-    channels.listChannels (err, channels) ->
-      if err then res.json err.code, message: err.msg else
-        res.json channels
+    if req.query.category?
+      channels.listChannelsInCategory req.query.category, (err, channels) ->
+        if err then res.json err.code, message: err.msg else
+          res.json channels
+    else
+      channels.listChannels (err, channels) ->
+        if err then res.json err.code, message: err.msg else
+          res.json channels
 
-  app
+  app.post '/channels', (req, res) ->
+    channels.createChannel req.user_id, req.body, (err, channel) ->
+      if err then res.json err.code, message: err.msg else
+        res.json 201, channel
+
+  app.put '/channels/:channelId', (req, res) ->
+    channels.rename req.user_id, channelId, req.body.name, (err, channel) ->
+      if err then res.json err.code, message: err.msg else
+        res.json channel
+
+  app.get '/channels/categories', (req, res) ->
+    channels.listCategories (err, categories) ->
+      if err then res.json err.code, message: err.msg else
+        res.json categories
