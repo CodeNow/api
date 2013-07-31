@@ -10,8 +10,10 @@ module.exports = (parentDomain) ->
 
   app.use domains parentDomain
 
-  app.get '/channels/:tag', (req, res) ->
-    res.json 400, { message: 'not implemented' }
+  app.get '/channels/:name', (req, res) ->
+    channels.getChannel req.params.name, (err, channel) ->
+      if err then res.json err.code, message: err.msg else
+        res.json channel
 
   app.get '/channels', (req, res) ->
     if req.query.category?
@@ -37,3 +39,8 @@ module.exports = (parentDomain) ->
     channels.listCategories (err, categories) ->
       if err then res.json err.code, message: err.msg else
         res.json categories
+
+  # app.get '/channels/categories/:name', (req, res) ->
+  #   channels.getCategory (err, category) ->
+  #     if err then res.json err.code, message: err.msg else
+  #       res.json category

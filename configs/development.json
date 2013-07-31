@@ -9,7 +9,7 @@
   "port": 3030,
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
-  "docker": "http://harbourmaster.runnableapp.dev:4243",
+  "docker": "http://harbourmaster.runnableapp.dev",
   "shortProjectIds": true,
   "nodetime": {
     "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",

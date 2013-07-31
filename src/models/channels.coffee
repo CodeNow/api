@@ -22,18 +22,30 @@ channelSchema = new Schema
     type: [
         name:
           type:String
-          index: sparse:true # for listing categories
+          index:
+            sparse:true
         alias:
           type: [String]
-          index: true
-          unique: true
+          index:
+            sparse: true
       ]
     default: []
+
+channelSchema.statics.getChannel = (name, cb) ->
+  lower = name.toLowerCase()
+  @findOne alias:lower, (err, channel) ->
+    if err? then throw err else
+      if channel then cb null, channel.toJSON() else
+        images.listTags (err, tagNames) ->
+          if err? then throw err else
+            tagFound = _.find tagNames, (name) -> lower is name.toLowerCase()
+            if not tagFound? then cb code:404, msg: 'not found' else
+              cb null, { _id:tagFound, name:tagFound }
 
 channelSchema.statics.createChannel = (userId, data, cb) ->
   self = this;
   users.findUser _id:userId, (err, user) ->
-    if err then throw err else
+    if err? then throw err else
       if not user.isModerator then cb code: 403, msg: 'permission denied' else
         name = data.name
         if not name? then cb code: 400, msg: 'name required' else
@@ -55,7 +67,7 @@ channelSchema.statics.listChannels = (cb) ->
           channels = tagNames.map (name) ->
             lower = name.toLowerCase()
             dbChannel = _.find dbChannels, (chan) -> ~chan.alias.indexOf(lower)
-            return dbChannel or { _id:name, name:name };
+            return dbChannel or name:name
           cb null, channels
 
 channelSchema.statics.listChannelsInCategory = (category, cb) ->
@@ -68,11 +80,6 @@ channelSchema.statics.listChannelsInCategory = (category, cb) ->
 channelSchema.statics.findWithNames = (names, cb) ->
   lowerNames = names.map (name) -> name.toLowerCase()
   @find alias: $in: lowerNames, cb
-
-channelSchema.statics.listCategories = (cb) ->
-  @find().distinct 'category.name', (err, categoryNames) ->
-    if err? then throw err else
-      cb null, categoryNames
 
 channelSchema.statics.rename = (userId, channelId, name, cb) ->
   users.findUser _id:userId, (err, user) ->
@@ -87,5 +94,18 @@ channelSchema.statics.rename = (userId, channelId, name, cb) ->
               @findOneAndUpdate _id:channelId, update, (err, channel) ->
                 if err? then throw err else
                   cb null, channel.toJSON()
+
+channelSchema.statics.getCategory = (name, cb) ->
+  @listCategories (err, categories) ->
+    if err then throw err else
+      category = _.findWhere categories, name:name
+      if (!category) then cb code:404, message:'not found' else
+        cb null, category
+
+channelSchema.statics.listCategories = (cb) ->
+  @find().distinct 'category.name', (err, categoryNames) ->
+    if err? then throw err else
+      categories = categoryNames.map (name) -> name:name
+      cb null, categories
 
 module.exports = mongoose.model 'Channels', channelSchema

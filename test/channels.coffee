@@ -33,7 +33,7 @@ describe 'channels api', ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->
-          if err then cb err else
+          if err then done err else
             user.post("http://localhost:#{configs.port}/runnables?from=node.js")
               .end (err, res) ->
                 if err then done err else
@@ -50,7 +50,7 @@ describe 'channels api', ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedAdminUser (err, user) ->
-          if err then cb err else
+          if err then done err else
             user.post("http://localhost:#{configs.port}/channels")
               .set('content-type', 'application/json')
               .send(JSON.stringify(name: 'jquery'))
@@ -70,7 +70,7 @@ describe 'channels api', ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedAdminUser (err, user) ->
-          if err then cb err else
+          if err then done err else
             user.post("http://localhost:#{configs.port}/channels")
               .set('content-type', 'application/json')
               .send(JSON.stringify(name: 'testchannel', category:'testcategory'))
@@ -91,7 +91,7 @@ describe 'channels api', ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedAdminUser (err, user) ->
-          if err then cb err else
+          if err then done err else
             user.post("http://localhost:#{configs.port}/channels")
               .set('content-type', 'application/json')
               .send(JSON.stringify({ description: 'testchannel' }))
@@ -104,7 +104,7 @@ describe 'channels api', ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedRegisteredUser (err, user) ->
-          if err then cb err else
+          if err then done err else
             user.post("http://localhost:#{configs.port}/channels")
               .set('content-type', 'application/json')
               .send(JSON.stringify({ name: 'testchannel' }))
@@ -112,3 +112,32 @@ describe 'channels api', ->
                 if err then done err else
                   res.should.have.status 403
                   instance.stop done
+
+  it 'should be able to list all ::channel ::categories', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.authedAdminUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/channels")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'facebook', category:'category1'))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  category1 = res.body.category
+                  user.post("http://localhost:#{configs.port}/channels")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify(name: 'twitter', category:'category2'))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        category2 = res.body.category
+                        user.get("http://localhost:#{configs.port}/channels/categories")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.be.a.array
+                              res.body.length.should.equal 2
+                              res.body.should.includeEql category1
+                              res.body.should.includeEql category2
+                              instance.stop done

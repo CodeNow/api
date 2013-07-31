@@ -341,6 +341,65 @@ describe 'pagination api', ->
                             instance.configs.passwordSalt = oldSalt
                             instance.stop done
 
+  it 'should be able to ::paginate channel runnable list (multiple tags)', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        user = sa.agent()
+        oldSalt = instance.configs.passwordSalt
+        delete instance.configs.passwordSalt
+        user.post("http://localhost:#{configs.port}/token")
+          .set('Content-Type', 'application/json')
+          .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
+          .end (err, res) ->
+            res.should.have.status 200
+            token = res.body.access_token
+            runnables = [ ]
+            async.whilst () ->
+              runnables.length < 5
+            , (cb) ->
+              user.post("http://localhost:#{configs.port}/runnables")
+                .set('runnable-token', token)
+                .end (err, res) ->
+                  if err then cb err else
+                    res.should.have.status 201
+                    res.body.should.have.property '_id'
+                    runnableId = res.body._id
+                    runnables.push runnableId
+                    user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/tags")
+                      .set('runnable-token', token)
+                      .set('content-type', 'application/json')
+                      .send(JSON.stringify(name: 'facebook'))
+                      .end (err, res) ->
+                        user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/tags")
+                          .set('runnable-token', token)
+                          .set('content-type', 'application/json')
+                          .send(JSON.stringify(name: 'twitter'))
+                          .end (err, res) ->
+                          if err then done err else
+                            console.log(res.body)
+                            res.should.have.status 201
+                            cb()
+            , (err) ->
+              if err then done err else
+                user.get("http://localhost:#{configs.port}/runnables?channel=facebook&channel=twitter")
+                  .set('runnable-token', token)
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 200
+                      res.body.should.be.a.array
+                      res.body.length.should.equal 6
+                      elem = res.body[3]._id
+                      user.get("http://localhost:#{configs.port}/runnables?channel=facebook&channel=twitter&page=3&limit=1")
+                        .set('runnable-token', token)
+                        .end (err, res) ->
+                          if err then done err else
+                            res.should.have.status 200
+                            res.body.should.be.a.array
+                            res.body.length.should.equal 1
+                            res.body[0]._id.should.equal elem
+                            instance.configs.passwordSalt = oldSalt
+                            instance.stop done
+
   it 'should be able to ::paginate channel sorted by votes', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
@@ -407,3 +466,4 @@ describe 'pagination api', ->
                             res.body[1].should.have.property '_id'
                             instance.configs.passwordSalt = oldSalt
                             instance.stop done
+

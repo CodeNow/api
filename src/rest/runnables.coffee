@@ -33,7 +33,9 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.channel?
-      runnables.listFiltered {'tags.name': req.query.channel }, sortByVotes, limit, page, (err, results) ->
+      query = if Array.isArray(req.query.channel) then 'tags.name': {$in:req.query.channel} else
+        'tags.name': req.query.channel
+      runnables.listFiltered query, sortByVotes, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.owner?
