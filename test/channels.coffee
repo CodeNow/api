@@ -1,6 +1,7 @@
 apiserver = require '../lib'
 configs = require '../lib/configs'
 helpers = require './helpers'
+_ = require 'lodash'
 sa = require 'superagent'
 
 describe 'channels api', ->
@@ -17,16 +18,12 @@ describe 'channels api', ->
                   res.body.should.be.a.array
                   res.body.should.includeEql
                     name: 'facebook'
-                    _id: 'facebook'
                   res.body.should.includeEql
                     name: 'google'
-                    _id: 'google'
                   res.body.should.includeEql
                     name: 'twitter'
-                    _id: 'twitter'
                   res.body.should.includeEql
                     name: 'jquery'
-                    _id: 'jquery'
                   instance.stop done
 
   it 'should not list out blank ::channels', (done) ->
@@ -124,20 +121,20 @@ describe 'channels api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 201
-                  category1 = res.body.category
+                  category1 = res.body.category.pop()
                   user.post("http://localhost:#{configs.port}/channels")
                     .set('content-type', 'application/json')
                     .send(JSON.stringify(name: 'twitter', category:'category2'))
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 201
-                        category2 = res.body.category
+                        category2 = res.body.category.pop()
                         user.get("http://localhost:#{configs.port}/channels/categories")
                           .end (err, res) ->
                             if err then done err else
                               res.should.have.status 200
                               res.body.should.be.a.array
                               res.body.length.should.equal 2
-                              res.body.should.includeEql category1
-                              res.body.should.includeEql category2
+                              res.body.should.includeEql _.pick category1, 'name'
+                              res.body.should.includeEql _.pick category2, 'name'
                               instance.stop done

@@ -47,7 +47,7 @@ channelSchema.statics.createChannel = (userId, data, cb) ->
   users.findUser _id:userId, (err, user) ->
     if err? then throw err else
       if not user.isModerator then cb code: 403, msg: 'permission denied' else
-        name = data.name
+        name = if typeof data.name is 'string' then data.name else null
         if not name? then cb code: 400, msg: 'name required' else
           channel = new self;
           channel.name = name
