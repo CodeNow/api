@@ -64,18 +64,21 @@ channelSchema.statics.listChannels = (cb) ->
     if err? then throw err else
       @findWithNames tagNames, (err, dbChannels) ->
         if err? then throw err else
-          channels = tagNames.map (name) ->
+          async.map tagNames, (name, mcb) ->
             lower = name.toLowerCase()
             dbChannel = _.find dbChannels, (chan) -> ~chan.alias.indexOf(lower)
-            return dbChannel or name:name
-          cb null, channels
+            channel = dbChannel or name:name
+            addCountToChannel channel, mcb
+          , cb
 
-channelSchema.statics.listChannelsInCategory = (category, cb) ->
-  lower = category.toLowerCase();
+channelSchema.statics.listChannelsInCategory = (categoryName, cb) ->
+  lower = categoryName.toLowerCase();
   @find 'category.alias':lower, (err, channels) ->
     if err? then throw err else
       channels = channels.map (channel) -> channel.toJSON()
-      cb null, channels
+      async.map channels, (channel, mcb) ->
+        addCountToChannel channel, mcb
+      , cb
 
 channelSchema.statics.findWithNames = (names, cb) ->
   lowerNames = names.map (name) -> name.toLowerCase()
@@ -103,9 +106,33 @@ channelSchema.statics.getCategory = (name, cb) ->
         cb null, category
 
 channelSchema.statics.listCategories = (cb) ->
+  channels = this;
   @find().distinct 'category.name', (err, categoryNames) ->
     if err? then throw err else
-      categories = categoryNames.map (name) -> name:name
-      cb null, categories
+      async.map categoryNames, (name, mcb) ->
+        category = name:name
+        channels.listChannelsInCategory name, (err, channels) ->
+          if err? then throw err else
+            countImagesInChannels channels, (err, count) ->
+              if err? then throw err else
+                category.count = count
+                mcb null, category
+      , cb
+
+
+addCountToChannel = (channel, cb) ->
+  alias = channel.alias || [channel.name.toLowerCase()];
+  images.find('tags.name':$in:alias).count().exec (err, count) ->
+    if err? then throw err else
+      channel.count = count
+      cb null, channel
+
+countImagesInChannels = (channels, cb) ->
+  tags = [];
+  channels.forEach (channel) ->
+    tags.push(channel.name);
+    if channel.alias then tags.concat(channel.alias)
+  images.find('tags.name':$in:tags).count().exec cb
+
 
 module.exports = mongoose.model 'Channels', channelSchema

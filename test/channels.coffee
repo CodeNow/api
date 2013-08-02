@@ -6,7 +6,7 @@ sa = require 'superagent'
 
 describe 'channels api', ->
 
-  it 'should list out the ::channels', (done) ->
+  it 'should list ::channels', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->
@@ -18,12 +18,16 @@ describe 'channels api', ->
                   res.body.should.be.a.array
                   res.body.should.includeEql
                     name: 'facebook'
+                    count: 1
                   res.body.should.includeEql
                     name: 'google'
+                    count: 1
                   res.body.should.includeEql
                     name: 'twitter'
+                    count: 1
                   res.body.should.includeEql
                     name: 'jquery'
+                    count: 1
                   instance.stop done
 
   it 'should not list out blank ::channels', (done) ->
@@ -33,11 +37,13 @@ describe 'channels api', ->
           if err then done err else
             user.post("http://localhost:#{configs.port}/runnables?from=node.js")
               .end (err, res) ->
+                console.log res.body
                 if err then done err else
                   res.should.have.status 201
                   runnableId = res.body._id
                   user.get("http://localhost:#{configs.port}/channels")
                     .end (err, res) ->
+                      console.log res.body
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.be.a.array
@@ -81,6 +87,7 @@ describe 'channels api', ->
                         res.should.have.status 200
                         res.body.should.be.a.array
                         res.body.length.should.equal 1
+                        channel.count = 0
                         res.body.should.includeEql channel
                         instance.stop done
 
@@ -135,6 +142,10 @@ describe 'channels api', ->
                               res.should.have.status 200
                               res.body.should.be.a.array
                               res.body.length.should.equal 2
-                              res.body.should.includeEql _.pick category1, 'name'
-                              res.body.should.includeEql _.pick category2, 'name'
+                              res.body.should.includeEql
+                                name: 'category1',
+                                count: 1
+                              res.body.should.includeEql
+                                name: 'category2',
+                                count: 1
                               instance.stop done
