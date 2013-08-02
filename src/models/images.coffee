@@ -221,13 +221,9 @@ imageSchema.statics.destroy = (id, cb) ->
   @findOne _id: id, (err, image) =>
     if err then throw err
     if not image then cb error 404, 'image not found' else
-      req = docker.removeImage { id: image.docker_id }
-      req.on 'error', (err) ->
-        throw err
-      req.on 'end', () =>
-        @remove { _id: id }, (err) ->
-          if err then throw err
-          cb()
+      @remove { _id: id }, (err) ->
+        if err then throw err
+        cb()
 
 imageSchema.statics.listTags = (cb) ->
   @find().distinct 'tags.name', (err, tagNames) ->
