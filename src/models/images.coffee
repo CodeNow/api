@@ -230,6 +230,12 @@ imageSchema.statics.listTags = (cb) ->
     if err then throw err
     cb null, tagNames
 
+imageSchema.statics.listTagsWithTags = (tagNames, cb) ->
+  if not Array.isArray(tagNames) then tagNames = [tagNames]
+  @distinct 'tags.name', name:{$in:tagNames}, (err, tagNames) ->
+    if err then throw err
+    cb null, tagNames
+
 imageSchema.statics.isOwner = (userId, runnableId, cb) ->
   @findOne _id: runnableId, (err, image) ->
     if err then throw err

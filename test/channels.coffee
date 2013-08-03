@@ -6,6 +6,17 @@ sa = require 'superagent'
 
 describe 'channels api', ->
 
+  it 'should get a channel', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            user.get("http://localhost:#{configs.port}/channels/facebook")
+              .end (err, res) ->
+                res.should.have.status 200
+                res.body.name.should.equal 'facebook'
+                res.body.count.should.equal 1
+
   it 'should list ::channels', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else

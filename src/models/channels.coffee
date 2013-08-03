@@ -71,6 +71,19 @@ channelSchema.statics.listChannels = (cb) ->
             addCountToChannel channel, mcb
           , cb
 
+channelSchema.statics.listChannelsInChannel = (channelNames, cb) ->
+  if not Array.isArray(channelNames) then channels = [channels]
+  images.listTagsWithTags channelNames, (err, tagNames) =>
+    if err? then throw err else
+      @findWithNames tagNames, (err, dbChannels) ->
+        if err? then throw err else
+          async.map tagNames, (name, mcb) ->
+            lower = name.toLowerCase()
+            dbChannel = _.find dbChannels, (chan) -> ~chan.alias.indexOf(lower)
+            channel = dbChannel or name:name
+            addCountToChannel channel, mcb
+          , cb
+
 channelSchema.statics.listChannelsInCategory = (categoryName, cb) ->
   lower = categoryName.toLowerCase();
   @find 'category.alias':lower, (err, channels) ->
