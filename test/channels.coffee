@@ -54,7 +54,6 @@ describe 'channels api', ->
                   runnableId = res.body._id
                   user.get("http://localhost:#{configs.port}/channels")
                     .end (err, res) ->
-                      console.log res.body
                       if err then done err else
                         res.should.have.status 200
                         res.body.should.be.a.array
