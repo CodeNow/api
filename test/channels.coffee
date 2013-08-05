@@ -6,16 +6,17 @@ sa = require 'superagent'
 
 describe 'channels api', ->
 
-  it 'should get a channel', (done) ->
+  it 'should get a ::channel', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
             user.get("http://localhost:#{configs.port}/channels/facebook")
               .end (err, res) ->
-                res.should.have.status 200
-                res.body.name.should.equal 'facebook'
-                res.body.count.should.equal 1
+                if err then done err else
+                  res.should.have.status 200
+                  res.body.name.should.equal 'facebook'
+                  instance.stop done
 
   it 'should list ::channels', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -48,7 +49,6 @@ describe 'channels api', ->
           if err then done err else
             user.post("http://localhost:#{configs.port}/runnables?from=node.js")
               .end (err, res) ->
-                console.log res.body
                 if err then done err else
                   res.should.have.status 201
                   runnableId = res.body._id
