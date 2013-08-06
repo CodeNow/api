@@ -7,7 +7,6 @@ mongodb = require 'mongodb'
 redis = require 'redis'
 rimraf = require 'rimraf'
 state = require './state'
-_ = require 'lodash'
 
 db = mongodb.Db
 
