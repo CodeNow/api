@@ -25,19 +25,19 @@ docker.listContainers
   async.filterSeries list, (dockerContainer, cb) ->
     docker_id = dockerContainer.Id.substring 0,12
     if /^Up /.test dockerContainer.Status
-      cb false 
+      cb false
     else
       containers.findOne
         docker_id: docker_id
       , domain.intercept (mongoContainer) ->
-        if not mongoContainer? or mongoContainer.deleted 
+        if not mongoContainer? or mongoContainer.deleted
           cb true
         else
           users.findOne
             _id: mongoContainer.owner
           , domain.intercept (user) ->
-            if user? and user.registered 
-              cb false 
+            if user? and user.registered
+              cb false
             else
               cb true
   , (filtered) ->

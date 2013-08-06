@@ -1,6 +1,7 @@
 async = require 'async'
 configs = require '../configs'
 containers = require './containers'
+domain = require 'domain'
 error = require '../error'
 images = require './images'
 users = require './users'
