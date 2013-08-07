@@ -16,6 +16,10 @@ mongoose.connect configs.mongo
 if configs.rollbar
   rollbar.handleUncaughtExceptions configs.rollbar
 
+process.on 'uncaughtException', (err) ->
+  console.log err
+  console.log 'UNCAUGHT EXCEPTION'
+
 class App
 
   constructor: (@configs, @domain) ->
