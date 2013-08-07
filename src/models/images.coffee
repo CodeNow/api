@@ -137,60 +137,66 @@ imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
     if not exists then cb error 400, "image source not found: #{name}" else
       runnable = require "#{runnablePath}/#{name}/runnable.json"
       if not runnable then cb error 400, "image source not found: #{name}" else
-        image = new @()
-        tag = image._id.toString()
-        buildDockerImage "#{runnablePath}/#{name}", tag, (err, docker_id) ->
+        @findOne name: name, (err, existing) =>
           if err then throw err
-          image.docker_id = docker_id
-          image.owner = owner
-          image.name = runnable.name
-          image.cmd = runnable.cmd
-          if runnable.file_root then image.file_root = runnable.file_root
-          if runnable.service_cmds then image.service_cmds = runnable.service_cmds
-          if runnable.start_cmd then image.start_cmd = runnable.start_cmd
-          image.port = runnable.port
-          for tag in runnable.tags
-            image.tags.push tag
-          for file in runnable.files
-            image.files.push file
-          if sync
-            syncDockerImage image, (err) ->
-              if err then throw err
-              image.synced = true
-              image.save (err) ->
-                if err then throw err
-                cb null, image
-          else
-            image.save (err) ->
-              if err then throw err
-              cb null, image
+          if existing then cb error 403, 'a shared runnable by that name already exists' else
+            image = new @()
+            tag = image._id.toString()
+            buildDockerImage "#{runnablePath}/#{name}", tag, (err, docker_id) ->
+              if err then cb err else
+                image.docker_id = docker_id
+                image.owner = owner
+                image.name = runnable.name
+                image.cmd = runnable.cmd
+                if runnable.file_root then image.file_root = runnable.file_root
+                if runnable.service_cmds then image.service_cmds = runnable.service_cmds
+                if runnable.start_cmd then image.start_cmd = runnable.start_cmd
+                image.port = runnable.port
+                for tag in runnable.tags
+                  image.tags.push tag
+                for file in runnable.files
+                  image.files.push file
+                if sync
+                  syncDockerImage image, (err) ->
+                    if err then throw err
+                    image.synced = true
+                    image.save (err) ->
+                      if err then throw err
+                      cb null, image
+                else
+                  image.save (err) ->
+                    if err then throw err
+                    cb null, image
 
 imageSchema.statics.createFromContainer = (container, cb) ->
-  image = new @
-    parent: container.parent
-    owner: container.owner
-    name: container.name
-    cmd: container.cmd
-    file_root: container.file_root
-    service_cmds: container.service_cmds
-    start_cmd: container.start_cmd
-    port: container.port
-    synced: true
-  for file in container.files
-    image.files.push file.toJSON()
-  for tag in container.tags
-    image.tags.push tag.toJSON()
-  docker.commit
-    queryParams:
-      container: container.docker_id
-      m: "#{container.parent} => #{image._id}"
-      author: image.owner.toString()
-  , (err, result) ->
+  @findOne name: container.name, (err, existing) =>
     if err then throw err
-    image.docker_id = result.Id
-    image.save (err) ->
-      if err then throw err
-      cb null, image
+    if existing then cb error 403, 'a shared runnable by that name already exists' else
+      image = new @
+        parent: container.parent
+        owner: container.owner
+        name: container.name
+        cmd: container.cmd
+        file_root: container.file_root
+        service_cmds: container.service_cmds
+        start_cmd: container.start_cmd
+        port: container.port
+        synced: true
+      for file in container.files
+        image.files.push file.toJSON()
+      for tag in container.tags
+        image.tags.push tag.toJSON()
+      docker.commit
+        queryParams:
+          container: container.docker_id
+          m: "#{container.parent} => #{image._id}"
+          author: image.owner.toString()
+      , (err, result) ->
+        if err then throw err
+        image.docker_id = result.Id
+        image.save (err) ->
+          if err then throw err
+          cb null, image
 
 imageSchema.methods.updateFromContainer = (container, cb) ->
   @name = container.name
