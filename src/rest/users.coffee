@@ -241,19 +241,22 @@ module.exports = (parentDomain) ->
   app.post '/users/:userid/runnables/:id/sync', fetchuser, syncfiles
 
   createfile = (req, res) ->
-    if req.body.dir?
-      if not req.body.name? then res.json 400, message: 'dir must include a name field' else
-        if not req.body.path? then res.json 400, message: 'dir must include a path field'  else
-          runnables.createDirectory req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
-            if err then res.json err.code, message: err.msg else
-              res.json 201, dir
+    if req.headers['content-type'] isnt 'application/json'
+      res.json 400, message: 'content type must be application/json'
     else
-      if not req.body.name? then res.json 400, message: 'file must include a name field' else
-        if not req.body.content? then res.json 400, message: 'file must include a content field' else
-          if not req.body.path? then res.json 400, message: 'file must include a path field' else
-            runnables.createFile req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
+      if req.body.dir?
+        if not req.body.name? then res.json 400, message: 'dir must include a name field' else
+          if not req.body.path? then res.json 400, message: 'dir must include a path field'  else
+            runnables.createDirectory req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
               if err then res.json err.code, message: err.msg else
-                res.json 201, file
+                res.json 201, dir
+      else
+        if not req.body.name? then res.json 400, message: 'file must include a name field' else
+          if not req.body.content? then res.json 400, message: 'file must include a content field' else
+            if not req.body.path? then res.json 400, message: 'file must include a path field' else
+              runnables.createFile req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
+                if err then res.json err.code, message: err.msg else
+                  res.json 201, file
 
   app.post '/users/me/runnables/:id/files', createfile
   app.post '/users/:userid/runnables/:id/files', fetchuser, createfile
@@ -267,24 +270,27 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables/:id/files/:fileid', fetchuser, getfile
 
   updatefile = (req, res) ->
-    async.waterfall [
-      (cb) ->
-        file = null
-        if not req.body.content? then cb null, file else
-          runnables.updateFile req.user_id, req.params.id, req.params.fileid, req.body.content, cb
-      (file, cb) ->
-        if not req.body.path? then cb null, file else
-          runnables.moveFile req.user_id, req.params.id, req.params.fileid, req.body.path, cb
-      (file, cb) ->
-        if not req.body.name? then cb null, file else
-          runnables.renameFile req.user_id, req.params.id, req.params.fileid, req.body.name, cb
-      (file, cb) ->
-        if not req.body.default? then cb null, file else
-          runnables.defaultFile req.user_id, req.params.id, req.params.fileid, cb
-    ], (err, file) ->
-      if err then res.json err.code, message: err.msg else
-        if not file then res.json 400, message: 'must provide content, name, path or tag to update operation' else
-          res.json file
+    if req.headers['content-type'] isnt 'application/json'
+      res.json 400, message: 'content type must be application/json'
+    else
+      async.waterfall [
+        (cb) ->
+          file = null
+          if not req.body.content? then cb null, file else
+            runnables.updateFile req.user_id, req.params.id, req.params.fileid, req.body.content, cb
+        (file, cb) ->
+          if not req.body.path? then cb null, file else
+            runnables.moveFile req.user_id, req.params.id, req.params.fileid, req.body.path, cb
+        (file, cb) ->
+          if not req.body.name? then cb null, file else
+            runnables.renameFile req.user_id, req.params.id, req.params.fileid, req.body.name, cb
+        (file, cb) ->
+          if not req.body.default? then cb null, file else
+            runnables.defaultFile req.user_id, req.params.id, req.params.fileid, cb
+      ], (err, file) ->
+        if err then res.json err.code, message: err.msg else
+          if not file then res.json 400, message: 'must provide content, name, path or tag to update operation' else
+            res.json file
 
   app.put '/users/me/runnables/:id/files/:fileid', updatefile
   app.patch '/users/me/runnables/:id/files/:fileid', updatefile
