@@ -37,6 +37,7 @@ Helpers =
           res.should.have.status 201
           token = res.body.access_token
           cb null,
+            patch: (url) -> user.patch(url).set('runnable-token', token)
             post: (url) -> user.post(url).set('runnable-token', token)
             get: (url)  -> user.get(url).set('runnable-token', token)
             put: (url)  -> user.put(url).set('runnable-token', token)
@@ -57,6 +58,7 @@ Helpers =
               if err then cb err else
                 res.should.have.status 200
                 cb null,
+                  patch: (url) -> user.patch(url).set('runnable-token', token)
                   post: (url) -> user.post(url).set('runnable-token', token)
                   get:  (url) -> user.get(url).set('runnable-token', token)
                   put:  (url) -> user.put(url).set('runnable-token', token)
@@ -75,6 +77,7 @@ Helpers =
           token = res.body.access_token
           configs.passwordSalt = oldSalt
           cb null,
+            patch: (url) -> user.patch(url).set('runnable-token', token)
             post: (url) -> user.post(url).set('runnable-token', token)
             get:  (url) -> user.get(url).set('runnable-token', token)
             put:  (url) -> user.put(url).set('runnable-token', token)
