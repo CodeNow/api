@@ -154,16 +154,13 @@ Runnables =
               if not su and container.owner.toString() isnt image.owner.toString()
                 cb error 400, 'source container owner does not match image owner'
               else
-                images.findOne name: container.name, (err, existing) ->
-                  if err then throw err
-                  if existing then cb error 403, 'a shared runnable by that name already exists' else
-                    image.updateFromContainer container, (err) ->
-                      if err then cb err else
-                        json_project = image.toJSON()
-                        delete json_project.files
-                        json_project._id = encodeId json_project._id
-                        if json_project.parent then json_project.parent = encodeId json_project.parent
-                        cb null, json_project
+                image.updateFromContainer container, (err) ->
+                  if err then cb err else
+                    json_project = image.toJSON()
+                    delete json_project.files
+                    json_project._id = encodeId json_project._id
+                    if json_project.parent then json_project.parent = encodeId json_project.parent
+                    cb null, json_project
         if image.owner.toString() is userId then update false else
           users.findUser _id: userId, (err, user) ->
             if err then cb err else
