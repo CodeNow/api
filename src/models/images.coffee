@@ -3,6 +3,7 @@ cp = require 'child_process'
 configs = require '../configs'
 crypto = require 'crypto'
 dockerjs = require 'docker.js'
+domain = require 'domain'
 error = require '../error'
 fs = require 'fs'
 path = require 'path'
@@ -92,21 +93,20 @@ imageSchema.index
   tags: 1
   parent: 1
 
-buildDockerImage = (fspath, tag, cb) ->
+buildDockerImage = (domain, fspath, tag, cb) ->
   child = cp.spawn 'tar', [ '-c', '--directory', fspath, '.' ]
   req = request.post
     url: "#{configs.docker}/v1.3/build"
     headers: { 'content-type': 'application/tar' }
     qs:
       t: tag
-  , (err, res, body) ->
-    if err then cb err
+  , domain.intercept (res, body) ->
     if res.statusCode isnt 200 then cb error res.status, body else
       if body.indexOf('Successfully built') is -1 then cb error 400, 'could not build image from dockerfile' else
         cb null, tag
   child.stdout.pipe req
 
-syncDockerImage = (image, cb) ->
+syncDockerImage = (domain, image, cb) ->
   token = uuid.v4()
   docker.createContainer
     Token: token
@@ -119,80 +119,77 @@ syncDockerImage = (image, cb) ->
     Image: image.docker_id.toString()
     PortSpecs: [ image.port.toString() ]
     Cmd: [ image.cmd ]
-  , (err, res) ->
-    if err then cb err
+  , domain.intercept (res) ->
     containerId = res.Id
-    docker.inspectContainer containerId, (err, result) ->
-      if err then cb err
+    docker.inspectContainer containerId, domain.intercept (result) ->
       long_docker_id = result.ID
       sync long_docker_id, image, (err) ->
         if err then cb err else
-          docker.removeContainer containerId, (err) ->
-            if err then cb err
+          docker.removeContainer containerId, domain.intercept () ->
             cb()
 
-imageSchema.statics.createFromDisk = (owner, name, sync, cb) ->
+imageSchema.statics.createFromDisk = (domain, owner, name, sync, cb) ->
   runnablePath = "#{__dirname}/../../configs/runnables"
   fs.exists "#{runnablePath}/#{name}/runnable.json", (exists) =>
     if not exists then cb error 400, "image source not found: #{name}" else
       runnable = require "#{runnablePath}/#{name}/runnable.json"
       if not runnable then cb error 400, "image source not found: #{name}" else
-        image = new @()
-        tag = image._id.toString()
-        buildDockerImage "#{runnablePath}/#{name}", tag, (err, docker_id) ->
-          if err then throw err
-          image.docker_id = docker_id
-          image.owner = owner
-          image.name = runnable.name
-          image.cmd = runnable.cmd
-          if runnable.file_root then image.file_root = runnable.file_root
-          if runnable.service_cmds then image.service_cmds = runnable.service_cmds
-          if runnable.start_cmd then image.start_cmd = runnable.start_cmd
-          image.port = runnable.port
-          for tag in runnable.tags
-            image.tags.push tag
-          for file in runnable.files
-            image.files.push file
-          if sync
-            syncDockerImage image, (err) ->
-              if err then throw err
-              image.synced = true
-              image.save (err) ->
-                if err then throw err
-                cb null, image
-          else
-            image.save (err) ->
-              if err then throw err
-              cb null, image
+        @findOne name: name, domain.intercept (existing) =>
+          if existing then cb error 403, 'a shared runnable by that name already exists' else
+            image = new @()
+            tag = image._id.toString()
+            buildDockerImage domain, "#{runnablePath}/#{name}", tag, (err, docker_id) ->
+              if err then cb err else
+                image.docker_id = docker_id
+                image.owner = owner
+                image.name = runnable.name
+                image.cmd = runnable.cmd
+                if runnable.file_root then image.file_root = runnable.file_root
+                if runnable.service_cmds then image.service_cmds = runnable.service_cmds
+                if runnable.start_cmd then image.start_cmd = runnable.start_cmd
+                image.port = runnable.port
+                for tag in runnable.tags
+                  image.tags.push tag
+                for file in runnable.files
+                  image.files.push file
+                if sync
+                  syncDockerImage domain, image, (err) ->
+                    if err then throw err
+                    image.synced = true
+                    image.save domain.intercept () ->
+                      cb null, image
+                else
+                  image.save domain.intercept () ->
+                    cb null, image
 
-imageSchema.statics.createFromContainer = (container, cb) ->
-  image = new @
-    parent: container.parent
-    owner: container.owner
-    name: container.name
-    cmd: container.cmd
-    file_root: container.file_root
-    service_cmds: container.service_cmds
-    start_cmd: container.start_cmd
-    port: container.port
-    synced: true
-  for file in container.files
-    image.files.push file.toJSON()
-  for tag in container.tags
-    image.tags.push tag.toJSON()
-  docker.commit
-    queryParams:
-      container: container.docker_id
-      m: "#{container.parent} => #{image._id}"
-      author: image.owner.toString()
-  , (err, result) ->
-    if err then throw err
-    image.docker_id = result.Id
-    image.save (err) ->
-      if err then throw err
-      cb null, image
+imageSchema.statics.createFromContainer = (domain, container, cb) ->
+  @findOne name: container.name, domain.intercept (existing) =>
+    if existing then cb error 403, 'a shared runnable by that name already exists' else
+      image = new @
+        parent: container.parent
+        owner: container.owner
+        name: container.name
+        cmd: container.cmd
+        file_root: container.file_root
+        service_cmds: container.service_cmds
+        start_cmd: container.start_cmd
+        port: container.port
+        synced: true
+      for file in container.files
+        image.files.push file.toJSON()
+      for tag in container.tags
+        image.tags.push tag.toJSON()
+      docker.commit
+        queryParams:
+          container: container.docker_id
+          m: "#{container.parent} => #{image._id}"
+          author: image.owner.toString()
+      , domain.intercept (result) ->
+        image.docker_id = result.Id
+        image.save domain.intercept () ->
+          cb null, image
 
-imageSchema.methods.updateFromContainer = (container, cb) ->
+imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   @name = container.name
   @cmd = container.cmd
   @file_root = container.file_root
@@ -210,45 +207,37 @@ imageSchema.methods.updateFromContainer = (container, cb) ->
       container: container.docker_id
       m: "#{container.parent} => #{@_id}"
       author: @owner.toString()
-  , (err, result) =>
-    if err then throw err
+  , domain.intercept (result) =>
     @docker_id = result.Id
-    @save (err) =>
-      if err then throw err
+    @save domain.intercept () =>
       cb null, @
 
-imageSchema.statics.destroy = (id, cb) ->
-  @findOne _id: id, (err, image) =>
-    if err then throw err
+imageSchema.statics.destroy = (domain, id, cb) ->
+  @findOne _id: id, domain.intercept (image) =>
     if not image then cb error 404, 'image not found' else
-      @remove { _id: id }, (err) ->
-        if err then throw err
+      @remove { _id: id }, domain.intercept () ->
         cb()
 
-imageSchema.statics.listTags = (cb) ->
-  @find().distinct 'tags.name', (err, tagNames) ->
-    if err then throw err
+imageSchema.statics.listTags = (domain, cb) ->
+  @find().distinct 'tags.name', domain.intercept (tagNames) ->
     cb null, tagNames
 
-imageSchema.statics.listTagsWithTags = (tagNames, cb) ->
+imageSchema.statics.listTagsWithTags = (domain, tagNames, cb) ->
   if not Array.isArray(tagNames) then tagNames = [tagNames]
-  @distinct 'tags.name', name:{$in:tagNames}, (err, tagNames) ->
-    if err then throw err
+  @distinct 'tags.name', name:{$in:tagNames}, domain.intercept (tagNames) ->
     cb null, tagNames
 
-imageSchema.statics.isOwner = (userId, runnableId, cb) ->
-  @findOne _id: runnableId, (err, image) ->
-    if err then throw err
+imageSchema.statics.isOwner = (domain, userId, runnableId, cb) ->
+  @findOne _id: runnableId, domain.intercept (image) ->
     if not image then cb error 404, 'runnable not found' else
       cb null, image.owner.toString() is userId.toString()
 
-imageSchema.methods.sync = (cb) ->
+imageSchema.methods.sync = (domain, cb) ->
   if @synced then cb() else
-    syncDockerImage @, (err) =>
+    syncDockerImage domain, @, (err) =>
       if err then throw err
       @synced = true
-      @save (err) ->
-        if err then throw err
+      @save domain.intercept () ->
         cb()
 
 module.exports = mongoose.model 'Images', imageSchema

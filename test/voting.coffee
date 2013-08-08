@@ -304,7 +304,6 @@ describe 'voting api', ->
                                       cb()
                             , (err) ->
                               if err then done err else
-                                console.log 'asdfdasfasfsd'
                                 user.del("http://localhost:#{configs.port}/runnables/#{voted[0]._id}")
                                   .end (err, res) ->
                                     if err then done err else

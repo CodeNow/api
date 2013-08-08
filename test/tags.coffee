@@ -101,7 +101,7 @@ describe 'tagging api', ->
                             instance.configs.passwordSalt = oldSalt
                             instance.stop done
 
-  it 'should not be able to ::tag a runnable as an anonymous user', (done) ->
+  it 'should not be able to ::tag a runnable as an anonymous user ::tagon', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->

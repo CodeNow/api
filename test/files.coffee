@@ -24,6 +24,21 @@ describe 'files api', ->
                   res.body.should.have.property '_id'
                   instance.stop done
 
+  it 'should return an error when inserting a new ::file without ::content-type field being set', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createContainer 'node.js', (err, user, runnableId) ->
+          if err then done err else
+            content = 'console.log("Hello, World!");'
+            encodedContent = (new Buffer(content)).toString('base64')
+            user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+              .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 400
+                  res.body.should.have.property 'message', 'content type must be application/json'
+                  instance.stop done
+
   it 'should be able to read back a root ::file that was previously inserted', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
@@ -293,6 +308,57 @@ describe 'files api', ->
                   newContent = 'console.log("Hello, Second World!");'
                   encodedNewContent = (new Buffer(content)).toString('base64')
                   user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify(content: encodedNewContent))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.have.property 'name', 'hello.js'
+                        res.body.should.have.property 'path', '/'
+                        res.body.should.have.property '_id'
+                        instance.stop done
+
+  it 'should return error if ::content-type is not set when updating a ::file', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createContainer 'node.js', (err, user, runnableId) ->
+          if err then done err else
+            content = 'console.log("Hello, World!");'
+            encodedContent = (new Buffer(content)).toString('base64')
+            user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  fileId = res.body._id
+                  newContent = 'console.log("Hello, Second World!");'
+                  encodedNewContent = (new Buffer(content)).toString('base64')
+                  user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
+                    .send(JSON.stringify(content: encodedNewContent))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 400
+                        res.body.should.have.property 'message', 'content type must be application/json'
+                        instance.stop done
+
+  it 'should be able to update an existing ::file by ::patching content', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createContainer 'node.js', (err, user, runnableId) ->
+          if err then done err else
+            content = 'console.log("Hello, World!");'
+            encodedContent = (new Buffer(content)).toString('base64')
+            user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  fileId = res.body._id
+                  newContent = 'console.log("Hello, Second World!");'
+                  encodedNewContent = (new Buffer(content)).toString('base64')
+                  user.patch("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
                     .set('content-type', 'application/json')
                     .send(JSON.stringify(content: encodedNewContent))
                     .end (err, res) ->

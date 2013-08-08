@@ -21,14 +21,14 @@ module.exports = (parentDomain) ->
 
   fetchuser = (req, res, next) ->
     if not req.params.userid.match /^[0-9a-fA-F]{24}$/ then res.json 404, message: 'user not found' else
-      users.findUser _id: req.params.userid, (err, user) ->
+      users.findUser req.domain, _id: req.params.userid, (err, user) ->
         if err then res.json err.code, message: err.msg else
           if not user then res.json 404, message: 'user not found' else
             if req.params.userid.toString() isnt req.user_id.toString() then res.json 403, message: 'permission denied' else
               next()
 
   app.post '/users', (req, res) ->
-    users.createUser (err, user) ->
+    users.createUser req.domain, (err, user) ->
       if err then res.json err.code, message: err.msg else
         access_token = uuid.v4()
         redis_client.psetex [ access_token, configs.tokenExpires, user._id ], (err) ->
@@ -39,7 +39,7 @@ module.exports = (parentDomain) ->
             if not req.body.username? then res.json 400, message: 'must provide a username to register with' else
               if not req.body.password? then res.json 400, message: 'must provide a password to register with' else
                 data = _.pick req.body, 'email', 'username', 'password'
-                users.registerUser user._id, data, (err, user) ->
+                users.registerUser req.domain, user._id, data, (err, user) ->
                   if err then res.json err.code, message: err.msg else
                     json_user = user.toJSON()
                     delete json_user.password
@@ -50,7 +50,7 @@ module.exports = (parentDomain) ->
     if not req.body.username? and not req.body.email? then res.json 400, message: 'username or email required' else
       if not req.body.password? then res.json 400, message: 'password required' else
         identity = req.body.email or req.body.username
-        users.loginUser identity, req.body.password, (err, user_id) ->
+        users.loginUser req.domain, identity, req.body.password, (err, user_id) ->
           if err then res.json err.code, message: err.msg
           access_token = uuid.v4()
           redis_client.psetex [ access_token, configs.tokenExpires, user_id ], (err) ->
@@ -72,14 +72,14 @@ module.exports = (parentDomain) ->
     userIds = req.query.ids or [ ]
     if !Array.isArray(userIds) then userIds = [ userIds ]
     if userIds.length is 0 then res.json 400, message: 'must provide ids for user to get' else
-      users.publicListWithIds userIds, (err, users) ->
+      users.publicListWithIds req.domain, userIds, (err, users) ->
         if err then cb err else
           res.json users
 
   app.get '/users', getusers
 
   getuser = (req, res) ->
-    users.findUser _id: req.user_id, (err, user) ->
+    users.findUser req.domain, _id: req.user_id, (err, user) ->
       if err then res.json err.code, message: err.msg else
         if not user then res.json 404, message: 'user doesnt exist' else
           json_user = user.toJSON()
@@ -91,21 +91,21 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid', fetchuser, getuser
 
   deluser = (req, res) ->
-    users.removeUser req.user_id, () ->
+    users.removeUser req.domain, req.user_id, () ->
       res.json { message: 'user deleted' }
 
   app.del '/users/me', deluser
   app.del '/users/:userid', fetchuser, deluser
 
   putuser = (req, res) ->
-    users.findUser _id: req.user_id, (err, user) ->
+    users.findUser req.domain, _id: req.user_id, (err, user) ->
       if err then res.json err.code, message: err.message else
         if user.permission_level isnt 0 then res.json 403, message: 'you are already registered' else
           if not req.body.email? then res.json 400, message: 'must provide an email to register with' else
             if not req.body.username? then res.json 400, message: 'must provide a username to register with' else
               if not req.body.password? then res.json 400, message: 'must provide a password to register with' else
                 data = _.pick req.body, 'email', 'username', 'password'
-                users.registerUser req.user_id, data, (err, user) ->
+                users.registerUser req.domain, req.user_id, data, (err, user) ->
                   if err then res.json err.code, message: err.msg else
                     res.json user
 
@@ -113,7 +113,7 @@ module.exports = (parentDomain) ->
   app.put '/users/:userid', fetchuser, putuser
 
   getvotes = (req, res) ->
-    users.findUser { _id: req.user_id }, (err, user) ->
+    users.findUser req.domain, { _id: req.user_id }, (err, user) ->
       if err then res.json err.code, message: err.msg else
         res.json user.getVotes()
 
@@ -122,7 +122,7 @@ module.exports = (parentDomain) ->
 
   postvote = (req, res) ->
     if not req.body.runnable? then res.json 400, message: 'must include runnable to vote on' else
-      runnables.vote req.user_id, req.body.runnable, (err, vote) ->
+      runnables.vote req.domain, req.user_id, req.body.runnable, (err, vote) ->
         if err then res.json err.code, message: err.msg else
           res.json 201, vote
 
@@ -130,8 +130,8 @@ module.exports = (parentDomain) ->
   app.post '/users/:userid/votes', fetchuser, postvote
 
   removevote = (req, res) ->
-    users.findUser { _id: req.user_id }, (err, user) ->
-      user.removeVote req.params.voteid, (err) ->
+    users.findUser req.domain, { _id: req.user_id }, (err, user) ->
+      user.removeVote req.domain, req.params.voteid, (err) ->
         if err then res.json err.code, message: err.msg else
           res.json { message: 'removed vote' }
 
@@ -140,7 +140,7 @@ module.exports = (parentDomain) ->
 
   postrunnable = (req, res) ->
     if not req.query.from? then res.json 400, message: 'must provide a runnable to fork from' else
-      runnables.createContainer req.user_id, req.query.from, (err, container) ->
+      runnables.createContainer req.domain, req.user_id, req.query.from, (err, container) ->
         if err then res.json err.code, message: err.msg else
           res.json 201, container
 
@@ -149,7 +149,7 @@ module.exports = (parentDomain) ->
 
   getrunnables = (req, res) ->
     parent = req.query.parent
-    runnables.listContainers req.user_id, parent, (err, containers) ->
+    runnables.listContainers req.domain, req.user_id, parent, (err, containers) ->
       if err then res.json err.code, message: err.msg else
         res.json containers
 
@@ -157,7 +157,7 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables', fetchuser, getrunnables
 
   getrunnable = (req, res) ->
-    runnables.getContainer req.user_id, req.params.runnableid, (err, container) ->
+    runnables.getContainer req.domain, req.user_id, req.params.runnableid, (err, container) ->
       if err then res.json err.code, message: err.msg else
         res.json container
 
@@ -167,20 +167,20 @@ module.exports = (parentDomain) ->
   putrunnable = (req, res) ->
     if not req.body.running? then res.json 400, message: 'must provide a running parameter' else
       if not req.body.name? then res.json 400, message: 'must provide a runnable name' else
-        runnables.updateName req.user_id, req.params.runnableid, req.body.name, (err, runnable) ->
+        runnables.updateName req.domain, req.user_id, req.params.runnableid, req.body.name, (err, runnable) ->
           if err then res.json err.code, message: err.msg else
             if req.body.running
-              runnables.startContainer req.user_id, req.params.runnableid, (err, runnable) ->
+              runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
                 res.json runnable
             else
-              runnables.stopContainer req.user_id, req.params.runnableid, (err, runnable) ->
+              runnables.stopContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
                 res.json runnable
 
   app.put '/users/me/runnables/:runnableid', putrunnable
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
 
   delrunnable = (req, res) ->
-    runnables.removeContainer req.user_id, req.params.runnableid, (err) ->
+    runnables.removeContainer req.domain, req.user_id, req.params.runnableid, (err) ->
       if err then res.json err.code, message: err.msg else
         res.json { message : 'runnable deleted' }
 
@@ -188,7 +188,7 @@ module.exports = (parentDomain) ->
   app.del '/users/:userid/runnables/:runnableid', fetchuser, delrunnable
 
   gettags = (req, res) ->
-    runnables.getContainerTags req.params.id, (err, tags) ->
+    runnables.getContainerTags req.domain, req.params.id, (err, tags) ->
       if err then res.json err.code, message: err.msg else
         res.json tags
 
@@ -197,7 +197,7 @@ module.exports = (parentDomain) ->
 
   posttag = (req, res) ->
     if not req.body.name? then res.json 400, message: 'tag must include a name field' else
-      runnables.addContainerTag req.user_id, req.params.id, req.body.name, (err, tag) ->
+      runnables.addContainerTag req.domain, req.user_id, req.params.id, req.body.name, (err, tag) ->
         if err then res.json err.code, message: err.msg else
           res.json 201, tag
 
@@ -205,7 +205,7 @@ module.exports = (parentDomain) ->
   app.post '/users/:userid/runnables/:id/tags', fetchuser, posttag
 
   gettag = (req, res) ->
-    runnables.getContainerTag req.params.id, req.params.tagId, (err, tag) ->
+    runnables.getContainerTag req.domain, req.params.id, req.params.tagId, (err, tag) ->
       if err then res.json err.code, message: err.msg else
         res.json tag
 
@@ -213,7 +213,7 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables/:id/tags/:tagId', fetchuser, gettag
 
   deltag = (req, res) ->
-    runnables.removeContainerTag req.user_id, req.params.id, req.params.tagId, (err) ->
+    runnables.removeContainerTag req.domain, req.user_id, req.params.id, req.params.tagId, (err) ->
       if err then res.json err.code, message: err.msg else
         res.json { message: 'tag deleted' }
 
@@ -225,7 +225,7 @@ module.exports = (parentDomain) ->
     dir = req.query.dir?
     default_tag = req.query.default?
     path = req.query.path
-    runnables.listFiles req.user_id, req.params.runnableid, content, dir, default_tag, path, (err, files) ->
+    runnables.listFiles req.domain, req.user_id, req.params.runnableid, content, dir, default_tag, path, (err, files) ->
       if err then res.json err.code, message: err.msg else
         res.json files
 
@@ -233,7 +233,7 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables/:runnableid/files', fetchuser, listfiles
 
   syncfiles = (req, res) ->
-    runnables.syncFiles req.user_id, req.params.id, (err) ->
+    runnables.syncFiles req.domain, req.user_id, req.params.id, (err) ->
       if err then res.json err.code, message: err.msg else
         res.json 201, { message: 'files synced successfully', date: new Date }
 
@@ -241,25 +241,28 @@ module.exports = (parentDomain) ->
   app.post '/users/:userid/runnables/:id/sync', fetchuser, syncfiles
 
   createfile = (req, res) ->
-    if req.body.dir?
-      if not req.body.name? then res.json 400, message: 'dir must include a name field' else
-        if not req.body.path? then res.json 400, message: 'dir must include a path field'  else
-          runnables.createDirectory req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
-            if err then res.json err.code, message: err.msg else
-              res.json 201, dir
+    if req.headers['content-type'] isnt 'application/json'
+      res.json 400, message: 'content type must be application/json'
     else
-      if not req.body.name? then res.json 400, message: 'file must include a name field' else
-        if not req.body.content? then res.json 400, message: 'file must include a content field' else
-          if not req.body.path? then res.json 400, message: 'file must include a path field' else
-            runnables.createFile req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
+      if req.body.dir?
+        if not req.body.name? then res.json 400, message: 'dir must include a name field' else
+          if not req.body.path? then res.json 400, message: 'dir must include a path field'  else
+            runnables.createDirectory req.domain, req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
               if err then res.json err.code, message: err.msg else
-                res.json 201, file
+                res.json 201, dir
+      else
+        if not req.body.name? then res.json 400, message: 'file must include a name field' else
+          if not req.body.content? then res.json 400, message: 'file must include a content field' else
+            if not req.body.path? then res.json 400, message: 'file must include a path field' else
+              runnables.createFile req.domain, req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
+                if err then res.json err.code, message: err.msg else
+                  res.json 201, file
 
   app.post '/users/me/runnables/:id/files', createfile
   app.post '/users/:userid/runnables/:id/files', fetchuser, createfile
 
   getfile = (req, res) ->
-    runnables.readFile req.user_id, req.params.id, req.params.fileid, (err, file) ->
+    runnables.readFile req.domain, req.user_id, req.params.id, req.params.fileid, (err, file) ->
       if err then res.json err.code, message: err.msg else
         res.json file
 
@@ -267,24 +270,27 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables/:id/files/:fileid', fetchuser, getfile
 
   updatefile = (req, res) ->
-    async.waterfall [
-      (cb) ->
-        file = null
-        if not req.body.content? then cb null, file else
-          runnables.updateFile req.user_id, req.params.id, req.params.fileid, req.body.content, cb
-      (file, cb) ->
-        if not req.body.path? then cb null, file else
-          runnables.moveFile req.user_id, req.params.id, req.params.fileid, req.body.path, cb
-      (file, cb) ->
-        if not req.body.name? then cb null, file else
-          runnables.renameFile req.user_id, req.params.id, req.params.fileid, req.body.name, cb
-      (file, cb) ->
-        if not req.body.default? then cb null, file else
-          runnables.defaultFile req.user_id, req.params.id, req.params.fileid, cb
-    ], (err, file) ->
-      if err then res.json err.code, message: err.msg else
-        if not file then res.json 400, message: 'must provide content, name, path or tag to update operation' else
-          res.json file
+    if req.headers['content-type'] isnt 'application/json'
+      res.json 400, message: 'content type must be application/json'
+    else
+      async.waterfall [
+        (cb) ->
+          file = null
+          if not req.body.content? then cb null, file else
+            runnables.updateFile req.domain, req.user_id, req.params.id, req.params.fileid, req.body.content, cb
+        (file, cb) ->
+          if not req.body.path? then cb null, file else
+            runnables.moveFile req.domain, req.user_id, req.params.id, req.params.fileid, req.body.path, cb
+        (file, cb) ->
+          if not req.body.name? then cb null, file else
+            runnables.renameFile req.domain, req.user_id, req.params.id, req.params.fileid, req.body.name, cb
+        (file, cb) ->
+          if not req.body.default? then cb null, file else
+            runnables.defaultFile req.domain, req.user_id, req.params.id, req.params.fileid, cb
+      ], (err, file) ->
+        if err then res.json err.code, message: err.msg else
+          if not file then res.json 400, message: 'must provide content, name, path or tag to update operation' else
+            res.json file
 
   app.put '/users/me/runnables/:id/files/:fileid', updatefile
   app.patch '/users/me/runnables/:id/files/:fileid', updatefile
@@ -293,7 +299,7 @@ module.exports = (parentDomain) ->
 
   deletefile = (req, res) ->
     recursive = req.query.recursive?
-    runnables.deleteFile req.user_id, req.params.id, req.params.fileid, recursive, (err) ->
+    runnables.deleteFile req.domain, req.user_id, req.params.id, req.params.fileid, recursive, (err) ->
       if err then res.json err.code, message: err.msg else
         res.json { message: 'file deleted' }
 

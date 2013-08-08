@@ -220,7 +220,43 @@ describe 'runnables api', ->
                                         res.body.should.not.have.property 'files'
                                         instance.stop done
 
-  it 'should be able to save a ::runnable', (done) ->
+  it 'should be able to ::save a ::runnable', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createImage 'node.js', (err, runnableId) ->
+          if err then done err else
+            helpers.authedUser (err, user) ->
+              if err then done err else
+                user.get("http://localhost:#{configs.port}/users/me")
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 200
+                      userId = res.body._id
+                      user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                        .end (err, res) ->
+                          if err then done err else
+                            res.should.have.status 201
+                            userRunnableId = res.body._id
+                            user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                              .set('content-type', 'application/json')
+                              .send(JSON.stringify({ name: 'new name', running: false }))
+                              .end (err, res) ->
+                                if err then done err else
+                                  res.should.have.status 200
+                                  user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
+                                    .end (err, res) ->
+                                      if err then done err else
+                                        res.should.have.status 201
+                                        res.body.should.have.property '_id'
+                                        res.body.should.have.property 'docker_id'
+                                        res.body.should.have.property 'parent', runnableId
+                                        res.body.should.not.have.property 'files'
+                                        res.body.should.have.property 'owner', userId
+                                        res.body.should.have.property 'name', 'new name'
+                                        res.body.should.not.have.property 'files'
+                                        instance.stop done
+
+  it 'should not be able to ::save a ::runnable if the name already exists', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createImage 'node.js', (err, runnableId) ->
@@ -240,16 +276,11 @@ describe 'runnables api', ->
                             user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
                               .end (err, res) ->
                                 if err then done err else
-                                  res.should.have.status 201
-                                  res.body.should.have.property '_id'
-                                  res.body.should.have.property 'docker_id'
-                                  res.body.should.have.property 'parent', runnableId
-                                  res.body.should.not.have.property 'files'
-                                  res.body.should.have.property 'owner', userId
-                                  res.body.should.not.have.property 'files'
+                                  res.should.have.status 403
+                                  res.body.should.have.property 'message', 'a shared runnable by that name already exists'
                                   instance.stop done
 
-  it 'should not be able to save a ::runnable from a container you do not own', (done) ->
+  it 'should not be able to ::save a ::runnable from a container you do not own', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createImage 'node.js', (err, runnableId) ->
@@ -292,22 +323,27 @@ describe 'runnables api', ->
                           if err then done err else
                             res.should.have.status 201
                             userRunnableId = res.body._id
-                            user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
+                            user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                              .set('content-type', 'application/json')
+                              .send(JSON.stringify({ name: 'new name', running: false }))
                               .end (err, res) ->
                                 if err then done err else
-                                  res.should.have.status 201
-                                  res.body.should.have.property '_id'
-                                  res.body.should.have.property 'docker_id'
-                                  res.body.should.have.property 'parent', runnableId
-                                  res.body.should.have.property 'owner', userId
-                                  targetId = res.body._id
-                                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                                  user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
                                     .end (err, res) ->
                                       if err then done err else
-                                      res.should.have.status 200
-                                      res.body.should.have.property 'target', targetId
-                                      res.body.should.not.have.property 'files'
-                                      instance.stop done
+                                        res.should.have.status 201
+                                        res.body.should.have.property '_id'
+                                        res.body.should.have.property 'docker_id'
+                                        res.body.should.have.property 'parent', runnableId
+                                        res.body.should.have.property 'owner', userId
+                                        targetId = res.body._id
+                                        user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                                          .end (err, res) ->
+                                            if err then done err else
+                                            res.should.have.status 200
+                                            res.body.should.have.property 'target', targetId
+                                            res.body.should.not.have.property 'files'
+                                            instance.stop done
 
   it 'should be able to ::update a previously saved ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -328,31 +364,36 @@ describe 'runnables api', ->
                             userRunnableId = res.body._id
                             res.body.should.have.property 'docker_id'
                             res.body.should.have.property 'owner', userId
-                            user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
+                            user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                              .set('content-type', 'application/json')
+                              .send(JSON.stringify({ name: 'new name', running: false }))
                               .end (err, res) ->
                                 if err then done err else
-                                  res.should.have.status 201
-                                  res.body.should.have.property '_id'
-                                  publishedId = res.body._id
-                                  res.body.should.have.property 'docker_id'
-                                  res.body.should.have.property 'parent', runnableId
-                                  res.body.should.have.property 'owner', userId
-                                  user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
-                                    .set('content-type', 'application/json')
-                                    .send(JSON.stringify(name: 'updated project name', running: false))
+                                  user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
                                     .end (err, res) ->
                                       if err then done err else
-                                        res.should.have.status 200
-                                        res.body.should.have.property 'name', 'updated project name'
-                                        res.body.should.have.property 'running', false
-                                        res.body.should.not.have.property 'files'
-                                        user.put("http://localhost:#{configs.port}/runnables/#{publishedId}?from=#{userRunnableId}")
+                                        res.should.have.status 201
+                                        res.body.should.have.property '_id'
+                                        publishedId = res.body._id
+                                        res.body.should.have.property 'docker_id'
+                                        res.body.should.have.property 'parent', runnableId
+                                        res.body.should.have.property 'owner', userId
+                                        user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                                          .set('content-type', 'application/json')
+                                          .send(JSON.stringify(name: 'updated project name', running: false))
                                           .end (err, res) ->
                                             if err then done err else
                                               res.should.have.status 200
                                               res.body.should.have.property 'name', 'updated project name'
+                                              res.body.should.have.property 'running', false
                                               res.body.should.not.have.property 'files'
-                                              instance.stop done
+                                              user.put("http://localhost:#{configs.port}/runnables/#{publishedId}?from=#{userRunnableId}")
+                                                .end (err, res) ->
+                                                  if err then done err else
+                                                    res.should.have.status 200
+                                                    res.body.should.have.property 'name', 'updated project name'
+                                                    res.body.should.not.have.property 'files'
+                                                    instance.stop done
 
   it 'should not be able to ::update a published ::runnable you do not own', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -397,14 +438,19 @@ describe 'runnables api', ->
                           if err then done err else
                             res.should.have.status 201
                             userRunnableId = res.body._id
-                            user.put("http://localhost:#{configs.port}/runnables/#{runnableId}?from=#{userRunnableId}")
+                            user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                              .set('content-type', 'application/json')
+                              .send(JSON.stringify({ name: 'new name', running: false }))
                               .end (err, res) ->
                                 if err then done err else
-                                  res.should.have.status 200
-                                  res.body.should.have.property 'owner'
-                                  res.body.should.not.have.property 'files'
-                                  res.body.owner.should.not.equal userId
-                                  instance.stop done
+                                  user.put("http://localhost:#{configs.port}/runnables/#{runnableId}?from=#{userRunnableId}")
+                                    .end (err, res) ->
+                                      if err then done err else
+                                        res.should.have.status 200
+                                        res.body.should.have.property 'owner'
+                                        res.body.should.not.have.property 'files'
+                                        res.body.owner.should.not.equal userId
+                                        instance.stop done
 
   it 'should report error if the ::runnable provided named base does not exist', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -442,17 +488,22 @@ describe 'runnables api', ->
                     if err then done err else
                       res.should.have.status 201
                       runnableId = res.body._id
-                      user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+                      user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
+                        .set('content-type', 'application/json')
+                        .send(JSON.stringify({ name: 'new name', running: false }))
                         .end (err, res) ->
                           if err then done err else
-                            res.should.have.status 201
-                            publishedRunnableId = res.body._id
-                            user.del("http://localhost:#{configs.port}/runnables/#{publishedRunnableId}")
+                            user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
                               .end (err, res) ->
                                 if err then done err else
-                                  res.should.have.status 200
-                                  res.body.should.have.property 'message', 'runnable deleted'
-                                  instance.stop done
+                                  res.should.have.status 201
+                                  publishedRunnableId = res.body._id
+                                  user.del("http://localhost:#{configs.port}/runnables/#{publishedRunnableId}")
+                                    .end (err, res) ->
+                                      if err then done err else
+                                        res.should.have.status 200
+                                        res.body.should.have.property 'message', 'runnable deleted'
+                                        instance.stop done
 
   it 'should be able to delete a published ::runnable that you own without deleting every published image ::fix2', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -466,28 +517,39 @@ describe 'runnables api', ->
                     if err then done err else
                       res.should.have.status 201
                       runnableId = res.body._id
-                      user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
+                      user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
+                        .set('content-type', 'application/json')
+                        .send(JSON.stringify({ name: 'new name', running: false }))
                         .end (err, res) ->
                           if err then done err else
-                            res.should.have.status 201
-                            firstPublishedRunnableId = res.body._id
+                            res.should.have.status 200
                             user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
                               .end (err, res) ->
                                 if err then done err else
                                   res.should.have.status 201
-                                  secondPublishedRunnableId = res.body._id
-                                  user.del("http://localhost:#{configs.port}/runnables/#{secondPublishedRunnableId}")
+                                  firstPublishedRunnableId = res.body._id
+                                  user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
+                                    .set('content-type', 'application/json')
+                                    .send(JSON.stringify({ name: 'new name 2', running: false }))
                                     .end (err, res) ->
                                       if err then done err else
-                                        res.should.have.status 200
-                                        res.body.should.have.property 'message', 'runnable deleted'
-                                        user.get("http://localhost:#{configs.port}/runnables/#{firstPublishedRunnableId}")
+                                        user.post("http://localhost:#{configs.port}/runnables?from=#{runnableId}")
                                           .end (err, res) ->
                                             if err then done err else
-                                              res.should.have.status 200
-                                              res.body.should.not.have.property 'files'
-                                              res.body.should.have.property '_id', firstPublishedRunnableId
-                                              instance.stop done
+                                              res.should.have.status 201
+                                              secondPublishedRunnableId = res.body._id
+                                              user.del("http://localhost:#{configs.port}/runnables/#{secondPublishedRunnableId}")
+                                                .end (err, res) ->
+                                                  if err then done err else
+                                                    res.should.have.status 200
+                                                    res.body.should.have.property 'message', 'runnable deleted'
+                                                    user.get("http://localhost:#{configs.port}/runnables/#{firstPublishedRunnableId}")
+                                                      .end (err, res) ->
+                                                        if err then done err else
+                                                          res.should.have.status 200
+                                                          res.body.should.not.have.property 'files'
+                                                          res.body.should.have.property '_id', firstPublishedRunnableId
+                                                          instance.stop done
 
   it 'should create a ::runnable from an existing published one that someone else owns', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -501,18 +563,23 @@ describe 'runnables api', ->
                     if err then done err else
                       res.should.have.status 201
                       privateRunnableId = res.body._id
-                      user.post("http://localhost:#{configs.port}/runnables?from=#{privateRunnableId}")
+                      user.put("http://localhost:#{configs.port}/users/me/runnables/#{privateRunnableId}")
+                        .set('content-type', 'application/json')
+                        .send(JSON.stringify({ name: 'new name', running: false }))
                         .end (err, res) ->
                           if err then done err else
-                            res.should.have.status 201
-                            publishedId = res.body._id
-                            helpers.authedUser (err, user2) ->
-                              if err then done err else
-                                user2.post("http://localhost:#{configs.port}/users/me/runnables?from=#{publishedId}")
-                                  .end (err, res) ->
+                            user.post("http://localhost:#{configs.port}/runnables?from=#{privateRunnableId}")
+                              .end (err, res) ->
+                                if err then done err else
+                                  res.should.have.status 201
+                                  publishedId = res.body._id
+                                  helpers.authedUser (err, user2) ->
                                     if err then done err else
-                                      res.should.have.status 201
-                                      instance.stop done
+                                      user2.post("http://localhost:#{configs.port}/users/me/runnables?from=#{publishedId}")
+                                        .end (err, res) ->
+                                          if err then done err else
+                                            res.should.have.status 201
+                                            instance.stop done
 
   it 'should create a ::runnable from an existing published one from channel', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -541,24 +608,36 @@ describe 'runnables api', ->
                     if err then done err else
                       res.should.have.status 201
                       userRunnableId = res.body._id
-                      user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
+                      user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                        .set('content-type', 'application/json')
+                        .send(JSON.stringify({ name: 'new name 7', running: false }))
                         .end (err, res) ->
                           if err then done err else
-                            res.should.have.status 201
-                            publishedId = res.body._id
-                            helpers.authedUser (err, user2) ->
-                              if err then done err else
-                                user2.post("http://localhost:#{configs.port}/users/me/runnables?from=#{publishedId}")
-                                  .end (err, res) ->
+                            res.should.have.status 200
+                            user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
+                              .end (err, res) ->
+                                if err then done err else
+                                  console.log res.body.message
+                                  res.should.have.status 201
+                                  publishedId = res.body._id
+                                  helpers.authedUser (err, user2) ->
                                     if err then done err else
-                                      res.should.have.status 201
-                                      user2ownRunnableId = res.body._id
-                                      user2.post("http://localhost:#{configs.port}/runnables?from=#{user2ownRunnableId}")
+                                      user2.post("http://localhost:#{configs.port}/users/me/runnables?from=#{publishedId}")
                                         .end (err, res) ->
                                           if err then done err else
                                             res.should.have.status 201
-                                            res.body.should.have.property 'parent', publishedId
-                                            instance.stop done
+                                            user2ownRunnableId = res.body._id
+                                            user2.put("http://localhost:#{configs.port}/users/me/runnables/#{user2ownRunnableId}")
+                                              .set('content-type', 'application/json')
+                                              .send(JSON.stringify({ name: 'new name 3', running: false }))
+                                              .end (err, res) ->
+                                                if err then done err else
+                                                  user2.post("http://localhost:#{configs.port}/runnables?from=#{user2ownRunnableId}")
+                                                    .end (err, res) ->
+                                                      if err then done err else
+                                                        res.should.have.status 201
+                                                        res.body.should.have.property 'parent', publishedId
+                                                        instance.stop done
 
   it 'should be able to retrieve a users ::runnable by its id', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -689,22 +768,29 @@ describe 'runnables api', ->
                           .end (err, res) ->
                             res.should.have.status 201
                             ownRunnable = res.body._id
-                            if err then done err else
-                              user.post("http://localhost:#{configs.port}/runnables?from=#{ownRunnable}")
-                                .set('runnable-token', token)
-                                .end (err, res) ->
-                                  res.should.have.status 201
-                                  publishedId = res.body._id
-                                  user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}")
-                                    .set('runnable-token', token)
-                                    .end (err, res) ->
-                                      if err then done err else
-                                        res.should.have.status 200
-                                        res.body.should.be.a.array
-                                        res.body.length.should.equal 1
-                                        res.body[0]._id.should.equal publishedId
-                                        instance.configs.passwordSalt = oldSalt
-                                        instance.stop done
+                            user.put("http://localhost:#{configs.port}/users/me/runnables/#{ownRunnable}")
+                              .set('runnable-token', token)
+                              .set('content-type', 'application/json')
+                              .send(JSON.stringify({ name: 'new name 2', running: false }))
+                              .end (err, res) ->
+                                if err then done err else
+                                  res.should.have.status 200
+                                  if err then done err else
+                                    user.post("http://localhost:#{configs.port}/runnables?from=#{ownRunnable}")
+                                      .set('runnable-token', token)
+                                      .end (err, res) ->
+                                        res.should.have.status 201
+                                        publishedId = res.body._id
+                                        user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}")
+                                          .set('runnable-token', token)
+                                          .end (err, res) ->
+                                            if err then done err else
+                                              res.should.have.status 200
+                                              res.body.should.be.a.array
+                                              res.body.length.should.equal 1
+                                              res.body[0]._id.should.equal publishedId
+                                              instance.configs.passwordSalt = oldSalt
+                                              instance.stop done
 
   it 'should be possible to list all ::runnables which are published', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -777,7 +863,7 @@ describe 'runnables api', ->
                       runnableId = res.body._id
                       user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                         .set('content-type', 'application/json')
-                        .send(JSON.stringify({ running: true, name: name }))
+                        .send(JSON.stringify({ running: true, name: 'name' }))
                         .end (err, res) ->
                           if err then done err else
                             res.should.have.status 200
