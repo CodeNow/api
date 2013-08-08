@@ -244,7 +244,7 @@ module.exports = (parentDomain) ->
     if req.headers['content-type'] isnt 'application/json'
       res.json 400, message: 'content type must be application/json'
     else
-      if req.body.dir?
+      if req.body.dir
         if not req.body.name? then res.json 400, message: 'dir must include a name field' else
           if not req.body.path? then res.json 400, message: 'dir must include a path field'  else
             runnables.createDirectory req.domain, req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
