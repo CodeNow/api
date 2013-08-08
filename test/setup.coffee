@@ -92,7 +92,7 @@ process.on 'SIGINT', () ->
 
 wrapDone = (done) ->
   donedone = done
-  done = (err) ->
+  (err) ->
     if err? then cleanup () -> donedone err else donedone()
 
 cleanup = (cb) ->
