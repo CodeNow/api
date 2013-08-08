@@ -385,7 +385,7 @@ Runnables =
   syncFiles: (domain, userId, runnableId, cb) ->
     fetchContainer domain, userId, runnableId, (err, container) ->
       if err then cb err else
-        container.syncFiles cb
+        container.syncFiles domain, cb
 
   listFiles: (domain, userId, runnableId, content, dir, default_tag, path, cb) ->
     fetchContainer domain, userId, runnableId, (err, container) ->

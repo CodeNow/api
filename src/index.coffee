@@ -53,8 +53,8 @@ class App
       res.json err.code, message: err.msg
       if configs.logErrorStack then debug "threw exception: #{err.stack}"
       @stop () =>
-        if cluster.isWorker
-          @cleanup_worker()
+        if cluster.isWorker then @cleanup_worker() else
+          process.removeAllListneers 'uncaughtException'
     app.get '/throws', (req, res) ->
       process.nextTick req.domain.bind () -> throw new Error 'zomg!'
     app.get '/', (req, res) -> res.json { message: 'runnable api' }

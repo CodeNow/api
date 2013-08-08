@@ -167,7 +167,7 @@ containerSchema.methods.syncFiles = (domain, cb) ->
   sync @long_docker_id, @, (err) =>
     if err then cb err else
       @last_write = new Date()
-      @save domain.intercept () ->
+      @save domain.intercept () =>
         cb null, @
 
 containerSchema.methods.createFile = (domain, name, path, content, cb) ->
