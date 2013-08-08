@@ -16,10 +16,6 @@ mongoose.connect configs.mongo
 if configs.rollbar
   rollbar.handleUncaughtExceptions configs.rollbar
 
-process.on 'uncaughtException', (err) ->
-  console.log err
-  console.log 'UNCAUGHT EXCEPTION'
-
 class App
 
   constructor: (@configs, @domain) ->
@@ -64,6 +60,10 @@ class App
     app.get '/', (req, res) -> res.json { message: 'runnable api' }
     app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
     @server = http.createServer app
+    process.on 'uncaughtException', (err) =>
+      @stop () =>
+        if cluster.isWorker
+          @cleanup_worker()
 
   cleanup_worker: () ->
     workerId = cluster.worker.process.pid

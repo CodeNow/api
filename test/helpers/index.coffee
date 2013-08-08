@@ -9,14 +9,7 @@ Helpers =
   createServer: (configs, done, cb) ->
     d = domain.create()
     d.on 'error', (err) ->
-      isdone = false
-      cleanup = setTimeout () ->
-        isdone = true
-        done()
-      , 5000
-      instance.stop () ->
-        clearTimeout cleanup
-        if not isdone then done err
+      instance.stop () -> done err
     instance = new apiserver configs, d
     d.run () ->
       instance.start (err) ->

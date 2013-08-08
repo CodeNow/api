@@ -21,7 +21,6 @@ docker.listContainers
   queryParams:
     all: true
 , domain.intercept (list) ->
-  console.log list.length
   async.filterSeries list, (dockerContainer, cb) ->
     docker_id = dockerContainer.Id.substring 0,12
     if /^Up /.test dockerContainer.Status
@@ -41,7 +40,6 @@ docker.listContainers
             else
               cb true
   , (filtered) ->
-    console.log 'filtered', filtered.length
     async.eachLimit filtered, 3, (dockerContainer, cb) ->
       docker.removeContainer
         id: dockerContainer.Id
@@ -55,5 +53,4 @@ docker.listContainers
           , domain.intercept () ->
             cb null
     , domain.intercept () ->
-      console.log 'done'
       process.exit 0

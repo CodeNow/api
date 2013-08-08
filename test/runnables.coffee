@@ -608,14 +608,16 @@ describe 'runnables api', ->
                     if err then done err else
                       res.should.have.status 201
                       userRunnableId = res.body._id
-                      user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
+                      user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
                         .set('content-type', 'application/json')
-                        .send(JSON.stringify({ name: 'new name 2', running: false }))
+                        .send(JSON.stringify({ name: 'new name 7', running: false }))
                         .end (err, res) ->
                           if err then done err else
+                            res.should.have.status 200
                             user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
                               .end (err, res) ->
                                 if err then done err else
+                                  console.log res.body.message
                                   res.should.have.status 201
                                   publishedId = res.body._id
                                   helpers.authedUser (err, user2) ->
@@ -627,7 +629,7 @@ describe 'runnables api', ->
                                             user2ownRunnableId = res.body._id
                                             user2.put("http://localhost:#{configs.port}/users/me/runnables/#{user2ownRunnableId}")
                                               .set('content-type', 'application/json')
-                                              .send(JSON.stringify({ name: 'new name 2', running: false }))
+                                              .send(JSON.stringify({ name: 'new name 3', running: false }))
                                               .end (err, res) ->
                                                 if err then done err else
                                                   user2.post("http://localhost:#{configs.port}/runnables?from=#{user2ownRunnableId}")
@@ -766,22 +768,29 @@ describe 'runnables api', ->
                           .end (err, res) ->
                             res.should.have.status 201
                             ownRunnable = res.body._id
-                            if err then done err else
-                              user.post("http://localhost:#{configs.port}/runnables?from=#{ownRunnable}")
-                                .set('runnable-token', token)
-                                .end (err, res) ->
-                                  res.should.have.status 201
-                                  publishedId = res.body._id
-                                  user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}")
-                                    .set('runnable-token', token)
-                                    .end (err, res) ->
-                                      if err then done err else
-                                        res.should.have.status 200
-                                        res.body.should.be.a.array
-                                        res.body.length.should.equal 1
-                                        res.body[0]._id.should.equal publishedId
-                                        instance.configs.passwordSalt = oldSalt
-                                        instance.stop done
+                            user.put("http://localhost:#{configs.port}/users/me/runnables/#{ownRunnable}")
+                              .set('runnable-token', token)
+                              .set('content-type', 'application/json')
+                              .send(JSON.stringify({ name: 'new name 2', running: false }))
+                              .end (err, res) ->
+                                if err then done err else
+                                  res.should.have.status 200
+                                  if err then done err else
+                                    user.post("http://localhost:#{configs.port}/runnables?from=#{ownRunnable}")
+                                      .set('runnable-token', token)
+                                      .end (err, res) ->
+                                        res.should.have.status 201
+                                        publishedId = res.body._id
+                                        user.get("http://localhost:#{configs.port}/runnables?owner=#{owner}")
+                                          .set('runnable-token', token)
+                                          .end (err, res) ->
+                                            if err then done err else
+                                              res.should.have.status 200
+                                              res.body.should.be.a.array
+                                              res.body.length.should.equal 1
+                                              res.body[0]._id.should.equal publishedId
+                                              instance.configs.passwordSalt = oldSalt
+                                              instance.stop done
 
   it 'should be possible to list all ::runnables which are published', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -854,7 +863,7 @@ describe 'runnables api', ->
                       runnableId = res.body._id
                       user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                         .set('content-type', 'application/json')
-                        .send(JSON.stringify({ running: true, name: name }))
+                        .send(JSON.stringify({ running: true, name: 'name' }))
                         .end (err, res) ->
                           if err then done err else
                             res.should.have.status 200

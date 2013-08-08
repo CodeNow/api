@@ -73,30 +73,26 @@ userSchema.virtual('registered').get () ->
 userSchema.virtual('isModerator').get () ->
   this.permission_level >= 5
 
-userSchema.statics.createUser = (cb) ->
+userSchema.statics.createUser = (domain, cb) ->
   user = new @
-  user.save (err) =>
-    if err then throw err
+  user.save domain.intercept () ->
     cb null, user
 
-userSchema.statics.findUser = (params, cb) ->
-  @findOne params, (err, user) ->
-    if err then throw err
+userSchema.statics.findUser = (domain, params, cb) ->
+  @findOne params, domain.intercept (user) ->
     if user
       userLifetime = (new Date()).getTime() - user.created.getTime()
       if userLifetime >= configs.cookieExpires and user.permission_level is 0
         user = null
     cb null, user
 
-userSchema.statics.removeUser = (userId, cb) ->
-  @remove { _id: userId }, (err) ->
-    if err then throw err
+userSchema.statics.removeUser = (domain, userId, cb) ->
+  @remove { _id: userId }, domain.intercept () ->
     cb()
 
-userSchema.statics.loginUser = (login, password, cb) ->
+userSchema.statics.loginUser = (domain, login, password, cb) ->
   query = { $or: [ {username: login}, {email: login} ] }
-  @findOne query, (err, user) ->
-    if err then throw err
+  @findOne query, domain.intercept (user) ->
     if not user then cb error 404, 'user not found' else
       if configs.passwordSalt
         bcrypt.compare password + configs.passwordSalt, user.password, (err, matches) ->
@@ -107,31 +103,28 @@ userSchema.statics.loginUser = (login, password, cb) ->
         if password isnt user.password then cb error 403, 'invalid password' else
           cb null, user._id
 
-userSchema.statics.registerUser = (userId, data, cb) ->
+userSchema.statics.registerUser = (domain, userId, data, cb) ->
   setPassword = (password) =>
-    @findOne { email: data.email }, (err, user) =>
-      if err then throw err
+    @findOne { email: data.email }, domain.intercept (user) =>
       if user then cb error 403, 'user already exists' else
         cmd = $set:
           email: data.email
           password: password
           permission_level: 1
         if data.username then cmd.$set.username = data.username
-        @findByIdAndUpdate userId, cmd, (err, user) ->
-          if err then throw err
+        @findByIdAndUpdate userId, cmd, domain.intercept (user) ->
           cb null, user
   if not configs.passwordSalt then setPassword data.password else
     bcrypt.hash data.password + configs.passwordSalt, 10, (err, hash) ->
       if err then throw err
       setPassword hash
 
-userSchema.statics.publicListWithIds = (userIds, cb) ->
+userSchema.statics.publicListWithIds = (domain, userIds, cb) ->
   fields =
     username : 1
     fb_userid: 1
     email    : 1
-  @find _id: $in: userIds, fields, (err, users) ->
-    if err then throw err
+  @find _id: $in: userIds, fields, domain.intercept (users) ->
     cb null, users.map (user) ->
       user = user.toJSON()
       user.email = undefined
@@ -145,25 +138,23 @@ userSchema.methods.getVotes = () ->
     votes.push json_vote
   votes
 
-userSchema.methods.addVote = (runnableId, cb) ->
+userSchema.methods.addVote = (domain, runnableId, cb) ->
   found = false
   for vote in @votes
     if vote.runnable.toString() is runnableId.toString()
       found = true
   if found then cb error 403, 'cannot vote on runnable more than once' else
     @votes.push runnable: runnableId
-    @save (err) =>
-      if err then throw err
+    @save domain.intercept () =>
       vote = @votes[@votes.length-1].toJSON()
       vote.runnable = encodeId vote.runnable
       cb null, vote
 
-userSchema.methods.removeVote = (voteId, cb) ->
+userSchema.methods.removeVote = (domain, voteId, cb) ->
   vote = @votes.id voteId
   if not vote then cb error 404, 'vote not found' else
     vote.remove()
-    @save (err) ->
-      if err then throw err
+    @save domain.intercept () ->
       cb()
 
 module.exports = mongoose.model 'Users', userSchema
