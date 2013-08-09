@@ -7,6 +7,13 @@ images = require './images'
 users = require './users'
 _ = require 'lodash'
 
+listFields =
+  _id:1,
+  name:1,
+  tags:1,
+  owner:1,
+  created:1
+
 Runnables =
 
   createImage: (domain, userId, from, sync, cb) ->
@@ -229,12 +236,12 @@ Runnables =
 
   listAll: (domain, sortByVotes, limit, page, cb) ->
     if not sortByVotes
-      images.find().skip(page*limit).limit(limit).exec domain.intercept (results) ->
+      images.find({}, listFields).skip(page*limit).limit(limit).exec domain.intercept (results) ->
         cb null, arrayToJSON results
     else
       users.aggregate voteSortPipeline(limit, limit*page), domain.intercept (results) ->
         async.map results, (result, cb) ->
-          images.findOne _id: result._id, domain.intercept (runnable) ->
+          images.findOne _id: result._id, listFields, domain.intercept (runnable) ->
             if not runnable then cb() else
               runnable.votes = result.number - 1
               cb null, runnable
@@ -256,13 +263,13 @@ Runnables =
       images.find(query).skip(page*limit).limit(limit).exec domain.intercept (results) ->
         cb null, arrayToJSON results
     else
-      images.find query, domain.intercept (selected) ->
+      images.find query, listFields, domain.intercept (selected) ->
         filter = [ ]
         for image in selected
           filter.push image._id
         users.aggregate voteSortPipelineFiltered(limit, limit*page, filter), domain.intercept (results) ->
           async.map results, (result, cb) ->
-            images.findOne { _id: result._id }, domain.intercept (runnable) ->
+            images.findOne { _id: result._id }, listFields, domain.intercept (runnable) ->
               if not runnable then cb() else
                 runnable.votes = result.number - 1
                 cb null, runnable
