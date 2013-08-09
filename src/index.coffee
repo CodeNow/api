@@ -14,7 +14,7 @@ channels = require './rest/channels'
 
 mongoose.connect configs.mongo
 if configs.rollbar
-  rollbar.handleUncaughtExceptions configs.rollbar
+  rollbar.init configs.rollbar.key, configs.rollbar.options
 
 class App
 
@@ -69,6 +69,8 @@ class App
     workerId = cluster.worker.process.pid
     debug 'sending exception message to master', workerId
     cluster.worker.send 'exception'
+    if configs.nodetime then nodetime.destroy()
+    if configs.rollbar then rollbar.shutdown()
     setTimeout () =>
       try
         debug 'waiting for worker to shut down gracefully', workerId
@@ -77,11 +79,10 @@ class App
           process.exit 1
         , 30000
         timer.unref()
-        if configs.nodetime then nodetime.destroy()
       catch exception_err
         if configs.logErrorStack then debug exception_err.stack
       debug 'disconnecting worker', workerId
       cluster.worker.disconnect()
-    , 90000
+    , 10000
 
 module.exports = App

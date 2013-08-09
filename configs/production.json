@@ -20,7 +20,14 @@
       "Draft Runnables": "/users/me/runnables"
     }
   },
-  "rollbar": "119509f9ba314df8a9ffbaf7b4812fb6",
+  "rollbar": {
+    "key": "119509f9ba314df8a9ffbaf7b4812fb6",
+    "options":  {
+      "root": "/home/ubuntu/api-server",
+      "branch": "master",
+      "environment": "production"
+    }
+  },
   "dnode_host": "10.0.2.232",
   "dnode_port": 13337,
   "dnode_access_timeout": "5 seconds",

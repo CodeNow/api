@@ -1,5 +1,6 @@
 eson = require 'eson'
 os = require 'os'
+path = require 'path'
 uuid = require 'node-uuid'
 env = process.env.NODE_ENV or 'development'
 
@@ -8,6 +9,7 @@ readConfigs = (filename) ->
   .use(eson.args())
   .use(eson.env())
   .use(eson.ms)
+  .use(eson.replace('{ROOT_DIR}', path.normalize(__dirname + '/..')))
   .use(eson.replace('{RAND_NUM}', uuid.v4().split('-')[0]))
   .use(eson.replace('{HOME_DIR}', process.env.HOME))
   .use(eson.replace('{CURR_DIR}', __dirname + '/../configs'))
