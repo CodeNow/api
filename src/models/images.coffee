@@ -54,10 +54,9 @@ imageSchema = new Schema
     type: Boolean
   tags:
     type: [
-      name:
-        index: true
-        sparse: true
-        type: String
+      channel: ObjectId
+      index: true
+      sparse: true
     ]
     default: [ ]
   service_cmds:

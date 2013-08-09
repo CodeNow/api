@@ -20,15 +20,15 @@ channelSchema = new Schema
     unique: true
   category:
     type: [
-        name:
-          type:String
-          index:
-            sparse:true
-        alias:
-          type: [String]
-          index:
-            sparse: true
-      ]
+      name:
+        type:String
+        index:
+          sparse:true
+      alias:
+        type: [String]
+        index:
+          sparse: true
+    ]
     default: []
 
 channelSchema.statics.getChannel = (domain, name, cb) ->
