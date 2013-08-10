@@ -131,6 +131,9 @@ containerSchema.statics.destroy = (domain, id, cb) ->
 
 containerSchema.methods.getProcessState = (domain, cb) ->
   docker.inspectContainer @docker_id, domain.intercept (result) ->
+    if not result.State? 
+      console.error 'bad result', result
+      throw new Error 'bad result from docker.inspectContainer'
     cb null, running: result.State.Running
 
 containerSchema.methods.start = (domain, cb) ->
