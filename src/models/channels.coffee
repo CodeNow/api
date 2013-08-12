@@ -50,6 +50,14 @@ channelSchema.statics.createChannel = (domain, userId, name, desc, cb) ->
           channel.save domain.intercept () ->
             cb null, channel.toJSON()
 
+channelSchema.statics.createImplicitChannel = (domain, name, cb) ->
+  channel = new @
+  channel.name = name
+  channel.alias = [name.toLowerCase()]
+  if name isnt name.toLowerCase() then channel.alias.push name
+  channel.save domain.intercept () ->
+    cb null, channel.toJSON()
+
 channelSchema.statics.listChannels = (domain, cb) ->
   @find { }, domain.intercept (channels) ->
     async.map channels, (channel, cb) ->
@@ -119,12 +127,19 @@ channelSchema.statics.deleteChannel = (domain, userId, channelId, cb) ->
           if user.permission_level < 5 then cb error 403, 'permission denied' else
             @findOne _id: channelId, domain.intercept (channel) ->
               if not channel then cb error 404, 'channel not found' else
-                # TODO: here we lookup the category, if it doesnt exist create it
-                # TODO: once we create it then we assign objectId to the element
-                channel.tags.push name: text
-                tagId = channel.tags[channel.tags.length-1]._id
-                channel.save domain.intercept () ->
-                  cb null, { name: text, _id: tagId }
+                categories.findOne alias : text, domain.intercept (category) ->
+                  if category
+                    channel.tags.push category: category._id
+                    tagId = channel.tags[channel.tags.length-1]._id
+                    channel.save domain.intercept () ->
+                      cb null, { name: category.name, _id: tagId }
+                  else
+                    categories.createImplicitCategory domain, text, (err, category) ->
+                      if err then cb err else
+                        channel.tags.push category: category._id
+                        tagId = channel.tags[channel.tags.length-1]._id
+                        channel.save domain.intercept () ->
+                          cb null, { name: category.name, _id: tagId }
 
   channelSchema.statics.removeTag: (domain, userId, channelId, tagId, cb) ->
     @findOne _id: runnableId, domain.intercept (channel) ->

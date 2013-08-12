@@ -34,6 +34,11 @@ module.exports = (parentDomain) ->
       if err then res.json err.code, message: err.msg else
         res.json channel
 
+  app.del '/channels/:id', (req, res) ->
+    channels.deleteChannel req.domain, req.user_id, req.params.id, (err) ->
+      if err then res.json err.code, message: err.msg else
+        res.json { message: 'channel deleted' }
+
   app.get '/channels/:id/tags', (req, res) ->
     channels.listTags req.domain, req.parmas.id, (err, tags) ->
       if err then res.json err.code, message: err.msg else

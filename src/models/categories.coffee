@@ -48,19 +48,28 @@ categorySchema.statics.createCategory = (domain, userId, name, desc, cb) ->
           category.save domain.intercept () ->
             cb null, category.toJSON()
 
-categorySchema.statics.updateCategory = (domain, categoryId, newName, cb) ->
+categorySchema.statics.createImplicitCategory = (domain, name, cb) ->
+  category = new @
+  category.name = name
+  category.alias = [name.toLowerCase()]
+  if name isnt name.toLowerCase() then category.alias.push name
+  category.save domain.intercept () ->
+    cb null, category.toJSON()
+
+categorySchema.statics.updateCategory = (domain, userId, categoryId, newName, newDesc, cb) ->
   users.findUser domain, _id: userId, (err, user) ->
     if err then cb err else
       if not user.isModerator then cb error 403, 'permission denied' else
-        if not newName? then cb error 400, 'name required' else
+        if not newName? or not newDesc? then cb error 400, 'name and desc field required' else
           @findOne _id: categoryId, domain.intercept (category) ->
-            category.name = newName
-            category.alias = [ newName.toLowerCase() ]
-            if newName isnt newName.toLowerCase() then category.alias.push newName
+            if category.name isnt newName
+              category.name = newName
+              if not newName in category.alias
+                category.alias.push newName
             category.save domain.intercept () ->
               cb null, category.toJSON()
 
-categorySchema.statics.deleteCategory = (domain, categoryId, cb) ->
+categorySchema.statics.deleteCategory = (domain, userId, categoryId, cb) ->
   users.findUser domain, _id: userId, (err, user) =>
     if err then cb err else
       if not user.isModerator then cb error 403, 'permission denied' else
