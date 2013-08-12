@@ -54,7 +54,7 @@ Runnables =
           options =
             sort: { _id: 1 }
             limit: 1
-          channels.findOne alias: from, domain.intercept (channel) ->
+          channels.findOne aliases: from, domain.intercept (channel) ->
             if not channel then cb error 400, 'could not find channel by that name' else
               images.find 'tags.channel': channel._id, null, options, domain.intercept (images) ->
                 if not images.length then cb error 400, "could not find runnable in #{channe.name} to fork from" else
@@ -349,7 +349,7 @@ Runnables =
             images.findOne _id: runnableId, domain.intercept (image) ->
               if not image then cb error 404, 'runnable not found' else
                 add = () ->
-                  channels.findOne alias : text, domain.intercept (channel) ->
+                  channels.findOne aliases : text, domain.intercept (channel) ->
                     if channel
                       image.tags.push channel: channel._id
                       tagId = image.tags[image.tags.length-1]._id

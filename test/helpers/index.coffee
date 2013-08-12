@@ -107,7 +107,7 @@ Helpers =
         , cb
 
   createCategory: (name, cb) ->
-    helpers.authedAdminUser (err, user) ->
+    @authedAdminUser (err, user) ->
       if err then done err else
         user.post("http://localhost:#{configs.port}/categories")
           .set('content-type', 'application/json')

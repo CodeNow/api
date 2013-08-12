@@ -1,3 +1,4 @@
+categories = require './rest/categories'
 cluster = require 'cluster'
 configs = require './configs'
 debug = require('debug')('worker')
@@ -44,6 +45,7 @@ class App
     app.use users @domain
     app.use runnables @domain
     app.use channels @domain
+    app.use categories @domain
     app.use app.router
     if configs.nodetime then app.use nodetime.expressErrorHandler()
     if configs.rollbar then app.use rollbar.errorHandler()

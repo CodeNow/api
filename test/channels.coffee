@@ -55,7 +55,7 @@ describe 'channels api', ->
   it 'should not be able to create a ::channel with a duplicate name', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
-        helpers.createChannel 'facebook' (err, channel) ->
+        helpers.createChannel 'facebook', (err, channel) ->
           if err then done err else
             helpers.authedAdminUser (err, user) ->
               if err then done err else
@@ -86,7 +86,7 @@ describe 'channels api', ->
   it 'should get a ::channel', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
-        helpers.createChannel 'facebook' (err, channel) ->
+        helpers.createChannel 'facebook', (err, channel) ->
           if err then done err else
             helpers.authedUser (err, user) ->
               if err then done err else
@@ -127,7 +127,7 @@ describe 'channels api', ->
       if err then done err else
         helpers.createCategory 'newCategory', (err, category) ->
           if err then done err else
-            helpers.createChannel 'facebook' (err, channel) ->
+            helpers.createChannel 'facebook', (err, channel) ->
               if err then done err else
                 helpers.authedAdminUser (err, user) ->
                   if err then done err else
@@ -144,7 +144,7 @@ describe 'channels api', ->
       if err then done err else
         helpers.createCategory 'newCategory', (err, category) ->
           if err then done err else
-            helpers.createChannel 'facebook' (err, channel) ->
+            helpers.createChannel 'facebook', (err, channel) ->
               if err then done err else
                 helpers.authedUser (err, user) ->
                   if err then done err else
@@ -162,7 +162,7 @@ describe 'channels api', ->
       if err then done err else
         helpers.createCategory 'newCategory', (err, category) ->
           if err then done err else
-            helpers.createChannel 'facebook' (err, channel) ->
+            helpers.createChannel 'facebook', (err, channel) ->
               if err then done err else
                 helpers.authedAdminUser (err, user) ->
                   if err then done err else
@@ -185,7 +185,7 @@ describe 'channels api', ->
       if err then done err else
         helpers.createCategory 'newCategory', (err, category) ->
           if err then done err else
-            helpers.createChannel 'facebook' (err, channel) ->
+            helpers.createChannel 'facebook', (err, channel) ->
               if err then done err else
                 helpers.authedAdminUser (err, user) ->
                   if err then done err else
@@ -208,7 +208,7 @@ describe 'channels api', ->
       if err then done err else
         helpers.createCategory 'newCategory', (err, category) ->
           if err then done err else
-            helpers.createChannel 'facebook' (err, channel) ->
+            helpers.createChannel 'facebook', (err, channel) ->
               if err then done err else
                 helpers.authedAdminUser (err, user) ->
                   if err then done err else

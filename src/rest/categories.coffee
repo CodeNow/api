@@ -16,9 +16,14 @@ module.exports = (parentDomain) ->
         res.json 201, category
 
   app.get '/categories', (req, res) ->
-    categories.listCategories req.domain, (err, categories) ->
-      if err then res.json err.code, message: err.msg else
-        res.json categories
+    if req.query.name?
+      categories.getCategoryByName req.domain, req.query.name, (err, category) ->
+        if err then res.json err.code, message: err.msg else
+          res.json [ category ]
+    else
+      categories.listCategories req.domain, (err, categories) ->
+        if err then res.json err.code, message: err.msg else
+          res.json categories
 
   app.get '/categories/:id', (req, res) ->
     categories.getCategory req.domain, req.params.id, (err, category) ->
@@ -34,5 +39,10 @@ module.exports = (parentDomain) ->
     categories.deleteCategory req.domain, req.user_id, req.params.id, (err) ->
       if err then res.json err.code, message: err.msg else
         res.json { message: 'category deleted' }
+
+  app.put '/categories/:id/aliases', (req, res) ->
+    categories.updateAliases req.domain, req.user_id, req.params.id, req.body, (err, category) ->
+      if err then res.json err.code, message: err.msg else
+        res.json category.aliases
 
   app
