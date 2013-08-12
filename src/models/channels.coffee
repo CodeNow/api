@@ -112,6 +112,8 @@ channelSchema.statics.rename = (domain, userId, channelId, newName, cb) ->
           if user.permission_level < 5 then cb error 403, 'permission denied' else
             @findOne _id: channelId, domain.intercept (channel) ->
               if not channel then cb error 404, 'channel not found' else
+                # TODO: here we lookup the category, if it doesnt exist create it
+                # TODO: once we create it then we assign objectId to the element
                 channel.tags.push name: text
                 tagId = channel.tags[channel.tags.length-1]._id
                 channel.save domain.intercept () ->

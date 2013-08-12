@@ -25,6 +25,7 @@ Runnables =
               if err then cb err else
                 json_image = image.toJSON()
                 delete json_image.files
+                # TODO: make sure to populate the names of tags so we dont need to do a second lookup here
                 if json_image.parent then json_image.parent = encodeId json_image.parent
                 json_image._id = encodeId image._id
                 cb null, json_image
@@ -314,11 +315,13 @@ Runnables =
               if not image then cb error 404, 'runnable not found' else
                 if image.owner.toString() isnt userId.toString()
                   if user.permission_level < 2 then cb error 403, 'permission denied' else
+                    # TODO: check if channel exists, if not create it
                     image.tags.push name: text
                     tagId = image.tags[image.tags.length-1]._id
                     image.save domain.intercept () ->
                       cb null, { name: text, _id: tagId }
                 else
+                  # checek if channel exists, if not create a new one
                   image.tags.push name: text
                   tagId = image.tags[image.tags.length-1]._id
                   image.save domain.intercept () ->
