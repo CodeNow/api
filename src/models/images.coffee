@@ -219,11 +219,6 @@ imageSchema.statics.listTags = (domain, cb) ->
   @find().distinct 'tags.name', domain.intercept (tagNames) ->
     cb null, tagNames
 
-imageSchema.statics.listTagsWithTags = (domain, tagNames, cb) ->
-  if not Array.isArray(tagNames) then tagNames = [tagNames]
-  @distinct 'tags.name', name:{$in:tagNames}, domain.intercept (tagNames) ->
-    cb null, tagNames
-
 imageSchema.statics.isOwner = (domain, userId, runnableId, cb) ->
   @findOne _id: runnableId, domain.intercept (image) ->
     if not image then cb error 404, 'runnable not found' else

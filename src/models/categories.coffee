@@ -1,4 +1,5 @@
 async = require 'async'
+channels = require './channels'
 configs = require '../configs'
 error = require '../error'
 images = require './images'
@@ -21,22 +22,17 @@ categorySchema = new Schema
     index:
       sparse: true
 
-categorySchema.statics.getCategory = (domain, name, cb) ->
-  @listCategories domain, (categories) ->
-    category = _.findWhere categories, name:name
-    if (!category) then cb error 404, 'not found' else
+categorySchema.statics.getCategory = (domain, id, cb) ->
+  @find { _id: id }, domain.intercept (category) ->
+    if not category then cb error 404, 'not found' else
       cb null, category
 
 categorySchema.statics.listCategories = (domain, cb) ->
-  channels = this;
-  @find().distinct 'category.name', domain.intercept (categoryNames) ->
-    async.map categoryNames, (name, mcb) ->
-      category = name:name
-      channels.listChannelsInCategory domain, name, (err, channels) ->
-        if err then mcb err else
-          countImagesInChannels domain, channels, (count) ->
-            category.count = count
-            mcb null, category
+  @find { }, domain.intercept (categories) ->
+    async.map categories, (category, cb) ->
+      channels.find('tags.category': category._id).count().exec domain.intercept (count) ->
+        category.count = count
+        cb null, category
     , cb
 
 module.exports = mongoose.model 'Categories', categorySchema
