@@ -82,6 +82,41 @@ Helpers =
             put:  (url) -> user.put(url).set('runnable-token', token)
             del:  (url) -> user.del(url).set('runnable-token', token)
 
+  createChannel: (name, cb) ->
+    @authedAdminUser (err, user) ->
+      if err then cb err else
+        user.post("http://localhost:#{configs.port}/channels")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(name: name))
+          .end (err, res) ->
+            if err then cb err else
+              res.should.have.status 201
+              cb null, res.body
+
+  createChannels: (names, cb) ->
+    @authedAdminUser (err, user) ->
+      if err then cb err else
+        async.forEach names, (name, cb) ->
+          user.post("http://localhost:#{configs.port}/channels")
+            .set('content-type', 'application/json')
+            .send(JSON.stringify(name: name))
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 201
+                cb null, res.body
+        , cb
+
+  createCategory: (name, cb) ->
+    helpers.authedAdminUser (err, user) ->
+      if err then done err else
+        user.post("http://localhost:#{configs.port}/categories")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(name: name))
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              cb null, res.body
+
   createImage: (name, cb) ->
     @authedUser (err, user) ->
       if err then cb err else

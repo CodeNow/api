@@ -55,8 +55,6 @@ imageSchema = new Schema
   tags:
     type: [
       channel: ObjectId
-      index: true
-      sparse: true
     ]
     default: [ ]
   service_cmds:

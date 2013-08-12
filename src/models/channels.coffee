@@ -18,18 +18,11 @@ channelSchema = new Schema
     type: [String]
     index: true
     unique: true
-  category:
+  tags:
     type: [
-      name:
-        type:String
-        index:
-          sparse:true
-      alias:
-        type: [String]
-        index:
-          sparse: true
+      category: ObjectId
     ]
-    default: []
+    default: [ ]
 
 channelSchema.statics.getChannel = (domain, name, cb) ->
   lower = name.toLowerCase()

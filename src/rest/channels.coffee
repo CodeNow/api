@@ -10,15 +10,10 @@ module.exports = (parentDomain) ->
 
   app.use domains parentDomain
 
-  app.get '/channels/categories', (req, res) ->
-    channels.listCategories req.domain, (err, categories) ->
+  app.post '/channels', (req, res) ->
+    channels.createChannel req.domain, req.user_id, req.body, (err, channel) ->
       if err then res.json err.code, message: err.msg else
-        res.json categories
-
-  app.get '/channels/:name', (req, res) ->
-    channels.getChannel req.domain, req.params.name, (err, channel) ->
-      if err then res.json err.code, message: err.msg else
-        res.json channel
+        res.json 201, channel
 
   app.get '/channels', (req, res) ->
     if req.query.category?
@@ -34,9 +29,29 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           res.json channels
 
-  app.post '/channels', (req, res) ->
-    channels.createChannel req.domain, req.user_id, req.body, (err, channel) ->
+  app.get '/channels/:id', (req, res) ->
+    channels.getChannel req.domain, req.params.id, (err, channel) ->
       if err then res.json err.code, message: err.msg else
-        res.json 201, channel
+        res.json channel
+
+  app.get '/channels/:id/tags', (req, res) ->
+    channels.listTags req.domain, req.parmas.id, (err, tags) ->
+      if err then res.json err.code, message: err.msg else
+        res.json tags
+
+  app.post '/channels/:id/tags', (req, res) ->
+    channels.addTag req.domain, req.params.id, req.body.name, (err, tag) ->
+      if err then res.json err.code, message: err.msg else
+        res.json tag
+
+  app.get '/channels/:id/tags/:tagid', (req, res) ->
+    channels.getTag req.domain, req.params.id, req.params.tagid, (err, tag) ->
+      if err then res.json err.code, message: err.msg else
+        res.json tag
+
+  app.del '/channels/:id/tags/:tagid', (req, res) ->
+    channels.deleteTag req.domain, req.params.id, req.params.tagid, (err, categories) ->
+      if err then res.json err.code, message: err.msg else
+        res.json { message: 'tag deleted' }
 
   app
