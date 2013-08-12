@@ -108,19 +108,19 @@ channelSchema.statics.deleteChannel = (domain, userId, channelId, cb) ->
         @remove _id: channelId, domain.intercept () ->
           cb()
 
-  channelSchema.statics.getTags: (domain, channelId, cb) ->
+  channelSchema.statics.getTags = (domain, channelId, cb) ->
     @findOne _id: channelId, domain.intercept (channel) ->
       if not image then cb error 404, 'channel not found' else
         cb null, channel.tags
 
-  channelSchema.statics.getTag: (domain, channelId, tagId, cb) ->
+  channelSchema.statics.getTag = (domain, channelId, tagId, cb) ->
     @findOne _id: channelId, domain.intercept (channel) ->
       if not channel then cb error 404, 'channel not found' else
         tag = channel.tags.id tagId
         if not tag then cb error 404, 'tag not found' else
           cb null, tag
 
-  channelSchema.statics.addTag: (domain, userId, channelId, text, cb) ->
+  channelSchema.statics.addTag = (domain, userId, channelId, text, cb) ->
     users.findUser domain, _id: userId, (err, user) =>
       if err then cb err else
         if not user then cb error 403, 'user not found' else
@@ -141,7 +141,7 @@ channelSchema.statics.deleteChannel = (domain, userId, channelId, cb) ->
                         channel.save domain.intercept () ->
                           cb null, { name: category.name, _id: tagId }
 
-  channelSchema.statics.removeTag: (domain, userId, channelId, tagId, cb) ->
+  channelSchema.statics.removeTag = (domain, userId, channelId, tagId, cb) ->
     @findOne _id: runnableId, domain.intercept (channel) ->
       if not channel then cb error 404, 'runnable not found' else
         users.findOne _id: userId, domain.intercept (user) ->
