@@ -81,7 +81,7 @@ channelSchema.statics.listChannelsInCategory = (domain, categoryName, cb) ->
             cb null, channel
     , cb
 
-channelSchema.statics.rename = (domain, userId, channelId, newName, cb) ->
+channelSchema.statics.updateChannel = (domain, userId, channelId, newName, cb) ->
   users.findUser domain, _id:userId, (err, user) ->
     if err then cb err else
       if not user.isModerator then cb error 403, 'permission denied' else
@@ -92,6 +92,13 @@ channelSchema.statics.rename = (domain, userId, channelId, newName, cb) ->
             if newName isnt newName.toLowerCase() then channel.alias.push newName
             channel.save domain.intercept () ->
               cb null, channel.toJSON()
+
+channelSchema.statics.deleteChannel = (domain, userId, channelId, cb) ->
+  users.findUser domain, _id: userId, (err, user) =>
+    if err then cb err else
+      if not user.isModerator then cb error 403, 'permission denied' else
+        @remove _id: channelId, domain.intercept () ->
+          cb()
 
   channelSchema.statics.getTags: (domain, channelId, cb) ->
     @findOne _id: channelId, domain.intercept (channel) ->
