@@ -1,0 +1,38 @@
+{
+  "tokenExpires": "1 year",
+  "passwordSalt" : "$up3r,$3<r3t",
+  "mongo": "mongodb://10.0.1.176:27017/runnable",
+  "redis": {
+    "ipaddress": "10.0.1.14",
+    "port": "6379"
+  },
+  "port": 3000,
+  "ipaddress": "10.0.1.86",
+  "maxPageLimit": 200,
+  "defaultPageLimit": 25,
+  "docker": "http://harbourmaster.cloudcosmos.com:3000",
+  "shortProjectIds": true,
+  "nodetime": {
+    "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",
+    "appName": "Runnable.com API Server",
+    "namedTransactions": {
+      "Published Runnables": "/runnables",
+      "Draft Runnables": "/users/me/runnables"
+    }
+  },
+  "rollbar": {
+    "key": "119509f9ba314df8a9ffbaf7b4812fb6",
+    "options":  {
+      "root": "/home/ubuntu/api-server",
+      "branch": "master",
+      "environment": "production"
+    }
+  },
+  "dnode_host": "10.0.2.90",
+  "dnode_port": 13337,
+  "dnode_access_timeout": "5 seconds",
+  "dnode_sync_timeout": "20 seconds",
+  "logExpress": true,
+  "logErrorStack": true,
+  "throwErrors": false
+}
