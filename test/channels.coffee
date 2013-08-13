@@ -65,7 +65,7 @@ describe 'channels api', ->
                   .end (err, res) ->
                     if err then done err else
                       res.should.have.status 403
-                      res.body.should.have.property 'message', 'a channel by this name already exists'
+                      res.body.should.have.property 'message', 'a channel by that name already exists'
                       instance.stop done
 
   it 'should be able to create a ::channel implicitly by tagging an image', (done) ->
@@ -94,33 +94,49 @@ describe 'channels api', ->
                   .end (err, res) ->
                     if err then done err else
                       res.should.have.status 200
-                      res.body.name.should.equal 'facebook'
-                      res.body.count.should.equal 0
+                      res.body.should.have.property 'name', 'facebook'
+                      res.body.should.have.property 'count', 0
                       instance.stop done
 
   it 'should list ::channels', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
-        helpers.createChannels [ 'facebook', 'google', 'twitter', 'jquery' ], (err, channel) ->
+        helpers.createChannels [ 'facebook', 'google', 'twitter', 'jquery' ], (err, channels) ->
           if err then done err else
-            user.get("http://localhost:#{configs.port}/channels")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body.should.be.a.array
-                  res.body.should.includeEql
-                    name: 'facebook'
-                    count: 0
-                  res.body.should.includeEql
-                    name: 'google'
-                    count: 0
-                  res.body.should.includeEql
-                    name: 'twitter'
-                    count: 0
-                  res.body.should.includeEql
-                    name: 'jquery'
-                    count: 0
-                  instance.stop done
+            helpers.authedUser (err, user) ->
+              if err then done err else
+                user.get("http://localhost:#{configs.port}/channels")
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 200
+                      res.body.should.be.a.array
+                      channels.forEach (channel) ->
+                        res.body.should.includeEql channel
+                      instance.stop done
+
+  it 'should keep a count of the number of images tagged with a particular ::channel', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createTaggedImage 'node.js', 'Express', (err, runnableId) ->
+          if err then done err else
+            helpers.authedAdminUser (err, user) ->
+              if err then done err else
+                helpers.createNamedTaggedImage user, runnableId, 'Example 2', 'Express', (err) ->
+                  if err then done err else
+                    user.get("http://localhost:#{configs.port}/channels")
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body.should.be.a.array
+                          res.body[0].should.have.property 'count', 2
+                          res.body[0].should.have.property 'name', 'Express'
+                          user.get("http://localhost:#{configs.port}/channels/#{res.body[0]._id}")
+                            .end (err, res) ->
+                              if err then done err else
+                                res.should.have.status 200
+                                res.body.should.have.property 'count', 2
+                                res.body.should.have.property 'name', 'Express'
+                                instance.stop done
 
   it 'should be possible to tag a ::channel with a category as an admin', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -230,19 +246,20 @@ describe 'channels api', ->
       if err then done err else
         helpers.authedAdminUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/channels")
-              .set('content-type', 'application/json')
-              .send(JSON.stringify(name: 'testchannel', category:'testcategory'))
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  channel = res.body
-                  user.get("http://localhost:#{configs.port}/channels?category=testcategory")
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 200
-                        res.body.should.be.a.array
-                        res.body.length.should.equal 1
-                        channel.count = 0
-                        res.body.should.includeEql channel
-                        instance.stop done
+            helpers.createChannel 'social', (err, channel) ->
+              if err then done err else
+                user.post("http://localhost:#{configs.port}/channels/#{channel._id}/tags")
+                  .set('content-type', 'application/json')
+                  .send(JSON.stringify({ name: 'TestCategory'}))
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 201
+                      user.get("http://localhost:#{configs.port}/channels?category=testcategory")
+                        .end (err, res) ->
+                          if err then done err else
+                            res.should.have.status 200
+                            res.body.should.be.a.array
+                            res.body.length.should.equal 1
+                            res.body[0].should.have.property 'name', 'social'
+                            res.body[0].tags[0].should.have.property 'name', 'TestCategory'
+                            instance.stop done

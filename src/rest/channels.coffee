@@ -26,7 +26,7 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           res.json channels
     else
-      channels.listChannels req.domain, (err, channels) ->
+      channels.listChannels req.domain, categories, (err, channels) ->
         if err then res.json err.code, message: err.msg else
           res.json channels
 
@@ -46,7 +46,7 @@ module.exports = (parentDomain) ->
         res.json channel.aliases
 
   app.get '/channels/:id/tags', (req, res) ->
-    channels.listTags req.domain, req.params.id, (err, tags) ->
+    channels.getTags req.domain, categories, req.params.id, (err, tags) ->
       if err then res.json err.code, message: err.msg else
         res.json tags
 
@@ -56,12 +56,12 @@ module.exports = (parentDomain) ->
         res.json 201, tag
 
   app.get '/channels/:id/tags/:tagid', (req, res) ->
-    channels.getTag req.domain, req.params.id, req.params.tagid, (err, tag) ->
+    channels.getTag req.domain, categories, req.params.id, req.params.tagid, (err, tag) ->
       if err then res.json err.code, message: err.msg else
         res.json tag
 
   app.del '/channels/:id/tags/:tagid', (req, res) ->
-    channels.deleteTag req.domain, req.user_id, req.params.id, req.params.tagid, (err, categories) ->
+    channels.removeTag req.domain, req.user_id, req.params.id, req.params.tagid, (err) ->
       if err then res.json err.code, message: err.msg else
         res.json { message: 'tag deleted' }
 
