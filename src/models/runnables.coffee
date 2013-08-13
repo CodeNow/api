@@ -330,7 +330,12 @@ Runnables =
     runnableId = decodeId runnableId
     images.findOne _id: runnableId, domain.intercept (image) ->
       if not image then cb error 404, 'runnable not found' else
-        cb null, image.tags
+        async.map image.tags, (tag, cb) ->
+          json = tag.toJSON()
+          channels.findOne _id: json.channel, domain.intercept (channel) ->
+            if channel then json.name = channel.name
+            cb null, json
+        , cb
 
   getTag: (domain, runnableId, tagId, cb) ->
     runnableId = decodeId runnableId
@@ -338,7 +343,10 @@ Runnables =
       if not image then cb error 404, 'runnable not found' else
         tag = image.tags.id tagId
         if not tag then cb error 404, 'tag not found' else
-          cb null, tag
+          json = tag.toJSON()
+          channels.findOne _id: json.channel, domain.intercept (channel) ->
+            if channel then json.name = channel.name
+            cb null, json
 
   addTag: (domain, userId, runnableId, text, cb) ->
     users.findUser domain, _id: userId, (err, user) ->
@@ -386,7 +394,12 @@ Runnables =
     runnableId = decodeId runnableId
     containers.findOne _id: runnableId, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
-        cb null, container.tags
+        async.map container.tags, (tag, cb) ->
+          json = tag.toJSON()
+          channels.findOne _id: json.channel, domain.intercept (channel) ->
+            if channel then json.name = channel.name
+            cb null, json
+        , cb
 
   getContainerTag: (domain, runnableId, tagId, cb) ->
     runnableId = decodeId runnableId
@@ -394,7 +407,10 @@ Runnables =
       if not container then cb error 404, 'runnable not found' else
         tag = container.tags.id tagId
         if not tag then cb error 404, 'tag not found' else
-          cb null, tag
+          json = tag.toJSON()
+          channels.findOne _id: json.channel, domain.intercept (channel) ->
+            if channel then json.name = channel.name
+            cb null, json
 
   addContainerTag: (domain, userId, runnableId, text, cb) ->
     users.findUser domain, _id: userId, (err, user) ->
@@ -403,17 +419,23 @@ Runnables =
           runnableId = decodeId runnableId
           containers.findOne _id: runnableId, domain.intercept (container) ->
             if not container then cb error 404, 'runnable not found' else
-              if container.owner.toString() isnt userId.toString()
-                if user.permission_level < 2 then cb error 403, 'permission denied' else
-                  container.tags.push name: text
-                  tagId = container.tags[container.tags.length-1]._id
-                  container.save domain.intercept () ->
-                    cb null, { name: text, _id: tagId }
-              else
-                container.tags.push name: text
-                tagId = container.tags[container.tags.length-1]._id
-                container.save domain.intercept () ->
-                  cb null, { name: text, _id: tagId }
+              add = () ->
+                channels.findOne aliases : text, domain.intercept (channel) ->
+                  if channel
+                    container.tags.push channel: channel._id
+                    tagId = container.tags[container.tags.length-1]._id
+                    container.save domain.intercept () ->
+                      cb null, { name: channel.name, _id: tagId }
+                  else
+                    channels.createImplicitChannel domain, text, (err, channel) ->
+                      if err then cb err else
+                        container.tags.push channel: channel._id
+                        tagId = container.tags[container.tags.length-1]._id
+                        container.save domain.intercept () ->
+                          cb null, { name: channel.name, _id: tagId }
+              if container.owner.toString() is userId.toString() then add() else
+                if user.permission_level > 1 then add() else
+                  cb error 403, 'permission denied'
 
   removeContainerTag: (domain, userId, runnableId, tagId, cb) ->
     runnableId = decodeId runnableId
