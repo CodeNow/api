@@ -435,10 +435,10 @@ Runnables =
       if err then cb err else
         container.createDirectory domain, name, path, cb
 
-  defaultFile: (domain, userId, runnableId, fileId, cb) ->
+  defaultFile: (domain, userId, runnableId, fileId, isDefault, cb) ->
     fetchContainer domain, userId, runnableId, (err, container) ->
       if err then cb err else
-        container.tagFile domain, fileId, cb
+        container.tagFile domain, fileId, isDefault, cb
 
   getStat: (domain, userId, runnableId, stat, cb) ->
     if not (stat in stats) then cb error 400, 'not a valid stat' else

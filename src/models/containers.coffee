@@ -131,7 +131,7 @@ containerSchema.statics.destroy = (domain, id, cb) ->
 
 containerSchema.methods.getProcessState = (domain, cb) ->
   docker.inspectContainer @docker_id, domain.intercept (result) ->
-    if not result.State? 
+    if not result.State?
       console.error 'bad result', result
       throw new Error 'bad result from docker.inspectContainer'
     cb null, running: result.State.Running
@@ -246,11 +246,11 @@ containerSchema.methods.readFile = (domain, fileId, cb) ->
   if not file then cb error 404, 'file does not exist' else
     cb null, file.toJSON()
 
-containerSchema.methods.tagFile = (domain, fileId, cb) ->
+containerSchema.methods.tagFile = (domain, fileId, isDefault, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if file.dir then cb error 403, 'cannot tag directory as default' else
-      file.default = true
+      file.default = isDefault
       @save domain.intercept () ->
         cb null, file
 
