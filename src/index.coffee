@@ -25,6 +25,10 @@ class App
 
   start: (cb) ->
     if @started then cb() else
+      process.on 'uncaughtException', (err) =>
+        @stop () =>
+          if cluster.isWorker
+            @cleanup_worker()
       @server.listen @configs.port, @configs.ipaddress || "0.0.0.0", (err) =>
         if err then cb err else
           @started = true
@@ -32,6 +36,7 @@ class App
 
   stop: (cb) ->
     if not @started then cb() else
+      process.removeAllListeners 'uncaughtException'
       @server.close (err) =>
         if err then cb err else
           @started = false
@@ -55,17 +60,12 @@ class App
       res.json err.code, message: err.msg
       if configs.logErrorStack then debug "threw exception: #{err.stack}"
       @stop () =>
-        if cluster.isWorker then @cleanup_worker() else
-          process.removeAllListneers 'uncaughtException'
+        if cluster.isWorker then @cleanup_worker()
     app.get '/throws', (req, res) ->
       process.nextTick req.domain.bind () -> throw new Error 'zomg!'
     app.get '/', (req, res) -> res.json { message: 'runnable api' }
     app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
     @server = http.createServer app
-    process.on 'uncaughtException', (err) =>
-      @stop () =>
-        if cluster.isWorker
-          @cleanup_worker()
 
   cleanup_worker: () ->
     workerId = cluster.worker.process.pid
