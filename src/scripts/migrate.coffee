@@ -25,7 +25,7 @@ db.connect configs.mongo, (err, runnable_db) ->
                       channel.category = channel.category or [ ]
                       tags = [ ]
                       async.forEachSeries channel.category, (category, cb) ->
-                        categories_collection.findOne aliases: category.name, (err, existing) ->
+                        categories_collection.findOne alias: category.name.toLowerCase(), (err, existing) ->
                           if err then console.log err else
                             if not existing
                               categories_collection.insert category, (err, new_category) ->
@@ -58,22 +58,20 @@ db.connect configs.mongo, (err, runnable_db) ->
                       images.tags = image.tags or [ ]
                       tags = [ ]
                       async.forEachSeries image.tags, (tag, cb) ->
-                        channels_collection.findOne aliases: tag.name, (err, existing) ->
+                        channels_collection.findOne alias: tag.name.toLowerCase(), (err, existing) ->
                           if err then console.log err else
                             if not existing
-                              channels_collection.insert { name: tag.name, aliases: [ tag.name ] }, (err, new_channel) ->
+                              channels_collection.insert { name: tag.name, alias: [ tag.name ] }, (err, new_channel) ->
                                 if err then cb err else
                                   tags.push
                                     _id: new mongodb.ObjectID
                                     channel: new_channel._id
                                   cb()
                             else
-                              channels_collection.update { _id: existing._id }, { $set { aliases: existing.alias }, $unset: { alias: '' } }, (err) ->
-                                if err then console.log err else
-                                  tags.push
-                                    _id: new mongodb.ObjectID
-                                    channel: existing._id
-                                  cb()
+                              tags.push
+                                _id: new mongodb.ObjectID
+                                channel: existing._id
+                              cb()
                       , (err) ->
                         if err then console.log err else
                           images_collection.update { _id: image._id }, { $set: { tags: tags } }, (err) ->
@@ -93,22 +91,20 @@ db.connect configs.mongo, (err, runnable_db) ->
                       container.tags = container.tags or [ ]
                       tags = [ ]
                       async.forEachSeries container.tags, (tag, cb) ->
-                        channels_collection.findOne aliases: tag.name, (err, existing) ->
+                        channels_collection.findOne alias: tag.name.toLowerCase(), (err, existing) ->
                           if err then console.log err else
                             if not existing
-                              channels_collection.insert { name: tag.name, aliases: [ tag.name ] }, (err, new_channel) ->
+                              channels_collection.insert { name: tag.name, alias: [ tag.name ] }, (err, new_channel) ->
                                 if err then cb err else
                                   tags.push
                                     _id: new mongodb.ObjectID
                                     channel: new_channel._id
                                   cb()
                             else
-                              channels_collection.update { _id: existing._id }, { $set { aliases: existing.alias }, $unset: { alias: '' } }, (err) ->
-                                if err then console.log err else
-                                  tags.push
-                                    _id: new mongodb.ObjectID
-                                    channel: existing._id
-                                  cb()
+                              tags.push
+                                _id: new mongodb.ObjectID
+                                channel: existing._id
+                              cb()
                       , (err) ->
                         if err then console.log err else
                           containers_collection.update { _id: container._id }, { $set: { tags: tags } }, (err) ->
@@ -117,6 +113,24 @@ db.connect configs.mongo, (err, runnable_db) ->
                     , (err) ->
                       if err the console.log err else
                         cb()
+      (cb) ->
+        runnable_db.collection 'channels', (err, channels_collection) ->
+          if err then console.log err else
+            channels_collection.find().toArray (err, channels) ->
+              if err then console.log err else
+                async.forEachSeries channels, (channel, cb) ->
+                  channels_collection.update { _id: channel._id }, { $set: { aliases: channel.alias }, $unset: { alias: '' } }, (err) ->
+                    if err then console.log err else
+                      cb()
+      (cb) ->
+        runnable_db.collection 'categories', (err, categories_collection) ->
+          if err then console.log err else
+            categories_collection.find().toArray (err, categories) ->
+              if err then console.log err else
+                async.forEachSeries categories, (category, cb) ->
+                  categories_collection.update { _id: category._id }, { $set: { aliases: category.alias }, $unset: { alias: '' } }, (err) ->
+                    if err then console.log err else
+                      cb()
     ], (err) ->
       if err then console.log err else
         console.log 'DONNNNNE'
