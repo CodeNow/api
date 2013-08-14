@@ -1,4 +1,5 @@
 apiserver = require '../../lib'
+async = require 'async'
 cp = require 'child_process'
 configs = require '../../lib/configs'
 domain = require 'domain'
@@ -9,8 +10,7 @@ Helpers =
   createServer: (configs, done, cb) ->
     d = domain.create()
     d.on 'error', (err) ->
-      instance.stop () ->
-        done err
+      instance.stop () -> done err
     instance = new apiserver configs, d
     d.run () ->
       instance.start (err) ->
@@ -83,6 +83,41 @@ Helpers =
             put:  (url) -> user.put(url).set('runnable-token', token)
             del:  (url) -> user.del(url).set('runnable-token', token)
 
+  createChannel: (name, cb) ->
+    @authedAdminUser (err, user) ->
+      if err then cb err else
+        user.post("http://localhost:#{configs.port}/channels")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(name: name))
+          .end (err, res) ->
+            if err then cb err else
+              res.should.have.status 201
+              cb null, res.body
+
+  createChannels: (names, cb) ->
+    @authedAdminUser (err, user) ->
+      if err then cb err else
+        async.map names, (name, cb) ->
+          user.post("http://localhost:#{configs.port}/channels")
+            .set('content-type', 'application/json')
+            .send(JSON.stringify(name: name))
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 201
+                cb null, res.body
+        , cb
+
+  createCategory: (name, cb) ->
+    @authedAdminUser (err, user) ->
+      if err then done err else
+        user.post("http://localhost:#{configs.port}/categories")
+          .set('content-type', 'application/json')
+          .send(JSON.stringify(name: name))
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 201
+              cb null, res.body
+
   createImage: (name, cb) ->
     @authedUser (err, user) ->
       if err then cb err else
@@ -116,6 +151,31 @@ Helpers =
                   if err then cb err else
                     res.should.have.status 201
                     cb null, runnableId
+
+  createNamedTaggedImage: (user, source, name, tag, cb) ->
+    user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{source}")
+      .end (err, res) ->
+        if err then cb err else
+          res.should.have.status 201
+          userRunnableId = res.body._id
+          user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+            .set('content-type', 'application/json')
+            .send(JSON.stringify({ name: name, running: false }))
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 200
+                user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
+                  .end (err, res) ->
+                    if err then cb err else
+                      res.should.have.status 201
+                      runnableId = res.body._id
+                      user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/tags")
+                        .set('content-type', 'application/json')
+                        .send(JSON.stringify({name: tag}))
+                        .end (err, res) ->
+                          if err then cb err else
+                            res.should.have.status 201
+                            cb null, runnableId
 
   createContainer: (name, cb) ->
     @authedUser (err, user) ->

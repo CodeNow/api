@@ -40,10 +40,9 @@ containerSchema = new Schema
     type: String
   tags:
     type: [
-      name: String
+      channel: ObjectId
     ]
     default: [ ]
-    index: true
   service_cmds:
     type: String
     default: ''
@@ -79,8 +78,8 @@ containerSchema.index
   tags: 1
   parent: 1
 
-containerSchema.statics.create = (owner, image, cb) ->
-  image.sync () =>
+containerSchema.statics.create = (domain, owner, image, cb) ->
+  image.sync domain, () =>
     container = new @
       parent: image
       name: image.name
@@ -106,49 +105,45 @@ containerSchema.statics.create = (owner, image, cb) ->
       Image: image.docker_id.toString()
       PortSpecs: [ container.port.toString() ]
       Cmd: [ container.cmd ]
-    , (err, res) ->
-      if err then throw err
+    , domain.intercept (res) ->
       container.docker_id = res.Id
-      docker.inspectContainer container.docker_id, (err, result) ->
-        if err then throw err
+      docker.inspectContainer container.docker_id, domain.intercept (result) ->
         container.long_docker_id = result.ID
-        container.save (err) ->
-          if err then throw err
+        container.save domain.intercept () ->
           cb null, container
 
-containerSchema.statics.destroy = (id, cb) ->
-  @findOne { _id: id } , (err, container) =>
+containerSchema.statics.destroy = (domain, id, cb) ->
+  @findOne { _id: id } , domain.intercept (container) =>
     if not container then cb error 404, 'container metadata not found' else
-      container.getProcessState (err, state) =>
+      container.getProcessState domain, (err, state) =>
         if err then cb err else
           remove = () =>
-            docker.removeContainer container.docker_id, (err) =>
-              if err then throw err
-              @remove { _id: id }, (err) ->
-                if err then throw err else cb()
+            docker.removeContainer container.docker_id, domain.intercept () =>
+              @remove { _id: id }, domain.intercept () ->
+                cb()
           if state.running
-            container.stop (err) =>
+            container.stop domain, (err) =>
               if err then cb err else
                 remove()
           else
             remove()
 
-containerSchema.methods.getProcessState = (cb) ->
-  docker.inspectContainer @docker_id, (err, result) ->
-    if err then throw err
+containerSchema.methods.getProcessState = (domain, cb) ->
+  docker.inspectContainer @docker_id, domain.intercept (result) ->
+    if not result.State?
+      console.error 'bad result', result
+      throw new Error 'bad result from docker.inspectContainer'
     cb null, running: result.State.Running
 
-containerSchema.methods.start = (cb) ->
-  docker.startContainer @docker_id, (err) ->
-    if err then throw err
+containerSchema.methods.start = (domain, cb) ->
+  docker.startContainer @docker_id, domain.intercept () ->
     cb()
 
-containerSchema.methods.stop = (cb) ->
-  docker.stopContainer @docker_id, (err) ->
-    if err then throw err
+containerSchema.methods.stop = (domain, cb) ->
+  docker.stopContainer @docker_id, domain.intercept () ->
     cb()
 
-containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
+containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]
   if default_tag
     content = true
@@ -170,15 +165,14 @@ containerSchema.methods.listFiles = (content, dir, default_tag, path, cb) ->
       delete file.content
   cb null, files
 
-containerSchema.methods.syncFiles = (cb) ->
+containerSchema.methods.syncFiles = (domain, cb) ->
   sync @long_docker_id, @, (err) =>
     if err then cb err else
       @last_write = new Date()
-      @save (err) =>
-        if err then throw err
+      @save domain.intercept () =>
         cb null, @
 
-containerSchema.methods.createFile = (name, path, content, cb) ->
+containerSchema.methods.createFile = (domain, name, path, content, cb) ->
   volumes.createFile @long_docker_id, @file_root, name, path, content, (err) =>
     if err then cb err else
       @files.push
@@ -187,22 +181,20 @@ containerSchema.methods.createFile = (name, path, content, cb) ->
         content: content
       file = @files[@files.length-1]
       @last_write = new Date()
-      @save (err) ->
-        if err then throw err
+      @save domain.intercept () ->
         cb null, { _id: file._id, name: name, path: path }
 
-containerSchema.methods.updateFile = (fileId, content, cb) ->
+containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     volumes.updateFile @long_docker_id, @file_root, file.name, file.path, content, (err) =>
       if err then cb err else
         file.content = content
         @last_write = new Date()
-        @save (err) ->
-          if err then throw err
+        @save domain.intercept () ->
           cb null, file
 
-containerSchema.methods.renameFile = (fileId, newName, cb) ->
+containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     volumes.renameFile @long_docker_id, @file_root, file.name, file.path, newName, (err) =>
@@ -216,11 +208,10 @@ containerSchema.methods.renameFile = (fileId, newName, cb) ->
             if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
               elem.path = elem.path.replace oldPath, newPath
         @last_write = new Date()
-        @save (err) ->
-          if err then throw err
+        @save domain.intercept () ->
           cb null, file
 
-containerSchema.methods.moveFile = (fileId, newPath, cb) ->
+containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     volumes.moveFile @long_docker_id, @file_root, file.name, file.path, newPath, (err) =>
@@ -234,11 +225,10 @@ containerSchema.methods.moveFile = (fileId, newPath, cb) ->
             if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
               elem.path = elem.path.replace oldPath, newPath
         @last_write = new Date()
-        @save (err) ->
-          if err then throw err
+        @save domain.intercept () ->
           cb null, file
 
-containerSchema.methods.createDirectory = (name, path, cb) ->
+containerSchema.methods.createDirectory = (domain, name, path, cb) ->
   volumes.createDirectory @long_docker_id, @file_root, name, path, (err) =>
     if err then cb err else
       @files.push
@@ -247,34 +237,31 @@ containerSchema.methods.createDirectory = (name, path, cb) ->
         dir: true
       file = @files[@files.length-1]
       @last_write = new Date()
-      @save (err) ->
-        if err then throw err
+      @save domain.intercept () ->
         cb null, file
 
-containerSchema.methods.readFile = (fileId, cb) ->
+containerSchema.methods.readFile = (domain, fileId, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     cb null, file.toJSON()
 
-containerSchema.methods.tagFile = (fileId, cb) ->
+containerSchema.methods.tagFile = (domain, fileId, isDefault, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if file.dir then cb error 403, 'cannot tag directory as default' else
-      file.default = true
-      @save (err) ->
-        if err then throw err
+      file.default = isDefault
+      @save domain.intercept () ->
         cb null, file
 
-containerSchema.methods.deleteAllFiles = (cb) ->
+containerSchema.methods.deleteAllFiles = (domain, cb) ->
   volumes.deleteAllFiles @long_docker_id, @file_root, (err) =>
     if err then cb err else
       @files = [ ]
       @last_write = new Date()
-      @save (err) ->
-        if err then throw err
+      @save domain.intercept () ->
         cb()
 
-containerSchema.methods.deleteFile = (fileId, recursive, cb) ->
+containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if not file.dir
@@ -283,8 +270,7 @@ containerSchema.methods.deleteFile = (fileId, recursive, cb) ->
           if err then cb err else
             file.remove()
             @last_write = new Date()
-            @save (err) ->
-              if err then throw err
+            @save domain.intercept () ->
               cb()
     else
       volumes.removeDirectory @long_docker_id, @file_root, file.name, file.path, recursive, (err) =>
@@ -299,8 +285,7 @@ containerSchema.methods.deleteFile = (fileId, recursive, cb) ->
               elem.remove()
           file.remove()
           @last_write = new Date()
-          @save (err) ->
-            if err then throw err
+          @save domain.intercept () ->
             cb()
 
 module.exports = mongoose.model 'Containers', containerSchema

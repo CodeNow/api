@@ -120,7 +120,7 @@ describe 'pagination api', ->
                     if err then done err else
                       res.should.have.status 200
                       res.body.should.be.a.array
-                      res.body.length.should.equal 8
+                      res.body.length.should.equal 5
                       elem = res.body[2]._id
                       user.get("http://localhost:#{configs.port}/runnables?page=2&limit=1")
                         .end (err, res) ->
@@ -169,7 +169,7 @@ describe 'pagination api', ->
                     if err then done err else
                       res.should.have.status 200
                       res.body.should.be.a.array
-                      res.body.length.should.equal 8
+                      res.body.length.should.equal 5
                       user.get("http://localhost:#{configs.port}/runnables?sort=votes&page=2&limit=1")
                         .end (err, res) ->
                           if err then done err else

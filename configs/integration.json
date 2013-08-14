@@ -1,16 +1,16 @@
 {
   "tokenExpires": "1 year",
   "passwordSalt" : "$up3r,$3<r3t",
-  "mongo": "mongodb://10.0.1.47:27017/runnable2",
+  "mongo": "mongodb://10.0.1.176:27017/runnable",
   "redis": {
-    "ipaddress": "10.0.1.15",
+    "ipaddress": "10.0.1.14",
     "port": "6379"
   },
   "port": 3000,
-  "ipaddress": "10.0.1.54",
+  "ipaddress": "10.0.1.86",
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
-  "docker": "http://harbourmaster.runnable.com:3000",
+  "docker": "http://harbourmaster.cloudcosmos.com:3000",
   "shortProjectIds": true,
   "nodetime": {
     "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",
@@ -25,10 +25,10 @@
     "options":  {
       "root": "/home/ubuntu/api-server",
       "branch": "master",
-      "environment": "production"
+      "environment": "integration"
     }
   },
-  "dnode_host": "10.0.2.232",
+  "dnode_host": "10.0.2.90",
   "dnode_port": 13337,
   "dnode_access_timeout": "5 seconds",
   "dnode_sync_timeout": "20 seconds",
