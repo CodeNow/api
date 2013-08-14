@@ -25,7 +25,7 @@
     "options":  {
       "root": "/home/ubuntu/api-server",
       "branch": "master",
-      "environment": "production"
+      "environment": "integration"
     }
   },
   "dnode_host": "10.0.2.90",
