@@ -114,6 +114,21 @@ describe 'channels api', ->
                         res.body.should.includeEql channel
                       instance.stop done
 
+  it 'should be able to get a ::channel by name', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createChannels [ 'facebook', 'google', 'twitter', 'jquery' ], (err, channels) ->
+          if err then done err else
+            channel = _.findWhere channels, name:'twitter'
+            helpers.authedUser (err, user) ->
+              if err then done err else
+                user.get("http://localhost:#{configs.port}/channels?name=#{channel.name}")
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 200
+                      res.body.should.eql channel
+                      instance.stop done
+
   it 'should keep a count of the number of images tagged with a particular ::channel', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else

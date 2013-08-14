@@ -84,6 +84,14 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
             cb null, json
     , cb
 
+channelSchema.statics.getChannelWithName = (domain, name, cb) ->
+  lower = name.toLowerCase()
+  @findOne aliases:lower, domain.intercept (channel) ->
+    images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+      json = channel.toJSON()
+      json.count = count
+      cb null, json
+
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne 'aliases': categoryName, domain.intercept (category) =>
     if not category then cb error 403, 'could not find category' else
