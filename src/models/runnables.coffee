@@ -261,7 +261,18 @@ Runnables =
   listAll: (domain, sortByVotes, limit, page, cb) ->
     if not sortByVotes
       images.find({}, listFields).skip(page*limit).limit(limit).exec domain.intercept (results) ->
-        cb null, arrayToJSON results
+        results = arrayToJSON results
+        async.map results, (item, cb) ->
+          if not item then cb() else
+            item.tags = item.tags or [ ]
+            async.forEach item.tags, (tag, cb) ->
+              channels.findOne _id: tag.channel, domain.intercept (channel) ->
+                if channel then tag.name = channel.name
+                cb()
+            , (err) ->
+              if err then cb err else
+                cb null, item
+        , cb
     else
       users.aggregate voteSortPipeline(limit, limit*page), domain.intercept (results) ->
         async.map results, (result, cb) ->
@@ -291,7 +302,18 @@ Runnables =
   listFiltered: (domain, query, sortByVotes, limit, page, cb) ->
     if not sortByVotes
       images.find(query).skip(page*limit).limit(limit).exec domain.intercept (results) ->
-        cb null, arrayToJSON results
+        results = arrayToJSON results
+        async.map results, (item, cb) ->
+          if not item then cb() else
+            item.tags = item.tags or [ ]
+            async.forEach item.tags, (tag, cb) ->
+              channels.findOne _id: tag.channel, domain.intercept (channel) ->
+                if channel then tag.name = channel.name
+                cb()
+            , (err) ->
+              if err then cb err else
+                cb null, item
+        , cb
     else
       images.find query, listFields, domain.intercept (selected) ->
         filter = [ ]
