@@ -48,7 +48,7 @@ db.connect configs.mongo, (err, runnable_db) ->
                             if err then console.log err else
                               cb()
                     , (err) ->
-                      if err the console.log err else
+                      if err then console.log err else
                         cb()
       (cb) ->
         runnable_db.collection 'images', (err, images_collection) ->
@@ -81,7 +81,7 @@ db.connect configs.mongo, (err, runnable_db) ->
                             if err then console.log err else
                               cb()
                     , (err) ->
-                      if err the console.log err else
+                      if err then console.log err else
                         cb()
       (cb) ->
         runnable_db.collection 'containers', (err, containers_collection) ->
@@ -114,7 +114,7 @@ db.connect configs.mongo, (err, runnable_db) ->
                             if err then console.log err else
                               cb()
                     , (err) ->
-                      if err the console.log err else
+                      if err then console.log err else
                         cb()
       (cb) ->
         runnable_db.collection 'channels', (err, channels_collection) ->
