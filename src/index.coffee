@@ -1,3 +1,4 @@
+categories = require './rest/categories'
 cluster = require 'cluster'
 configs = require './configs'
 debug = require('debug')('worker')
@@ -14,7 +15,7 @@ channels = require './rest/channels'
 
 mongoose.connect configs.mongo
 if configs.rollbar
-  rollbar.handleUncaughtExceptions configs.rollbar
+  rollbar.init configs.rollbar.key, configs.rollbar.options
 
 class App
 
@@ -24,6 +25,10 @@ class App
 
   start: (cb) ->
     if @started then cb() else
+      process.on 'uncaughtException', (err) =>
+        @stop () =>
+          if cluster.isWorker
+            @cleanup_worker()
       @server.listen @configs.port, @configs.ipaddress || "0.0.0.0", (err) =>
         if err then cb err else
           @started = true
@@ -31,6 +36,7 @@ class App
 
   stop: (cb) ->
     if not @started then cb() else
+      process.removeAllListeners 'uncaughtException'
       @server.close (err) =>
         if err then cb err else
           @started = false
@@ -44,6 +50,7 @@ class App
     app.use users @domain
     app.use runnables @domain
     app.use channels @domain
+    app.use categories @domain
     app.use app.router
     if configs.nodetime then app.use nodetime.expressErrorHandler()
     if configs.rollbar then app.use rollbar.errorHandler()
@@ -53,22 +60,19 @@ class App
       res.json err.code, message: err.msg
       if configs.logErrorStack then debug "threw exception: #{err.stack}"
       @stop () =>
-        if cluster.isWorker
-          @cleanup_worker()
+        if cluster.isWorker then @cleanup_worker()
     app.get '/throws', (req, res) ->
       process.nextTick req.domain.bind () -> throw new Error 'zomg!'
     app.get '/', (req, res) -> res.json { message: 'runnable api' }
     app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
     @server = http.createServer app
-    process.on 'uncaughtException', (err) =>
-      @stop () =>
-        if cluster.isWorker
-          @cleanup_worker()
 
   cleanup_worker: () ->
     workerId = cluster.worker.process.pid
     debug 'sending exception message to master', workerId
     cluster.worker.send 'exception'
+    if configs.nodetime then nodetime.destroy()
+    if configs.rollbar then rollbar.shutdown()
     setTimeout () =>
       try
         debug 'waiting for worker to shut down gracefully', workerId
@@ -77,11 +81,10 @@ class App
           process.exit 1
         , 30000
         timer.unref()
-        if configs.nodetime then nodetime.destroy()
       catch exception_err
         if configs.logErrorStack then debug exception_err.stack
       debug 'disconnecting worker', workerId
       cluster.worker.disconnect()
-    , 90000
+    , 10000
 
 module.exports = App

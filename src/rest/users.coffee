@@ -244,7 +244,7 @@ module.exports = (parentDomain) ->
     if req.headers['content-type'] isnt 'application/json'
       res.json 400, message: 'content type must be application/json'
     else
-      if req.body.dir?
+      if req.body.dir
         if not req.body.name? then res.json 400, message: 'dir must include a name field' else
           if not req.body.path? then res.json 400, message: 'dir must include a path field'  else
             runnables.createDirectory req.domain, req.user_id, req.params.id, req.body.name, req.body.path, (err, dir) ->
@@ -286,7 +286,7 @@ module.exports = (parentDomain) ->
             runnables.renameFile req.domain, req.user_id, req.params.id, req.params.fileid, req.body.name, cb
         (file, cb) ->
           if not req.body.default? then cb null, file else
-            runnables.defaultFile req.domain, req.user_id, req.params.id, req.params.fileid, cb
+            runnables.defaultFile req.domain, req.user_id, req.params.id, req.params.fileid, req.body.default, cb
       ], (err, file) ->
         if err then res.json err.code, message: err.msg else
           if not file then res.json 400, message: 'must provide content, name, path or tag to update operation' else

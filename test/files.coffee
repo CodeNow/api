@@ -928,6 +928,44 @@ describe 'files api', ->
                         res.body.should.have.property 'message', 'cannot tag directory as default'
                         instance.stop done
 
+  it 'should be possible to untag a ::file as not default', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createContainer 'node.js', (err, user, runnableId) ->
+          if err then done err else
+            content = 'console.log("Hello, World!");'
+            encodedContent = (new Buffer(content)).toString('base64')
+            user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello.js', path: '/', content: encodedContent))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  fileId = res.body._id
+                  user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
+                    .set('content-type','application/json')
+                    .send(JSON.stringify(default: true))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.have.property 'default', true
+                        user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
+                          .end (err, res) ->
+                            res.should.have.status 200
+                            res.body.should.have.property 'default', true
+                            user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
+                              .set('content-type','application/json')
+                              .send(JSON.stringify(default: false))
+                              .end (err, res) ->
+                                if err then done err else
+                                  res.should.have.status 200
+                                  res.body.should.have.property 'default', false
+                                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
+                                    .end (err, res) ->
+                                      res.should.have.status 200
+                                      res.body.should.have.property 'default', false
+                                      instance.stop done
+
   it 'should ::list all ::file resources, without contents', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else

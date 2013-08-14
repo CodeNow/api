@@ -12,128 +12,211 @@ ObjectId = Schema.ObjectId
 channelSchema = new Schema
   name:
     type: String
-  description:
-    type: String
-  alias:
-    type: [String]
     index: true
     unique: true
-  category:
+  description:
+    type: String
+  aliases:
+    type: [ String ]
+    index: true
+    unique: true
+    default: [ ]
+  tags:
     type: [
-        name:
-          type:String
-          index:
-            sparse:true
-        alias:
-          type: [String]
-          index:
-            sparse: true
-      ]
-    default: []
+      category: ObjectId
+    ]
+    default: [ ]
 
-channelSchema.statics.getChannel = (domain, name, cb) ->
+channelSchema.statics.getChannel = (domain, categories, id, cb) ->
+  @findOne _id: id, domain.intercept (channel) ->
+    if not channel then cb error 404, 'channel not found' else
+      json = channel.toJSON()
+      json.tags = json.tags or [ ]
+      images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+        json.count = count
+        async.forEach json.tags, (tag, cb) ->
+          categories.findOne _id: tag.category, domain.intercept (category) ->
+            tag.name = category.name
+            cb()
+        , (err) ->
+          if err then cb err else
+            cb null, json
+
+channelSchema.statics.getChannelByName = (domain, categories, name, cb) ->
   lower = name.toLowerCase()
-  @findOne alias:lower, domain.intercept (channel) ->
-    if channel then cb null, channel.toJSON() else
-      images.listTags domain, (err, tagNames) ->
+  @findOne aliases:lower, domain.intercept (channel) ->
+    images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+      json = channel.toJSON()
+      json.count = count
+      async.forEach json.tags, (tag, cb) ->
+        categories.findOne _id: tag.category, domain.intercept (category) ->
+          tag.name = category.name
+          cb()
+      , (err) ->
         if err then cb err else
-          tagFound = _.find tagNames, (name) -> lower is name.toLowerCase()
-          if not tagFound? then cb error 404, 'not found' else
-            cb null, { _id:tagFound, name:tagFound }
+          cb null, json
 
-channelSchema.statics.createChannel = (domain, userId, data, cb) ->
+channelSchema.statics.createChannel = (domain, userId, name, desc, cb) ->
+  users.findUser domain, _id: userId, (err, user) =>
+    if err then cb err else
+      if not user then cb error 403, 'user not found' else
+        if not user.isModerator then cb error 403, 'permission denied' else
+          if not name? then cb error 400, 'name required' else
+            @findOne aliases: name.toLowerCase(), domain.intercept (existing) =>
+              if existing then cb error 403, 'a channel by that name already exists' else
+                channel = new @
+                channel.name = name
+                if desc then channel.description = desc
+                channel.aliases = [ name.toLowerCase() ]
+                if name isnt name.toLowerCase() then channel.aliases.push name
+                channel.save domain.intercept () ->
+                  json = channel.toJSON()
+                  json.count = 0
+                  cb null, json
+
+channelSchema.statics.createImplicitChannel = (domain, name, cb) ->
+  channel = new @
+  channel.name = name
+  channel.aliases = [name.toLowerCase()]
+  if name isnt name.toLowerCase() then channel.aliases.push name
+  channel.save domain.intercept () ->
+    cb null, channel.toJSON()
+
+channelSchema.statics.listChannels = (domain, categories, cb) ->
+  @find { }, domain.intercept (channels) ->
+    async.map channels, (channel, cb) ->
+      images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+        json = channel.toJSON()
+        json.count = count
+        json.tags = json.tags or [ ]
+        async.forEach json.tags, (tag, cb) ->
+          categories.findOne _id: tag.category, domain.intercept (category) ->
+            if category then json.name = category.name
+            cb()
+        , (err) ->
+          if err then cb err else
+            cb null, json
+    , cb
+
+channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
+  categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
+    if not category then cb error 404, 'could not find category' else
+      @find 'tags.category' : category._id, domain.intercept (channels) ->
+        async.map channels, (channel, cb) ->
+          images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+            json = channel.toJSON()
+            json.count = count
+            json.tags = json.tags or [ ]
+            async.forEach json.tags, (tag, cb) ->
+              categories.findOne _id: tag.category, domain.intercept (category) ->
+                if category then tag.name = category.name
+                cb()
+            , (err) ->
+              if err then cb err else
+                cb null, json
+        , cb
+
+channelSchema.statics.relatedChannels = (domain, channelNames, cb) ->
+  lowerNames = channelNames.map (name) -> name.toLowerCase()
+  @find aliases:$in:lowerNames, domain.bind (err, channels) =>
+    if err then throw err else
+      channelIds = channels.map (channel) -> channel._id
+      images.relatedChannelIds domain, channelIds, domain.intercept (relatedChannelIds) =>
+        relatedChannelIds = toStringDifference relatedChannelIds, channelIds
+        @find _id:$in:relatedChannelIds, domain.intercept (channels) ->
+          async.map channels, (channel, cb) ->
+            images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+              json = channel.toJSON()
+              json.count = count
+              cb null, json
+          , cb
+
+channelSchema.statics.updateChannel = (domain, userId, channelId, newName, cb) ->
   users.findUser domain, _id:userId, (err, user) =>
     if err then cb err else
       if not user.isModerator then cb error 403, 'permission denied' else
-        name = if typeof data.name is 'string' then data.name else null
-        if not name? then cb error 400, 'name required' else
-          channel = new @
-          channel.name = name
-          channel.description = data.description
-          channel.alias = [name.toLowerCase()]
-          category = data.category
-          if category? then channel.category = name:category, alias:[category.toLowerCase()]
-          channel.save domain.intercept () ->
-            cb null, channel.toJSON()
-
-channelSchema.statics.listChannels = (domain, cb) ->
-  images.listTags domain, (err, tagNames) =>
-    if err then cb err else
-      @findWithNames domain, tagNames, (dbChannels) ->
-        async.map tagNames, (name, mcb) ->
-          lower = name.toLowerCase()
-          dbChannel = _.find dbChannels, (chan) -> ~chan.alias.indexOf(lower)
-          channel = dbChannel or name:name
-          addCountToChannel domain, channel, mcb
-        , cb
-
-channelSchema.statics.listChannelsInChannel = (domain, channelNames, cb) ->
-  if not Array.isArray(channelNames) then channels = [channels]
-  images.listTagsWithTags domain, channelNames, (err, tagNames) =>
-    if err then cb err else
-      @findWithNames domain, tagNames, (dbChannels) ->
-        async.map tagNames, (name, mcb) ->
-          lower = name.toLowerCase()
-          dbChannel = _.find dbChannels, (chan) -> ~chan.alias.indexOf(lower)
-          channel = dbChannel or name:name
-          addCountToChannel domain, channel, mcb
-        , cb
-
-channelSchema.statics.listChannelsInCategory = (domain, categoryName, cb) ->
-  lower = categoryName.toLowerCase();
-  @find 'category.alias':lower, domain.intercept (channels) ->
-    channels = channels.map (channel) -> channel.toJSON()
-    async.map channels, (channel, mcb) ->
-      addCountToChannel domain, channel, mcb
-    , cb
-
-channelSchema.statics.findWithNames = (domain, names, cb) ->
-  lowerNames = names.map (name) -> name.toLowerCase()
-  @find alias: $in: lowerNames, domain.intercept () ->
-    cb()
-
-channelSchema.statics.rename = (domain, userId, channelId, name, cb) ->
-  users.findUser domain, _id:userId, (err, user) ->
-    if err then cb err else
-      if not user.isModerator then cb error 403, 'permission denied' else
-        if not name? then cb error 400, 'name required' else
-          lower = name.toLowerCase()
-          @find _id:channelId, domain.intercept (channel) ->
-            oldLower = channel.name.toLowerCase()
-            update = $set:{name:name}, $push:{alias:lower}, $pull:{alias:oldLower}
-            @findOneAndUpdate _id:channelId, update, domain.intercept (channel) ->
+        if not newName? then cb error 400, 'name required' else
+          @findOne _id: channelId, domain.intercept (channel) ->
+            channel.name = newName
+            channel.aliases = [ newName.toLowerCase() ]
+            if newName isnt newName.toLowerCase() then channel.aliases.push newName
+            channel.save domain.intercept () ->
               cb null, channel.toJSON()
 
-channelSchema.statics.getCategory = (domain, name, cb) ->
-  @listCategories domain, (categories) ->
-    category = _.findWhere categories, name:name
-    if (!category) then cb error 404, 'not found' else
-      cb null, category
+channelSchema.statics.updateAliases = (domain, userId, channelId, newAliases, cb) ->
+  users.findUser domain, _id:userId, (err, user) =>
+    if err then cb err else
+      if not user then cb error 403, 'user not found' else
+        if not user.isModerator then cb error 403, 'permission denied' else
+          if not newAliases? then cb error 400, 'new aliases required' else
+            @findOne _id: channelId, domain.intercept (channel) ->
+              channel.aliases = newAliases
+              channel.save domain.intercept () ->
+                cb null, channel.toJSON()
 
-channelSchema.statics.listCategories = (domain, cb) ->
-  channels = this;
-  @find().distinct 'category.name', domain.intercept (categoryNames) ->
-    async.map categoryNames, (name, mcb) ->
-      category = name:name
-      channels.listChannelsInCategory domain, name, (err, channels) ->
-        if err then mcb err else
-          countImagesInChannels domain, channels, (count) ->
-            category.count = count
-            mcb null, category
-    , cb
+channelSchema.statics.deleteChannel = (domain, userId, channelId, cb) ->
+  users.findUser domain, _id: userId, (err, user) =>
+    if err then cb err else
+      if not user.isModerator then cb error 403, 'permission denied' else
+        @remove _id: channelId, domain.intercept () ->
+          cb()
 
-addCountToChannel = (domain, channel, cb) ->
-  alias = channel.alias || [channel.name.toLowerCase()];
-  images.find('tags.name':$in:alias).count().exec domain.intercept (count) ->
-    channel.count = count
-    cb null, channel
+channelSchema.statics.getTags = (domain, categories, channelId, cb) ->
+  @findOne _id: channelId, domain.intercept (channel) ->
+    if not channel then cb error 404, 'channel not found' else
+      async.map channel.tags, (tag, cb) ->
+        json = tag.toJSON()
+        categories.findOne _id: json.category, domain.intercept (category) ->
+          if category then json.name = category.name
+          cb null, json
+      , cb
 
-countImagesInChannels = (domain, channels, cb) ->
-  tags = [];
-  channels.forEach (channel) ->
-    tags.push(channel.name);
-    if channel.alias then tags.concat(channel.alias)
-  images.find('tags.name':$in:tags).count().exec domain.intercept () ->
-    cb()
+channelSchema.statics.getTag = (domain, categories, channelId, tagId, cb) ->
+  @findOne _id: channelId, domain.intercept (channel) ->
+    if not channel then cb error 404, 'channel not found' else
+      tag = channel.tags.id tagId
+      if not tag then cb error 404, 'tag not found' else
+        json = tag.toJSON()
+        categories.findOne _id: json.category, domain.intercept (category) ->
+          if category then json.name = category.name
+          cb null, json
+
+channelSchema.statics.addTag = (domain, categories, userId, channelId, text, cb) ->
+  users.findUser domain, _id: userId, (err, user) =>
+    if err then cb err else
+      if not user then cb error 403, 'user not found' else
+        if user.permission_level < 5 then cb error 403, 'permission denied' else
+          @findOne _id: channelId, domain.intercept (channel) ->
+            if not channel then cb error 404, 'channel not found' else
+              categories.findOne { aliases : text }, domain.intercept (category) ->
+                if category
+                  channel.tags.push category: category._id
+                  tagId = channel.tags[channel.tags.length-1]._id
+                  channel.save domain.intercept () ->
+                    cb null, { name: category.name, _id: tagId }
+                else
+                  categories.createImplicitCategory domain, text, (err, category) ->
+                    if err then cb err else
+                      channel.tags.push category: category._id
+                      tagId = channel.tags[channel.tags.length-1]._id
+                      channel.save domain.intercept () ->
+                        cb null, { name: category.name, _id: tagId }
+
+channelSchema.statics.removeTag = (domain, userId, channelId, tagId, cb) ->
+  @findOne _id: channelId, domain.intercept (channel) ->
+    if not channel then cb error 404, 'channel not found' else
+      users.findOne _id: userId, domain.intercept (user) ->
+        if not user then cb error 403, 'user not found' else
+          if user.permission_level < 5 then cb error 403, 'permission denied' else
+            channel.tags.id(tagId).remove()
+            channel.save domain.intercept () ->
+              cb()
+
+toStringDifference = (arr1, arr2) ->
+  strArr1 = arr1.map (i) -> i.toString()
+  strArr2 = arr2.map (i) -> i.toString()
+  filtered1 = arr1.filter (i) -> strArr2.indexOf(i.toString()) is -1
+  filtered2 = arr2.filter (i) -> strArr1.indexOf(i.toString()) is -1
+  filtered1.concat filtered2
 
 module.exports = mongoose.model 'Channels', channelSchema

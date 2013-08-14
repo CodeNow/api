@@ -20,6 +20,14 @@
       "Draft Runnables": "/users/me/runnables"
     }
   },
+  "rollbar": {
+    "key": "119509f9ba314df8a9ffbaf7b4812fb6",
+    "options":  {
+      "root": "{ROOT_DIR}",
+      "branch": "master",
+      "environment": "development"
+    }
+  },
   "dnode_host": "harbourmaster.runnableapp.dev",
   "dnode_port": 13337,
   "dnode_access_timeout": "5 seconds",

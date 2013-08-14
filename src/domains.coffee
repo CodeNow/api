@@ -15,5 +15,4 @@ module.exports = (parentDomain) ->
           next e
       catch e
         console.log e
-
     d.run next

@@ -40,10 +40,9 @@ containerSchema = new Schema
     type: String
   tags:
     type: [
-      name: String
+      channel: ObjectId
     ]
     default: [ ]
-    index: true
   service_cmds:
     type: String
     default: ''
@@ -131,6 +130,9 @@ containerSchema.statics.destroy = (domain, id, cb) ->
 
 containerSchema.methods.getProcessState = (domain, cb) ->
   docker.inspectContainer @docker_id, domain.intercept (result) ->
+    if not result.State?
+      console.error 'bad result', result
+      throw new Error 'bad result from docker.inspectContainer'
     cb null, running: result.State.Running
 
 containerSchema.methods.start = (domain, cb) ->
@@ -167,7 +169,7 @@ containerSchema.methods.syncFiles = (domain, cb) ->
   sync @long_docker_id, @, (err) =>
     if err then cb err else
       @last_write = new Date()
-      @save domain.intercept () ->
+      @save domain.intercept () =>
         cb null, @
 
 containerSchema.methods.createFile = (domain, name, path, content, cb) ->
@@ -243,11 +245,11 @@ containerSchema.methods.readFile = (domain, fileId, cb) ->
   if not file then cb error 404, 'file does not exist' else
     cb null, file.toJSON()
 
-containerSchema.methods.tagFile = (domain, fileId, cb) ->
+containerSchema.methods.tagFile = (domain, fileId, isDefault, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if file.dir then cb error 403, 'cannot tag directory as default' else
-      file.default = true
+      file.default = isDefault
       @save domain.intercept () ->
         cb null, file
 

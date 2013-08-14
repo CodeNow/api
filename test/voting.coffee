@@ -196,7 +196,7 @@ describe 'voting api', ->
                                               res.body.should.have.property 'count', 0
                                               instance.stop done
 
-  it 'should be able to list all ::runnables in descending order of ::votes', (done) ->
+  it 'should be able to list all ::runnables in descending order of ::votes ::abc123', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->
@@ -246,7 +246,7 @@ describe 'voting api', ->
                                       res.should.have.status 200
                                       res.should.have.property 'body'
                                       res.body.should.be.a.array
-                                      res.body.length.should.equal 8
+                                      res.body.length.should.equal 5
                                       voted.should.include res.body[0]._id
                                       voted.should.include res.body[1]._id
                                       voted.should.include res.body[2]._id
@@ -255,9 +255,6 @@ describe 'voting api', ->
                                       res.body[2].should.have.property 'votes', 1
                                       res.body[3].should.have.property 'votes', 0
                                       res.body[4].should.have.property 'votes', 0
-                                      res.body[5].should.have.property 'votes', 0
-                                      res.body[6].should.have.property 'votes', 0
-                                      res.body[7].should.have.property 'votes', 0
                                       instance.stop done
 
   it 'should be able to list all ::runnables in descending order of ::votes after runnable is deleted', (done) ->
@@ -313,16 +310,13 @@ describe 'voting api', ->
                                             res.should.have.status 200
                                             res.should.have.property 'body'
                                             res.body.should.be.a.array
-                                            res.body.length.should.equal 8
+                                            res.body.length.should.equal 5
                                             voted.should.include res.body[0]._id
                                             voted.should.include res.body[1]._id
                                             res.body[0].should.have.property 'votes', 1
                                             res.body[1].should.have.property 'votes', 1
                                             res.body[3].should.have.property 'votes', 0
                                             res.body[4].should.have.property 'votes', 0
-                                            res.body[5].should.have.property 'votes', 0
-                                            res.body[6].should.have.property 'votes', 0
-                                            res.body[7].should.have.property 'votes', 0
                                             instance.stop done
 
   it 'should be able to list channel ::runnables in descending order of ::votes', (done) ->
@@ -568,7 +562,7 @@ describe 'voting api', ->
                                                 res.should.have.status 200
                                                 res.should.have.property 'body'
                                                 res.body.should.be.a.array
-                                                res.body.length.should.equal 8
+                                                res.body.length.should.equal 5
                                                 voted.should.include res.body[0]._id
                                                 voted.should.include res.body[1]._id
                                                 voted.should.include res.body[2]._id
@@ -576,8 +570,5 @@ describe 'voting api', ->
                                                 res.body[1].should.have.property 'votes', 1
                                                 res.body[2].should.have.property 'votes', 1
                                                 res.body[3].should.have.property 'votes', 0
-                                                res.body[4].should.have.property 'votes', 0
-                                                res.body[5].should.have.property 'votes', 0
-                                                res.body[6].should.have.property 'votes', 0
                                                 instance.configs.passwordSalt = oldSalt
                                                 instance.stop done
