@@ -133,7 +133,7 @@ db.connect 'mongodb://127.0.0.1:27017/runnable', (err, runnable_db) ->
             categories_collection.find().toArray (err, categories) ->
               if err then console.log err else
                 async.forEachSeries categories, (category, cb) ->
-                  console.log category 
+                  console.log category
                   categories_collection.update { _id: category._id }, { $set: { aliases: category.alias }, $unset: { alias: '' } }, (err) ->
                     if err then console.log err else
                       cb()

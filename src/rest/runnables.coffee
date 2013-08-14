@@ -33,7 +33,11 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.channel?
-      query = if Array.isArray(req.query.channel) then aliases: {$in:req.query.channel} else aliases: req.query.channel
+      if Array.isArray req.query.channel
+        channels = channel.toLowerCase() for channel in req.query.channel
+        query = aliases: { $in: channels }
+      else
+        query = aliases: req.query.channel.toLowerCase()
       channels.findOne query, req.domain.intercept (channel) ->
         if not channel then res.json 400, message: 'could not find channel by that name' else
           runnables.listFiltered req.domain, { 'tags.channel' : channel._id }, sortByVotes, limit, page, (err, results) ->

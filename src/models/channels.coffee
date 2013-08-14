@@ -42,13 +42,27 @@ channelSchema.statics.getChannel = (domain, categories, id, cb) ->
           if err then cb err else
             cb null, json
 
+channelSchema.statics.getChannelByName = (domain, categories, name, cb) ->
+  lower = name.toLowerCase()
+  @findOne aliases:lower, domain.intercept (channel) ->
+    images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+      json = channel.toJSON()
+      json.count = count
+      async.forEach json.tags, (tag, cb) ->
+        categories.findOne _id: tag.category, domain.intercept (category) ->
+          tag.name = category.name
+          cb()
+      , (err) ->
+        if err then cb err else
+          cb null, json
+
 channelSchema.statics.createChannel = (domain, userId, name, desc, cb) ->
   users.findUser domain, _id: userId, (err, user) =>
     if err then cb err else
       if not user then cb error 403, 'user not found' else
         if not user.isModerator then cb error 403, 'permission denied' else
           if not name? then cb error 400, 'name required' else
-            @findOne aliases: name, domain.intercept (existing) =>
+            @findOne aliases: name.toLowerCase(), domain.intercept (existing) =>
               if existing then cb error 403, 'a channel by that name already exists' else
                 channel = new @
                 channel.name = name
@@ -83,14 +97,6 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
           if err then cb err else
             cb null, json
     , cb
-
-channelSchema.statics.getChannelWithName = (domain, name, cb) ->
-  lower = name.toLowerCase()
-  @findOne aliases:lower, domain.intercept (channel) ->
-    images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
-      json = channel.toJSON()
-      json.count = count
-      cb null, json
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne 'aliases': categoryName, domain.intercept (category) =>

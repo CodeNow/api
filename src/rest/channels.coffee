@@ -18,15 +18,11 @@ module.exports = (parentDomain) ->
 
   app.get '/channels', (req, res) ->
     if req.query.name?
-      channels.getChannelWithName req.domain, req.query.name, (err, channel) ->
+      channels.getChannelByName req.domain, categories, req.query.name, (err, channel) ->
         if err then res.json err.code, message: err.msg else
           res.json channel
     else if req.query.category?
       channels.listChannelsInCategory req.domain, categories, req.query.category, (err, channels) ->
-        if err then res.json err.code, message: err.msg else
-          res.json channels
-    else if req.query.channel?
-      channels.listChannelsInChannel req.domain, req.query.channel, (err, channels) ->
         if err then res.json err.code, message: err.msg else
           res.json channels
     else

@@ -32,7 +32,7 @@ categorySchema.statics.getCategory = (domain, categoryId, cb) ->
         cb null, json
 
 categorySchema.statics.getCategoryByName = (domain, categoryName, cb) ->
-  @findOne aliases: categoryName, domain.intercept (category) ->
+  @findOne aliases: categoryName.toLowerCase(), domain.intercept (category) ->
     if not category then cb error 404, 'not found' else
       channels.find('tags.category': category._id).count().exec domain.intercept (count) ->
         json = category.toJSON()
@@ -54,7 +54,7 @@ categorySchema.statics.createCategory = (domain, userId, name, desc, cb) ->
       if not user then cb error 403, 'user not found' else
         if not user.isModerator then cb error 403, 'permission denied' else
           if not name? then cb error 400, 'name required' else
-            @findOne aliases: name, domain.intercept (existing) =>
+            @findOne aliases: name.toLowerCase(), domain.intercept (existing) =>
               if existing then cb error 403, 'category by that name already exists' else
                 category = new @
                 category.name = name
