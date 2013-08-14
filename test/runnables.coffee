@@ -813,17 +813,21 @@ describe 'runnables api', ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.get("http://localhost:#{configs.port}/runnables?channel=facebook")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body.should.be.a.array
-                  res.body.length.should.equal 1
-                  res.body.forEach (elem) ->
-                    elem.tags.should.be.a.array
-                    elem.tags.length.should.be.above 0
-                    elem.tags.should.includeEql { name: 'facebook', id: null }
-                  instance.stop done
+            helpers.createChannel 'Facebook', (err, channel) ->
+              if err then done err else
+                helpers.createTaggedImage 'node.js', 'facebook', (err, image) ->
+                  if err then done err else
+                    user.get("http://localhost:#{configs.port}/runnables?channel=facebook")
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 200
+                          res.body.should.be.a.array
+                          res.body.length.should.equal 1
+                          res.body.forEach (elem) ->
+                            elem.tags.should.be.a.array
+                            elem.tags.length.should.be.above 0
+                            elem.tags[0].should.have.property 'name', 'Facebook'
+                          instance.stop done
 
   it 'should be possible to check the state of abc a stopped ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->

@@ -54,10 +54,10 @@ imageSchema = new Schema
     type: Boolean
   tags:
     type: [
-      name:
-        index: true
-        sparse: true
-        type: String
+      channel:
+        type: ObjectId
+        index:
+          sparse: true
     ]
     default: [ ]
   service_cmds:
@@ -222,10 +222,9 @@ imageSchema.statics.listTags = (domain, cb) ->
   @find().distinct 'tags.name', domain.intercept (tagNames) ->
     cb null, tagNames
 
-imageSchema.statics.listTagsWithTags = (domain, tagNames, cb) ->
-  if not Array.isArray(tagNames) then tagNames = [tagNames]
-  @distinct 'tags.name', name:{$in:tagNames}, domain.intercept (tagNames) ->
-    cb null, tagNames
+imageSchema.statics.relatedChannelIds = (domain, channelIds, cb) ->
+  @distinct 'tags.channel', 'tags.channel':$in:channelIds, domain.intercept (channelIds) ->
+    cb null, channelIds
 
 imageSchema.statics.isOwner = (domain, userId, runnableId, cb) ->
   @findOne _id: runnableId, domain.intercept (image) ->

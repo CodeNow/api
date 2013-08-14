@@ -1,3 +1,4 @@
+channels = require '../models/channels'
 configs = require '../configs'
 debug = require('debug');
 domains = require '../domains'
@@ -33,11 +34,11 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.channel?
-      query = if Array.isArray(req.query.channel) then 'tags.name': {$in:req.query.channel} else
-        'tags.name': req.query.channel
-      runnables.listFiltered req.domain, query, sortByVotes, limit, page, (err, results) ->
-        if err then res.json err.code, message: err.msg else
-          res.json results
+      channels.findOne aliases: req.query.channel.toLowerCase(), req.domain.intercept (channel) ->
+        if not channel then res.json 400, message: 'could not find channel by that name' else
+          runnables.listFiltered req.domain, { 'tags.channel' : channel._id }, sortByVotes, limit, page, (err, results) ->
+            if err then res.json err.code, message: err.msg else
+              res.json results
     else if req.query.owner?
       runnables.listFiltered req.domain, { owner: req.query.owner }, sortByVotes, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else

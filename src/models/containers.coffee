@@ -40,10 +40,9 @@ containerSchema = new Schema
     type: String
   tags:
     type: [
-      name: String
+      channel: ObjectId
     ]
     default: [ ]
-    index: true
   service_cmds:
     type: String
     default: ''
