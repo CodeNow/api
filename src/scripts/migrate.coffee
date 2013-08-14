@@ -11,7 +11,9 @@ mongodb = require 'mongodb'
 # if no, then create the channel on the spot and
 
 db = mongodb.Db
+console.log 'connecting to server..'
 db.connect configs.mongo, (err, runnable_db) ->
+  console.log 'connected to server'
   if err then console.log err else
     async.series [
       (cb) ->
@@ -24,6 +26,7 @@ db.connect configs.mongo, (err, runnable_db) ->
                     async.forEachSeries channels, (channel, cb) ->
                       channel.category = channel.category or [ ]
                       tags = [ ]
+                      console.log 'ah'
                       async.forEachSeries channel.category, (category, cb) ->
                         categories_collection.findOne alias: category.name.toLowerCase(), (err, existing) ->
                           if err then console.log err else
@@ -32,7 +35,7 @@ db.connect configs.mongo, (err, runnable_db) ->
                                 if err then cb err else
                                   tags.push
                                     _id: new mongodb.ObjectID
-                                    category: new_category._id
+                                    category: new_category[0]._id
                                   cb()
                             else
                               tags.push
@@ -52,7 +55,7 @@ db.connect configs.mongo, (err, runnable_db) ->
           if err then console.log err else
             runnable_db.collection 'channels', (err, channels_collection) ->
               if err then console.log err else
-                images_collection.find().toArray (err, images) ->
+                images_collection.find({}, { files: 0} ).toArray (err, images) ->
                   if err then console.log err else
                     async.forEachSeries images, (image, cb) ->
                       images.tags = image.tags or [ ]
@@ -65,7 +68,7 @@ db.connect configs.mongo, (err, runnable_db) ->
                                 if err then cb err else
                                   tags.push
                                     _id: new mongodb.ObjectID
-                                    channel: new_channel._id
+                                    channel: new_channel[0]._id
                                   cb()
                             else
                               tags.push
@@ -85,7 +88,7 @@ db.connect configs.mongo, (err, runnable_db) ->
           if err then console.log err else
             runnable_db.collection 'channels', (err, channels_collection) ->
               if err then console.log err else
-                containers_collection.find().toArray (err, containers) ->
+                containers_collection.find({}, { files: 0 } ).toArray (err, containers) ->
                   if err then console.log err else
                     async.forEachSeries containers, (container, cb) ->
                       container.tags = container.tags or [ ]
@@ -98,7 +101,7 @@ db.connect configs.mongo, (err, runnable_db) ->
                                 if err then cb err else
                                   tags.push
                                     _id: new mongodb.ObjectID
-                                    channel: new_channel._id
+                                    channel: new_channel[0]._id
                                   cb()
                             else
                               tags.push
@@ -122,6 +125,9 @@ db.connect configs.mongo, (err, runnable_db) ->
                   channels_collection.update { _id: channel._id }, { $set: { aliases: channel.alias }, $unset: { alias: '' } }, (err) ->
                     if err then console.log err else
                       cb()
+                , (err) ->
+                  if err then console.log err else
+                    cb()
       (cb) ->
         runnable_db.collection 'categories', (err, categories_collection) ->
           if err then console.log err else
@@ -131,6 +137,9 @@ db.connect configs.mongo, (err, runnable_db) ->
                   categories_collection.update { _id: category._id }, { $set: { aliases: category.alias }, $unset: { alias: '' } }, (err) ->
                     if err then console.log err else
                       cb()
+                , (err) ->
+                  if err then console.log err else
+                    cb()
     ], (err) ->
       if err then console.log err else
         console.log 'DONNNNNE'
