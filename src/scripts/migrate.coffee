@@ -11,10 +11,10 @@ mongodb = require 'mongodb'
 # if no, then create the channel on the spot and
 
 db = mongodb.Db
-console.log 'connecting to server..'
-db.connect configs.mongo, (err, runnable_db) ->
-  console.log 'connected to server'
+console.log 'connecting to server'
+db.connect 'mongodb://127.0.0.1:27017/runnable', (err, runnable_db) ->
   if err then console.log err else
+    console.log 'connected to server'
     async.series [
       (cb) ->
         runnable_db.collection 'channels', (err, channels_collection) ->
@@ -26,7 +26,6 @@ db.connect configs.mongo, (err, runnable_db) ->
                     async.forEachSeries channels, (channel, cb) ->
                       channel.category = channel.category or [ ]
                       tags = [ ]
-                      console.log 'ah'
                       async.forEachSeries channel.category, (category, cb) ->
                         categories_collection.findOne alias: category.name.toLowerCase(), (err, existing) ->
                           if err then console.log err else
@@ -134,6 +133,7 @@ db.connect configs.mongo, (err, runnable_db) ->
             categories_collection.find().toArray (err, categories) ->
               if err then console.log err else
                 async.forEachSeries categories, (category, cb) ->
+                  console.log category 
                   categories_collection.update { _id: category._id }, { $set: { aliases: category.alias }, $unset: { alias: '' } }, (err) ->
                     if err then console.log err else
                       cb()
