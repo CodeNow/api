@@ -211,6 +211,38 @@ describe 'channels api', ->
                                 res.body[0].should.have.property 'name', 'newCategory'
                                 instance.stop done
 
+  it 'should be a able to list related ::channel tags', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.authedAdminUser (err, user) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/runnables?from=node.js")
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  runnableId = res.body._id
+                  user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/tags")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify({name: 'facebook'}))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/tags")
+                          .set('content-type', 'application/json')
+                          .send(JSON.stringify({name: 'facebook2'}))
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 201
+                              relatedTag = res.body
+                              user.get("http://localhost:#{configs.port}/channels?channel=facebook")
+                                .end (err, res) ->
+                                  if err then done err else
+                                    res.should.have.status 200
+                                    res.body.should.be.a.array
+                                    res.body.length.should.equal 1
+                                    res.body[0].name.should.equal relatedTag.name
+                                    instance.stop done
+
   it 'should be able to get a ::channel tag', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else

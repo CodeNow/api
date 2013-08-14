@@ -116,6 +116,21 @@ channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName
                 cb null, json
         , cb
 
+channelSchema.statics.relatedChannels = (domain, channelNames, cb) ->
+  lowerNames = channelNames.map (name) -> name.toLowerCase()
+  @find aliases:$in:lowerNames, domain.bind (err, channels) =>
+    if err then throw err else
+      channelIds = channels.map (channel) -> channel._id
+      images.relatedChannelIds domain, channelIds, domain.intercept (relatedChannelIds) =>
+        relatedChannelIds = toStringDifference relatedChannelIds, channelIds
+        @find _id:$in:relatedChannelIds, domain.intercept (channels) ->
+          async.map channels, (channel, cb) ->
+            images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+              json = channel.toJSON()
+              json.count = count
+              cb null, json
+          , cb
+
 channelSchema.statics.updateChannel = (domain, userId, channelId, newName, cb) ->
   users.findUser domain, _id:userId, (err, user) =>
     if err then cb err else
@@ -196,5 +211,12 @@ channelSchema.statics.removeTag = (domain, userId, channelId, tagId, cb) ->
             channel.tags.id(tagId).remove()
             channel.save domain.intercept () ->
               cb()
+
+toStringDifference = (arr1, arr2) ->
+  strArr1 = arr1.map (i) -> i.toString()
+  strArr2 = arr2.map (i) -> i.toString()
+  filtered1 = arr1.filter (i) -> strArr2.indexOf(i.toString()) is -1
+  filtered2 = arr2.filter (i) -> strArr1.indexOf(i.toString()) is -1
+  filtered1.concat filtered2
 
 module.exports = mongoose.model 'Channels', channelSchema
