@@ -36,7 +36,7 @@ channelSchema.statics.getChannel = (domain, categories, id, cb) ->
         json.count = count
         async.forEach json.tags, (tag, cb) ->
           categories.findOne _id: tag.category, domain.intercept (category) ->
-            tag.name = category.name
+            if category then tag.name = category.name
             cb()
         , (err) ->
           if err then cb err else
@@ -51,7 +51,7 @@ channelSchema.statics.getChannelByName = (domain, categories, name, cb) ->
         json.count = count
         async.forEach json.tags, (tag, cb) ->
           categories.findOne _id: tag.category, domain.intercept (category) ->
-            tag.name = category.name
+            if category then tag.name = category.name
             cb()
         , (err) ->
           if err then cb err else
