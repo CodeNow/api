@@ -90,7 +90,7 @@ Runnables =
         , (err) ->
           if err then cb err else
             cb null, json
-      cb null, results
+      , cb
 
   getContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
