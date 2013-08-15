@@ -54,8 +54,23 @@ channelSchema.statics.getChannelByName = (domain, categories, name, cb) ->
             if category then tag.name = category.name
             cb()
         , (err) ->
-          if err then cb err else
-            cb null, json
+          cb err, json
+
+channelSchema.statics.getChannelsWithNames = (domain, categories, names, cb) ->
+  if not Array.isArray names then names = [names]
+  lowers = names.map (name) -> name.toLowerCase()
+  @find aliases:$in:lowers, domain.intercept (channels) ->
+    async.map channels, (channel, cb) ->
+      images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+        json = channel.toJSON()
+        json.count = count
+        async.forEach json.tags, (tag, cb) ->
+          categories.findOne _id: tag.category, domain.intercept (category) ->
+            if category then tag.name = category.name
+            cb()
+        , (err) ->
+          cb err, json
+    , cb
 
 channelSchema.statics.createChannel = (domain, userId, name, desc, cb) ->
   users.findUser domain, _id: userId, (err, user) =>
