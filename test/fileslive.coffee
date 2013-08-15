@@ -1,0 +1,20 @@
+apiserver = require '../lib'
+configs = require '../lib/configs'
+helpers = require './helpers'
+sa = require 'superagent'
+qs = require 'querystring'
+
+describe 'live files api', ->
+
+  it 'should return a mount error when attempting to read a ::livefile before the container is started (and the file is mounted)'
+  it 'should return a ops error when attempting to write a ::livefile because they are read only'
+  it 'should return a ops error when attempting to create a ::livefile directory because they are read only'
+  it 'should return a ops error when attempting to update a ::livefile because they are read only'
+  it 'should read a list of directories and ::livefiles that are associated with a the live root after container is started'
+  it 'should not read the contents of ::livefile for files which are listed as parat of a live directory read'
+  it 'should be possible to read ::livefile subdirectories off of a live files path'
+  it 'should be possible to read ::livefile contents off of a live files path'
+  it 'should immediately reflect the change when updating a ::livefile at the terminal since its uncached'
+  it 'should return not found if a ::livefile is not found inside a valid path'
+  it 'should return not found if a path itself is not a valid ::livefile path'
+  it 'should not return ::livefile content if the file type is not part of the code mirror file extension list'
