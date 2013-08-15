@@ -91,7 +91,7 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
         json.tags = json.tags or [ ]
         async.forEach json.tags, (tag, cb) ->
           categories.findOne _id: tag.category, domain.intercept (category) ->
-            if category then json.name = category.name
+            if category then tag.name = category.name
             cb()
         , (err) ->
           if err then cb err else
