@@ -67,11 +67,8 @@ Runnables =
               if err then cb err else
                 json_container = container.toJSON()
                 delete json_container.files
-                if json_container.parent then json_container.parent = encodeId json_container.parent
-                if json_container.target then json_container.target = encodeId json_container.target
                 _.extend json_container, state
-                json_container._id = encodeId container._id
-                cb null, json_container
+                encodeIdsAndGetTags domain, json_container, cb
     ], cb
 
   listContainers: (domain, userId, parent, cb) ->
@@ -636,6 +633,17 @@ stats = [
   'runs'
   'views'
 ]
+
+encodeIdsAndGetTags = (domain, json, cb) ->
+  json._id = encodeId json._id
+  if json.parent? then json.parent = encodeId json.parent
+  if json.target? then json.target = encodeId json.target
+  async.forEach json.tags, (tag, cb) ->
+    channels.findOne _id: tag.channel, domain.intercept (channel) ->
+      if channel then tag.name = channel.name
+      cb()
+  , (err) ->
+    cb err, json
 
 encodeId = (id) -> id
 decodeId = (id) -> id
