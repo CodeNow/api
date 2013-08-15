@@ -7,6 +7,7 @@ error = require '../error'
 images = require './images'
 users = require './users'
 _ = require 'lodash'
+ObjectId = require('mongoose').Types.ObjectId
 
 listFields =
   _id:1,
@@ -379,19 +380,16 @@ Runnables =
             images.findOne _id: runnableId, domain.intercept (image) ->
               if not image then cb error 404, 'runnable not found' else
                 add = () ->
-                  channels.findOne aliases : text, domain.intercept (channel) ->
-                    if channel
-                      image.tags.push channel: channel._id
-                      tagId = image.tags[image.tags.length-1]._id
+                  channels.findOne aliases : text.toLowerCase(), domain.intercept (channel) ->
+                    createTag = (channel, cb) ->
+                      image.tags.push channel:channel._id
                       image.save domain.intercept () ->
-                        cb null, { name: channel.name, _id: tagId }
-                    else
+                        newTag = (_.last image.tags).toJSON();
+                        newTag.name = channel.name
+                        cb null, newTag
+                    if channel then createTag channel, cb else
                       channels.createImplicitChannel domain, text, (err, channel) ->
-                        if err then cb err else
-                          image.tags.push channel: channel._id
-                          tagId = image.tags[image.tags.length-1]._id
-                          image.save domain.intercept () ->
-                            cb null, { name: channel.name, _id: tagId }
+                        if err then cb err else createTag channel, cb
                 if image.owner.toString() is userId.toString() then add() else
                   if user.permission_level > 1 then add() else
                     cb error 403, 'permission denied'
@@ -442,19 +440,16 @@ Runnables =
           containers.findOne _id: runnableId, domain.intercept (container) ->
             if not container then cb error 404, 'runnable not found' else
               add = () ->
-                channels.findOne aliases : text, domain.intercept (channel) ->
-                  if channel
-                    container.tags.push channel: channel._id
-                    tagId = container.tags[container.tags.length-1]._id
+                channels.findOne aliases:text.toLowerCase(), domain.intercept (channel) ->
+                  createTag = (channel, cb) ->
+                    container.tags.push channel:channel._id
                     container.save domain.intercept () ->
-                      cb null, { name: channel.name, _id: tagId }
-                  else
+                      newTag = (_.last container.tags).toJSON();
+                      newTag.name = channel.name
+                      cb null, newTag
+                  if channel then createTag channel, cb else
                     channels.createImplicitChannel domain, text, (err, channel) ->
-                      if err then cb err else
-                        container.tags.push channel: channel._id
-                        tagId = container.tags[container.tags.length-1]._id
-                        container.save domain.intercept () ->
-                          cb null, { name: channel.name, _id: tagId }
+                      if err then cb err else createTag channel, cb
               if container.owner.toString() is userId.toString() then add() else
                 if user.permission_level > 1 then add() else
                   cb error 403, 'permission denied'
