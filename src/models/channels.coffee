@@ -45,16 +45,17 @@ channelSchema.statics.getChannel = (domain, categories, id, cb) ->
 channelSchema.statics.getChannelByName = (domain, categories, name, cb) ->
   lower = name.toLowerCase()
   @findOne aliases:lower, domain.intercept (channel) ->
-    images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
-      json = channel.toJSON()
-      json.count = count
-      async.forEach json.tags, (tag, cb) ->
-        categories.findOne _id: tag.category, domain.intercept (category) ->
-          tag.name = category.name
-          cb()
-      , (err) ->
-        if err then cb err else
-          cb null, json
+    if not channel then cb error 404, 'channel not found' else
+      images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+        json = channel.toJSON()
+        json.count = count
+        async.forEach json.tags, (tag, cb) ->
+          categories.findOne _id: tag.category, domain.intercept (category) ->
+            tag.name = category.name
+            cb()
+        , (err) ->
+          if err then cb err else
+            cb null, json
 
 channelSchema.statics.createChannel = (domain, userId, name, desc, cb) ->
   users.findUser domain, _id: userId, (err, user) =>
