@@ -30,7 +30,7 @@ db.connect 'mongodb://127.0.0.1:27017/runnable', (err, runnable_db) ->
                         categories_collection.findOne alias: category.name.toLowerCase(), (err, existing) ->
                           if err then console.log err else
                             if not existing
-                              categories_collection.insert category, (err, new_category) ->
+                              categories_collection.insert category, { safe: true }, (err, new_category) ->
                                 if err then cb err else
                                   tags.push
                                     _id: new mongodb.ObjectID
@@ -63,7 +63,7 @@ db.connect 'mongodb://127.0.0.1:27017/runnable', (err, runnable_db) ->
                         channels_collection.findOne alias: tag.name.toLowerCase(), (err, existing) ->
                           if err then console.log err else
                             if not existing
-                              channels_collection.insert { name: tag.name, alias: [ tag.name.toLowerCase() ] }, (err, new_channel) ->
+                              channels_collection.insert { name: tag.name, alias: [ tag.name.toLowerCase() ] }, { safe: true }, (err, new_channel) ->
                                 if err then cb err else
                                   tags.push
                                     _id: new mongodb.ObjectID
@@ -96,7 +96,7 @@ db.connect 'mongodb://127.0.0.1:27017/runnable', (err, runnable_db) ->
                         channels_collection.findOne alias: tag.name.toLowerCase(), (err, existing) ->
                           if err then console.log err else
                             if not existing
-                              channels_collection.insert { name: tag.name, alias: [ tag.name.toLowerCase() ] }, (err, new_channel) ->
+                              channels_collection.insert { name: tag.name, alias: [ tag.name.toLowerCase() ] }, { safe: true }, (err, new_channel) ->
                                 if err then cb err else
                                   tags.push
                                     _id: new mongodb.ObjectID
