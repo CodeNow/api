@@ -55,10 +55,8 @@ class App
     if configs.nodetime then app.use nodetime.expressErrorHandler()
     if configs.rollbar then app.use rollbar.errorHandler()
     app.use (err, req, res, next) =>
-      if not err.code then err.code = 500
-      if not err.msg then err.msg = 'something bad happened :('
-      res.json err.code, message: err.msg
-      if configs.logErrorStack then debug "threw exception: #{err.stack}"
+      res.json 500, message: 'something bad happened :('
+      if configs.logErrorStack then console.log err.stack
       @stop () =>
         if cluster.isWorker then @cleanup_worker()
     app.get '/throws', (req, res) ->
@@ -82,7 +80,7 @@ class App
         , 30000
         timer.unref()
       catch exception_err
-        if configs.logErrorStack then debug exception_err.stack
+        if configs.logErrorStack then console.log exception_err.stack
       debug 'disconnecting worker', workerId
       cluster.worker.disconnect()
     , 10000
