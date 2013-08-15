@@ -36,7 +36,6 @@ class App
 
   stop: (cb) ->
     if not @started then cb() else
-      process.removeAllListeners 'uncaughtException'
       @server.close (err) =>
         if err then cb err else
           @started = false
