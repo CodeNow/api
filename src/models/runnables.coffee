@@ -58,7 +58,7 @@ Runnables =
           channels.findOne aliases: from.toLowerCase(), domain.intercept (channel) ->
             if not channel then cb error 400, 'could not find channel by that name' else
               images.find 'tags.channel': channel._id, null, options, domain.intercept (images) ->
-                if not images.length then cb error 400, "could not find runnable in #{channe.name} to fork from" else
+                if not images.length then cb error 400, "could not find runnable in #{tags.name} to fork from" else
                   cb null, images[0]
       (image, cb)->
         containers.create domain, userId, image, (err, container) ->
@@ -66,9 +66,8 @@ Runnables =
             container.getProcessState domain, (err, state) ->
               if err then cb err else
                 json_container = container.toJSON()
-                delete json_container.files
                 _.extend json_container, state
-                encodeIdsAndGetTags domain, json_container, cb
+                encode domain, json_container, cb
     ], cb
 
   listContainers: (domain, userId, parent, cb) ->
@@ -77,17 +76,7 @@ Runnables =
     containers.find query, domain.intercept (containers) ->
       async.map containers, (item, cb) ->
         json = item.toJSON()
-        delete json.files
-        json._id = encodeId json._id
-        if json.parent then json.parent = encodeId json.parent
-        json.tags = json.tags or [ ]
-        async.forEach json.tags, (tag, cb) ->
-          channels.findOne _id: tag.channel, domain.intercept (channel) ->
-            if channel then tag.name = channel.name
-            cb()
-        , (err) ->
-          if err then cb err else
-            cb null, json
+        encode domain, json, cb
       , cb
 
   getContainer: (domain, userId, runnableId, cb) ->
@@ -99,19 +88,8 @@ Runnables =
             container.getProcessState domain, (err, state) ->
               if err then cb err else
                 json = container.toJSON()
-                delete json.files
-                json._id = encodeId json._id
-                if json.parent then json.parent = encodeId json.parent
-                if json.target then json.target = encodeId json.target
                 _.extend json, state
-                json.tags = json.tags or [ ]
-                async.forEach json.tags, (tag, cb) ->
-                  channels.findOne _id: tag.channel, domain.intercept (channel) ->
-                    if channel then tag.name = channel.name
-                    cb()
-                , (err) ->
-                  if err then cb err else
-                    cb null, json
+                encode domain, json, cb
 
   removeContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -149,11 +127,7 @@ Runnables =
           container.name = newName;
           container.save domain.intercept () ->
             json = container.toJSON()
-            delete json.files
-            json._id = encodeId json._id
-            if json.parent then json.parent = encodeId json.parent
-            if json.target then json.target = encodeId json.target
-            cb null, container
+            encode domain, json, cb
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -168,11 +142,7 @@ Runnables =
               else
                 image.updateFromContainer domain, container, (err) ->
                   if err then cb err else
-                    json_project = image.toJSON()
-                    delete json_project.files
-                    json_project._id = encodeId json_project._id
-                    if json_project.parent then json_project.parent = encodeId json_project.parent
-                    cb null, json_project
+                    encode domain, image.toJSON(), cb
         if image.owner.toString() is userId then update false else
           users.findUser domain, _id: userId, (err, user) ->
             if err then cb err else
@@ -183,38 +153,25 @@ Runnables =
   getImage: (domain, runnableId, cb) ->
     if not isObjectId64 runnableId then cb error 404, 'runnable not found' else
       decodedRunnableId = decodeId runnableId
-      images.findOne _id: decodedRunnableId, domain.intercept (image) =>
+      images.findOne {_id: decodedRunnableId}, {files:0}, domain.intercept (image) =>
         if not image then cb error 404, 'runnable not found' else
           @getVotes domain, runnableId, (err, votes) ->
             if err then cb err else
               json_project = image.toJSON()
-              delete json_project.files
               json_project.votes = votes.count
-              json_project._id = encodeId json_project._id
-              if json_project.parent then json_project.parent = encodeId json_project.parent
-              json_project.tags = json_project.tags or [ ]
-              async.forEach json_project.tags, (tag, cb) ->
-                channels.findOne _id: tag.channel, domain.intercept (channel) ->
-                  if channel then tag.name = channel.name
-                  cb()
-              , (err) ->
-                if err then cb err else
-                  cb null, json_project
+              encode domain, json_project, cb
 
   startContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    containers.findOne _id: runnableId, domain.intercept (container) ->
+    containers.findOne {_id: runnableId}, {files:0}, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
           container.getProcessState domain, (err, state) ->
             if err then cb err else
               response = (state) ->
                 json_project = container.toJSON()
-                delete json_project.files
-                json_project._id = encodeId json_project._id
-                if json_project.parent then json_project.parent = encodeId json_project.parent
                 _.extend json_project, state
-                cb null, json_project
+                encode domain, json_project, cb
               if state.running then response state else
                 container.start domain, (err) ->
                   if err then cb err else
@@ -223,7 +180,7 @@ Runnables =
 
   stopContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    containers.findOne _id: runnableId, domain.intercept (container) ->
+    containers.findOne {_id: runnableId}, {files:0}, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString()
           cb error 403, 'permission denied'
@@ -231,11 +188,8 @@ Runnables =
           container.getProcessState domain, (err, state) ->
             response = (state) ->
               json_project = container.toJSON()
-              delete json_project.files
-              json_project._id = encodeId json_project._id
-              if json_project.parent then json_project.parent = encodeId json_project.parent
               _.extend json_project, state
-              cb null, json_project
+              encode domain, json_project, cb
             if not state.running then response state else
               container.stop domain, (err) ->
                 if err then cb err else
@@ -259,59 +213,21 @@ Runnables =
   listAll: (domain, sortByVotes, limit, page, cb) ->
     if not sortByVotes
       images.find({}, listFields).skip(page*limit).limit(limit).exec domain.intercept (results) ->
-        results = arrayToJSON results
-        async.map results, (item, cb) ->
-          if not item then cb() else
-            item.tags = item.tags or [ ]
-            async.forEach item.tags, (tag, cb) ->
-              channels.findOne _id: tag.channel, domain.intercept (channel) ->
-                if channel then tag.name = channel.name
-                cb()
-            , (err) ->
-              if err then cb err else
-                cb null, item
-        , cb
+        arrayToJSON(domain, results, cb)
     else
       users.aggregate voteSortPipeline(limit, limit*page), domain.intercept (results) ->
         async.map results, (result, cb) ->
           images.findOne _id: result._id, listFields, domain.intercept (runnable) ->
             if not runnable then cb() else
-              runnable.votes = result.number - 1
-              cb null, runnable
-        , (err, results) ->
-          if err then cb err else
-            async.map results, (item, cb) ->
-              if not item then cb() else
-                json = item.toJSON()
-                json._id = encodeId json._id
-                delete json.files
-                json.votes = item.votes
-                if json.parent then json.parent = encodeId json.parent
-                json.tags = json.tags or [ ]
-                async.forEach json.tags, (tag, cb) ->
-                  channels.findOne _id: tag.channel, domain.intercept (channel) ->
-                    if channel then tag.name = channel.name
-                    cb()
-                , (err) ->
-                  if err then cb err else
-                    cb null, json
-            , cb
+              json = runnable.toJSON()
+              json.votes = result.number - 1
+              encode domain, json, cb
+        , cb
 
   listFiltered: (domain, query, sortByVotes, limit, page, cb) ->
     if not sortByVotes
       images.find(query).skip(page*limit).limit(limit).exec domain.intercept (results) ->
-        results = arrayToJSON results
-        async.map results, (item, cb) ->
-          if not item then cb() else
-            item.tags = item.tags or [ ]
-            async.forEach item.tags, (tag, cb) ->
-              channels.findOne _id: tag.channel, domain.intercept (channel) ->
-                if channel then tag.name = channel.name
-                cb()
-            , (err) ->
-              if err then cb err else
-                cb null, item
-        , cb
+        arrayToJSON(domain, results, cb)
     else
       images.find query, listFields, domain.intercept (selected) ->
         filter = [ ]
@@ -321,30 +237,14 @@ Runnables =
           async.map results, (result, cb) ->
             images.findOne { _id: result._id }, listFields, domain.intercept (runnable) ->
               if not runnable then cb() else
-                runnable.votes = result.number - 1
-                cb null, runnable
-          , (err, results) ->
-            if err then cb err else
-              async.map results, (item, cb) ->
-                if not item then cb() else
-                  json = item.toJSON()
-                  delete json.files
-                  json._id = encodeId json._id
-                  json.votes = item.votes
-                  if json.parent then json.parent = encodeId json.parent
-                  json.tags = json.tags or [ ]
-                  async.forEach json.tags, (tag, cb) ->
-                    channels.findOne _id: tag.channel, domain.intercept (channel) ->
-                      if channel then tag.name = channel.name
-                      cb()
-                  , (err) ->
-                    if err then cb err else
-                      cb null, json
-              , cb
+                json = runnable.toJSON()
+                json.votes = result.number - 1
+                encode domain, json, cb
+          , cb
 
   listNames: (domain, cb) ->
     images.find({ tags: $not: $size: 0 }, 'name').exec domain.intercept (results) ->
-      cb null, arrayToJSON results
+      arrayToJSON(domain, results, cb)
 
   getTags: (domain, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -613,13 +513,11 @@ fetchContainer = (domain, userId, runnableId, cb) ->
       if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
         cb null, container
 
-arrayToJSON = (res) ->
-  result = for item in res
+arrayToJSON = (res, cb) ->
+  async.map res, (item, cb) ->
     json = item.toJSON()
-    delete json.files
-    json._id = encodeId json._id
-    if json.parent then json.parent = encodeId json.parent
-    json
+    encode domain, json, cb
+  , cb
 
 plus = /\+/g
 slash = /\//g
@@ -634,10 +532,12 @@ stats = [
   'views'
 ]
 
-encodeIdsAndGetTags = (domain, json, cb) ->
+encode = (domain, json, cb) ->
   json._id = encodeId json._id
+  if json.files? then delete json.files
   if json.parent? then json.parent = encodeId json.parent
   if json.target? then json.target = encodeId json.target
+  json.tags = json.tags or []
   async.forEach json.tags, (tag, cb) ->
     channels.findOne _id: tag.channel, domain.intercept (channel) ->
       if channel then tag.name = channel.name
