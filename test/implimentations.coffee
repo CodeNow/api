@@ -36,6 +36,19 @@ createOwner = (cb) ->
       @ownerToken = res.body.access_token
       cb null
 
+createModerator = (cb) ->
+  @moderator = sa.agent()
+  req = @user.post "#{base}/token"
+  req.set 'Content-Type', 'application/json'
+  req.send JSON.stringify 
+    username: 'test4@testing.com' 
+    password: 'testing'
+  req.end (err, res) =>
+    if err then cb err else
+      res.should.have.status 200
+      @moderatorToken = res.body.access_token
+      cb null
+
 createUser = (cb) ->
   @user = sa.agent()
   req = @user.post "#{base}/token"
@@ -50,7 +63,7 @@ createUser = (cb) ->
       cb null
 
 initOwner = (cb) ->
-  req = @owner.post "#{base}/users/me/vars"
+  req = @owner.post "#{base}/implimentations"
   req.set 'runnable-token', @ownerToken
   req.send data.user.create
   req.end (err, res) =>
@@ -59,7 +72,7 @@ initOwner = (cb) ->
     if err then cb err else cb null
 
 doUserOperation = (cb) ->
-  url = "#{base}/users/me/vars"
+  url = "#{base}/implimentations"
   if @operation is 'add' then method = 'post'
   if @operation is 'edit'
     method = 'put' 
@@ -78,7 +91,7 @@ doUserOperation = (cb) ->
     if err then cb err else cb null
 
 checkUserOperation = (cb) ->
-  req = @owner.get "#{base}/users/me/vars"
+  req = @owner.get "#{base}/implimentations"
   req.set 'runnable-token', @ownerToken
   req.end (err, res) =>
     if err then cb err else
@@ -87,6 +100,36 @@ checkUserOperation = (cb) ->
         Object.keys(obj)
           .every (key) =>
             res.body[i][key].should.equal obj[key]
+      cb null
+
+createImage = (cb) ->
+  req = @owner.post "#{base}/runnables"
+  req.set 'runnable-token', @ownerToken
+  req.send data[@type].create
+  req.end (err, res) =>
+    if err then cb err else
+      res.should.have.status 201
+      @imageId = res.body._id
+      cb null
+
+initImage = (cb) ->
+  method = if @type is 'instructions' then 'put' else 'post'
+  req = @owner[method] "#{base}/runnables/#{@imageId}/#{@type}"
+  req.set 'runnable-token', @ownerToken
+  req.send data[@type].create
+  req.end (err, res) =>
+    if res.status is 404 then err = new Error "init route not found"
+    @updateId = res.body._id 
+    if err then cb err else cb null
+
+createContainer = (cb) ->
+  req = @owner.post "#{base}/users/me/runnables?from=#{@imageId}"
+  req.set 'runnable-token', @ownerToken
+  req.end (err, res) =>
+    if err then cb err else
+      res.should.have.status 201
+      @containerId = res.body._id
+      @token = res.body.token
       cb null
 
 setEnv = (cb) ->
@@ -125,7 +168,9 @@ testCrud = (cb) ->
     createImage.bind @
     initImage.bind @
   ]
-  if not @.isOwner
+  if @userType === 'moderator'
+    list.push createModerator.bind @
+  if @userType === 'non-owner'
     list.push createUser.bind @
   list = list.concat [
     doOperation.bind @
@@ -134,13 +179,18 @@ testCrud = (cb) ->
   ]
   async.series list, cb
 
-testCreation = (cb) ->
+testStart = (cb) ->
   list = [
     createServer.bind @
     createOwner.bind @
-    initOwner.bind @
-    doUserOperation.bind @
-    checkUserOperation.bind @
+  ]
+  if @with 
+    list.push initOwner.bind @
+  list = list.concat [
+    createImage.bind @
+    initImage.bind @
+    createContainer.bind @
+    startContainer.bind @
     stopServer.bind @
   ]
   async.series list, cb
@@ -150,13 +200,16 @@ testUrl = (cb) ->
     createServer.bind @
     createOwner.bind @
     initOwner.bind @
-    doUserOperation.bind @
-    checkUserOperation.bind @
+    createImage.bind @
+    initImage.bind @
+    createContainer.bind @
+    startContainer.bind @
+    checkUrl.bind @
     stopServer.bind @
   ]
   async.series list, cb
 
-testContainer = (cb) ->
+testVariables = (cb) ->
   list = [
     createServer.bind @
     createOwner.bind @
@@ -177,16 +230,24 @@ testContainer = (cb) ->
 
 describe 'implimentation api', ->
   
-  it 'should allow owners/moderators to create ::implimentations'
-  it 'should allow owners/moderators to edit ::implimentations'
-  it 'should allow owners/moderators to view ::implimentations'
-  it 'should allow owners/moderators to remove ::implimentations'
+  it 'should allow owners to create ::implimentations'
+  it 'should allow owners to edit ::implimentations'
+  it 'should allow owners to view ::implimentations'
+  it 'should allow owners to list ::implimentations'
+  it 'should allow owners to remove ::implimentations'
+
+  it 'should allow moderators to create ::implimentations'
+  it 'should allow moderators to edit ::implimentations'
+  it 'should allow moderators to view ::implimentations'
+  it 'should allow moderators to list ::implimentations'
+  it 'should allow moderators to remove ::implimentations'
 
   it 'should forbid non-owners/moderators to create ::implimentations'
   it 'should forbid non-owners/moderators to edit ::implimentations'
   it 'should forbid non-owners/moderators to view ::implimentations'
   it 'should forbid non-owners/moderators to remove ::implimentations'
 
+  it 'should allow container start with ::implimentations'
   it 'should forbid container start without ::implimentations'
 
   it 'should cause the web page to use the ::implimentations url'
