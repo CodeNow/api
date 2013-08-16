@@ -243,8 +243,8 @@ Runnables =
           , cb
 
   listNames: (domain, cb) ->
-    images.find({ tags: $not: $size: 0 }, 'name').exec domain.intercept (results) ->
-      arrayToJSON(domain, results, cb)
+    images.find(tags:$not:$size:0, {_id:1,name:1,tags:1}).exec domain.intercept (results) ->
+      arrayToJSON domain, results, cb
 
   getTags: (domain, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -513,7 +513,7 @@ fetchContainer = (domain, userId, runnableId, cb) ->
       if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
         cb null, container
 
-arrayToJSON = (res, cb) ->
+arrayToJSON = (domain, res, cb) ->
   async.map res, (item, cb) ->
     json = item.toJSON()
     encode domain, json, cb
