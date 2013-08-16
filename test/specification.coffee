@@ -380,10 +380,10 @@ describe 'specification api', ->
       success: false
 
   it 'should persist the ::specifications from an image to a container', ->
-    testPersist
+    testPersist.bind {}
   it 'should persist the ::specifications from a container to an image', ->
     testPersist.bind
       direction: 'backward'
 
   it 'should forbid duplicate ::specifications', ->
-    testStomp
+    testStomp.bind {}

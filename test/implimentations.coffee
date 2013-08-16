@@ -230,28 +230,100 @@ testVariables = (cb) ->
 
 describe 'implimentation api', ->
   
-  it 'should allow owners to create ::implimentations'
-  it 'should allow owners to edit ::implimentations'
-  it 'should allow owners to view ::implimentations'
-  it 'should allow owners to list ::implimentations'
-  it 'should allow owners to remove ::implimentations'
+  it 'should allow owners to create ::implimentations', ->
+    testCrud.bind
+      userType: 'owner'
+      operation: 'add'
+      success: true
+  it 'should allow owners to edit ::implimentations', ->
+    testCrud.bind
+      userType: 'owner'
+      operation: 'edit'
+      success: true
+  it 'should allow owners to view ::implimentations', ->
+    testCrud.bind
+      userType: 'owner'
+      operation: 'read'
+      success: true
+  it 'should allow owners to list ::implimentations', ->
+    testCrud.bind
+      userType: 'owner'
+      operation: 'list'
+      success: true
+  it 'should allow owners to remove ::implimentations', ->
+    testCrud.bind
+      userType: 'owner'
+      operation: 'remove'
+      success: true
 
-  it 'should allow moderators to create ::implimentations'
-  it 'should allow moderators to edit ::implimentations'
-  it 'should allow moderators to view ::implimentations'
-  it 'should allow moderators to list ::implimentations'
-  it 'should allow moderators to remove ::implimentations'
+  it 'should allow moderators to create ::implimentations', ->
+    testCrud.bind
+      userType: 'moderator'
+      operation: 'add'
+      success: true
+  it 'should allow moderators to edit ::implimentations', ->
+    testCrud.bind
+      userType: 'moderator'
+      operation: 'edit'
+      success: true
+  it 'should allow moderators to view ::implimentations', ->
+    testCrud.bind
+      userType: 'moderator'
+      operation: 'read'
+      success: true
+  it 'should allow moderators to list ::implimentations', ->
+    testCrud.bind
+      userType: 'moderator'
+      operation: 'list'
+      success: true
+  it 'should allow moderators to remove ::implimentations', ->
+    testCrud.bind
+      userType: 'moderator'
+      operation: 'remove'
+      success: true
 
-  it 'should forbid non-owners/moderators to create ::implimentations'
-  it 'should forbid non-owners/moderators to edit ::implimentations'
-  it 'should forbid non-owners/moderators to view ::implimentations'
-  it 'should forbid non-owners/moderators to remove ::implimentations'
+  it 'should forbid non-owners/moderators to create ::implimentations', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'add'
+      success: false
+  it 'should forbid non-owners/moderators to edit ::implimentations', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'edit'
+      success: false
+  it 'should forbid non-owners/moderators to view ::implimentations', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'read'
+      success: false
+  it 'should forbid non-owners/moderators to list ::implimentations', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'list'
+      success: false
+  it 'should forbid non-owners/moderators to remove ::implimentations', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'remove'
+      success: false
 
-  it 'should allow container start with ::implimentations'
-  it 'should forbid container start without ::implimentations'
+  it 'should allow container start with ::implimentations', ->
+    testStart.bind
+      with: true
+      success: true
+  it 'should forbid container start without ::implimentations', ->
+    testStart.bind
+      with: false
+      success: false
 
-  it 'should cause the web page to use the ::implimentations url'
+  it 'should cause the web page to use the ::implimentations url', ->
+    testUrl.bind {}
 
-  it 'should have existing ::implimentations env variables set'
-  it 'should set ::implimentations env variables on demand'
+  it 'should have existing ::implimentations env variables set', ->
+    testVariables.bind
+      existing: true
+  it 'should set ::implimentations env variables on demand', ->
+    testVariables.bind
+      existing: false
   
