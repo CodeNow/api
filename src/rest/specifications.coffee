@@ -44,7 +44,7 @@ module.exports = (parentDomain) ->
         res.json specification
 
   app.del '/specifications/:id', (req, res) ->
-    specifications.deletespecification req.domain, 
+    specifications.deleteSpecification req.domain, 
       userId: req.user_id
       specificationId: req.params.id
     , (err) ->
