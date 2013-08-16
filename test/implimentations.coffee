@@ -8,9 +8,9 @@ async = require 'async'
 
 base = "http://localhost:#{configs.port}"
 
-data
+data = {}
 
-expected
+expected = {}
 
 
 # UTILITIES AND TESTS
@@ -168,9 +168,9 @@ testCrud = (cb) ->
     createImage.bind @
     initImage.bind @
   ]
-  if @userType === 'moderator'
+  if @userType is 'moderator'
     list.push createModerator.bind @
-  if @userType === 'non-owner'
+  if @userType is 'non-owner'
     list.push createUser.bind @
   list = list.concat [
     doOperation.bind @

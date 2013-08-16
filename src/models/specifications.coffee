@@ -9,7 +9,7 @@ Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
 specificationSchema = new Schema
-  owner
+  owner:
     type: ObjectId
   name:
     type:String

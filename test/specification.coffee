@@ -8,9 +8,9 @@ async = require 'async'
 
 base = "http://localhost:#{configs.port}"
 
-data
+data = {}
 
-expected
+expected = {}
 
 
 # UTILITIES AND TESTS
@@ -36,6 +36,41 @@ createOwner = (cb) ->
       @ownerToken = res.body.access_token
       cb null
 
+initOwner = (cb) ->
+  req = @owner.post "#{base}/specifications"
+  req.set 'runnable-token', @ownerToken
+  req.send data.user.create
+  req.end (err, res) =>
+    if res.status is 404 then err = new Error "init route not found"
+    @updateId = res.body._id 
+    if err then cb err else cb null
+
+createModerator = (cb) ->
+  @moderator = sa.agent()
+  req = @user.post "#{base}/token"
+  req.set 'Content-Type', 'application/json'
+  req.send JSON.stringify 
+    username: 'test4@testing.com' 
+    password: 'testing'
+  req.end (err, res) =>
+    if err then cb err else
+      res.should.have.status 200
+      @moderatorToken = res.body.access_token
+      cb null
+
+createUser = (cb) ->
+  @user = sa.agent()
+  req = @user.post "#{base}/token"
+  req.set 'Content-Type', 'application/json'
+  req.send JSON.stringify 
+    username: 'matchusername5' 
+    password: 'testing'
+  req.end (err, res) =>
+    if err then cb err else
+      res.should.have.status 200
+      @userToken = res.body.access_token
+      cb null
+
 createImage = (cb) ->
   req = @owner.post "#{base}/runnables"
   req.set 'runnable-token', @ownerToken
@@ -47,8 +82,7 @@ createImage = (cb) ->
       cb null
 
 initImage = (cb) ->
-  method = if @type is 'instructions' then 'put' else 'post'
-  req = @owner[method] "#{base}/runnables/#{@imageId}/#{@type}"
+  req = @owner.post "#{base}/runnables/#{@imageId}/#{@type}"
   req.set 'runnable-token', @ownerToken
   req.send data[@type].create
   req.end (err, res) =>
@@ -111,26 +145,12 @@ recreateImage = (cb) ->
       @imageId = res.body._id
       cb null
 
-createUser = (cb) ->
-  @user = sa.agent()
-  req = @user.post "#{base}/token"
-  req.set 'Content-Type', 'application/json'
-  req.send JSON.stringify 
-    username: 'matchusername5' 
-    password: 'testing'
-  req.end (err, res) =>
-    if err then cb err else
-      res.should.have.status 200
-      @userToken = res.body.access_token
-      cb null
-
 doOperation = (cb) ->
-  url = "#{base}/runnables/#{@imageId}/#{@type}"
+  url = "#{base}/specifications"
   if @operation is 'add' then method = 'post'
   if @operation is 'edit' 
     method = 'put' 
-    if @type isnt 'instructions'
-      url += "/#{@updateId}"
+    url += "/#{@updateId}"
   if @operation is 'read' then return cb null
   if @operation is 'remove' 
     method = 'del'  
@@ -155,7 +175,7 @@ checkOperation = (cb) ->
     cb null
   else
     user = @user or @owner
-    req = user.get "#{base}/runnables/#{@imageId}/#{@type}"
+    req = user.get "/specifications"
     req.set 'runnable-token', if @isOwner then @ownerToken else @userToken
     req.end (err, res) =>
       if res?.status is 403 then err = new Error 'forbiden'
@@ -171,15 +191,6 @@ checkOperation = (cb) ->
           res.body[@type].should.equal expected[@type][@operation]
         cb null
 
-initOwner = (cb) ->
-  req = @owner.post "#{base}/users/me/vars"
-  req.set 'runnable-token', @ownerToken
-  req.send data.user.create
-  req.end (err, res) =>
-    if res.status is 404 then err = new Error "init route not found"
-    @updateId = res.body._id 
-    if err then cb err else cb null
-
 tryStomp = (cb) ->
   req = @owner.post "#{base}/runnables/#{@imageId}/#{@type}"
   req.set 'runnable-token', @ownerToken
@@ -194,6 +205,42 @@ stopServer = (cb) ->
   @instance.stop cb
 
 # TEST CONTROLLERS
+
+testCrud = (cb) ->
+  list = [
+    createServer.bind @
+    createOwner.bind @
+    initOwner.bind @
+  ]
+  if @userType is 'moderator'
+    list.push createModerator.bind @
+  if @userType is 'non-owner'
+    list.push createUser.bind @
+  list = list.concat [
+    doOperation.bind @
+    checkOperation.bind @
+    stopServer.bind @
+  ]
+  async.series list, cb
+
+testAttach = (cb) ->
+  list = [
+    createServer.bind @
+    createOwner.bind @
+    initOwner.bind @
+    createImage.bind @
+  ]
+  if @operation is 'edit'
+    list.push initImage.bind @
+  if @userType is 'moderator'
+    list.push createModerator.bind @
+  if @userType is 'non-owner'
+    list.push createUser.bind @
+  list = list.concat [
+    attachImage.bind @
+    checkImage.bind @
+    stopServer.bind @
+  ]
 
 testPersist = (cb) ->
   list = [
@@ -214,22 +261,6 @@ testPersist = (cb) ->
   list.push stopServer.bind @
   async.series list, cb
 
-testCrud = (cb) ->
-  list = [
-    createServer.bind @
-    createOwner.bind @
-    createImage.bind @
-    initImage.bind @
-  ]
-  if not @.isOwner
-    list.push createUser.bind @
-  list = list.concat [
-    doOperation.bind @
-    checkOperation.bind @
-    stopServer.bind @
-  ]
-  async.series list, cb
-
 testStomp = (cb) ->
   list = [
     createServer.bind @
@@ -246,15 +277,113 @@ testStomp = (cb) ->
 
 describe 'specification api', ->
   
-  it 'should allow publishers to create ::specifications'
-  it 'should forbid non-publishers from creating ::specifications'
-  it 'should allow specification owners or moderators to edit ::specifications'
-  it 'should forbid non-owners/moderators from editing ::specifications'
-  it 'should allow specification owners or moderators to remove ::specifications'
-  it 'should forbid non-owners/moderators from removing ::specifications'
-  it 'should allow owners to read ::specifications'
-  it 'should allow non-owners to read ::specifications'
+  it 'should allow publishers to create ::specifications', ->
+    testCrud.bind
+      userType: 'publisher'
+      operation: 'add'
+      success: true
+  it 'should forbid non-publishers from creating ::specifications', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'add'
+      success: false
 
-  it 'should allow publishers to attach a ::specifications to a container'
-  it 'should persist the ::specifications from a container to an image'
-  it 'should persist the ::specifications from an image to a container'
+  it 'should allow specification owners to edit ::specifications', ->
+    testCrud.bind
+      userType: 'publisher'
+      operation: 'edit'
+      success: true
+  it 'should allow specification moderators to edit ::specifications', ->
+    testCrud.bind
+      userType: 'moderators'
+      operation: 'edit'
+      success: true
+  it 'should forbid non-owners from editing ::specifications', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'edit'
+      success: false
+
+  it 'should allow specification owners to remove ::specifications', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'edit'
+      success: false
+  it 'should allow specification moderators to remove ::specifications', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'edit'
+      success: false
+  it 'should forbid non-owners from removing ::specifications', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'edit'
+      success: false
+
+  it 'should allow owners to read ::specifications', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'edit'
+      success: false
+  it 'should allow non-owners to read ::specifications', ->
+    testCrud.bind
+      userType: 'non-owner'
+      operation: 'edit'
+      success: false
+
+  it 'should allow publishers to attach a ::specifications to a container', ->
+    testAttach.bind
+      userType: 'publisher'
+      operation: 'add'
+      success: true
+  it 'should allow moderators to attach a ::specifications to a container', ->
+    testAttach.bind
+      userType: 'moderator'
+      operation: 'add'
+      success: true
+  it 'should forbid non-owners from attaching a ::specifications to a container', ->
+    testAttach.bind
+      userType: 'non-owner'
+      operation: 'add'
+      success: false
+
+  it 'should allow publishers to remove a ::specifications to a container', ->
+    testAttach.bind
+      userType: 'publisher'
+      operation: 'remove'
+      success: true
+  it 'should allow moderators to remove a ::specifications to a container', ->
+    testAttach.bind
+      userType: 'moderator'
+      operation: 'remove'
+      success: true
+  it 'should forbid non-owners from removing a ::specifications to a container', ->
+    testAttach.bind
+      userType: 'non-owner'
+      operation: 'remove'
+      success: false
+
+  it 'should allow publishers to swap out the ::specifications of a container', ->
+    testAttach.bind
+      userType: 'publisher'
+      operation: 'edit'
+      success: true
+  it 'should allow moderators to swap out the ::specifications of a container', ->
+    testAttach.bind
+      userType: 'moderator'
+      operation: 'edit'
+      success: true
+  it 'should forbid non-owners from swaping out the ::specifications of a container', ->
+    testAttach.bind
+      userType: 'non-owner'
+      operation: 'edit'
+      success: false
+
+  it 'should persist the ::specifications from an image to a container', ->
+    testPersist
+  it 'should persist the ::specifications from a container to an image', ->
+    testPersist.bind
+      direction: 'backward'
+
+  it 'should forbid duplicate ::specifications', ->
+    testStomp
