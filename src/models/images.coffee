@@ -86,6 +86,8 @@ imageSchema = new Schema
         type: Boolean
     ]
     default: [ ]
+  specification:
+    type: ObjectId
 
 imageSchema.set 'toJSON', virtuals: true
 

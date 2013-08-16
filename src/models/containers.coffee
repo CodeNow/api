@@ -71,6 +71,8 @@ containerSchema = new Schema
         default: false
     ]
     default: [ ]
+  specification:
+    type: ObjectId
 
 containerSchema.set 'toJSON', virtuals: true
 
