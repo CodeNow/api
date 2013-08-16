@@ -222,7 +222,10 @@ Runnables =
               json = runnable.toJSON()
               json.votes = result.number - 1
               encode domain, json, cb
-        , cb
+        , (err, runnables) ->
+          if err then cb err else
+            runnables = runnables.filter exists
+            cb null, runnables
 
   listFiltered: (domain, query, sortByVotes, limit, page, cb) ->
     if not sortByVotes
@@ -240,7 +243,10 @@ Runnables =
                 json = runnable.toJSON()
                 json.votes = result.number - 1
                 encode domain, json, cb
-          , cb
+          , (err, runnables) ->
+            if err then cb err else
+              runnables = runnables.filter exists
+              cb null, runnables
 
   listNames: (domain, cb) ->
     images.find(tags:$not:$size:0, {_id:1,name:1,tags:1}).exec domain.intercept (results) ->
@@ -558,3 +564,6 @@ isObjectId = (str) ->
 isObjectId64 = (str) ->
   str = decodeId str
   Boolean(str.match(/^[0-9a-fA-F]{24}$/))
+
+exists = (thing) ->
+  thing isnt null and thing isnt undefined
