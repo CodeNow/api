@@ -11,6 +11,7 @@ nodetime = require 'nodetime'
 rollbar = require 'rollbar'
 runnables = require './rest/runnables'
 users = require './rest/users'
+musers = require './models/users'
 channels = require './rest/channels'
 
 mongoose.connect configs.mongo
@@ -25,10 +26,12 @@ class App
 
   start: (cb) ->
     if @started then cb() else
-      process.on 'uncaughtException', (err) =>
-        @stop () =>
-          if cluster.isWorker
-            @cleanup_worker()
+      @listener = (err) =>
+        if @domain and configs.throwErrors then @domain.emit 'error', err else
+          @stop () =>
+            # need to cleanup the live socket since connection is dead!
+            if cluster.isWorker then @cleanup_worker()
+      process.on 'uncaughtException', @listener
       @server.listen @configs.port, @configs.ipaddress || "0.0.0.0", (err) =>
         if err then cb err else
           @started = true
@@ -36,9 +39,11 @@ class App
 
   stop: (cb) ->
     if not @started then cb() else
+      process.removeListener 'uncaughtException', @listener
       @server.close (err) =>
         if err then cb err else
           @started = false
+          delete @listener
           cb()
 
   create: () ->
@@ -54,15 +59,21 @@ class App
     if configs.nodetime then app.use nodetime.expressErrorHandler()
     if configs.rollbar then app.use rollbar.errorHandler()
     app.use (err, req, res, next) =>
-      res.json 500, message: 'something bad happened :('
       if configs.logErrorStack then console.log err.stack
-      @stop () =>
-        if cluster.isWorker then @cleanup_worker()
-    app.get '/throws', (req, res) ->
-      process.nextTick req.domain.bind () -> throw new Error 'zomg!'
+      if not err.domain and configs.throwErrors and req.parentDomain
+        req.parentDomain.emit 'error', err
+      else
+        res.json 500, message: 'something bad happened :(', error: err.message
+        @stop () =>
+          if cluster.isWorker then @cleanup_worker()
+    app.get '/test/throw/express', (req, res) -> throw new Error 'express'
+    app.get '/test/throw/express_async', (req, res) -> process.nextTick () -> throw new Error 'express_async'
+    app.get '/test/throw/mongo_pool', (req, res) -> musers.findOne { }, req.domain.intercept () -> throw new Error 'mongo_pool'
+    app.get '/test/throw/no_domain', (req, res) -> musers.findOne { }, () -> throw new Error 'no_domain'
     app.get '/', (req, res) -> res.json { message: 'runnable api' }
     app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
     @server = http.createServer app
+    @server.timeout = configs.socketTimeout
 
   cleanup_worker: () ->
     workerId = cluster.worker.process.pid
