@@ -16,16 +16,11 @@ docker = dockerjs host: configs.direct_docker
 beforeEach (done) ->
   db.connect configs.mongo, (err, test_db) ->
     if err then done err else
-      projectIds = [ ]
-      userId = null
       async.series [
         (cb) ->
           test_db.collection 'users', (err, users) ->
             async.forEachSeries state.Users, (user, cb) ->
-              users.insert user, (err, user) ->
-                if not userId then userId = user[0]._id
-                if err then cb err else
-                  cb()
+              users.insert user, cb
             , cb
       ], (err) ->
         if err then done err else

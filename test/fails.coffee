@@ -7,7 +7,7 @@ containers = require '../lib/models/containers'
 
 describe 'domain', ->
 
-  it 'should catch error in ::domain when docker.js createContainer() calls back with an error code', (done) ->
+  it 'should return server error response when docker.js createContainer() ::fails', (done) ->
     oldFunc = images.docker.createContainer
     images.docker.createContainer = (params, cb) ->
       cb new Error 'Docker is returning an error here'
@@ -25,8 +25,8 @@ describe 'domain', ->
                   images.docker.createContainer = oldFunc
                   instance.stop done
 
-  it 'should catch error in ::domain when docker.js inspectContainer() calls back with an error code', (done) ->
-    oldFunc = images.docker.inspectContainers
+  it 'should return server error response when docker.js inspectContainer() ::fails', (done) ->
+    oldFunc = images.docker.inspectContainer
     images.docker.inspectContainer = (params, cb) ->
       cb new Error 'Docker is returning an error here'
     configs.throwErrors = false
@@ -43,8 +43,8 @@ describe 'domain', ->
                   images.docker.inspectContainer = oldFunc
                   instance.stop done
 
-  it 'should catch error in ::domain when docker.js removeContainer() calls back with an error code', (done) ->
-    configs.throwErrors = true
+  it 'should return server error response when docker.js removeContainer() ::fails', (done) ->
+    configs.throwErrors = false
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->

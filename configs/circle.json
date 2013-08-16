@@ -8,6 +8,7 @@
     "port": "6379"
   },
   "maxPageLimit": 200,
+  "socketTimeout": "10 seconds",
   "defaultPageLimit": 25,
   "docker": "http://54.215.13.107:4243",
   "direct_docker": "http://54.215.13.107:4243",

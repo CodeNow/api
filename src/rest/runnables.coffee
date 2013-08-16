@@ -1,4 +1,5 @@
 channels = require '../models/channels'
+categories = require '../models/categories'
 configs = require '../configs'
 debug = require('debug');
 domains = require '../domains'
@@ -34,9 +35,11 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.channel?
-      channels.findOne aliases: req.query.channel.toLowerCase(), req.domain.intercept (channel) ->
-        if not channel then res.json 400, message: 'could not find channel by that name' else
-          runnables.listFiltered req.domain, { 'tags.channel' : channel._id }, sortByVotes, limit, page, (err, results) ->
+      channels.getChannelsWithNames req.domain, categories, req.query.channel, (err, results) ->
+        if err then res.json err.code, message: err.msg else
+          channelIds = results.map (channel) -> channel._id
+          console.log channelIds
+          runnables.listFiltered req.domain, 'tags.channel':$in:channelIds, sortByVotes, limit, page, (err, results) ->
             if err then res.json err.code, message: err.msg else
               res.json results
     else if req.query.owner?
