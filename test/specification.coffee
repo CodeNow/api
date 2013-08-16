@@ -338,3 +338,17 @@ testContainer = (cb) ->
 # DESCRIPTION
 
 describe 'specification api', ->
+  
+  it 'should allow publishers to create ::specifications'
+  it 'should forbid non-publishers from creating ::specifications'
+  it 'should allow specification owners or moderators to edit ::specifications'
+  it 'should forbid non-owners/moderators from editing ::specifications'
+  it 'should allow specification owners or moderators to remove ::specifications'
+  it 'should forbid non-owners/moderators from removing ::specifications'
+  it 'should allow owners to read ::specifications'
+  it 'should allow non-owners to read ::specifications'
+
+  it 'should allow publishers to attach a ::specifications to a container'
+  it 'should persist the ::specifications from a container to an image'
+  it 'should persist the ::specifications from an image to a container'
+  
