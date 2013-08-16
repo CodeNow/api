@@ -180,37 +180,6 @@ initOwner = (cb) ->
     @updateId = res.body._id 
     if err then cb err else cb null
 
-doUserOperation = (cb) ->
-  url = "#{base}/users/me/vars"
-  if @operation is 'add' then method = 'post'
-  if @operation is 'edit'
-    method = 'put' 
-    url += "/#{@updateId}"
-  if @operation is 'read' then return cb null
-  if @operation is 'remove'
-    method = 'del'
-    url += "/#{@updateId}"
-  req = @owner[method] url
-  req.set 'runnable-token', @ownerToken
-  if @operation is 'add' then req.send data.user.add
-  if @operation is 'edit' then req.send data.user.edit
-  req.end (err, res) =>
-    if res?.status is 403 then err = new Error 'forbiden'
-    if res?.status is 404 then err = new Error 'not found'
-    if err then cb err else cb null
-
-checkUserOperation = (cb) ->
-  req = @owner.get "#{base}/users/me/vars"
-  req.set 'runnable-token', @ownerToken
-  req.end (err, res) =>
-    if err then cb err else
-      res.body.length.should.equal expected.user[@operation].length
-      expected.user[@operation].every (obj, i) =>
-        Object.keys(obj)
-          .every (key) =>
-            res.body[i][key].should.equal obj[key]
-      cb null
-
 tryStomp = (cb) ->
   req = @owner.post "#{base}/runnables/#{@imageId}/#{@type}"
   req.set 'runnable-token', @ownerToken
@@ -220,45 +189,11 @@ tryStomp = (cb) ->
     if not err then cb new Error 'should not have succeeded' else
       cb null
 
-setEnv = (cb) ->
-  type = if @type is 'globalVars' then 'user' else @type
-  controlUrl = "http://#{@token}.runnableapp.dev/api/envs"
-  wake = @owner.get controlUrl
-  wake.end (err, res) =>
-    if err then cb err else
-      set = @owner.post controlUrl
-      set.send
-        key: data[type].add.key
-        value: data[type].add.value
-      set.end (err, res) =>
-        if err then cb err else
-          cb null
-
-checkEnv = (cb) ->
-  termUrl = "http://terminals.runnableapp.dev/term.html?termId=#{@token}"
-  helpers.sendCommand termUrl, 'env', (err, env) =>
-    if err then cb err else
-      if not expected.env[@type][@existing].test env
-        cb new Error 'vars not found'
-      else
-        cb null
-
 stopServer = (cb) ->
   @instance.configs.passwordSalt = @oldSalt
   @instance.stop cb
 
 # TEST CONTROLLERS
-
-testCreate = (cb) ->
-  list = [
-    createServer.bind @
-    createOwner.bind @
-    createImage.bind @
-    initImage.bind @
-    checkImage.bind @
-    stopServer.bind @
-  ]
-  async.series list, cb
 
 testPersist = (cb) ->
   list = [
@@ -295,17 +230,6 @@ testCrud = (cb) ->
   ]
   async.series list, cb
 
-testUser = (cb) ->
-  list = [
-    createServer.bind @
-    createOwner.bind @
-    initOwner.bind @
-    doUserOperation.bind @
-    checkUserOperation.bind @
-    stopServer.bind @
-  ]
-  async.series list, cb
-
 testStomp = (cb) ->
   list = [
     createServer.bind @
@@ -314,23 +238,6 @@ testStomp = (cb) ->
     initImage.bind @
     checkImage.bind @
     tryStomp.bind @
-    stopServer.bind @
-  ]
-  async.series list, cb
-
-testContainer = (cb) ->
-  list = [
-    createServer.bind @
-    createOwner.bind @
-    initOwner.bind @
-    createImage.bind @
-    initImage.bind @
-    createContainer.bind @
-  ]
-  if @existing is 'added'
-    list.push setEnv.bind @
-  list = list.concat [
-    checkEnv.bind @
     stopServer.bind @
   ]
   async.series list, cb
@@ -351,4 +258,3 @@ describe 'specification api', ->
   it 'should allow publishers to attach a ::specifications to a container'
   it 'should persist the ::specifications from a container to an image'
   it 'should persist the ::specifications from an image to a container'
-  
