@@ -28,11 +28,11 @@ implimentationSchema = new Schema
 implimentationSchema.statics.createImplimentation = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
-      @find
+      @findOne
         owner: opts.userId
         impliments: opts.specificationId
-      , domain.intercept (implimentations) =>
-        if implimentations.length then cb error 403, 'implimentation already exists' else
+      , domain.intercept (implimentation) =>
+        if implimentation then cb error 403, 'implimentation already exists' else
           implimentation = new @
           implimentation.owner = opts.userId
           implimentation.impliments = opts.specificationId

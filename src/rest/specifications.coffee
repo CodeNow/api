@@ -35,7 +35,6 @@ module.exports = (parentDomain) ->
     specifications.updateSpecification req.domain, 
       userId: req.user_id 
       specificationId: req.params.id
-      name: req.body.name
       description: req.body.description
       instructions: req.body.instructions
       requirements: req.body.requirements
