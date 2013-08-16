@@ -187,10 +187,10 @@ describe 'implimentation api', ->
   it 'should forbid non-owners/moderators to view ::implimentations'
   it 'should forbid non-owners/moderators to remove ::implimentations'
 
-  it 'should forbid container creation without ::implimentations'
+  it 'should forbid container start without ::implimentations'
 
   it 'should cause the web page to use the ::implimentations url'
 
-  it 'should have existing ::implimentations variables set'
-  it 'should set ::implimentations variables on demand'
+  it 'should have existing ::implimentations env variables set'
+  it 'should set ::implimentations env variables on demand'
   
