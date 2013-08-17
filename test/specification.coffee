@@ -118,7 +118,6 @@ createUser = (cb) ->
 createImage = (cb) ->
   req = @owner.post "#{base}/runnables"
   req.set 'runnable-token', @ownerToken
-  req.send data[@type].create
   req.end (err, res) =>
     if err then cb err else
       res.should.have.status 201
@@ -230,9 +229,21 @@ checkOperation = (cb) ->
           delete specification.owner
           return specification
         if not _.isEqual results, expected.specification[@operation]
-          console.log results, expected.specification[@operation]
           throw new Error 'results dont\'t match'
         cb null
+
+attachImage = (cb) ->
+  user = @user or @moderator or @owner
+  req = user.put "#{base}/runnables/#{@imageId}"
+  req.set 'runnable-token', @userToken or @moderatorToken or @ownerToken
+  req.end (err, res) =>
+    if res?.status is 403 then err = new Error 'forbidden'
+    if res?.status is 404 then err = new Error "not found"
+    if err && @success then cb err 
+    else if err && not @success then cb null
+    else if not @success then cb new Error 'should not have succeeded'
+    else
+     cb null
 
 tryStomp = (cb) ->
   req = @owner.post "#{base}/runnables/#{@imageId}/#{@type}"
@@ -281,9 +292,10 @@ testAttach = (cb) ->
     list.push createUser.bind @
   list = list.concat [
     attachImage.bind @
-    checkImage.bind @
+    #checkImage.bind @
     stopServer.bind @
   ]
+  async.series list, cb
 
 testPersist = (cb) ->
   list = [
@@ -374,7 +386,7 @@ describe 'specification api', ->
       operation: 'edit'
       success: false
 
-  it 'should allow publishers to attach a ::specifications to a container', ->
+  it 'should allow publishers to attach a ::specifications to a container ::current',
     testAttach.bind
       userType: 'publisher'
       operation: 'add'
