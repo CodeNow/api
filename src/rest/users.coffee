@@ -306,4 +306,19 @@ module.exports = (parentDomain) ->
   app.del '/users/me/runnables/:id/files/:fileid', deletefile
   app.del '/users/:userid/runnables/:id/files/:fileid', fetchuser, deletefile
 
+  getmountedfiles = (req, res) ->
+    mountDir = req.query.path or '/'
+    runnables.getMountedFiles req.domain, req.user_id, req.params.id, req.params.fileid, mountDir, (err, files) ->
+      if err then res.json err.code, message: err.msg else
+        res.json files
+
+  app.get '/users/me/runnables/:id/files/:fileid/files', getmountedfiles
+  app.get '/users/:userid/runnables/:id/files/:fileid/files', fetchuser, getmountedfiles
+
+  writemountedfiles = (req, res) ->
+    res.json 403, 'mounted file-system is read-only'
+
+  app.post '/users/me/runnables/:id/files/:fileid/files', writemountedfiles
+  app.post '/users/:userid/runnables/:id/files/:fileid/files', fetchuser, writemountedfiles
+
   app

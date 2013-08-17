@@ -131,7 +131,6 @@ containerSchema.statics.destroy = (domain, id, cb) ->
 containerSchema.methods.getProcessState = (domain, cb) ->
   docker.inspectContainer @docker_id, domain.intercept (result) ->
     if not result.State?
-      console.error 'bad result', result
       throw new Error 'bad result from docker.inspectContainer'
     cb null, running: result.State.Running
 
@@ -287,6 +286,15 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
           @last_write = new Date()
           @save domain.intercept () ->
             cb()
+
+containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
+  file = @files.id fileId
+  if not file then cb error 404, 'file does not exist' else
+    if not file.ignore then cb error 403, 'entry is not a valid mount point' else
+      subDir = path.normalize "#{file.path}/#{file.name}/#{mountDir}"
+      volumes.readDirectory @long_docker_id, @file_root, subDir, (err, files) ->
+        if err then cb 403, 'entry is not mounted' else
+          cb null, files
 
 module.exports = mongoose.model 'Containers', containerSchema
 module.exports.docker = docker

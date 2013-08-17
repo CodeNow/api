@@ -424,6 +424,11 @@ Runnables =
       if err then cb err else
         container.tagFile domain, fileId, isDefault, cb
 
+  getMountedFiles: (domain, userId, runnableId, fileId, mountDir, cb) ->
+    fetchContainer domain, userId, runnableId, (err, container) ->
+      if err then cb err else
+        container.getMountedFiles domain, fileId, mountDir, cb
+
   getStat: (domain, userId, runnableId, stat, cb) ->
     if not (stat in stats) then cb error 400, 'not a valid stat' else
       runnableId = decodeId runnableId

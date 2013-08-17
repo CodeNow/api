@@ -102,6 +102,18 @@ Volumes =
         if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
+  readDirectory: (containerId, srcDir, subDir, cb) ->
+    dnode_timeout = setTimeout () ->
+      throw new Error "timeout while trying to call readDirectory() via dnode to harbourmaster"
+    , configs.dnode_sync_timeout
+    up (remote) ->
+      if not remote.readDirectory then throw new Error "harbourmaster does not implement method: readDirectory"
+      debug 'calling remote function readDirectory()'
+      remote.readDirectory containerId, srcDir, subDir, (err, files) ->
+        clearTimeout dnode_timeout
+        if err and err.code is 500 then throw new Error err.msg
+        if err then cb err else cb null, files
+
   removeDirectory: (containerId, srcDir, name, path, recursive, cb) ->
     dnode_timeout = setTimeout () ->
       throw new Error "timeout while trying to call removeDirectory() via dnode to harbourmaster"
