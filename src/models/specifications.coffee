@@ -57,21 +57,23 @@ specificationSchema.statics.updateSpecification = (domain, opts, cb) ->
         @findOne
           _id: opts.specificationId
         , domain.intercept (specification) =>
-          specification.description = opts.description
-          specification.instructions = opts.instructions
-          specification.requirements = opts.requirements
-          specification.save domain.intercept () ->
-            cb null, specification.toJSON()
+          if not specification? then cb error 404, 'specification not found' else
+            specification.description = opts.description
+            specification.instructions = opts.instructions
+            specification.requirements = opts.requirements
+            specification.save domain.intercept () ->
+              cb null, specification.toJSON()
       else
         @findOne
           owner: opts.userId
-          _id: opts.implimentationId
+          _id: opts.specificationId
         , domain.intercept (specification) =>
-          specification.description = opts.description
-          specification.instructions = opts.instructions
-          specification.requirements = opts.requirements
-          specification.save domain.intercept () ->
-            cb null, specification.toJSON()
+          if not specification? then cb error 404, 'specification not found' else
+            specification.description = opts.description
+            specification.instructions = opts.instructions
+            specification.requirements = opts.requirements
+            specification.save domain.intercept () ->
+              cb null, specification.toJSON()
 
 specificationSchema.statics.deleteSpecification = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>

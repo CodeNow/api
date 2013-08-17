@@ -25,6 +25,12 @@ data =
       requirements: [
         'SECOND_REQUIREMENT'
       ]
+    edit:
+      description: 'edited spec'
+      instructions: 'fill me in bro'
+      requirements: [
+        'EDITED_REQUIREMENT'
+      ]
 
 expected =
   specification:
@@ -42,7 +48,14 @@ expected =
         requirements: [ 'SECOND_REQUIREMENT' ] 
       }
     ]
-
+    edit: [
+      name: 'name1',
+      description: 'edited spec'
+      instructions: 'fill me in bro'
+      requirements: [
+        'EDITED_REQUIREMENT'
+      ]
+    ]
 
 # UTILITIES AND TESTS
 
@@ -318,44 +331,44 @@ describe 'specification api', ->
       operation: 'add'
       success: false
 
-  it 'should allow specification owners to edit ::specifications', ->
+  it 'should allow specification owners to edit ::specifications',
     testCrud.bind
       userType: 'publisher'
       operation: 'edit'
       success: true
-  it 'should allow specification moderators to edit ::specifications', ->
+  it 'should allow specification moderators to edit ::specifications',
     testCrud.bind
       userType: 'moderators'
       operation: 'edit'
       success: true
-  it 'should forbid non-owners from editing ::specifications', ->
+  it 'should forbid non-owners from editing ::specifications',
     testCrud.bind
       userType: 'non-owner'
       operation: 'edit'
       success: false
 
-  it 'should allow specification owners to remove ::specifications', ->
+  it 'should allow specification owners to remove ::specifications',
     testCrud.bind
       userType: 'non-owner'
       operation: 'edit'
       success: false
-  it 'should allow specification moderators to remove ::specifications', ->
+  it 'should allow specification moderators to remove ::specifications',
     testCrud.bind
       userType: 'non-owner'
       operation: 'edit'
       success: false
-  it 'should forbid non-owners from removing ::specifications', ->
+  it 'should forbid non-owners from removing ::specifications',
     testCrud.bind
       userType: 'non-owner'
       operation: 'edit'
       success: false
 
-  it 'should allow owners to read ::specifications', ->
+  it 'should allow owners to read ::specifications',
     testCrud.bind
       userType: 'non-owner'
       operation: 'edit'
       success: false
-  it 'should allow non-owners to read ::specifications', ->
+  it 'should allow non-owners to read ::specifications',
     testCrud.bind
       userType: 'non-owner'
       operation: 'edit'
