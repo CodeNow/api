@@ -8,9 +8,40 @@ async = require 'async'
 
 base = "http://localhost:#{configs.port}"
 
-data = {}
+data = 
+  user:
+    create:
+      name: 'name1'
+      description: 'first spec'
+      instructions: 'fill me in bro'
+      requirements: [
+        'FIRST_REQUIREMENT'
+      ]
+  specification:
+    add:
+      name: 'name2'
+      description: 'second spec'
+      instructions: 'fill me in bro'
+      requirements: [
+        'SECOND_REQUIREMENT'
+      ]
 
-expected = {}
+expected =
+  specification:
+    add: [ 
+      {
+        instructions: 'fill me in bro',
+        description: 'first spec',
+        name: 'name1',
+        requirements: [ 'FIRST_REQUIREMENT' ]
+      }
+      { 
+        instructions: 'fill me in bro',
+        description: 'second spec',
+        name: 'name2',
+        requirements: [ 'SECOND_REQUIREMENT' ] 
+      }
+    ]
 
 
 # UTILITIES AND TESTS
@@ -155,12 +186,11 @@ doOperation = (cb) ->
   if @operation is 'remove' 
     method = 'del'  
     url += "/#{@updateId}"
-  user = @user or @owner
+  user = @user or @moderator or @owner
   req = user[method] url
-  req.set 'runnable-token', if @isOwner then @ownerToken else @userToken
-  if @operation is 'add' then req.send data[@type][@operation]
-  if @operation is 'edit' then req.send data[@type][@operation]
-  if @operation is 'remove' then req.send @updateId
+  req.set 'runnable-token', @userToken or @moderatorToken or @ownerToken
+  if @operation is 'add' then req.send data.specification[@operation]
+  if @operation is 'edit' then req.send data.specification[@operation]
   req.end (err, res) =>
     if res?.status is 403 then err = new Error 'forbiden'
     if res?.status is 404 then err = new Error "#{url} not found"
@@ -174,21 +204,21 @@ checkOperation = (cb) ->
   if not @success
     cb null
   else
-    user = @user or @owner
-    req = user.get "/specifications"
-    req.set 'runnable-token', if @isOwner then @ownerToken else @userToken
+    user = @user or @moderator or @owner
+    req = user.get "#{base}/specifications"
+    req.set 'runnable-token', @userToken or @moderatorToken or @ownerToken
     req.end (err, res) =>
       if res?.status is 403 then err = new Error 'forbiden'
       if res?.status is 404 then err = new Error 'not found'
       if err then cb err else
-        if Array.isArray expected[@type][@operation]
-          res.body[@type].length.should.equal expected[@type][@operation].length
-          expected[@type][@operation].every (obj, i) =>
-            Object.keys(obj)
-              .every (key) =>
-                res.body[@type][i][key].should.equal obj[key]
-        else 
-          res.body[@type].should.equal expected[@type][@operation]
+        results = res.body.map (specification) ->
+          delete specification._id
+          delete specification.__v
+          delete specification.owner
+          return specification
+        if not _.isEqual results, expected.specification[@operation]
+          console.log results, expected.specification[@operation]
+          throw new Error 'results dont\'t match'
         cb null
 
 tryStomp = (cb) ->
@@ -277,7 +307,7 @@ testStomp = (cb) ->
 
 describe 'specification api', ->
   
-  it 'should allow publishers to create ::specifications', ->
+  it 'should allow publishers to create ::specifications',
     testCrud.bind
       userType: 'publisher'
       operation: 'add'

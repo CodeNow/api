@@ -51,7 +51,7 @@ implimentationSchema.statics.listImplimentations = (domain, userId, cb) ->
         @find 
           owner: userId
         , domain.intercept (implimentations) => 
-          cb null, implimentations.toJSON()
+          cb null, implimentations.map (implimentation) -> implimentation.toJSON()
 
 implimentationSchema.statics.getImplimentation = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>

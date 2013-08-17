@@ -27,6 +27,13 @@
       "permission_level": 1,
       "password": "testing",
       "votes": [ ]
+    },
+    {
+      "email": "publisher@doesnot.com",
+      "username": "publisher",
+      "permission_level": 2,
+      "password": "testing",
+      "votes": [ ]
     }
   ],
 

@@ -29,7 +29,7 @@ specificationSchema.statics.createSpecification = (domain, opts, cb) ->
       @findOne
         name: opts.name
       , domain.intercept (specification) =>
-        if specification.length then cb error 403, 'specification already exists' else
+        if specification? then cb error 403, 'specification already exists' else
           specification = new @
           specification.owner = opts.userId
           specification.name = opts.name
@@ -41,7 +41,7 @@ specificationSchema.statics.createSpecification = (domain, opts, cb) ->
 
 specificationSchema.statics.listSpecifications = (domain, cb) ->
   @find {}, domain.intercept (specifications) => 
-    cb null, specifications.toJSON()
+    cb null, specifications.map (specification) -> specification.toJSON()
 
 specificationSchema.statics.getSpecification = (domain, id, cb) ->
   @findOne
