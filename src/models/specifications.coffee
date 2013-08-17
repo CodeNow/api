@@ -26,18 +26,19 @@ specificationSchema = new Schema
 specificationSchema.statics.createSpecification = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
-      @findOne
-        name: opts.name
-      , domain.intercept (specification) =>
-        if specification? then cb error 403, 'specification already exists' else
-          specification = new @
-          specification.owner = opts.userId
-          specification.name = opts.name
-          specification.description = opts.description
-          specification.instructions = opts.instructions
-          specification.requirements = opts.requirements
-          specification.save domain.intercept () ->
-            cb null, specification.toJSON()
+      if not user.isVerified then cb error 403, 'user not verified' else
+        @findOne
+          name: opts.name
+        , domain.intercept (specification) =>
+          if specification? then cb error 403, 'specification already exists' else
+            specification = new @
+            specification.owner = opts.userId
+            specification.name = opts.name
+            specification.description = opts.description
+            specification.instructions = opts.instructions
+            specification.requirements = opts.requirements
+            specification.save domain.intercept () ->
+              cb null, specification.toJSON()
 
 specificationSchema.statics.listSpecifications = (domain, cb) ->
   @find {}, domain.intercept (specifications) => 

@@ -192,7 +192,7 @@ doOperation = (cb) ->
   if @operation is 'add' then req.send data.specification[@operation]
   if @operation is 'edit' then req.send data.specification[@operation]
   req.end (err, res) =>
-    if res?.status is 403 then err = new Error 'forbiden'
+    if res?.status is 403 then err = new Error 'forbidden'
     if res?.status is 404 then err = new Error "#{url} not found"
     if err && @success then cb err 
     else if err && not @success then cb null
@@ -312,7 +312,7 @@ describe 'specification api', ->
       userType: 'publisher'
       operation: 'add'
       success: true
-  it 'should forbid non-publishers from creating ::specifications', ->
+  it 'should forbid non-publishers from creating ::specifications',
     testCrud.bind
       userType: 'non-owner'
       operation: 'add'
