@@ -56,6 +56,15 @@ expected =
         'EDITED_REQUIREMENT'
       ]
     ]
+    remove: []
+    view: [
+      name: 'name1'
+      description: 'first spec'
+      instructions: 'fill me in bro'
+      requirements: [
+        'FIRST_REQUIREMENT'
+      ]
+    ]
 
 # UTILITIES AND TESTS
 
@@ -91,7 +100,7 @@ initOwner = (cb) ->
 
 createModerator = (cb) ->
   @moderator = sa.agent()
-  req = @user.post "#{base}/token"
+  req = @moderator.post "#{base}/token"
   req.set 'Content-Type', 'application/json'
   req.send JSON.stringify 
     username: 'test4@testing.com' 
@@ -350,7 +359,7 @@ describe 'specification api', ->
       success: true
   it 'should allow specification moderators to edit ::specifications',
     testCrud.bind
-      userType: 'moderators'
+      userType: 'moderator'
       operation: 'edit'
       success: true
   it 'should forbid non-owners from editing ::specifications',
@@ -361,32 +370,32 @@ describe 'specification api', ->
 
   it 'should allow specification owners to remove ::specifications',
     testCrud.bind
-      userType: 'non-owner'
-      operation: 'edit'
-      success: false
+      userType: 'publisher'
+      operation: 'remove'
+      success: true
   it 'should allow specification moderators to remove ::specifications',
     testCrud.bind
-      userType: 'non-owner'
-      operation: 'edit'
-      success: false
+      userType: 'moderator'
+      operation: 'remove'
+      success: true
   it 'should forbid non-owners from removing ::specifications',
     testCrud.bind
       userType: 'non-owner'
-      operation: 'edit'
+      operation: 'remove'
       success: false
 
   it 'should allow owners to read ::specifications',
     testCrud.bind
-      userType: 'non-owner'
-      operation: 'edit'
+      userType: 'publisher'
+      operation: 'read'
       success: false
   it 'should allow non-owners to read ::specifications',
     testCrud.bind
       userType: 'non-owner'
-      operation: 'edit'
+      operation: 'read'
       success: false
 
-  it 'should allow publishers to attach a ::specifications to a container ::current',
+  it 'should allow publishers to attach a ::specifications to a container',
     testAttach.bind
       userType: 'publisher'
       operation: 'add'

@@ -81,12 +81,19 @@ specificationSchema.statics.deleteSpecification = (domain, opts, cb) ->
       if user.isModerator
         @remove
           _id: opts.specificationId
-        , domain.intercept cb
+        , domain.intercept (count) =>
+          if count is 0
+            cb error 404, 'specification not found'
+          else
+            cb null
       else
         @remove
           owner: opts.userId
           _id: opts.specificationId
-        , domain.intercept cb
-
+        , domain.intercept (count) =>
+          if count is 0
+            cb error 404, 'specification not found'
+          else
+           cb null
 
 module.exports = mongoose.model 'Specifications', specificationSchema
