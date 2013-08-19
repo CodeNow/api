@@ -102,14 +102,14 @@ Volumes =
         if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
-  readDirectory: (domain, containerId, srcDir, subDir, cb) ->
+  readDirectory: (domain, containerId, srcDir, subDir, exts, cb) ->
     dnode_timeout = setTimeout () ->
       throw new Error "timeout while trying to call readDirectory() via dnode to harbourmaster"
     , configs.dnode_sync_timeout
     up domain.bind (remote) ->
       if not remote.readDirectory then throw new Error "harbourmaster does not implement method: readDirectory"
       debug 'calling remote function readDirectory()'
-      remote.readDirectory containerId, srcDir, subDir, domain.bind (err, files) ->
+      remote.readDirectory containerId, srcDir, subDir, exts, domain.bind (err, files) ->
         clearTimeout dnode_timeout
         if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb null, files

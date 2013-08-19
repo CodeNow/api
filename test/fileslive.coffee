@@ -1,5 +1,6 @@
 apiserver = require '../lib'
 configs = require '../lib/configs'
+path = require 'path'
 helpers = require './helpers'
 sa = require 'superagent'
 qs = require 'querystring'
@@ -100,7 +101,7 @@ describe 'live files api', ->
                                   res.body.should.have.property 'message', 'mounted file-system is read-only'
                                   instance.stop done
 
-  it 'should include the contents of ::livefile for codemirror typed files of a live directory read', (done) ->
+  it 'should include the contents of ::livefile for ace typed files of a live directory read ::12345', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createContainer 'node.js_express', (err, user, runnableId) ->
@@ -123,15 +124,20 @@ describe 'live files api', ->
                             res.body.forEach (entry) ->
                               if entry.name is 'node_modules'
                                 node_modules_id = entry._id
-                            user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{node_modules_id}/files")
+                            query = qs.stringify path: '/express'
+                            user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{node_modules_id}/files?#{query}")
                               .end (err, res) ->
                                 if err then done err else
                                   res.should.have.status 200
                                   res.body.should.be.a.array
-                                  # TODO: should lookup based on code mirror list
+                                  exts = [ '.js', '.md', '.txt', '.py', '.mysql', '.jade', '.css', '.html', '.json', '.php' ]
                                   res.body.forEach (elem) ->
                                     if not elem.dir
-                                      elem.should.have.property 'content'
+                                      extName = path.extname(elem.name).toLowerCase()
+                                      if not (extName in exts)
+                                        elem.should.not.have.property 'content'
+                                      else
+                                        elem.should.have.property 'content'
                                   instance.stop done
 
   it 'should be possible to read ::livefile subdirectories off of a live files path', (done) ->

@@ -292,7 +292,8 @@ containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
   if not file then cb error 404, 'file does not exist' else
     if not file.ignore then cb error 403, 'entry is not a valid mount point' else
       subDir = path.normalize "#{file.path}/#{file.name}/#{mountDir}"
-      volumes.readDirectory domain, @long_docker_id, @file_root, subDir, (err, files) ->
+      exts = [ '.js', '.md', '.txt', '.py', '.mysql', '.jade', '.css', '.html', '.json', '.php' ]
+      volumes.readDirectory domain, @long_docker_id, @file_root, subDir, exts, (err, files) ->
         if err then cb err else
           cb null, files
 
