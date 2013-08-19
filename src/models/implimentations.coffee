@@ -14,7 +14,7 @@ implimentationSchema = new Schema
     type: ObjectId
   impliments:
     type: ObjectId
-  url:
+  subDomain:
     type:String
     index: true
     unique: true
@@ -36,7 +36,7 @@ implimentationSchema.statics.createImplimentation = (domain, opts, cb) ->
           implimentation = new @
           implimentation.owner = opts.userId
           implimentation.impliments = opts.specificationId
-          implimentation.url = "#{uuid.v4()}.#{configs.baseDomain}"
+          implimentation.subDomain = "#{uuid.v4()}"
           implimentation.requirements = opts.requirements
           implimentation.save domain.intercept () ->
             cb null, implimentation.toJSON()
@@ -93,11 +93,19 @@ implimentationSchema.statics.deleteImplimentation = (domain, opts, cb) ->
       if user.isModerator
         @remove
           _id: opts.implimentationId
-        , domain.intercept cb
+        , domain.intercept (count) =>
+          if count is 0 
+            cb error 404, 'implimentation not found'
+          else
+            cb null
       else
         @remove
           owner: opts.userId
           _id: opts.implimentationId
-        , domain.intercept cb
+        , domain.intercept (count) =>
+          if count is 0 
+            cb error 404, 'implimentation not found'
+          else
+            cb null
 
 module.exports = mongoose.model 'Implimentation', implimentationSchema

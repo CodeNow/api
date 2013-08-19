@@ -13,6 +13,7 @@ users = require './rest/users'
 channels = require './rest/channels'
 categories = require './rest/categories'
 specifications = require './rest/specifications'
+implimentations = require './rest/implimentations'
 
 mongoose.connect configs.mongo
 if configs.rollbar
@@ -52,6 +53,7 @@ class App
     app.use channels @domain
     app.use categories @domain
     app.use specifications @domain
+    app.use implimentations @domain
     app.use app.router
     if configs.nodetime then app.use nodetime.expressErrorHandler()
     if configs.rollbar then app.use rollbar.errorHandler()
