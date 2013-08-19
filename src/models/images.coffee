@@ -123,7 +123,7 @@ syncDockerImage = (domain, image, cb) ->
     containerId = res.Id
     docker.inspectContainer containerId, domain.intercept (result) ->
       long_docker_id = result.ID
-      sync long_docker_id, image, (err) ->
+      sync domain, long_docker_id, image, (err) ->
         if err then cb err else
           docker.removeContainer containerId, domain.intercept () ->
             cb()

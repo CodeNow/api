@@ -97,7 +97,7 @@ describe 'live files api', ->
                               .end (err, res) ->
                                 if err then done err else
                                   res.should.have.status 403
-                                  res.body.should.have.message 'mounted file-system is read only'
+                                  res.body.should.have.property 'message', 'mounted file-system is read-only'
                                   instance.stop done
 
   it 'should include the contents of ::livefile for codemirror typed files of a live directory read', (done) ->
@@ -132,7 +132,6 @@ describe 'live files api', ->
                                   res.body.forEach (elem) ->
                                     if not elem.dir
                                       elem.should.have.property 'content'
-                                  hasExpressDir.should.equal true
                                   instance.stop done
 
   it 'should be possible to read ::livefile subdirectories off of a live files path', (done) ->

@@ -29,7 +29,6 @@ class App
       @listener = (err) =>
         if @domain and configs.throwErrors then @domain.emit 'error', err else
           @stop () =>
-            # need to cleanup the live socket since connection is dead!
             if cluster.isWorker then @cleanup_worker()
       process.on 'uncaughtException', @listener
       @server.listen @configs.port, @configs.ipaddress || "0.0.0.0", (err) =>
@@ -73,7 +72,6 @@ class App
     app.get '/', (req, res) -> res.json { message: 'runnable api' }
     app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
     @server = http.createServer app
-    @server.timeout = configs.socketTimeout
 
   cleanup_worker: () ->
     workerId = cluster.worker.process.pid

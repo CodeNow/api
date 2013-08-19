@@ -165,14 +165,14 @@ containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb
   cb null, files
 
 containerSchema.methods.syncFiles = (domain, cb) ->
-  sync @long_docker_id, @, (err) =>
+  sync domain, @long_docker_id, @, (err) =>
     if err then cb err else
       @last_write = new Date()
       @save domain.intercept () =>
         cb null, @
 
 containerSchema.methods.createFile = (domain, name, path, content, cb) ->
-  volumes.createFile @long_docker_id, @file_root, name, path, content, (err) =>
+  volumes.createFile domain, @long_docker_id, @file_root, name, path, content, (err) =>
     if err then cb err else
       @files.push
         path: path
@@ -186,7 +186,7 @@ containerSchema.methods.createFile = (domain, name, path, content, cb) ->
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.updateFile @long_docker_id, @file_root, file.name, file.path, content, (err) =>
+    volumes.updateFile domain, @long_docker_id, @file_root, file.name, file.path, content, (err) =>
       if err then cb err else
         file.content = content
         @last_write = new Date()
@@ -196,7 +196,7 @@ containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
 containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.renameFile @long_docker_id, @file_root, file.name, file.path, newName, (err) =>
+    volumes.renameFile domain, @long_docker_id, @file_root, file.name, file.path, newName, (err) =>
       if err then cb err else
         oldName = file.name
         file.name = newName
@@ -213,7 +213,7 @@ containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
 containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.moveFile @long_docker_id, @file_root, file.name, file.path, newPath, (err) =>
+    volumes.moveFile domain, @long_docker_id, @file_root, file.name, file.path, newPath, (err) =>
       if err then cb err else
         oldPath = file.path
         file.path = newPath
@@ -228,7 +228,7 @@ containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
           cb null, file
 
 containerSchema.methods.createDirectory = (domain, name, path, cb) ->
-  volumes.createDirectory @long_docker_id, @file_root, name, path, (err) =>
+  volumes.createDirectory domain, @long_docker_id, @file_root, name, path, (err) =>
     if err then cb err else
       @files.push
         path: path
@@ -253,7 +253,7 @@ containerSchema.methods.tagFile = (domain, fileId, isDefault, cb) ->
         cb null, file
 
 containerSchema.methods.deleteAllFiles = (domain, cb) ->
-  volumes.deleteAllFiles @long_docker_id, @file_root, (err) =>
+  volumes.deleteAllFiles domain, @long_docker_id, @file_root, (err) =>
     if err then cb err else
       @files = [ ]
       @last_write = new Date()
@@ -265,14 +265,14 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
   if not file then cb error 404, 'file does not exist' else
     if not file.dir
       if recursive then cb error 400, 'cannot recursively delete a plain file' else
-        volumes.deleteFile @long_docker_id, @file_root, file.name, file.path, (err) =>
+        volumes.deleteFile domain, @long_docker_id, @file_root, file.name, file.path, (err) =>
           if err then cb err else
             file.remove()
             @last_write = new Date()
             @save domain.intercept () ->
               cb()
     else
-      volumes.removeDirectory @long_docker_id, @file_root, file.name, file.path, recursive, (err) =>
+      volumes.removeDirectory domain, @long_docker_id, @file_root, file.name, file.path, recursive, (err) =>
         if err then cb err else
           if recursive
             toDelete = [ ]
@@ -292,8 +292,8 @@ containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
   if not file then cb error 404, 'file does not exist' else
     if not file.ignore then cb error 403, 'entry is not a valid mount point' else
       subDir = path.normalize "#{file.path}/#{file.name}/#{mountDir}"
-      volumes.readDirectory @long_docker_id, @file_root, subDir, (err, files) ->
-        if err then cb 403, 'entry is not mounted' else
+      volumes.readDirectory domain, @long_docker_id, @file_root, subDir, (err, files) ->
+        if err then cb err else
           cb null, files
 
 module.exports = mongoose.model 'Containers', containerSchema

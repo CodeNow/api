@@ -3,7 +3,7 @@ path = require 'path'
 volumes = require './volumes'
 _ = require 'lodash'
 
-module.exports = (containerId, target, cb) ->
+module.exports = (domain, containerId, target, cb) ->
   ignores = [ ]
   new_file_list = [ ]
   for file in target.files
@@ -11,7 +11,7 @@ module.exports = (containerId, target, cb) ->
       ignores.push path.normalize "#{file.path}/#{file.name}"
       new_file_list.push file
   old_file_list = _.clone target.files
-  volumes.readAllFiles containerId, target.file_root, ignores, (err, allFiles) ->
+  volumes.readAllFiles domain, containerId, target.file_root, ignores, (err, allFiles) ->
     if err then cb err else
       allFiles.forEach (file) ->
         new_file =

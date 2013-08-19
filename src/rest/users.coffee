@@ -316,7 +316,7 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables/:id/files/:fileid/files', fetchuser, getmountedfiles
 
   writemountedfiles = (req, res) ->
-    res.json 403, 'mounted file-system is read-only'
+    res.json 403, message: 'mounted file-system is read-only'
 
   app.post '/users/me/runnables/:id/files/:fileid/files', writemountedfiles
   app.post '/users/:userid/runnables/:id/files/:fileid/files', fetchuser, writemountedfiles
