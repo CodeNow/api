@@ -167,7 +167,7 @@ module.exports = (parentDomain) ->
   putrunnable = (req, res) ->
     if not req.body.running? then res.json 400, message: 'must provide a running parameter' else
       if not req.body.name? then res.json 400, message: 'must provide a runnable name' else
-        runnables.updateName req.domain, req.user_id, req.params.runnableid, req.body.name, (err, runnable) ->
+        runnables.updateContainer req.domain, req.user_id, req.params.runnableid, req.body, (err, runnable) ->
           if err then res.json err.code, message: err.msg else
             if req.body.running
               runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->

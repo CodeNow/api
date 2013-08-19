@@ -119,15 +119,29 @@ Runnables =
                       vote.remove()
                   remove()
 
-  updateName: (domain, userId, runnableId, newName, cb) ->
+  updateContainer: (domain, userId, runnableId, data, cb) ->
     runnableId = decodeId runnableId
     containers.findOne _id: runnableId, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-          container.name = newName;
+          [
+            'name'
+            'instructions'
+            'description'
+            'cmd'
+            'service_cmds'
+            'start_cmd'
+            'file_root'
+            'specification'
+          ].forEach (key) ->
+            container[key] = if data[key] isnt undefined then data[key] else container[key]
           container.save domain.intercept () ->
             json = container.toJSON()
-            encode domain, json, cb
+            delete json.files
+            json._id = encodeId json._id
+            if json.parent then json.parent = encodeId json.parent
+            if json.target then json.target = encodeId json.target
+            cb null, container
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId

@@ -131,16 +131,8 @@ createImage = (cb) ->
     if err then cb err else
       res.should.have.status 201
       @imageId = res.body._id
+      @image = res.body
       cb null
-
-initImage = (cb) ->
-  req = @owner.post "#{base}/runnables/#{@imageId}/#{@type}"
-  req.set 'runnable-token', @ownerToken
-  req.send data[@type].create
-  req.end (err, res) =>
-    if res.status is 404 then err = new Error "init route not found"
-    @updateId = res.body._id 
-    if err then cb err else cb null
 
 createContainer = (cb) ->
   req = @owner.post "#{base}/users/me/runnables?from=#{@imageId}"
@@ -150,20 +142,7 @@ createContainer = (cb) ->
       res.should.have.status 201
       @containerId = res.body._id
       @token = res.body.token
-      cb null
-
-checkContainer = (cb) ->
-  req = @owner.get "#{base}/users/me/runnables/#{@containerId}"
-  req.set 'runnable-token', @ownerToken
-  req.end (err, res) =>
-    if err then cb err else
-      if Array.isArray expected[@type].read
-        expected[@type].read.every (obj, i) =>
-          Object.keys(obj)
-            .every (key) =>
-              res.body[@type][i][key].should.equal obj[key]
-      else 
-        res.body[@type].should.equal expected[@type].read
+      @container = res.body
       cb null
 
 deleteImage = (cb) ->
@@ -227,15 +206,14 @@ checkOperation = (cb) ->
           throw new Error 'results dont\'t match'
         cb null
 
-attachImage = (cb) ->
-  console.log @updateId
-  @specificationId = @updateId
+attachContainer = (cb) ->
+  @container.specification = @updateId
   user = @user or @moderator or @owner
-  req = user.put "#{base}/runnables/#{@imageId}"
+  req = user.put "#{base}/users/me/runnables/#{@containerId}"
   req.set 'runnable-token', @userToken or @moderatorToken or @ownerToken
-  req.send 
-    specification: @specificationId
+  req.send @container
   req.end (err, res) =>
+    if res?.status is 400 then err = new Error 'not allowed'
     if res?.status is 403 then err = new Error 'forbidden'
     if res?.status is 404 then err = new Error "not found"
     if err && @success then cb err 
@@ -244,28 +222,28 @@ attachImage = (cb) ->
     else
      cb null
 
-checkImage = (cb) ->
+checkContainer = (cb) ->
   if not @success
     cb null
   else
-    req = @owner.get "#{base}/runnables/#{@imageId}"
+    req = @owner.get "#{base}/users/me/runnables/#{@containerId}"
     req.set 'runnable-token', @ownerToken
     req.end (err, res) =>
       if err then cb err else
-        console.log res.body.specification, @specificationId
-        if res.body.specification isnt @specificationId
+        if res.body.specification isnt @container.specification
           cb new Error 'specification doesn\'t match'
         else
           cb null
 
-tryStomp = (cb) ->
-  req = @owner.post "#{base}/runnables/#{@imageId}/#{@type}"
+checkImage = (cb) ->
+  req = @owner.get "#{base}/runnables/#{@imageId}"
   req.set 'runnable-token', @ownerToken
-  req.send data[@type].create
   req.end (err, res) =>
-    if res?.status is 409 then err = new Error 'conflict'
-    if not err then cb new Error 'should not have succeeded' else
-      cb null
+    if err then cb err else
+      if res.body.specification isnt @image.specification
+        cb new Error 'specification doesn\'t match'
+      else
+        cb null
 
 stopServer = (cb) ->
   @instance.configs.passwordSalt = @oldSalt
@@ -296,16 +274,17 @@ testAttach = (cb) ->
     createOwner.bind @
     initOwner.bind @
     createImage.bind @
+    createContainer.bind @
   ]
   if @operation is 'edit'
-    list.push initImage.bind @
+    list.push initContainer.bind @
   if @userType is 'moderator'
     list.push createModerator.bind @
   if @userType is 'non-owner'
     list.push createUser.bind @
   list = list.concat [
-    attachImage.bind @
-    checkImage.bind @
+    attachContainer.bind @
+    checkContainer.bind @
     stopServer.bind @
   ]
   async.series list, cb
@@ -314,31 +293,21 @@ testPersist = (cb) ->
   list = [
     createServer.bind @
     createOwner.bind @
+    initOwner.bind @
     createImage.bind @
-    initImage.bind @
-    checkImage.bind @
     createContainer.bind @
+    attachContainer.bind @
     checkContainer.bind @
+    deleteImage.bind @
+    recreateImage.bind @
+    checkImage.bind @
   ]
   if @direction is 'backward'
     list = list.concat [
-      deleteImage.bind @
-      recreateImage.bind @
-      checkImage.bind @
+      createContainer.bind @
+      checkContainer.bind @
     ]
   list.push stopServer.bind @
-  async.series list, cb
-
-testStomp = (cb) ->
-  list = [
-    createServer.bind @
-    createOwner.bind @
-    createImage.bind @
-    initImage.bind @
-    checkImage.bind @
-    tryStomp.bind @
-    stopServer.bind @
-  ]
   async.series list, cb
 
 # DESCRIPTION
@@ -399,59 +368,19 @@ describe 'specification api', ->
       operation: 'read'
       success: false
 
-  it 'should allow publishers to attach a ::specifications to a container ::current',
+  it 'should allow publishers to attach a ::specifications to a container',
     testAttach.bind
       userType: 'publisher'
-      operation: 'add'
       success: true
-  it 'should allow moderators to attach a ::specifications to a container', ->
-    testAttach.bind
-      userType: 'moderator'
-      operation: 'add'
-      success: true
-  it 'should forbid non-owners from attaching a ::specifications to a container', ->
+  it 'should forbid non-owners from attaching a ::specifications to a container',
     testAttach.bind
       userType: 'non-owner'
-      operation: 'add'
       success: false
 
-  it 'should allow publishers to remove a ::specifications to a container', ->
-    testAttach.bind
-      userType: 'publisher'
-      operation: 'remove'
+  it 'should persist the ::specifications from a container to an image ::current',
+    testPersist.bind
       success: true
-  it 'should allow moderators to remove a ::specifications to a container', ->
-    testAttach.bind
-      userType: 'moderator'
-      operation: 'remove'
-      success: true
-  it 'should forbid non-owners from removing a ::specifications to a container', ->
-    testAttach.bind
-      userType: 'non-owner'
-      operation: 'remove'
-      success: false
-
-  it 'should allow publishers to swap out the ::specifications of a container', ->
-    testAttach.bind
-      userType: 'publisher'
-      operation: 'edit'
-      success: true
-  it 'should allow moderators to swap out the ::specifications of a container', ->
-    testAttach.bind
-      userType: 'moderator'
-      operation: 'edit'
-      success: true
-  it 'should forbid non-owners from swaping out the ::specifications of a container', ->
-    testAttach.bind
-      userType: 'non-owner'
-      operation: 'edit'
-      success: false
-
-  it 'should persist the ::specifications from an image to a container', ->
-    testPersist.bind {}
-  it 'should persist the ::specifications from a container to an image', ->
+  it 'should persist the ::specifications from a container to an image ::current',
     testPersist.bind
       direction: 'backward'
-
-  it 'should forbid duplicate ::specifications', ->
-    testStomp.bind {}
+      success: true
