@@ -142,20 +142,6 @@ initImage = (cb) ->
     @updateId = res.body._id 
     if err then cb err else cb null
 
-checkImage = (cb) ->
-  req = @owner.get "#{base}/runnables/#{@imageId}"
-  req.set 'runnable-token', @ownerToken
-  req.end (err, res) =>
-    if err then cb err else
-      if Array.isArray expected[@type].read
-        expected[@type].read.every (obj, i) =>
-          Object.keys(obj)
-            .every (key) =>
-              res.body[@type][i][key].should.equal obj[key]
-      else 
-        res.body[@type].should.equal expected[@type].read
-      cb null
-
 createContainer = (cb) ->
   req = @owner.post "#{base}/users/me/runnables?from=#{@imageId}"
   req.set 'runnable-token', @ownerToken
@@ -242,9 +228,13 @@ checkOperation = (cb) ->
         cb null
 
 attachImage = (cb) ->
+  console.log @updateId
+  @specificationId = @updateId
   user = @user or @moderator or @owner
   req = user.put "#{base}/runnables/#{@imageId}"
   req.set 'runnable-token', @userToken or @moderatorToken or @ownerToken
+  req.send 
+    specification: @specificationId
   req.end (err, res) =>
     if res?.status is 403 then err = new Error 'forbidden'
     if res?.status is 404 then err = new Error "not found"
@@ -253,6 +243,20 @@ attachImage = (cb) ->
     else if not @success then cb new Error 'should not have succeeded'
     else
      cb null
+
+checkImage = (cb) ->
+  if not @success
+    cb null
+  else
+    req = @owner.get "#{base}/runnables/#{@imageId}"
+    req.set 'runnable-token', @ownerToken
+    req.end (err, res) =>
+      if err then cb err else
+        console.log res.body.specification, @specificationId
+        if res.body.specification isnt @specificationId
+          cb new Error 'specification doesn\'t match'
+        else
+          cb null
 
 tryStomp = (cb) ->
   req = @owner.post "#{base}/runnables/#{@imageId}/#{@type}"
@@ -301,7 +305,7 @@ testAttach = (cb) ->
     list.push createUser.bind @
   list = list.concat [
     attachImage.bind @
-    #checkImage.bind @
+    checkImage.bind @
     stopServer.bind @
   ]
   async.series list, cb
@@ -395,7 +399,7 @@ describe 'specification api', ->
       operation: 'read'
       success: false
 
-  it 'should allow publishers to attach a ::specifications to a container',
+  it 'should allow publishers to attach a ::specifications to a container ::current',
     testAttach.bind
       userType: 'publisher'
       operation: 'add'
