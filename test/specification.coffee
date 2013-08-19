@@ -230,7 +230,7 @@ checkContainer = (cb) ->
     req.set 'runnable-token', @ownerToken
     req.end (err, res) =>
       if err then cb err else
-        if res.body.specification isnt @container.specification
+        if res.body.specification isnt @updateId
           cb new Error 'specification doesn\'t match'
         else
           cb null
@@ -240,7 +240,7 @@ checkImage = (cb) ->
   req.set 'runnable-token', @ownerToken
   req.end (err, res) =>
     if err then cb err else
-      if res.body.specification isnt @image.specification
+      if res.body.specification isnt @updateId
         cb new Error 'specification doesn\'t match'
       else
         cb null
@@ -377,10 +377,10 @@ describe 'specification api', ->
       userType: 'non-owner'
       success: false
 
-  it 'should persist the ::specifications from a container to an image ::current',
+  it 'should persist the ::specifications from a container to an image',
     testPersist.bind
       success: true
-  it 'should persist the ::specifications from a container to an image ::current',
+  it 'should persist the ::specifications from a container to an image',
     testPersist.bind
       direction: 'backward'
       success: true

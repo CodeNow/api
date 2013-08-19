@@ -177,6 +177,7 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         start_cmd: container.start_cmd
         port: container.port
         synced: true
+        specification: container.specification
       for file in container.files
         image.files.push file.toJSON()
       for tag in container.tags

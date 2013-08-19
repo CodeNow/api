@@ -92,6 +92,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       service_cmds: image.service_cmds
       start_cmd: image.start_cmd
       token: uuid.v4()
+      specification: image.specification
     for file in image.files
       container.files.push file.toJSON()
     for tag in image.tags
