@@ -27,7 +27,6 @@ module.exports = (parentDomain) ->
     req.pause()
     tmpdir = "#{os.tmpdir()}/#{uuid.v4()}"
     fs.mkdirSync tmpdir
-    console.log tmpdir
     uncompress = zlib.createUnzip()
     req.pipe uncompress
     untar = tar.Parse()
@@ -37,10 +36,11 @@ module.exports = (parentDomain) ->
     untar.pipe writer
     req.resume()
 
+    if req.query.sync is 'false' then sync = false else sync = true
     writer.on 'close', () ->
       fs.exists "#{tmpdir}/runnable.json", (exists) ->
         if exists
-          runnables.createImageFromDisk req.domain, req.user_id, tmpdir, true, (err, runnable) ->
+          runnables.createImageFromDisk req.domain, req.user_id, tmpdir, sync, (err, runnable) ->
             if err then res.json err.code, message: err.msg else
               rimraf tmpdir, (err) ->
                 if err then throw err else
@@ -49,7 +49,7 @@ module.exports = (parentDomain) ->
           fs.readdir tmpdir, (err, files) ->
             if err then throw err
             newPath = "#{tmpdir}/#{files[0]}"
-            runnables.createImageFromDisk req.domain, req.user_id, newPath, true, (err, runnable) ->
+            runnables.createImageFromDisk req.domain, req.user_id, newPath, sync, (err, runnable) ->
               if err then res.json err.code, message: err.msg else
                 rimraf tmpdir, (err) ->
                   if err then throw err else

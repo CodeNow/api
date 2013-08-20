@@ -24,23 +24,16 @@ describe 'runnables api', ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables?from=node.js")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  res.body.should.have.property '_id'
-                  res.body.should.have.property 'docker_id'
-                  res.body.should.not.have.property 'files'
-                  runnableId = res.body._id
-                  user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 200
-                        res.body.should.have.property '_id', runnableId
-                        res.body.should.have.property 'tags'
-                        res.body.should.have.property 'votes', 0
-                        res.body.should.not.have.property 'files'
-                        instance.stop done
+            helpers.createUserImage user, 'node.js', (err, runnableId) ->
+              user.get("http://localhost:#{configs.port}/runnables/#{runnableId}")
+                .end (err, res) ->
+                  if err then done err else
+                    res.should.have.status 200
+                    res.body.should.have.property '_id', runnableId
+                    res.body.should.have.property 'tags'
+                    res.body.should.have.property 'votes', 0
+                    res.body.should.not.have.property 'files'
+                    instance.stop done
 
   it 'should be able to edit a published ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->

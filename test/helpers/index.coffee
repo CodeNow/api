@@ -112,14 +112,33 @@ Helpers =
 
   createCategory: (name, cb) ->
     @authedAdminUser (err, user) ->
-      if err then done err else
+      if err then cb err else
         user.post("http://localhost:#{configs.port}/categories")
           .set('content-type', 'application/json')
           .send(JSON.stringify(name: name))
           .end (err, res) ->
-            if err then done err else
+            if err then cb err else
               res.should.have.status 201
               cb null, res.body
+
+  createUserImage: (user, name, cb) ->
+    req = user.post("http://localhost:#{configs.port}/runnables/import")
+    req.set 'content-type', 'application/x-gzip'
+    compress = zlib.createGzip()
+    packer = tar.Pack()
+    reader = fstream.Reader
+      path: "#{__dirname}/fixtures/#{name}"
+      type: 'Directory'
+      mode: '0755'
+    compress.pipe(req)
+    packer.pipe(compress)
+    reader.pipe(packer)
+    reader.resume()
+    req.on 'error', (err) ->
+      cb err
+    req.on 'response', (res) ->
+      res.should.have.status 201
+      cb null, res.body._id
 
   createImage: (name, cb) ->
     @authedUser (err, user) ->
@@ -137,7 +156,7 @@ Helpers =
         reader.pipe(packer)
         reader.resume()
         req.on 'error', (err) ->
-          done err
+          cb err
         req.on 'response', (res) ->
           res.should.have.status 201
           cb null, res.body._id
@@ -158,7 +177,7 @@ Helpers =
         reader.pipe(packer)
         reader.resume()
         req.on 'error', (err) ->
-          done err
+          cb err
         req.on 'response', (res) ->
           res.should.have.status 201
           cb null, res.body._id
@@ -179,7 +198,7 @@ Helpers =
         reader.pipe(packer)
         reader.resume()
         req.on 'error', (err) ->
-          done err
+          cb err
         req.on 'response', (res) ->
           res.should.have.status 201
           runnableId = res.body._id
@@ -232,7 +251,7 @@ Helpers =
         reader.pipe(packer)
         reader.resume()
         req.on 'error', (err) ->
-          done err
+          cb err
         req.on 'response', (res) ->
           res.should.have.status 201
           runnableId = res.body._id

@@ -11,92 +11,76 @@ describe 'voting api', ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables?from=node.js")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  res.should.have.property 'body'
-                  runnableId = res.body._id
-                  user.post("http://localhost:#{configs.port}/users/me/votes")
-                    .set('content-type', 'application/json')
-                    .send(JSON.stringify( {  } ))
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 400
-                        res.body.should.have.property 'message', 'must include runnable to vote on'
-                        instance.stop done
+            helpers.createUserImage user, 'node.js', (err, runnableId) ->
+              if err then done err else
+                user.post("http://localhost:#{configs.port}/users/me/votes")
+                  .set('content-type', 'application/json')
+                  .send(JSON.stringify( {  } ))
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 400
+                      res.body.should.have.property 'message', 'must include runnable to vote on'
+                      instance.stop done
 
   it 'should not allow a user to ::vote for their own ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables?from=node.js")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  res.should.have.property 'body'
-                  runnableId = res.body._id
-                  user.post("http://localhost:#{configs.port}/users/me/votes")
-                    .set('content-type', 'application/json')
-                    .send(JSON.stringify( { runnable: runnableId } ))
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 403
-                        res.body.should.have.property 'message', 'cannot vote for own runnables'
-                        instance.stop done
+            helpers.createUserImage user, 'node.js', (err, runnableId) ->
+              if err then done err else
+                user.post("http://localhost:#{configs.port}/users/me/votes")
+                  .set('content-type', 'application/json')
+                  .send(JSON.stringify( { runnable: runnableId } ))
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 403
+                      res.body.should.have.property 'message', 'cannot vote for own runnables'
+                      instance.stop done
 
   it 'should allow a user to ::vote for a ::runnable they do not own', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables?from=node.js")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  res.should.have.property 'body'
-                  runnableId = res.body._id
-                  helpers.authedUser (err, user2) ->
-                    if err then done err else
-                      user2.post("http://localhost:#{configs.port}/users/me/votes")
-                        .set('content-type', 'application/json')
-                        .send(JSON.stringify( { runnable: runnableId } ))
-                        .end (err, res) ->
-                          if err then done err else
-                            res.should.have.status 201
-                            res.body.should.have.property '_id'
-                            res.body.should.have.property 'runnable', runnableId
-                            instance.stop done
+            helpers.createUserImage user, 'node.js', (err, runnableId) ->
+              if err then done err else
+                helpers.authedUser (err, user2) ->
+                  if err then done err else
+                    user2.post("http://localhost:#{configs.port}/users/me/votes")
+                      .set('content-type', 'application/json')
+                      .send(JSON.stringify( { runnable: runnableId } ))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 201
+                          res.body.should.have.property '_id'
+                          res.body.should.have.property 'runnable', runnableId
+                          instance.stop done
 
   it 'should allow a user to retrieve a list of their ::votes', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  res.should.have.property 'body'
-                  runnableId = res.body._id
-                  helpers.authedUser (err, user2) ->
-                    if err then done err else
-                      user2.post("http://localhost:#{configs.port}/users/me/votes")
-                        .set('content-type', 'application/json')
-                        .send(JSON.stringify( { runnable: runnableId } ))
-                        .end (err, res) ->
-                          if err then done err else
-                            res.should.have.status 201
-                            res.body.should.have.property '_id'
-                            res.body.should.have.property 'runnable', runnableId
-                            user2.get("http://localhost:#{configs.port}/users/me/votes")
-                              .end (err, res) ->
-                                res.should.have.status 200
-                                res.body.should.be.a.array
-                                res.body.length.should.equal 1
-                                res.body[0].should.have.property 'runnable', runnableId
-                                instance.stop done
+            helpers.createUserImage user, 'node.js', (err, runnableId) ->
+              if err then done err else
+                helpers.authedUser (err, user2) ->
+                  if err then done err else
+                    user2.post("http://localhost:#{configs.port}/users/me/votes")
+                      .set('content-type', 'application/json')
+                      .send(JSON.stringify( { runnable: runnableId } ))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 201
+                          res.body.should.have.property '_id'
+                          res.body.should.have.property 'runnable', runnableId
+                          user2.get("http://localhost:#{configs.port}/users/me/votes")
+                            .end (err, res) ->
+                              res.should.have.status 200
+                              res.body.should.be.a.array
+                              res.body.length.should.equal 1
+                              res.body[0].should.have.property 'runnable', runnableId
+                              instance.stop done
 
 
   it 'should not allow a user to ::vote twice for the same ::runnable', (done) ->
@@ -104,72 +88,36 @@ describe 'voting api', ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  res.should.have.property 'body'
-                  runnableId = res.body._id
-                  helpers.authedUser (err, user2) ->
-                    if err then done err else
-                      user2.post("http://localhost:#{configs.port}/users/me/votes")
-                        .set('content-type', 'application/json')
-                        .send(JSON.stringify( { runnable: runnableId } ))
-                        .end (err, res) ->
-                          if err then done err else
-                            res.should.have.status 201
-                            res.body.should.have.property '_id'
-                            res.body.should.have.property 'runnable', runnableId
-                            user2.post("http://localhost:#{configs.port}/users/me/votes")
-                              .set('content-type', 'application/json')
-                              .send(JSON.stringify( { runnable: runnableId } ))
-                              .end (err, res) ->
-                                if err then done err else
-                                  res.should.have.status 403
-                                  res.body.should.have.property 'message', 'cannot vote on runnable more than once'
-                                  instance.stop done
+            helpers.createUserImage user, 'node.js', (err, runnableId) ->
+              if err then done err else
+                helpers.authedUser (err, user2) ->
+                  if err then done err else
+                    user2.post("http://localhost:#{configs.port}/users/me/votes")
+                      .set('content-type', 'application/json')
+                      .send(JSON.stringify( { runnable: runnableId } ))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 201
+                          res.body.should.have.property '_id'
+                          res.body.should.have.property 'runnable', runnableId
+                          user2.post("http://localhost:#{configs.port}/users/me/votes")
+                            .set('content-type', 'application/json')
+                            .send(JSON.stringify( { runnable: runnableId } ))
+                            .end (err, res) ->
+                              if err then done err else
+                                res.should.have.status 403
+                                res.body.should.have.property 'message', 'cannot vote on runnable more than once'
+                                instance.stop done
 
   it 'should increase the ::vote count of a ::runnable after the vote is applied', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  res.should.have.property 'body'
-                  runnableId = res.body._id
-                  helpers.authedUser (err, user2) ->
-                    if err then done err else
-                        user2.post("http://localhost:#{configs.port}/users/me/votes")
-                          .set('content-type', 'application/json')
-                          .send(JSON.stringify( { runnable: runnableId } ))
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 201
-                              res.body.should.have.property '_id'
-                              res.body.should.have.property 'runnable', runnableId
-                              user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/votes")
-                                .end (err, res) ->
-                                  if err then done err else
-                                    res.should.have.status 200
-                                    res.body.should.have.property 'count', 1
-                                    instance.stop done
-
-  it 'should decrease the ::vote count of a ::runnable after a vote is removed', (done) ->
-    helpers.createServer configs, done, (err, instance) ->
-      if err then done err else
-        helpers.authedUser (err, user) ->
-          if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  res.should.have.property 'body'
-                  runnableId = res.body._id
-                  helpers.authedUser (err, user2) ->
-                    if err then done err else
+            helpers.createUserImage user, 'node.js', (err, runnableId) ->
+              if err then done err else
+                helpers.authedUser (err, user2) ->
+                  if err then done err else
                       user2.post("http://localhost:#{configs.port}/users/me/votes")
                         .set('content-type', 'application/json')
                         .send(JSON.stringify( { runnable: runnableId } ))
@@ -178,23 +126,47 @@ describe 'voting api', ->
                             res.should.have.status 201
                             res.body.should.have.property '_id'
                             res.body.should.have.property 'runnable', runnableId
-                            voteId = res.body._id
                             user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/votes")
                               .end (err, res) ->
                                 if err then done err else
                                   res.should.have.status 200
                                   res.body.should.have.property 'count', 1
-                                  user2.del("http://localhost:#{configs.port}/users/me/votes/#{voteId}")
-                                    .end (err, res) ->
-                                      if err then done err else
-                                        res.should.have.status 200
-                                        res.body.should.have.property 'message', 'removed vote'
-                                        user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/votes")
-                                          .end (err, res) ->
-                                            if err then done err else
-                                              res.should.have.status 200
-                                              res.body.should.have.property 'count', 0
-                                              instance.stop done
+                                  instance.stop done
+
+  it 'should decrease the ::vote count of a ::runnable after a vote is removed', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.authedUser (err, user) ->
+          if err then done err else
+            helpers.createUserImage user, 'node.js', (err, runnableId) ->
+              if err then done err else
+                helpers.authedUser (err, user2) ->
+                  if err then done err else
+                    user2.post("http://localhost:#{configs.port}/users/me/votes")
+                      .set('content-type', 'application/json')
+                      .send(JSON.stringify( { runnable: runnableId } ))
+                      .end (err, res) ->
+                        if err then done err else
+                          res.should.have.status 201
+                          res.body.should.have.property '_id'
+                          res.body.should.have.property 'runnable', runnableId
+                          voteId = res.body._id
+                          user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/votes")
+                            .end (err, res) ->
+                              if err then done err else
+                                res.should.have.status 200
+                                res.body.should.have.property 'count', 1
+                                user2.del("http://localhost:#{configs.port}/users/me/votes/#{voteId}")
+                                  .end (err, res) ->
+                                    if err then done err else
+                                      res.should.have.status 200
+                                      res.body.should.have.property 'message', 'removed vote'
+                                      user.get("http://localhost:#{configs.port}/runnables/#{runnableId}/votes")
+                                        .end (err, res) ->
+                                          if err then done err else
+                                            res.should.have.status 200
+                                            res.body.should.have.property 'count', 0
+                                            instance.stop done
 
   it 'should be able to list all ::runnables in descending order of ::votes ::abc123', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -207,12 +179,9 @@ describe 'voting api', ->
                 async.whilst () ->
                   runnables.length < 5
                 , (cb) ->
-                  user.post("http://localhost:#{configs.port}/runnables?from=node.js")
-                    .end (err, res) ->
-                      if err then cb err else
-                        res.should.have.status 201
-                        res.body.should.have.property '_id'
-                        runnables.push res.body._id
+                    helpers.createUserImage user, 'node.js', (err, runnableId) ->
+                      if err then done err else
+                        runnables.push runnableId
                         cb()
                 , (err) ->
                   if err then done err else
@@ -268,13 +237,10 @@ describe 'voting api', ->
                 async.whilst () ->
                   runnables.length < 5
                 , (cb) ->
-                  user.post("http://localhost:#{configs.port}/runnables?from=node.js")
-                    .end (err, res) ->
-                      if err then cb err else
-                        res.should.have.status 201
-                        res.body.should.have.property '_id'
-                        runnables.push res.body._id
-                        cb()
+                  helpers.createUserImage user, 'node.js', (err, runnableId) ->
+                    if err then done err else
+                      runnables.push runnableId
+                      cb()
                 , (err) ->
                   if err then done err else
                     helpers.authedUser (err, user2) ->
