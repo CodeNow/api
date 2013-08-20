@@ -13,7 +13,7 @@ module.exports = (parentDomain) ->
   app.post '/implimentations', (req, res) ->
     implimentations.createImplimentation req.domain, 
       userId: req.user_id
-      specificationId: req.body.specificationId
+      specificationId: req.body.specification
       requirements: req.body.requirements
     , (err, implimentation) ->
       if err then res.json err.code, message: err.msg else

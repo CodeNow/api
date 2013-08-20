@@ -171,10 +171,12 @@ module.exports = (parentDomain) ->
           if err then res.json err.code, message: err.msg else
             if req.body.running
               runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
-                res.json runnable
+                if err then res.json err.code, message: err.msg else
+                  res.json runnable
             else
               runnables.stopContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
-                res.json runnable
+                if err then res.json err.code, message: err.msg else
+                  res.json runnable
 
   app.put '/users/me/runnables/:runnableid', putrunnable
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable

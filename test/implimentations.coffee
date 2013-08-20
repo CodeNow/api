@@ -62,8 +62,6 @@ expected =
     ]
     remove: []
 
-
-
 # UTILITIES AND TESTS
 
 doOperation = (cb) ->
@@ -79,28 +77,38 @@ doOperation = (cb) ->
   if @operation is 'remove'
     method = 'del'
     url += "/#{@updateId}"
-  req = @owner[method] url
-  req.set 'runnable-token', @ownerToken
+  user = @user or @moderator or @owner
+  req = user[method] url
+  req.set 'runnable-token', @userToken or @moderatorToken or @ownerToken
   if @operation is 'add' then req.send _.extend data.implimentation.add,
     specification: @specificationId
   if @operation is 'edit' then req.send data.implimentation.edit
   req.end (err, res) =>
     if res?.status is 403 then err = new Error 'forbiden'
     if res?.status is 404 then err = new Error 'not found'
-    if err then cb err else cb null
+    if err && @success then cb err 
+    else if err && not @success then cb null
+    else if not @success then cb new Error 'should not have succeeded'
+    else
+     cb null
 
 checkOperation = (cb) ->
-  req = @owner.get "#{base}/implimentations"
-  req.set 'runnable-token', @ownerToken
-  req.end (err, res) =>
-    if err then cb err else
-      res.body.length.should.equal expected.implimentation[@operation].length
-      expected.implimentation[@operation].every (implimentation, i) =>
-        implimentation.requirements.every (requirement, j) =>
-          requirement.name.should.equal res.body[i].requirements[j].name
-          requirement.value.should.equal res.body[i].requirements[j].value
-          return true
-      cb null
+  if not @success
+    cb null
+  else 
+    user = @moderator or @owner
+    req = user.get "#{base}/implimentations"
+    req.set 'runnable-token', @moderatorToken or @ownerToken
+    req.end (err, res) =>
+      if err then cb err else
+        console.log res.status, res.body
+        res.body.length.should.equal expected.implimentation[@operation].length
+        expected.implimentation[@operation].every (implimentation, i) =>
+          implimentation.requirements.every (requirement, j) =>
+            requirement.name.should.equal res.body[i].requirements[j].name
+            requirement.value.should.equal res.body[i].requirements[j].value
+            return true
+        cb null
 
 
 setEnv = (cb) ->
@@ -244,6 +252,19 @@ attachContainer = (cb) ->
     if res?.status is 400 then err = new Error 'not allowed'
     if res?.status is 403 then err = new Error 'forbidden'
     if res?.status is 404 then err = new Error "not found"
+    if err then cb err else
+     cb null
+
+startContainer = (cb) ->
+  @container.running = true
+  user = @user or @moderator or @owner
+  req = user.put "#{base}/users/me/runnables/#{@containerId}"
+  req.set 'runnable-token', @userToken or @moderatorToken or @ownerToken
+  req.send @container
+  req.end (err, res) =>
+    if res?.status is 400 then err = new Error 'not allowed'
+    if res?.status is 403 then err = new Error 'forbidden'
+    if res?.status is 404 then err = new Error "not found"
     if err && @success then cb err 
     else if err && not @success then cb null
     else if not @success then cb new Error 'should not have succeeded'
@@ -290,15 +311,11 @@ testCrud = (cb) ->
 
 testStart = (cb) ->
   list = [
-    createServer.bind @
-    createOwner.bind @
+    prepContainer.bind @
   ]
   if @with 
-    list.push initOwner.bind @
+    list.push createImplimentation.bind @
   list = list.concat [
-    createImage.bind @
-    initImage.bind @
-    createContainer.bind @
     startContainer.bind @
     stopServer.bind @
   ]
@@ -365,11 +382,6 @@ describe 'implimentation api', ->
       operation: 'remove'
       success: true
 
-  it 'should allow moderators to create ::implimentations',
-    testCrud.bind
-      userType: 'moderator'
-      operation: 'add'
-      success: true
   it 'should allow moderators to edit ::implimentations',
     testCrud.bind
       userType: 'moderator'
@@ -391,37 +403,32 @@ describe 'implimentation api', ->
       operation: 'remove'
       success: true
 
-  it 'should forbid non-owners/moderators to create ::implimentations',
-    testCrud.bind
-      userType: 'non-owner'
-      operation: 'add'
-      success: false
-  it 'should forbid non-owners/moderators to edit ::implimentations', ->
+  it 'should forbid non-owners/moderators to edit ::implimentations',
     testCrud.bind
       userType: 'non-owner'
       operation: 'edit'
       success: false
-  it 'should forbid non-owners/moderators to view ::implimentations', ->
+  it 'should forbid non-owners/moderators to view ::implimentations',
     testCrud.bind
       userType: 'non-owner'
       operation: 'read'
       success: false
-  it 'should forbid non-owners/moderators to list ::implimentations', ->
+  it 'should forbid non-owners/moderators to list ::implimentations',
     testCrud.bind
       userType: 'non-owner'
       operation: 'list'
       success: false
-  it 'should forbid non-owners/moderators to remove ::implimentations', ->
+  it 'should forbid non-owners/moderators to remove ::implimentations',
     testCrud.bind
       userType: 'non-owner'
       operation: 'remove'
       success: false
 
-  it 'should allow container start with ::implimentations', ->
+  it 'should allow container start with ::implimentations',
     testStart.bind
       with: true
       success: true
-  it 'should forbid container start without ::implimentations', ->
+  it 'should forbid container start without ::implimentations',
     testStart.bind
       with: false
       success: false

@@ -26,27 +26,28 @@ implimentationSchema = new Schema
     default: [ ]
 
 implimentationSchema.statics.createImplimentation = (domain, opts, cb) ->
-  users.findUser domain, _id: opts.userId, domain.intercept (user) =>
-    if not user then cb error 403, 'user not found' else
-      @findOne
-        owner: opts.userId
-        impliments: opts.specificationId
-      , domain.intercept (implimentation) =>
-        if implimentation then cb error 403, 'implimentation already exists' else
-          implimentation = new @
-          implimentation.owner = opts.userId
-          implimentation.impliments = opts.specificationId
-          implimentation.subDomain = "#{uuid.v4()}"
-          implimentation.requirements = opts.requirements
-          implimentation.save domain.intercept () ->
-            cb null, implimentation.toJSON()
+  if not opts.specificationId then cb 400, 'needs specification' else
+    users.findUser domain, _id: opts.userId, domain.intercept (user) =>
+      if not user then cb error 404, 'user not found' else
+        @findOne
+          owner: opts.userId
+          impliments: opts.specificationId
+        , domain.intercept (implimentation) =>
+          if implimentation then cb error 403, 'implimentation already exists' else
+            implimentation = new @
+            implimentation.owner = opts.userId
+            implimentation.impliments = opts.specificationId
+            implimentation.subDomain = "#{uuid.v4()}"
+            implimentation.requirements = opts.requirements
+            implimentation.save domain.intercept () ->
+              cb null, implimentation.toJSON()
 
 implimentationSchema.statics.listImplimentations = (domain, userId, cb) ->
   users.findUser domain, _id: userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
       if user.isModerator
         @find {}, domain.intercept (implimentations) => 
-          cb null, implimentations.toJSON()
+          cb null, implimentations.map (implimentation) -> implimentation.toJSON()
       else
         @find 
           owner: userId
@@ -60,13 +61,19 @@ implimentationSchema.statics.getImplimentation = (domain, opts, cb) ->
         @findOne
           _id: opts.implimentationId
         , domain.intercept (implimentation) =>
-          cb null, implimentation.toJSON()
+          if not implimentation?
+            cb error 404, 'implimentation not found'
+          else
+            cb null, implimentation.toJSON()
       else
         @findOne
           owner: opts.userId
           _id: opts.implimentationId
         , domain.intercept (implimentation) =>
-          cb null, implimentation.toJSON()
+          if not implimentation?
+            cb error 404, 'implimentation not found'
+          else
+            cb null, implimentation.toJSON()
 
 implimentationSchema.statics.updateImplimentation = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
@@ -75,17 +82,23 @@ implimentationSchema.statics.updateImplimentation = (domain, opts, cb) ->
         @findOne
           _id: opts.implimentationId
         , domain.intercept (implimentation) =>
-          implimentation.requirements = opts.requirements
-          implimentation.save domain.intercept () ->
-            cb null, implimentation.toJSON()
+          if not implimentation?
+            cb error 404, 'implimentation not found'
+          else
+            implimentation.requirements = opts.requirements
+            implimentation.save domain.intercept () ->
+              cb null, implimentation.toJSON()
       else
         @findOne
           owner: opts.userId
           _id: opts.implimentationId
         , domain.intercept (implimentation) =>
-          implimentation.requirements = opts.requirements
-          implimentation.save domain.intercept () ->
-            cb null, implimentation.toJSON()
+          if not implimentation?
+            cb error 404, 'implimentation not found'
+          else
+            implimentation.requirements = opts.requirements
+            implimentation.save domain.intercept () ->
+              cb null, implimentation.toJSON()
 
 implimentationSchema.statics.deleteImplimentation = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>

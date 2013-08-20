@@ -6,6 +6,7 @@ domain = require 'domain'
 error = require '../error'
 images = require './images'
 users = require './users'
+implimentations = require './implimentations'
 _ = require 'lodash'
 ObjectId = require('mongoose').Types.ObjectId
 
@@ -180,17 +181,29 @@ Runnables =
     containers.findOne {_id: runnableId}, {files:0}, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-          container.getProcessState domain, (err, state) ->
-            if err then cb err else
-              response = (state) ->
-                json_project = container.toJSON()
-                _.extend json_project, state
-                encode domain, json_project, cb
-              if state.running then response state else
-                container.start domain, (err) ->
-                  if err then cb err else
-                    container.getProcessState domain, (err, state) ->
-                      response state
+          start = () ->
+            container.getProcessState domain, (err, state) ->
+              if err then cb err else
+                response = (state) ->
+                  json_project = container.toJSON()
+                  _.extend json_project, state
+                  encode domain, json_project, cb
+                if state.running then response state else
+                  container.start domain, (err) ->
+                    if err then cb err else
+                      container.getProcessState domain, (err, state) ->
+                        response state
+          if container.specification?
+            implimentations.findOne
+              owner: userId
+              impliments: container.specification
+            , domain.intercept (implimentation) ->
+              if not implimentation?
+                cb new error 400, 'no implimentation'
+              else
+                start()
+          else
+            start()
 
   stopContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
