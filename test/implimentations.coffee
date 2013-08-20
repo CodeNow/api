@@ -101,7 +101,6 @@ checkOperation = (cb) ->
     req.set 'runnable-token', @moderatorToken or @ownerToken
     req.end (err, res) =>
       if err then cb err else
-        console.log res.status, res.body
         res.body.length.should.equal expected.implimentation[@operation].length
         expected.implimentation[@operation].every (implimentation, i) =>
           implimentation.requirements.every (requirement, j) =>
@@ -434,12 +433,14 @@ describe 'implimentation api', ->
       success: false
 
   it 'should cause the web page to use the ::implimentations url', ->
+    # harbourmaster needs to support
     testUrl.bind {}
 
   it 'should have existing ::implimentations env variables set', ->
     testVariables.bind
       existing: true
   it 'should set ::implimentations env variables on demand', ->
+    # this is the tricky one
     testVariables.bind
       existing: false
   
