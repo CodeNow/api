@@ -48,7 +48,6 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
               async.each containers, (container, cb) =>
                 url = "http://#{container.token}.runnableapp.dev/api/envs"
                 request.get url, domain.bind (err, res, body) =>
-                  console.log err
                   request.get url, domain.intercept (res, body) =>
                     async.each implementation.requirements, (requirement, cb) =>
                       request.post 
