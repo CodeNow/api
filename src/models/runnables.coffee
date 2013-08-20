@@ -18,31 +18,38 @@ listFields =
 
 Runnables =
 
+  createImageFromDisk: (domain, userId, runnablePath, sync, cb) ->
+    images.createFromDisk domain, userId, runnablePath, sync, (err, image) ->
+      if err then cb err else
+        users.findUser domain, _id: userId, (err, user) ->
+          if err then cb err else
+            if not user then cb error 404, 'user not found' else
+              user.addVote domain, image._id, (err) ->
+                if err then cb err else
+                  json_image = image.toJSON()
+                  delete json_image.files
+                  if json_image.parent then json_image.parent = encodeId json_image.parent
+                  json_image._id = encodeId image._id
+                  cb null, json_image
+
   createImage: (domain, userId, from, sync, cb) ->
-    handler = (image) ->
-      users.findUser domain, _id: userId, (err, user) ->
-        if err then cb err else
-          if not user then cb error 404, 'user not found' else
-            user.addVote domain, image._id, (err) ->
-              if err then cb err else
-                json_image = image.toJSON()
-                delete json_image.files
-                if json_image.parent then json_image.parent = encodeId json_image.parent
-                json_image._id = encodeId image._id
-                cb null, json_image
-    if not isObjectId64 from
-      images.createFromDisk domain, userId, from, sync, (err, image) ->
-        if err then cb err else
-          handler image
-    else
-      containers.findOne _id: decodeId(from), domain.intercept (container) ->
-        if not container then cb error 403, 'source runnable not found' else
-          if container.owner.toString() isnt userId then cb error 403, 'permission denied' else
-            images.createFromContainer domain, container, (err, image) ->
-              if err then cb err else
-                container.target = image._id
-                container.save domain.intercept () ->
-                  handler image
+    containers.findOne _id: decodeId(from), domain.intercept (container) ->
+      if not container then cb error 403, 'source runnable not found' else
+        if container.owner.toString() isnt userId then cb error 403, 'permission denied' else
+          images.createFromContainer domain, container, (err, image) ->
+            if err then cb err else
+              container.target = image._id
+              container.save domain.intercept () ->
+                users.findUser domain, _id: userId, (err, user) ->
+                  if err then cb err else
+                    if not user then cb error 404, 'user not found' else
+                      user.addVote domain, image._id, (err) ->
+                        if err then cb err else
+                          json_image = image.toJSON()
+                          delete json_image.files
+                          if json_image.parent then json_image.parent = encodeId json_image.parent
+                          json_image._id = encodeId image._id
+                          cb null, json_image
 
   createContainer: (domain, userId, from, cb) ->
     async.waterfall [

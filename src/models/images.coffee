@@ -128,17 +128,16 @@ syncDockerImage = (domain, image, cb) ->
           docker.removeContainer containerId, domain.intercept () ->
             cb()
 
-imageSchema.statics.createFromDisk = (domain, owner, name, sync, cb) ->
-  runnablePath = "#{__dirname}/../../configs/runnables"
-  fs.exists "#{runnablePath}/#{name}/runnable.json", (exists) =>
-    if not exists then cb error 400, "image source not found: #{name}" else
-      runnable = require "#{runnablePath}/#{name}/runnable.json"
-      if not runnable then cb error 400, "image source not found: #{name}" else
-        @findOne name: name, domain.intercept (existing) =>
+imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
+  fs.exists "#{runnablePath}/runnable.json", (exists) =>
+    if not exists then cb error 400, "image source not found" else
+      runnable = require "#{runnablePath}/runnable.json"
+      if not runnable then cb error 400, "image source not found" else
+        @findOne name: runnable.name, domain.intercept (existing) =>
           if existing then cb error 403, 'a shared runnable by that name already exists' else
             image = new @()
             tag = image._id.toString()
-            buildDockerImage domain, "#{runnablePath}/#{name}", tag, (err, docker_id) ->
+            buildDockerImage domain, runnablePath, tag, (err, docker_id) ->
               if err then cb err else
                 image.docker_id = docker_id
                 image.owner = owner

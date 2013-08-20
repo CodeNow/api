@@ -4,7 +4,7 @@ helpers = require './helpers'
 sa = require 'superagent'
 qs = require 'querystring'
 
-describe 'live streams api', ->
+describe 'file streams api', ->
 
   it 'should be able to ::stream a new file of a code-mirror type to an existing runnable'
   it 'should be able to ::stream a new file of a non code-mirror type (uncached) to an existing runnable'

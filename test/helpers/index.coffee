@@ -3,7 +3,10 @@ async = require 'async'
 cp = require 'child_process'
 configs = require '../../lib/configs'
 domain = require 'domain'
+fstream = require 'fstream'
 sa = require 'superagent'
+tar = require 'tar'
+zlib = require 'zlib'
 
 Helpers =
 
@@ -121,36 +124,72 @@ Helpers =
   createImage: (name, cb) ->
     @authedUser (err, user) ->
       if err then cb err else
-        user.post("http://localhost:#{configs.port}/runnables?from=#{name}")
-          .end (err, res) ->
-            if err then cb err else
-              res.should.have.status 201
-              cb null, res.body._id
+        req = user.post("http://localhost:#{configs.port}/runnables/import")
+        req.set 'content-type', 'application/x-gzip'
+        compress = zlib.createGzip()
+        packer = tar.Pack()
+        reader = fstream.Reader
+          path: "#{__dirname}/fixtures/#{name}"
+          type: 'Directory'
+          mode: '0755'
+        compress.pipe(req)
+        packer.pipe(compress)
+        reader.pipe(packer)
+        reader.resume()
+        req.on 'error', (err) ->
+          done err
+        req.on 'response', (res) ->
+          res.should.have.status 201
+          cb null, res.body._id
 
   createUnsyncedImage: (name, cb) ->
     @authedUser (err, user) ->
       if err then cb err else
-        user.post("http://localhost:#{configs.port}/runnables?from=#{name}&sync=false")
-          .end (err, res) ->
-            if err then cb err else
-              res.should.have.status 201
-              cb null, res.body._id
+        req = user.post("http://localhost:#{configs.port}/runnables/import?sync=false")
+        req.set 'content-type', 'application/x-gzip'
+        compress = zlib.createGzip()
+        packer = tar.Pack()
+        reader = fstream.Reader
+          path: "#{__dirname}/fixtures/#{name}"
+          type: 'Directory'
+          mode: '0755'
+        compress.pipe(req)
+        packer.pipe(compress)
+        reader.pipe(packer)
+        reader.resume()
+        req.on 'error', (err) ->
+          done err
+        req.on 'response', (res) ->
+          res.should.have.status 201
+          cb null, res.body._id
 
   createTaggedImage: (name, tag, cb) ->
     @authedRegisteredUser (err, user) ->
       if err then cb err else
-        user.post("http://localhost:#{configs.port}/runnables?from=#{name}")
-          .end (err, res) ->
-            if err then cb err else
-              res.should.have.status 201
-              runnableId = res.body._id
-              user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/tags")
-                .set('content-type', 'application/json')
-                .send(JSON.stringify({name: tag}))
-                .end (err, res) ->
-                  if err then cb err else
-                    res.should.have.status 201
-                    cb null, runnableId
+        req = user.post("http://localhost:#{configs.port}/runnables/import")
+        req.set 'content-type', 'application/x-gzip'
+        compress = zlib.createGzip()
+        packer = tar.Pack()
+        reader = fstream.Reader
+          path: "#{__dirname}/fixtures/#{name}"
+          type: 'Directory'
+          mode: '0755'
+        compress.pipe(req)
+        packer.pipe(compress)
+        reader.pipe(packer)
+        reader.resume()
+        req.on 'error', (err) ->
+          done err
+        req.on 'response', (res) ->
+          res.should.have.status 201
+          runnableId = res.body._id
+          user.post("http://localhost:#{configs.port}/runnables/#{runnableId}/tags")
+            .set('content-type', 'application/json')
+            .send(JSON.stringify({name: tag}))
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 201
+                cb null, runnableId
 
   createNamedTaggedImage: (user, source, name, tag, cb) ->
     user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{source}")
@@ -180,16 +219,28 @@ Helpers =
   createContainer: (name, cb) ->
     @authedUser (err, user) ->
       if err then cb err else
-        user.post("http://localhost:#{configs.port}/runnables?from=#{name}")
-          .end (err, res) ->
-            if err then cb err else
-              res.should.have.status 201
-              runnableId = res.body._id
-              user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
-                .end (err, res) ->
-                  if err then cb err else
-                    res.should.have.status 201
-                    cb null, user, res.body._id
+        req = user.post("http://localhost:#{configs.port}/runnables/import")
+        req.set 'content-type', 'application/x-gzip'
+        compress = zlib.createGzip()
+        packer = tar.Pack()
+        reader = fstream.Reader
+          path: "#{__dirname}/fixtures/#{name}"
+          type: 'Directory'
+          mode: '0755'
+        compress.pipe(req)
+        packer.pipe(compress)
+        reader.pipe(packer)
+        reader.resume()
+        req.on 'error', (err) ->
+          done err
+        req.on 'response', (res) ->
+          res.should.have.status 201
+          runnableId = res.body._id
+          user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+            .end (err, res) ->
+              if err then cb err else
+                res.should.have.status 201
+                cb null, user, res.body._id
 
   createPublishedProject: (user, cb) ->
     @createImage 'node.js', (err, runnableId) ->
