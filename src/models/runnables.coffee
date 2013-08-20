@@ -6,7 +6,7 @@ domain = require 'domain'
 error = require '../error'
 images = require './images'
 users = require './users'
-implimentations = require './implimentations'
+implementations = require './implementations'
 _ = require 'lodash'
 ObjectId = require('mongoose').Types.ObjectId
 
@@ -194,12 +194,12 @@ Runnables =
                       container.getProcessState domain, (err, state) ->
                         response state
           if container.specification?
-            implimentations.findOne
+            implementations.findOne
               owner: userId
-              impliments: container.specification
-            , domain.intercept (implimentation) ->
-              if not implimentation?
-                cb new error 400, 'no implimentation'
+              implements: container.specification
+            , domain.intercept (implementation) ->
+              if not implementation?
+                cb new error 400, 'no implementation'
               else
                 start()
           else

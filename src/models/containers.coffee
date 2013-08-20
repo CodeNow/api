@@ -8,6 +8,7 @@ mongoose = require 'mongoose'
 sync = require './sync'
 uuid = require 'node-uuid'
 volumes = require  "./volumes"
+implementations = require './implementations'
 _ = require 'lodash'
 
 docker = dockerjs host: configs.docker
@@ -82,38 +83,51 @@ containerSchema.index
 
 containerSchema.statics.create = (domain, owner, image, cb) ->
   image.sync domain, () =>
-    container = new @
-      parent: image
-      name: image.name
-      owner: owner
-      port: image.port
-      cmd: image.cmd
-      file_root: image.file_root
-      service_cmds: image.service_cmds
-      start_cmd: image.start_cmd
-      token: uuid.v4()
-      specification: image.specification
-    for file in image.files
-      container.files.push file.toJSON()
-    for tag in image.tags
-      container.tags.push tag.toJSON()
-    docker.createContainer
-      Token: container.token
-      Env: [
-        "RUNNABLE_USER_DIR=#{container.file_root}"
-        "RUNNABLE_SERVICE_CMDS=#{container.service_cmds}"
-        "RUNNABLE_START_CMD=#{container.start_cmd}"
-      ]
-      Hostname: 'runnable'
-      Image: image.docker_id.toString()
-      PortSpecs: [ container.port.toString() ]
-      Cmd: [ container.cmd ]
-    , domain.intercept (res) ->
-      container.docker_id = res.Id
-      docker.inspectContainer container.docker_id, domain.intercept (result) ->
-        container.long_docker_id = result.ID
-        container.save domain.intercept () ->
-          cb null, container
+    env = [
+      "RUNNABLE_USER_DIR=#{image.file_root}"
+      "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
+      "RUNNABLE_START_CMD=#{image.start_cmd}"
+    ]
+    createContainer = () =>
+      container = new @
+        parent: image
+        name: image.name
+        owner: owner
+        port: image.port
+        cmd: image.cmd
+        file_root: image.file_root
+        service_cmds: image.service_cmds
+        start_cmd: image.start_cmd
+        token: uuid.v4()
+        specification: image.specification
+      for file in image.files
+        container.files.push file.toJSON()
+      for tag in image.tags
+        container.tags.push tag.toJSON()
+      docker.createContainer
+        Token: container.token
+        Env: env
+        Hostname: 'runnable'
+        Image: image.docker_id.toString()
+        PortSpecs: [ container.port.toString() ]
+        Cmd: [ container.cmd ]
+      , domain.intercept (res) ->
+        container.docker_id = res.Id
+        docker.inspectContainer container.docker_id, domain.intercept (result) ->
+          container.long_docker_id = result.ID
+          container.save domain.intercept () ->
+            cb null, container
+    if image.specification?
+      implementations.findOne
+        owner: owner
+        implements: image.specification
+      , domain.intercept (implementation) =>
+        if implementation?
+          env = env.concat implementation.toJSON().requirements.map (requirement) ->
+            "#{requirement.name}=#{requirement.value}"
+          createContainer()
+    else
+      createContainer()
 
 containerSchema.statics.destroy = (domain, id, cb) ->
   @findOne { _id: id } , domain.intercept (container) =>

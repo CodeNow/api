@@ -125,11 +125,10 @@ setEnv = (cb) ->
           cb null
 
 checkEnv = (cb) ->
-  termUrl = "http://terminals.runnableapp.dev/term.html?termId=#{@token}"
   helpers.sendCommand termUrl, 'env', (err, env) =>
     if err then cb err else
-      if not expected.env[@type][@existing].test env
-        cb new Error 'vars not found'
+      if not /FIRST_REQUIREMENT/.test env 
+        cb new Error 'env not set'
       else
         cb null
 
@@ -153,6 +152,25 @@ recreateImage = (cb) ->
       res.should.have.status 201
       @imageId = res.body._id
       @image = res.body
+      cb null
+
+deleteContainer = (cb) ->
+  req = @owner.del "#{base}/users/me/runnables/#{@containerId}"
+  req.set 'runnable-token', @ownerToken
+  req.end (err, res) =>
+    if err then cb err else
+      res.should.have.status 200
+      cb null
+
+recreateContainer = (cb) ->
+  req = @owner.post "#{base}/users/me/runnables?from=#{@imageId}"
+  req.set 'runnable-token', @ownerToken
+  req.end (err, res) =>
+    if err then cb err else
+      res.should.have.status 201
+      @containerId = res.body._id
+      @token = res.body.token
+      @container = res.body
       cb null
 
 createServer = (cb) ->
@@ -326,7 +344,6 @@ testUrl = (cb) ->
     createOwner.bind @
     initOwner.bind @
     createImage.bind @
-    initImage.bind @
     createContainer.bind @
     startContainer.bind @
     checkUrl.bind @
@@ -336,12 +353,9 @@ testUrl = (cb) ->
 
 testVariables = (cb) ->
   list = [
-    createServer.bind @
-    createOwner.bind @
-    initOwner.bind @
-    createImage.bind @
-    initImage.bind @
-    createContainer.bind @
+    prepImage.bind @
+    deleteContainer.bind @
+    recreateContainer.bind @
   ]
   if @existing is 'added'
     list.push setEnv.bind @
@@ -436,9 +450,10 @@ describe 'implimentation api', ->
     # harbourmaster needs to support
     testUrl.bind {}
 
-  it 'should have existing ::implimentations env variables set', ->
+  it 'should have existing ::implimentations env variables set ::current',
     testVariables.bind
       existing: true
+      success: true
   it 'should set ::implimentations env variables on demand', ->
     # this is the tricky one
     testVariables.bind
