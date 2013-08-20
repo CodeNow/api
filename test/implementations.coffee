@@ -109,26 +109,10 @@ checkOperation = (cb) ->
             return true
         cb null
 
-
-setEnv = (cb) ->
-  type = if @type is 'globalVars' then 'user' else @type
-  controlUrl = "http://#{@token}.runnableapp.dev/api/envs"
-  wake = @owner.get controlUrl
-  wake.end (err, res) =>
-    if err then cb err else
-      set = @owner.post controlUrl
-      set.send
-        key: data[type].add.key
-        value: data[type].add.value
-      set.end (err, res) =>
-        if err then cb err else
-          cb null
-
 checkEnv = (cb) ->
   termUrl = "http://terminals.runnableapp.dev/term.html?termId=#{@token}"
   helpers.sendCommand termUrl, 'env', (err, env) =>
     if err then cb err else
-      console.log env
       if not /FIRST_REQUIREMENT/.test env 
         cb new Error 'env not set'
       else
@@ -356,12 +340,15 @@ testUrl = (cb) ->
 testVariables = (cb) ->
   list = [
     prepImage.bind @
-    createImplementation.bind @
+  ]
+  if @existing
+    list.push createImplementation.bind @
+  list = list.concat [
     deleteContainer.bind @
     recreateContainer.bind @
   ]
   if not @existing
-    list.push setEnv.bind @
+    list.push createImplementation.bind @
   list = list.concat [
     checkEnv.bind @
     stopServer.bind @
@@ -453,11 +440,11 @@ describe 'implementation api', ->
     # harbourmaster needs to support
     testUrl.bind {}
 
-  it 'should have existing ::implementations env variables set ::current',
+  it 'should have existing ::implementations env variables set',
     testVariables.bind
       existing: true
       success: true
-  it 'should set ::implementations env variables on demand', ->
+  it 'should set ::implementations env variables on demand',
     # this is the tricky one
     testVariables.bind
       existing: false

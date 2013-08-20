@@ -5,6 +5,7 @@ mongoose = require 'mongoose'
 _ = require 'lodash'
 users = require './users'
 uuid = require 'node-uuid'
+request = require 'request'
 
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
@@ -39,8 +40,27 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
             implementation.implements = opts.specificationId
             implementation.subDomain = "#{uuid.v4()}"
             implementation.requirements = opts.requirements
-            implementation.save domain.intercept () ->
-              cb null, implementation.toJSON()
+            containers = require './containers'
+            containers.find
+              owner: opts.userId
+              specification: opts.specificationId
+            , domain.intercept (containers) =>
+              async.each containers, (container, cb) =>
+                url = "http://#{container.token}.runnableapp.dev/api/envs"
+                request.get url, domain.bind (err, res, body) =>
+                  console.log err
+                  request.get url, domain.intercept (res, body) =>
+                    async.each implementation.requirements, (requirement, cb) =>
+                      request.post 
+                        url: url
+                        json: 
+                          key: requirement.name
+                          value: requirement.value
+                      , (cb)
+                    , domain.intercept cb
+              , domain.intercept () =>
+                implementation.save domain.intercept () ->
+                  cb null, implementation.toJSON()
 
 implementationSchema.statics.listImplementations = (domain, userId, cb) ->
   users.findUser domain, _id: userId, domain.intercept (user) =>
