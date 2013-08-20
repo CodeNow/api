@@ -125,8 +125,10 @@ setEnv = (cb) ->
           cb null
 
 checkEnv = (cb) ->
+  termUrl = "http://terminals.runnableapp.dev/term.html?termId=#{@token}"
   helpers.sendCommand termUrl, 'env', (err, env) =>
     if err then cb err else
+      console.log env
       if not /FIRST_REQUIREMENT/.test env 
         cb new Error 'env not set'
       else
@@ -354,10 +356,11 @@ testUrl = (cb) ->
 testVariables = (cb) ->
   list = [
     prepImage.bind @
+    createImplementation.bind @
     deleteContainer.bind @
     recreateContainer.bind @
   ]
-  if @existing is 'added'
+  if not @existing
     list.push setEnv.bind @
   list = list.concat [
     checkEnv.bind @

@@ -88,7 +88,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
       "RUNNABLE_START_CMD=#{image.start_cmd}"
     ]
-    createContainer = () =>
+    createContainer = (env) =>
       container = new @
         parent: image
         name: image.name
@@ -123,11 +123,13 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         implements: image.specification
       , domain.intercept (implementation) =>
         if implementation?
-          env = env.concat implementation.toJSON().requirements.map (requirement) ->
+          envFull = env.concat implementation.toJSON().requirements.map (requirement) ->
             "#{requirement.name}=#{requirement.value}"
-          createContainer()
+          createContainer envFull
+        else
+          createContainer env
     else
-      createContainer()
+      createContainer env
 
 containerSchema.statics.destroy = (domain, id, cb) ->
   @findOne { _id: id } , domain.intercept (container) =>
