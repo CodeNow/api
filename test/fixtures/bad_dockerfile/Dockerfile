@@ -1,5 +1,5 @@
-FROM runnable/base
-NOTADD ./src /root
-RUN cd /root; npm install
-CMD /usr/local/bin/npm start /root
-EXPOSE 80
+FROM {IMAGE}
+NOTADD {FILE_ROOT_HOST} {FILE_ROOT}
+RUN cd {FILE_ROOT}; npm install
+CMD /usr/local/bin/npm start {FILE_ROOT}
+EXPOSE {PORT}
