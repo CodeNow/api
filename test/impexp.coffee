@@ -197,6 +197,7 @@ describe 'import/export api', ->
                   res.body.should.have.property 'message', 'could not build image from dockerfile'
                   instance.stop done
 
+  ### TODO: figure out how to do this
   it 'should return error if ::streamed gzipped tarball Dockerfile template references undefined variable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
@@ -223,6 +224,7 @@ describe 'import/export api', ->
                   res.should.have.status 400
                   res.body.should.have.property 'message', 'could not build image from dockerfile'
                   instance.stop done
+  ###
 
   it 'should write a ::streamed gzipped tarball when hitting the export route of an existing runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -253,6 +255,13 @@ describe 'import/export api', ->
                       fs.existsSync("#{dir}/runnable.json").should.equal true
                       fs.existsSync("#{dir}/Dockerfile").should.equal true
                       runnable_json = require "#{dir}/runnable.json"
+                      runnable_json.should.have.property 'service_cmds'
+                      runnable_json.should.have.property 'start_cmd'
+                      runnable_json.should.have.property 'tags'
+                      runnable_json.should.have.property 'image'
+                      runnable_json.should.have.property 'file_root'
+                      runnable_json.should.have.property 'file_root_host'
+                      runnable_json.should.have.property 'port'
                       runnable_json.should.have.property 'files'
                       runnable_json.files.should.be.a.array
                       runnable_json.files.length.should.equal 2

@@ -71,6 +71,7 @@ module.exports = (parentDomain) ->
           cmd: runnable.start_cmd
           port: runnable.port
           start_cmd: runnable.start_cmd
+          service_cmds: runnable.service_cmds
           file_root: runnable.file_root
           file_root_host: runnable.file_root_host
         runnable_json.tags = [ ]
