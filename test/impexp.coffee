@@ -197,6 +197,33 @@ describe 'import/export api', ->
                   res.body.should.have.property 'message', 'could not build image from dockerfile'
                   instance.stop done
 
+  it 'should return error if ::streamed gzipped tarball Dockerfile template references undefined variable', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createChannel 'node.js', (err, channel) ->
+          if err then done err else
+            existingChannelId = channel._id
+            helpers.authedRegisteredUser (err, user) ->
+              if err then done err else
+                req = user.post("http://localhost:#{configs.port}/runnables/import")
+                req.set 'content-type', 'application/x-gzip'
+                compress = zlib.createGzip()
+                packer = tar.Pack()
+                reader = fstream.Reader
+                  path: "#{__dirname}/fixtures/undefined_mustache_variable"
+                  type: 'Directory'
+                  mode: '0755'
+                compress.pipe(req)
+                packer.pipe(compress)
+                reader.pipe(packer)
+                reader.resume()
+                req.on 'error', (err) ->
+                  done err
+                req.on 'response', (res) ->
+                  res.should.have.status 400
+                  res.body.should.have.property 'message', 'could not build image from dockerfile'
+                  instance.stop done
+
   it 'should write a ::streamed gzipped tarball when hitting the export route of an existing runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else

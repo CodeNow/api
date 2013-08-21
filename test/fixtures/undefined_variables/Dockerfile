@@ -1,5 +1,5 @@
-FROM {{IMAGE}}
-ADD ./src {{FILE_ROOT}}
-RUN cd {{FILE_ROOT}}; npm install
-CMD /usr/local/bin/npm start {{FILE_ROOT}}
-EXPOSE {{PORT}}
+FROM {{image}}
+ADD {{file_root_host}} {{file_root}}
+RUN npm install {{file_root}}
+CMD npm start {{file_root}}
+EXPOSE {{port}}

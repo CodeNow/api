@@ -8,6 +8,7 @@ error = require '../error'
 fs = require 'fs'
 path = require 'path'
 mongoose = require 'mongoose'
+mu = require 'mu2'
 request = require 'request'
 sync = require './sync'
 uuid = require 'node-uuid'
@@ -148,42 +149,47 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
             if not exists then cb error 400, 'dockerfile not found' else
               fs.readFile "#{runnablePath}/Dockerfile", 'utf8', (err, dockerfile) =>
                 if err then throw err
-                compiled_dockerfile = _.clone dockerfile
-                compiled_dockerfile = compiled_dockerfile.replace /{FILE_ROOT}/g, runnable.file_root
-                compiled_dockerfile = compiled_dockerfile.replace /{FILE_ROOT_HOST}/g, runnable.file_root_host
-                compiled_dockerfile = compiled_dockerfile.replace /{IMAGE}/g, runnable.image
-                compiled_dockerfile = compiled_dockerfile.replace /{PORT}/g, runnable.port
-                fs.writeFile "#{runnablePath}/Dockerfile", compiled_dockerfile, 'utf8', (err) =>
-                  if err then throw err
-                  @findOne name: runnable.name, domain.intercept (existing) =>
-                    if existing then cb error 403, 'a runnable by that name already exists' else
-                      image = new @()
-                      tag = image._id.toString()
-                      buildDockerImage domain, runnablePath, tag, (err, docker_id) ->
-                        if err then cb err else
-                          image.docker_id = docker_id
-                          image.owner = owner
-                          image.name = runnable.name
-                          image.image = runnable.image
-                          image.dockerfile = dockerfile
-                          image.cmd = runnable.cmd
-                          if runnable.file_root_host then image.file_root_host = runnable.file_root_host
-                          if runnable.file_root then image.file_root = runnable.file_root
-                          if runnable.service_cmds then image.service_cmds = runnable.service_cmds
-                          if runnable.start_cmd then image.start_cmd = runnable.start_cmd
-                          image.port = runnable.port
-                          runnable.tags = runnable.tags or [ ]
-                          for file in runnable.files
-                            image.files.push file
-                          if sync
-                            syncDockerImage domain, image, (err) ->
-                              if err then throw err
-                              image.synced = true
-                              image.save domain.intercept () ->
-                                cb null, image, runnable.tags
-                          else
-                            image.save domain.intercept () ->
-                              cb null, image, runnable.tags
+                mu.compileText 'Dockerfile', dockerfile, (err, compiled) =>
+                  if err then cb error 400, "error compiling mustache template: #{err.message}" else
+                    rendered = mu.render compiled,
+                      file_root: runnable.file_root
+                      file_root_host: runnable.file_root_host
+                      image: runnable.image
+                      port: runnable.port
+                    writestream = fs.createWriteStream "#{runnablePath}/Dockerfile", 'utf8'
+                    writestream.on 'error', (err) ->
+                      throw err
+                    writestream.on 'close', () =>
+                      @findOne name: runnable.name, domain.intercept (existing) =>
+                        if existing then cb error 403, 'a runnable by that name already exists' else
+                          image = new @()
+                          tag = image._id.toString()
+                          buildDockerImage domain, runnablePath, tag, (err, docker_id) ->
+                            if err then cb err else
+                              image.docker_id = docker_id
+                              image.owner = owner
+                              image.name = runnable.name
+                              image.image = runnable.image
+                              image.dockerfile = dockerfile
+                              image.cmd = runnable.cmd
+                              if runnable.file_root_host then image.file_root_host = runnable.file_root_host
+                              if runnable.file_root then image.file_root = runnable.file_root
+                              if runnable.service_cmds then image.service_cmds = runnable.service_cmds
+                              if runnable.start_cmd then image.start_cmd = runnable.start_cmd
+                              image.port = runnable.port
+                              runnable.tags = runnable.tags or [ ]
+                              for file in runnable.files
+                                image.files.push file
+                              if sync
+                                syncDockerImage domain, image, (err) ->
+                                  if err then throw err
+                                  image.synced = true
+                                  image.save domain.intercept () ->
+                                    cb null, image, runnable.tags
+                              else
+                                image.save domain.intercept () ->
+                                  cb null, image, runnable.tags
+                    rendered.pipe writestream
 
 imageSchema.statics.createFromContainer = (domain, container, cb) ->
   @findOne name: container.name, domain.intercept (existing) =>
