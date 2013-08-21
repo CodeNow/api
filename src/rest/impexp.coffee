@@ -59,7 +59,9 @@ module.exports = (parentDomain) ->
 
   app.get '/runnables/:id/export', (req, res) ->
 
-    tmpdir = "#{os.tmpdir()}/#{uuid.v4()}"
+    baseTmpDir = "#{os.tmpdir()}/#{uuid.v4()}"
+    fs.mkdirSync baseTmpDir
+    tmpdir = "#{baseTmpDir}/#{req.params.id}"
     fs.mkdirSync tmpdir
     runnables.getImage req.domain, req.params.id, (err, runnable) ->
       if err then res.json err.code, message: err.msg else
@@ -112,6 +114,7 @@ module.exports = (parentDomain) ->
                           if err then throw err
                           runnables.removeContainer req.domain, req.user_id, container._id, (err) ->
                             if err then res.json err.code, message: err.msg else
+                              tmpdir = path.resolve tmpdir
                               compress = zlib.createGzip()
                               packer = tar.Pack()
                               reader = fstream.Reader
@@ -124,7 +127,7 @@ module.exports = (parentDomain) ->
                               packer.pipe(compress)
                               reader.pipe(packer)
                               res.on 'end', () ->
-                                rimraf tmpdir, (err) ->
+                                rimraf baseTmpDir, (err) ->
                                   if err then throw err
                               reader.resume()
 
