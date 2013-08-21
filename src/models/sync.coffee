@@ -25,6 +25,8 @@ module.exports = (domain, containerId, target, cb) ->
         for existingFile in old_file_list
           if file.path is existingFile.path and file.name is existingFile.name
             new_file._id = existingFile._id
+            new_file.default = existingFile.default
+            new_file.ignore = existingFile.ignore
             break
         new_file_list.push new_file
       target.files = new_file_list
