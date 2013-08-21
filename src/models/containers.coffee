@@ -32,6 +32,10 @@ containerSchema = new Schema
     default: Date.now
   target:
     type: ObjectId
+  image:
+    type: String
+  dockerfile:
+    type: String
   cmd:
     type: String
   port:
@@ -54,6 +58,9 @@ containerSchema = new Schema
   file_root:
     type: String
     default: '/root'
+  file_root_host:
+    type: String
+    default: './src'
   files:
     type: [
       name:
@@ -86,8 +93,11 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       owner: owner
       port: image.port
       cmd: image.cmd
+      image: image.image
       file_root: image.file_root
+      file_root_host: image.file_root_host
       service_cmds: image.service_cmds
+      dockerfile: image.dockerfile
       start_cmd: image.start_cmd
       token: uuid.v4()
     for file in image.files
