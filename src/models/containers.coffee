@@ -174,6 +174,11 @@ containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb
       delete file.content
   cb null, files
 
+
+cacheContents = (ext) ->
+  exts = [ '.js', '.md', '.txt', '.py', '.mysql', '.jade', '.css', '.html', '.json', '.php' ]
+  ext in exts
+
 containerSchema.methods.syncFiles = (domain, cb) ->
   sync domain, @long_docker_id, @, (err) =>
     if err then cb err else
@@ -181,24 +186,29 @@ containerSchema.methods.syncFiles = (domain, cb) ->
       @save domain.intercept () =>
         cb null, @
 
-containerSchema.methods.createFile = (domain, name, path, content, cb) ->
-  volumes.createFile domain, @long_docker_id, @file_root, name, path, content, (err) =>
+containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
+  volumes.createFile domain, @long_docker_id, @file_root, name, filePath, content, (err) =>
     if err then cb err else
-      @files.push
-        path: path
+      file =
+        path: filePath
         name: name
-        content: content
+      ext = path.extname name
+      if cacheContents ext
+        file.content = content
+      @files.push file
       file = @files[@files.length-1]
       @last_write = new Date()
       @save domain.intercept () ->
-        cb null, { _id: file._id, name: name, path: path }
+        cb null, { _id: file._id, name: name, path: filePath }
 
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     volumes.updateFile domain, @long_docker_id, @file_root, file.name, file.path, content, (err) =>
       if err then cb err else
-        file.content = content
+        ext = path.extname file.name
+        if cacheContents ext
+          file.content = content
         @last_write = new Date()
         @save domain.intercept () ->
           cb null, file
@@ -216,9 +226,28 @@ containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
           for elem in @files
             if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
               elem.path = elem.path.replace oldPath, newPath
-        @last_write = new Date()
-        @save domain.intercept () ->
-          cb null, file
+          @last_write = new Date()
+          @save domain.intercept () ->
+            cb null, file
+        else
+          oldExt = path.extname oldName
+          newExt = path.extname newName
+          oldCached = cacheContents oldExt
+          newCached = cacheContents newExt
+          if oldCached and not newCached
+            file.content = undefined
+            file.default = false
+          if not oldCached and newCached
+            volumes.readFile domain, @long_docker_id, @file_root, file.name, file.path, (err, content) =>
+              if err then cb err else
+                file.content = content
+                @last_write = new Date()
+                @save domain.intercept () ->
+                  cb null, file
+          else
+            @last_write = new Date()
+            @save domain.intercept () ->
+              cb null, file
 
 containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
   file = @files.id fileId
@@ -258,9 +287,10 @@ containerSchema.methods.tagFile = (domain, fileId, isDefault, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if file.dir then cb error 403, 'cannot tag directory as default' else
-      file.default = isDefault
-      @save domain.intercept () ->
-        cb null, file
+      if not file.content and isDefault then cb error 403, 'cannot tag an uncached file as default' else
+        file.default = isDefault
+        @save domain.intercept () ->
+          cb null, file
 
 containerSchema.methods.deleteAllFiles = (domain, cb) ->
   volumes.deleteAllFiles domain, @long_docker_id, @file_root, (err) =>

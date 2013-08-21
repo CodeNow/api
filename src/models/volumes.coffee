@@ -78,14 +78,14 @@ Volumes =
         if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb()
 
-  readAllFiles: (domain, containerId, srcDir, ignores, cb) ->
+  readAllFiles: (domain, containerId, srcDir, ignores, exts, cb) ->
     dnode_timeout = setTimeout () ->
       throw new Error "timeout while trying to call readAllFiles() via dnode to harbourmaster"
     , configs.dnode_sync_timeout
     up (remote) ->
       if not remote.readAllFiles then throw new Error "harbourmaster does not implement method: readAllFiles"
       debug 'calling remote function readAllFiles()'
-      remote.readAllFiles containerId, srcDir, ignores, domain.bind (err, files) ->
+      remote.readAllFiles containerId, srcDir, ignores, exts, domain.bind (err, files) ->
         clearTimeout dnode_timeout
         if err and err.code is 500 then throw new Error err.msg
         if err then cb err else cb null, files

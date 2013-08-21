@@ -11,17 +11,15 @@ module.exports = (domain, containerId, target, cb) ->
       ignores.push path.normalize "#{file.path}/#{file.name}"
       new_file_list.push file
   old_file_list = _.clone target.files
-  volumes.readAllFiles domain, containerId, target.file_root, ignores, (err, allFiles) ->
+  exts = [ '.js', '.md', '.txt', '.py', '.mysql', '.jade', '.css', '.html', '.json', '.php' ]
+  volumes.readAllFiles domain, containerId, target.file_root, ignores, exts, (err, allFiles) ->
     if err then cb err else
       allFiles.forEach (file) ->
         new_file =
           name: file.name
           path: file.path
-        if file.dir
-          new_file.dir = true
-        else
-          new_file.content = file.content
-        found = false
+        if file.dir then new_file.dir = true
+        if file.content then new_file.content = file.content
         for existingFile in old_file_list
           if file.path is existingFile.path and file.name is existingFile.name
             new_file._id = existingFile._id
