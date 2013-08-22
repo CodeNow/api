@@ -221,25 +221,33 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    if typeof content is 'string'
-      volumes.updateFile domain, @long_docker_id, @file_root, file.name, file.path, content, (err) =>
+    volumes.updateFile domain, @long_docker_id, @file_root, file.name, file.path, content, (err) =>
+      if err then cb err else
+        ext = path.extname file.name
+        if cacheContents ext
+          file.content = content
+        @last_write = new Date()
+        @save domain.intercept () ->
+          cb null, file
+
+containerSchema.methods.updateFileContents = (domain, filePath, content, cb) ->
+  foundFile = null
+  filePath = path.normalize filePath
+  @files.forEach (file) ->
+    elemPath = path.normalize "#{file.path}/#{file.name}"
+    if elemPath is filePath
+      foundFile = file
+  if not foundFile then cb error 404, 'file does not exist' else
+    store = concat (file_content) =>
+      volumes.updateFile domain, @long_docker_id, @file_root, foundFile.name, foundFile.path, file_content.toString(), (err) =>
         if err then cb err else
-          ext = path.extname file.name
+          ext = path.extname foundFile.name
           if cacheContents ext
-            file.content = content
+            foundFile.content = file_content
           @last_write = new Date()
           @save domain.intercept () ->
-            cb null, file
-    else
-      store = concat (file_content) =>
-        volumes.updateFile domain, @long_docker_id, @file_root, file.name, file.path, file_content, (err) =>
-          if err then cb err else
-            ext = path.extname file.name
-            if cacheContents ext
-              file.content = file_content
-            @last_write = new Date()
-            @save domain.intercept () ->
-              cb null, file
+            cb null, foundFile
+    content.pipe store
 
 containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
   file = @files.id fileId

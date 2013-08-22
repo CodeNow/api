@@ -265,7 +265,7 @@ module.exports = (parentDomain) ->
           files_array = [ ]
           for key, file of files
             files_array.push file
-          async.map files_array, (file, cb) ->
+          async.mapSeries files_array, (file, cb) ->
             filestream = fs.createReadStream file.path
             runnables.createFile req.domain, req.user_id, req.params.id, file.name, '/', filestream, cb
           , (err, files) ->
@@ -277,6 +277,49 @@ module.exports = (parentDomain) ->
   app.post '/users/me/runnables/:id/files', createfile
   app.post '/users/:userid/runnables/:id/files', fetchuser, createfile
 
+  streamupdate = (req, res) ->
+    contentType = req.headers['content-type']
+    if /multipart\/form-data/.test(contentType)
+      form = new formidable.IncomingForm()
+      form.parse req, (err, fields, files) ->
+        files_array = [ ]
+        for key, file of files
+          files_array.push file
+        async.mapSeries files_array, (file, cb) ->
+          filestream = fs.createReadStream file.path
+          runnables.updateFileContents req.domain, req.user_id, req.params.id, "/#{file.name}", filestream, cb
+        , (err, files) ->
+          if err then res.json err.code, message: err.msg else
+            res.json 200, files
+    else
+      res.json 400, message: 'content type must be application/json or multipart/form-data'
+
+  app.put '/users/me/runnables/:id/files', streamupdate
+  app.put '/users/:userid/runnables/:id/files', fetchuser, streamupdate
+
+  createindir = (req, res) ->
+    contentType = req.headers['content-type']
+    if /multipart\/form-data/.test(contentType)
+      form = new formidable.IncomingForm()
+      form.parse req, (err, fields, files) ->
+        files_array = [ ]
+        for key, file of files
+          files_array.push file
+        runnables.readFile req.domain, req.user_id, req.params.id, req.params.fileid, (err, root) ->
+          if err then res.json err.code, message: err.msg else
+            if not root.dir then res.json 403, message: 'resource is not of directory type' else
+              async.mapSeries files_array, (file, cb) ->
+                filestream = fs.createReadStream file.path
+                runnables.createFile req.domain, req.user_id, req.params.id, file.name, "#{root.path}/#{root.name}", filestream, cb
+              , (err, files) ->
+                if err then res.json err.code, message: err.msg else
+                  res.json 201, files
+    else
+      res.json 400, message: 'content type must be multipart/form-data'
+
+  app.post '/users/me/runnables/:id/files/:fileid', createindir
+  app.post '/users/:userid/runnables/:id/files/:fileid', fetchuser, createindir
+
   getfile = (req, res) ->
     runnables.readFile req.domain, req.user_id, req.params.id, req.params.fileid, (err, file) ->
       if err then res.json err.code, message: err.msg else
@@ -286,9 +329,8 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables/:id/files/:fileid', fetchuser, getfile
 
   updatefile = (req, res) ->
-    if req.headers['content-type'] isnt 'application/json'
-      res.json 400, message: 'content type must be application/json'
-    else
+    contentType = req.headers['content-type']
+    if contentType is 'application/json'
       async.waterfall [
         (cb) ->
           file = null
@@ -307,6 +349,24 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           if not file then res.json 400, message: 'must provide content, name, path or tag to update operation' else
             res.json file
+    else
+      if /multipart\/form-data/.test(contentType)
+        form = new formidable.IncomingForm()
+        form.parse req, (err, fields, files) ->
+          files_array = [ ]
+          for key, file of files
+            files_array.push file
+          runnables.readFile req.domain, req.user_id, req.params.id, req.params.fileid, (err, root) ->
+            if err then res.json err.code, message: err.msg else
+              if not root.dir then res.json 403, message: 'resource is not of directory type' else
+                async.mapSeries files_array, (file, cb) ->
+                  filestream = fs.createReadStream file.path
+                  runnables.updateFileContents req.domain, req.user_id, req.params.id, "#{root.path}/#{root.name}/#{file.name}", filestream, cb
+                , (err, files) ->
+                  if err then res.json err.code, message: err.msg else
+                    res.json 200, files
+      else
+        res.json 400, message: 'content type must be application/json or multipart/form-data'
 
   app.put '/users/me/runnables/:id/files/:fileid', updatefile
   app.patch '/users/me/runnables/:id/files/:fileid', updatefile

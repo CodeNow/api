@@ -419,6 +419,11 @@ Runnables =
       if err then cb err else
         container.updateFile domain, fileId, content, cb
 
+  updateFileContents: (domain, userId, runnableId, fileId, content, cb) ->
+    fetchContainer domain, userId, runnableId, (err, container) ->
+      if err then cb err else
+        container.updateFileContents domain, fileId, content, cb
+
   deleteFile: (domain, userId, runnableId, fileId, recursive, cb) ->
     fetchContainer domain, userId, runnableId, (err, container) ->
       if err then cb err else
