@@ -261,10 +261,17 @@ module.exports = (parentDomain) ->
       if /multipart\/form-data/.test(contentType)
         form = new formidable.IncomingForm()
         form.parse req, (err, fields, files) ->
-          for key, file of files
-            console.log file.path
-            console.log key
-          res.json 201, message: 'file created successfully'
+          if not fields.name? then res.json 400, message: 'file must include a name field' else
+            if not fields.path? then res.json 400, message: 'file must include a path field' else
+              files_array = [ ]
+              for file of files
+                files_array.push file
+              async.map files_array, (file, cb) ->
+                filestream = fs.createReadStream file.path
+                runnables.createFile req.domain, req.user_id, req.params.id, fields.name, fields.path, filestream, cb
+              , (err, files) ->
+                if err then res.json err.code, message: err.msg else
+                  res.json 201, files
       else
         res.json 400, message: 'content type must be application/json or multipart/form-data'
 

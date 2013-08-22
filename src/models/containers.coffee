@@ -1,5 +1,6 @@
 async = require 'async'
 configs = require '../configs'
+concat = require 'concat-stream'
 crypto = require 'crypto'
 dockerjs = require 'docker.js'
 error = require '../error'
@@ -174,9 +175,8 @@ containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb
       delete file.content
   cb null, files
 
-
+exts = [ '.js', '.md', '.txt', '.py', '.mysql', '.jade', '.css', '.html', '.json', '.php' ]
 cacheContents = (ext) ->
-  exts = [ '.js', '.md', '.txt', '.py', '.mysql', '.jade', '.css', '.html', '.json', '.php' ]
   ext in exts
 
 containerSchema.methods.syncFiles = (domain, cb) ->
@@ -187,31 +187,59 @@ containerSchema.methods.syncFiles = (domain, cb) ->
         cb null, @
 
 containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
-  volumes.createFile domain, @long_docker_id, @file_root, name, filePath, content, (err) =>
-    if err then cb err else
-      file =
-        path: filePath
-        name: name
-      ext = path.extname name
-      if cacheContents ext
-        file.content = content
-      @files.push file
-      file = @files[@files.length-1]
-      @last_write = new Date()
-      @save domain.intercept () ->
-        cb null, { _id: file._id, name: name, path: filePath }
+  if typeof content is 'string'
+    volumes.createFile domain, @long_docker_id, @file_root, name, filePath, content, (err) =>
+      if err then cb err else
+        file =
+          path: filePath
+          name: name
+        ext = path.extname name
+        if cacheContents ext
+          file.content = content
+        @files.push file
+        file = @files[@files.length-1]
+        @last_write = new Date()
+        @save domain.intercept () ->
+          cb null, { _id: file._id, name: name, path: filePath }
+  else
+    store = concat (file_content) =>
+      volumes.createFile domain, @long_docker_id, @file_root, name, filePath, file_content, (err) =>
+        if err then cb err else
+          file =
+            path: filePath
+            name: name
+          ext = path.extname name
+          if cacheContents ext
+            file.content = file_content
+          @files.push file
+          file = @files[@files.length-1]
+          @last_write = new Date()
+          @save domain.intercept () ->
+            cb null, { _id: file._id, name: name, path: filePath }
+    content.pipe store
 
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.updateFile domain, @long_docker_id, @file_root, file.name, file.path, content, (err) =>
-      if err then cb err else
-        ext = path.extname file.name
-        if cacheContents ext
-          file.content = content
-        @last_write = new Date()
-        @save domain.intercept () ->
-          cb null, file
+    if typeof content is 'string'
+      volumes.updateFile domain, @long_docker_id, @file_root, file.name, file.path, content, (err) =>
+        if err then cb err else
+          ext = path.extname file.name
+          if cacheContents ext
+            file.content = content
+          @last_write = new Date()
+          @save domain.intercept () ->
+            cb null, file
+    else
+      store = concat (file_content) =>
+        volumes.updateFile domain, @long_docker_id, @file_root, file.name, file.path, file_content, (err) =>
+          if err then cb err else
+            ext = path.extname file.name
+            if cacheContents ext
+              file.content = file_content
+            @last_write = new Date()
+            @save domain.intercept () ->
+              cb null, file
 
 containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
   file = @files.id fileId
