@@ -5,6 +5,8 @@ Getting started
 
 * Setup harbourmaster, runnable-web and api-server
 * Create a username/password
+* Get an access token like 
+	curl -X POST localhost:3030/users
 * Create your first Runnable like this
 	curl -X POST -H "runnable-token:2cfa32ca-a6ba-4113-857c-312b65b441b5" http://localhost:3030/runnables
 
