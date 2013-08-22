@@ -15,8 +15,8 @@ page.open(system.args[1], function (status) {
   } else {
     var wait = setInterval(function () {
       // evaluate whether we have a stream connection
-      var isStreaming = page.evaluate( function() {
-        return window.isStreaming;
+      var isStreaming = page.evaluate(function() {
+        return window.term;
       });
       if(isStreaming) {
         var command = system.args[2];

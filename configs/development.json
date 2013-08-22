@@ -10,6 +10,7 @@
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
   "docker": "http://harbourmaster.runnableapp.dev",
+  "rootDomain": "runnableapp.dev",
   "shortProjectIds": true,
   "nodetime": {
     "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",

@@ -15,7 +15,7 @@ implementationSchema = new Schema
     type: ObjectId
   implements:
     type: ObjectId
-  subDomain:
+  subdomain:
     type:String
     index: true
     unique: true
@@ -34,32 +34,50 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
           owner: opts.userId
           implements: opts.specificationId
         , domain.intercept (implementation) =>
+          save = () =>
+            implementation.save domain.intercept () =>
+              cb null, implementation.toJSON()
           if implementation then cb error 403, 'implementation already exists' else
             implementation = new @
             implementation.owner = opts.userId
             implementation.implements = opts.specificationId
-            implementation.subDomain = "#{uuid.v4()}"
+            implementation.subdomain = "web#{uuid.v4()}" # good enough for now, should be spec name
             implementation.requirements = opts.requirements
-            containers = require './containers'
-            containers.find
-              owner: opts.userId
-              specification: opts.specificationId
-            , domain.intercept (containers) =>
-              async.each containers, (container, cb) =>
-                url = "http://#{container.token}.runnableapp.dev/api/envs"
-                request.get url, domain.bind (err, res, body) =>
-                  request.get url, domain.intercept (res, body) =>
-                    async.each implementation.requirements, (requirement, cb) =>
+            if opts.containerId
+              containers = require './containers'
+              containers.findOne
+                owner: opts.userId
+                specification: opts.specificationId
+                _id: decodeId opts.containerId
+              , domain.intercept (container) =>
+                if container
+                  async.parallel [
+                    (cb) =>
+                      url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
+                      request.get url, domain.bind (err, res, body) =>
+                        request.get url, domain.intercept (res, body) =>
+                          async.each implementation.requirements, (requirement, cb) =>
+                            request.post 
+                              url: url
+                              json: 
+                                key: requirement.name
+                                value: requirement.value
+                            , cb
+                          , domain.intercept cb
+                    (cb) =>
+                      url = "#{configs.docker}/custom/changeRoute"
                       request.post 
-                        url: url
                         json: 
-                          key: requirement.name
-                          value: requirement.value
-                      , (cb)
-                    , domain.intercept cb
-              , domain.intercept () =>
-                implementation.save domain.intercept () ->
-                  cb null, implementation.toJSON()
+                          webToken: implementation.subdomain
+                          containerId: container.docker_id
+                        url: url
+                      , domain.intercept (res, body) =>
+                        cb null
+                  ], domain.intercept save
+                else
+                  save null
+            else
+              save null
 
 implementationSchema.statics.listImplementations = (domain, userId, cb) ->
   users.findUser domain, _id: userId, domain.intercept (user) =>
@@ -141,3 +159,8 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
             cb null
 
 module.exports = mongoose.model 'Implementation', implementationSchema
+
+minus = /-/g
+underscore = /_/g
+
+decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');

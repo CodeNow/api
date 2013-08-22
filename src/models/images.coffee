@@ -109,9 +109,9 @@ buildDockerImage = (domain, fspath, tag, cb) ->
   child.stdout.pipe req
 
 syncDockerImage = (domain, image, cb) ->
-  token = uuid.v4()
   docker.createContainer
-    Token: token
+    servicesToken: 'services-' + uuid.v4()
+    webToken: 'web-' + uuid.v4()
     Env: [
       "RUNNABLE_USER_DIR=#{image.file_root}"
       "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"

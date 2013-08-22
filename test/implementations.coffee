@@ -110,13 +110,15 @@ checkOperation = (cb) ->
         cb null
 
 checkEnv = (cb) ->
-  termUrl = "http://terminals.runnableapp.dev/term.html?termId=#{@token}"
-  helpers.sendCommand termUrl, 'env', (err, env) =>
-    if err then cb err else
-      if not /FIRST_REQUIREMENT/.test env 
-        cb new Error 'env not set'
-      else
-        cb null
+  termUrl = "http://#{@container.servicesToken}.runnableapp.dev/static/term.html"
+  wakeup = @owner.get termUrl
+  wakeup.end (err, res) =>
+    helpers.sendCommand termUrl, 'env', (err, env) =>
+      if err then cb err else
+        if not /FIRST_REQUIREMENT/.test env 
+          cb new Error 'env not set: ' + env
+        else
+          cb null
 
 stopServer = (cb) ->
   @instance.configs.passwordSalt = @oldSalt
@@ -155,7 +157,6 @@ recreateContainer = (cb) ->
     if err then cb err else
       res.should.have.status 201
       @containerId = res.body._id
-      @token = res.body.token
       @container = res.body
       cb null
 
@@ -220,9 +221,11 @@ createImplementation = (cb) ->
   req.set 'runnable-token', @ownerToken
   req.send _.extend data.implementation.create,
     specification: @specificationId
+    containerId: @containerId
   req.end (err, res) =>
     if res.status is 404 then err = new Error "implementation route not found"
     @updateId = res.body._id 
+    @implementation = res.body;
     if err then cb err else cb null
 
 createImage = (cb) ->
@@ -241,7 +244,6 @@ createContainer = (cb) ->
     if err then cb err else
       res.should.have.status 201
       @containerId = res.body._id
-      @token = res.body.token
       @container = res.body
       cb null
 
@@ -273,6 +275,17 @@ startContainer = (cb) ->
     else if not @success then cb new Error 'should not have succeeded'
     else
      cb null
+
+checkUrl = (cb) ->
+  url = "http://#{@implementation.subdomain}.runnableapp.dev"
+  wake = @owner.get url
+  wake.end (err, res) =>
+    check = @owner.get url
+    check.end (err, res) =>
+      if /No Runnable Configured/.test res?.text
+        cb new Error 'No Runnable Configured'
+      else
+        cb err
 
 # TEST CONTROLLERS
 
@@ -326,12 +339,17 @@ testStart = (cb) ->
 
 testUrl = (cb) ->
   list = [
-    createServer.bind @
-    createOwner.bind @
-    initOwner.bind @
-    createImage.bind @
-    createContainer.bind @
-    startContainer.bind @
+    prepImage.bind @
+  ]
+  if @existing
+    list.push createImplementation.bind @
+  list = list.concat [
+    deleteContainer.bind @
+    recreateContainer.bind @
+  ]
+  if not @existing
+    list.push createImplementation.bind @
+  list = list.concat [
     checkUrl.bind @
     stopServer.bind @
   ]
@@ -436,9 +454,14 @@ describe 'implementation api', ->
       with: false
       success: false
 
-  it 'should cause the web page to use the ::implementations url', ->
-    # harbourmaster needs to support
-    testUrl.bind {}
+  it 'should cause the web page to use the existing ::implementations url',
+    testUrl.bind 
+      existing: true
+      success: true
+  it 'should cause the web page to use the ::implementations url on demand',
+    testUrl.bind
+      existing: false
+      success: true
 
   it 'should have existing ::implementations env variables set',
     testVariables.bind

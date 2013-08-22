@@ -37,7 +37,9 @@ containerSchema = new Schema
     type: String
   port:
     type: Number
-  token:
+  servicesToken:
+    type: String
+  webToken:
     type: String
   tags:
     type: [
@@ -88,7 +90,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
       "RUNNABLE_START_CMD=#{image.start_cmd}"
     ]
-    createContainer = (env) =>
+    createContainer = (env, subdomain) =>
       container = new @
         parent: image
         name: image.name
@@ -98,14 +100,16 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         file_root: image.file_root
         service_cmds: image.service_cmds
         start_cmd: image.start_cmd
-        token: uuid.v4()
+        servicesToken: 'services-' + uuid.v4()
+        webToken: 'web-' + uuid.v4()
         specification: image.specification
       for file in image.files
         container.files.push file.toJSON()
       for tag in image.tags
         container.tags.push tag.toJSON()
       docker.createContainer
-        Token: container.token
+        servicesToken: container.servicesToken
+        webToken: subdomain or container.webToken
         Env: env
         Hostname: 'runnable'
         Image: image.docker_id.toString()
@@ -125,7 +129,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         if implementation?
           envFull = env.concat implementation.toJSON().requirements.map (requirement) ->
             "#{requirement.name}=#{requirement.value}"
-          createContainer envFull
+          createContainer envFull, implementation.subdomain
         else
           createContainer env
     else

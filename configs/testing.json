@@ -10,6 +10,7 @@
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
   "docker": "http://harbourmaster.runnableapp.dev",
+  "rootDomain": "runnableapp.dev",
   "direct_docker": "http://docker.runnableapp.dev",
   "shortProjectIds": true,
   "dnode_host": "harbourmaster.runnableapp.dev",
