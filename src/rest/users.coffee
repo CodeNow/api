@@ -4,6 +4,7 @@ debug = require('debug')('users')
 domains = require '../domains'
 error = require '../error'
 express = require 'express'
+formidable = require 'formidable'
 users = require '../models/users'
 redis = require 'redis'
 runnables = require '../models/runnables'
@@ -241,9 +242,8 @@ module.exports = (parentDomain) ->
   app.post '/users/:userid/runnables/:id/sync', fetchuser, syncfiles
 
   createfile = (req, res) ->
-    if req.headers['content-type'] isnt 'application/json'
-      res.json 400, message: 'content type must be application/json'
-    else
+    contentType = req.headers['content-type']
+    if contentType is 'application/json'
       if req.body.dir
         if not req.body.name? then res.json 400, message: 'dir must include a name field' else
           if not req.body.path? then res.json 400, message: 'dir must include a path field'  else
@@ -257,6 +257,16 @@ module.exports = (parentDomain) ->
               runnables.createFile req.domain, req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
                 if err then res.json err.code, message: err.msg else
                   res.json 201, file
+    else
+      if /multipart\/form-data/.test(contentType)
+        form = new formidable.IncomingForm()
+        form.parse req, (err, fields, files) ->
+          for key, file of files
+            console.log file.path
+            console.log key
+          res.json 201, message: 'file created successfully'
+      else
+        res.json 400, message: 'content type must be application/json or multipart/form-data'
 
   app.post '/users/me/runnables/:id/files', createfile
   app.post '/users/:userid/runnables/:id/files', fetchuser, createfile

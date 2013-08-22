@@ -30,7 +30,7 @@ describe 'import/export api', ->
             compress = zlib.createGzip()
             packer = tar.Pack()
             reader = fstream.Reader
-              path: "#{__dirname}/fixtures/node.js_express"
+              path: "#{__dirname}/fixtures/runnables/node.js_express"
               type: 'Directory'
               mode: '0755'
             compress.pipe(req)
@@ -54,7 +54,7 @@ describe 'import/export api', ->
             compress = zlib.createGzip()
             packer = tar.Pack()
             reader = fstream.Reader
-              path: "#{__dirname}/fixtures/no_runnable_json"
+              path: "#{__dirname}/fixtures/runnables/no_runnable_json"
               type: 'Directory'
               mode: '0755'
             compress.pipe(req)
@@ -78,7 +78,7 @@ describe 'import/export api', ->
             compress = zlib.createGzip()
             packer = tar.Pack()
             reader = fstream.Reader
-              path: "#{__dirname}/fixtures/bad_runnable_json"
+              path: "#{__dirname}/fixtures/runnables/bad_runnable_json"
               type: 'Directory'
               mode: '0755'
             compress.pipe(req)
@@ -102,7 +102,7 @@ describe 'import/export api', ->
             compress = zlib.createGzip()
             packer = tar.Pack()
             reader = fstream.Reader
-              path: "#{__dirname}/fixtures/missing_name"
+              path: "#{__dirname}/fixtures/runnables/missing_name"
               type: 'Directory'
               mode: '0755'
             compress.pipe(req)
@@ -126,7 +126,7 @@ describe 'import/export api', ->
             compress = zlib.createGzip()
             packer = tar.Pack()
             reader = fstream.Reader
-              path: "#{__dirname}/fixtures/node.js_tagged"
+              path: "#{__dirname}/fixtures/runnables/node.js_tagged"
               type: 'Directory'
               mode: '0755'
             compress.pipe(req)
@@ -154,7 +154,7 @@ describe 'import/export api', ->
                 compress = zlib.createGzip()
                 packer = tar.Pack()
                 reader = fstream.Reader
-                  path: "#{__dirname}/fixtures/node.js_tagged"
+                  path: "#{__dirname}/fixtures/runnables/node.js_tagged"
                   type: 'Directory'
                   mode: '0755'
                 compress.pipe(req)
@@ -183,7 +183,7 @@ describe 'import/export api', ->
                 compress = zlib.createGzip()
                 packer = tar.Pack()
                 reader = fstream.Reader
-                  path: "#{__dirname}/fixtures/bad_dockerfile"
+                  path: "#{__dirname}/fixtures/runnables/bad_dockerfile"
                   type: 'Directory'
                   mode: '0755'
                 compress.pipe(req)
@@ -211,7 +211,7 @@ describe 'import/export api', ->
                 compress = zlib.createGzip()
                 packer = tar.Pack()
                 reader = fstream.Reader
-                  path: "#{__dirname}/fixtures/undefined_mustache_variable"
+                  path: "#{__dirname}/fixtures/runnables/undefined_mustache_variable"
                   type: 'Directory'
                   mode: '0755'
                 compress.pipe(req)
