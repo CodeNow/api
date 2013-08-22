@@ -4,6 +4,7 @@ debug = require('debug')('users')
 domains = require '../domains'
 error = require '../error'
 express = require 'express'
+fs = require 'fs'
 formidable = require 'formidable'
 users = require '../models/users'
 redis = require 'redis'
@@ -261,17 +262,15 @@ module.exports = (parentDomain) ->
       if /multipart\/form-data/.test(contentType)
         form = new formidable.IncomingForm()
         form.parse req, (err, fields, files) ->
-          if not fields.name? then res.json 400, message: 'file must include a name field' else
-            if not fields.path? then res.json 400, message: 'file must include a path field' else
-              files_array = [ ]
-              for file of files
-                files_array.push file
-              async.map files_array, (file, cb) ->
-                filestream = fs.createReadStream file.path
-                runnables.createFile req.domain, req.user_id, req.params.id, fields.name, fields.path, filestream, cb
-              , (err, files) ->
-                if err then res.json err.code, message: err.msg else
-                  res.json 201, files
+          files_array = [ ]
+          for key, file of files
+            files_array.push file
+          async.map files_array, (file, cb) ->
+            filestream = fs.createReadStream file.path
+            runnables.createFile req.domain, req.user_id, req.params.id, file.name, '/', filestream, cb
+          , (err, files) ->
+            if err then res.json err.code, message: err.msg else
+              res.json 201, files
       else
         res.json 400, message: 'content type must be application/json or multipart/form-data'
 

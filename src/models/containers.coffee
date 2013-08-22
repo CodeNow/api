@@ -203,7 +203,7 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
           cb null, { _id: file._id, name: name, path: filePath }
   else
     store = concat (file_content) =>
-      volumes.createFile domain, @long_docker_id, @file_root, name, filePath, file_content, (err) =>
+      volumes.createFile domain, @long_docker_id, @file_root, name, filePath, file_content.toString(), (err) =>
         if err then cb err else
           file =
             path: filePath

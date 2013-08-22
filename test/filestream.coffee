@@ -6,7 +6,7 @@ qs = require 'querystring'
 
 describe 'file streams api', ->
 
-  it 'should be able to ::stream a new file of a ace type to an existing runnable', (done) ->
+  it 'should be able to ::stream a new file of a ace type to the root path of a runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createContainer 'node.js', (err, user, runnableId) ->
@@ -16,6 +16,47 @@ describe 'file streams api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 201
+                  res.body.should.be.a.array
+                  res.body[0].should.have.property '_id'
+                  fileId = res.body[0]._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.have.property 'content'
+                        instance.stop done
+
+  it 'should be able to ::stream a new file of a non-ace type (uncached) to the root path of a runnable', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createContainer 'node.js', (err, user, runnableId) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+              .attach('image', "#{__dirname}/fixtures/files/runnable.png", 'runnable.jpg')
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  res.body.should.be.a.array
+                  res.body[0].should.have.property '_id'
+                  fileId = res.body[0]._id
+                  user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.not.have.property 'content'
+                        instance.stop done
+
+  it 'should be able to ::stream a new file of a ace type to a sub-directory of a runnable', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createContainer 'node.js', (err, user, runnableId) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+              .attach('code', "#{__dirname}/fixtures/files/sample.js", 'sample.js')
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  res.body.should.have.property '_id'
                   fileId = res.body._id
                   user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
                     .end (err, res) ->
@@ -24,7 +65,7 @@ describe 'file streams api', ->
                         res.body.should.have.property 'content'
                         instance.stop done
 
-  it 'should be able to ::stream a new file of a non-ace type (uncached) to an existing runnable', (done) ->
+  it 'should be able to ::stream a new file of a non-ace type (uncached) to a sub-directory of a runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createContainer 'node.js', (err, user, runnableId) ->
@@ -42,7 +83,7 @@ describe 'file streams api', ->
                         res.body.should.not.have.property 'content'
                         instance.stop done
 
-  it 'should be able to ::stream a file update of a ace type to an existing runnable', (done) ->
+  it 'should be able to ::stream a file update of an ace type to an existing runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createContainer 'node.js', (err, user, runnableId) ->
