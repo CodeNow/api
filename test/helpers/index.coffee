@@ -10,7 +10,7 @@ Helpers =
   createServer: (configs, done, cb) ->
     d = domain.create()
     d.on 'error', (err) ->
-      instance.stop () -> done err
+      done err
     instance = new apiserver configs, d
     d.run () ->
       instance.start (err) ->

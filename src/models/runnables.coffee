@@ -249,7 +249,10 @@ Runnables =
               json = runnable.toJSON()
               json.votes = result.number - 1
               encode domain, json, cb
-        , cb
+        , (err, runnables) ->
+          if err then cb err else
+            runnables = runnables.filter exists
+            cb null, runnables
 
   listFiltered: (domain, query, sortByVotes, limit, page, cb) ->
     if not sortByVotes
@@ -267,11 +270,14 @@ Runnables =
                 json = runnable.toJSON()
                 json.votes = result.number - 1
                 encode domain, json, cb
-          , cb
+          , (err, runnables) ->
+            if err then cb err else
+              runnables = runnables.filter exists
+              cb null, runnables
 
   listNames: (domain, cb) ->
-    images.find({ tags: $not: $size: 0 }, 'name').exec domain.intercept (results) ->
-      arrayToJSON(domain, results, cb)
+    images.find(tags:$not:$size:0, {_id:1,name:1,tags:1}).exec domain.intercept (results) ->
+      arrayToJSON domain, results, cb
 
   getTags: (domain, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -540,7 +546,7 @@ fetchContainer = (domain, userId, runnableId, cb) ->
       if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
         cb null, container
 
-arrayToJSON = (res, cb) ->
+arrayToJSON = (domain, res, cb) ->
   async.map res, (item, cb) ->
     json = item.toJSON()
     encode domain, json, cb
@@ -585,3 +591,6 @@ isObjectId = (str) ->
 isObjectId64 = (str) ->
   str = decodeId str
   Boolean(str.match(/^[0-9a-fA-F]{24}$/))
+
+exists = (thing) ->
+  thing isnt null and thing isnt undefined

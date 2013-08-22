@@ -13,6 +13,7 @@
   "docker": "http://harbourmaster.runnable.com:3000",
   "rootDomain": "runnable.com",
   "shortProjectIds": true,
+  "socketTimeout": "2 minutes",
   "nodetime": {
     "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",
     "appName": "Runnable.com API Server",

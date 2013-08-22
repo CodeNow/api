@@ -35,32 +35,5 @@
       "password": "testing",
       "votes": [ ]
     }
-  ],
-
-  "Projects": [
-    {
-      "tags": [
-        {
-          "name": "twitter"
-        },
-        {
-          "name": "facebook"
-        }
-      ]
-    },
-    {
-      "tags": [
-        {
-          "name": "google"
-        },
-        {
-          "name": "jquery"
-        }
-      ]
-    },
-    {
-      "name": "not published",
-      "tags": [ ]
-    }
   ]
 }
