@@ -19,6 +19,9 @@ ObjectId = Schema.ObjectId
 containerSchema = new Schema
   name:
     type: String
+  description:
+    type: String
+    default: ''
   owner:
     type: ObjectId
   docker_id:
@@ -97,6 +100,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       image: image.image
       file_root: image.file_root
       file_root_host: image.file_root_host
+      description: image.description
       service_cmds: image.service_cmds
       dockerfile: image.dockerfile
       start_cmd: image.start_cmd
