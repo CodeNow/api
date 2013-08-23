@@ -21,9 +21,17 @@ module.exports = (parentDomain) ->
         res.json 201, implementation
 
   app.get '/implementations', (req, res) ->
-    implementations.listImplementations req.domain, req.user_id, (err, implementations) ->
-      if err then res.json err.code, message: err.msg else
-        res.json implementations
+    if req.query.implements
+      implementations.getImplementationBySpecification req.domain,
+        userId: req.user_id
+        implements: req.query.implements
+      , (err, implementation) ->
+        if err then res.json err.code, message: err.msg else
+          res.json implementation
+    else 
+      implementations.listImplementations req.domain, req.user_id, (err, implementations) ->
+        if err then res.json err.code, message: err.msg else
+          res.json implementations
 
   app.get '/implementations/:id', (req, res) ->
     implementations.getImplementation req.domain, 

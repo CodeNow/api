@@ -91,6 +91,15 @@ implementationSchema.statics.listImplementations = (domain, userId, cb) ->
         , domain.intercept (implementations) => 
           cb null, implementations.map (implementation) -> implementation.toJSON()
 
+implementationSchema.statics.getImplementationBySpecification = (domain, opts, cb) ->
+  users.findUser domain, _id: opts.userId, domain.intercept (user) =>
+    if not user then cb error 403, 'user not found' else
+      @findOne
+        owner: userId
+        implements: opts.implements
+      , domain.intercept (implementation) => 
+        cb null, implementation.toJSON()
+
 implementationSchema.statics.getImplementation = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
