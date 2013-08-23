@@ -5,7 +5,6 @@ fs = require 'fs'
 mkdirp = require 'mkdirp'
 mongodb = require 'mongodb'
 redis = require 'redis'
-rimraf = require 'rimraf'
 state = require './state'
 
 db = mongodb.Db

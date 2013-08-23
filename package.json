@@ -29,7 +29,12 @@
     "upnode": "~0.4.3",
     "debug": "~0.7.2",
     "nodetime": "0.8.12",
-    "rollbar": "~0.2.5"
+    "rollbar": "~0.2.5",
+    "fstream": "~0.1.24",
+    "tar": "~0.1.18",
+    "mu2": "~0.5.19",
+    "formidable": "~1.0.14",
+    "concat-stream": "~1.0.1"
   },
   "devDependencies": {
     "mocha": "~1.9.0",

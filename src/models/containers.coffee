@@ -1,5 +1,6 @@
 async = require 'async'
 configs = require '../configs'
+concat = require 'concat-stream'
 crypto = require 'crypto'
 dockerjs = require 'docker.js'
 error = require '../error'
@@ -35,6 +36,10 @@ containerSchema = new Schema
     default: Date.now
   target:
     type: ObjectId
+  image:
+    type: String
+  dockerfile:
+    type: String
   cmd:
     type: String
   port:
@@ -57,6 +62,9 @@ containerSchema = new Schema
   file_root:
     type: String
     default: '/root'
+  file_root_host:
+    type: String
+    default: './src'
   files:
     type: [
       name:
@@ -89,8 +97,11 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       owner: owner
       port: image.port
       cmd: image.cmd
+      image: image.image
       file_root: image.file_root
+      file_root_host: image.file_root_host
       service_cmds: image.service_cmds
+      dockerfile: image.dockerfile
       start_cmd: image.start_cmd
       token: uuid.v4()
     for file in image.files
@@ -134,7 +145,6 @@ containerSchema.statics.destroy = (domain, id, cb) ->
 containerSchema.methods.getProcessState = (domain, cb) ->
   docker.inspectContainer @docker_id, domain.intercept (result) ->
     if not result.State?
-      console.error 'bad result', result
       throw new Error 'bad result from docker.inspectContainer'
     cb null, running: result.State.Running
 
@@ -168,39 +178,109 @@ containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb
       delete file.content
   cb null, files
 
+exts = [ '.js'
+         '.md'
+         '.txt'
+         '.py'
+         '.mysql'
+         '.jade'
+         '.css'
+         '.html'
+         '.json'
+         '.php'
+         '.c'
+         '.cpp'
+         '.java'
+         '.coffee'
+         '.cc'
+         '.h'
+         '.hh'
+         '.hbs'
+         '.htm'
+         '.rb'
+         '.yml'
+         '.yaml'
+         '.xml'
+         ''
+       ]
+
+cacheContents = (ext) ->
+  ext in exts
+
 containerSchema.methods.syncFiles = (domain, cb) ->
-  sync @long_docker_id, @, (err) =>
+  sync domain, @long_docker_id, @, (err) =>
     if err then cb err else
       @last_write = new Date()
       @save domain.intercept () =>
         cb null, @
 
-containerSchema.methods.createFile = (domain, name, path, content, cb) ->
-  volumes.createFile @long_docker_id, @file_root, name, path, content, (err) =>
-    if err then cb err else
-      @files.push
-        path: path
-        name: name
-        content: content
-      file = @files[@files.length-1]
-      @last_write = new Date()
-      @save domain.intercept () ->
-        cb null, { _id: file._id, name: name, path: path }
+containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
+  if typeof content is 'string'
+    volumes.createFile domain, @long_docker_id, @file_root, name, filePath, content, (err) =>
+      if err then cb err else
+        file =
+          path: filePath
+          name: name
+        ext = path.extname name
+        if cacheContents ext
+          file.content = content
+        @files.push file
+        file = @files[@files.length-1]
+        @last_write = new Date()
+        @save domain.intercept () ->
+          cb null, { _id: file._id, name: name, path: filePath }
+  else
+    store = concat (file_content) =>
+      volumes.createFile domain, @long_docker_id, @file_root, name, filePath, file_content.toString(), (err) =>
+        if err then cb err else
+          file =
+            path: filePath
+            name: name
+          ext = path.extname name
+          if cacheContents ext
+            file.content = file_content
+          @files.push file
+          file = @files[@files.length-1]
+          @last_write = new Date()
+          @save domain.intercept () ->
+            cb null, { _id: file._id, name: name, path: filePath }
+    content.pipe store
 
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.updateFile @long_docker_id, @file_root, file.name, file.path, content, (err) =>
+    volumes.updateFile domain, @long_docker_id, @file_root, file.name, file.path, content, (err) =>
       if err then cb err else
-        file.content = content
+        ext = path.extname file.name
+        if cacheContents ext
+          file.content = content
         @last_write = new Date()
         @save domain.intercept () ->
           cb null, file
 
+containerSchema.methods.updateFileContents = (domain, filePath, content, cb) ->
+  foundFile = null
+  filePath = path.normalize filePath
+  @files.forEach (file) ->
+    elemPath = path.normalize "#{file.path}/#{file.name}"
+    if elemPath is filePath
+      foundFile = file
+  if not foundFile then cb error 404, 'file does not exist' else
+    store = concat (file_content) =>
+      volumes.updateFile domain, @long_docker_id, @file_root, foundFile.name, foundFile.path, file_content.toString(), (err) =>
+        if err then cb err else
+          ext = path.extname foundFile.name
+          if cacheContents ext
+            foundFile.content = file_content
+          @last_write = new Date()
+          @save domain.intercept () ->
+            cb null, foundFile
+    content.pipe store
+
 containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.renameFile @long_docker_id, @file_root, file.name, file.path, newName, (err) =>
+    volumes.renameFile domain, @long_docker_id, @file_root, file.name, file.path, newName, (err) =>
       if err then cb err else
         oldName = file.name
         file.name = newName
@@ -210,14 +290,33 @@ containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
           for elem in @files
             if elem.path.indexOf(oldPath) is 0 and elem._id isnt file._id
               elem.path = elem.path.replace oldPath, newPath
-        @last_write = new Date()
-        @save domain.intercept () ->
-          cb null, file
+          @last_write = new Date()
+          @save domain.intercept () ->
+            cb null, file
+        else
+          oldExt = path.extname oldName
+          newExt = path.extname newName
+          oldCached = cacheContents oldExt
+          newCached = cacheContents newExt
+          if oldCached and not newCached
+            file.content = undefined
+            file.default = false
+          if not oldCached and newCached
+            volumes.readFile domain, @long_docker_id, @file_root, file.name, file.path, (err, content) =>
+              if err then cb err else
+                file.content = content
+                @last_write = new Date()
+                @save domain.intercept () ->
+                  cb null, file
+          else
+            @last_write = new Date()
+            @save domain.intercept () ->
+              cb null, file
 
 containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.moveFile @long_docker_id, @file_root, file.name, file.path, newPath, (err) =>
+    volumes.moveFile domain, @long_docker_id, @file_root, file.name, file.path, newPath, (err) =>
       if err then cb err else
         oldPath = file.path
         file.path = newPath
@@ -232,7 +331,7 @@ containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
           cb null, file
 
 containerSchema.methods.createDirectory = (domain, name, path, cb) ->
-  volumes.createDirectory @long_docker_id, @file_root, name, path, (err) =>
+  volumes.createDirectory domain, @long_docker_id, @file_root, name, path, (err) =>
     if err then cb err else
       @files.push
         path: path
@@ -252,12 +351,13 @@ containerSchema.methods.tagFile = (domain, fileId, isDefault, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if file.dir then cb error 403, 'cannot tag directory as default' else
-      file.default = isDefault
-      @save domain.intercept () ->
-        cb null, file
+      if not file.content and isDefault then cb error 403, 'cannot tag an uncached file as default' else
+        file.default = isDefault
+        @save domain.intercept () ->
+          cb null, file
 
 containerSchema.methods.deleteAllFiles = (domain, cb) ->
-  volumes.deleteAllFiles @long_docker_id, @file_root, (err) =>
+  volumes.deleteAllFiles domain, @long_docker_id, @file_root, (err) =>
     if err then cb err else
       @files = [ ]
       @last_write = new Date()
@@ -269,14 +369,14 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
   if not file then cb error 404, 'file does not exist' else
     if not file.dir
       if recursive then cb error 400, 'cannot recursively delete a plain file' else
-        volumes.deleteFile @long_docker_id, @file_root, file.name, file.path, (err) =>
+        volumes.deleteFile domain, @long_docker_id, @file_root, file.name, file.path, (err) =>
           if err then cb err else
             file.remove()
             @last_write = new Date()
             @save domain.intercept () ->
               cb()
     else
-      volumes.removeDirectory @long_docker_id, @file_root, file.name, file.path, recursive, (err) =>
+      volumes.removeDirectory domain, @long_docker_id, @file_root, file.name, file.path, recursive, (err) =>
         if err then cb err else
           if recursive
             toDelete = [ ]
@@ -290,6 +390,41 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
           @last_write = new Date()
           @save domain.intercept () ->
             cb()
+
+exts = [ '.js'
+         '.md'
+         '.txt'
+         '.py'
+         '.mysql'
+         '.jade'
+         '.css'
+         '.html'
+         '.json'
+         '.php'
+         '.c'
+         '.cpp'
+         '.java'
+         '.coffee'
+         '.cc'
+         '.h'
+         '.hh'
+         '.hbs'
+         '.htm'
+         '.rb'
+         '.yml'
+         '.yaml'
+         '.xml'
+         ''
+       ]
+
+containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
+  file = @files.id fileId
+  if not file then cb error 404, 'file does not exist' else
+    if not file.ignore then cb error 403, 'entry is not a valid mount point' else
+      subDir = path.normalize "#{file.path}/#{file.name}/#{mountDir}"
+      volumes.readDirectory domain, @long_docker_id, @file_root, subDir, exts, (err, files) ->
+        if err then cb err else
+          cb null, files
 
 module.exports = mongoose.model 'Containers', containerSchema
 module.exports.docker = docker

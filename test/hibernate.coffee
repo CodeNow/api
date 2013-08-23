@@ -137,6 +137,3 @@ describe 'hibernate feature', ->
                                       res.body.should.be.a.array
                                       res.body.length.should.equal 2
                                       instance.stop done
-
-  it 'should take the container out of ::hibernate when the web service is accessed'
-  it 'should take the container out of ::hibernate when the tail log is accessed'

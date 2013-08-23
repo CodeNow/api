@@ -38,7 +38,6 @@ module.exports = (parentDomain) ->
       channels.getChannelsWithNames req.domain, categories, req.query.channel, (err, results) ->
         if err then res.json err.code, message: err.msg else
           channelIds = results.map (channel) -> channel._id
-          console.log channelIds
           runnables.listFiltered req.domain, 'tags.channel':$in:channelIds, sortByVotes, limit, page, (err, results) ->
             if err then res.json err.code, message: err.msg else
               res.json results
