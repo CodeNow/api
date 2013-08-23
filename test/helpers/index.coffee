@@ -127,7 +127,7 @@ Helpers =
     compress = zlib.createGzip()
     packer = tar.Pack()
     reader = fstream.Reader
-      path: "#{__dirname}/fixtures/runnables/#{name}"
+      path: "#{__dirname}/../fixtures/runnables/#{name}"
       type: 'Directory'
       mode: '0755'
     compress.pipe(req)

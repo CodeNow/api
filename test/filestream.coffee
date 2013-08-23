@@ -299,7 +299,7 @@ describe 'file streams api', ->
                           if err then done err else
                             instance.stop done
 
-  it 'should be able to ::stream a group of existing mixed ace / non-ace type files atomically in a subdirectory of an existing runnable ::current', (done) ->
+  it 'should be able to ::stream a group of existing mixed ace / non-ace type files atomically in a subdirectory of an existing runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createContainer 'node.js', (err, user, runnableId) ->

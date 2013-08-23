@@ -5,20 +5,6 @@ sa = require 'superagent'
 
 describe 'runnables api', ->
 
-  it 'should be able to create a published ::runnable from filesystem', (done) ->
-    helpers.createServer configs, done, (err, instance) ->
-      if err then done err else
-        helpers.authedUser (err, user) ->
-          if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables?from=node.js")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  res.body.should.have.property '_id'
-                  res.body.should.have.property 'docker_id'
-                  res.body.should.not.have.property 'files'
-                  instance.stop done
-
   it 'should be able to read a published ::runnable from filesystem', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
@@ -445,7 +431,7 @@ describe 'runnables api', ->
                                         res.body.owner.should.not.equal userId
                                         instance.stop done
 
-  it 'should report error if the ::runnable provided named base does not exist', (done) ->
+  it 'should report error if the ::runnable provided named base is not a valid objectId', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedUser (err, user) ->
@@ -453,8 +439,8 @@ describe 'runnables api', ->
             user.post("http://localhost:#{configs.port}/runnables?from=notfound")
               .end (err, res) ->
                 if err then done err else
-                  res.should.have.status 400
-                  res.body.should.have.property 'message', 'image source not found: notfound'
+                  res.should.have.status 404
+                  res.body.should.have.property 'message', 'source runnable not found'
                   instance.stop done
 
   it 'should report error when saving/publishing a ::runnable that does not exist', (done) ->
@@ -788,18 +774,24 @@ describe 'runnables api', ->
   it 'should be possible to list all ::runnables which are published', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
-        helpers.authedUser (err, user) ->
+        helpers.createImage 'node.js', (err, imageId) ->
           if err then done err else
-            user.get("http://localhost:#{configs.port}/runnables?published=true")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 200
-                  res.body.should.be.a.array
-                  res.body.length.should.equal 2
-                  res.body.forEach (elem) ->
-                    elem.tags.should.be.a.array
-                    elem.tags.length.should.be.above 0
-                  instance.stop done
+            helpers.authedRegisteredUser (err, user) ->
+              if err then done err else
+                helpers.createNamedTaggedImage user, imageId, 'image1', 'jquery', (err, image) ->
+                  if err then done err else
+                    helpers.createNamedTaggedImage user, imageId, 'image2', 'jquery', (err, image) ->
+                      if err then done err else
+                        user.get("http://localhost:#{configs.port}/runnables?published=true")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              res.body.should.be.a.array
+                              res.body.length.should.equal 2
+                              res.body.forEach (elem) ->
+                                elem.tags.should.be.a.array
+                                elem.tags.length.should.be.above 0
+                              instance.stop done
 
   it 'should be possible to list all ::runnables which belong to a channel', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -822,7 +814,7 @@ describe 'runnables api', ->
                             elem.tags[0].should.have.property 'name', 'Facebook'
                           instance.stop done
 
-  it 'should be possible to check the state of abc a stopped ::runnable', (done) ->
+  it 'should be possible to check the state of a stopped ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createImage 'node.js', (err, runnableId) ->

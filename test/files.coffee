@@ -36,7 +36,7 @@ describe 'files api', ->
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 400
-                  res.body.should.have.property 'message', 'content type must be application/json'
+                  res.body.should.have.property 'message', 'content type must be application/json or multipart/form-data'
                   instance.stop done
 
   it 'should be able to read back a root ::file that was previously inserted', (done) ->
@@ -339,7 +339,7 @@ describe 'files api', ->
                     .end (err, res) ->
                       if err then done err else
                         res.should.have.status 400
-                        res.body.should.have.property 'message', 'content type must be application/json'
+                        res.body.should.have.property 'message', 'content type must be application/json or multipart/form-data'
                         instance.stop done
 
   it 'should be able to update an existing ::file by ::patching content', (done) ->
