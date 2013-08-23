@@ -175,7 +175,32 @@ containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb
       delete file.content
   cb null, files
 
-exts = [ '.js', '.md', '.txt', '.py', '.mysql', '.jade', '.css', '.html', '.json', '.php' ]
+exts = [ '.js'
+         '.md'
+         '.txt'
+         '.py'
+         '.mysql'
+         '.jade'
+         '.css'
+         '.html'
+         '.json'
+         '.php'
+         '.c'
+         '.cpp'
+         '.java'
+         '.coffee'
+         '.cc'
+         '.h'
+         '.hh'
+         '.hbs'
+         '.htm'
+         '.rb'
+         '.yml'
+         '.yaml'
+         '.xml'
+         ''
+       ]
+
 cacheContents = (ext) ->
   ext in exts
 
@@ -363,12 +388,37 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
           @save domain.intercept () ->
             cb()
 
+exts = [ '.js'
+         '.md'
+         '.txt'
+         '.py'
+         '.mysql'
+         '.jade'
+         '.css'
+         '.html'
+         '.json'
+         '.php'
+         '.c'
+         '.cpp'
+         '.java'
+         '.coffee'
+         '.cc'
+         '.h'
+         '.hh'
+         '.hbs'
+         '.htm'
+         '.rb'
+         '.yml'
+         '.yaml'
+         '.xml'
+         ''
+       ]
+
 containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if not file.ignore then cb error 403, 'entry is not a valid mount point' else
       subDir = path.normalize "#{file.path}/#{file.name}/#{mountDir}"
-      exts = [ '.js', '.md', '.txt', '.py', '.mysql', '.jade', '.css', '.html', '.json', '.php' ]
       volumes.readDirectory domain, @long_docker_id, @file_root, subDir, exts, (err, files) ->
         if err then cb err else
           cb null, files

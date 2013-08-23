@@ -3,6 +3,32 @@ path = require 'path'
 volumes = require './volumes'
 _ = require 'lodash'
 
+exts = [ '.js'
+         '.md'
+         '.txt'
+         '.py'
+         '.mysql'
+         '.jade'
+         '.css'
+         '.html'
+         '.json'
+         '.php'
+         '.c'
+         '.cpp'
+         '.java'
+         '.coffee'
+         '.cc'
+         '.h'
+         '.hh'
+         '.hbs'
+         '.htm'
+         '.rb'
+         '.yml'
+         '.yaml'
+         '.xml'
+         ''
+       ]
+
 module.exports = (domain, containerId, target, cb) ->
   ignores = [ ]
   new_file_list = [ ]
@@ -11,7 +37,6 @@ module.exports = (domain, containerId, target, cb) ->
       ignores.push path.normalize "#{file.path}/#{file.name}"
       new_file_list.push file
   old_file_list = _.clone target.files
-  exts = [ '.js', '.md', '.txt', '.py', '.mysql', '.jade', '.css', '.html', '.json', '.php' ]
   volumes.readAllFiles domain, containerId, target.file_root, ignores, exts, (err, allFiles) ->
     if err then cb err else
       allFiles.forEach (file) ->
