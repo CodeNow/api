@@ -18,6 +18,9 @@ ObjectId = Schema.ObjectId
 containerSchema = new Schema
   name:
     type: String
+  description:
+    type: String
+    default: ''
   owner:
     type: ObjectId
   docker_id:
