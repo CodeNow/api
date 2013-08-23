@@ -42,6 +42,7 @@ describe 'import/export api', ->
             req.on 'response', (res) ->
               res.should.have.status 201
               res.body.should.have.property 'name', 'Hello node.js!'
+              res.body.should.have.property 'description', 'This is a hello world example!'
               instance.stop done
 
   it 'should return error if ::streamed gzipped tarball doesnt include a runnable.json file', (done) ->

@@ -171,7 +171,7 @@ module.exports = (parentDomain) ->
       attribs = ['name', 'description']
       set = {}
       attribs.every (attr) ->
-        if not req.body[attr]? then res.json 400, message: 'must provide a runnable '+attr else
+        if not req.body[attr]? then res.json 400, message: 'must provide a runnable ' + attr else
           set[attr] = req.body[attr]
           return true
       runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->

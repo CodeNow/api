@@ -1,6 +1,7 @@
 {
   "name": "Hello node.js!",
   "image": "runnable/node",
+  "description": "This is a hello world example!",
   "cmd": "/usr/local/bin/npm start /root",
   "port": 80,
   "file_root": "/root",

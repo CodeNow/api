@@ -175,6 +175,7 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
                               image.image = runnable.image
                               image.dockerfile = dockerfile
                               image.cmd = runnable.cmd
+                              if runnable.description then image.description = runnable.description
                               if runnable.file_root_host then image.file_root_host = runnable.file_root_host
                               if runnable.file_root then image.file_root = runnable.file_root
                               if runnable.service_cmds then image.service_cmds = runnable.service_cmds
@@ -203,6 +204,7 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         name: container.name
         image: container.image
         cmd: container.cmd
+        description: container.description
         dockerfile: container.dockerfile
         file_root: container.file_root
         file_root_host: container.file_root_host

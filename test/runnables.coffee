@@ -169,7 +169,7 @@ describe 'runnables api', ->
                             res.body.should.have.property 'message', 'runnable deleted'
                             instance.stop done
 
-  it 'should be able to discard/undo any unsaved changes without removing all containers ::fix in the system ::runnable', (done) ->
+  it 'should be able to discard/undo any unsaved changes without removing all containers in the system ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createImage 'node.js', (err, runnableId) ->
@@ -235,7 +235,7 @@ describe 'runnables api', ->
                                         res.body.should.not.have.property 'files'
                                         instance.stop done
 
-  it "should be able to ::update a ::runnable's description that you own", (done) ->
+  it "should be able to ::update a ::runnable's description that you", (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createImage 'node.js', (err, runnableId) ->
@@ -541,7 +541,7 @@ describe 'runnables api', ->
                                         res.body.should.have.property 'message', 'runnable deleted'
                                         instance.stop done
 
-  it 'should be able to delete a published ::runnable that you own without deleting every published image ::fix2', (done) ->
+  it 'should be able to delete a published ::runnable that you own without deleting every published image', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createImage 'node.js', (err, runnableId) ->
@@ -653,7 +653,6 @@ describe 'runnables api', ->
                             user.post("http://localhost:#{configs.port}/runnables?from=#{userRunnableId}")
                               .end (err, res) ->
                                 if err then done err else
-                                  console.log res.body.message
                                   res.should.have.status 201
                                   publishedId = res.body._id
                                   helpers.authedUser (err, user2) ->
