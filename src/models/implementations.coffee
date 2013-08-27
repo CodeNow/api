@@ -44,6 +44,7 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
             implementation.subdomain = opts.subdomain || "web#{uuid.v4()}"
             implementation.requirements = opts.requirements
             if opts.containerId
+              console.log 'containerId', opts.containerId
               containers = require './containers'
               containers.findOne
                 owner: opts.userId
@@ -51,6 +52,7 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
                 _id: decodeId opts.containerId
               , domain.intercept (container) =>
                 if container
+                  console.log 'container', container
                   async.parallel [
                     (cb) =>
                       url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
@@ -63,7 +65,10 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
                                 key: requirement.name
                                 value: requirement.value
                             , cb
-                          , domain.intercept cb
+                          , domain.intercept () =>
+                            request.get url, domain.intercept (res, body) =>
+                              console.log body
+                              cb null
                     (cb) =>
                       url = "#{configs.docker}/custom/changeRoute"
                       request.post 
@@ -72,6 +77,7 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
                           containerId: container.docker_id
                         url: url
                       , domain.intercept (res, body) =>
+                        console.log body
                         cb null
                   ], domain.intercept save
                 else
