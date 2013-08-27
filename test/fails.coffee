@@ -49,24 +49,21 @@ describe 'domain', ->
       if err then done err else
         helpers.authedUser (err, user) ->
           if err then done err else
-            user.post("http://localhost:#{configs.port}/runnables?from=node.js")
-              .end (err, res) ->
-                if err then done err else
-                  res.should.have.status 201
-                  runnableId = res.body._id
-                  user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
-                    .end (err, res) ->
-                      if err then done err else
-                        res.should.have.status 201
-                        userRunnableId = res.body._id
-                        oldFunc = containers.docker.removeContainer
-                        containers.docker.removeContainer = (params, cb) ->
-                          cb new Error 'Docker is returning an error here'
-                        user.del("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
-                          .end (err, res) ->
-                            if err then done err else
-                              res.should.have.status 500
-                              res.body.should.have.property 'message', 'something bad happened :('
-                              configs.throwErrors = true
-                              containers.docker.removeContainer = oldFunc
-                              instance.stop done
+            helpers.createUserImage user, 'node.js', (err, runnableId) ->
+              if err then done err else
+                user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                  .end (err, res) ->
+                    if err then done err else
+                      res.should.have.status 201
+                      userRunnableId = res.body._id
+                      oldFunc = containers.docker.removeContainer
+                      containers.docker.removeContainer = (params, cb) ->
+                        cb new Error 'Docker is returning an error here'
+                      user.del("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
+                        .end (err, res) ->
+                          if err then done err else
+                            res.should.have.status 500
+                            res.body.should.have.property 'message', 'something bad happened :('
+                            configs.throwErrors = true
+                            containers.docker.removeContainer = oldFunc
+                            instance.stop done

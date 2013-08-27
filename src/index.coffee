@@ -5,6 +5,7 @@ domains = require './domains'
 error = require './error'
 express = require 'express'
 http = require 'http'
+impexp = require './rest/impexp'
 mongoose = require 'mongoose'
 nodetime = require 'nodetime'
 rollbar = require 'rollbar'
@@ -31,7 +32,6 @@ class App
       @listener = (err) =>
         if @domain and configs.throwErrors then @domain.emit 'error', err else
           @stop () =>
-            # need to cleanup the live socket since connection is dead!
             if cluster.isWorker then @cleanup_worker()
       process.on 'uncaughtException', @listener
       @server.listen @configs.port, @configs.ipaddress || "0.0.0.0", (err) =>
@@ -52,8 +52,10 @@ class App
     app = express()
     app.use domains @domain
     if configs.logExpress then app.use express.logger()
-    app.use express.bodyParser()
+    app.use express.json()
+    app.use express.urlencoded()
     app.use users @domain
+    app.use impexp @domain
     app.use runnables @domain
     app.use channels @domain
     app.use categories @domain
@@ -77,7 +79,6 @@ class App
     app.get '/', (req, res) -> res.json { message: 'runnable api' }
     app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
     @server = http.createServer app
-    @server.timeout = configs.socketTimeout
 
   cleanup_worker: () ->
     workerId = cluster.worker.process.pid

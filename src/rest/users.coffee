@@ -4,6 +4,8 @@ debug = require('debug')('users')
 domains = require '../domains'
 error = require '../error'
 express = require 'express'
+fs = require 'fs'
+formidable = require 'formidable'
 users = require '../models/users'
 redis = require 'redis'
 runnables = require '../models/runnables'
@@ -166,6 +168,7 @@ module.exports = (parentDomain) ->
 
   putrunnable = (req, res) ->
     if not req.body.running? then res.json 400, message: 'must provide a running parameter' else
+<<<<<<< HEAD
       if not req.body.name? then res.json 400, message: 'must provide a runnable name' else
         runnables.updateContainer req.domain, req.user_id, req.params.runnableid, req.body, (err, runnable) ->
           if err then res.json err.code, message: err.msg else
@@ -177,6 +180,22 @@ module.exports = (parentDomain) ->
               runnables.stopContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
                 if err then res.json err.code, message: err.msg else
                   res.json runnable
+=======
+      attribs = ['name', 'description']
+      set = {}
+      attribs.every (attr) ->
+        if not req.body[attr]? then res.json 400, message: 'must provide a runnable ' + attr else
+          set[attr] = req.body[attr]
+          return true
+      runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
+        if err then res.json err.code, message: err.msg else
+          if req.body.running
+            runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
+              res.json runnable
+          else
+            runnables.stopContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
+              res.json runnable
+>>>>>>> master
 
   app.put '/users/me/runnables/:runnableid', putrunnable
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
@@ -243,9 +262,8 @@ module.exports = (parentDomain) ->
   app.post '/users/:userid/runnables/:id/sync', fetchuser, syncfiles
 
   createfile = (req, res) ->
-    if req.headers['content-type'] isnt 'application/json'
-      res.json 400, message: 'content type must be application/json'
-    else
+    contentType = req.headers['content-type']
+    if contentType is 'application/json'
       if req.body.dir
         if not req.body.name? then res.json 400, message: 'dir must include a name field' else
           if not req.body.path? then res.json 400, message: 'dir must include a path field'  else
@@ -259,9 +277,67 @@ module.exports = (parentDomain) ->
               runnables.createFile req.domain, req.user_id, req.params.id, req.body.name, req.body.path, req.body.content, (err, file) ->
                 if err then res.json err.code, message: err.msg else
                   res.json 201, file
+    else
+      if /multipart\/form-data/.test(contentType)
+        form = new formidable.IncomingForm()
+        form.parse req, (err, fields, files) ->
+          files_array = [ ]
+          for key, file of files
+            files_array.push file
+          async.mapSeries files_array, (file, cb) ->
+            filestream = fs.createReadStream file.path
+            runnables.createFile req.domain, req.user_id, req.params.id, file.name, '/', filestream, cb
+          , (err, files) ->
+            if err then res.json err.code, message: err.msg else
+              res.json 201, files
+      else
+        res.json 400, message: 'content type must be application/json or multipart/form-data'
 
   app.post '/users/me/runnables/:id/files', createfile
   app.post '/users/:userid/runnables/:id/files', fetchuser, createfile
+
+  streamupdate = (req, res) ->
+    contentType = req.headers['content-type']
+    if /multipart\/form-data/.test(contentType)
+      form = new formidable.IncomingForm()
+      form.parse req, (err, fields, files) ->
+        files_array = [ ]
+        for key, file of files
+          files_array.push file
+        async.mapSeries files_array, (file, cb) ->
+          filestream = fs.createReadStream file.path
+          runnables.updateFileContents req.domain, req.user_id, req.params.id, "/#{file.name}", filestream, cb
+        , (err, files) ->
+          if err then res.json err.code, message: err.msg else
+            res.json 200, files
+    else
+      res.json 400, message: 'content type must be application/json or multipart/form-data'
+
+  app.put '/users/me/runnables/:id/files', streamupdate
+  app.put '/users/:userid/runnables/:id/files', fetchuser, streamupdate
+
+  createindir = (req, res) ->
+    contentType = req.headers['content-type']
+    if /multipart\/form-data/.test(contentType)
+      form = new formidable.IncomingForm()
+      form.parse req, (err, fields, files) ->
+        files_array = [ ]
+        for key, file of files
+          files_array.push file
+        runnables.readFile req.domain, req.user_id, req.params.id, req.params.fileid, (err, root) ->
+          if err then res.json err.code, message: err.msg else
+            if not root.dir then res.json 403, message: 'resource is not of directory type' else
+              async.mapSeries files_array, (file, cb) ->
+                filestream = fs.createReadStream file.path
+                runnables.createFile req.domain, req.user_id, req.params.id, file.name, "#{root.path}/#{root.name}", filestream, cb
+              , (err, files) ->
+                if err then res.json err.code, message: err.msg else
+                  res.json 201, files
+    else
+      res.json 400, message: 'content type must be multipart/form-data'
+
+  app.post '/users/me/runnables/:id/files/:fileid', createindir
+  app.post '/users/:userid/runnables/:id/files/:fileid', fetchuser, createindir
 
   getfile = (req, res) ->
     runnables.readFile req.domain, req.user_id, req.params.id, req.params.fileid, (err, file) ->
@@ -272,9 +348,8 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables/:id/files/:fileid', fetchuser, getfile
 
   updatefile = (req, res) ->
-    if req.headers['content-type'] isnt 'application/json'
-      res.json 400, message: 'content type must be application/json'
-    else
+    contentType = req.headers['content-type']
+    if contentType is 'application/json'
       async.waterfall [
         (cb) ->
           file = null
@@ -293,6 +368,24 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           if not file then res.json 400, message: 'must provide content, name, path or tag to update operation' else
             res.json file
+    else
+      if /multipart\/form-data/.test(contentType)
+        form = new formidable.IncomingForm()
+        form.parse req, (err, fields, files) ->
+          files_array = [ ]
+          for key, file of files
+            files_array.push file
+          runnables.readFile req.domain, req.user_id, req.params.id, req.params.fileid, (err, root) ->
+            if err then res.json err.code, message: err.msg else
+              if not root.dir then res.json 403, message: 'resource is not of directory type' else
+                async.mapSeries files_array, (file, cb) ->
+                  filestream = fs.createReadStream file.path
+                  runnables.updateFileContents req.domain, req.user_id, req.params.id, "#{root.path}/#{root.name}/#{file.name}", filestream, cb
+                , (err, files) ->
+                  if err then res.json err.code, message: err.msg else
+                    res.json 200, files
+      else
+        res.json 400, message: 'content type must be application/json or multipart/form-data'
 
   app.put '/users/me/runnables/:id/files/:fileid', updatefile
   app.patch '/users/me/runnables/:id/files/:fileid', updatefile
@@ -307,5 +400,20 @@ module.exports = (parentDomain) ->
 
   app.del '/users/me/runnables/:id/files/:fileid', deletefile
   app.del '/users/:userid/runnables/:id/files/:fileid', fetchuser, deletefile
+
+  getmountedfiles = (req, res) ->
+    mountDir = req.query.path or '/'
+    runnables.getMountedFiles req.domain, req.user_id, req.params.id, req.params.fileid, mountDir, (err, files) ->
+      if err then res.json err.code, message: err.msg else
+        res.json files
+
+  app.get '/users/me/runnables/:id/files/:fileid/files', getmountedfiles
+  app.get '/users/:userid/runnables/:id/files/:fileid/files', fetchuser, getmountedfiles
+
+  writemountedfiles = (req, res) ->
+    res.json 403, message: 'mounted file-system is read-only'
+
+  app.post '/users/me/runnables/:id/files/:fileid/files', writemountedfiles
+  app.post '/users/:userid/runnables/:id/files/:fileid/files', fetchuser, writemountedfiles
 
   app

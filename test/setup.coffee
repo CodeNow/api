@@ -5,7 +5,6 @@ fs = require 'fs'
 mkdirp = require 'mkdirp'
 mongodb = require 'mongodb'
 redis = require 'redis'
-rimraf = require 'rimraf'
 state = require './state'
 
 db = mongodb.Db
@@ -14,6 +13,7 @@ redis_client = redis.createClient()
 docker = dockerjs host: configs.direct_docker
 
 beforeEach (done) ->
+  done = wrapDone done
   db.connect configs.mongo, (err, test_db) ->
     if err then done err else
       async.series [
@@ -27,6 +27,7 @@ beforeEach (done) ->
           test_db.close done
 
 afterEach (done) ->
+  done = wrapDone done
   redis_client.flushall () ->
     db.connect configs.mongo, (err, test_db) ->
       if err then done err else
@@ -46,6 +47,7 @@ afterEach (done) ->
                           , done
 
 before (done) ->
+  done = wrapDone done
   docker.listContainers (err, containers) ->
     if err then done err else
       async.forEach containers, (container, cb) ->
@@ -59,9 +61,22 @@ before (done) ->
               , done
 
 after (done) ->
+  cleanup done
+
+process.on 'SIGINT', () ->
+  cleanup (err) ->
+    if err then console.log 'error cleaning up', err
+    process.exit(); #always
+
+wrapDone = (done) ->
+  donedone = done
+  (err) ->
+    if err? then cleanup () -> donedone err else donedone()
+
+cleanup = (cb) ->
   redis_client.flushall () ->
     db.connect configs.mongo, (err, test_db) ->
-      if err then done err else
+      if err then cb err else
         test_db.dropDatabase (err) ->
-          if err then done err else
-            test_db.close done
+          if err then cb err else
+            test_db.close cb

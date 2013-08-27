@@ -19,23 +19,35 @@ listFields =
 
 Runnables =
 
-  createImage: (domain, userId, from, sync, cb) ->
-    handler = (image) ->
-      users.findUser domain, _id: userId, (err, user) ->
-        if err then cb err else
-          if not user then cb error 404, 'user not found' else
-            user.addVote domain, image._id, (err) ->
+  createImageFromDisk: (domain, userId, runnablePath, sync, cb) ->
+    images.createFromDisk domain, userId, runnablePath, sync, (err, image, tags) ->
+      if err then cb err else
+        async.forEach tags, (tag, cb) ->
+          channels.findOne aliases: tag.toLowerCase(), domain.intercept (channel) ->
+            if channel
+              image.tags.push channel: channel._id
+              cb()
+            else
+              channels.createImplicitChannel domain, tag, (err, channel) ->
+                if err then cb err else
+                  image.tags.push channel: channel._id
+                  cb()
+        , (err) ->
+          if err then throw err
+          image.save domain.intercept () ->
+            users.findUser domain, _id: userId, (err, user) ->
               if err then cb err else
-                json_image = image.toJSON()
-                delete json_image.files
-                if json_image.parent then json_image.parent = encodeId json_image.parent
-                json_image._id = encodeId image._id
-                cb null, json_image
-    if not isObjectId64 from
-      images.createFromDisk domain, userId, from, sync, (err, image) ->
-        if err then cb err else
-          handler image
-    else
+                if not user then cb error 404, 'user not found' else
+                  user.addVote domain, image._id, (err) ->
+                    if err then cb err else
+                      json_image = image.toJSON()
+                      delete json_image.files
+                      if json_image.parent then json_image.parent = encodeId json_image.parent
+                      json_image._id = encodeId image._id
+                      cb null, json_image
+
+  createImage: (domain, userId, from, sync, cb) ->
+    if not isObjectId64 from then cb error 404, 'source runnable not found' else
       containers.findOne _id: decodeId(from), domain.intercept (container) ->
         if not container then cb error 403, 'source runnable not found' else
           if container.owner.toString() isnt userId then cb error 403, 'permission denied' else
@@ -43,7 +55,16 @@ Runnables =
               if err then cb err else
                 container.target = image._id
                 container.save domain.intercept () ->
-                  handler image
+                  users.findUser domain, _id: userId, (err, user) ->
+                    if err then cb err else
+                      if not user then cb error 404, 'user not found' else
+                        user.addVote domain, image._id, (err) ->
+                          if err then cb err else
+                            json_image = image.toJSON()
+                            delete json_image.files
+                            if json_image.parent then json_image.parent = encodeId json_image.parent
+                            json_image._id = encodeId image._id
+                            cb null, json_image
 
   createContainer: (domain, userId, from, cb) ->
     async.waterfall [
@@ -143,6 +164,16 @@ Runnables =
             if json.parent then json.parent = encodeId json.parent
             if json.target then json.target = encodeId json.target
             cb null, container
+
+  updateContainer: (domain, userId, runnableId, updateSet, cb) ->
+    runnableId = decodeId runnableId
+    containers.findOne _id: runnableId, domain.intercept (container) ->
+      if not container then cb error 404, 'runnable not found' else
+        if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
+          _.extend container, updateSet
+          container.save domain.intercept () ->
+            json = container.toJSON()
+            encode domain, json, cb
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -426,6 +457,11 @@ Runnables =
       if err then cb err else
         container.updateFile domain, fileId, content, cb
 
+  updateFileContents: (domain, userId, runnableId, fileId, content, cb) ->
+    fetchContainer domain, userId, runnableId, (err, container) ->
+      if err then cb err else
+        container.updateFileContents domain, fileId, content, cb
+
   deleteFile: (domain, userId, runnableId, fileId, recursive, cb) ->
     fetchContainer domain, userId, runnableId, (err, container) ->
       if err then cb err else
@@ -450,6 +486,11 @@ Runnables =
     fetchContainer domain, userId, runnableId, (err, container) ->
       if err then cb err else
         container.tagFile domain, fileId, isDefault, cb
+
+  getMountedFiles: (domain, userId, runnableId, fileId, mountDir, cb) ->
+    fetchContainer domain, userId, runnableId, (err, container) ->
+      if err then cb err else
+        container.getMountedFiles domain, fileId, mountDir, cb
 
   getStat: (domain, userId, runnableId, stat, cb) ->
     if not (stat in stats) then cb error 400, 'not a valid stat' else

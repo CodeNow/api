@@ -485,9 +485,3 @@ describe 'file sync feature', ->
                                                 res.body.should.be.a.array
                                                 res.body.length.should.equal 2
                                                 instance.stop done
-
-  ### NEXT ITERATION ###
-
-  it 'should ::sync container changes automatically when publishing to an image'
-  it 'should read ignored file contents directly from disk, without ::syncing'
-  it 'should write file changes for ignored files directly to container volume without ::syncing'

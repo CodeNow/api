@@ -54,7 +54,7 @@ describe 'hibernate feature', ->
           if err then done err else
             user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
               .set('content-type', 'application/json')
-              .send(JSON.stringify({ name: 'new name', running: true }))
+              .send(JSON.stringify({ name: 'new name', running: true, description:'' }))
               .end (err, res) ->
                 if err then done err else
                   res.should.have.status 200
@@ -75,7 +75,7 @@ describe 'hibernate feature', ->
             setTimeout () ->
               user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                 .set('content-type', 'application/json')
-                .send(JSON.stringify({ name: 'new name', running: true }))
+                .send(JSON.stringify({ name: 'new name', running: true, description:'' }))
                 .end (err, res) ->
                   if err then done err else
                     res.should.have.status 200
@@ -137,6 +137,3 @@ describe 'hibernate feature', ->
                                       res.body.should.be.a.array
                                       res.body.length.should.equal 2
                                       instance.stop done
-
-  it 'should take the container out of ::hibernate when the web service is accessed'
-  it 'should take the container out of ::hibernate when the tail log is accessed'
