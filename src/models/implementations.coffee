@@ -41,7 +41,7 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
             implementation = new @
             implementation.owner = opts.userId
             implementation.implements = opts.specificationId
-            implementation.subdomain = "web#{uuid.v4()}" # good enough for now, should be spec name
+            implementation.subdomain = opts.subdomain || "web#{uuid.v4()}"
             implementation.requirements = opts.requirements
             if opts.containerId
               containers = require './containers'
@@ -95,7 +95,7 @@ implementationSchema.statics.getImplementationBySpecification = (domain, opts, c
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
       @findOne
-        owner: userId
+        owner: opts.userId
         implements: opts.implements
       , domain.intercept (implementation) => 
         cb null, implementation.toJSON()
