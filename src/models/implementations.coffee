@@ -27,12 +27,12 @@ implementationSchema = new Schema
     default: [ ]
 
 implementationSchema.statics.createImplementation = (domain, opts, cb) ->
-  if not opts.specificationId then cb 400, 'needs specification' else
+  if not opts.implements then cb 400, 'needs specification' else
     users.findUser domain, _id: opts.userId, domain.intercept (user) =>
       if not user then cb error 404, 'user not found' else
         @findOne
           owner: opts.userId
-          implements: opts.specificationId
+          implements: opts.implements
         , domain.intercept (implementation) =>
           save = () =>
             implementation.save domain.intercept () =>
@@ -40,48 +40,11 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
           if implementation then cb error 403, 'implementation already exists' else
             implementation = new @
             implementation.owner = opts.userId
-            implementation.implements = opts.specificationId
-            implementation.subdomain = opts.subdomain || "web#{uuid.v4()}"
+            implementation.implements = opts.implements
+            implementation.subdomain = opts.subdomain
             implementation.requirements = opts.requirements
             if opts.containerId
-              console.log 'containerId', opts.containerId
-              containers = require './containers'
-              containers.findOne
-                owner: opts.userId
-                specification: opts.specificationId
-                _id: decodeId opts.containerId
-              , domain.intercept (container) =>
-                if container
-                  console.log 'container', container
-                  async.parallel [
-                    (cb) =>
-                      url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
-                      request.get url, domain.bind (err, res, body) =>
-                        request.get url, domain.intercept (res, body) =>
-                          async.each implementation.requirements, (requirement, cb) =>
-                            request.post 
-                              url: url
-                              json: 
-                                key: requirement.name
-                                value: requirement.value
-                            , cb
-                          , domain.intercept () =>
-                            request.get url, domain.intercept (res, body) =>
-                              console.log body
-                              cb null
-                    (cb) =>
-                      url = "#{configs.docker}/custom/changeRoute"
-                      request.post 
-                        json: 
-                          webToken: implementation.subdomain
-                          containerId: container.docker_id
-                        url: url
-                      , domain.intercept (res, body) =>
-                        console.log body
-                        cb null
-                  ], domain.intercept save
-                else
-                  save null
+              updateEnv opts, save
             else
               save null
 
@@ -145,12 +108,17 @@ implementationSchema.statics.updateImplementation = (domain, opts, cb) ->
           owner: opts.userId
           _id: opts.implementationId
         , domain.intercept (implementation) =>
+          save = () =>
+            implementation.save domain.intercept () ->
+              cb null, implementation.toJSON()
           if not implementation?
             cb error 404, 'implementation not found'
           else
             implementation.requirements = opts.requirements
-            implementation.save domain.intercept () ->
-              cb null, implementation.toJSON()
+            if opts.containerId
+              updateEnv opts, save
+            else
+              save null
 
 implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
@@ -172,6 +140,46 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
             cb error 404, 'implementation not found'
           else
             cb null
+
+updateEnv = (opts, cb) ->
+  console.log 'containerId', opts.containerId
+  containers = require './containers'
+  containers.findOne
+    owner: opts.userId
+    specification: opts.implements
+    _id: decodeId opts.containerId
+  , domain.intercept (container) =>
+    if container
+      console.log 'container', container
+      async.parallel [
+        (cb) =>
+          url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
+          request.get url, domain.bind (err, res, body) =>
+            request.get url, domain.intercept (res, body) =>
+              async.each opts.requirements, (requirement, cb) =>
+                request.post 
+                  url: url
+                  json: 
+                    key: requirement.name
+                    value: requirement.value
+                , cb
+              , domain.intercept () =>
+                request.get url, domain.intercept (res, body) =>
+                  console.log body
+                  cb null
+        (cb) =>
+          url = "#{configs.docker}/custom/changeRoute"
+          request.post 
+            json: 
+              webToken: opts.subdomain
+              containerId: container.docker_id
+            url: url
+          , domain.intercept (res, body) =>
+            console.log body
+            cb null
+      ], domain.intercept cb
+    else
+     cb new Error 'container not found'
 
 module.exports = mongoose.model 'Implementation', implementationSchema
 
