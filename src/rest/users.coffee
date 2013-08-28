@@ -172,8 +172,7 @@ module.exports = (parentDomain) ->
       optional = ['specification']
       set = {}
       # for loop for early return
-      for i = 0; i < required.length; i++
-        attr = required[i]
+      for attr in required
         if not req.body[attr]? 
           return res.json 400, message: 'must provide a runnable ' + attr 
         else
