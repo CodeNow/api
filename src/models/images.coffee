@@ -135,8 +135,7 @@ syncDockerImage = (domain, image, cb) ->
   , domain.intercept (res) ->
     containerId = res.Id
     docker.inspectContainer containerId, domain.intercept (result) ->
-      long_docker_id = result.ID
-      sync domain, long_docker_id, image, (err) ->
+      sync domain, token, image, (err) ->
         if err then cb err else
           docker.removeContainer containerId, domain.intercept () ->
             cb()
@@ -188,10 +187,10 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
                                 image.files.push file
                               if sync
                                 syncDockerImage domain, image, (err) ->
-                                  if err then throw err
-                                  image.synced = true
-                                  image.save domain.intercept () ->
-                                    cb null, image, runnable.tags
+                                  if err then cb err else
+                                    image.synced = true
+                                    image.save domain.intercept () ->
+                                      cb null, image, runnable.tags
                               else
                                 image.save domain.intercept () ->
                                   cb null, image, runnable.tags
@@ -274,10 +273,10 @@ imageSchema.statics.isOwner = (domain, userId, runnableId, cb) ->
 imageSchema.methods.sync = (domain, cb) ->
   if @synced then cb() else
     syncDockerImage domain, @, (err) =>
-      if err then throw err
-      @synced = true
-      @save domain.intercept () ->
-        cb()
+      if err then cb err else
+        @synced = true
+        @save domain.intercept () ->
+          cb()
 
 module.exports = mongoose.model 'Images', imageSchema
 module.exports.docker = docker

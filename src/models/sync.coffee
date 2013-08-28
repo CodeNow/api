@@ -29,7 +29,7 @@ exts = [ '.js'
          ''
        ]
 
-module.exports = (domain, containerId, target, cb) ->
+module.exports = (domain, token, target, cb) ->
   ignores = [ ]
   new_file_list = [ ]
   for file in target.files
@@ -37,7 +37,7 @@ module.exports = (domain, containerId, target, cb) ->
       ignores.push path.normalize "#{file.path}/#{file.name}"
       new_file_list.push file
   old_file_list = _.clone target.files
-  volumes.readAllFiles domain, containerId, target.file_root, ignores, exts, (err, allFiles) ->
+  volumes.readAllFiles domain, token, target.file_root, ignores, exts, (err, allFiles) ->
     if err then cb err else
       allFiles.forEach (file) ->
         new_file =

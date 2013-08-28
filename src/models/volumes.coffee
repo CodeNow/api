@@ -1,129 +1,184 @@
 configs = require '../configs'
 debug = require('debug')('volumes')
-upnode = require 'upnode'
-
-up = upnode.connect configs.dnode_host, configs.dnode_port
+error = require '../error'
+request = require 'request'
 
 Volumes =
 
-  createFile: (domain, containerId, srcDir, name, path, content, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call createFile() via dnode to harbourmaster"
-    , configs.dnode_access_timeout
-    up (remote) ->
-      if not remote.createFile then throw new Error "harbourmaster does not implement method: createFile"
-      debug 'calling remote function createFile()'
-      remote.createFile containerId, srcDir, name, path, content, domain.bind (err) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb()
+  createFile: (domain, subDomain, srcDir, name, path, content, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/create"
+        method: 'POST'
+        json:
+          dir: srcDir
+          name: name
+          path: path
+          content: content
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+            cb()
+    doReq()
 
-  readFile: (domain, containerId, srcDir, name, path, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call readFile() via dnode to harbourmaster"
-    , configs.dnode_access_timeout
-    up (remote) ->
-      if not remote.readFile then throw new Error "harbourmaster does not implement method: readFile"
-      debug 'calling remote function readFile()'
-      remote.readFile containerId, srcDir, name, path, domain.bind (err, content) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb null, content
+  readFile: (domain, subDomain, srcDir, name, path, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/read"
+        method: 'POST'
+        json:
+          dir: srcDir
+          name: name
+          path: path
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+            cb null, res.body.content
+    doReq()
 
-  updateFile: (domain, containerId, srcDir, name, path, content, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call updateFile() via dnode to harbourmaster"
-    , configs.dnode_access_timeout
-    up (remote) ->
-      if not remote.updateFile then throw new Error "harbourmaster does not implement method: updateFile"
-      debug 'calling remote function updateFile()'
-      remote.updateFile containerId, srcDir, name, path, content, domain.bind (err) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb()
+  updateFile: (domain, subDomain, srcDir, name, path, content, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/update"
+        method: 'POST'
+        json:
+          dir: srcDir
+          name: name
+          path: path
+          content: content
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+            cb null, res.body.content
+    doReq()
 
-  deleteFile: (domain, containerId, srcDir, name, path, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call deleteFile() via dnode to harbourmaster"
-    , configs.dnode_access_timeout
-    up (remote) ->
-      if not remote.deleteFile then throw new Error "harbourmaster does not implement method: deleteFile"
-      debug 'calling remote function deleteFile()'
-      remote.deleteFile containerId, srcDir, name, path, domain.bind (err) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb()
+  deleteFile: (domain, subDomain, srcDir, name, path, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/delete"
+        method: 'POST'
+        json:
+          dir: srcDir
+          name: name
+          path: path
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+            cb()
+    doReq()
 
-  renameFile: (domain, containerId, srcDir, name, path, newName, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call renameFile() via dnode to harbourmaster"
-    , configs.dnode_access_timeout
-    up (remote) ->
-      if not remote.renameFile then throw new Error "harbourmaster does not implement method: renameFile"
-      debug 'calling remote function renameFile()'
-      remote.renameFile containerId, srcDir, name, path, newName, domain.bind (err) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb()
+  renameFile: (domain, subDomain, srcDir, name, path, newName, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/rename"
+        method: 'POST'
+        json:
+          dir: srcDir
+          name: name
+          path: path
+          newName: newName
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+            cb()
+    doReq()
 
-  moveFile: (domain, containerId, srcDir, name, path, newPath, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call moveFile() via dnode to harbourmaster"
-    , configs.dnode_access_timeout
-    up (remote) ->
-      if not remote.moveFile then throw new Error "harbourmaster does not implement method: moveFile"
-      debug 'calling remote function moveFile()'
-      remote.moveFile containerId, srcDir, name, path, newPath, domain.bind (err) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb()
+  moveFile: (domain, subDomain, srcDir, name, path, newPath, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/move"
+        method: 'POST'
+        json:
+          dir: srcDir
+          name: name
+          path: path
+          newPath: newPath
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+            cb()
+    doReq()
 
-  readAllFiles: (domain, containerId, srcDir, ignores, exts, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call readAllFiles() via dnode to harbourmaster"
-    , configs.dnode_sync_timeout
-    up (remote) ->
-      if not remote.readAllFiles then throw new Error "harbourmaster does not implement method: readAllFiles"
-      debug 'calling remote function readAllFiles()'
-      remote.readAllFiles containerId, srcDir, ignores, exts, domain.bind (err, files) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb null, files
+  readAllFiles: (domain, subDomain, srcDir, ignores, exts, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/readall"
+        method: 'POST'
+        json:
+          dir: srcDir
+          ignores: ignores
+          exts: exts
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb null, res.body
+    doReq()
 
-  createDirectory: (domain, containerId, srcDir, name, path, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call createDirectory() via dnode to harbourmaster"
-    , configs.dnode_access_timeout
-    up (remote) ->
-      if not remote.createDirectory then throw new Error "harbourmaster does not implement method: createDirectory"
-      debug 'calling remote function createDirectory()'
-      remote.createDirectory containerId, srcDir, name, path, domain.bind (err) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb()
+  createDirectory: (domain, subDomain, srcDir, name, path, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/mkdir"
+        method: 'POST'
+        json:
+          dir: srcDir
+          name: name
+          path: path
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+            cb()
+    doReq()
 
-  readDirectory: (domain, containerId, srcDir, subDir, exts, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call readDirectory() via dnode to harbourmaster"
-    , configs.dnode_sync_timeout
-    up domain.bind (remote) ->
-      if not remote.readDirectory then throw new Error "harbourmaster does not implement method: readDirectory"
-      debug 'calling remote function readDirectory()'
-      remote.readDirectory containerId, srcDir, subDir, exts, domain.bind (err, files) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb null, files
+  readDirectory: (domain, subDomain, srcDir, subDir, exts, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/readdir"
+        method: 'POST'
+        json:
+          dir: srcDir
+          sub: subDir
+          exts: exts
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+            cb null, res.body
+    doReq()
 
-  removeDirectory: (domain, containerId, srcDir, name, path, recursive, cb) ->
-    dnode_timeout = setTimeout () ->
-      throw new Error "timeout while trying to call removeDirectory() via dnode to harbourmaster"
-    , configs.dnode_access_timeout
-    up (remote) ->
-      if not remote.removeDirectory then throw new Error "harbourmaster does not implement method: removeDirectory"
-      debug 'calling remote function removeDirectory()'
-      remote.removeDirectory containerId, srcDir, name, path, recursive, domain.bind (err) ->
-        clearTimeout dnode_timeout
-        if err and err.code is 500 then throw new Error err.msg
-        if err then cb err else cb()
+  removeDirectory: (domain, subDomain, srcDir, name, path, recursive, cb) ->
+    doReq = () ->
+      req = request
+        url: "http://#{subDomain}.#{configs.domain}/api/files/rmdir"
+        method: 'POST'
+        json:
+          dir: srcDir
+          name: name
+          path: path
+          recursive: recursive
+        timeout: configs.dnode_access_timeout
+      , (err, res) ->
+        if err then throw err
+        if res.statusCode is 503 then doReq() else
+          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+            cb()
+    doReq()
 
 module.exports = Volumes
