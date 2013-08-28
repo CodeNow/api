@@ -44,7 +44,7 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
             implementation.subdomain = opts.subdomain
             implementation.requirements = opts.requirements
             if opts.containerId
-              updateEnv opts, save
+              updateEnv domain, opts, save
             else
               save null
 
@@ -141,8 +141,7 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
           else
             cb null
 
-updateEnv = (opts, cb) ->
-  console.log 'containerId', opts.containerId
+updateEnv = (domain, opts, cb) ->
   containers = require './containers'
   containers.findOne
     owner: opts.userId
@@ -150,7 +149,6 @@ updateEnv = (opts, cb) ->
     _id: decodeId opts.containerId
   , domain.intercept (container) =>
     if container
-      console.log 'container', container
       async.parallel [
         (cb) =>
           url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
