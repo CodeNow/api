@@ -45,17 +45,19 @@ module.exports = (parentDomain) ->
           runnables.createImageFromDisk req.domain, req.user_id, tmpdir, sync, (err, runnable) ->
             if err then res.json err.code, message: err.msg else
               rimraf tmpdir, (err) ->
-                if err then throw err else
-                  res.json 201, runnable
+                if err then throw err
+                res.json 201, runnable
         else
           fs.readdir tmpdir, (err, files) ->
             if err then throw err
             newPath = "#{tmpdir}/#{files[0]}"
-            runnables.createImageFromDisk req.domain, req.user_id, newPath, sync, (err, runnable) ->
-              if err then res.json err.code, message: err.msg else
-                rimraf tmpdir, (err) ->
-                  if err then throw err else
-                    res.json 201, runnable
+            fs.exists "#{newPath}/runnable.json", (exists) ->
+              if not exists then res.json 403, message: 'could not find runnable.json' else
+                runnables.createImageFromDisk req.domain, req.user_id, newPath, sync, (err, runnable) ->
+                  if err then res.json err.code, message: err.msg else
+                    rimraf tmpdir, (err) ->
+                      if err then throw err
+                      res.json 201, runnable
 
   app.get '/runnables/:id/export', (req, res) ->
 
