@@ -168,25 +168,18 @@ module.exports = (parentDomain) ->
 
   putrunnable = (req, res) ->
     if not req.body.running? then res.json 400, message: 'must provide a running parameter' else
-<<<<<<< HEAD
-      if not req.body.name? then res.json 400, message: 'must provide a runnable name' else
-        runnables.updateContainer req.domain, req.user_id, req.params.runnableid, req.body, (err, runnable) ->
-          if err then res.json err.code, message: err.msg else
-            if req.body.running
-              runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
-                if err then res.json err.code, message: err.msg else
-                  res.json runnable
-            else
-              runnables.stopContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
-                if err then res.json err.code, message: err.msg else
-                  res.json runnable
-=======
-      attribs = ['name', 'description']
+      required = ['name', 'description']
+      optional = ['specification']
       set = {}
-      attribs.every (attr) ->
-        if not req.body[attr]? then res.json 400, message: 'must provide a runnable ' + attr else
+      # for loop for early return
+      for i = 0; i < required.length; i++
+        attr = required[i]
+        if not req.body[attr]? 
+          return res.json 400, message: 'must provide a runnable ' + attr 
+        else
           set[attr] = req.body[attr]
-          return true
+      optional.forEach (attr) ->
+        set[attr] = req.body[attr]
       runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
         if err then res.json err.code, message: err.msg else
           if req.body.running
@@ -195,7 +188,6 @@ module.exports = (parentDomain) ->
           else
             runnables.stopContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
               res.json runnable
->>>>>>> master
 
   app.put '/users/me/runnables/:runnableid', putrunnable
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
