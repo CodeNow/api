@@ -27,7 +27,7 @@ implementationSchema = new Schema
     default: [ ]
 
 implementationSchema.statics.createImplementation = (domain, opts, cb) ->
-  if not opts.implements then cb 400, 'needs specification' else
+  if not opts.implements then cb error 400, 'needs specification' else
     users.findUser domain, _id: opts.userId, domain.intercept (user) =>
       if not user then cb error 404, 'user not found' else
         @findOne

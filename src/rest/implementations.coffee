@@ -13,7 +13,7 @@ module.exports = (parentDomain) ->
   app.post '/implementations', (req, res) ->
     implementations.createImplementation req.domain, 
       userId: req.user_id
-      specificationId: req.body.implements
+      implements: req.body.implements
       containerId: req.body.containerId
       requirements: req.body.requirements
       subdomain: req.body.subdomain
