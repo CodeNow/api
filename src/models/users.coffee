@@ -70,6 +70,9 @@ userSchema.virtual('gravitar').get () ->
 userSchema.virtual('registered').get () ->
   this.permission_level >= 1
 
+userSchema.virtual('isVerified').get () ->
+  this.permission_level >= 2
+
 userSchema.virtual('isModerator').get () ->
   this.permission_level >= 5
 

@@ -10,6 +10,7 @@
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
   "docker": "http://harbourmaster.runnableapp.dev",
+  "rootDomain": "runnableapp.dev",
   "shortProjectIds": true,
   "socketTimeout": "2 minutes",
   "nodetime": {

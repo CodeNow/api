@@ -97,6 +97,8 @@ imageSchema = new Schema
         type: Boolean
     ]
     default: [ ]
+  specification:
+    type: ObjectId
 
 imageSchema.set 'toJSON', virtuals: true
 
@@ -118,9 +120,9 @@ buildDockerImage = (domain, fspath, tag, cb) ->
   child.stdout.pipe req
 
 syncDockerImage = (domain, image, cb) ->
-  token = uuid.v4()
   docker.createContainer
-    Token: token
+    servicesToken: 'services-' + uuid.v4()
+    webToken: 'web-' + uuid.v4()
     Env: [
       "RUNNABLE_USER_DIR=#{image.file_root}"
       "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
@@ -211,6 +213,7 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         start_cmd: container.start_cmd
         port: container.port
         synced: true
+        specification: container.specification
       for file in container.files
         image.files.push file.toJSON()
       for tag in container.tags

@@ -6,6 +6,7 @@ domain = require 'domain'
 error = require '../error'
 images = require './images'
 users = require './users'
+implementations = require './implementations'
 _ = require 'lodash'
 ObjectId = require('mongoose').Types.ObjectId
 
@@ -140,15 +141,29 @@ Runnables =
                       vote.remove()
                   remove()
 
-  updateName: (domain, userId, runnableId, newName, cb) ->
+  updateContainer: (domain, userId, runnableId, data, cb) ->
     runnableId = decodeId runnableId
     containers.findOne _id: runnableId, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-          container.name = newName;
+          [
+            'name'
+            'instructions'
+            'description'
+            'cmd'
+            'service_cmds'
+            'start_cmd'
+            'file_root'
+            'specification'
+          ].forEach (key) ->
+            container[key] = if data[key] isnt undefined then data[key] else container[key]
           container.save domain.intercept () ->
             json = container.toJSON()
-            encode domain, json, cb
+            delete json.files
+            json._id = encodeId json._id
+            if json.parent then json.parent = encodeId json.parent
+            if json.target then json.target = encodeId json.target
+            cb null, container
 
   updateContainer: (domain, userId, runnableId, updateSet, cb) ->
     runnableId = decodeId runnableId
@@ -197,17 +212,29 @@ Runnables =
     containers.findOne {_id: runnableId}, {files:0}, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-          container.getProcessState domain, (err, state) ->
-            if err then cb err else
-              response = (state) ->
-                json_project = container.toJSON()
-                _.extend json_project, state
-                encode domain, json_project, cb
-              if state.running then response state else
-                container.start domain, (err) ->
-                  if err then cb err else
-                    container.getProcessState domain, (err, state) ->
-                      response state
+          start = () ->
+            container.getProcessState domain, (err, state) ->
+              if err then cb err else
+                response = (state) ->
+                  json_project = container.toJSON()
+                  _.extend json_project, state
+                  encode domain, json_project, cb
+                if state.running then response state else
+                  container.start domain, (err) ->
+                    if err then cb err else
+                      container.getProcessState domain, (err, state) ->
+                        response state
+          if container.specification?
+            implementations.findOne
+              owner: userId
+              implements: container.specification
+            , domain.intercept (implementation) ->
+              if not implementation?
+                cb new error 400, 'no implementation'
+              else
+                start()
+          else
+            start()
 
   stopContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId

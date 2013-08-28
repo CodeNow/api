@@ -15,14 +15,18 @@ page.open(system.args[1], function (status) {
   } else {
     var wait = setInterval(function () {
       // evaluate whether we have a stream connection
-      var isStreaming = page.evaluate( function() {
-        return window.isStreaming;
+      var isStreaming = page.evaluate(function() {
+        return window.term;
       });
       if(isStreaming) {
         var command = system.args[2];
         page.sendEvent('keypress', command, null, null, 0);
         page.sendEvent('keypress', page.event.key.Enter, null, null, 0);
         setTimeout(function () {
+          var text = page.evaluate(function () {
+            return document.body.innerText;
+          });
+          console.log(text);
           phantom.exit(0);
         }, 500);
         clearInterval(wait);

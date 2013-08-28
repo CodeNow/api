@@ -11,6 +11,7 @@
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
   "docker": "http://harbourmaster.cloudcosmos.com:3000",
+  "rootDomain": "cloudcosmos.com",
   "shortProjectIds": true,
   "socketTimeout": "2 minutes",
   "nodetime": {

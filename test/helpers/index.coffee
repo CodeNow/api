@@ -279,7 +279,7 @@ Helpers =
     ptm = cp.spawn 'phantomjs', [ './term.js', url, cmd ], { cwd: __dirname }
     output_buffer = ''
     ptm.on 'close', (code, signal) ->
-      if code isnt 0 then cb new Error 'error calling phantomjs' else
+      if code isnt 0 then cb new Error 'error calling phantomjs: ' + output_buffer else
         cb null, output_buffer
     ptm.stdout.on 'data', (data) ->
       output_buffer += data.toString()
