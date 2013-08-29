@@ -19,8 +19,9 @@ Volumes =
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503 then doReq() else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb()
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb()
     doReq()
 
   readFile: (domain, subDomain, srcDir, name, path, cb) ->
@@ -36,8 +37,9 @@ Volumes =
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503 then doReq() else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb null, res.body.content
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb null, res.body.content
     doReq()
 
   updateFile: (domain, subDomain, srcDir, name, path, content, cb) ->
@@ -54,8 +56,9 @@ Volumes =
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503 then doReq() else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb null, res.body.content
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb null, res.body.content
     doReq()
 
   deleteFile: (domain, subDomain, srcDir, name, path, cb) ->
@@ -71,8 +74,9 @@ Volumes =
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503 then doReq() else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb()
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb()
     doReq()
 
   renameFile: (domain, subDomain, srcDir, name, path, newName, cb) ->
@@ -89,8 +93,9 @@ Volumes =
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503 then doReq() else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb()
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb()
     doReq()
 
   moveFile: (domain, subDomain, srcDir, name, path, newPath, cb) ->
@@ -107,8 +112,9 @@ Volumes =
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503 then doReq() else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb()
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb()
     doReq()
 
   readAllFiles: (domain, subDomain, srcDir, ignores, exts, cb) ->
@@ -142,8 +148,9 @@ Volumes =
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503 then doReq() else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb()
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb()
     doReq()
 
   readDirectory: (domain, subDomain, srcDir, subDir, exts, cb) ->
@@ -159,8 +166,9 @@ Volumes =
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503 then doReq() else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb null, res.body
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb null, res.body
     doReq()
 
   removeDirectory: (domain, subDomain, srcDir, name, path, recursive, cb) ->
@@ -177,8 +185,9 @@ Volumes =
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503 then doReq() else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb()
+          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+            if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
+              cb()
     doReq()
 
 module.exports = Volumes

@@ -173,8 +173,8 @@ module.exports = (parentDomain) ->
       set = {}
       # for loop for early return
       for attr in required
-        if not req.body[attr]? 
-          return res.json 400, message: 'must provide a runnable ' + attr 
+        if not req.body[attr]?
+          return res.json 400, message: 'must provide a runnable ' + attr
         else
           set[attr] = req.body[attr]
       optional.forEach (attr) ->

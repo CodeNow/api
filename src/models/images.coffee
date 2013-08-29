@@ -120,8 +120,9 @@ buildDockerImage = (domain, fspath, tag, cb) ->
   child.stdout.pipe req
 
 syncDockerImage = (domain, image, cb) ->
+  servicesToken = 'services-' + uuid.v4()
   docker.createContainer
-    servicesToken: 'services-' + uuid.v4()
+    servicesToken: servicesToken
     webToken: 'web-' + uuid.v4()
     Env: [
       "RUNNABLE_USER_DIR=#{image.file_root}"
@@ -135,7 +136,7 @@ syncDockerImage = (domain, image, cb) ->
   , domain.intercept (res) ->
     containerId = res.Id
     docker.inspectContainer containerId, domain.intercept (result) ->
-      sync domain, token, image, (err) ->
+      sync domain, servicesToken, image, (err) ->
         if err then cb err else
           docker.removeContainer containerId, domain.intercept () ->
             cb()

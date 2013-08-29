@@ -229,7 +229,7 @@ cacheContents = (ext) ->
   ext in exts
 
 containerSchema.methods.syncFiles = (domain, cb) ->
-  sync domain, @token, @, (err) =>
+  sync domain, @servicesToken, @, (err) =>
     if err then cb err else
       @last_write = new Date()
       @save domain.intercept () =>
@@ -237,7 +237,7 @@ containerSchema.methods.syncFiles = (domain, cb) ->
 
 containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
   if typeof content is 'string'
-    volumes.createFile domain, @token, @file_root, name, filePath, content, (err) =>
+    volumes.createFile domain, @servicesToken, @file_root, name, filePath, content, (err) =>
       if err then cb err else
         file =
           path: filePath
@@ -252,7 +252,7 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
           cb null, { _id: file._id, name: name, path: filePath }
   else
     store = concat (file_content) =>
-      volumes.createFile domain, @token, @file_root, name, filePath, file_content.toString(), (err) =>
+      volumes.createFile domain, @servicesToken, @file_root, name, filePath, file_content.toString(), (err) =>
         if err then cb err else
           file =
             path: filePath
@@ -270,7 +270,7 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.updateFile domain, @token, @file_root, file.name, file.path, content, (err) =>
+    volumes.updateFile domain, @servicesToken, @file_root, file.name, file.path, content, (err) =>
       if err then cb err else
         ext = path.extname file.name
         if cacheContents ext
@@ -288,7 +288,7 @@ containerSchema.methods.updateFileContents = (domain, filePath, content, cb) ->
       foundFile = file
   if not foundFile then cb error 404, 'file does not exist' else
     store = concat (file_content) =>
-      volumes.updateFile domain, @token, @file_root, foundFile.name, foundFile.path, file_content.toString(), (err) =>
+      volumes.updateFile domain, @servicesToken, @file_root, foundFile.name, foundFile.path, file_content.toString(), (err) =>
         if err then cb err else
           ext = path.extname foundFile.name
           if cacheContents ext
@@ -301,7 +301,7 @@ containerSchema.methods.updateFileContents = (domain, filePath, content, cb) ->
 containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.renameFile domain, @token, @file_root, file.name, file.path, newName, (err) =>
+    volumes.renameFile domain, @servicesToken, @file_root, file.name, file.path, newName, (err) =>
       if err then cb err else
         oldName = file.name
         file.name = newName
@@ -323,7 +323,7 @@ containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
             file.content = undefined
             file.default = false
           if not oldCached and newCached
-            volumes.readFile domain, @token, @file_root, file.name, file.path, (err, content) =>
+            volumes.readFile domain, @servicesToken, @file_root, file.name, file.path, (err, content) =>
               if err then cb err else
                 file.content = content
                 @last_write = new Date()
@@ -337,7 +337,7 @@ containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
 containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
-    volumes.moveFile domain, @token, @file_root, file.name, file.path, newPath, (err) =>
+    volumes.moveFile domain, @servicesToken, @file_root, file.name, file.path, newPath, (err) =>
       if err then cb err else
         oldPath = file.path
         file.path = newPath
@@ -352,7 +352,7 @@ containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
           cb null, file
 
 containerSchema.methods.createDirectory = (domain, name, path, cb) ->
-  volumes.createDirectory domain, @token, @file_root, name, path, (err) =>
+  volumes.createDirectory domain, @servicesToken, @file_root, name, path, (err) =>
     if err then cb err else
       @files.push
         path: path
@@ -382,14 +382,14 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
   if not file then cb error 404, 'file does not exist' else
     if not file.dir
       if recursive then cb error 400, 'cannot recursively delete a plain file' else
-        volumes.deleteFile domain, @token, @file_root, file.name, file.path, (err) =>
+        volumes.deleteFile domain, @servicesToken, @file_root, file.name, file.path, (err) =>
           if err then cb err else
             file.remove()
             @last_write = new Date()
             @save domain.intercept () ->
               cb()
     else
-      volumes.removeDirectory domain, @token, @file_root, file.name, file.path, recursive, (err) =>
+      volumes.removeDirectory domain, @servicesToken, @file_root, file.name, file.path, recursive, (err) =>
         if err then cb err else
           if recursive
             toDelete = [ ]
@@ -435,7 +435,7 @@ containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
   if not file then cb error 404, 'file does not exist' else
     if not file.ignore then cb error 403, 'entry is not a valid mount point' else
       subDir = path.normalize "#{file.path}/#{file.name}/#{mountDir}"
-      volumes.readDirectory domain, @token, @file_root, subDir, exts, (err, files) ->
+      volumes.readDirectory domain, @servicesToken, @file_root, subDir, exts, (err, files) ->
         if err then cb err else
           cb null, files
 
