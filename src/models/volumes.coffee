@@ -18,7 +18,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb()
@@ -36,7 +40,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb null, res.body.content
@@ -55,7 +63,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb null, res.body.content
@@ -73,7 +85,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb()
@@ -92,7 +108,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb()
@@ -111,7 +131,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb()
@@ -129,7 +153,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb null, res.body
@@ -147,7 +175,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb()
@@ -165,7 +197,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb null, res.body
@@ -184,7 +220,11 @@ Volumes =
         timeout: configs.dnode_access_timeout
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503 then doReq() else
+        if res.statusCode is 503
+          setTimeout () ->
+            doReq()
+          , 500
+        else
           if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
             if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
               cb()
