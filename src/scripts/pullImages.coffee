@@ -1,14 +1,3 @@
-async = undefined
-configs = undefined
-docker = undefined
-dockerjs = undefined
-domain = undefined
-encodeId = undefined
-images = undefined
-mongoose = undefined
-plus = undefined
-slash = undefined
-users = undefined
 async = require("async")
 images = require("../models/images")
 users = require("../models/users")
