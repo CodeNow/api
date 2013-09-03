@@ -48,20 +48,23 @@ doRemove = ->
             )
         )
     ), (filtered) ->
-      async.eachLimit filtered, 3, ((dockerContainer, cb) ->
-        docker.removeContainer
-          id: dockerContainer.Id
-        , (err) ->
-          if err?
-            console.error "failed to remove", dockerContainer.Id
-            cb null
-          else
-            containers.remove
-              docker_id: dockerContainer.Id.substring(0, 12)
-            , domain.intercept(->
+      async.eachLimit filtered, 1, ((dockerContainer, cb) ->
+        console.log "Removing " + dockerContainer.Id
+        setTimeout (->
+          docker.removeContainer
+            id: dockerContainer.Id
+          , (err) ->
+            if err?
+              console.error "failed to remove", dockerContainer.Id
               cb null
-            )
+            else
+              containers.remove
+                docker_id: dockerContainer.Id.substring(0, 12)
+              , domain.intercept(->
+                cb null
+              )
 
+        ), 1000
       ), domain.intercept(->
         setTimeout doRemove, 60 * 60 * 1000
       )
