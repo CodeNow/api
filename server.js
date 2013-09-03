@@ -25,8 +25,9 @@ if (cluster.isMaster) {
   }
 
   var numCPUs = os.cpus().length;
-  debug('spawning initial ' + numCPUs + ' workers');
-  for (var i = 0; i < numCPUs; i++) {
+  var numWorkers = numCPUs * 5;
+  debug('spawning initial ' + numWorkers + ' workers');
+  for (var i = 0; i < numWorkers; i++) {
     create_worker();
   }
 

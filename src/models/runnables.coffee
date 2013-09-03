@@ -230,7 +230,7 @@ Runnables =
               implements: container.specification
             , domain.intercept (implementation) ->
               if not implementation?
-                cb new error 400, 'no implementation'
+                cb error 400, 'no implementation'
               else
                 start()
           else
