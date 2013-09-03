@@ -26,8 +26,6 @@ doRemove = ->
       all: true
   , domain.intercept((list) ->
     async.filterSeries list, ((dockerContainer, cb) ->
-      docker_id = undefined
-      docker_id = undefined
       docker_id = dockerContainer.Id.substring(0, 12)
       if /^Up /.test(dockerContainer.Status)
         cb false
