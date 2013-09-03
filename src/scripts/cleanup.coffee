@@ -33,7 +33,7 @@ doRemove = ->
         containers.findOne
           docker_id: docker_id
         , domain.intercept((mongoContainer) ->
-          if (mongoContainer?) or mongoContainer.deleted
+          if not mongoContainer? or mongoContainer.deleted
             cb true
           else
             users.findOne
