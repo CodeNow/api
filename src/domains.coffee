@@ -13,6 +13,7 @@ module.exports = (parentDomain) ->
     d.add req
     d.add res
     d.on 'error', (e) ->
+      console.error 'DOMAIN', e
       if parentDomain and configs.throwErrors 
         throw e 
       else if e.message and dockerExp.test e.message 
