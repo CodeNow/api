@@ -26,8 +26,6 @@ doRemove = ->
       all: true
   , domain.intercept((list) ->
     async.filterSeries list, ((dockerContainer, cb) ->
-      docker_id = undefined
-      docker_id = undefined
       docker_id = dockerContainer.Id.substring(0, 12)
       if /^Up /.test(dockerContainer.Status)
         cb false
@@ -35,7 +33,7 @@ doRemove = ->
         containers.findOne
           docker_id: docker_id
         , domain.intercept((mongoContainer) ->
-          if (mongoContainer?) or mongoContainer.deleted
+          if not mongoContainer? or mongoContainer.deleted
             cb true
           else
             users.findOne
