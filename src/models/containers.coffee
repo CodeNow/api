@@ -101,7 +101,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
       "RUNNABLE_START_CMD=#{image.start_cmd}"
     ]
-    createContainer = domain.bind (env, subdomain) =>
+    createContainer = (env, subdomain) =>
       container = new @
         parent: image
         name: image.name
@@ -164,21 +164,18 @@ containerSchema.statics.destroy = (domain, id, cb) ->
             remove()
 
 containerSchema.methods.getProcessState = (domain, cb) ->
-  domain.run () ->
-    docker.inspectContainer @docker_id, domain.intercept (result) ->
-      if not result.State?
-        throw new Error 'bad result from docker.inspectContainer'
-      cb null, running: result.State.Running
+  docker.inspectContainer @docker_id, domain.intercept (result) ->
+    if not result.State?
+      throw new Error 'bad result from docker.inspectContainer'
+    cb null, running: result.State.Running
 
 containerSchema.methods.start = (domain, cb) ->
-  domain.run () ->
-    docker.startContainer @docker_id, domain.intercept () ->
-      cb()
+  docker.startContainer @docker_id, domain.intercept () ->
+    cb()
 
 containerSchema.methods.stop = (domain, cb) ->
-  domain.run () ->
-    docker.stopContainer @docker_id, domain.intercept () ->
-      cb()
+  docker.stopContainer @docker_id, domain.intercept () ->
+    cb()
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]
