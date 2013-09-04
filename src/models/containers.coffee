@@ -464,4 +464,3 @@ containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
           cb null, files
 
 module.exports = mongoose.model 'Containers', containerSchema
-module.exports.docker = docker

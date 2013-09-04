@@ -106,7 +106,7 @@ imageSchema.index
 buildDockerImage = (domain, fspath, tag, cb) ->
   child = cp.spawn 'tar', [ '-c', '--directory', fspath, '.' ]
   req = request.post
-    url: "#{configs.harbourmaster}/images"
+    url: "#{configs.harbourmaster}/v1.3/build"
     headers: { 'content-type': 'application/tar' }
     qs:
       t: tag
@@ -286,4 +286,3 @@ imageSchema.methods.sync = (domain, cb) ->
           cb()
 
 module.exports = mongoose.model 'Images', imageSchema
-module.exports.docker = docker
