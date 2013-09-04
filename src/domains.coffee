@@ -13,17 +13,13 @@ module.exports = (parentDomain) ->
     d.add req
     d.add res
     d.on 'error', (e) ->
-      console.error 'DOMAIN', e
       if parentDomain and configs.throwErrors 
         throw e 
-      else if e.message and dockerExp.test e.message 
-        console.error e.message
+      else if e.message and dockerExp.test e.message
         parts = dockerExp.exec e.message
-        console.error 'parts', parts
         code = parts[1]
         message = parts[2]
         if code >= 500 then code = 502
-        console.error code, message
         res.json code, message: message
       else
         next e
