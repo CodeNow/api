@@ -6,15 +6,15 @@ dockerjs = undefined
 domain = undefined
 mongoose = undefined
 users = undefined
-containers = require("../models/containers")
-users = require("../models/users")
-configs = require("../configs")
+containers = require("./libs/models/containers")
+users = require("./libs/models/users")
+configs = require("./libs/configs")
 dockerjs = require("docker.js")
 domain = require("domain").create()
 mongoose = require("mongoose")
 async = require("async")
 mongoose.connect configs.mongo
-docker = dockerjs(host: configs.docker)
+docker = dockerjs(host: configs.direct_docker)
 domain.on "error", (err) ->
   console.error "CLEANUP ERROR:", err.stack
   process.exit 1

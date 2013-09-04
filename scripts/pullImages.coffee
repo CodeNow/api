@@ -1,12 +1,12 @@
 async = require("async")
-images = require("../models/images")
-users = require("../models/users")
-configs = require("../configs")
+images = require("./lib/models/images")
+users = require("./lib/models/users")
+configs = require("./lib/configs")
 dockerjs = require("docker.js")
 domain = require("domain").create()
 mongoose = require("mongoose")
 mongoose.connect configs.mongo
-docker = dockerjs(host: configs.docker)
+docker = dockerjs(host: configs.direct_docker)
 plus = /\+/g
 slash = /\//g
 encodeId = (id) ->
