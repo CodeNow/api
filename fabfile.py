@@ -154,4 +154,5 @@ def shiva_the_destroyer():
   Death Destruction Chaos.
   """
   run('pm2 stop server.js')
+  run('pm2 stop cleanup.js')
   run('rm -Rf api-server')
