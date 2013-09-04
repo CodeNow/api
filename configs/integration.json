@@ -10,7 +10,6 @@
   "ipaddress": "10.0.1.86",
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
-  "docker": "http://harbourmaster.cloudcosmos.com:3000",
   "rootDomain": "cloudcosmos.com",
   "shortProjectIds": true,
   "socketTimeout": "2 minutes",
@@ -30,10 +29,8 @@
       "environment": "integration"
     }
   },
-  "dnode_host": "10.0.2.90",
-  "dnode_port": 13337,
-  "dnode_access_timeout": "5 seconds",
-  "dnode_sync_timeout": "20 seconds",
+  "harbourmaster": "http://harbourmaster.cloudcosmos.com:3000",
+  "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
   "throwErrors": false,

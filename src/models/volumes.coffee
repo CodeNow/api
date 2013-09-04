@@ -15,7 +15,7 @@ Volumes =
           name: name
           path: path
           content: content
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503
@@ -37,7 +37,7 @@ Volumes =
           dir: srcDir
           name: name
           path: path
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503
@@ -60,7 +60,7 @@ Volumes =
           name: name
           path: path
           content: content
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503
@@ -82,7 +82,7 @@ Volumes =
           dir: srcDir
           name: name
           path: path
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503
@@ -105,7 +105,7 @@ Volumes =
           name: name
           path: path
           newName: newName
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503
@@ -128,7 +128,7 @@ Volumes =
           name: name
           path: path
           newPath: newPath
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503
@@ -150,7 +150,7 @@ Volumes =
           dir: srcDir
           ignores: ignores
           exts: exts
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503
@@ -172,7 +172,7 @@ Volumes =
           dir: srcDir
           name: name
           path: path
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503
@@ -194,7 +194,7 @@ Volumes =
           dir: srcDir
           sub: subDir
           exts: exts
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503
@@ -217,7 +217,7 @@ Volumes =
           name: name
           path: path
           recursive: recursive
-        timeout: configs.dnode_access_timeout
+        timeout: configs.runnable_access_timeout
       , (err, res) ->
         if err then throw err
         if res.statusCode is 503

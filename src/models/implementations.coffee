@@ -52,12 +52,12 @@ implementationSchema.statics.listImplementations = (domain, userId, cb) ->
   users.findUser domain, _id: userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
       if user.isModerator
-        @find {}, domain.intercept (implementations) => 
+        @find {}, domain.intercept (implementations) =>
           cb null, implementations.map (implementation) -> implementation.toJSON()
       else
-        @find 
+        @find
           owner: userId
-        , domain.intercept (implementations) => 
+        , domain.intercept (implementations) =>
           cb null, implementations.map (implementation) -> implementation.toJSON()
 
 implementationSchema.statics.getImplementationBySpecification = (domain, opts, cb) ->
@@ -66,7 +66,7 @@ implementationSchema.statics.getImplementationBySpecification = (domain, opts, c
       @findOne
         owner: opts.userId
         implements: opts.implements
-      , domain.intercept (implementation) => 
+      , domain.intercept (implementation) =>
         cb null, implementation.toJSON()
 
 implementationSchema.statics.getImplementation = (domain, opts, cb) ->
@@ -127,7 +127,7 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
         @remove
           _id: opts.implementationId
         , domain.intercept (count) =>
-          if count is 0 
+          if count is 0
             cb error 404, 'implementation not found'
           else
             cb null
@@ -136,7 +136,7 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
           owner: opts.userId
           _id: opts.implementationId
         , domain.intercept (count) =>
-          if count is 0 
+          if count is 0
             cb error 404, 'implementation not found'
           else
             cb null
@@ -155,25 +155,23 @@ updateEnv = (domain, opts, cb) ->
           request.get url, domain.bind (err, res, body) =>
             request.get url, domain.intercept (res, body) =>
               async.each opts.requirements, (requirement, cb) =>
-                request.post 
+                request.post
                   url: url
-                  json: 
+                  json:
                     key: requirement.name
                     value: requirement.value
                 , cb
               , domain.intercept () =>
                 request.get url, domain.intercept (res, body) =>
-                  console.log body
                   cb null
         (cb) =>
-          url = "#{configs.docker}/custom/changeRoute"
-          request.post 
-            json: 
+          url = "#{configs.harbourmaster}/containers/#{opts.containerId}/route"
+          request
+            method: 'PUT'
+            json:
               webToken: opts.subdomain
-              containerId: container.docker_id
             url: url
           , domain.intercept (res, body) =>
-            console.log body
             cb null
       ], domain.intercept cb
     else

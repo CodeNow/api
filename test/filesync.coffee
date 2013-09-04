@@ -375,7 +375,7 @@ describe 'file sync feature', ->
                   if err then done err else
                     res.should.have.status 201
                     userRunnableId = res.body._id
-                    res.body.should.have.property 'token'
+                    res.body.should.have.property 'servicesToken'
                     token = res.body.token
                     user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
                       .end (err, res) ->
@@ -412,7 +412,7 @@ describe 'file sync feature', ->
                   if err then done err else
                     res.should.have.status 201
                     userRunnableId = res.body._id
-                    res.body.should.have.property 'token'
+                    res.body.should.have.property 'servicesToken'
                     token = res.body.token
                     user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
                       .end (err, res) ->
@@ -455,7 +455,7 @@ describe 'file sync feature', ->
                   if err then done err else
                     res.should.have.status 201
                     userRunnableId = res.body._id
-                    res.body.should.have.property 'token'
+                    res.body.should.have.property 'servicesToken'
                     token = res.body.token
                     user.get("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}/files")
                       .end (err, res) ->

@@ -43,7 +43,7 @@ describe 'runnables api', ->
                             res.body.should.have.property 'parent', runnableId
                             res.body.should.have.property 'owner', userId
                             res.body.should.not.have.property 'files'
-                            res.body.should.have.property 'token'
+                            res.body.should.have.property 'servicesToken'
                             if instance.configs.shortProjectIds
                               res.body._id.length.should.equal 16
                             else
@@ -79,7 +79,7 @@ describe 'runnables api', ->
                             res.body.should.have.property 'parent', runnableId
                             res.body.should.have.property 'owner', userId
                             res.body.should.not.have.property 'files'
-                            res.body.should.have.property 'token'
+                            res.body.should.have.property 'servicesToken'
                             if instance.configs.shortProjectIds
                               res.body._id.length.should.equal 16
                             else
