@@ -120,26 +120,27 @@ buildDockerImage = (domain, fspath, tag, cb) ->
   child.stdout.pipe req
 
 syncDockerImage = (domain, image, cb) ->
-  servicesToken = 'services-' + uuid.v4()
-  docker.createContainer
-    servicesToken: servicesToken
-    webToken: 'web-' + uuid.v4()
-    Env: [
-      "RUNNABLE_USER_DIR=#{image.file_root}"
-      "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
-      "RUNNABLE_START_CMD=#{image.start_cmd}"
-    ]
-    Hostname: image._id.toString()
-    Image: image.docker_id.toString()
-    PortSpecs: [ image.port.toString() ]
-    Cmd: [ image.cmd ]
-  , domain.intercept (res) ->
-    containerId = res.Id
-    docker.inspectContainer containerId, domain.intercept (result) ->
-      sync domain, servicesToken, image, (err) ->
-        if err then cb err else
-          docker.removeContainer containerId, domain.intercept () ->
-            cb()
+  domain.run () ->
+    servicesToken = 'services-' + uuid.v4()
+    docker.createContainer
+      servicesToken: servicesToken
+      webToken: 'web-' + uuid.v4()
+      Env: [
+        "RUNNABLE_USER_DIR=#{image.file_root}"
+        "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
+        "RUNNABLE_START_CMD=#{image.start_cmd}"
+      ]
+      Hostname: image._id.toString()
+      Image: image.docker_id.toString()
+      PortSpecs: [ image.port.toString() ]
+      Cmd: [ image.cmd ]
+    , domain.intercept (res) ->
+      containerId = res.Id
+      docker.inspectContainer containerId, domain.intercept (result) ->
+        sync domain, servicesToken, image, (err) ->
+          if err then cb err else
+            docker.removeContainer containerId, domain.intercept () ->
+              cb()
 
 imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
   fs.exists "#{runnablePath}/runnable.json", (exists) =>
@@ -230,27 +231,28 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
           cb null, image
 
 imageSchema.methods.updateFromContainer = (domain, container, cb) ->
-  @name = container.name
-  @cmd = container.cmd
-  @file_root = container.file_root
-  @service_cmds = container.service_cmds
-  @start_cmd = container.start_cmd
-  @port = container.port
-  @files = [ ]
-  for file in container.files
-    @files.push file.toJSON()
-  @tags = [ ]
-  for tag in container.tags
-    @tags.push tag.toJSON()
-  docker.commit
-    queryParams:
-      container: container.docker_id
-      m: "#{container.parent} => #{@_id}"
-      author: @owner.toString()
-  , domain.intercept (result) =>
-    @docker_id = result.Id
-    @save domain.intercept () =>
-      cb null, @
+  domain.run () =>
+    @name = container.name
+    @cmd = container.cmd
+    @file_root = container.file_root
+    @service_cmds = container.service_cmds
+    @start_cmd = container.start_cmd
+    @port = container.port
+    @files = [ ]
+    for file in container.files
+      @files.push file.toJSON()
+    @tags = [ ]
+    for tag in container.tags
+      @tags.push tag.toJSON()
+    docker.commit
+      queryParams:
+        container: container.docker_id
+        m: "#{container.parent} => #{@_id}"
+        author: @owner.toString()
+    , domain.intercept (result) =>
+      @docker_id = result.Id
+      @save domain.intercept () =>
+        cb null, @
 
 imageSchema.statics.destroy = (domain, id, cb) ->
   @findOne _id: id, domain.intercept (image) =>
