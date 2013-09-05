@@ -222,10 +222,13 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         image.files.push file.toJSON()
       for tag in container.tags
         image.tags.push tag.toJSON()
+      encodedId = encodeId image._id.toString()
       request
         url: "#{configs.harbourmaster}/containers/commit"
         method: 'POST'
         qs:
+          repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
+          tag: 'latest'
           container: container.docker_id
           m: "#{container.parent} => #{image._id}"
           author: image.owner.toString()
@@ -252,6 +255,8 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
     url: "#{configs.harbourmaster}/containers/commit"
     method: 'POST'
     qs:
+      repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
+      tag: 'latest'
       container: container.docker_id
       m: "#{container.parent} => #{@_id}"
       author: @owner.toString()
