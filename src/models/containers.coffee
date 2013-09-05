@@ -127,7 +127,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
           PortSpecs: [ container.port.toString() ]
           Cmd: [ container.cmd ]
       , domain.intercept (res) ->
-        container.docker_id = res._id
+        container.docker_id = res.body._id
         container.save domain.intercept () ->
           cb null, container
     if image.specification?
@@ -153,7 +153,7 @@ containerSchema.statics.destroy = (domain, id, cb) ->
             request
               url: "#{configs.harbourmaster}/containers/#{container.docker_id}"
               method: 'DELETE'
-            , domain.intercept (res) ->
+            , domain.intercept (res) =>
               @remove { _id: id }, domain.intercept () ->
                 cb()
           if not state.running then remove() else
@@ -162,21 +162,22 @@ containerSchema.statics.destroy = (domain, id, cb) ->
                 remove()
 
 containerSchema.methods.getProcessState = (domain, cb) ->
-  req = request
+  request
     url: "http://#{@servicesToken}.#{configs.domain}/api/running"
     method: 'GET'
     timeout: configs.runnable_access_timeout
   , domain.intercept (res) ->
     if res.statusCode is 503 then cb null, running: false else
       if res.statusCode is 502 then cb error 500, 'runnable not responding to status requests' else
-        if res.statusCode isnt 200 then cb error res.statusCode, res.body.message else
-          cb null, running: res.body.running
-    doReq()
+        if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+          if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
+            res.body = JSON.parse res.body
+            cb null, running: res.body.running
 
 containerSchema.methods.start = (domain, cb) ->
-  doReq = () ->
-    req = request
-      url: "http://#{subDomain}.#{configs.domain}/api/start"
+  doReq = () =>
+    request
+      url: "http://#{@servicesToken}.#{configs.domain}/api/start"
       method: 'GET'
       timeout: configs.runnable_access_timeout
     , domain.intercept (res) ->
@@ -186,20 +187,22 @@ containerSchema.methods.start = (domain, cb) ->
         , 500
       else
         if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
-          if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-            cb null, res.body.content
+          if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+            if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
+              cb()
   doReq()
 
 containerSchema.methods.stop = (domain, cb) ->
-  req = request
-    url: "http://#{subDomain}.#{configs.domain}/api/stop"
+  request
+    url: "http://#{@servicesToken}.#{configs.domain}/api/stop"
     method: 'GET'
     timeout: configs.runnable_access_timeout
   , domain.intercept (res) ->
-    if res.statusCode is 503 then cb() else
+    if res.statusCode is 503 then cb() else # container is not running no sense in waking it up
       if res.statusCode is 502 then cb error 500, 'runnable not responding to stop request' else
-        if res.statusCode isnt 201 then cb error res.statusCode, res.body.message else
-          cb null, res.body.content
+        if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+          if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
+            cb()
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]

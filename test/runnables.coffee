@@ -135,21 +135,6 @@ describe 'runnables api', ->
                             res.body[0].should.not.have.property 'files'
                             instance.stop done
 
-  it 'should store the long container id associated with a ::runnable', (done) ->
-    helpers.createServer configs, done, (err, instance) ->
-      if err then done err else
-        helpers.createImage 'node.js', (err, runnableId) ->
-          if err then done err else
-            helpers.authedUser (err, user) ->
-              if err then done err else
-                user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
-                  .end (err, res) ->
-                    if err then done err else
-                      res.should.have.status 201
-                      res.body.should.have.property 'long_docker_id'
-                      res.body.long_docker_id.indexOf(res.body.docker_id).should.not.equal -1
-                      instance.stop done
-
   it 'should be able to discard/undo any unsaved changes made while editing a ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
@@ -908,7 +893,7 @@ describe 'runnables api', ->
                       runnableId = res.body._id
                       user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                         .set('content-type', 'application/json')
-                        .send(JSON.stringify({ running: true, name: 'name', description:'' }))
+                        .send(JSON.stringify({ running: true, name: 'name', description:'adsfs' }))
                         .end (err, res) ->
                           if err then done err else
                             res.should.have.status 200
@@ -988,26 +973,3 @@ describe 'runnables api', ->
                               res.body.should.have.property 'running', false
                               instance.stop done
                       , 1000
-
-  it 'should pass back a service url that the client can hit when a ::runnable is started', (done) ->
-    helpers.createServer configs, done, (err, instance) ->
-      if err then done err else
-        helpers.createImage 'node.js', (err, runnableId) ->
-          if err then done err else
-            helpers.authedUser (err, user) ->
-              if err then done err else
-                user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
-                  .end (err, res) ->
-                    if err then done err else
-                      res.should.have.status 201
-                      res.body.should.have.property 'running', false
-                      name = res.body.name
-                      runnableId = res.body._id
-                      user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
-                        .set('content-type', 'application/json')
-                        .send(JSON.stringify({ running: true, name: name, description:'' }))
-                        .end (err, res) ->
-                          if err then done err else
-                            res.should.have.status 200
-                            res.body.should.have.property 'running', true
-                            instance.stop done

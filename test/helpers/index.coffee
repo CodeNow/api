@@ -13,6 +13,7 @@ Helpers =
   createServer: (configs, done, cb) ->
     d = domain.create()
     d.on 'error', (err) ->
+      console.log err.stack
       done err
     instance = new apiserver configs, d
     d.run () ->
@@ -218,7 +219,7 @@ Helpers =
           userRunnableId = res.body._id
           user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
             .set('content-type', 'application/json')
-            .send(JSON.stringify({ name: name, running: false }))
+            .send(JSON.stringify({ name: name, running: false, description: 'a runnable desc' }))
             .end (err, res) ->
               if err then cb err else
                 res.should.have.status 200

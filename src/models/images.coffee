@@ -134,7 +134,7 @@ syncDockerImage = (domain, image, cb) ->
       PortSpecs: [ image.port.toString() ]
       Cmd: [ image.cmd ]
   , domain.intercept (res) ->
-    containerId = res.Id
+    containerId = res.body._id
     sync domain, servicesToken, image, (err) ->
       if err then cb err else
         request
@@ -229,7 +229,8 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
           m: "#{container.parent} => #{image._id}"
           author: image.owner.toString()
       , domain.intercept (res) ->
-        image.docker_id = res.Id
+        res.body = JSON.parse res.body
+        image.docker_id = res.body.Id
         image.save domain.intercept () ->
           cb null, image
 
@@ -253,8 +254,9 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
       container: container.docker_id
       m: "#{container.parent} => #{@_id}"
       author: @owner.toString()
-  , domain.intercept (res) ->
-    @docker_id = res.Id
+  , domain.intercept (res) =>
+    res.body = JSON.parse res.body
+    @docker_id = res.body.Id
     @save domain.intercept () =>
       cb null, @
 
