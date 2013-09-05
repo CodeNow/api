@@ -13,6 +13,7 @@
   "rootDomain": "runnableapp.dev",
   "direct_docker": "http://docker.runnableapp.dev",
   "shortProjectIds": true,
+  "dockerRegistry": "registry.runnable.com",
   "harbourmaster": "http://harbourmaster.runnableapp.dev",
   "runnable_access_timeout": "5 seconds",
   "logExpress": false,

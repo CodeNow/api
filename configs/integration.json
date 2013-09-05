@@ -29,6 +29,7 @@
       "environment": "integration"
     }
   },
+  "dockerRegistry": "registry.runnable.com",
   "harbourmaster": "http://harbourmaster.cloudcosmos.com:3000",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,

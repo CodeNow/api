@@ -170,7 +170,8 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
                       @findOne name: runnable.name, domain.intercept (existing) =>
                         if existing then cb error 403, 'a runnable by that name already exists' else
                           image = new @()
-                          tag = image._id.toString()
+                          encodedId = encodeId image._id.toString()
+                          tag = "#{configs.dockerRegistry}/runnable/#{encodedId}"
                           buildDockerImage domain, runnablePath, tag, (err, docker_id) ->
                             if err then cb err else
                               image.docker_id = docker_id
@@ -286,5 +287,12 @@ imageSchema.methods.sync = (domain, cb) ->
         @synced = true
         @save domain.intercept () ->
           cb()
+
+plus = /\+/g
+slash = /\//g
+minus = /-/g
+underscore = /_/g
+
+encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
 
 module.exports = mongoose.model 'Images', imageSchema

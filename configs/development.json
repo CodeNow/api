@@ -29,6 +29,7 @@
       "environment": "development"
     }
   },
+  "dockerRegistry": "registry.runnable.com",
   "harbourmaster": "http://harbourmaster.runnableapp.dev",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,

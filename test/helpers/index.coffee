@@ -13,7 +13,6 @@ Helpers =
   createServer: (configs, done, cb) ->
     d = domain.create()
     d.on 'error', (err) ->
-      console.log err.stack
       done err
     instance = new apiserver configs, d
     d.run () ->

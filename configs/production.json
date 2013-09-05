@@ -29,6 +29,7 @@
       "environment": "production"
     }
   },
+  "dockerRegistry": "registry.runnable.com",
   "harbourmaster": "http://harbourmaster.runnable.com:3000",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
