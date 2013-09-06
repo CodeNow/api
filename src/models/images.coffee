@@ -251,6 +251,7 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   @tags = [ ]
   for tag in container.tags
     @tags.push tag.toJSON()
+  encodedId = encodeId @_id.toString()
   request
     url: "#{configs.harbourmaster}/containers/commit"
     method: 'POST'
