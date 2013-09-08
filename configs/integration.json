@@ -30,7 +30,7 @@
     }
   },
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "http://harbourmaster.cloudcosmos.com:3000",
+  "harbourmaster": "http://10.0.1.226 22:3000",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
