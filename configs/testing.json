@@ -15,7 +15,7 @@
   "shortProjectIds": true,
   "dockerRegistry": "registry.runnable.com",
   "harbourmaster": "http://harbourmaster.runnableapp.dev",
-  "runnable_access_timeout": "5 seconds",
+  "runnable_access_timeout": "10 seconds",
   "logExpress": false,
   "throwErrors": true,
   "logStack": false,

@@ -115,6 +115,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         container.files.push file.toJSON()
       for tag in image.tags
         container.tags.push tag.toJSON()
+      encodedId = encodeId image._id.toString()
       request
         url: "#{configs.harbourmaster}/containers"
         method: 'POST'
@@ -123,7 +124,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
           webToken: subdomain or container.webToken
           Env: env
           Hostname: 'runnable'
-          Image: image.docker_id.toString()
+          Image: "#{configs.dockerRegistry}/runnable/#{encodedId}"
           PortSpecs: [ container.port.toString() ]
           Cmd: [ container.cmd ]
       , domain.intercept (res) ->
@@ -465,5 +466,12 @@ containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
       volumes.readDirectory domain, @servicesToken, @file_root, subDir, exts, (err, files) ->
         if err then cb err else
           cb null, files
+
+plus = /\+/g
+slash = /\//g
+minus = /-/g
+underscore = /_/g
+
+encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
 
 module.exports = mongoose.model 'Containers', containerSchema
