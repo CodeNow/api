@@ -161,6 +161,27 @@ Helpers =
           res.should.have.status 201
           cb null, res.body._id
 
+  adminCreateImage: (name, cb) ->
+    @authedAdminUser (err, user) ->
+      if err then cb err else
+        req = user.post("http://localhost:#{configs.port}/runnables/import")
+        req.set 'content-type', 'application/x-gzip'
+        compress = zlib.createGzip()
+        packer = tar.Pack()
+        reader = fstream.Reader
+          path: "#{__dirname}/../fixtures/runnables/#{name}"
+          type: 'Directory'
+          mode: '0755'
+        compress.pipe(req)
+        packer.pipe(compress)
+        reader.pipe(packer)
+        reader.resume()
+        req.on 'error', (err) ->
+          cb err
+        req.on 'response', (res) ->
+          res.should.have.status 201
+          cb null, res.body._id, user
+
   createUnsyncedImage: (name, cb) ->
     @authedUser (err, user) ->
       if err then cb err else
@@ -218,7 +239,7 @@ Helpers =
           userRunnableId = res.body._id
           user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
             .set('content-type', 'application/json')
-            .send(JSON.stringify({ name: name, running: false }))
+            .send(JSON.stringify({ name: name, description:'', running: false }))
             .end (err, res) ->
               if err then cb err else
                 res.should.have.status 200

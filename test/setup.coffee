@@ -6,7 +6,7 @@ mkdirp = require 'mkdirp'
 mongodb = require 'mongodb'
 redis = require 'redis'
 state = require './state'
-
+nocleanup = false
 db = mongodb.Db
 
 redis_client = redis.createClient()
@@ -27,24 +27,25 @@ beforeEach (done) ->
           test_db.close done
 
 afterEach (done) ->
-  done = wrapDone done
-  redis_client.flushall () ->
-    db.connect configs.mongo, (err, test_db) ->
-      if err then done err else
-        test_db.dropDatabase (err) ->
-          if err then done err else
-            test_db.close () ->
-              docker.listContainers (err, containers) ->
-                if err then done err else
-                  async.forEach containers, (container, cb) ->
-                    docker.stopContainer container.Id, cb
-                  , (err) ->
-                    if err then done err else
-                      docker.listContainers queryParams: all: true, (err, containers) ->
-                        if err then done err else
-                          async.forEach containers, (container, cb) ->
-                            docker.removeContainer container.Id, cb
-                          , done
+  if nocleanup then done(); else
+    done = wrapDone done
+    redis_client.flushall () ->
+      db.connect configs.mongo, (err, test_db) ->
+        if err then done err else
+          test_db.dropDatabase (err) ->
+            if err then done err else
+              test_db.close () ->
+                docker.listContainers (err, containers) ->
+                  if err then done err else
+                    async.forEach containers, (container, cb) ->
+                      docker.stopContainer container.Id, cb
+                    , (err) ->
+                      if err then done err else
+                        docker.listContainers queryParams: all: true, (err, containers) ->
+                          if err then done err else
+                            async.forEach containers, (container, cb) ->
+                              docker.removeContainer container.Id, cb
+                            , done
 
 before (done) ->
   done = wrapDone done
@@ -74,9 +75,10 @@ wrapDone = (done) ->
     if err? then cleanup () -> donedone err else donedone()
 
 cleanup = (cb) ->
-  redis_client.flushall () ->
-    db.connect configs.mongo, (err, test_db) ->
-      if err then cb err else
-        test_db.dropDatabase (err) ->
-          if err then cb err else
-            test_db.close cb
+  if nocleanup then cb() else
+    redis_client.flushall () ->
+      db.connect configs.mongo, (err, test_db) ->
+        if err then cb err else
+          test_db.dropDatabase (err) ->
+            if err then cb err else
+              test_db.close cb

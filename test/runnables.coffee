@@ -2,6 +2,7 @@ apiserver = require '../lib'
 configs = require '../lib/configs'
 helpers = require './helpers'
 sa = require 'superagent'
+async = require 'async'
 
 describe 'runnables api', ->
 
@@ -1011,3 +1012,52 @@ describe 'runnables api', ->
                             res.should.have.status 200
                             res.body.should.have.property 'running', true
                             instance.stop done
+
+it 'should be able to be #searched by name',  (done) ->
+  helpers.createServer configs, done, (err, instance) ->
+    if err then done err else
+    helpers.adminCreateImage 'node.js', (err, imageId, user) ->
+      numProjects = 10
+      names = [
+        "How to OAuth with Twitter",
+        "Server-side OAuth with Google",
+        "Get user details (email address) with JavaScript SDK",
+        "Tweet a picture using Twitter's API",
+        "How to use Namespaces with socket.io and node.js",
+        "Get Friends with Twitter",
+        "List files on Google Drive",
+        "Create a new doc with Google Drive API",
+        "Sending and getting data",
+        "Sending volatile messages"
+      ];
+      i = 0
+      async.whilst () ->
+        i < numProjects
+      , (cb) ->
+        helpers.createNamedTaggedImage user, imageId, names[i], 'node.js', cb
+        i++
+      , () ->
+        search = "picture"
+        user.get("http://localhost:#{configs.port}/runnables?search=#{search}")
+          .end (err, res) ->
+            if err then done err else
+              res.should.have.status 200
+              res.body.should.be.a.array
+              res.body.length.should.equal 1
+              res.body[0].name.should.equal "Tweet a picture using Twitter's API"
+              search = "Twitter"
+              user.get("http://localhost:#{configs.port}/runnables?search=#{search}")
+                .end (err, res) ->
+                  if err then done err else
+                    console.log(res.body)
+                    res.should.have.status 200
+                    res.body.should.be.a.array
+                    res.body.length.should.equal 3
+                    user.get("http://localhost:#{configs.port}/runnables?search=#{search}&limit=1")
+                      .end (err, res) ->
+                        if err then done err else
+                          console.log(res.body)
+                          res.should.have.status 200
+                          res.body.should.be.a.array
+                          res.body.length.should.equal 1
+                          instance.stop done
