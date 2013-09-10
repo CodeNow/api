@@ -432,7 +432,7 @@ Runnables =
             cb()
 
   searchImages: (domain, searchText, limit, cb) ->
-    images.searchByName domain, searchText, limit, (err, results) ->
+    images.search domain, searchText, limit, (err, results) ->
       if err then cb err else
         results.forEach (res) ->
           res._id = encodeId res._id

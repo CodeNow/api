@@ -235,10 +235,10 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         image.save domain.intercept () ->
           cb null, image
 
-imageSchema.statics.searchByName = (domain, searchText, limit, cb) ->
+imageSchema.statics.search = (domain, searchText, limit, cb) ->
   opts =
     filter : tags:$not:$size:0
-    project: name:1, description:1
+    project: name:1, description:1, tags:1
     limit  : if (limit <= configs.defaultPageLimit) then limit else configs.defaultPageLimit
   this.textSearch searchText, opts, (err, output) ->
     if err then throw err else
