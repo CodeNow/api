@@ -13,6 +13,7 @@ request = require 'request'
 sync = require './sync'
 uuid = require 'node-uuid'
 _ = require 'lodash'
+textSearch = require 'mongoose-text-search'
 
 docker = dockerjs host: configs.docker
 
@@ -100,11 +101,16 @@ imageSchema = new Schema
   specification:
     type: ObjectId
 
+imageSchema.plugin(textSearch)
+
 imageSchema.set 'toJSON', virtuals: true
 
 imageSchema.index
   tags: 1
   parent: 1
+imageSchema.index
+  name: 'text'
+  tags: 'text'
 
 buildDockerImage = (domain, fspath, tag, cb) ->
   child = cp.spawn 'tar', [ '-c', '--directory', fspath, '.' ]
@@ -228,6 +234,16 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         image.docker_id = result.Id
         image.save domain.intercept () ->
           cb null, image
+
+imageSchema.statics.searchByName = (domain, searchText, limit, cb) ->
+  opts =
+    filter : tags:$not:$size:0
+    project: name:1, description:1
+    limit  : if (limit <= configs.defaultPageLimit) then limit else configs.defaultPageLimit
+  this.textSearch searchText, opts, (err, output) ->
+    if err then throw err else
+      images = output.results.map (result) -> if result.obj.toJSON then result.obj.toJSON() else result.obj
+      cb null, images
 
 imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   @name = container.name

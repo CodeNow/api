@@ -431,6 +431,13 @@ Runnables =
           container.save domain.intercept () ->
             cb()
 
+  searchImages: (domain, searchText, limit, cb) ->
+    images.searchByName domain, searchText, limit, (err, results) ->
+      if err then cb err else
+        results.forEach (res) ->
+          res._id = encodeId res._id
+        cb null, results
+
   syncFiles: (domain, userId, runnableId, cb) ->
     fetchContainer domain, userId, runnableId, (err, container) ->
       if err then cb err else
