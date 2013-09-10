@@ -31,7 +31,7 @@ containerSchema = new Schema
     default: Date.now
   target:
     type: ObjectId
-  docker_id:
+  docker_id:  # deprecated
     type: String
   image:
     type: String
@@ -128,7 +128,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
           PortSpecs: [ container.port.toString() ]
           Cmd: [ container.cmd ]
       , domain.intercept (res) ->
-        container.docker_id = res.body._id
+        # container.docker_id = res.body._id
         container.save domain.intercept () ->
           cb null, container
     if image.specification?
@@ -152,7 +152,7 @@ containerSchema.statics.destroy = (domain, id, cb) ->
         if err then cb err else
           remove = () =>
             request
-              url: "#{configs.harbourmaster}/containers/#{container.docker_id}"
+              url: "#{configs.harbourmaster}/containers/#{container.servicesToken}"
               method: 'DELETE'
             , domain.intercept (res) =>
               @remove { _id: id }, domain.intercept () ->
@@ -176,6 +176,7 @@ containerSchema.methods.getProcessState = (domain, cb) ->
             cb null, running: res.body.running
 
 containerSchema.methods.start = (domain, cb) ->
+  # should no longer need to try multiple times
   doReq = () =>
     request
       url: "http://#{@servicesToken}.#{configs.domain}/api/start"

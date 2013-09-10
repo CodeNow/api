@@ -106,7 +106,7 @@ imageSchema.index
 buildDockerImage = (domain, fspath, tag, cb) ->
   child = cp.spawn 'tar', [ '-c', '--directory', fspath, '.' ]
   req = request.post
-    url: "#{configs.harbourmaster}/v1.3/build"
+    url: "#{configs.harbourmaster}/build"
     headers: { 'content-type': 'application/tar' }
     qs:
       t: tag
@@ -134,11 +134,11 @@ syncDockerImage = (domain, image, cb) ->
       PortSpecs: [ image.port.toString() ]
       Cmd: [ image.cmd ]
   , domain.intercept (res) ->
-    containerId = res.body._id
+    # containerId = res.body._id
     sync domain, servicesToken, image, (err) ->
       if err then cb err else
         request
-          url: "#{configs.harbourmaster}/containers/#{containerId}"
+          url: "#{configs.harbourmaster}/containers/#{servicesToken}"
           method: 'DELETE'
         , domain.intercept () ->
           cb()
@@ -224,12 +224,12 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         image.tags.push tag.toJSON()
       encodedId = encodeId image._id.toString()
       request
-        url: "#{configs.harbourmaster}/containers/commit"
+        url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
         method: 'POST'
         qs:
           repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
           tag: 'latest'
-          container: container.docker_id
+          # container: container.docker_id
           m: "#{container.parent} => #{image._id}"
           author: image.owner.toString()
       , domain.intercept (res) ->
@@ -253,12 +253,12 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
     @tags.push tag.toJSON()
   encodedId = encodeId @_id.toString()
   request
-    url: "#{configs.harbourmaster}/containers/commit"
+    url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
     method: 'POST'
     qs:
       repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
       tag: 'latest'
-      container: container.docker_id
+      # container: container.docker_id
       m: "#{container.parent} => #{@_id}"
       author: @owner.toString()
   , domain.intercept (res) =>
