@@ -121,7 +121,7 @@ describe 'hibernate feature', ->
                     if err then done err else
                       res.should.have.status 201
                       userRunnableId = res.body._id
-                      res.body.should.have.property 'token'
+                      res.body.should.have.property 'servicesToken'
                       token = res.body.token
                       terminalUrl = "http://terminals.runnableapp.dev/term.html?termId=#{token}"
                       helpers.sendCommand terminalUrl, 'rm server.js', (err, output) ->

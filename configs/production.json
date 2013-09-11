@@ -10,7 +10,6 @@
   "ipaddress": "10.0.1.54",
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
-  "docker": "http://harbourmaster.runnable.com:3000",
   "rootDomain": "runnable.com",
   "shortProjectIds": true,
   "socketTimeout": "2 minutes",
@@ -30,10 +29,9 @@
       "environment": "production"
     }
   },
-  "dnode_host": "10.0.2.232",
-  "dnode_port": 13337,
-  "dnode_access_timeout": "5 seconds",
-  "dnode_sync_timeout": "20 seconds",
+  "dockerRegistry": "registry.runnable.com",
+  "harbourmaster": "http://harbourmaster.runnable.com:3000",
+  "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
   "throwErrors": false,

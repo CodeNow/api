@@ -48,18 +48,7 @@ afterEach (done) ->
                             , done
 
 before (done) ->
-  done = wrapDone done
-  docker.listContainers (err, containers) ->
-    if err then done err else
-      async.forEach containers, (container, cb) ->
-        docker.stopContainer container.Id, cb
-      , (err) ->
-        if err then done err else
-          docker.listContainers queryParams: all: true, (err, containers) ->
-            if err then done err else
-              async.forEach containers, (container, cb) ->
-                docker.removeContainer container.Id, cb
-              , done
+  done()
 
 after (done) ->
   cleanup done

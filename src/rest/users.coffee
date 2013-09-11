@@ -60,15 +60,14 @@ module.exports = (parentDomain) ->
             res.json access_token: access_token
 
   app.all '*', (req, res, next) ->
-    if (/\/runnables\?map=true|\/channels\?map=true/.test(url.parse(req.url).path))
-      return next()
-    token = req.get('runnable-token');
-    if not token then res.json 401, message: 'access token required' else
-      redis_client.get token, (err, user_id) ->
-        if err then throw err
-        if not user_id then res.json 401, message: 'must provide a valid access token' else
-          req.user_id = user_id
-          next()
+    if (/\/runnables\?map=true|\/channels\?map=true/.test(url.parse(req.url).path)) then next() else
+      token = req.get 'runnable-token'
+      if not token then res.json 401, message: 'access token required' else
+        redis_client.get token, (err, user_id) ->
+          if err then throw err
+          if not user_id then res.json 401, message: 'must provide a valid access token' else
+            req.user_id = user_id
+            next()
 
   getusers = (req, res) ->
     userIds = req.query.ids or [ ]

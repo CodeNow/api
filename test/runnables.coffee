@@ -44,7 +44,7 @@ describe 'runnables api', ->
                             res.body.should.have.property 'parent', runnableId
                             res.body.should.have.property 'owner', userId
                             res.body.should.not.have.property 'files'
-                            res.body.should.have.property 'token'
+                            res.body.should.have.property 'servicesToken'
                             if instance.configs.shortProjectIds
                               res.body._id.length.should.equal 16
                             else
@@ -58,10 +58,11 @@ describe 'runnables api', ->
                                   res.body.length.should.equal 3
                                   instance.stop done
 
-  it 'should be able to edit a tagged published ::runnable', (done) ->
+  it 'should be able to edit a tagged published ::runnable ::current', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createTaggedImage 'node.js', 'node.js', (err, runnableId) ->
+          console.log runnableId
           if err then done err else
             helpers.authedUser (err, user) ->
               if err then done err else
@@ -70,29 +71,31 @@ describe 'runnables api', ->
                     if err then done err else
                       res.should.have.status 200
                       userId = res.body._id
-                      user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
-                        .end (err, res) ->
-                          if err then done err else
-                            res.should.have.status 201
-                            res.should.have.property 'body'
-                            res.body.should.have.property 'docker_id'
-                            res.body.should.have.property '_id'
-                            res.body.should.have.property 'parent', runnableId
-                            res.body.should.have.property 'owner', userId
-                            res.body.should.not.have.property 'files'
-                            res.body.should.have.property 'token'
-                            if instance.configs.shortProjectIds
-                              res.body._id.length.should.equal 16
-                            else
-                              res.body._id.length.should.equal 24
-                            runnableId = res.body._id
-                            user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
-                              .end (err, res) ->
-                                if err then done err else
-                                  res.should.have.status 200
-                                  res.body.should.be.a.array
-                                  res.body.length.should.equal 3
-                                  instance.stop done
+                      setTimeout () ->
+                        user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 201
+                              res.should.have.property 'body'
+                              res.body.should.have.property 'docker_id'
+                              res.body.should.have.property '_id'
+                              res.body.should.have.property 'parent', runnableId
+                              res.body.should.have.property 'owner', userId
+                              res.body.should.not.have.property 'files'
+                              res.body.should.have.property 'servicesToken'
+                              if instance.configs.shortProjectIds
+                                res.body._id.length.should.equal 16
+                              else
+                                res.body._id.length.should.equal 24
+                              runnableId = res.body._id
+                              user.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+                                .end (err, res) ->
+                                  if err then done err else
+                                    res.should.have.status 200
+                                    res.body.should.be.a.array
+                                    res.body.length.should.equal 3
+                                    instance.stop done
+                      , 20000
 
   it 'should be able to query for an existing unsaved ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -135,21 +138,6 @@ describe 'runnables api', ->
                             res.body[0].should.have.property '_id', myRunnableId
                             res.body[0].should.not.have.property 'files'
                             instance.stop done
-
-  it 'should store the long container id associated with a ::runnable', (done) ->
-    helpers.createServer configs, done, (err, instance) ->
-      if err then done err else
-        helpers.createImage 'node.js', (err, runnableId) ->
-          if err then done err else
-            helpers.authedUser (err, user) ->
-              if err then done err else
-                user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
-                  .end (err, res) ->
-                    if err then done err else
-                      res.should.have.status 201
-                      res.body.should.have.property 'long_docker_id'
-                      res.body.long_docker_id.indexOf(res.body.docker_id).should.not.equal -1
-                      instance.stop done
 
   it 'should be able to discard/undo any unsaved changes made while editing a ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
@@ -909,7 +897,7 @@ describe 'runnables api', ->
                       runnableId = res.body._id
                       user.put("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
                         .set('content-type', 'application/json')
-                        .send(JSON.stringify({ running: true, name: 'name', description:'' }))
+                        .send(JSON.stringify({ running: true, name: 'name', description:'adsfs' }))
                         .end (err, res) ->
                           if err then done err else
                             res.should.have.status 200

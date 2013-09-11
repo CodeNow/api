@@ -2,7 +2,6 @@ async = require 'async'
 cp = require 'child_process'
 configs = require '../configs'
 crypto = require 'crypto'
-dockerjs = require 'docker.js'
 domain = require 'domain'
 error = require '../error'
 fs = require 'fs'
@@ -15,8 +14,6 @@ uuid = require 'node-uuid'
 _ = require 'lodash'
 textSearch = require 'mongoose-text-search'
 
-docker = dockerjs host: configs.docker
-
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
@@ -28,8 +25,6 @@ imageSchema = new Schema
     default: ''
   owner:
     type: ObjectId
-  docker_id:
-    type: String
   parent:
     type: ObjectId
     index: true
@@ -37,6 +32,8 @@ imageSchema = new Schema
     type: Date
     default: Date.now
   image:
+    type: String
+  docker_id:
     type: String
   dockerfile:
     type: String
@@ -115,7 +112,7 @@ imageSchema.index
 buildDockerImage = (domain, fspath, tag, cb) ->
   child = cp.spawn 'tar', [ '-c', '--directory', fspath, '.' ]
   req = request.post
-    url: "#{configs.docker}/v1.3/build"
+    url: "#{configs.harbourmaster}/v1.3/build"
     headers: { 'content-type': 'application/tar' }
     qs:
       t: tag
@@ -127,25 +124,30 @@ buildDockerImage = (domain, fspath, tag, cb) ->
 
 syncDockerImage = (domain, image, cb) ->
   servicesToken = 'services-' + uuid.v4()
-  docker.createContainer
-    servicesToken: servicesToken
-    webToken: 'web-' + uuid.v4()
-    Env: [
-      "RUNNABLE_USER_DIR=#{image.file_root}"
-      "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
-      "RUNNABLE_START_CMD=#{image.start_cmd}"
-    ]
-    Hostname: image._id.toString()
-    Image: image.docker_id.toString()
-    PortSpecs: [ image.port.toString() ]
-    Cmd: [ image.cmd ]
+  request
+    url: "#{configs.harbourmaster}/containers"
+    method: 'POST'
+    json:
+      servicesToken: servicesToken
+      webToken: 'web-' + uuid.v4()
+      Env: [
+        "RUNNABLE_USER_DIR=#{image.file_root}"
+        "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
+        "RUNNABLE_START_CMD=#{image.start_cmd}"
+      ]
+      Hostname: image._id.toString()
+      Image: image.docker_id.toString()
+      PortSpecs: [ image.port.toString() ]
+      Cmd: [ image.cmd ]
   , domain.intercept (res) ->
-    containerId = res.Id
-    docker.inspectContainer containerId, domain.intercept (result) ->
-      sync domain, servicesToken, image, (err) ->
-        if err then cb err else
-          docker.removeContainer containerId, domain.intercept () ->
-            cb()
+    containerId = res.body._id
+    sync domain, servicesToken, image, (err) ->
+      if err then cb err else
+        request
+          url: "#{configs.harbourmaster}/containers/#{containerId}"
+          method: 'DELETE'
+        , domain.intercept () ->
+          cb()
 
 imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
   fs.exists "#{runnablePath}/runnable.json", (exists) =>
@@ -174,7 +176,8 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
                       @findOne name: runnable.name, domain.intercept (existing) =>
                         if existing then cb error 403, 'a runnable by that name already exists' else
                           image = new @()
-                          tag = image._id.toString()
+                          encodedId = encodeId image._id.toString()
+                          tag = "#{configs.dockerRegistry}/runnable/#{encodedId}"
                           buildDockerImage domain, runnablePath, tag, (err, docker_id) ->
                             if err then cb err else
                               image.docker_id = docker_id
@@ -225,13 +228,19 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         image.files.push file.toJSON()
       for tag in container.tags
         image.tags.push tag.toJSON()
-      docker.commit
-        queryParams:
+      encodedId = encodeId image._id.toString()
+      request
+        url: "#{configs.harbourmaster}/containers/commit"
+        method: 'POST'
+        qs:
+          repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
+          tag: 'latest'
           container: container.docker_id
           m: "#{container.parent} => #{image._id}"
           author: image.owner.toString()
-      , domain.intercept (result) ->
-        image.docker_id = result.Id
+      , domain.intercept (res) ->
+        res.body = JSON.parse res.body
+        image.docker_id = res.body.Id
         image.save domain.intercept () ->
           cb null, image
 
@@ -258,13 +267,19 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   @tags = [ ]
   for tag in container.tags
     @tags.push tag.toJSON()
-  docker.commit
-    queryParams:
+  encodedId = encodeId @_id.toString()
+  request
+    url: "#{configs.harbourmaster}/containers/commit"
+    method: 'POST'
+    qs:
+      repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
+      tag: 'latest'
       container: container.docker_id
       m: "#{container.parent} => #{@_id}"
       author: @owner.toString()
-  , domain.intercept (result) =>
-    @docker_id = result.Id
+  , domain.intercept (res) =>
+    res.body = JSON.parse res.body
+    @docker_id = res.body.Id
     @save domain.intercept () =>
       cb null, @
 
@@ -295,5 +310,11 @@ imageSchema.methods.sync = (domain, cb) ->
         @save domain.intercept () ->
           cb()
 
+plus = /\+/g
+slash = /\//g
+minus = /-/g
+underscore = /_/g
+
+encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
+
 module.exports = mongoose.model 'Images', imageSchema
-module.exports.docker = docker

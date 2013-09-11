@@ -2,17 +2,15 @@ async = require 'async'
 configs = require '../configs'
 concat = require 'concat-stream'
 crypto = require 'crypto'
-dockerjs = require 'docker.js'
 error = require '../error'
 path = require 'path'
 mongoose = require 'mongoose'
+request = require 'request'
 sync = require './sync'
 uuid = require 'node-uuid'
 volumes = require  "./volumes"
 implementations = require './implementations'
 _ = require 'lodash'
-
-docker = dockerjs host: configs.docker
 
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
@@ -25,10 +23,6 @@ containerSchema = new Schema
     default: ''
   owner:
     type: ObjectId
-  docker_id:
-    type: String
-  long_docker_id:
-    type: String
   parent:
     type: ObjectId
     index: true
@@ -37,6 +31,8 @@ containerSchema = new Schema
     default: Date.now
   target:
     type: ObjectId
+  docker_id:
+    type: String
   image:
     type: String
   dockerfile:
@@ -119,20 +115,22 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         container.files.push file.toJSON()
       for tag in image.tags
         container.tags.push tag.toJSON()
-      docker.createContainer
-        servicesToken: container.servicesToken
-        webToken: subdomain or container.webToken
-        Env: env
-        Hostname: 'runnable'
-        Image: image.docker_id.toString()
-        PortSpecs: [ container.port.toString() ]
-        Cmd: [ container.cmd ]
+      encodedId = encodeId image._id.toString()
+      request
+        url: "#{configs.harbourmaster}/containers"
+        method: 'POST'
+        json:
+          servicesToken: container.servicesToken
+          webToken: subdomain or container.webToken
+          Env: env
+          Hostname: 'runnable'
+          Image: "#{configs.dockerRegistry}/runnable/#{encodedId}"
+          PortSpecs: [ container.port.toString() ]
+          Cmd: [ container.cmd ]
       , domain.intercept (res) ->
-        container.docker_id = res.Id
-        docker.inspectContainer container.docker_id, domain.intercept (result) ->
-          container.long_docker_id = result.ID
-          container.save domain.intercept () ->
-            cb null, container
+        container.docker_id = res.body._id
+        container.save domain.intercept () ->
+          cb null, container
     if image.specification?
       implementations.findOne
         owner: owner
@@ -153,29 +151,59 @@ containerSchema.statics.destroy = (domain, id, cb) ->
       container.getProcessState domain, (err, state) =>
         if err then cb err else
           remove = () =>
-            docker.removeContainer container.docker_id, domain.intercept () =>
+            request
+              url: "#{configs.harbourmaster}/containers/#{container.docker_id}"
+              method: 'DELETE'
+            , domain.intercept (res) =>
               @remove { _id: id }, domain.intercept () ->
                 cb()
-          if state.running
+          if not state.running then remove() else
             container.stop domain, (err) =>
               if err then cb err else
                 remove()
-          else
-            remove()
 
 containerSchema.methods.getProcessState = (domain, cb) ->
-  docker.inspectContainer @docker_id, domain.intercept (result) ->
-    if not result.State?
-      throw new Error 'bad result from docker.inspectContainer'
-    cb null, running: result.State.Running
+  request
+    url: "http://#{@servicesToken}.#{configs.domain}/api/running"
+    method: 'GET'
+    timeout: configs.runnable_access_timeout
+  , domain.intercept (res) ->
+    if res.statusCode is 503 then cb null, running: false else
+      if res.statusCode is 502 then cb error 500, 'runnable not responding to status requests' else
+        if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+          if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
+            res.body = JSON.parse res.body
+            cb null, running: res.body.running
 
 containerSchema.methods.start = (domain, cb) ->
-  docker.startContainer @docker_id, domain.intercept () ->
-    cb()
+  doReq = () =>
+    request
+      url: "http://#{@servicesToken}.#{configs.domain}/api/start"
+      method: 'GET'
+      timeout: configs.runnable_access_timeout
+    , domain.intercept (res) ->
+      if res.statusCode is 503
+        setTimeout () ->
+          doReq()
+        , 500
+      else
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
+          if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+            if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
+              cb()
+  doReq()
 
 containerSchema.methods.stop = (domain, cb) ->
-  docker.stopContainer @docker_id, domain.intercept () ->
-    cb()
+  request
+    url: "http://#{@servicesToken}.#{configs.domain}/api/stop"
+    method: 'GET'
+    timeout: configs.runnable_access_timeout
+  , domain.intercept (res) ->
+    if res.statusCode is 503 then cb() else # container is not running no sense in waking it up
+      if res.statusCode is 502 then cb error 500, 'runnable not responding to stop request' else
+        if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+          if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
+            cb()
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]
@@ -439,5 +467,11 @@ containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
         if err then cb err else
           cb null, files
 
+plus = /\+/g
+slash = /\//g
+minus = /-/g
+underscore = /_/g
+
+encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
+
 module.exports = mongoose.model 'Containers', containerSchema
-module.exports.docker = docker
