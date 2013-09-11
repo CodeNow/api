@@ -92,10 +92,12 @@ containerSchema.index
 
 containerSchema.statics.create = (domain, owner, image, cb) ->
   image.sync domain, () =>
+    servicesToken = 'services-' + uuid.v4()
     env = [
       "RUNNABLE_USER_DIR=#{image.file_root}"
       "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
       "RUNNABLE_START_CMD=#{image.start_cmd}"
+      "SERVICES_TOKEN=#{servicesToken}"
     ]
     createContainer = (env, subdomain) =>
       container = new @
@@ -108,7 +110,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         file_root: image.file_root
         service_cmds: image.service_cmds
         start_cmd: image.start_cmd
-        servicesToken: 'services-' + uuid.v4()
+        servicesToken: servicesToken
         webToken: 'web-' + uuid.v4()
         specification: image.specification
       for file in image.files
