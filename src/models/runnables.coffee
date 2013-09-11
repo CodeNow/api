@@ -434,7 +434,7 @@ Runnables =
   searchImages: (domain, searchText, limit, cb) ->
     images.search domain, searchText, limit, (err, results) ->
       if err then cb err else
-        cb null, arrayToJSON results
+        arrayToJSON domain, results, cb
 
   syncFiles: (domain, userId, runnableId, cb) ->
     fetchContainer domain, userId, runnableId, (err, container) ->
