@@ -383,7 +383,7 @@ module.exports = (parentDomain) ->
   app.patch '/users/:userid/runnables/:id/files/:fileid', fetchuser, updatefile
 
   deletefile = (req, res) ->
-    recursive = req.query.recursive?
+    recursive = if req.query.recursive? then req.query.recursive else true
     runnables.deleteFile req.domain, req.user_id, req.params.id, req.params.fileid, recursive, (err) ->
       if err then res.json err.code, message: err.msg else
         res.json { message: 'file deleted' }
