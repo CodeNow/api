@@ -30,7 +30,11 @@ module.exports = (parentDomain) ->
     if req.query.page?
       page = Number req.query.page
     sortByVotes = req.query.sort is 'votes'
-    if req.query.published?
+    if req.query.search?
+      runnables.searchImages req.domain, req.query.search, limit, (err, results) ->
+        if err then res.json err.code, message: err.msg else
+          res.json results
+    else if req.query.published?
       runnables.listFiltered req.domain, { tags: $not: $size: 0 }, sortByVotes, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
