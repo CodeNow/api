@@ -251,7 +251,7 @@ imageSchema.statics.search = (domain, searchText, limit, cb) ->
     limit  : if (limit <= configs.defaultPageLimit) then limit else configs.defaultPageLimit
   this.textSearch searchText, opts, (err, output) ->
     if err then throw err else
-      images = output.results.map (result) -> if result.obj.toJSON then result.obj.toJSON() else result.obj
+      images = output.results.map (result) -> result.obj
       cb null, images
 
 imageSchema.methods.updateFromContainer = (domain, container, cb) ->
