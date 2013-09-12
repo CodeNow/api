@@ -3,6 +3,7 @@ configs = require '../configs'
 concat = require 'concat-stream'
 crypto = require 'crypto'
 error = require '../error'
+exts = require('../extensions')
 path = require 'path'
 mongoose = require 'mongoose'
 request = require 'request'
@@ -227,32 +228,6 @@ containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb
       delete file.content
   cb null, files
 
-exts = [ '.js'
-         '.md'
-         '.txt'
-         '.py'
-         '.mysql'
-         '.jade'
-         '.css'
-         '.html'
-         '.json'
-         '.php'
-         '.c'
-         '.cpp'
-         '.java'
-         '.coffee'
-         '.cc'
-         '.h'
-         '.hh'
-         '.hbs'
-         '.htm'
-         '.rb'
-         '.yml'
-         '.yaml'
-         '.xml'
-         ''
-       ]
-
 cacheContents = (ext) ->
   ext in exts
 
@@ -430,32 +405,6 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
           @last_write = new Date()
           @save domain.intercept () ->
             cb()
-
-exts = [ '.js'
-         '.md'
-         '.txt'
-         '.py'
-         '.mysql'
-         '.jade'
-         '.css'
-         '.html'
-         '.json'
-         '.php'
-         '.c'
-         '.cpp'
-         '.java'
-         '.coffee'
-         '.cc'
-         '.h'
-         '.hh'
-         '.hbs'
-         '.htm'
-         '.rb'
-         '.yml'
-         '.yaml'
-         '.xml'
-         ''
-       ]
 
 containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
   file = @files.id fileId

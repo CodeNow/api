@@ -525,7 +525,7 @@ describe 'files api', ->
                                     res.body.should.have.property 'content', encodedContent
                                     instance.stop done
 
-  it 'should be able to change the path of an existing ::file to a new target directory', (done) ->
+  it 'should be able to change the path of an existing ::file to a new target directory ::current', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createContainer 'node.js', (err, user, runnableId) ->

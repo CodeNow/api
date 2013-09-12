@@ -3,31 +3,7 @@ path = require 'path'
 volumes = require './volumes'
 _ = require 'lodash'
 
-exts = [ '.js'
-         '.md'
-         '.txt'
-         '.py'
-         '.mysql'
-         '.jade'
-         '.css'
-         '.html'
-         '.json'
-         '.php'
-         '.c'
-         '.cpp'
-         '.java'
-         '.coffee'
-         '.cc'
-         '.h'
-         '.hh'
-         '.hbs'
-         '.htm'
-         '.rb'
-         '.yml'
-         '.yaml'
-         '.xml'
-         ''
-       ]
+exts = require('../extensions')
 
 module.exports = (domain, token, target, cb) ->
   ignores = [ ]

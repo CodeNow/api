@@ -1,0 +1,27 @@
+module.exports = [ '.js'
+         '.md'
+         '.txt'
+         '.py'
+         '.mysql'
+         '.jade'
+         '.css'
+         '.html'
+         '.json'
+         '.php'
+         '.c'
+         '.cpp'
+         '.java'
+         '.coffee'
+         '.cc'
+         '.h'
+         '.hh'
+         '.hbs'
+         '.htm'
+         '.rb'
+         '.yml'
+         '.yaml'
+         '.xml',
+         '.ctp',
+         '.erb',
+         ''
+       ]
