@@ -32,8 +32,6 @@ containerSchema = new Schema
     default: Date.now
   target:
     type: ObjectId
-  docker_id:  # deprecated
-    type: String
   image:
     type: String
   dockerfile:
@@ -131,7 +129,6 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
           PortSpecs: [ container.port.toString() ]
           Cmd: [ container.cmd ]
       , domain.intercept (res) ->
-        # container.docker_id = res.body._id
         container.save domain.intercept () ->
           cb null, container
     if image.specification?
