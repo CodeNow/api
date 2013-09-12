@@ -431,31 +431,7 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
           @save domain.intercept () ->
             cb()
 
-exts = [ '.js'
-         '.md'
-         '.txt'
-         '.py'
-         '.mysql'
-         '.jade'
-         '.css'
-         '.html'
-         '.json'
-         '.php'
-         '.c'
-         '.cpp'
-         '.java'
-         '.coffee'
-         '.cc'
-         '.h'
-         '.hh'
-         '.hbs'
-         '.htm'
-         '.rb'
-         '.yml'
-         '.yaml'
-         '.xml'
-         ''
-       ]
+exts = require('../extensions')
 
 containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
   file = @files.id fileId
