@@ -20,6 +20,8 @@ module.exports = [ '.js'
          '.rb'
          '.yml'
          '.yaml'
-         '.xml'
+         '.xml',
+         '.ctp',
+         '.erb',
          ''
        ]
