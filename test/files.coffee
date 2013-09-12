@@ -525,7 +525,7 @@ describe 'files api', ->
                                     res.body.should.have.property 'content', encodedContent
                                     instance.stop done
 
-  it 'should be able to change the path of an existing ::file to a new target directory', (done) ->
+  it 'should be able to change the path of an existing ::file to a new target directory ::current', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createContainer 'node.js', (err, user, runnableId) ->
@@ -589,6 +589,61 @@ describe 'files api', ->
                             if err then done err else
                               res.should.have.status 403
                               res.body.should.have.property 'message', 'destination resource already exists'
+                              instance.stop done
+
+  it 'should be able to move a ::file folder from one location to another', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createContainer 'node.js', (err, user, runnableId) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello', path: '/', dir: true))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  dirId = res.body._id
+                  user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify(name: 'hello2.txt', path: '/hello', dir: true))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        dirId = res.body._id
+                        user.patch("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{dirId}")
+                          .set('content-type', 'application/json')
+                          .send(JSON.stringify(path: '/'))
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              instance.stop done
+
+  it 'should be able to move a ::file from one location to another', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createContainer 'node.js', (err, user, runnableId) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+              .set('content-type', 'application/json')
+              .send(JSON.stringify(name: 'hello', path: '/', dir: true))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 201
+                  dirId = res.body._id
+                  content = 'console.log("Hello, World!");'
+                  user.post("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files")
+                    .set('content-type', 'application/json')
+                    .send(JSON.stringify(name: 'hello2.txt', path: '/hello', content: content))
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 201
+                        fileId = res.body._id
+                        user.patch("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}/files/#{fileId}")
+                          .set('content-type', 'application/json')
+                          .send(JSON.stringify(path: '/'))
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
                               instance.stop done
 
   it 'should not be possible to move a ::file directory into one of its own subdirectories', (done) ->

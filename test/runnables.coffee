@@ -58,7 +58,7 @@ describe 'runnables api', ->
                                   res.body.length.should.equal 3
                                   instance.stop done
 
-  it 'should be able to edit a tagged published ::runnable ::current', (done) ->
+  it 'should be able to edit a tagged published ::runnable', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createTaggedImage 'node.js', 'node.js', (err, runnableId) ->

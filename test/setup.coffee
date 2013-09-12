@@ -27,25 +27,14 @@ beforeEach (done) ->
           test_db.close done
 
 afterEach (done) ->
-  if nocleanup then done(); else
+  if nocleanup then done() else
     done = wrapDone done
     redis_client.flushall () ->
       db.connect configs.mongo, (err, test_db) ->
         if err then done err else
           test_db.dropDatabase (err) ->
             if err then done err else
-              test_db.close () ->
-                docker.listContainers (err, containers) ->
-                  if err then done err else
-                    async.forEach containers, (container, cb) ->
-                      docker.stopContainer container.Id, cb
-                    , (err) ->
-                      if err then done err else
-                        docker.listContainers queryParams: all: true, (err, containers) ->
-                          if err then done err else
-                            async.forEach containers, (container, cb) ->
-                              docker.removeContainer container.Id, cb
-                            , done
+              test_db.close done
 
 before (done) ->
   done()
@@ -70,4 +59,16 @@ cleanup = (cb) ->
         if err then cb err else
           test_db.dropDatabase (err) ->
             if err then cb err else
-              test_db.close cb
+              test_db.close (err) ->
+                if err then done err else
+                  docker.listContainers (err, containers) ->
+                    if err then done err else
+                      async.forEach containers, (container, cb) ->
+                        docker.stopContainer container.Id, cb
+                      , (err) ->
+                        if err then done err else
+                          docker.listContainers queryParams: all: true, (err, containers) ->
+                            if err then done err else
+                              async.forEach containers, (container, cb) ->
+                                docker.removeContainer container.Id, cb
+                              , cb
