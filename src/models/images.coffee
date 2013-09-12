@@ -117,7 +117,7 @@ buildDockerImage = (domain, fspath, tag, cb) ->
     qs:
       t: tag
   , domain.intercept (res, body) ->
-    if res.statusCode isnt 200 then cb error res.status, body else
+    if res.statusCode isnt 200 then cb error res.statusCode, body else
       if body.indexOf('Successfully built') is -1 then cb error 400, 'could not build image from dockerfile' else
         cb null, tag
   child.stdout.pipe req
@@ -140,14 +140,16 @@ syncDockerImage = (domain, image, cb) ->
       PortSpecs: [ image.port.toString() ]
       Cmd: [ image.cmd ]
   , domain.intercept (res) ->
-    containerId = res.body._id
-    sync domain, servicesToken, image, (err) ->
-      if err then cb err else
-        request
-          url: "#{configs.harbourmaster}/containers/#{containerId}"
-          method: 'DELETE'
-        , domain.intercept () ->
-          cb()
+    if res.statusCode isnt 201 then cb error res.statusCode, body else
+      containerId = res.body._id
+      sync domain, servicesToken, image, (err) ->
+        if err then cb err else
+          request
+            url: "#{configs.harbourmaster}/containers/#{containerId}"
+            method: 'DELETE'
+          , domain.intercept (res) ->
+            if res.statusCode isnt 204 then cb error res.statusCode, body else
+              cb()
 
 imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
   fs.exists "#{runnablePath}/runnable.json", (exists) =>
