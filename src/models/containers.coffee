@@ -409,13 +409,12 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if not file.dir
-      if recursive then cb error 400, 'cannot recursively delete a plain file' else
-        volumes.deleteFile domain, @servicesToken, @file_root, file.name, file.path, (err) =>
-          if err then cb err else
-            file.remove()
-            @last_write = new Date()
-            @save domain.intercept () ->
-              cb()
+      volumes.deleteFile domain, @servicesToken, @file_root, file.name, file.path, (err) =>
+        if err then cb err else
+          file.remove()
+          @last_write = new Date()
+          @save domain.intercept () ->
+            cb()
     else
       volumes.removeDirectory domain, @servicesToken, @file_root, file.name, file.path, recursive, (err) =>
         if err then cb err else
