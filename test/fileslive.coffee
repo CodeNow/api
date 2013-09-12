@@ -101,7 +101,7 @@ describe 'live files api', ->
                                   res.body.should.have.property 'message', 'mounted file-system is read-only'
                                   instance.stop done
 
-  it 'should include the contents of ::livefile for ace typed files of a live directory read ::12345', (done) ->
+  it 'should include the contents of ::livefile for ace typed files of a live directory read', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.createContainer 'node.js_express', (err, user, runnableId) ->
