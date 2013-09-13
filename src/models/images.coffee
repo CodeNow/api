@@ -139,7 +139,7 @@ syncDockerImage = (domain, image, cb) ->
       Image: image.docker_id.toString()
       PortSpecs: [ image.port.toString() ]
       Cmd: [ image.cmd ]
-  , domain.intercept (res) ->
+  , domain.intercept (res, body) ->
     if res.statusCode isnt 201 then cb error res.statusCode, body else
       containerId = res.body._id
       sync domain, servicesToken, image, (err) ->
