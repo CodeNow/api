@@ -53,11 +53,22 @@ module.exports = (parentDomain) ->
       if not req.body.password? then res.json 400, message: 'password required' else
         identity = req.body.email or req.body.username
         users.loginUser req.domain, identity, req.body.password, (err, user_id) ->
-          if err then res.json err.code, message: err.msg
-          access_token = uuid.v4()
-          redis_client.psetex [ access_token, configs.tokenExpires, user_id ], (err) ->
-            if err then throw err
-            res.json access_token: access_token
+          if err then res.json err.code, message: err.msg else
+            response = () ->
+              access_token = uuid.v4()
+              redis_client.psetex [ access_token, configs.tokenExpires, user_id ], (err) ->
+                if err then throw err
+                res.json access_token: access_token
+            token = req.get 'runnable-token'
+            if not token then response() else
+              redis_client.get token, (err, old_user_id) ->
+                if err then throw err
+                if not old_user_id then response() else
+                  users.findUser req.domain, _id: old_user_id, (err, old_user) ->
+                    if err then res.json err.code, message: err.msg else
+                      if old_user.password then response() else
+                        runnables.migrateContainers req.domain, old_user_id, user_id, req.domain.intercept () ->
+                          response()
 
   app.all '*', (req, res, next) ->
     if (/\/runnables\?map=true|\/channels\?map=true/.test(url.parse(req.url).path)) then next() else

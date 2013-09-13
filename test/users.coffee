@@ -277,6 +277,36 @@ describe 'user api', ->
                     instance.configs.passwordSalt = oldSalt
                     instance.stop done
 
+  it 'should inherit containers from anonymous ::user into newly logged in user', (done) ->
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        oldSalt = instance.configs.passwordSalt
+        delete instance.configs.passwordSalt
+        helpers.createContainer 'node.js', (err, user, runnableId) ->
+          if err then done err else
+            user.post("http://localhost:#{configs.port}/token")
+              .set('Content-Type', 'application/json')
+              .send(JSON.stringify({ username: 'matchusername5', password: 'testing' }))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  res.body.should.have.property 'access_token'
+                  access_token = res.body.access_token
+                  user2 = sa.agent()
+                  user2.get("http://localhost:#{configs.port}/users/me")
+                    .set('runnable-token', access_token)
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        res.body.should.have.property 'username', 'matchusername5'
+                        user2.get("http://localhost:#{configs.port}/users/me/runnables/#{runnableId}")
+                          .set('runnable-token', access_token)
+                          .end (err, res) ->
+                            if err then done err else
+                              res.should.have.status 200
+                              instance.configs.passwordSalt = oldSalt
+                              instance.stop done
+
   it 'should return an error when we ::login with a ::user that doesnt exist', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
