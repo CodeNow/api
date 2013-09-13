@@ -35,18 +35,18 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.published?
-      runnables.listFiltered req.domain, { tags: $not: $size: 0 }, sortByVotes, limit, page, (err, results) ->
+      runnables.listByPublished req.domain, sortByVotes, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.channel?
       channels.getChannelsWithNames req.domain, categories, req.query.channel, (err, results) ->
         if err then res.json err.code, message: err.msg else
           channelIds = results.map (channel) -> channel._id
-          runnables.listFiltered req.domain, 'tags.channel':$in:channelIds, sortByVotes, limit, page, (err, results) ->
+          runnables.listByChannelMembership req.domain, channelIds, sortByVotes, limit, page, (err, results) ->
             if err then res.json err.code, message: err.msg else
               res.json results
     else if req.query.owner?
-      runnables.listFiltered req.domain, { owner: req.query.owner }, sortByVotes, limit, page, (err, results) ->
+      runnables.listByOwner req.domain, req.query.owner, sortByVotes, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.map?
