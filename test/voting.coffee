@@ -290,7 +290,7 @@ describe 'voting api', ->
                                                 res.body[4].should.have.property 'votes', 0
                                                 instance.stop done
 
-  it 'should be able to list channel runnables in descending order of ::votes', (done) ->
+  it 'should be able to list channel runnables in descending order of ::votes ::current', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
         helpers.authedRegisteredUser (err, user) ->
