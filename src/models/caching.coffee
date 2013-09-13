@@ -33,7 +33,7 @@ getFilteredCachedResults = (limit, index, channels, cb) ->
         key = "#{key}-#{channel}"
       redis_client.get key, (err, value) ->
         if err then cb err else
-          if value then cb null, JOSN.parse value else
+          if value then cb null, JSON.parse value else
             updateSingleFilteredCachedResult limit, index, channels, (err, value) ->
               if err then cb err else
                 cb null, value
@@ -64,7 +64,7 @@ updateAllUnfilteredCachedResults = (cb) ->
   limit = configs.defaultPageLimit
   users.aggregate voteSortPipelineAll(), (err, results) ->
     if err then cb err else
-      num_pages = Math.ceil(results/limit)
+      num_pages = Math.ceil(results.length/limit)
       indices = for i in [ 0 ... num_pages ]
         i*limit
       async.forEach indices, (index, cb) ->
@@ -81,7 +81,7 @@ updateFilteredCachedResults = (channels, cb) ->
       limit = configs.defaultPageLimit
       users.aggregate voteSortPipelineFilteredAll(filter), (err, results) ->
         if err then cb err else
-          num_pages = Math.ceil(results/limit)
+          num_pages = Math.ceil(results.length/limit)
           indices = for i in [ 0 ... num_pages ]
             i*limit
           async.forEach indices, (index, cb) ->
@@ -95,14 +95,14 @@ updateFilteredCachedResults = (channels, cb) ->
 updateAllFilteredCachedResults = (query, cb) ->
   channels.find { }, (err, results) ->
     results = results or [ ]
-    async.forEach results, (channel, cb) ->
-      updateFilteredCachedResults [ channel ], cb
+    async.forEachSeries results, (channel, cb) ->
+      updateFilteredCachedResults [ channel._id ], cb
     , cb
 
 updateAllCaches =  (cb) ->
-  updateAllUnfilteredCachedResults (err) ->
-    if err err then cb err else
-      updateAllFilteredCachedResults (err) ->
+  updateAllFilteredCachedResults (err) ->
+    if err then cb err else
+      updateAllUnfilteredCachedResults (err) ->
         if err then cb err else
           cb()
 
