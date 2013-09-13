@@ -102,6 +102,10 @@ Runnables =
         encode domain, json, cb
       , cb
 
+  migrateContainers: (domain, userId, targetUserId, cb) ->
+    containers.update { owner: userId }, { $set: owner: targetUserId }, domain.intercept () ->
+      cb()
+
   getContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     if not isObjectId runnableId then cb error, 404, 'runnable not found' else
