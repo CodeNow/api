@@ -163,6 +163,24 @@ containerSchema.statics.destroy = (domain, id, cb) ->
               if err then cb err else
                 remove()
 
+# send a list of containers of registered users
+containerSchema.statics.listRegisteredContainers = (domain, cb) ->
+  @find { _id: id } , domain.intercept (container) =>
+    if not container then cb error 404, 'container metadata not found' else
+      container.getProcessState domain, (err, state) =>
+        if err then cb err else
+          remove = () =>
+            request
+              url: "#{configs.harbourmaster}/containers/#{container.docker_id}"
+              method: 'DELETE'
+            , domain.intercept (res) =>
+              @remove { _id: id }, domain.intercept () ->
+                cb()
+          if not state.running then remove() else
+            container.stop domain, (err) =>
+              if err then cb err else
+                remove()
+
 containerSchema.methods.getProcessState = (domain, cb) ->
   request
     url: "http://#{@servicesToken}.#{configs.domain}/api/running"
