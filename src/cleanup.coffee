@@ -19,14 +19,12 @@ module.exports = (req, res) ->
                       validContainers.push container.servicesToken
                     cb()
             , (err) ->
-              if err
-                res.json 500, message: 'error sending cleanup request to harbourmaster'
-              else
-                res.json 200, message: 'successfuly sent cleanup request to harbourmaster'
-              request
-                url: "#{configs.harbourmaster}/containers/cleanup"
-                method: 'POST'
-                json: validContainers
-              , (err, serverRes, body) ->
-                if err then throw err
-                if serverRes.statusCode isnt 200 then console.error err.stack
+              if err then res.json 500, message: 'error computing container whitelist' else
+                request
+                  url: "#{configs.harbourmaster}/containers/cleanup"
+                  method: 'POST'
+                  json: validContainers
+                , (err, serverRes, body) ->
+                  if err then throw err
+                  if serverRes.statusCode isnt 200 then res.json 500, message: 'whitelist not accepted by harbourmaster' else
+                    res.json 200, message: 'successfuly send prune request harbourmaster'
