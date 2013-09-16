@@ -76,6 +76,7 @@ def checkout_latest():
   Pull the latest code on the specified branch.
   """
   with cd('api-server'):
+    run('git reset --hard')
     run('git checkout %(branch)s' % env)
     run('git pull origin %(branch)s' % env)
  
@@ -90,7 +91,8 @@ def make():
   """
   Run make
   """
-  run('cd api-server; make')
+  with cd('api-server'):
+    run('make')
 
 def boot():
   """
@@ -118,8 +120,7 @@ def reboot():
   """
   Restart the server.
   """
-  run('forever stop api-server/server.js')
-  run('forever stop api-server/lib/scripts/cleanup.js')
+  run('forever stopall || echo not started')
   boot()
 
 """
