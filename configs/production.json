@@ -30,7 +30,7 @@
     }
   },
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "http://harbourmaster.runnable.com:3000",
+  "harbourmaster": "http://10.0.1.243:3000",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,

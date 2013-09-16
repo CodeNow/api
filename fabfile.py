@@ -75,7 +75,9 @@ def checkout_latest():
   """
   Pull the latest code on the specified branch.
   """
-  run('cd api-server; git checkout %(branch)s; git pull origin %(branch)s' % env)
+  with cd('api-server'):
+    run('git checkout %(branch)s' % env)
+    run('git pull origin %(branch)s' % env)
  
 def install_requirements():
   """
