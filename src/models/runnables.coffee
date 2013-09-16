@@ -326,7 +326,7 @@ Runnables =
         filter = [ ]
         for image in selected
           filter.push image._id
-        users.aggregate voteSortPipelineFiltered(limit, limit*page, filter), domain.intercept (results) ->
+        users.aggregate caching.voteSortPipelineFiltered(limit, limit*page, filter), domain.intercept (results) ->
           async.map results, (result, cb) ->
             images.findOne { _id: result._id }, listFields, domain.intercept (runnable) ->
               if not runnable then cb() else

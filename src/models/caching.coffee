@@ -193,6 +193,7 @@ voteSortPipelineFilteredAll = (filter) ->
   ]
 
 module.exports =
+  voteSortPipelineFiltered: voteSortPipelineFiltered
   getUnfilteredCachedResults: getUnfilteredCachedResults
   getFilteredCachedResults: getFilteredCachedResults
   updateAllCaches: updateAllCaches
