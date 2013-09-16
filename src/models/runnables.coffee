@@ -1,4 +1,5 @@
 async = require 'async'
+caching = require './caching'
 channels = require './channels'
 configs = require '../configs'
 containers = require './containers'
@@ -271,13 +272,15 @@ Runnables =
         users.findOne _id: userId, domain.intercept (user) ->
           if not user then cb error 403, 'user not found' else
             user.addVote domain, runnableId, cb
+            caching.updateAllCaches (err) ->
+              if err then console.log err
 
   listAll: (domain, sortByVotes, limit, page, cb) ->
     if not sortByVotes
       images.find({}, listFields).skip(page*limit).limit(limit).exec domain.intercept (results) ->
         arrayToJSON(domain, results, cb)
     else
-      users.aggregate voteSortPipeline(limit, limit*page), domain.intercept (results) ->
+      caching.getUnfilteredCachedResults limit, limit*page, domain.intercept (results) ->
         async.map results, (result, cb) ->
           images.findOne _id: result._id, listFields, domain.intercept (runnable) ->
             if not runnable then cb() else
@@ -288,6 +291,31 @@ Runnables =
           if err then cb err else
             runnables = runnables.filter exists
             cb null, runnables
+
+  listByPublished: (domain, sortByVotes, limit, page, cb) ->
+    @listFiltered domain, { tags: $not: $size: 0 }, sortByVotes, limit, page, cb
+
+  listByChannelMembership: (domain, channelIds, sortByVotes, limit, page, cb) ->
+    if sortByVotes and channelIds.length is 1
+      @listCachedChannelsFiltered domain, channelIds, true, limit, page, cb
+    else
+      @listFiltered domain, 'tags.channel': $in: channelIds, sortByVotes, limit, page, cb
+
+  listByOwner: (domain, owner, sortByVotes, limit, page, cb) ->
+    @listFiltered domain, { owner: owner }, sortByVotes, limit, page, cb
+
+  listCachedChannelsFiltered: (domain, channels, sortByVotes, limit, page, cb) ->
+    caching.getFilteredCachedResults limit, limit*page, channels, domain.intercept (results) ->
+      async.map results, (result, cb) ->
+        images.findOne { _id: result._id }, listFields, domain.intercept (runnable) ->
+          if not runnable then cb() else
+            json = runnable.toJSON()
+            json.votes = result.number - 1
+            encode domain, json, cb
+      , (err, runnables) ->
+        if err then cb err else
+          runnables = runnables.filter exists
+          cb null, runnables
 
   listFiltered: (domain, query, sortByVotes, limit, page, cb) ->
     if not sortByVotes
@@ -539,55 +567,6 @@ Runnables =
 
 
 module.exports = Runnables
-
-voteSortPipeline = (limit, skip) ->
-  [
-    {
-      $project:
-        _id: 0
-        votes: '$votes.runnable'
-    },
-    { $unwind: '$votes' },
-    { $group:
-        _id: '$votes'
-        number:
-          $sum: 1
-    },
-    {
-      $sort: number: -1
-    },
-    {
-      $skip: skip
-    },
-    {
-      $limit: limit
-    }
-  ]
-
-voteSortPipelineFiltered = (limit, skip, filter) ->
-  [
-    {
-      $project:
-        _id: 0
-        votes: '$votes.runnable'
-    },
-    { $unwind: '$votes' },
-    { $match: { votes: { $in: filter } } },
-    { $group:
-        _id: '$votes'
-        number:
-          $sum: 1
-    },
-    {
-      $sort: number: -1
-    },
-    {
-      $skip: skip
-    },
-    {
-      $limit: limit
-    }
-  ]
 
 fetchContainer = (domain, userId, runnableId, cb) ->
   runnableId = decodeId runnableId

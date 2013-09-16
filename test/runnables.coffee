@@ -39,7 +39,6 @@ describe 'runnables api', ->
                           if err then done err else
                             res.should.have.status 201
                             res.should.have.property 'body'
-                            res.body.should.have.property 'docker_id'
                             res.body.should.have.property '_id'
                             res.body.should.have.property 'parent', runnableId
                             res.body.should.have.property 'owner', userId
@@ -77,7 +76,6 @@ describe 'runnables api', ->
                             if err then done err else
                               res.should.have.status 201
                               res.should.have.property 'body'
-                              res.body.should.have.property 'docker_id'
                               res.body.should.have.property '_id'
                               res.body.should.have.property 'parent', runnableId
                               res.body.should.have.property 'owner', userId
@@ -216,7 +214,6 @@ describe 'runnables api', ->
                                       if err then done err else
                                         res.should.have.status 201
                                         res.body.should.have.property '_id'
-                                        res.body.should.have.property 'docker_id'
                                         res.body.should.have.property 'parent', runnableId
                                         res.body.should.not.have.property 'files'
                                         res.body.should.have.property 'owner', userId
@@ -358,7 +355,6 @@ describe 'runnables api', ->
                                       if err then done err else
                                         res.should.have.status 201
                                         res.body.should.have.property '_id'
-                                        res.body.should.have.property 'docker_id'
                                         res.body.should.have.property 'parent', runnableId
                                         res.body.should.have.property 'owner', userId
                                         targetId = res.body._id
@@ -387,7 +383,6 @@ describe 'runnables api', ->
                           if err then done err else
                             res.should.have.status 201
                             userRunnableId = res.body._id
-                            res.body.should.have.property 'docker_id'
                             res.body.should.have.property 'owner', userId
                             user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
                               .set('content-type', 'application/json')
@@ -400,7 +395,6 @@ describe 'runnables api', ->
                                         res.should.have.status 201
                                         res.body.should.have.property '_id'
                                         publishedId = res.body._id
-                                        res.body.should.have.property 'docker_id'
                                         res.body.should.have.property 'parent', runnableId
                                         res.body.should.have.property 'owner', userId
                                         user.put("http://localhost:#{configs.port}/users/me/runnables/#{userRunnableId}")
@@ -437,7 +431,6 @@ describe 'runnables api', ->
                           if err then done err else
                             res.should.have.status 201
                             userRunnableId = res.body._id
-                            res.body.should.have.property 'docker_id'
                             res.body.should.have.property 'owner', userId
                             user.put("http://localhost:#{configs.port}/runnables/#{runnableId}?from=#{userRunnableId}")
                               .end (err, res) ->

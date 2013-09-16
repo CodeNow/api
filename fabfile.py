@@ -81,7 +81,7 @@ def install_requirements():
   """
   Install the required packages using npm.
   """
-  sudo('npm install pm2 -g')
+  sudo('npm install forever -g')
   run('npm install api-server')
   
 def make():
@@ -92,10 +92,10 @@ def make():
 
 def boot():
   """
-  Start process with pm2
+  Start process with forever
   """
-  run('NODE_ENV=%(settings)s pm2 start api-server/server.js' % env)
-  run('NODE_ENV=%(settings)s pm2 start api-server/lib/scripts/cleanup.js' % env)
+  run('NODE_ENV=%(settings)s forever start api-server/server.js' % env)
+  run('NODE_ENV=%(settings)s forever start api-server/lib/scripts/cleanup.js' % env)
 
 """
 Commands - deployment
@@ -116,8 +116,8 @@ def reboot():
   """
   Restart the server.
   """
-  run('pm2 stop server.js')
-  run('pm2 stop cleanup.js')
+  run('forever stop api-server/server.js')
+  run('forever stop api-server/lib/scripts/cleanup.js')
   boot()
 
 """
@@ -153,6 +153,6 @@ def shiva_the_destroyer():
   """
   Death Destruction Chaos.
   """
-  run('pm2 stop server.js')
-  run('pm2 stop cleanup.js')
+  run('forever stop api-server/server.js')
+  run('forever stop api-server/lib/scripts/cleanup.js')
   run('rm -Rf api-server')

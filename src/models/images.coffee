@@ -33,8 +33,6 @@ imageSchema = new Schema
     default: Date.now
   image:
     type: String
-  docker_id:
-    type: String
   dockerfile:
     type: String
   cmd:
@@ -112,7 +110,7 @@ imageSchema.index
 buildDockerImage = (domain, fspath, tag, cb) ->
   child = cp.spawn 'tar', [ '-c', '--directory', fspath, '.' ]
   req = request.post
-    url: "#{configs.harbourmaster}/v1.3/build"
+    url: "#{configs.harbourmaster}/build"
     headers: { 'content-type': 'application/tar' }
     qs:
       t: tag
@@ -124,6 +122,8 @@ buildDockerImage = (domain, fspath, tag, cb) ->
 
 syncDockerImage = (domain, image, cb) ->
   servicesToken = 'services-' + uuid.v4()
+  encodedId = encodeId image._id.toString()
+  imageTag = "#{configs.dockerRegistry}/runnable/#{encodedId}"
   request
     url: "#{configs.harbourmaster}/containers"
     method: 'POST'
@@ -136,16 +136,15 @@ syncDockerImage = (domain, image, cb) ->
         "RUNNABLE_START_CMD=#{image.start_cmd}"
       ]
       Hostname: image._id.toString()
-      Image: image.docker_id.toString()
+      Image: imageTag
       PortSpecs: [ image.port.toString() ]
       Cmd: [ image.cmd ]
   , domain.intercept (res, body) ->
     if res.statusCode isnt 201 then cb error res.statusCode, body else
-      containerId = res.body._id
       sync domain, servicesToken, image, (err) ->
         if err then cb err else
           request
-            url: "#{configs.harbourmaster}/containers/#{containerId}"
+            url: "#{configs.harbourmaster}/containers/#{servicesToken}"
             method: 'DELETE'
           , domain.intercept (res) ->
             if res.statusCode isnt 204 then cb error res.statusCode, body else
@@ -180,9 +179,8 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
                           image = new @()
                           encodedId = encodeId image._id.toString()
                           tag = "#{configs.dockerRegistry}/runnable/#{encodedId}"
-                          buildDockerImage domain, runnablePath, tag, (err, docker_id) ->
+                          buildDockerImage domain, runnablePath, tag, (err) ->
                             if err then cb err else
-                              image.docker_id = docker_id
                               image.owner = owner
                               image.name = runnable.name
                               image.image = runnable.image
@@ -232,17 +230,15 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         image.tags.push tag.toJSON()
       encodedId = encodeId image._id.toString()
       request
-        url: "#{configs.harbourmaster}/containers/commit"
+        url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
         method: 'POST'
         qs:
           repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
-          tag: 'latest'
-          container: container.docker_id
           m: "#{container.parent} => #{image._id}"
           author: image.owner.toString()
+          tag: 'latest'
       , domain.intercept (res) ->
         res.body = JSON.parse res.body
-        image.docker_id = res.body.Id
         image.save domain.intercept () ->
           cb null, image
 
@@ -271,17 +267,14 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
     @tags.push tag.toJSON()
   encodedId = encodeId @_id.toString()
   request
-    url: "#{configs.harbourmaster}/containers/commit"
+    url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
     method: 'POST'
     qs:
       repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
-      tag: 'latest'
-      container: container.docker_id
       m: "#{container.parent} => #{@_id}"
+      tag: 'latest'
       author: @owner.toString()
   , domain.intercept (res) =>
-    res.body = JSON.parse res.body
-    @docker_id = res.body.Id
     @save domain.intercept () =>
       cb null, @
 

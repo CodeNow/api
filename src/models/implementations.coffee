@@ -165,7 +165,7 @@ updateEnv = (domain, opts, cb) ->
                 request.get url, domain.intercept (res, body) =>
                   cb null
         (cb) =>
-          url = "#{configs.harbourmaster}/containers/#{opts.containerId}/route"
+          url = "#{configs.harbourmaster}/containers/#{container.servicesToken}/route"
           request
             method: 'PUT'
             json:
