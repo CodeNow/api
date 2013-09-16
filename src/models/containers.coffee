@@ -170,7 +170,6 @@ containerSchema.methods.getProcessState = (domain, cb) ->
   request
     url: "http://#{@servicesToken}.#{configs.domain}/api/running"
     method: 'GET'
-    timeout: configs.runnable_access_timeout
   , domain.intercept (res) ->
     if res.statusCode is 503 then cb null, running: false else
       if res.statusCode is 502 then cb error 500, 'runnable not responding to status requests' else
@@ -185,7 +184,6 @@ containerSchema.methods.start = (domain, cb) ->
     request
       url: "http://#{@servicesToken}.#{configs.domain}/api/start"
       method: 'GET'
-      timeout: configs.runnable_access_timeout
     , domain.intercept (res) ->
       if res.statusCode is 503
         setTimeout () ->
@@ -202,7 +200,6 @@ containerSchema.methods.stop = (domain, cb) ->
   request
     url: "http://#{@servicesToken}.#{configs.domain}/api/stop"
     method: 'GET'
-    timeout: configs.runnable_access_timeout
   , domain.intercept (res) ->
     if res.statusCode is 503 then cb() else # container is not running no sense in waking it up
       if res.statusCode is 502 then cb error 500, 'runnable not responding to stop request' else
