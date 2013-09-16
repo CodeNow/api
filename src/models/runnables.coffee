@@ -228,7 +228,8 @@ Runnables =
                   container.start domain, (err) ->
                     if err then cb err else
                       container.getProcessState domain, (err, state) ->
-                        response state
+                        if err then cb err else
+                          response state
           if container.specification?
             implementations.findOne
               owner: userId
@@ -249,16 +250,17 @@ Runnables =
           cb error 403, 'permission denied'
         else
           container.getProcessState domain, (err, state) ->
-            response = (state) ->
-              json_project = container.toJSON()
-              _.extend json_project, state
-              encode domain, json_project, cb
-            if not state.running then response state else
-              container.stop domain, (err) ->
-                if err then cb err else
-                  container.getProcessState domain, (err, state) ->
-                    if err then cb err else
-                      response state
+            if err then cb err else
+              response = (state) ->
+                json_project = container.toJSON()
+                _.extend json_project, state
+                encode domain, json_project, cb
+              if not state.running then response state else
+                container.stop domain, (err) ->
+                  if err then cb err else
+                    container.getProcessState domain, (err, state) ->
+                      if err then cb err else
+                        response state
 
   getVotes: (domain, runnableId, cb) ->
     runnableId = decodeId runnableId
