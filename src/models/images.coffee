@@ -33,6 +33,11 @@ imageSchema = new Schema
     default: Date.now
   image:
     type: String
+  revisions: [
+    created:
+      type: Date
+      default: Date.now
+  ]
   dockerfile:
     type: String
   cmd:
@@ -122,7 +127,11 @@ buildDockerImage = (domain, fspath, tag, cb) ->
 
 syncDockerImage = (domain, image, cb) ->
   servicesToken = 'services-' + uuid.v4()
-  encodedId = encodeId image._id.toString()
+  if image.revisions and image.revisions.length
+    length = image.revisions.length
+    encodedId = encodeId image.revisions[length-1]._id.toString()
+  else
+    encodedId = encodeId image._id.toString()
   imageTag = "#{configs.dockerRegistry}/runnable/#{encodedId}"
   request
     url: "#{configs.harbourmaster}/containers"
@@ -265,7 +274,9 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   @tags = [ ]
   for tag in container.tags
     @tags.push tag.toJSON()
-  encodedId = encodeId @_id.toString()
+  @revisions = @revisions or [ ]
+  length = @revisions.push { }
+  encodedId = encodeId @revisions[length-1]._id.toString()
   request
     url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
     method: 'POST'

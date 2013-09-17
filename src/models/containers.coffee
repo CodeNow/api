@@ -116,7 +116,11 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         container.files.push file.toJSON()
       for tag in image.tags
         container.tags.push tag.toJSON()
-      encodedId = encodeId image._id.toString()
+      if image.revisions and image.revisions.length
+        length = image.revisions.length
+        encodedId = encodeId image.revisions[length-1]._id.toString()
+      else
+        encodedId = encodeId image._id.toString()
       request
         url: "#{configs.harbourmaster}/containers"
         method: 'POST'
