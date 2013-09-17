@@ -85,7 +85,8 @@ def install_requirements():
   Install the required packages using npm.
   """
   sudo('npm install forever -g')
-  run('npm install api-server')
+  with cd('api-server'):
+    run('npm install')
   
 def make():
   """
