@@ -94,7 +94,7 @@ Runnables =
     ], cb
 
   listContainers: (domain, userId, parent, cb) ->
-    query = { owner: userId }, { $or: [ { saved: true }, { saved: { $exists: false } } ] }
+    query = { owner: userId , $or: [ { saved: true }, { saved: { $exists: false } } ] }
     if parent then query.parent = decodeId parent
     containers.find query, domain.intercept (containers) ->
       async.map containers, (item, cb) ->

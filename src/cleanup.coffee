@@ -12,7 +12,7 @@ module.exports = (req, res) ->
           containers.listAll req.domain, (containers) ->
             validContainers = [ ]
             async.forEach containers, (container, cb) ->
-              if container.saved? and not container.saved then cb() else
+              if not container.saved then cb() else
                 users.findUser req.domain, _id: container.owner, (err, user) ->
                   if err then cb err else
                     if not user then cb() else
