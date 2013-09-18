@@ -3,7 +3,7 @@ configs = require '../configs'
 concat = require 'concat-stream'
 crypto = require 'crypto'
 error = require '../error'
-exts = require('../extensions')
+exts = require '../extensions'
 path = require 'path'
 mongoose = require 'mongoose'
 request = require 'request'
@@ -52,6 +52,9 @@ containerSchema = new Schema
   service_cmds:
     type: String
     default: ''
+  saved:
+    type: Boolean
+    default: false
   start_cmd:
     type: String
     default: 'date'

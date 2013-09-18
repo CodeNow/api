@@ -12,21 +12,22 @@ module.exports = (req, res) ->
           containers.listAll req.domain, (containers) ->
             validContainers = [ ]
             async.forEach containers, (container, cb) ->
-              users.findUser req.domain, _id: container.owner, (err, user) ->
-                if err then cb err else
-                  if not user then cb() else
-                    containerLife = (new Date()).getTime() - container.created.getTime()
-                    if user.permission_level > 0 or containerLife < 3600000
-                      validContainers.push container.servicesToken
-                    cb()
-            , (err) ->
-              if err then res.json 500, message: 'error computing container whitelist' else
-                request
-                  url: "#{configs.harbourmaster}/containers/cleanup"
-                  method: 'POST'
-                  json: validContainers
-                , (err, serverRes, body) ->
-                  if err then throw err
-                  console.log body
-                  if serverRes.statusCode isnt 200 then res.json 500, message: 'whitelist not accepted by harbourmaster' else
-                    res.json 200, message: 'successfuly send prune request harbourmaster'
+              if container.saved? and not container.saved then cb() else
+                users.findUser req.domain, _id: container.owner, (err, user) ->
+                  if err then cb err else
+                    if not user then cb() else
+                      containerLife = (new Date()).getTime() - container.created.getTime()
+                      if user.permission_level > 0 or containerLife < 3600000
+                        validContainers.push container.servicesToken
+                      cb()
+              , (err) ->
+                if err then res.json 500, message: 'error computing container whitelist' else
+                  request
+                    url: "#{configs.harbourmaster}/containers/cleanup"
+                    method: 'POST'
+                    json: validContainers
+                  , (err, serverRes, body) ->
+                    if err then throw err
+                    console.log body
+                    if serverRes.statusCode isnt 200 then res.json 500, message: 'whitelist not accepted by harbourmaster' else
+                      res.json 200, message: 'successfuly send prune request harbourmaster'
