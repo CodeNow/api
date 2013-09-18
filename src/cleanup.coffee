@@ -20,14 +20,14 @@ module.exports = (req, res) ->
                       if user.permission_level > 0 or containerLife < 3600000
                         validContainers.push container.servicesToken
                       cb()
-              , (err) ->
-                if err then res.json 500, message: 'error computing container whitelist' else
-                  request
-                    url: "#{configs.harbourmaster}/containers/cleanup"
-                    method: 'POST'
-                    json: validContainers
-                  , (err, serverRes, body) ->
-                    if err then throw err
-                    console.log body
-                    if serverRes.statusCode isnt 200 then res.json 500, message: 'whitelist not accepted by harbourmaster' else
-                      res.json 200, message: 'successfuly send prune request harbourmaster'
+            , (err) ->
+              if err then res.json 500, message: 'error computing container whitelist' else
+                request
+                  url: "#{configs.harbourmaster}/containers/cleanup"
+                  method: 'POST'
+                  json: validContainers
+                , (err, serverRes, body) ->
+                  if err then throw err
+                  console.log body
+                  if serverRes.statusCode isnt 200 then res.json 500, message: 'whitelist not accepted by harbourmaster' else
+                    res.json 200, message: 'successfuly send prune request harbourmaster'
