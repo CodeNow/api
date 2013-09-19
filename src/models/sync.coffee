@@ -20,7 +20,7 @@ module.exports = (domain, token, target, cb) ->
           name: file.name
           path: file.path
         if file.dir then new_file.dir = true
-        if file.content then new_file.content = file.content
+        if file.content? then new_file.content = file.content
         for existingFile in old_file_list
           if file.path is existingFile.path and file.name is existingFile.name
             new_file._id = existingFile._id
