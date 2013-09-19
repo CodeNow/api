@@ -170,8 +170,8 @@ containerSchema.statics.destroy = (domain, id, cb) ->
                 remove()
 
 # send a list of containers of registered users
-containerSchema.statics.listAll = (domain, cb) ->
-  @find { } , domain.intercept cb
+containerSchema.statics.listSavedContainers = (domain, cb) ->
+  @find { saved: true } , domain.intercept cb
 
 containerSchema.methods.getProcessState = (domain, cb) ->
   request

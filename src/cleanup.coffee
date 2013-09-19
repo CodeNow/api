@@ -9,17 +9,16 @@ module.exports = (req, res) ->
     if err then done err else
       if not user then cb() else
         if not user.isModerator then res.json 403, message: 'permission denied' else
-          containers.listAll req.domain, (containers) ->
+          containers.listSavedContainers req.domain, (containers) ->
             validContainers = [ ]
             async.forEach containers, (container, cb) ->
-              if not container.saved then cb() else
-                users.findUser req.domain, _id: container.owner, (err, user) ->
-                  if err then cb err else
-                    if not user then cb() else
-                      containerLife = (new Date()).getTime() - container.created.getTime()
-                      if user.permission_level > 0 or containerLife < 3600000
-                        validContainers.push container.servicesToken
-                      cb()
+              users.findUser req.domain, _id: container.owner, (err, user) ->
+                if err then cb err else
+                  if not user then cb() else
+                    containerLife = (new Date()).getTime() - container.created.getTime()
+                    if user.permission_level > 0 or containerLife < 3600000
+                      validContainers.push container.servicesToken
+                    cb()
             , (err) ->
               if err then res.json 500, message: 'error computing container whitelist' else
                 request
