@@ -35,5 +35,7 @@
   "logExpress": true,
   "logErrorStack": true,
   "throwErrors": false,
+  "adminToken": "9154a011-f8f5-48cc-85c3-b4ce379e4d39",
+  "cleanInterval": "6 hours",
   "domain": "runnable.com"
 }
