@@ -154,20 +154,13 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
 
 containerSchema.statics.destroy = (domain, id, cb) ->
   @findOne { _id: id } , domain.intercept (container) =>
-    if not container then cb error 404, 'container metadata not found' else
-      container.getProcessState domain, (err, state) =>
-        if err then cb err else
-          remove = () =>
-            request
-              url: "#{configs.harbourmaster}/containers/#{container.servicesToken}"
-              method: 'DELETE'
-            , domain.intercept (res) =>
-              @remove { _id: id }, domain.intercept () ->
-                cb()
-          if not state.running then remove() else
-            container.stop domain, (err) =>
-              if err then cb err else
-                remove()
+    if not container then cb error 404, 'container not found' else
+      request
+        url: "#{configs.harbourmaster}/containers/#{container.servicesToken}"
+        method: 'DELETE'
+      , domain.intercept (res) =>
+        @remove { _id: id }, domain.intercept () ->
+          cb()
 
 # send a list of containers of registered users
 containerSchema.statics.listSavedContainers = (domain, cb) ->
