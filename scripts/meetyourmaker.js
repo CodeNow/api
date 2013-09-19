@@ -1,4 +1,4 @@
-var configs = require('./lib/configs');
+var configs = require('../lib/configs');
 var request = require('request');
 
 var clean = function() {
