@@ -88,11 +88,9 @@ Runnables =
       (image, cb)->
         containers.create domain, userId, image, (err, container) ->
           if err then cb err else
-            container.getProcessState domain, (err, state) ->
-              if err then cb err else
-                json_container = container.toJSON()
-                _.extend json_container, state
-                encode domain, json_container, cb
+            json_container = container.toJSON()
+            _.extend json_container, { running: false }
+            encode domain, json_container, cb
     ], cb
 
   listContainers: (domain, userId, parent, cb) ->
@@ -114,7 +112,7 @@ Runnables =
       containers.findOne _id: runnableId, domain.intercept (container) ->
         if not container then cb error 404, 'runnable not found' else
           if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-            container.getProcessState domain, (err, state) ->
+            container.getRunningState domain, (err, state) ->
               if err then cb err else
                 json = container.toJSON()
                 _.extend json, state
@@ -196,19 +194,12 @@ Runnables =
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
           start = () ->
-            container.getProcessState domain, (err, state) ->
+            container.start domain, (err) ->
               if err then cb err else
-                response = (state) ->
-                  json_project = container.toJSON()
-                  _.extend json_project, state
-                  encode domain, json_project, cb
-                if state.running then response state else
-                  container.start domain, (err) ->
-                    if err then cb err else
-                      container.getProcessState domain, (err, state) ->
-                        if err then cb err else
-                          response state
-          if container.specification?
+                json_project = container.toJSON()
+                _.extend json_project, { running: true }
+                encode domain, json_project, cb
+        if container.specification?
             implementations.findOne
               owner: userId
               implements: container.specification
@@ -227,18 +218,11 @@ Runnables =
         if container.owner.toString() isnt userId.toString()
           cb error 403, 'permission denied'
         else
-          container.getProcessState domain, (err, state) ->
+          container.stop domain, (err) ->
             if err then cb err else
-              response = (state) ->
-                json_project = container.toJSON()
-                _.extend json_project, state
-                encode domain, json_project, cb
-              if not state.running then response state else
-                container.stop domain, (err) ->
-                  if err then cb err else
-                    container.getProcessState domain, (err, state) ->
-                      if err then cb err else
-                        response state
+              json_project = container.toJSON()
+              _.extend json_project, { running: false }
+              encode domain, json_project, cb
 
   getVotes: (domain, runnableId, cb) ->
     runnableId = decodeId runnableId

@@ -166,7 +166,7 @@ containerSchema.statics.destroy = (domain, id, cb) ->
 containerSchema.statics.listSavedContainers = (domain, cb) ->
   @find { saved: true } , domain.intercept cb
 
-containerSchema.methods.getProcessState = (domain, cb) ->
+containerSchema.methods.getRunningState = (domain, cb) ->
   request
     url: "http://#{@servicesToken}.#{configs.domain}/api/running"
     method: 'GET'
