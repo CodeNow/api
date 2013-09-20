@@ -14,6 +14,19 @@ listFields =
 
 redis_client = redis.createClient(configs.redis.port, configs.redis.ipaddress)
 
+markCacheAsDirty = () ->
+  redis_client.set "sort_cache.dirty", true, (err) ->
+    if err then console.error err
+
+markCacheAsClean = () ->
+  redis_client.set "sort_cache.dirty", false, (err) ->
+    if err then console.error err
+
+isCacheDirty = (cb) ->
+  redis_client.get "sort_cache.dirty", (err, value) ->
+    if err then cb err else
+      cb null, value is null or value is true
+
 getUnfilteredCachedResults = (limit, index, cb) ->
   redis_client.get "sort_cache.#{limit}-#{index}", (err, value) ->
     if err then cb err else
@@ -99,12 +112,21 @@ updateAllFilteredCachedResults = (query, cb) ->
       updateFilteredCachedResults [ channel._id ], cb
     , cb
 
-updateAllCaches =  (cb) ->
-  updateAllFilteredCachedResults (err) ->
-    if err then cb err else
-      updateAllUnfilteredCachedResults (err) ->
-        if err then cb err else
-          cb()
+updateAllCaches =  (req, res) ->
+  users.findUser req.domain, _id: req.user_id, (err, user) ->
+    if err then res.json 500, message: 'error looking up user in mongodb' else
+      if not user then res.json 500, message: 'user not found' else
+        if not user.isModerator then res.json 403, message: 'permission denied' else
+          isCacheDirty (err, dirty) ->
+            if err then res.json 500, message: 'error checking cache dirty flag' else
+              if not dirty then res.json message: 'cache is not dirty, skipping refresh' else
+                updateAllFilteredCachedResults (err) ->
+                  if err then res.json 500, message: 'error refreshing redis cache' else
+                    updateAllUnfilteredCachedResults (err) ->
+                      if err then res.json 500, message: 'error refreshing redis cache' else
+                        markCacheAsClean (err) ->
+                          if err then res.json 500, message: 'error marking cache as clean' else
+                            res.json message: 'redis cache refreshed'
 
 voteSortPipeline = (limit, index) ->
   [
@@ -192,8 +214,10 @@ voteSortPipelineFilteredAll = (filter) ->
     }
   ]
 
-module.exports =
-  voteSortPipelineFiltered: voteSortPipelineFiltered
-  getUnfilteredCachedResults: getUnfilteredCachedResults
-  getFilteredCachedResults: getFilteredCachedResults
-  updateAllCaches: updateAllCaches
+module.exports = {
+  voteSortPipelineFiltered
+  getUnfilteredCachedResults
+  getFilteredCachedResults
+  updateAllCaches
+  markCacheAsDirty
+}

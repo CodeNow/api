@@ -46,6 +46,7 @@ Runnables =
                       if json_image.parent then json_image.parent = encodeId json_image.parent
                       json_image._id = encodeId image._id
                       cb null, json_image
+                      caching.markCacheAsDirty()
 
   createImage: (domain, userId, from, sync, cb) ->
     if not isObjectId64 from then cb error 404, 'source runnable not found' else
@@ -66,6 +67,7 @@ Runnables =
                             if json_image.parent then json_image.parent = encodeId json_image.parent
                             json_image._id = encodeId image._id
                             cb null, json_image
+                            caching.markCacheAsDirty()
 
   createContainer: (domain, userId, from, cb) ->
     async.waterfall [
@@ -250,8 +252,7 @@ Runnables =
         users.findOne _id: userId, domain.intercept (user) ->
           if not user then cb error 403, 'user not found' else
             user.addVote domain, runnableId, cb
-            caching.updateAllCaches (err) ->
-              if err then console.log err
+            caching.markCacheAsDirty()
 
   listAll: (domain, sortByVotes, limit, page, cb) ->
     if not sortByVotes
