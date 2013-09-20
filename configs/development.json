@@ -9,7 +9,7 @@
   "port": 3030,
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
-  "rootDomain": "runnableapp.dev",
+  "rootDomain": "runnable2.net",
   "shortProjectIds": true,
   "socketTimeout": "2 minutes",
   "nodetime": {
@@ -35,5 +35,5 @@
   "logExpress": true,
   "logErrorStack": true,
   "throwErrors": false,
-  "domain": "runnableapp.dev"
+  "domain": "runnable2.net"
   }
