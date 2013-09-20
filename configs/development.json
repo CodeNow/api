@@ -30,7 +30,7 @@
     }
   },
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "localhost:4243",
+  "harbourmaster": "http://localhost:4244",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
