@@ -164,7 +164,8 @@ containerSchema.statics.destroy = (domain, id, cb) ->
 
 # send a list of containers of registered users
 containerSchema.statics.listSavedContainers = (domain, cb) ->
-  @find { saved: true } , domain.intercept cb
+  lasthour = (new Date()).getTime() - (1000 * 60 * 60)
+  @find { $or: [ { saved: true }, { created: $gte: lasthour } ] }, domain.intercept cb
 
 containerSchema.methods.getRunningState = (domain, cb) ->
   request
