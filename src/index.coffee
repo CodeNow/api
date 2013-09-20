@@ -1,3 +1,4 @@
+caching = require './models/caching'
 cluster = require 'cluster'
 cleanup = require './cleanup'
 configs = require './configs'
@@ -74,6 +75,7 @@ class App
         @stop () =>
           if cluster.isWorker then @cleanup_worker()
     app.get '/cleanup', cleanup
+    app.get '/cache', caching.updateAllCaches
     app.get '/test/throw/express', (req, res) -> throw new Error 'express'
     app.get '/test/throw/express_async', (req, res) -> process.nextTick () -> throw new Error 'express_async'
     app.get '/test/throw/mongo_pool', (req, res) -> musers.findOne { }, req.domain.intercept () -> throw new Error 'mongo_pool'

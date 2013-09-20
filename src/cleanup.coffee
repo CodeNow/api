@@ -6,7 +6,7 @@ users = require './models/users'
 
 module.exports = (req, res) ->
   users.findUser req.domain, _id: req.user_id, (err, user) ->
-    if err then done err else
+    if err then cb err else
       if not user then cb() else
         if not user.isModerator then res.json 403, message: 'permission denied' else
           containers.listSavedContainers req.domain, (containers) ->
