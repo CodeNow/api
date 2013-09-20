@@ -122,12 +122,12 @@ updateAllCaches =  (req, res) ->
           isCacheDirty (err, dirty) ->
             if err then res.json 500, message: 'error checking cache dirty flag' else
               if not dirty then res.json message: 'cache is not dirty, skipping refresh' else
-                updateAllFilteredCachedResults (err) ->
-                  if err then res.json 500, message: 'error refreshing filtered redis cache' else
-                    updateAllUnfilteredCachedResults (err) ->
-                      if err then res.json 500, message: 'error refreshing redis cache' else
-                        markCacheAsClean (err) ->
-                          if err then res.json 500, message: 'error marking cache as clean' else
+                markCacheAsClean (err) ->
+                  if err then res.json 500, message: 'error marking cache as clean' else
+                    updateAllFilteredCachedResults (err) ->
+                      if err then res.json 500, message: 'error refreshing filtered redis cache' else
+                        updateAllUnfilteredCachedResults (err) ->
+                          if err then res.json 500, message: 'error refreshing redis cache' else
                             res.json message: 'redis cache refreshed'
 
 voteSortPipeline = (limit, index) ->
