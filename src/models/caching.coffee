@@ -18,6 +18,10 @@ markCacheAsDirty = () ->
   redis_client.set "sort_cache.dirty", true, (err) ->
     if err then console.error err
 
+markCacheAsClean = () ->
+  redis_client.set "sort_cache.dirty", false, (err) ->
+    if err then console.error err
+
 isCacheDirty = (cb) ->
   redis_client.get "sort_cache.dirty", (err, value) ->
     if err then cb err else
@@ -120,7 +124,9 @@ updateAllCaches =  (req, res) ->
                   if err then res.json 500, message: 'error refreshing redis cache' else
                     updateAllUnfilteredCachedResults (err) ->
                       if err then res.json 500, message: 'error refreshing redis cache' else
-                        res.json message: 'redis cache refreshed'
+                        markCacheAsClean (err) ->
+                          if err then res.json 500, message: 'error marking cache as clean' else
+                            res.json message: 'redis cache refreshed'
 
 voteSortPipeline = (limit, index) ->
   [
