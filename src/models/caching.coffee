@@ -14,19 +14,20 @@ listFields =
 
 redis_client = redis.createClient(configs.redis.port, configs.redis.ipaddress)
 
+
 markCacheAsDirty = () ->
-  redis_client.set "sort_cache.dirty", true, (err) ->
+  redis_client.set "sort_cache.dirty", 'true', (err) ->
     if err then console.error err
 
 markCacheAsClean = (cb) ->
-  redis_client.set "sort_cache.dirty", false, (err) ->
+  redis_client.set "sort_cache.dirty", 'false', (err) ->
     if err then cb err else
       cb()
 
 isCacheDirty = (cb) ->
   redis_client.get "sort_cache.dirty", (err, value) ->
     if err then cb err else
-      cb null, value is null or value is true
+      cb null, (not value) or (value is 'true') 
 
 getUnfilteredCachedResults = (limit, index, cb) ->
   redis_client.get "sort_cache.#{limit}-#{index}", (err, value) ->
@@ -122,7 +123,7 @@ updateAllCaches =  (req, res) ->
             if err then res.json 500, message: 'error checking cache dirty flag' else
               if not dirty then res.json message: 'cache is not dirty, skipping refresh' else
                 updateAllFilteredCachedResults (err) ->
-                  if err then res.json 500, message: 'error refreshing redis cache' else
+                  if err then res.json 500, message: 'error refreshing filtered redis cache' else
                     updateAllUnfilteredCachedResults (err) ->
                       if err then res.json 500, message: 'error refreshing redis cache' else
                         markCacheAsClean (err) ->
