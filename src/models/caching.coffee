@@ -18,9 +18,10 @@ markCacheAsDirty = () ->
   redis_client.set "sort_cache.dirty", true, (err) ->
     if err then console.error err
 
-markCacheAsClean = () ->
+markCacheAsClean = (cb) ->
   redis_client.set "sort_cache.dirty", false, (err) ->
-    if err then console.error err
+    if err then cb err else
+      cb()
 
 isCacheDirty = (cb) ->
   redis_client.get "sort_cache.dirty", (err, value) ->
@@ -105,7 +106,7 @@ updateFilteredCachedResults = (channels, cb) ->
             redis_client.set key, JSON.stringify(page), cb
           , cb
 
-updateAllFilteredCachedResults = (query, cb) ->
+updateAllFilteredCachedResults = (cb) ->
   channels.find { }, (err, results) ->
     results = results or [ ]
     async.forEachSeries results, (channel, cb) ->
