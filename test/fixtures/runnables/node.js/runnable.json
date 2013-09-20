@@ -1,5 +1,5 @@
 {
-  "name": "Hello node.js!",
+  "name": "Hsssello node.js!",
   "image": "runnable/node",
   "description": "This is a hello world example!",
   "cmd": "/usr/local/bin/npm start /root",
