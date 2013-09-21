@@ -35,5 +35,6 @@
   "logExpress": true,
   "logErrorStack": true,
   "throwErrors": false,
+  "containerTimeout": "5 minutes",
   "domain": "runnable2.net"
   }

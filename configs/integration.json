@@ -38,5 +38,6 @@
   "adminToken": "ecd64597-ad2e-4442-848f-411db25247f0",
   "cleanInterval": "2 minutes",
   "cacheRefreshInterval": "2 minutes",
+  "containerTimeout": "5 minutes",
   "domain": "cloudcosmos.com"
 }
