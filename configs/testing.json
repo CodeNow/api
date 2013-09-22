@@ -19,5 +19,12 @@
   "logExpress": false,
   "throwErrors": true,
   "logStack": false,
-  "domain": "runnableapp.dev"
+  "domain": "runnableapp.dev",
+  "mailchimp": {
+    "key":  "5fb2e67f84c1be89cf4ddf2252fc3de3-us5",
+    "lists": {
+      "publishers": "b7a679ddc3",
+      "contact": "43330e29a9"
+    }
+  }
 }

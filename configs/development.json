@@ -36,5 +36,12 @@
   "logErrorStack": true,
   "throwErrors": false,
   "containerTimeout": "5 minutes",
-  "domain": "runnable2.net"
+  "domain": "runnable2.net",
+  "mailchimp": {
+    "key":  "5fb2e67f84c1be89cf4ddf2252fc3de3-us5",
+    "lists": {
+      "publishers": "b7a679ddc3",
+      "contact": "43330e29a9"
+    }
   }
+}

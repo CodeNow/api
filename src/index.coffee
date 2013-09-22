@@ -18,6 +18,7 @@ channels = require './rest/channels'
 categories = require './rest/categories'
 specifications = require './rest/specifications'
 implementations = require './rest/implementations'
+campaigns = require './rest/campaigns'
 
 mongoose.connect configs.mongo
 if configs.rollbar
@@ -63,6 +64,7 @@ class App
     app.use categories @domain
     app.use specifications @domain
     app.use implementations @domain
+    app.use campaigns @domain
     app.use app.router
     if configs.nodetime then app.use nodetime.expressErrorHandler()
     if configs.rollbar then app.use rollbar.errorHandler()
