@@ -98,6 +98,7 @@ channelSchema.statics.createImplicitChannel = (domain, name, cb) ->
   channel.save domain.intercept () ->
     cb null, channel.toJSON()
 
+# this should be moved to redis
 listChannelsCache = null
 
 channelSchema.statics.listChannels = (domain, categories, cb) ->
@@ -124,24 +125,33 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
               , 5000
       , cb
 
+listChannelsInCategoryCache = {}
+
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
-  # this should have a caching layer
-  categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
-    if not category then cb error 404, 'could not find category' else
-      @find 'tags.category' : category._id, domain.intercept (channels) ->
-        async.map channels, (channel, cb) ->
-          images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
-            json = channel.toJSON()
-            json.count = count
-            json.tags = json.tags or [ ]
-            async.forEach json.tags, (tag, cb) ->
-              categories.findOne _id: tag.category, domain.intercept (category) ->
-                if category then tag.name = category.name
-                cb()
-            , (err) ->
-              if err then cb err else
-                cb null, json
-        , cb
+  if listChannelsInCategoryCache[categoryName]
+    process.nextTick ->
+      cb null, listChannelsInCategoryCache[categoryName]
+  else
+    categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
+      if not category then cb error 404, 'could not find category' else
+        @find 'tags.category' : category._id, domain.intercept (channels) ->
+          async.map channels, (channel, cb) ->
+            images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+              json = channel.toJSON()
+              json.count = count
+              json.tags = json.tags or [ ]
+              async.forEach json.tags, (tag, cb) ->
+                categories.findOne _id: tag.category, domain.intercept (category) ->
+                  if category then tag.name = category.name
+                  cb()
+              , (err) ->
+                if err then cb err else
+                  cb null, json
+                  listChannelsInCategoryCache[categoryName] = json
+                  setTimeout ->
+                    listChannelsCache = null
+                  , 5000
+          , cb
 
 channelSchema.statics.relatedChannels = (domain, channelNames, cb) ->
   # this should have a caching layer

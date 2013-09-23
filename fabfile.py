@@ -77,6 +77,7 @@ def checkout_latest():
   """
   with cd('api-server'):
     run('git reset --hard')
+    run('git fetch')
     run('git checkout %(branch)s' % env)
     run('git pull origin %(branch)s' % env)
 
