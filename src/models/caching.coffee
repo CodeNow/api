@@ -14,7 +14,6 @@ listFields =
 
 redis_client = redis.createClient(configs.redis.port, configs.redis.ipaddress)
 
-
 markCacheAsDirty = () ->
   redis_client.set "sort_cache.dirty", 'true', (err) ->
     if err then console.error err
@@ -27,7 +26,7 @@ markCacheAsClean = (cb) ->
 isCacheDirty = (cb) ->
   redis_client.get "sort_cache.dirty", (err, value) ->
     if err then cb err else
-      cb null, (not value) or (value is 'true') 
+      cb null, (not value) or (value is 'true')
 
 getUnfilteredCachedResults = (limit, index, cb) ->
   redis_client.get "sort_cache.#{limit}-#{index}", (err, value) ->
