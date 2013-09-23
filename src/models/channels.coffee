@@ -99,6 +99,7 @@ channelSchema.statics.createImplicitChannel = (domain, name, cb) ->
     cb null, channel.toJSON()
 
 channelSchema.statics.listChannels = (domain, categories, cb) ->
+  # this should have a caching layer
   @find { }, domain.intercept (channels) ->
     async.map channels, (channel, cb) ->
       images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
@@ -115,6 +116,7 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
     , cb
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
+  # this should have a caching layer
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
     if not category then cb error 404, 'could not find category' else
       @find 'tags.category' : category._id, domain.intercept (channels) ->
@@ -133,6 +135,7 @@ channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName
         , cb
 
 channelSchema.statics.relatedChannels = (domain, channelNames, cb) ->
+  # this should have a caching layer
   lowerNames = channelNames.map (name) -> name.toLowerCase()
   @find aliases:$in:lowerNames, domain.bind (err, channels) =>
     if err then throw err else
