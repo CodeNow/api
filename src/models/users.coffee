@@ -84,7 +84,7 @@ userSchema.statics.createUser = (domain, cb) ->
 userSchema.statics.findUser = (domain, params, cb) ->
   @findOne params, domain.intercept (user) ->
     if user
-      userLifetime = (new Date()).getTime() - user.created.getTime()
+      userLifetime = Date.now() - user.created.getTime()
       if userLifetime >= configs.cookieExpires and user.permission_level is 0
         user = null
     cb null, user
