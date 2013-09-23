@@ -13,8 +13,9 @@ module.exports = (parentDomain) ->
     d.add req
     d.add res
     d.on 'error', (e) ->
-      if parentDomain and configs.throwErrors 
-        throw e 
+      if parentDomain and configs.throwErrors
+        console.log e.stack
+        throw e
       else if e.message and dockerExp.test e.message
         parts = dockerExp.exec e.message
         code = parts[1]

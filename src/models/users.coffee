@@ -82,11 +82,9 @@ userSchema.statics.createUser = (domain, cb) ->
     cb null, user
 
 userSchema.statics.findUser = (domain, params, cb) ->
+  minCreated = Date.now() - configs.tokenExpires
+  params['$or'] = [ { created: $gte: minCreated }, { permission_level: $gt: 0 } ]
   @findOne params, domain.intercept (user) ->
-    if user
-      userLifetime = (new Date()).getTime() - user.created.getTime()
-      if userLifetime >= configs.cookieExpires and user.permission_level is 0
-        user = null
     cb null, user
 
 userSchema.statics.removeUser = (domain, userId, cb) ->
