@@ -98,22 +98,31 @@ channelSchema.statics.createImplicitChannel = (domain, name, cb) ->
   channel.save domain.intercept () ->
     cb null, channel.toJSON()
 
+listChannelsCache = null
+
 channelSchema.statics.listChannels = (domain, categories, cb) ->
-  # this should have a caching layer
-  @find { }, domain.intercept (channels) ->
-    async.map channels, (channel, cb) ->
-      images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
-        json = channel.toJSON()
-        json.count = count
-        json.tags = json.tags or [ ]
-        async.forEach json.tags, (tag, cb) ->
-          categories.findOne _id: tag.category, domain.intercept (category) ->
-            if category then tag.name = category.name
-            cb()
-        , (err) ->
-          if err then cb err else
-            cb null, json
-    , cb
+  if listChannelsCache
+    process.nextTick ->
+      cb null, listChannelsCache
+  else
+    @find { }, domain.intercept (channels) ->
+      async.map channels, (channel, cb) ->
+        images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+          json = channel.toJSON()
+          json.count = count
+          json.tags = json.tags or [ ]
+          async.forEach json.tags, (tag, cb) ->
+            categories.findOne _id: tag.category, domain.intercept (category) ->
+              if category then tag.name = category.name
+              cb()
+          , (err) ->
+            if err then cb err else
+              cb null, json
+              listChannelsCache = json
+              setTimeout ->
+                listChannelsCache = null
+              , 5000
+      , cb
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   # this should have a caching layer
