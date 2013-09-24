@@ -4,6 +4,7 @@ error = require '../error'
 images = require './images'
 users = require './users'
 mongoose = require 'mongoose'
+redis = require 'redis'
 _ = require 'lodash'
 
 Schema = mongoose.Schema
@@ -28,6 +29,8 @@ channelSchema = new Schema
     default: [ ]
 
 channelSchema.set 'autoIndex', false
+
+redis_client = redis.createClient(configs.redis.port, configs.redis.ipaddress)
 
 channelSchema.statics.getChannel = (domain, categories, id, cb) ->
   @findOne _id: id, domain.intercept (channel) ->
@@ -100,67 +103,49 @@ channelSchema.statics.createImplicitChannel = (domain, name, cb) ->
   channel.save domain.intercept () ->
     cb null, channel.toJSON()
 
-listChannelsCache = null
-
 channelSchema.statics.listChannels = (domain, categories, cb) ->
-  if listChannelsCache
-    do (listChannelsCache) ->
-      process.nextTick ->
-        cb null, listChannelsCache
-  else
-    @find { }, domain.intercept (channels) ->
-      async.map channels, (channel, cb) ->
-        images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
-          json = channel.toJSON()
-          json.count = count
-          json.tags = json.tags or [ ]
-          async.forEach json.tags, (tag, cb) ->
-            categories.findOne _id: tag.category, domain.intercept (category) ->
-              if category then tag.name = category.name
-              cb()
-          , (err) ->
-            if err then cb err else
-              cb null, json
-      , (err, result) ->
-        if err then cb err else
-          listChannelsCache = result
-          setTimeout ->
-            listChannelsCache = null
-          , 5000
-          cb null, result
-
-listChannelsInCategoryCache = { }
+  redis_client.get 'listChannelsCache', domain.intercept (listChannelsCache) =>
+    if listChannelsCache then cb null, JSON.parse(listChannelsCache) else
+      @find { }, domain.intercept (channels) ->
+        async.map channels, (channel, cb) ->
+          images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+            json = channel.toJSON()
+            json.count = count
+            json.tags = json.tags or [ ]
+            async.forEach json.tags, (tag, cb) ->
+              categories.findOne _id: tag.category, domain.intercept (category) ->
+                if category then tag.name = category.name
+                cb()
+            , (err) ->
+              if err then cb err else
+                cb null, json
+        , (err, result) ->
+          if err then cb err else
+            redis_client.setex 'listChannelsCache', 5, JSON.stringify(result)
+            cb null, result
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
     if not category then cb error 404, 'could not find category' else
-      if listChannelsInCategoryCache[category]
-        cached = listChannelsInCategoryCache[category]
-        do (cached) ->
-          process.nextTick () ->
-            cb null, cached
-      else
-        @find 'tags.category' : category._id, domain.intercept (channels) ->
-          async.map channels, (channel, cb) ->
-            images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
-              json = channel.toJSON()
-              json.count = count
-              json.tags = json.tags or [ ]
-              async.forEach json.tags, (tag, cb) ->
-                categories.findOne _id: tag.category, domain.intercept (category) ->
-                  if category then tag.name = category.name
-                  cb()
-              , (err) ->
-                if err then cb err else
-                  cb null, json
-          , (err, result) ->
-            if err then cb err else
-              listChannelsInCategoryCache[category] = result
-              setTimeout ->
-                listChannelsInCategoryCache[category] = null
-              , 5000
-              cb null, result
-
+      redis_client.get "listChannelsInCategory:#{category}", domain.intercept (listChannelsInCategoryCache) =>
+        if listChannelsInCategoryCache then cb null, JSON.parse(listChannelsInCategoryCache) else
+          @find 'tags.category' : category._id, domain.intercept (channels) ->
+            async.map channels, (channel, cb) ->
+              images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
+                json = channel.toJSON()
+                json.count = count
+                json.tags = json.tags or [ ]
+                async.forEach json.tags, (tag, cb) ->
+                  categories.findOne _id: tag.category, domain.intercept (category) ->
+                    if category then tag.name = category.name
+                    cb()
+                , (err) ->
+                  if err then cb err else
+                    cb null, json
+            , (err, result) ->
+              if err then cb err else
+                redis_client.set "listChannelsInCategory#{category}", 5, JSON.stringify(result)
+                cb null, result
 
 channelSchema.statics.relatedChannels = (domain, channelNames, cb) ->
   lowerNames = channelNames.map (name) -> name.toLowerCase()
