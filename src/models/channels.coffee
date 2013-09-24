@@ -104,7 +104,9 @@ listChannelsCache = null
 
 channelSchema.statics.listChannels = (domain, categories, cb) ->
   if listChannelsCache
-    cb null, listChannelsCache
+    do (listChannelsCache) ->
+      process.nextTick ->
+        cb null, listChannelsCache
   else
     @find { }, domain.intercept (channels) ->
       async.map channels, (channel, cb) ->
@@ -131,7 +133,10 @@ channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
     if not category then cb error 404, 'could not find category' else
       if listChannelsInCategoryCache[category]
-        cb null, listChannelsInCategoryCache[category]
+        cached = listChannelsInCategoryCache[category]
+        do (cached) ->
+          process.nextTick () ->
+            cb null, cached
       else
         @find 'tags.category' : category._id, domain.intercept (channels) ->
           async.map channels, (channel, cb) ->
@@ -145,8 +150,8 @@ channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName
                   cb()
               , (err) ->
                 if err then cb err else
-                  cb null, json
                   listChannelsInCategoryCache[category] = json
+                  cb null, json
                   setTimeout ->
                     listChannelsInCategoryCache[category] = null
                   , 5000
