@@ -106,6 +106,7 @@ channelSchema.statics.createImplicitChannel = (domain, name, cb) ->
 channelSchema.statics.listChannels = (domain, categories, cb) ->
   redis_client.get 'listChannelsCache', domain.intercept (listChannelsCache) =>
     if listChannelsCache then cb null, JSON.parse(listChannelsCache) else
+      console.log 'REFRESHING LIST CHANNELS'
       @find { }, domain.intercept (channels) ->
         async.map channels, (channel, cb) ->
           images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
@@ -127,8 +128,9 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
     if not category then cb error 404, 'could not find category' else
-      redis_client.get "listChannelsInCategory:#{category}", domain.intercept (listChannelsInCategoryCache) =>
+      redis_client.get "listChannelsInCategory:#{category._id}", domain.intercept (listChannelsInCategoryCache) =>
         if listChannelsInCategoryCache then cb null, JSON.parse(listChannelsInCategoryCache) else
+          console.log 'REFRESHING LIST CHANNELS IN CATEGORY'
           @find 'tags.category' : category._id, domain.intercept (channels) ->
             async.map channels, (channel, cb) ->
               images.find('tags.channel': channel._id).count().exec domain.intercept (count) ->
@@ -144,7 +146,7 @@ channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName
                     cb null, json
             , (err, result) ->
               if err then cb err else
-                redis_client.set "listChannelsInCategory#{category}", 5, JSON.stringify(result)
+                redis_client.setex "listChannelsInCategory:#{category._id}", 5, JSON.stringify(result)
                 cb null, result
 
 channelSchema.statics.relatedChannels = (domain, channelNames, cb) ->
