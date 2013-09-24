@@ -26,6 +26,8 @@ implementationSchema = new Schema
     ]
     default: [ ]
 
+implementationSchema.set 'autoIndex', false
+
 implementationSchema.statics.createImplementation = (domain, opts, cb) ->
   if not opts.implements then cb error 400, 'needs specification' else
     users.findUser domain, _id: opts.userId, domain.intercept (user) =>
