@@ -121,11 +121,13 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
           , (err) ->
             if err then cb err else
               cb null, json
-              listChannelsCache = json
-              setTimeout ->
-                listChannelsCache = null
-              , 5000
-      , cb
+      , (err, result) ->
+        if err then cb err else
+          listChannelsCache = result
+          setTimeout ->
+            listChannelsCache = null
+          , 5000
+          cb null, result
 
 listChannelsInCategoryCache = { }
 
@@ -150,12 +152,15 @@ channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName
                   cb()
               , (err) ->
                 if err then cb err else
-                  listChannelsInCategoryCache[category] = json
                   cb null, json
-                  setTimeout ->
-                    listChannelsInCategoryCache[category] = null
-                  , 5000
-          , cb
+          , (err, result) ->
+            if err then cb err else
+              listChannelsInCategoryCache[category] = result
+              setTimeout ->
+                listChannelsInCategoryCache[category] = null
+              , 5000
+              cb null, result
+
 
 channelSchema.statics.relatedChannels = (domain, channelNames, cb) ->
   lowerNames = channelNames.map (name) -> name.toLowerCase()
