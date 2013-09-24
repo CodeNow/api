@@ -154,21 +154,22 @@ updateEnv = (domain, opts, cb) ->
       async.parallel [
         (cb) =>
           url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
-          request.get url, domain.bind (err, res, body) =>
-            request.get url, domain.intercept (res, body) =>
-              async.each opts.requirements, (requirement, cb) =>
-                request.post
-                  url: url
-                  json:
-                    key: requirement.name
-                    value: requirement.value
-                , cb
-              , domain.intercept () =>
-                request.get url, domain.intercept (res, body) =>
-                  cb null
+          request.get { url: url, pool: false }, domain.intercept (res, body) =>
+            async.each opts.requirements, (requirement, cb) =>
+              request.post
+                pool: false
+                url: url
+                json:
+                  key: requirement.name
+                  value: requirement.value
+              , cb
+            , domain.intercept () =>
+              request.get { url: url, pool: false }, domain.intercept (res, body) =>
+                cb null
         (cb) =>
           url = "#{configs.harbourmaster}/containers/#{container.servicesToken}/route"
           request
+            pool: false
             method: 'PUT'
             json:
               webToken: opts.subdomain

@@ -25,6 +25,7 @@ module.exports = (req, res) ->
                   url: "#{configs.harbourmaster}/containers/cleanup"
                   method: 'POST'
                   json: validContainers
+                  pool: false
                 , (err, serverRes, body) ->
                   if err then throw err
                   console.log body

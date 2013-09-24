@@ -120,6 +120,7 @@ buildDockerImage = (domain, fspath, tag, cb) ->
     headers: { 'content-type': 'application/tar' }
     qs:
       t: tag
+    pool: false
   , domain.intercept (res, body) ->
     if res.statusCode isnt 200 then cb error res.statusCode, body else
       if body.indexOf('Successfully built') is -1 then cb error 400, 'could not build image from dockerfile' else
@@ -135,6 +136,7 @@ syncDockerImage = (domain, image, cb) ->
     encodedId = encodeId image._id.toString()
   imageTag = "#{configs.dockerRegistry}/runnable/#{encodedId}"
   request
+    pool: false
     url: "#{configs.harbourmaster}/containers"
     method: 'POST'
     json:
@@ -154,6 +156,7 @@ syncDockerImage = (domain, image, cb) ->
       sync domain, servicesToken, image, (err) ->
         if err then cb err else
           request
+            pool: false
             url: "#{configs.harbourmaster}/containers/#{servicesToken}"
             method: 'DELETE'
           , domain.intercept (res) ->
@@ -240,6 +243,7 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         image.tags.push tag.toJSON()
       encodedId = encodeId image._id.toString()
       request
+        pool: false
         url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
         method: 'POST'
         qs:
@@ -279,6 +283,7 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   length = @revisions.push { }
   encodedId = encodeId @revisions[length-1]._id.toString()
   request
+    pool: false
     url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
     method: 'POST'
     qs:
