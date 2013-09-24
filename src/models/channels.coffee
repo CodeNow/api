@@ -27,6 +27,8 @@ channelSchema = new Schema
     ]
     default: [ ]
 
+channelSchema.set 'autoIndex', false
+
 channelSchema.statics.getChannel = (domain, categories, id, cb) ->
   @findOne _id: id, domain.intercept (channel) ->
     if not channel then cb error 404, 'channel not found' else

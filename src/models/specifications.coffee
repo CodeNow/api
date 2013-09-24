@@ -23,6 +23,8 @@ specificationSchema = new Schema
     type: [String]
     default: [ ]
 
+specificationSchema.set 'autoIndex', false
+
 specificationSchema.statics.createSpecification = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
@@ -41,7 +43,7 @@ specificationSchema.statics.createSpecification = (domain, opts, cb) ->
               cb null, specification.toJSON()
 
 specificationSchema.statics.listSpecifications = (domain, cb) ->
-  @find {}, domain.intercept (specifications) => 
+  @find {}, domain.intercept (specifications) =>
     cb null, specifications.map (specification) -> specification.toJSON()
 
 specificationSchema.statics.getSpecification = (domain, id, cb) ->

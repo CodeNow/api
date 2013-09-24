@@ -14,11 +14,7 @@ userSchema = new Schema
     index: true
   password:
     type: String
-    index: true
   username:
-    type: String
-    index: true
-  fb_userid:
     type: String
     index: true
   permission_level:
@@ -50,15 +46,14 @@ userSchema = new Schema
     ]
     default: [ ]
 
+# common user lookup
 userSchema.index
-  email:1
-  password:1
-
-userSchema.index
-  username:1
-  password:1
+  _id: 1
+  created: 1
+  permission_level: 1
 
 userSchema.set 'toJSON', { virtuals: true }
+userSchema.set 'autoIndex', false
 
 userSchema.virtual('gravitar').get () ->
   if not @email then undefined else
@@ -82,11 +77,9 @@ userSchema.statics.createUser = (domain, cb) ->
     cb null, user
 
 userSchema.statics.findUser = (domain, params, cb) ->
+  minCreated = Date.now() - configs.tokenExpires
+  params['$or'] = [ { created: $gte: minCreated }, { permission_level: $gt: 0 } ]
   @findOne params, domain.intercept (user) ->
-    if user
-      userLifetime = (new Date()).getTime() - user.created.getTime()
-      if userLifetime >= configs.cookieExpires and user.permission_level is 0
-        user = null
     cb null, user
 
 userSchema.statics.removeUser = (domain, userId, cb) ->

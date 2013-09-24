@@ -12,15 +12,6 @@
   "rootDomain": "runnable2.net",
   "shortProjectIds": true,
   "socketTimeout": "2 minutes",
-  "nodetime": {
-    "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",
-    "appName": "Runnable.com API Server (Development)",
-    "stdout": false,
-    "namedTransactions": {
-      "Published Runnables": "/runnables",
-      "Draft Runnables": "/users/me/runnables"
-    }
-  },
   "rollbar": {
     "key": "119509f9ba314df8a9ffbaf7b4812fb6",
     "options":  {

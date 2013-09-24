@@ -23,6 +23,8 @@ categorySchema = new Schema
     unique: true
     default: [ ]
 
+categorySchema.set 'autoIndex', false
+
 categorySchema.statics.getCategory = (domain, categoryId, cb) ->
   @findOne _id: categoryId , domain.intercept (category) ->
     if not category then cb error 404, 'not found' else

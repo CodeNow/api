@@ -87,6 +87,8 @@ containerSchema = new Schema
     type: ObjectId
 
 containerSchema.set 'toJSON', virtuals: true
+containerSchema.set 'autoIndex', false
+
 
 containerSchema.index
   tags: 1

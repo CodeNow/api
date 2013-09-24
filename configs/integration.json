@@ -15,7 +15,7 @@
   "socketTimeout": "2 minutes",
   "nodetime": {
     "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",
-    "appName": "Runnable.com API Server",
+    "appName": "api.cloudcosmos.com",
     "namedTransactions": {
       "Published Runnables": "/runnables",
       "Draft Runnables": "/users/me/runnables"
