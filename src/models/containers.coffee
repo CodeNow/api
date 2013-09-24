@@ -129,6 +129,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       request
         url: "#{configs.harbourmaster}/containers"
         method: 'POST'
+        pool: false
         json:
           servicesToken: container.servicesToken
           webToken: subdomain or container.webToken
@@ -160,6 +161,7 @@ containerSchema.statics.destroy = (domain, id, cb) ->
       request
         url: "#{configs.harbourmaster}/containers/#{container.servicesToken}"
         method: 'DELETE'
+        pool: false
       , domain.intercept (res) =>
         @remove { _id: id }, domain.intercept () ->
           cb()
@@ -173,6 +175,7 @@ containerSchema.methods.getRunningState = (domain, cb) ->
   request
     url: "http://#{@servicesToken}.#{configs.domain}/api/running"
     method: 'GET'
+    pool: false
   , domain.intercept (res) ->
     if res.statusCode is 503 then cb null, running: false else
       if res.statusCode is 502 then cb error 500, 'runnable not responding to status requests' else
@@ -187,6 +190,7 @@ containerSchema.methods.start = (domain, cb) ->
     request
       url: "http://#{@servicesToken}.#{configs.domain}/api/start"
       method: 'GET'
+      pool: false
     , domain.intercept (res) ->
       if res.statusCode is 503
         setTimeout () ->
@@ -203,6 +207,7 @@ containerSchema.methods.stop = (domain, cb) ->
   request
     url: "http://#{@servicesToken}.#{configs.domain}/api/stop"
     method: 'GET'
+    pool: false
   , domain.intercept (res) ->
     if res.statusCode is 503 then cb() else # container is not running no sense in waking it up
       if res.statusCode is 502 then cb error 500, 'runnable not responding to stop request' else
