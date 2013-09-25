@@ -252,9 +252,10 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
           author: image.owner.toString()
           tag: 'latest'
       , domain.intercept (res) ->
-        res.body = JSON.parse res.body
-        image.save domain.intercept () ->
-          cb null, image
+        if res.statusCode isnt 201 then cb error 500, "error committing docker image: #{res.body}" else
+          res.body = JSON.parse res.body
+          image.save domain.intercept () ->
+            cb null, image
 
 imageSchema.statics.search = (domain, searchText, limit, cb) ->
   opts =
