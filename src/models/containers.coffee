@@ -1,6 +1,5 @@
 async = require 'async'
 configs = require '../configs'
-concat = require 'concat-stream'
 crypto = require 'crypto'
 error = require '../error'
 exts = require '../extensions'
@@ -166,7 +165,6 @@ containerSchema.statics.destroy = (domain, id, cb) ->
         @remove { _id: id }, domain.intercept () ->
           cb()
 
-# send a list of containers of registered users
 containerSchema.statics.listSavedContainers = (domain, cb) ->
   timeout = (new Date()).getTime() - configs.containerTimeout
   @find { $or: [ { saved: true }, { created: $gte: timeout } ] }, domain.intercept cb
@@ -177,12 +175,11 @@ containerSchema.methods.getRunningState = (domain, cb) ->
     method: 'GET'
     pool: false
   , domain.intercept (res) ->
-    if res.statusCode is 503 then cb null, running: false else
-      if res.statusCode is 502 then cb error 500, 'runnable not responding to status requests' else
-        if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-          if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
-            res.body = JSON.parse res.body
-            cb null, running: res.body.running
+    if res.statusCode is 502 then cb error 500, 'runnable not responding to status requests' else
+      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+        if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
+          res.body = JSON.parse res.body
+          cb null, running: res.body.running
 
 containerSchema.methods.start = (domain, cb) ->
   # should no longer need to try multiple times
@@ -192,15 +189,10 @@ containerSchema.methods.start = (domain, cb) ->
       method: 'GET'
       pool: false
     , domain.intercept (res) ->
-      if res.statusCode is 503
-        setTimeout () ->
-          doReq()
-        , 500
-      else
-        if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
-          if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-            if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
-              cb()
+      if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
+        if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+          if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
+            cb()
   doReq()
 
 containerSchema.methods.stop = (domain, cb) ->
@@ -209,11 +201,10 @@ containerSchema.methods.stop = (domain, cb) ->
     method: 'GET'
     pool: false
   , domain.intercept (res) ->
-    if res.statusCode is 503 then cb() else # container is not running no sense in waking it up
-      if res.statusCode is 502 then cb error 500, 'runnable not responding to stop request' else
-        if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-          if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
-            cb()
+    if res.statusCode is 502 then cb error 500, 'runnable not responding to stop request' else
+      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+        if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
+          cb()
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]
@@ -263,21 +254,19 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
         @save domain.intercept () ->
           cb null, { _id: file._id, name: name, path: filePath }
   else
-    store = concat (file_content) =>
-      volumes.createFile domain, @servicesToken, @file_root, name, filePath, file_content.toString(), (err) =>
-        if err then cb err else
-          file =
-            path: filePath
-            name: name
-          ext = path.extname name
-          if cacheContents ext
-            file.content = file_content
-          @files.push file
-          file = @files[@files.length-1]
-          @last_write = new Date()
-          @save domain.intercept () ->
-            cb null, { _id: file._id, name: name, path: filePath }
-    content.pipe store
+    volumes.streamFile domain, @servicesToken, @file_root, name, filePath, content, (err) =>
+      if err then cb err else
+        file =
+          path: filePath
+          name: name
+        ext = path.extname name
+        if cacheContents ext
+          file.content = file_content
+        @files.push file
+        file = @files[@files.length-1]
+        @last_write = new Date()
+        @save domain.intercept () ->
+          cb null, { _id: file._id, name: name, path: filePath }
 
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
@@ -299,16 +288,14 @@ containerSchema.methods.updateFileContents = (domain, filePath, content, cb) ->
     if elemPath is filePath
       foundFile = file
   if not foundFile then cb error 404, 'file does not exist' else
-    store = concat (file_content) =>
-      volumes.updateFile domain, @servicesToken, @file_root, foundFile.name, foundFile.path, file_content.toString(), (err) =>
-        if err then cb err else
-          ext = path.extname foundFile.name
-          if cacheContents ext
-            foundFile.content = file_content
-          @last_write = new Date()
-          @save domain.intercept () ->
-            cb null, foundFile
-    content.pipe store
+    volumes.streamFile domain, @servicesToken, @file_root, foundFile.name, foundFile.path, file_content.toString(), (err) =>
+      if err then cb err else
+        ext = path.extname foundFile.name
+        if cacheContents ext
+          foundFile.content = file_content
+        @last_write = new Date()
+        @save domain.intercept () ->
+          cb null, foundFile
 
 containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
   file = @files.id fileId

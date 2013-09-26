@@ -18,14 +18,27 @@ Volumes =
           content: content
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb()
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb()
+    doReq()
+
+  streamFile: (domain, subDomain, srcDir, name, path, stream, cb) ->
+    doReq = () ->
+      r = request
+        pool: false
+        url: "http://#{subDomain}.#{configs.domain}/api/files/stream"
+        method: 'POST'
+      form = r.form()
+      form.append 'dir', srcDir
+      form.append 'name', name
+      form.append 'path', path
+      form.append 'content', stream
+      r.on 'end', (err, res) ->
+        if err then throw err
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb()
     doReq()
 
   readFile: (domain, subDomain, srcDir, name, path, cb) ->
@@ -40,14 +53,9 @@ Volumes =
           path: path
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb null, res.body.content
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb null, res.body.content
     doReq()
 
   updateFile: (domain, subDomain, srcDir, name, path, content, cb) ->
@@ -63,14 +71,9 @@ Volumes =
           content: content
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb()
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb()
     doReq()
 
   deleteFile: (domain, subDomain, srcDir, name, path, cb) ->
@@ -85,14 +88,9 @@ Volumes =
           path: path
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb()
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb()
     doReq()
 
   renameFile: (domain, subDomain, srcDir, name, path, newName, cb) ->
@@ -108,14 +106,9 @@ Volumes =
           newName: newName
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb()
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb()
     doReq()
 
   moveFile: (domain, subDomain, srcDir, name, path, newPath, cb) ->
@@ -131,14 +124,9 @@ Volumes =
           newPath: newPath
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb()
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb()
     doReq()
 
   readAllFiles: (domain, subDomain, srcDir, ignores, exts, cb) ->
@@ -153,14 +141,9 @@ Volumes =
           exts: exts
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb null, res.body
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb null, res.body
     doReq()
 
   createDirectory: (domain, subDomain, srcDir, name, path, cb) ->
@@ -175,14 +158,9 @@ Volumes =
           path: path
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb()
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb()
     doReq()
 
   readDirectory: (domain, subDomain, srcDir, subDir, exts, cb) ->
@@ -197,14 +175,9 @@ Volumes =
           exts: exts
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb null, res.body
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb null, res.body
     doReq()
 
   removeDirectory: (domain, subDomain, srcDir, name, path, recursive, cb) ->
@@ -220,14 +193,9 @@ Volumes =
           recursive: recursive
       , (err, res) ->
         if err then throw err
-        if res.statusCode is 503
-          setTimeout () ->
-            doReq()
-          , 500
-        else
-          if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
-            if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-              cb()
+        if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
+          if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
+            cb()
     doReq()
 
 module.exports = Volumes
