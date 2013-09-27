@@ -34,8 +34,9 @@ Volumes =
       form.append 'name', name
       form.append 'path', path
       form.append 'content', stream
-      r.on 'end', (err, res) ->
-        if err then throw err
+      r.on 'error', (err) ->
+       throw err
+      r.on 'response', (res) ->
         if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
           if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
             cb()
