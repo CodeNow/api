@@ -261,12 +261,20 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
           name: name
         ext = path.extname name
         if cacheContents ext
-          file.content = file_content
-        @files.push file
-        file = @files[@files.length-1]
-        @last_write = new Date()
-        @save domain.intercept () ->
-          cb null, { _id: file._id, name: name, path: filePath }
+          volumes.readFile domain, @servicesToken, @file_root, name, filePath, (err, file_content) =>
+            if err then cb err else
+              file.content = file_content
+              @files.push file
+              file = @files[@files.length-1]
+              @last_write = new Date()
+              @save domain.intercept () ->
+                cb null, { _id: file._id, name: name, path: filePath }
+        else
+          @files.push file
+          file = @files[@files.length-1]
+          @last_write = new Date()
+          @save domain.intercept () ->
+            cb null, { _id: file._id, name: name, path: filePath }
 
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
@@ -288,14 +296,20 @@ containerSchema.methods.updateFileContents = (domain, filePath, content, cb) ->
     if elemPath is filePath
       foundFile = file
   if not foundFile then cb error 404, 'file does not exist' else
-    volumes.streamFile domain, @servicesToken, @file_root, foundFile.name, foundFile.path, file_content.toString(), (err) =>
+    volumes.streamFile domain, @servicesToken, @file_root, foundFile.name, foundFile.path, content, (err) =>
       if err then cb err else
         ext = path.extname foundFile.name
         if cacheContents ext
-          foundFile.content = file_content
-        @last_write = new Date()
-        @save domain.intercept () ->
-          cb null, foundFile
+          volumes.readFile domain, @servicesToken, @file_root, foundFile.name, foundFile.path, (err, file_content) =>
+            if err then cb err else
+              foundFile.content = file_content
+              @last_write = new Date()
+              @save domain.intercept () ->
+                cb null, { _id: foundFile._id, name: foundFile.name, path: foundFile.path }
+        else
+          @last_write = new Date()
+          @save domain.intercept () ->
+            cb null, { _id: foundFile._id, name: foundFile.name, path: foundFile.path }
 
 containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
   file = @files.id fileId
