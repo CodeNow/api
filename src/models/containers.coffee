@@ -268,7 +268,7 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
               file = @files[@files.length-1]
               @last_write = new Date()
               @save domain.intercept () ->
-                cb null, { _id: file._id, name: name, path: filePath }
+                cb null, { _id: file._id, name: name, path: filePath, content: file_content }
         else
           @files.push file
           file = @files[@files.length-1]
