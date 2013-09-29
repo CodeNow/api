@@ -287,6 +287,7 @@ module.exports = (parentDomain) ->
             files_array.push file
           async.mapSeries files_array, (file, cb) ->
             filestream = fs.createReadStream file.path
+            filestream.pause()
             runnables.createFile req.domain, req.user_id, req.params.id, file.name, '/', filestream, cb
           , (err, files) ->
             if err then res.json err.code, message: err.msg else
@@ -307,6 +308,7 @@ module.exports = (parentDomain) ->
           files_array.push file
         async.mapSeries files_array, (file, cb) ->
           filestream = fs.createReadStream file.path
+          filestream.pause()
           runnables.updateFileContents req.domain, req.user_id, req.params.id, "/#{file.name}", filestream, cb
         , (err, files) ->
           if err then res.json err.code, message: err.msg else
@@ -330,6 +332,7 @@ module.exports = (parentDomain) ->
             if not root.dir then res.json 403, message: 'resource is not of directory type' else
               async.mapSeries files_array, (file, cb) ->
                 filestream = fs.createReadStream file.path
+                filestream.pause()
                 runnables.createFile req.domain, req.user_id, req.params.id, file.name, "#{root.path}/#{root.name}", filestream, cb
               , (err, files) ->
                 if err then res.json err.code, message: err.msg else
@@ -381,6 +384,7 @@ module.exports = (parentDomain) ->
               if not root.dir then res.json 403, message: 'resource is not of directory type' else
                 async.mapSeries files_array, (file, cb) ->
                   filestream = fs.createReadStream file.path
+                  filestream.pause()
                   runnables.updateFileContents req.domain, req.user_id, req.params.id, "#{root.path}/#{root.name}/#{file.name}", filestream, cb
                 , (err, files) ->
                   if err then res.json err.code, message: err.msg else

@@ -34,6 +34,7 @@ Volumes =
       form.append 'name', name
       form.append 'path', path
       form.append 'content', stream
+      stream.resume()
       r.on 'error', (err) ->
         throw err
       r.on 'response', (res) ->
