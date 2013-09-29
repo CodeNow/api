@@ -57,7 +57,7 @@ Volumes =
         if err then throw err
         if res.statusCode is 502 then cb error 500, 'runnable not responding to file requests' else
           if res.statusCode isnt 201 then cb error res.statusCode, 'unknown error response from runnable' else
-            cb null, res.body.content
+            cb null, res.body
     doReq()
 
   updateFile: (domain, subDomain, srcDir, name, path, content, cb) ->
