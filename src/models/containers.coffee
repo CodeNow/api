@@ -229,7 +229,7 @@ containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb
   cb null, files
 
 cacheContents = (ext) ->
-  ext in exts
+  ext.toLowerCase() in exts
 
 containerSchema.methods.syncFiles = (domain, cb) ->
   sync domain, @servicesToken, @, (err) =>
