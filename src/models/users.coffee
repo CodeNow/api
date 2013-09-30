@@ -101,8 +101,11 @@ userSchema.statics.loginUser = (domain, login, password, cb) ->
 
 userSchema.statics.registerUser = (domain, userId, data, cb) ->
   setPassword = (password) =>
-    @findOne { email: data.email }, domain.intercept (user) =>
-      if user then cb error 403, 'user already exists' else
+    @findOne $or: [{ email: data.email }, { username: data.username }], domain.intercept (user) =>
+      if user
+        collision = if data.email is user.email then 'email' else 'username'
+        cb error 403, collision+' already exists'
+      else
         cmd = $set:
           email: data.email
           password: password
