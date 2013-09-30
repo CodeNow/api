@@ -262,7 +262,7 @@ Runnables =
     if sortByVotes and channelIds.length is 1
       @listCachedChannelsFiltered domain, channelIds, true, limit, page, cb
     else
-      @listFiltered domain, 'tags.channel': $in: channelIds, sortByVotes, limit, page, null cb
+      @listFiltered domain, 'tags.channel': $in: channelIds, sortByVotes, limit, page, null, cb
 
   listByOwner: (domain, owner, sortByVotes, limit, page, cb) ->
     fields = _.clone listFields
