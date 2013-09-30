@@ -272,7 +272,7 @@ Runnables =
       cuts:1
       runs:1
       views:1
-    @listFiltered domain, { owner: owner }, sortByVotes, limit, page, null, cb
+    @listFiltered domain, { owner: owner }, sortByVotes, limit, page, fields, cb
 
   listCachedChannelsFiltered: (domain, channels, sortByVotes, limit, page, cb) ->
     caching.getFilteredCachedResults limit, limit*page, channels, domain.intercept (results) ->
