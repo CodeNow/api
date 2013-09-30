@@ -295,7 +295,9 @@ module.exports = (parentDomain) ->
       else
         res.json 400, message: 'content type must be application/json or multipart/form-data'
 
+  app.post '/users/me/runnables/:id/files/', createfile
   app.post '/users/me/runnables/:id/files', createfile
+  app.post '/users/:userid/runnables/:id/files/', fetchuser, createfile
   app.post '/users/:userid/runnables/:id/files', fetchuser, createfile
 
   streamupdate = (req, res) ->
