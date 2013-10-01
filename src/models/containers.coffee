@@ -268,13 +268,14 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
               file = @files[@files.length-1]
               @last_write = new Date()
               @save domain.intercept () ->
-                cb null, { _id: file._id, name: name, path: filePath, content: file_content }
+                cb null, { _id: file._id, name: file.name, path: file.path, content: file.content }
         else
           @files.push file
           file = @files[@files.length-1]
           @last_write = new Date()
           @save domain.intercept () ->
-            cb null, { _id: file._id, name: name, path: filePath }
+            console.log file
+            cb null, { _id: file._id, name: file.name, path: file.path }
 
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
