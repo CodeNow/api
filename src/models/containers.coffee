@@ -239,6 +239,7 @@ containerSchema.methods.syncFiles = (domain, cb) ->
         cb null, @
 
 containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
+  filePath = path.normalize filePath
   if typeof content is 'string'
     volumes.createFile domain, @servicesToken, @file_root, name, filePath, content, (err) =>
       if err then cb err else
@@ -268,13 +269,14 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
               file = @files[@files.length-1]
               @last_write = new Date()
               @save domain.intercept () ->
-                cb null, { _id: file._id, name: name, path: filePath, content: file_content }
+                cb null, { _id: file._id, name: file.name, path: file.path, content: file.content }
         else
           @files.push file
           file = @files[@files.length-1]
           @last_write = new Date()
           @save domain.intercept () ->
-            cb null, { _id: file._id, name: name, path: filePath }
+            console.log file
+            cb null, { _id: file._id, name: file.name, path: file.path }
 
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
@@ -349,6 +351,7 @@ containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
 
 containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
   file = @files.id fileId
+  newPath = path.normalize newPath
   if not file then cb error 404, 'file does not exist' else
     volumes.moveFile domain, @servicesToken, @file_root, file.name, file.path, newPath, (err) =>
       if err then cb err else
