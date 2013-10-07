@@ -55,6 +55,7 @@ getFilteredCachedResults = (limit, index, channels, cb) ->
 updateSingleUnfilteredCachedResult = (limit, index, cb) ->
   users.aggregate voteSortPipeline(limit, index), (err, results) ->
     if err then cb err else
+      results = results or [ ]
       redis_client.set "sort_cache.#{limit}-#{index}", JSON.stringify(results), (err) ->
         if err then cb err else
           cb null, results
@@ -67,6 +68,7 @@ updateSingleFilteredCachedResult = (limit, index, channels, cb) ->
         filter.push image._id
       users.aggregate voteSortPipelineFiltered(limit, index, filter), (err, results) ->
         if err then cb err else
+          results = results or [ ]
           key = "sort_cache.#{limit}-#{index}"
           channels.forEach (channel) ->
             key = "#{key}-#{channel}"
@@ -78,6 +80,7 @@ updateAllUnfilteredCachedResults = (cb) ->
   limit = configs.defaultPageLimit
   users.aggregate voteSortPipelineAll(), (err, results) ->
     if err then cb err else
+      results = results or [ ]
       num_pages = Math.ceil(results.length/limit)
       indices = for i in [ 0 ... num_pages ]
         i*limit
@@ -95,6 +98,7 @@ updateFilteredCachedResults = (channels, cb) ->
       limit = configs.defaultPageLimit
       users.aggregate voteSortPipelineFilteredAll(filter), (err, results) ->
         if err then cb err else
+          results = results or [ ]
           num_pages = Math.ceil(results.length/limit)
           indices = for i in [ 0 ... num_pages ]
             i*limit
