@@ -13,10 +13,18 @@
   "rootDomain": "runnable.com",
   "shortProjectIds": true,
   "socketTimeout": "2 minutes",
+  "nodetime": {
+    "accountKey": "89c858c5a6332b998a1ada5985e5e4c8f578b602",
+    "appName": "api.runnable.com",
+    "namedTransactions": {
+      "Published Runnables": "/runnables",
+      "Draft Runnables": "/users/me/runnables"
+    }
+  },
   "rollbar": {
-    "key": "119509f9ba314df8a9ffbaf7b4812fb6",
+    "key": "3452187560b847028e7b2442ad8c17d9",
     "options":  {
-      "root": "/home/ubuntu/api-server",
+      "root": "/home/ubuntu/docklet",
       "branch": "master",
       "environment": "production"
     }
