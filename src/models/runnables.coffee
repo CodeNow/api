@@ -89,7 +89,7 @@ Runnables =
               if not channel.base then useOldestProject() else
                 images.findById channel.base, domain.intercept (image) ->
                   if not image then useOldestProject() else
-                    cb null, image else
+                    cb null, image
 
       (image, cb)->
         containers.create domain, userId, image, (err, container) ->
