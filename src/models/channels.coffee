@@ -17,6 +17,8 @@ channelSchema = new Schema
     unique: true
   description:
     type: String
+  base:
+    type: ObjectId
   aliases:
     type: [ String ]
     index: true
