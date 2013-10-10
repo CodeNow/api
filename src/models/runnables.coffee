@@ -82,9 +82,15 @@ Runnables =
             limit: 1
           channels.findOne aliases: from.toLowerCase(), domain.intercept (channel) ->
             if not channel then cb error 400, 'could not find channel by that name' else
-              images.find 'tags.channel': channel._id, null, options, domain.intercept (images) ->
-                if not images.length then cb error 400, "could not find runnable in #{tags.name} to fork from" else
-                  cb null, images[0]
+              useOldestProject = () ->
+                images.find 'tags.channel': channel._id, null, options, domain.intercept (images) ->
+                  if not images.length then cb error 400, "could not find runnable in #{tags.name} to fork from" else
+                    cb null, images[0]
+              if not channel.base then useOldestProject() else
+                images.findById channel.base, domain.intercept (image) ->
+                  if not image then useOldestProject() else
+                    cb null, image
+
       (image, cb)->
         containers.create domain, userId, image, (err, container) ->
           if err then cb err else
