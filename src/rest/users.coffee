@@ -188,7 +188,7 @@ module.exports = (parentDomain) ->
         else
           set[attr] = req.body[attr]
       optional.forEach (attr) ->
-        set[attr] = req.body[attr]
+        if req.body[attr]? then set[attr] = req.body[attr]
       runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
         if err then res.json err.code, message: err.msg else
           if req.body.running
