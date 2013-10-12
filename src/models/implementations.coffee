@@ -57,10 +57,15 @@ implementationSchema.statics.listImplementations = (domain, userId, cb) ->
         @find {}, domain.intercept (implementations) =>
           cb null, implementations.map (implementation) -> implementation.toJSON()
       else
-        @find
-          owner: userId
-        , domain.intercept (implementations) =>
-          cb null, implementations.map (implementation) -> implementation.toJSON()
+        cb error 403, 'access denied'
+
+implementationSchema.statics.listImplementationsForUser = (domain, userId, cb) ->
+  users.findUser domain, _id: userId, domain.intercept (user) =>
+    if not user then cb error 403, 'user not found' else
+      @find
+        owner: userId
+      , domain.intercept (implementations) =>
+        cb null, implementations.map (implementation) -> implementation.toJSON()
 
 implementationSchema.statics.getImplementationBySpecification = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
