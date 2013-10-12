@@ -183,7 +183,7 @@ module.exports = (parentDomain) ->
       set = {}
       # for loop for early return
       for attr in required
-        if not req.body[attr]?
+        if not req.body[attr] is undefined # null will set prop as null
           return res.json 400, message: 'must provide a runnable ' + attr
         else
           set[attr] = req.body[attr]

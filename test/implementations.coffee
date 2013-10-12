@@ -34,7 +34,7 @@ data =
         value: 'EDITED_VALUE'
       ]
 
-expected = 
+expected =
   implementation:
     add: [
       requirements: [
@@ -65,12 +65,12 @@ expected =
 # UTILITIES AND TESTS
 
 doOperation = (cb) ->
-  url = "#{base}/implementations"
+  url = "#{base}/users/me/implementations"
   if @operation is 'add' then method = 'post'
   if @operation is 'edit'
-    method = 'put' 
+    method = 'put'
     url += "/#{@updateId}"
-  if @operation is 'read' 
+  if @operation is 'read'
     method = 'get'
     url += "/#{@updateId}"
   if @operation is 'list' then return cb null
@@ -86,7 +86,7 @@ doOperation = (cb) ->
   req.end (err, res) =>
     if res?.status is 403 then err = new Error 'forbiden'
     if res?.status is 404 then err = new Error 'not found'
-    if err && @success then cb err 
+    if err && @success then cb err
     else if err && not @success then cb null
     else if not @success then cb new Error 'should not have succeeded'
     else
@@ -95,7 +95,7 @@ doOperation = (cb) ->
 checkOperation = (cb) ->
   if not @success
     cb null
-  else 
+  else
     user = @moderator or @owner
     req = user.get "#{base}/implementations"
     req.set 'runnable-token', @moderatorToken or @ownerToken
@@ -115,7 +115,7 @@ checkEnv = (cb) ->
   wakeup.end (err, res) =>
     helpers.sendCommand termUrl, 'env', (err, env) =>
       if err then cb err else
-        if not /FIRST_REQUIREMENT/.test env 
+        if not /FIRST_REQUIREMENT/.test env
           cb new Error 'env not set: ' + env
         else
           cb null
@@ -172,8 +172,8 @@ createOwner = (cb) ->
   @owner = sa.agent()
   req = @owner.post "#{base}/token"
   req.set 'Content-Type', 'application/json'
-  req.send JSON.stringify 
-    username: 'publisher' 
+  req.send JSON.stringify
+    username: 'publisher'
     password: 'testing'
   req.end (err, res) =>
     if err then cb err else
@@ -185,8 +185,8 @@ createModerator = (cb) ->
   @moderator = sa.agent()
   req = @moderator.post "#{base}/token"
   req.set 'Content-Type', 'application/json'
-  req.send JSON.stringify 
-    username: 'test4@testing.com' 
+  req.send JSON.stringify
+    username: 'test4@testing.com'
     password: 'testing'
   req.end (err, res) =>
     if err then cb err else
@@ -198,8 +198,8 @@ createUser = (cb) ->
   @user = sa.agent()
   req = @user.post "#{base}/token"
   req.set 'Content-Type', 'application/json'
-  req.send JSON.stringify 
-    username: 'matchusername5' 
+  req.send JSON.stringify
+    username: 'matchusername5'
     password: 'testing'
   req.end (err, res) =>
     if err then cb err else
@@ -213,7 +213,7 @@ createSpecification = (cb) ->
   req.send data.specification.create
   req.end (err, res) =>
     if res.status is 404 then err = new Error "specification route not found"
-    @specificationId = res.body._id 
+    @specificationId = res.body._id
     if err then cb err else cb null
 
 createImplementation = (cb) ->
@@ -224,7 +224,7 @@ createImplementation = (cb) ->
     containerId: @containerId
   req.end (err, res) =>
     if res.status is 404 then err = new Error "implementation route not found"
-    @updateId = res.body._id 
+    @updateId = res.body._id
     @implementation = res.body;
     if err then cb err else cb null
 
@@ -270,7 +270,7 @@ startContainer = (cb) ->
     if res?.status is 400 then err = new Error 'not allowed'
     if res?.status is 403 then err = new Error 'forbidden'
     if res?.status is 404 then err = new Error "not found"
-    if err && @success then cb err 
+    if err && @success then cb err
     else if err && not @success then cb null
     else if not @success then cb new Error 'should not have succeeded'
     else
@@ -298,7 +298,7 @@ prepContainer = (cb) ->
     createContainer.bind @
     attachContainer.bind @
   ]
-  async.series list, cb 
+  async.series list, cb
 
 prepImage = (cb) ->
   list = [
@@ -329,7 +329,7 @@ testStart = (cb) ->
   list = [
     prepContainer.bind @
   ]
-  if @with 
+  if @with
     list.push createImplementation.bind @
   list = list.concat [
     startContainer.bind @
@@ -376,7 +376,7 @@ testVariables = (cb) ->
 # DESCRIPTION
 
 describe 'implementation api', ->
-  
+
   it 'should allow owners to create ::implementations',
     testCrud.bind
       userType: 'owner'
@@ -455,7 +455,7 @@ describe 'implementation api', ->
       success: false
 
   it 'should cause the web page to use the existing ::implementations url',
-    testUrl.bind 
+    testUrl.bind
       existing: true
       success: true
   it 'should cause the web page to use the ::implementations url on demand',
@@ -471,4 +471,3 @@ describe 'implementation api', ->
     # this is the tricky one
     testVariables.bind
       existing: false
-  
