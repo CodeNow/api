@@ -35,6 +35,7 @@ module.exports = [
   '.ashx'
   '.rtf'
   '.csv'
+  '.dart'
   '.data'
   '.input'
   '.svg'
