@@ -100,32 +100,20 @@ implementationSchema.statics.getImplementation = (domain, opts, cb) ->
 implementationSchema.statics.updateImplementation = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
-      if user.isModerator
-        @findOne
-          _id: opts.implementationId
-        , domain.intercept (implementation) =>
-          if not implementation?
-            cb error 404, 'implementation not found'
+      query = _id: opts.implementationId
+      if !user.isModerator then query.owner = opts.userId
+      @findOne query, domain.intercept (implementation) =>
+        save = () =>
+          implementation.save domain.intercept () ->
+            cb null, implementation.toJSON()
+        if not implementation?
+          cb error 404, 'implementation not found'
+        else
+          implementation.requirements = opts.requirements
+          if opts.containerId
+            updateEnv opts, save
           else
-            implementation.requirements = opts.requirements
-            implementation.save domain.intercept () ->
-              cb null, implementation.toJSON()
-      else
-        @findOne
-          owner: opts.userId
-          _id: opts.implementationId
-        , domain.intercept (implementation) =>
-          save = () =>
-            implementation.save domain.intercept () ->
-              cb null, implementation.toJSON()
-          if not implementation?
-            cb error 404, 'implementation not found'
-          else
-            implementation.requirements = opts.requirements
-            if opts.containerId
-              updateEnv opts, save
-            else
-              save null
+            save null
 
 implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
@@ -161,6 +149,7 @@ updateEnv = (domain, opts, cb) ->
           url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
           request.get { url: url, pool: false }, domain.intercept (res, body) =>
             async.each opts.requirements, (requirement, cb) =>
+              console.log(requirement)
               request.post
                 pool: false
                 url: url

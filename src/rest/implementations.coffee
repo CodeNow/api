@@ -47,6 +47,7 @@ module.exports = (parentDomain) ->
       userId: req.user_id
       implementationId: req.params.id
       requirements: req.body.requirements
+      containerId: req.body.containerId
     , (err, implementation) ->
       if err then res.json err.code, message: err.msg else
         res.json implementation
