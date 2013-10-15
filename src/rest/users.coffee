@@ -183,12 +183,12 @@ module.exports = (parentDomain) ->
       set = {}
       # for loop for early return
       for attr in required
-        if not req.body[attr] is undefined # null will set prop as null
+        if req.body[attr] is undefined
           return res.json 400, message: 'must provide a runnable ' + attr
         else
           set[attr] = req.body[attr]
       optional.forEach (attr) ->
-        if req.body[attr]? then set[attr] = req.body[attr]
+        if req.body[attr] isnt undefined then set[attr] = req.body[attr]
       runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
         if err then res.json err.code, message: err.msg else
           if req.body.running
