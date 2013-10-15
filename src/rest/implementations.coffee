@@ -45,9 +45,11 @@ module.exports = (parentDomain) ->
   app.put '/users/me/implementations/:id', (req, res) ->
     implementations.updateImplementation req.domain,
       userId: req.user_id
+      implements: req.body.implements
+      containerId: req.body.containerId
       implementationId: req.params.id
       requirements: req.body.requirements
-      containerId: req.body.containerId
+      subdomain: req.body.subdomain
     , (err, implementation) ->
       if err then res.json err.code, message: err.msg else
         res.json implementation

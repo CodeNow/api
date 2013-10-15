@@ -111,7 +111,7 @@ implementationSchema.statics.updateImplementation = (domain, opts, cb) ->
         else
           implementation.requirements = opts.requirements
           if opts.containerId
-            updateEnv opts, save
+            updateEnv domain, opts, save
           else
             save null
 
@@ -149,7 +149,6 @@ updateEnv = (domain, opts, cb) ->
           url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
           request.get { url: url, pool: false }, domain.intercept (res, body) =>
             async.each opts.requirements, (requirement, cb) =>
-              console.log(requirement)
               request.post
                 pool: false
                 url: url
@@ -172,7 +171,7 @@ updateEnv = (domain, opts, cb) ->
             cb null
       ], domain.intercept cb
     else
-     cb new Error 'container not found'
+     cb error 404, 'container not found'
 
 module.exports = mongoose.model 'Implementation', implementationSchema
 
