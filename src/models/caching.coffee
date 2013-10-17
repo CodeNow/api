@@ -1,3 +1,4 @@
+_ = require 'lodash'
 async = require 'async'
 channels = require './channels'
 configs = require '../configs'
@@ -14,9 +15,11 @@ listFields =
 
 redis_client = redis.createClient(configs.redis.port, configs.redis.ipaddress)
 
-markCacheAsDirty = () ->
+markCacheAsDirty = _.debounce () ->
   redis_client.set "sort_cache.dirty", 'true', (err) ->
     if err then console.error err
+, 1*1000*60*60
+, true
 
 markCacheAsClean = (cb) ->
   redis_client.set "sort_cache.dirty", 'false', (err) ->
