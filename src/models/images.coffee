@@ -295,8 +295,9 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
       tag: 'latest'
       author: @owner.toString()
   , domain.intercept (res) =>
-    @save domain.intercept () =>
-      cb null, @
+    if res.statusCode isnt 201 then cb error 500, "error committing docker image: #{res.body}" else
+      @save domain.intercept () =>
+        cb null, @
 
 imageSchema.statics.destroy = (domain, id, cb) ->
   @findOne _id: id, domain.intercept (image) =>
