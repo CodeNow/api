@@ -4,6 +4,8 @@ error = require '../error'
 mongoose = require 'mongoose'
 _ = require 'lodash'
 users = require './users'
+images = require './images'
+implementations = require './implementations'
 
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
@@ -44,38 +46,29 @@ specificationSchema.statics.createSpecification = (domain, opts, cb) ->
 
 specificationSchema.statics.listSpecifications = (domain, cb) ->
   @find {}, domain.intercept (specifications) =>
-    cb null, specifications.map (specification) -> specification.toJSON()
+    async.map specifications, (spec, cb) =>
+      @getVirtuals(domain, spec, cb)
+    , cb
 
 specificationSchema.statics.getSpecification = (domain, id, cb) ->
   @findOne
     _id: id
   , domain.intercept (specification) =>
-    cb null, specification.toJSON()
+    @getVirtuals domain, specification, cb
 
 specificationSchema.statics.updateSpecification = (domain, opts, cb) ->
-  users.findUser domain, _id: opts.userId, domain.intercept (user) =>
+  users.findUser domain, {_id:opts.userId}, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
-      if user.isModerator
-        @findOne
-          _id: opts.specificationId
-        , domain.intercept (specification) =>
-          if not specification? then cb error 404, 'specification not found' else
-            specification.description = opts.description
-            specification.instructions = opts.instructions
-            specification.requirements = opts.requirements
-            specification.save domain.intercept () ->
-              cb null, specification.toJSON()
-      else
-        @findOne
-          owner: opts.userId
-          _id: opts.specificationId
-        , domain.intercept (specification) =>
-          if not specification? then cb error 404, 'specification not found' else
-            specification.description = opts.description
-            specification.instructions = opts.instructions
-            specification.requirements = opts.requirements
-            specification.save domain.intercept () ->
-              cb null, specification.toJSON()
+      query = _id:opts.specificationId
+      if not user.isModerator then query.owner = opts.userId
+      @findOne query, domain.intercept (specification) =>
+        if not specification? then cb error 404, 'specification not found' else
+          specification.name = opts.name
+          specification.description = opts.description
+          specification.instructions = opts.instructions
+          specification.requirements = opts.requirements
+          specification.save domain.intercept () ->
+            cb null, specification.toJSON()
 
 specificationSchema.statics.deleteSpecification = (domain, opts, cb) ->
   users.findUser domain, _id: opts.userId, domain.intercept (user) =>
@@ -97,5 +90,23 @@ specificationSchema.statics.deleteSpecification = (domain, opts, cb) ->
             cb error 404, 'specification not found'
           else
            cb null
+
+specificationSchema.statics.getVirtuals = (domain, spec, cb) ->
+  json = spec.toJSON()
+  specId = json._id
+  owner = json.owner
+  console.log(specId, owner);
+  async.parallel [
+    (cb) ->
+      images.findOne {specification:specId}, {_id:1}, domain.intercept (image) ->
+        cb null, Boolean(image)
+    (cb) ->
+      images.findOne {specification:specId, owner:$ne:owner}, {_id:1}, domain.intercept (image) ->
+        cb null, Boolean(image)
+  ]
+  , (err, results) ->
+    json.inUse = results[0];
+    json.inUseByNonOwner = results[1];
+    cb null, json
 
 module.exports = mongoose.model 'Specifications', specificationSchema

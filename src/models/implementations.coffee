@@ -68,7 +68,7 @@ implementationSchema.statics.listImplementationsForUser = (domain, userId, cb) -
         cb null, implementations.map (implementation) -> implementation.toJSON()
 
 implementationSchema.statics.getImplementationBySpecification = (domain, opts, cb) ->
-  users.findUser domain, _id: opts.userId, domain.intercept (user) =>
+  users.findUser domain, _id:opts.userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
       @findOne
         owner: opts.userId
@@ -109,6 +109,7 @@ implementationSchema.statics.updateImplementation = (domain, opts, cb) ->
         if not implementation?
           cb error 404, 'implementation not found'
         else
+          console.log(opts)
           implementation.requirements = opts.requirements
           if opts.containerId
             updateEnv domain, opts, save

@@ -100,6 +100,8 @@ imageSchema = new Schema
     default: [ ]
   specification:
     type: ObjectId
+    index:
+      sparse: true
 
 imageSchema.plugin(textSearch)
 

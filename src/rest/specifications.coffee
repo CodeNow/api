@@ -11,9 +11,9 @@ module.exports = (parentDomain) ->
   app.use domains parentDomain
 
   app.post '/specifications', (req, res) ->
-    specifications.createSpecification req.domain, 
+    specifications.createSpecification req.domain,
       userId: req.user_id
-      name: req.body.name 
+      name: req.body.name
       description: req.body.description
       instructions: req.body.instructions
       requirements: req.body.requirements
@@ -32,9 +32,10 @@ module.exports = (parentDomain) ->
         res.json specification
 
   app.put '/specifications/:id', (req, res) ->
-    specifications.updateSpecification req.domain, 
-      userId: req.user_id 
+    specifications.updateSpecification req.domain,
+      userId: req.user_id
       specificationId: req.params.id
+      name: req.body.name
       description: req.body.description
       instructions: req.body.instructions
       requirements: req.body.requirements
@@ -43,7 +44,7 @@ module.exports = (parentDomain) ->
         res.json specification
 
   app.del '/specifications/:id', (req, res) ->
-    specifications.deleteSpecification req.domain, 
+    specifications.deleteSpecification req.domain,
       userId: req.user_id
       specificationId: req.params.id
     , (err) ->
