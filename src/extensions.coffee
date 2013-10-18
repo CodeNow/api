@@ -8,6 +8,7 @@ module.exports = [
   '.css'
   '.html'
   '.json'
+  '.scss'
   '.php'
   '.c'
   '.cpp'
