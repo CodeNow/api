@@ -154,13 +154,19 @@ Runnables =
 
   updateContainer: (domain, userId, runnableId, updateSet, cb) ->
     runnableId = decodeId runnableId
+    save = ->
+      container.save domain.intercept ->
+        json = container.toJSON()
+        encode domain, json, cb
     containers.findOne _id: runnableId, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
           _.extend container, updateSet
-          container.save domain.intercept () ->
-            json = container.toJSON()
-            encode domain, json, cb
+          if updateSet.start_cmd?
+            updateCmd domain, container, save 
+          else 
+            save()
+          
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -600,3 +606,14 @@ isObjectId64 = (str) ->
 
 exists = (thing) ->
   thing isnt null and thing isnt undefined
+
+updateCmd = (domain, container, cb) ->
+  startCommandArray = (container.start_cmd || "date").split " "
+  url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/cmd"
+  request.post 
+    url: url
+    pool: false
+    json: 
+      cmd: startCommandArray.shift()
+      args: startCommandArray
+  , domain.intercept cb
