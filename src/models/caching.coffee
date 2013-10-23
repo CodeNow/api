@@ -1,3 +1,4 @@
+_ = require 'lodash'
 async = require 'async'
 channels = require './channels'
 configs = require '../configs'
@@ -15,8 +16,15 @@ listFields =
 redis_client = redis.createClient(configs.redis.port, configs.redis.ipaddress)
 
 markCacheAsDirty = () ->
-  redis_client.set "sort_cache.dirty", 'true', (err) ->
-    if err then console.error err
+  cb = (err) -> if (err) then console.log err.message and console.log err.stack
+  redis_client.get 'sort_cache.block_set_dirty', (err, value) ->
+    if (err) then cb err else
+      if value is 'true' then return else
+        console.log "Marking sort cache as dirty"
+        async.parallel [
+          redis_client.setex.bind(redis_client, 'sort_cache.block_set_dirty', 3600, 'true'),
+          redis_client.set.bind(redis_client, "sort_cache.dirty", 'true')
+        ], cb
 
 markCacheAsClean = (cb) ->
   redis_client.set "sort_cache.dirty", 'false', (err) ->
