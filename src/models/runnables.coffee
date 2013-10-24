@@ -166,6 +166,7 @@ Runnables =
             updateCmd domain, container, save 
           else 
             save()
+          # handle build cmd
           
 
   updateImage: (domain, userId, runnableId, from, cb) ->

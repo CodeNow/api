@@ -75,6 +75,9 @@ imageSchema = new Schema
   start_cmd:
     type: String
     default: 'date'
+  build_cmd:
+    type: String
+    default: ''
   file_root:
     type: String
     default: '/root'
@@ -146,6 +149,7 @@ syncDockerImage = (domain, image, cb) ->
         "RUNNABLE_USER_DIR=#{image.file_root}"
         "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
         "RUNNABLE_START_CMD=#{image.start_cmd}"
+        "RUNNABLE_BUILD_CMD=#{image.build_cmd}"
       ]
       Hostname: image._id.toString()
       Image: imageTag
@@ -204,6 +208,7 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
                               if runnable.file_root then image.file_root = runnable.file_root
                               if runnable.service_cmds then image.service_cmds = runnable.service_cmds
                               if runnable.start_cmd then image.start_cmd = runnable.start_cmd
+                              if runnable.build_cmd then image.build_cmd = runnable.build_cmd
                               image.port = runnable.port
                               runnable.tags = runnable.tags or [ ]
                               for file in runnable.files
@@ -234,6 +239,7 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         file_root_host: container.file_root_host
         service_cmds: container.service_cmds
         start_cmd: container.start_cmd
+        build_cmd: container.build_cmd
         port: container.port
         synced: true
         specification: container.specification
@@ -273,6 +279,7 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   @file_root = container.file_root
   @service_cmds = container.service_cmds
   @start_cmd = container.start_cmd
+  @build_cmd = container.build_cmd
   @port = container.port
   @files = [ ]
   for file in container.files

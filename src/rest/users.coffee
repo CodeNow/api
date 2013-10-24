@@ -179,7 +179,7 @@ module.exports = (parentDomain) ->
   putrunnable = (req, res) ->
     if not req.body.running? then res.json 400, message: 'must provide a running parameter' else
       required = ['name', 'description']
-      optional = ['specification', 'saved', 'start_cmd']
+      optional = ['specification', 'saved', 'start_cmd', 'build_cmd']
       set = {}
       # for loop for early return
       for attr in required
