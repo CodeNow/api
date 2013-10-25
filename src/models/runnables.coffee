@@ -10,6 +10,7 @@ users = require './users'
 implementations = require './implementations'
 _ = require 'lodash'
 ObjectId = require('mongoose').Types.ObjectId
+request = require 'request'
 
 listFields =
   _id:1,
