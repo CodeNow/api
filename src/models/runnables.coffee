@@ -154,20 +154,35 @@ Runnables =
                   remove()
 
   updateContainer: (domain, userId, runnableId, updateSet, cb) ->
+    rawId = runnableId
     runnableId = decodeId runnableId
     containers.findOne _id: runnableId, domain.intercept (container) ->
-      save = ->
-        container.save domain.intercept ->
-          json = container.toJSON()
-          encode domain, json, cb
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
           _.extend container, updateSet
+          save = (cb) ->
+            container.save domain.intercept ->
+              json = container.toJSON()
+              encode domain, json, cb
+          operations = [
+            save
+          ]
           if updateSet.start_cmd?
-            updateCmd domain, container, save 
-          else 
-            save()
-          # handle build cmd
+            updateStartCmd = (cb) ->
+              updateCmd domain, container, cb
+            operations.unshift updateStartCmd
+          if updateSet.specification?
+            updateEnv = (cb) ->
+              implementations.updateEnvBySpecification domain,  {
+                  userId: userId
+                  specification: specification
+                  containerId: rawId
+                }, cb
+            operations.unshift updateEnv
+          if updateSet.build_cmd?
+            console.log 'implement build update'
+          async.series operations, cb
+          
           
 
   updateImage: (domain, userId, runnableId, from, cb) ->
