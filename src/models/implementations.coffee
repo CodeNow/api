@@ -153,6 +153,7 @@ implementationSchema.statics.updateEnvBySpecification = (domain, opts, cb) ->
         implements: opts.specification
         containerId: opts.containerId
         requirements: implementation.requirements
+        subdomain: implementation.subdomain
       }, cb
 
 updateEnv = (domain, opts, cb) ->
