@@ -175,7 +175,7 @@ Runnables =
             updateEnv = (cb) ->
               implementations.updateEnvBySpecification domain,  {
                   userId: userId
-                  specification: specification
+                  specification: updateSet.specification
                   containerId: rawId
                 }, cb
             operations.unshift updateEnv
