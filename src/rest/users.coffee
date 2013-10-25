@@ -183,23 +183,34 @@ module.exports = (parentDomain) ->
       set = {}
       # for loop for early return
       for attr in required
-        if not req.body[attr]?
+        if req.body[attr] is undefined
           return res.json 400, message: 'must provide a runnable ' + attr
         else
           set[attr] = req.body[attr]
       optional.forEach (attr) ->
-        set[attr] = req.body[attr]
+        if req.body[attr] isnt undefined then set[attr] = req.body[attr]
       runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
         if err then res.json err.code, message: err.msg else
           if req.body.running
             runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
-              res.json runnable
+              if err then res.json err.code, message: err.msg else
+                res.json runnable
           else
             runnables.stopContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
-              res.json runnable
+              if err then res.json err.code, message: err.msg else
+                res.json runnable
 
   app.put '/users/me/runnables/:runnableid', putrunnable
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
+
+  patchrunnable = (req, res) ->
+    set = _.pick(req.body, 'specification');
+    runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
+      if err then res.json err.code, message: err.msg else
+        res.json runnable
+
+  app.patch '/users/me/runnables/:runnableid', patchrunnable
+  app.patch '/users/:userid/runnables/:runnableid', fetchuser, patchrunnable
 
   delrunnable = (req, res) ->
     runnables.removeContainer req.domain, req.user_id, req.params.runnableid, (err) ->
