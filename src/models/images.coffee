@@ -150,6 +150,9 @@ syncDockerImage = (domain, image, cb) ->
         "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
         "RUNNABLE_START_CMD=#{image.start_cmd}"
         "RUNNABLE_BUILD_CMD=#{image.build_cmd}"
+        "APACHE_RUN_USER=www-data"
+        "APACHE_RUN_GROUP=www-data"
+        "APACHE_LOG_DIR=/var/log/apache2"
       ]
       Hostname: image._id.toString()
       Image: imageTag

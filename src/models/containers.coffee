@@ -105,6 +105,9 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       "RUNNABLE_START_CMD=#{image.start_cmd}"
       "RUNNABLE_BUILD_CMD=#{image.build_cmd}"
       "SERVICES_TOKEN=#{servicesToken}"
+      "APACHE_RUN_USER=www-data"
+      "APACHE_RUN_GROUP=www-data"
+      "APACHE_LOG_DIR=/var/log/apache2"
     ]
     createContainer = (env, subdomain) =>
       container = new @
