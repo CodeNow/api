@@ -145,6 +145,7 @@ implementationSchema.statics.updateEnvBySpecification = (domain, opts, cb) ->
     if err or (not implementation)
       # to handle the specification but no implementation case
       console.error err or new Error 'no implementation'
+      cb null
     else 
       updateEnv domain, {
         userId: opts.userId
@@ -155,6 +156,7 @@ implementationSchema.statics.updateEnvBySpecification = (domain, opts, cb) ->
 
 updateEnv = (domain, opts, cb) ->
   containers = require './containers'
+  console.log 'ids:', opts.containerId, decodeId opts.containerId
   containers.findOne
     owner: opts.userId
     specification: opts.implements
