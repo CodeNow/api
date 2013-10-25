@@ -155,11 +155,11 @@ Runnables =
 
   updateContainer: (domain, userId, runnableId, updateSet, cb) ->
     runnableId = decodeId runnableId
-    save = ->
-      container.save domain.intercept ->
-        json = container.toJSON()
-        encode domain, json, cb
     containers.findOne _id: runnableId, domain.intercept (container) ->
+      save = ->
+        container.save domain.intercept ->
+          json = container.toJSON()
+          encode domain, json, cb
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
           _.extend container, updateSet
