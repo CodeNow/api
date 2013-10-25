@@ -167,6 +167,7 @@ Runnables =
           operations = [
             save
           ]
+          console.log updateSet
           if updateSet.start_cmd?
             updateStartCmd = (cb) ->
               updateCmd domain, container, cb
