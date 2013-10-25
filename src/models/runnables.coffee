@@ -159,13 +159,12 @@ Runnables =
     containers.findOne _id: runnableId, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-          save = (cb) ->
+          save = ->
             _.extend container, updateSet
             container.save domain.intercept ->
               json = container.toJSON()
               encode domain, json, cb
           operations = [
-            save
           ]
           console.log updateSet
           if updateSet.start_cmd? and container.start_cmd isnt updateSet.start_cmd
@@ -182,7 +181,7 @@ Runnables =
             operations.unshift updateEnv
           if updateSet.build_cmd? and container.build_cmd isnt updateSet.build_cmd
             console.log 'implement build update'
-          async.series operations, cb
+          async.series operations, domain.intercept save
           
           
 
