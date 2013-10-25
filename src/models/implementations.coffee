@@ -159,7 +159,6 @@ updateEnv = (domain, opts, cb) ->
   console.log 'ids:', opts.containerId, decodeId opts.containerId
   containers.findOne
     owner: opts.userId
-    specification: opts.implements
     _id: decodeId opts.containerId
   , domain.intercept (container) =>
     if container
