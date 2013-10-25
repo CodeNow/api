@@ -138,6 +138,7 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
             cb null
 
 implementationSchema.statics.updateEnvBySpecification = (domain, opts, cb) ->
+  console.log 'updateEnvBySpecification', opts
   @findOne
     owner: opts.userId
     implements: opts.specification

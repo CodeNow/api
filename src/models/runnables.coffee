@@ -166,11 +166,11 @@ Runnables =
               encode domain, json, cb
           operations = [
           ]
-          console.log updateSet
+          console.log updateSet.specification, updateSet.specification and container.specification isnt updateSet.specification
           if updateSet.start_cmd? and container.start_cmd isnt updateSet.start_cmd
             updateStartCmd = (cb) ->
               updateCmd domain, container, cb
-            operations.unshift updateStartCmd
+            operations.push updateStartCmd
           if updateSet.specification and container.specification isnt updateSet.specification
             updateEnv = (cb) ->
               implementations.updateEnvBySpecification domain,  {
@@ -178,7 +178,7 @@ Runnables =
                   specification: updateSet.specification
                   containerId: rawId
                 }, cb
-            operations.unshift updateEnv
+            operations.push updateEnv
           if updateSet.build_cmd? and container.build_cmd isnt updateSet.build_cmd
             console.log 'implement build update'
           async.series operations, domain.intercept save
