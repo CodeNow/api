@@ -170,7 +170,7 @@ module.exports = (parentDomain) ->
 
   getrunnable = (req, res) ->
     runnables.getContainer req.domain, req.user_id, req.params.runnableid, (err, container) ->
-      if err then res.json err.code, message: err.msg else
+      if err then res.json err.code or 500, message: err.msg or error.message else
         res.json container
 
   app.get '/users/me/runnables/:runnableid', getrunnable
