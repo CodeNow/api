@@ -225,24 +225,8 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
   @findOne name: container.name, domain.intercept (existing) =>
     if existing then cb error 403, 'a shared runnable by that name already exists' else
       image = new @
-        parent: container.parent
-        owner: container.owner
-        name: container.name
-        image: container.image
-        cmd: container.cmd
-        description: container.description
-        dockerfile: container.dockerfile
-        file_root: container.file_root
-        file_root_host: container.file_root_host
-        service_cmds: container.service_cmds
-        start_cmd: container.start_cmd
-        port: container.port
-        synced: true
-        specification: container.specification
-      for file in container.files
-        image.files.push file.toJSON()
-      for tag in container.tags
-        image.tags.push tag.toJSON()
+      copyPublishProperties image, container
+      image.synced = true
       encodedId = encodeId image._id.toString()
       request
         pool: false
@@ -270,18 +254,7 @@ imageSchema.statics.search = (domain, searchText, limit, cb) ->
       cb null, images
 
 imageSchema.methods.updateFromContainer = (domain, container, cb) ->
-  @name = container.name
-  @cmd = container.cmd
-  @file_root = container.file_root
-  @service_cmds = container.service_cmds
-  @start_cmd = container.start_cmd
-  @port = container.port
-  @files = [ ]
-  for file in container.files
-    @files.push file.toJSON()
-  @tags = [ ]
-  for tag in container.tags
-    @tags.push tag.toJSON()
+  copyPublishProperties @, container
   @revisions = @revisions or [ ]
   length = @revisions.push { }
   encodedId = encodeId @revisions[length-1]._id.toString()
@@ -332,5 +305,25 @@ minus = /-/g
 underscore = /_/g
 
 encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
+
+copyPublishProperties = (image, container) ->
+  [
+    'name'
+    'description'
+    'owner'
+    'parent'
+    'tags'
+    'files'
+    'image'
+    'dockerfile'
+    'file_root'
+    'file_root_host'
+    'cmd'
+    'start_cmd'
+    'service_cmds'
+    'port'
+    'specification'
+  ].forEach (property) ->
+    image[property] = _.clone container[property]
 
 module.exports = mongoose.model 'Images', imageSchema
