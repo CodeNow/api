@@ -338,6 +338,6 @@ copyPublishProperties = (image, container) ->
   properties.forEach (property) ->
     image[property] = _.clone container[property]
   objectIdProperties.forEach (property) ->
-    image[property] = container[property].toString()
+    image[property] = container[property] && container[property].toString()
 
 module.exports = mongoose.model 'Images', imageSchema
