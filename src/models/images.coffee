@@ -315,11 +315,9 @@ underscore = /_/g
 encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
 
 copyPublishProperties = (image, container) ->
-  [
+  properties = [
     'name'
     'description'
-    'owner'
-    'parent'
     'tags'
     'files'
     'image'
@@ -331,8 +329,15 @@ copyPublishProperties = (image, container) ->
     'start_cmd'
     'service_cmds'
     'port'
+  ]
+  objectIdProperties = [
+    'owner'
+    'parent'
     'specification'
-  ].forEach (property) ->
+  ]
+  properties.forEach (property) ->
     image[property] = _.clone container[property]
+  objectIdProperties.forEach (property) ->
+    image[property] = container[property].toString()
 
 module.exports = mongoose.model 'Images', imageSchema
