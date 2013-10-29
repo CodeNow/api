@@ -10,6 +10,7 @@ users = require './users'
 implementations = require './implementations'
 _ = require 'lodash'
 ObjectId = require('mongoose').Types.ObjectId
+request = require 'request'
 
 listFields =
   _id:1,
@@ -153,14 +154,36 @@ Runnables =
                   remove()
 
   updateContainer: (domain, userId, runnableId, updateSet, cb) ->
+    rawId = runnableId
     runnableId = decodeId runnableId
     containers.findOne _id: runnableId, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-          _.extend container, updateSet
-          container.save domain.intercept () ->
-            json = container.toJSON()
-            encode domain, json, cb
+          save = ->
+            _.extend container, updateSet
+            container.save domain.intercept ->
+              json = container.toJSON()
+              encode domain, json, cb
+          operations = [
+          ]
+          console.log updateSet.specification, updateSet.specification and container.specification isnt updateSet.specification
+          if updateSet.start_cmd? and container.start_cmd isnt updateSet.start_cmd
+            updateStartCmd = (cb) ->
+              updateCmd domain, container, cb
+            operations.push updateStartCmd
+          if updateSet.specification and container.specification isnt updateSet.specification
+            updateEnv = (cb) ->
+              implementations.updateEnvBySpecification domain,  {
+                  userId: userId
+                  specification: updateSet.specification
+                  containerId: rawId
+                }, cb
+            operations.push updateEnv
+          if updateSet.build_cmd? and container.build_cmd isnt updateSet.build_cmd
+            console.log 'implement build update'
+          async.series operations, domain.intercept save
+          
+          
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -600,3 +623,14 @@ isObjectId64 = (str) ->
 
 exists = (thing) ->
   thing isnt null and thing isnt undefined
+
+updateCmd = (domain, container, cb) ->
+  startCommandArray = (container.start_cmd || "date").split " "
+  url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/cmd"
+  request.post 
+    url: url
+    pool: false
+    json: 
+      cmd: startCommandArray.shift()
+      args: startCommandArray
+  , domain.intercept cb

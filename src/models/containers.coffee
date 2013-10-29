@@ -57,6 +57,9 @@ containerSchema = new Schema
   start_cmd:
     type: String
     default: 'date'
+  build_cmd:
+    type: String
+    default: ''
   last_write:
     type: Date
   file_root:
@@ -100,7 +103,11 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       "RUNNABLE_USER_DIR=#{image.file_root}"
       "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
       "RUNNABLE_START_CMD=#{image.start_cmd}"
+      "RUNNABLE_BUILD_CMD=#{image.build_cmd}"
       "SERVICES_TOKEN=#{servicesToken}"
+      "APACHE_RUN_USER=www-data"
+      "APACHE_RUN_GROUP=www-data"
+      "APACHE_LOG_DIR=/var/log/apache2"
     ]
     createContainer = (env, subdomain) =>
       container = new @
@@ -113,6 +120,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         file_root: image.file_root
         service_cmds: image.service_cmds
         start_cmd: image.start_cmd
+        build_cmd: image.build_cmd
         servicesToken: servicesToken
         webToken: 'web-' + uuid.v4()
         specification: image.specification
