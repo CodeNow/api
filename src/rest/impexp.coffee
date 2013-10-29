@@ -73,6 +73,7 @@ module.exports = (parentDomain) ->
           cmd: runnable.start_cmd
           port: runnable.port
           start_cmd: runnable.start_cmd
+          build_cmd: runnable.build_cmd
           service_cmds: runnable.service_cmds
           description: runnable.description
           file_root: runnable.file_root

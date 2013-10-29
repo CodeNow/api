@@ -109,7 +109,6 @@ implementationSchema.statics.updateImplementation = (domain, opts, cb) ->
         if not implementation?
           cb error 404, 'implementation not found'
         else
-          console.log(opts)
           implementation.requirements = opts.requirements
           if opts.containerId
             updateEnv domain, opts, save
@@ -137,11 +136,28 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
           else
             cb null
 
+implementationSchema.statics.updateEnvBySpecification = (domain, opts, cb) ->
+  @findOne
+    owner: opts.userId
+    implements: opts.specification
+  , (err, implementation) =>
+    if err or (not implementation)
+      # to handle the specification but no implementation case
+      console.error err or new Error 'no implementation'
+      cb null
+    else
+      updateEnv domain, {
+        userId: opts.userId
+        implements: opts.specification
+        containerId: opts.containerId
+        requirements: implementation.requirements
+        subdomain: implementation.subdomain
+      }, cb
+
 updateEnv = (domain, opts, cb) ->
   containers = require './containers'
   containers.findOne
     owner: opts.userId
-    specification: opts.implements
     _id: decodeId opts.containerId
   , domain.intercept (container) =>
     if container

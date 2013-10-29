@@ -170,7 +170,7 @@ module.exports = (parentDomain) ->
 
   getrunnable = (req, res) ->
     runnables.getContainer req.domain, req.user_id, req.params.runnableid, (err, container) ->
-      if err then res.json err.code, message: err.msg else
+      if err then res.json err.code or 500, message: err.msg or error.message else
         res.json container
 
   app.get '/users/me/runnables/:runnableid', getrunnable
@@ -179,7 +179,7 @@ module.exports = (parentDomain) ->
   putrunnable = (req, res) ->
     if not req.body.running? then res.json 400, message: 'must provide a running parameter' else
       required = ['name', 'description']
-      optional = ['specification', 'saved']
+      optional = ['specification', 'saved', 'start_cmd', 'build_cmd']
       set = {}
       # for loop for early return
       for attr in required
