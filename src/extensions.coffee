@@ -40,6 +40,7 @@ module.exports = [
   '.data'
   '.input'
   '.svg'
+  '.styl'
   '.slim'
   '.rdoc'
   ''
