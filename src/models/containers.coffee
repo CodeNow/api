@@ -54,6 +54,7 @@ containerSchema = new Schema
   saved:
     type: Boolean
     default: false
+    index: true
   start_cmd:
     type: String
     default: 'date'
