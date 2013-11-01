@@ -204,7 +204,7 @@ module.exports = (parentDomain) ->
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
 
   patchrunnable = (req, res) ->
-    set = _.pick(req.body, 'specification');
+    set = _.pick(req.body, 'specification', 'start_cmd', 'build_cmd');
     runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
       if err then res.json err.code, message: err.msg else
         res.json runnable
