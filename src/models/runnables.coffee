@@ -154,36 +154,19 @@ Runnables =
                   remove()
 
   updateContainer: (domain, userId, runnableId, updateSet, cb) ->
-    rawId = runnableId
     runnableId = decodeId runnableId
     containers.findOne _id: runnableId, domain.intercept (container) ->
-      if not container then cb error 404, 'runnable not found' else
-        if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-          save = ->
-            _.extend container, updateSet
-            container.save domain.intercept ->
-              json = container.toJSON()
-              encode domain, json, cb
-          operations = [
-          ]
-          console.log updateSet.specification, updateSet.specification and container.specification isnt updateSet.specification
-          if updateSet.start_cmd? and container.start_cmd isnt updateSet.start_cmd
-            updateStartCmd = (cb) ->
-              updateCmd domain, container, cb
-            operations.push updateStartCmd
-          if updateSet.specification and container.specification isnt updateSet.specification
-            updateEnv = (cb) ->
-              implementations.updateEnvBySpecification domain,  {
-                  userId: userId
-                  specification: updateSet.specification
-                  containerId: rawId
-                }, cb
-            operations.push updateEnv
-          if updateSet.build_cmd? and container.build_cmd isnt updateSet.build_cmd
-            console.log 'implement build update'
-          async.series operations, domain.intercept save
-          
-          
+      if not container
+        cb error 404, 'runnable not found'
+      else if container.owner.toString() isnt userId.toString()
+        cb error 403, 'permission denied'
+      else
+        save = ->
+          _.extend container, updateSet
+          container.save domain.intercept ->
+            json = container.toJSON()
+            encode domain, json, cb
+        save()
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -223,10 +206,9 @@ Runnables =
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
           start = () ->
-            container.start domain, (err) ->
+            container.updateRunOptionsAndStart domain, (err) ->
               if err then cb err else
                 json_project = container.toJSON()
-                _.extend json_project, { running: true }
                 encode domain, json_project, cb
         if container.specification?
             implementations.findOne
@@ -627,10 +609,10 @@ exists = (thing) ->
 updateCmd = (domain, container, cb) ->
   startCommandArray = (container.start_cmd || "date").split " "
   url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/cmd"
-  request.post 
+  request.post
     url: url
     pool: false
-    json: 
+    json:
       cmd: startCommandArray.shift()
       args: startCommandArray
   , domain.intercept cb

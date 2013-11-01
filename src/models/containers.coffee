@@ -190,19 +190,54 @@ containerSchema.methods.getRunningState = (domain, cb) ->
           res.body = JSON.parse res.body
           cb null, running: res.body.running
 
+containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
+  self = @
+  async.series [
+    (cb) ->
+      async.parallel [
+        self.updateEnvVariables.bind(self, domain)
+        self.updateBuildCommand.bind(self, domain)
+        self.updateStartCommand.bind(self, domain)
+      ], cb
+    self.start.bind(self, domain)
+  ], cb
+
+containerSchema.methods.updateBuildCommand = (domain, cb) ->
+  # TODO
+  cb()
+
+containerSchema.methods.updateEnvVariables = (domain, cb) ->
+  encodedId = encodeId @_id
+  implementations.updateEnvBySpecification domain,  {
+      userId: @owner
+      specification: @specification
+      containerId: encodedId
+    }, domain.intercept(cb)
+
+containerSchema.methods.updateStartCommand = (domain, cb) ->
+  startCommandArray = (@start_cmd || "date").split " "
+  url = "http://#{@servicesToken}.#{configs.domain}/api/cmd"
+  request.post
+    url: url
+    pool: false
+    json:
+      cmd: startCommandArray.shift()
+      args: startCommandArray
+  , domain.intercept () -> cb()
+
 containerSchema.methods.start = (domain, cb) ->
-  # should no longer need to try multiple times
-  doReq = () =>
-    request
-      url: "http://#{@servicesToken}.#{configs.domain}/api/start"
-      method: 'GET'
-      pool: false
-    , domain.intercept (res) ->
-      if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
-        if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-          if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
-            cb()
-  doReq()
+  request
+    url: "http://#{@servicesToken}.#{configs.domain}/api/start"
+    method: 'GET'
+    pool: false
+  , domain.intercept (res) ->
+    if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
+      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+        if res.statusCode isnt 200
+          cb error res.statusCode, 'unknown runnable error'
+        else
+          @running = true
+          cb()
 
 containerSchema.methods.stop = (domain, cb) ->
   request
@@ -442,6 +477,11 @@ slash = /\//g
 minus = /-/g
 underscore = /_/g
 
-encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
+encodeId = (id) -> id
+decodeId = (id) -> id
+
+if configs.shortProjectIds
+  encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
+  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');
 
 module.exports = mongoose.model 'Containers', containerSchema
