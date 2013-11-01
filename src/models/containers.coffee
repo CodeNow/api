@@ -202,10 +202,6 @@ containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
     self.start.bind(self, domain)
   ], cb
 
-containerSchema.methods.updateBuildCommand = (domain, cb) ->
-  # TODO
-  cb()
-
 containerSchema.methods.updateEnvVariables = (domain, cb) ->
   encodedId = encodeId @_id
   implementations.updateEnvBySpecification domain,  {
@@ -214,15 +210,22 @@ containerSchema.methods.updateEnvVariables = (domain, cb) ->
       containerId: encodedId
     }, domain.intercept(cb)
 
+containerSchema.methods.updateBuildCommand = (domain, cb) ->
+  url = "http://#{@servicesToken}.#{configs.domain}/api/build_cmd"
+  request.post
+    url: url
+    pool: false
+    json:
+      cmd: @build_cmd
+  , domain.intercept () -> cb()
+
 containerSchema.methods.updateStartCommand = (domain, cb) ->
-  startCommandArray = (@start_cmd || "date").split " "
   url = "http://#{@servicesToken}.#{configs.domain}/api/cmd"
   request.post
     url: url
     pool: false
     json:
-      cmd: startCommandArray.shift()
-      args: startCommandArray
+      cmd: @start_cmd
   , domain.intercept () -> cb()
 
 containerSchema.methods.start = (domain, cb) ->
