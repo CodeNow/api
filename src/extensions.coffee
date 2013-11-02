@@ -28,6 +28,7 @@ module.exports = [
   '.aspx'
   '.asp'
   '.erb'
+  '.cshtml'
   '.php3'
   '.config'
   '.htaccess'
