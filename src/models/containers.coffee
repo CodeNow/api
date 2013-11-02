@@ -211,7 +211,7 @@ containerSchema.methods.updateEnvVariables = (domain, cb) ->
     }, domain.intercept(cb)
 
 containerSchema.methods.updateBuildCommand = (domain, cb) ->
-  url = "http://#{@servicesToken}.#{configs.domain}/api/build_cmd"
+  url = "http://#{@servicesToken}.#{configs.domain}/api/buildCmd"
   console.log('sending build command', @build_cmd)
   request.post
     url: url
