@@ -51,6 +51,8 @@ containerSchema = new Schema
   service_cmds:
     type: String
     default: ''
+  output_format:
+    type: String
   saved:
     type: Boolean
     default: false
