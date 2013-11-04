@@ -214,7 +214,6 @@ containerSchema.methods.updateEnvVariables = (domain, cb) ->
 
 containerSchema.methods.updateBuildCommand = (domain, cb) ->
   url = "http://#{@servicesToken}.#{configs.domain}/api/buildCmd"
-  console.log('sending build command', @build_cmd)
   request.post
     url: url
     pool: false
@@ -325,7 +324,6 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
           file = @files[@files.length-1]
           @last_write = new Date()
           @save domain.intercept () ->
-            console.log file
             cb null, { _id: file._id, name: file.name, path: file.path }
 
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
