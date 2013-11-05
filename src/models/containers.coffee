@@ -51,6 +51,8 @@ containerSchema = new Schema
   service_cmds:
     type: String
     default: ''
+  output_format:
+    type: String
   saved:
     type: Boolean
     default: false
@@ -122,6 +124,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         service_cmds: image.service_cmds
         start_cmd: image.start_cmd
         build_cmd: image.build_cmd
+        output_format: image.output_format
         servicesToken: servicesToken
         webToken: 'web-' + uuid.v4()
         specification: image.specification
@@ -190,19 +193,57 @@ containerSchema.methods.getRunningState = (domain, cb) ->
           res.body = JSON.parse res.body
           cb null, running: res.body.running
 
+containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
+  self = @
+  async.series [
+    (cb) ->
+      async.parallel [
+        self.updateEnvVariables.bind(self, domain)
+        self.updateBuildCommand.bind(self, domain)
+        self.updateStartCommand.bind(self, domain)
+      ], cb
+    self.start.bind(self, domain)
+  ], cb
+
+containerSchema.methods.updateEnvVariables = (domain, cb) ->
+  encodedId = encodeId @_id
+  implementations.updateEnvBySpecification domain,  {
+      userId: @owner
+      specification: @specification
+      containerId: encodedId
+    }, domain.intercept(cb)
+
+containerSchema.methods.updateBuildCommand = (domain, cb) ->
+  url = "http://#{@servicesToken}.#{configs.domain}/api/buildCmd"
+  request.post
+    url: url
+    pool: false
+    json:
+      cmd: @build_cmd
+  , domain.intercept () -> cb()
+
+containerSchema.methods.updateStartCommand = (domain, cb) ->
+  url = "http://#{@servicesToken}.#{configs.domain}/api/cmd"
+  request.post
+    url: url
+    pool: false
+    json:
+      cmd: @start_cmd
+  , domain.intercept () -> cb()
+
 containerSchema.methods.start = (domain, cb) ->
-  # should no longer need to try multiple times
-  doReq = () =>
-    request
-      url: "http://#{@servicesToken}.#{configs.domain}/api/start"
-      method: 'GET'
-      pool: false
-    , domain.intercept (res) ->
-      if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
-        if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-          if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
-            cb()
-  doReq()
+  request
+    url: "http://#{@servicesToken}.#{configs.domain}/api/start"
+    method: 'GET'
+    pool: false
+  , domain.intercept (res) ->
+    if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
+      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
+        if res.statusCode isnt 200
+          cb error res.statusCode, 'unknown runnable error'
+        else
+          @running = true
+          cb()
 
 containerSchema.methods.stop = (domain, cb) ->
   request
@@ -284,7 +325,6 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
           file = @files[@files.length-1]
           @last_write = new Date()
           @save domain.intercept () ->
-            console.log file
             cb null, { _id: file._id, name: file.name, path: file.path }
 
 containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
@@ -442,6 +482,11 @@ slash = /\//g
 minus = /-/g
 underscore = /_/g
 
-encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
+encodeId = (id) -> id
+decodeId = (id) -> id
+
+if configs.shortProjectIds
+  encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
+  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');
 
 module.exports = mongoose.model 'Containers', containerSchema

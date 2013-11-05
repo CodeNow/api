@@ -69,6 +69,8 @@ imageSchema = new Schema
           sparse: true
     ]
     default: [ ]
+  output_format:
+    type: String
   service_cmds:
     type: String
     default: ''
@@ -328,7 +330,8 @@ copyPublishProperties = (image, container) ->
     'build_cmd'
     'start_cmd'
     'service_cmds'
-    'port'
+    'port',
+    'output_format'
   ]
   objectIdProperties = [
     'owner'

@@ -179,7 +179,7 @@ module.exports = (parentDomain) ->
   putrunnable = (req, res) ->
     if not req.body.running? then res.json 400, message: 'must provide a running parameter' else
       required = ['name', 'description']
-      optional = ['specification', 'saved', 'start_cmd', 'build_cmd']
+      optional = ['specification', 'saved', 'start_cmd', 'build_cmd', 'output_format']
       set = {}
       # for loop for early return
       for attr in required
@@ -204,7 +204,7 @@ module.exports = (parentDomain) ->
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
 
   patchrunnable = (req, res) ->
-    set = _.pick(req.body, 'specification');
+    set = _.pick(req.body, 'specification', 'start_cmd', 'build_cmd', 'output_format');
     runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
       if err then res.json err.code, message: err.msg else
         res.json runnable
