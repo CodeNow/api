@@ -124,6 +124,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         service_cmds: image.service_cmds
         start_cmd: image.start_cmd
         build_cmd: image.build_cmd
+        output_format: image.output_format
         servicesToken: servicesToken
         webToken: 'web-' + uuid.v4()
         specification: image.specification
