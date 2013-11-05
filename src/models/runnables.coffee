@@ -208,8 +208,9 @@ Runnables =
           start = () ->
             container.updateRunOptionsAndStart domain, (err) ->
               if err then cb err else
-                json_project = container.toJSON()
-                encode domain, json_project, cb
+                container.save domain.intercept () ->
+                  json_project = container.toJSON()
+                  encode domain, json_project, cb
         if container.specification?
             implementations.findOne
               owner: userId
