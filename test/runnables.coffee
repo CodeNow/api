@@ -18,7 +18,6 @@ describe 'runnables api', ->
                     res.should.have.status 200
                     res.body.should.have.property '_id', runnableId
                     res.body.should.have.property 'tags'
-                    res.body.should.have.property 'votes', 0
                     res.body.should.not.have.property 'files'
                     instance.stop done
 

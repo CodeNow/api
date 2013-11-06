@@ -38,13 +38,6 @@ userSchema = new Schema
   views:
     type: Number
     default: 0
-  votes:
-    type: [
-      runnable:
-        type: ObjectId
-        index: {sparse:true}
-    ]
-    default: [ ]
 
 # common user lookup
 userSchema.index
@@ -128,33 +121,6 @@ userSchema.statics.publicListWithIds = (domain, userIds, cb) ->
       user = user.toJSON()
       user.email = undefined
       user
-
-userSchema.methods.getVotes = () ->
-  votes = [ ]
-  for vote in @votes
-    json_vote = vote.toJSON()
-    json_vote.runnable = encodeId json_vote.runnable
-    votes.push json_vote
-  votes
-
-userSchema.methods.addVote = (domain, runnableId, cb) ->
-  found = false
-  for vote in @votes
-    if vote.runnable.toString() is runnableId.toString()
-      found = true
-  if found then cb error 403, 'cannot vote on runnable more than once' else
-    @votes.push runnable: runnableId
-    @save domain.intercept () =>
-      vote = @votes[@votes.length-1].toJSON()
-      vote.runnable = encodeId vote.runnable
-      cb null, vote
-
-userSchema.methods.removeVote = (domain, voteId, cb) ->
-  vote = @votes.id voteId
-  if not vote then cb error 404, 'vote not found' else
-    vote.remove()
-    @save domain.intercept () ->
-      cb()
 
 module.exports = mongoose.model 'Users', userSchema
 

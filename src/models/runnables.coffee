@@ -1,5 +1,4 @@
 async = require 'async'
-caching = require './caching'
 channels = require './channels'
 configs = require '../configs'
 containers = require './containers'
@@ -37,17 +36,11 @@ Runnables =
         , (err) ->
           if err then throw err
           image.save domain.intercept () ->
-            users.findUser domain, _id: userId, (err, user) ->
-              if err then cb err else
-                if not user then cb error 404, 'user not found' else
-                  user.addVote domain, image._id, (err) ->
-                    if err then cb err else
-                      json_image = image.toJSON()
-                      delete json_image.files
-                      if json_image.parent then json_image.parent = encodeId json_image.parent
-                      json_image._id = encodeId image._id
-                      cb null, json_image
-                      caching.markCacheAsDirty()
+            json_image = image.toJSON()
+            delete json_image.files
+            if json_image.parent then json_image.parent = encodeId json_image.parent
+            json_image._id = encodeId image._id
+            cb null, json_image
 
   createImage: (domain, userId, from, sync, cb) ->
     if not isObjectId64 from then cb error 404, 'source runnable not found' else
@@ -58,17 +51,11 @@ Runnables =
               if err then cb err else
                 container.target = image._id
                 container.save domain.intercept () ->
-                  users.findUser domain, _id: userId, (err, user) ->
-                    if err then cb err else
-                      if not user then cb error 404, 'user not found' else
-                        user.addVote domain, image._id, (err) ->
-                          if err then cb err else
-                            json_image = image.toJSON()
-                            delete json_image.files
-                            if json_image.parent then json_image.parent = encodeId json_image.parent
-                            json_image._id = encodeId image._id
-                            cb null, json_image
-                            caching.markCacheAsDirty()
+                  json_image = image.toJSON()
+                  delete json_image.files
+                  if json_image.parent then json_image.parent = encodeId json_image.parent
+                  json_image._id = encodeId image._id
+                  cb null, json_image
 
   createContainer: (domain, userId, from, cb) ->
     async.waterfall [
@@ -139,7 +126,8 @@ Runnables =
 
   removeImage: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    remove = () -> images.destroy domain, runnableId, cb
+    remove = () ->
+      images.destroy domain, runnableId, cb
     images.findOne _id: runnableId, domain.bind (err, image) ->
       if err then throw err
       if not image then cb error 404, 'runnable not found' else
@@ -148,9 +136,6 @@ Runnables =
             if err then cb err else
               if not user then cb error 404, 'user not found' else
                 if user.permission_level <= 1 then cb error 403, 'permission denied' else
-                  for vote in user.votes
-                    if vote.runnable.toString() is image._id.toString()
-                      vote.remove()
                   remove()
 
   updateContainer: (domain, userId, runnableId, updateSet, cb) ->
@@ -182,8 +167,8 @@ Runnables =
           if updateSet.build_cmd? and container.build_cmd isnt updateSet.build_cmd
             console.log 'implement build update'
           async.series operations, domain.intercept save
-          
-          
+
+
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -211,11 +196,8 @@ Runnables =
       decodedRunnableId = decodeId runnableId
       images.findOne {_id: decodedRunnableId}, {files:0}, domain.intercept (image) =>
         if not image then cb error 404, 'runnable not found' else
-          @getVotes domain, runnableId, (err, votes) ->
-            if err then cb err else
-              json_project = image.toJSON()
-              json_project.votes = votes.count
-              encode domain, json_project, cb
+          json_project = image.toJSON()
+          encode domain, json_project, cb
 
   startContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -253,47 +235,17 @@ Runnables =
               _.extend json_project, { running: false }
               encode domain, json_project, cb
 
-  getVotes: (domain, runnableId, cb) ->
-    runnableId = decodeId runnableId
-    users.find('votes.runnable': runnableId).count().exec domain.intercept (count) ->
-      cb null, { count: count - 1 }
+  listAll: (domain, limit, page, cb) ->
+    images.find({}, listFields).skip(page*limit).limit(limit).exec domain.intercept (results) ->
+      arrayToJSON domain, results, cb
 
-  vote: (domain, userId, runnableId, cb) ->
-    runnableId = decodeId runnableId
-    images.isOwner domain, userId, runnableId, (err, owner) ->
-      if owner then cb error 403, 'cannot vote for own runnables' else
-        users.findOne _id: userId, domain.intercept (user) ->
-          if not user then cb error 403, 'user not found' else
-            user.addVote domain, runnableId, cb
-            caching.markCacheAsDirty()
+  listByPublished: (domain, limit, page, cb) ->
+    @listFiltered domain, { tags: $not: $size: 0 }, limit, page, null, cb
 
-  listAll: (domain, sortByVotes, limit, page, cb) ->
-    if not sortByVotes
-      images.find({}, listFields).skip(page*limit).limit(limit).exec domain.intercept (results) ->
-        arrayToJSON(domain, results, cb)
-    else
-      caching.getUnfilteredCachedResults limit, limit*page, domain.intercept (results) ->
-        async.map results, (result, cb) ->
-          images.findOne _id: result._id, listFields, domain.intercept (runnable) ->
-            if not runnable then cb() else
-              json = runnable.toJSON()
-              json.votes = result.number - 1
-              encode domain, json, cb
-        , (err, runnables) ->
-          if err then cb err else
-            runnables = runnables.filter exists
-            cb null, runnables
+  listByChannelMembership: (domain, channelIds, limit, page, cb) ->
+    @listFiltered domain, 'tags.channel': $in: channelIds, limit, page, null, cb
 
-  listByPublished: (domain, sortByVotes, limit, page, cb) ->
-    @listFiltered domain, { tags: $not: $size: 0 }, sortByVotes, limit, page, null, cb
-
-  listByChannelMembership: (domain, channelIds, sortByVotes, limit, page, cb) ->
-    if sortByVotes and channelIds.length is 1
-      @listCachedChannelsFiltered domain, channelIds, true, limit, page, cb
-    else
-      @listFiltered domain, 'tags.channel': $in: channelIds, sortByVotes, limit, page, null, cb
-
-  listByOwner: (domain, owner, sortByVotes, limit, page, cb) ->
+  listByOwner: (domain, owner, limit, page, cb) ->
     fields = _.clone listFields
     _.extend fields,
       copies:1
@@ -301,42 +253,12 @@ Runnables =
       cuts:1
       runs:1
       views:1
-    @listFiltered domain, { owner: owner }, sortByVotes, limit, page, fields, cb
+    @listFiltered domain, { owner: owner }, limit, page, fields, cb
 
-  listCachedChannelsFiltered: (domain, channels, sortByVotes, limit, page, cb) ->
-    caching.getFilteredCachedResults limit, limit*page, channels, domain.intercept (results) ->
-      async.map results, (result, cb) ->
-        images.findOne { _id: result._id }, listFields, domain.intercept (runnable) ->
-          if not runnable then cb() else
-            json = runnable.toJSON()
-            json.votes = result.number - 1
-            encode domain, json, cb
-      , (err, runnables) ->
-        if err then cb err else
-          runnables = runnables.filter exists
-          cb null, runnables
-
-  listFiltered: (domain, query, sortByVotes, limit, page, fields, cb) ->
+  listFiltered: (domain, query, limit, page, fields, cb) ->
     fields = fields or listFields
-    if not sortByVotes
-      images.find(query).skip(page*limit).limit(limit).exec domain.intercept (results) ->
-        arrayToJSON(domain, results, cb)
-    else
-      images.find query, fields, domain.intercept (selected) ->
-        filter = [ ]
-        for image in selected
-          filter.push image._id
-        users.aggregate caching.voteSortPipelineFiltered(limit, limit*page, filter), domain.intercept (results) ->
-          async.map results, (result, cb) ->
-            images.findOne { _id: result._id }, fields, domain.intercept (runnable) ->
-              if not runnable then cb() else
-                json = runnable.toJSON()
-                json.votes = result.number - 1
-                encode domain, json, cb
-          , (err, runnables) ->
-            if err then cb err else
-              runnables = runnables.filter exists
-              cb null, runnables
+    images.find(query).skip(page*limit).limit(limit).exec domain.intercept (results) ->
+      arrayToJSON(domain, results, cb)
 
   listNames: (domain, cb) ->
     images.find(tags:$not:$size:0, {_id:1,name:1,tags:1}).exec domain.intercept (results) ->
@@ -627,10 +549,10 @@ exists = (thing) ->
 updateCmd = (domain, container, cb) ->
   startCommandArray = (container.start_cmd || "date").split " "
   url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/cmd"
-  request.post 
+  request.post
     url: url
     pool: false
-    json: 
+    json:
       cmd: startCommandArray.shift()
       args: startCommandArray
   , domain.intercept cb

@@ -96,7 +96,6 @@ module.exports = (parentDomain) ->
         if not user then res.json 404, message: 'user doesnt exist' else
           json_user = user.toJSON()
           delete json_user.password
-          delete json_user.votes
           res.json json_user
 
   app.get '/users/me', getuser
@@ -123,32 +122,6 @@ module.exports = (parentDomain) ->
 
   app.put '/users/me', putuser
   app.put '/users/:userid', fetchuser, putuser
-
-  getvotes = (req, res) ->
-    users.findUser req.domain, { _id: req.user_id }, (err, user) ->
-      if err then res.json err.code, message: err.msg else
-        res.json user.getVotes()
-
-  app.get '/users/me/votes', getvotes
-  app.get '/users/:userid/votes', fetchuser, getvotes
-
-  postvote = (req, res) ->
-    if not req.body.runnable? then res.json 400, message: 'must include runnable to vote on' else
-      runnables.vote req.domain, req.user_id, req.body.runnable, (err, vote) ->
-        if err then res.json err.code, message: err.msg else
-          res.json 201, vote
-
-  app.post '/users/me/votes', postvote
-  app.post '/users/:userid/votes', fetchuser, postvote
-
-  removevote = (req, res) ->
-    users.findUser req.domain, { _id: req.user_id }, (err, user) ->
-      user.removeVote req.domain, req.params.voteid, (err) ->
-        if err then res.json err.code, message: err.msg else
-          res.json { message: 'removed vote' }
-
-  app.del '/users/me/votes/:voteid', removevote
-  app.del '/users/:userid/votes/:voteid', fetchuser, removevote
 
   postrunnable = (req, res) ->
     if not req.query.from? then res.json 400, message: 'must provide a runnable to fork from' else

@@ -29,24 +29,23 @@ module.exports = (parentDomain) ->
     page = 0
     if req.query.page?
       page = Number req.query.page
-    sortByVotes = req.query.sort is 'votes'
     if req.query.search?
       runnables.searchImages req.domain, req.query.search, limit, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.published?
-      runnables.listByPublished req.domain, sortByVotes, limit, page, (err, results) ->
+      runnables.listByPublished req.domain, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.channel?
       channels.getChannelsWithNames req.domain, categories, req.query.channel, (err, results) ->
         if err then res.json err.code, message: err.msg else
           channelIds = results.map (channel) -> channel._id
-          runnables.listByChannelMembership req.domain, channelIds, sortByVotes, limit, page, (err, results) ->
+          runnables.listByChannelMembership req.domain, channelIds, limit, page, (err, results) ->
             if err then res.json err.code, message: err.msg else
               res.json results
     else if req.query.owner?
-      runnables.listByOwner req.domain, req.query.owner, sortByVotes, limit, page, (err, results) ->
+      runnables.listByOwner req.domain, req.query.owner, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.map?
@@ -54,7 +53,7 @@ module.exports = (parentDomain) ->
         if err then next err else
           res.json results
     else
-      runnables.listAll req.domain, sortByVotes, limit, page, (err, results) ->
+      runnables.listAll req.domain, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
 
@@ -73,11 +72,6 @@ module.exports = (parentDomain) ->
     runnables.removeImage req.domain, req.user_id, req.params.id, (err) ->
       if err then res.json err.code, message: err.msg else
         res.json message: 'runnable deleted'
-
-  app.get '/runnables/:id/votes', (req, res) ->
-    runnables.getVotes req.domain, req.params.id, (err, votes) ->
-      if err then res.json err.code, message: err.msg else
-        res.json votes
 
   app.get '/runnables/:id/tags', (req, res) ->
     runnables.getTags req.domain, req.params.id, (err, tags) ->
