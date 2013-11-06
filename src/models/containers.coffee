@@ -160,7 +160,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         if implementation?
           envFull = env.concat implementation.toJSON().requirements.map (requirement) ->
             "#{requirement.name}=#{requirement.value}"
-          envFull.push 'BASE_URL=http://#{implementation.subdomain}.#{configs.domain}'
+          envFull.push "BASE_URL=http://#{implementation.subdomain}.#{configs.domain}"
           createContainer envFull, implementation.subdomain
         else
           createContainer env
