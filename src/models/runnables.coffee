@@ -531,22 +531,18 @@ Runnables =
   incrementStat: (domain, userId, runnableId, stat, cb) ->
     if !(stat in stats) then cb error 400, 'not a valid stat' else
       runnableId = decodeId runnableId
+      update = $inc:{}
+      update.$inc[stat] = 1
       async.parallel [
         (cb) ->
-          images.findOne _id: runnableId, domain.intercept (image) ->
-            image[stat] = image[stat] + 1
-            image.save domain.intercept () ->
-              cb null, image[stat]
+          images.findOneAndUpdate _id: runnableId, update, domain.intercept (image) ->
+            cb null, image
         (cb) ->
-          users.findOne _id: userId, domain.intercept (user) ->
-            user[stat] = user[stat] + 1
-            user.save domain.intercept () ->
-              cb null, user[stat]
+          users.findOneAndUpdate _id: userId, update, domain.intercept (user) ->
+            cb null, user
       ], (err, results) ->
         if err then cb err else
-          cb null,
-            image: results[0]
-            user: results[1]
+          cb null, results[0]
 
 
 module.exports = Runnables
