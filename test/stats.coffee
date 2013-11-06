@@ -50,6 +50,5 @@ describe 'stats api', ->
                         .end (err, res) ->
                           if err then done err else
                             res.should.have.status 201
-                            res.body.user.should.equal 1
-                            res.body.image.should.equal 1
+                            res.body.image.runs.should.equal 1
                             instance.stop done

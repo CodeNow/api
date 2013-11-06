@@ -542,7 +542,7 @@ Runnables =
             cb null, user
       ], (err, results) ->
         if err then cb err else
-          cb null, results[0]
+          encode domain, results[0].toJSON(), cb
 
 
 module.exports = Runnables
