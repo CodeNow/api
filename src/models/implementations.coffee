@@ -185,6 +185,7 @@ updateEnv = (domain, opts, cb) ->
               webToken: opts.subdomain
             url: url
           , domain.intercept (res, body) =>
+            console.log 'ROUTE SWAP', opts.subdomain, body
             cb null
       ], domain.intercept cb
     else
