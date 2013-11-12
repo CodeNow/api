@@ -81,6 +81,8 @@ module.exports = (parentDomain) ->
             next()
 
   getusers = (req, res) ->
+    sendUsers = (err, users) ->
+      if err then next err else res.json users
     if req.query.ids
       userIds = req.query.ids or [ ]
       if !Array.isArray(userIds) then userIds = [ userIds ]
@@ -89,8 +91,6 @@ module.exports = (parentDomain) ->
      users.publicList req.domain, username:req.query.username, sendUsers
     else
       res.json 400, message: 'must provide ids or username for users to get'
-    sendUsers = (err, users) ->
-      if err then next err else res.json users
 
   app.get '/users', getusers
 

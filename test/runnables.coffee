@@ -809,6 +809,57 @@ describe 'runnables api', ->
                                               instance.configs.passwordSalt = oldSalt
                                               instance.stop done
 
+  it 'should be possible to list all ::runnable owned by a given username', (done) ->
+    username = "matchusername5";
+    helpers.createServer configs, done, (err, instance) ->
+      if err then done err else
+        helpers.createImage 'node.js', (err, runnableId) ->
+          if err then done err else
+            user = sa.agent()
+            oldSalt = instance.configs.passwordSalt
+            delete instance.configs.passwordSalt
+            user.post("http://localhost:#{configs.port}/token")
+              .set('Content-Type', 'application/json')
+              .send(JSON.stringify({ username:username, password: 'testing' }))
+              .end (err, res) ->
+                if err then done err else
+                  res.should.have.status 200
+                  token = res.body.access_token
+                  user.get("http://localhost:#{configs.port}/users/me")
+                    .set('runnable-token', token)
+                    .end (err, res) ->
+                      if err then done err else
+                        res.should.have.status 200
+                        owner = res.body._id
+                        user.post("http://localhost:#{configs.port}/users/me/runnables?from=#{runnableId}")
+                          .set('runnable-token', token)
+                          .end (err, res) ->
+                            res.should.have.status 201
+                            ownRunnable = res.body._id
+                            user.put("http://localhost:#{configs.port}/users/me/runnables/#{ownRunnable}")
+                              .set('runnable-token', token)
+                              .set('content-type', 'application/json')
+                              .send(JSON.stringify({ name: 'new name 2', running: false, description:'' }))
+                              .end (err, res) ->
+                                if err then done err else
+                                  res.should.have.status 200
+                                  if err then done err else
+                                    user.post("http://localhost:#{configs.port}/runnables?from=#{ownRunnable}")
+                                      .set('runnable-token', token)
+                                      .end (err, res) ->
+                                        res.should.have.status 201
+                                        publishedId = res.body._id
+                                        user.get("http://localhost:#{configs.port}/runnables?ownerUsername=#{username}")
+                                          .set('runnable-token', token)
+                                          .end (err, res) ->
+                                            if err then done err else
+                                              res.should.have.status 200
+                                              res.body.should.be.a.array
+                                              res.body.length.should.equal 1
+                                              res.body[0]._id.should.equal publishedId
+                                              instance.configs.passwordSalt = oldSalt
+                                              instance.stop done
+
   it 'should be possible to list all ::runnables which are published', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
