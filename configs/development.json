@@ -34,5 +34,6 @@
       "publishers": "b7a679ddc3",
       "contact": "43330e29a9"
     }
-  }
+  },
+  "cacheRefreshInterval": "60 minutes"
 }
