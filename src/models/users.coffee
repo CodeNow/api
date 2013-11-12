@@ -119,11 +119,15 @@ userSchema.statics.registerUser = (domain, userId, data, cb) ->
       setPassword hash
 
 userSchema.statics.publicListWithIds = (domain, userIds, cb) ->
+  query = _id: $in: userIds
+  @publicList domain, query, cb
+
+userSchema.statics.publicList = (domain, query, cb) ->
   fields =
     username : 1
     fb_userid: 1
     email    : 1
-  @find _id: $in: userIds, fields, domain.intercept (users) ->
+  @find query, fields, domain.intercept (users) ->
     cb null, users.map (user) ->
       user = user.toJSON()
       user.email = undefined
