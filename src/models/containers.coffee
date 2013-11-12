@@ -196,23 +196,25 @@ containerSchema.methods.getRunningState = (domain, cb) ->
 
 containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
   self = @
+  operations = [
+    self.updateBuildCommand.bind self, domain
+    self.updateStartCommand.bind self, domain
+  ]
+  if @specification?
+    operations.push self.updateEnvVariables.bind self, domain
   async.series [
     (cb) ->
-      async.parallel [
-        self.updateEnvVariables.bind(self, domain)
-        self.updateBuildCommand.bind(self, domain)
-        self.updateStartCommand.bind(self, domain)
-      ], cb
+      async.parallel operations, cb
     self.start.bind(self, domain)
   ], cb
 
 containerSchema.methods.updateEnvVariables = (domain, cb) ->
   encodedId = encodeId @_id
-  implementations.updateEnvBySpecification domain,  {
-      userId: @owner
-      specification: @specification
-      containerId: encodedId
-    }, domain.intercept(cb)
+  implementations.updateEnvBySpecification domain,
+    userId: @owner
+    specification: @specification
+    containerId: encodedId
+  , domain.intercept(cb)
 
 containerSchema.methods.updateBuildCommand = (domain, cb) ->
   url = "http://#{@servicesToken}.#{configs.domain}/api/buildCmd"
