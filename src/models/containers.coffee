@@ -143,7 +143,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         pool: false
         json:
           servicesToken: container.servicesToken
-          webToken: subdomain or container.webToken
+          webToken: container.webToken
           Env: env
           Hostname: 'runnable'
           Image: "#{configs.dockerRegistry}/runnable/#{encodedId}"
