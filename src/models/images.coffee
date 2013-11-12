@@ -264,7 +264,7 @@ imageSchema.statics.search = (domain, searchText, limit, cb) ->
       cb null, images
 
 imageSchema.methods.updateFromContainer = (domain, container, cb) ->
-  copyPublishProperties @, container
+  copyPublishProperties @, container, true
   @revisions = @revisions or [ ]
   length = @revisions.push { }
   encodedId = encodeId @revisions[length-1]._id.toString()
@@ -316,7 +316,7 @@ underscore = /_/g
 
 encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
 
-copyPublishProperties = (image, container) ->
+copyPublishProperties = (image, container, noOwner) ->
   properties = [
     'name'
     'description'
@@ -334,10 +334,10 @@ copyPublishProperties = (image, container) ->
     'output_format'
   ]
   objectIdProperties = [
-    'owner'
     'parent'
     'specification'
   ]
+  if (!noOwner) then objectIdProperties.push('owner')
   properties.forEach (property) ->
     image[property] = _.clone container[property]
   objectIdProperties.forEach (property) ->
