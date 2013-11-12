@@ -102,7 +102,7 @@ def boot():
   """
   run('NODE_ENV=%(settings)s forever start api-server/server.js' % env)
   run('NODE_ENV=%(settings)s forever start api-server/scripts/meetyourmaker.js' % env)
-  run('NODE_ENV=%(settings)s forever start api-server/scripts/refreshcache.js' % env)
+  # run('NODE_ENV=%(settings)s forever start api-server/scripts/refreshcache.js' % env)
 
 
 """
@@ -169,5 +169,5 @@ def shiva_the_destroyer():
   """
   run('forever stop api-server/server.js')
   run('forever stop api-server/scripts/meetyourmaker.js')
-  run('forever stop api-server/scripts/refreshcache.js')
+  # run('forever stop api-server/scripts/refreshcache.js')
   run('rm -Rf api-server')
