@@ -108,8 +108,12 @@ userSchema.statics.loginUser = (domain, login, password, cb) ->
         if password isnt user.password then cb error 403, 'invalid password' else
           cb null, user._id
 
-userSchema.statics.updateUser = (domain, userId, data, cb) ->
-  @findOneAndUpdate {_id:userId}, {$set:data}, domain.intercept (user) ->
+userSchema.statics.updateUser = (domain, userId, data, fields, cb) ->
+  if typeof fields is 'function'
+    cb = fields
+    fields = null
+  options = if fields then fields:fields else {}
+  @findOneAndUpdate {_id:userId}, {$set:data}, options, domain.intercept (user) ->
     cb null, user.toJSON()
 
 userSchema.statics.registerUser = (domain, userId, data, cb) ->

@@ -135,7 +135,7 @@ module.exports = (parentDomain) ->
       'show_email'
     ]
     data = _.pick(req.body, allowed);
-    users.updateUser req.domain, req.user_id, data, (err, user) ->
+    users.updateUser req.domain, req.user_id, data, fields:{password:0, votes:0}, (err, user) ->
       if err then res.json err.code, message: err.msg else
         res.json user
 
