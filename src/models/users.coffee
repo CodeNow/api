@@ -24,6 +24,9 @@ userSchema = new Schema
   lower_username:
     type: String
     index: true
+  show_email:
+    type: Boolean
+    default: false
   permission_level:
     type: Number
     default: 0
@@ -105,6 +108,10 @@ userSchema.statics.loginUser = (domain, login, password, cb) ->
       else
         if password isnt user.password then cb error 403, 'invalid password' else
           cb null, user._id
+
+userSchema.statics.updateUser = (domain, userId, data, cb) ->
+  @findOneAndUpdate _id:userId, $set:data, domain.intercept (user) ->
+    cb null, user.toJSON()
 
 userSchema.statics.registerUser = (domain, userId, data, cb) ->
   setPassword = (password) =>

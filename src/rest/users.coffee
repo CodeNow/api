@@ -128,6 +128,20 @@ module.exports = (parentDomain) ->
   app.put '/users/me', putuser
   app.put '/users/:userid', fetchuser, putuser
 
+  patchuser = (req, res) ->
+    allowed = [
+      'name'
+      'company'
+      'show_email'
+    ]
+    data = _.pick(req.body, allowed);
+    users.update req.domain, req.user_id, data, (err, user) ->
+      if err then res.json err.code, message: err.msg else
+        res.json user
+
+  app.patch '/users/me', patchuser
+  app.patch '/users/:userid', fetchuser, patchuser
+
   getvotes = (req, res) ->
     users.findUser req.domain, { _id: req.user_id }, (err, user) ->
       if err then res.json err.code, message: err.msg else
