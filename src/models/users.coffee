@@ -14,7 +14,14 @@ userSchema = new Schema
     index: true
   password:
     type: String
+  name:
+    type: String
+  company:
+    type: String
   username:
+    type: String
+    index: true
+  lower_username:
     type: String
     index: true
   permission_level:
@@ -101,7 +108,7 @@ userSchema.statics.loginUser = (domain, login, password, cb) ->
 
 userSchema.statics.registerUser = (domain, userId, data, cb) ->
   setPassword = (password) =>
-    @findOne $or: [{ email: data.email }, { username: data.username }], domain.intercept (user) =>
+    @findOne $or: [{ email: data.email }, { lower_username: data.username.toLowerCase() }], domain.intercept (user) =>
       if user
         collision = if data.email is user.email then 'email' else 'username'
         cb error 403, collision+' already exists'
@@ -127,6 +134,9 @@ userSchema.statics.publicList = (domain, query, cb) ->
     username : 1
     fb_userid: 1
     email    : 1
+    created  : 1
+    show_email: 1
+    company  : 1
   @find query, fields, domain.intercept (users) ->
     cb null, users.map (user) ->
       user = user.toJSON()

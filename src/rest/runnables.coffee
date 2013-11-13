@@ -50,11 +50,12 @@ module.exports = (parentDomain) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.ownerUsername?
-      users.findUser req.domain, username:req.query.ownerUsername, (err, user) ->
+      users.findUser req.domain, lower_username:req.query.ownerUsername.toLowerCase(), (err, user) ->
         if err then res.json err.code, message: err.msg else
-          runnables.listByOwner req.domain, user._id, sortByVotes, limit, page, (err, results) ->
-            if err then res.json err.code, message: err.msg else
-              res.json results
+          if !user then res.json [] else
+            runnables.listByOwner req.domain, user._id, sortByVotes, limit, page, (err, results) ->
+              if err then res.json err.code, message: err.msg else
+                res.json results
     else if req.query.map?
       runnables.listNames req.domain, (err, results) ->
         if err then next err else

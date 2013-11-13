@@ -88,7 +88,7 @@ module.exports = (parentDomain) ->
       if !Array.isArray(userIds) then userIds = [ userIds ]
       users.publicListWithIds req.domain, userIds, sendUsers
     else if req.query.username
-     users.publicList req.domain, username:req.query.username, sendUsers
+     users.publicList req.domain, lower_username:req.query.username.toLowerCase(), sendUsers
     else
       res.json 400, message: 'must provide ids or username for users to get'
 
