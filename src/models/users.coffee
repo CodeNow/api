@@ -26,7 +26,6 @@ userSchema = new Schema
     index: true
   show_email:
     type: Boolean
-    default: false
   permission_level:
     type: Number
     default: 0
@@ -147,7 +146,7 @@ userSchema.statics.publicList = (domain, query, cb) ->
   @find query, fields, domain.intercept (users) ->
     cb null, users.map (user) ->
       user = user.toJSON()
-      user.email = undefined
+      if !user.show_email then user.email = undefined
       user
 
 userSchema.methods.getVotes = () ->
