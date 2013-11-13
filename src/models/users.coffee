@@ -142,11 +142,12 @@ userSchema.statics.publicListWithIds = (domain, userIds, cb) ->
 userSchema.statics.publicList = (domain, query, cb) ->
   fields =
     username : 1
+    name     : 1
     fb_userid: 1
     email    : 1
     created  : 1
     show_email: 1
-    company  : 1
+    company  : 1,
   @find query, fields, domain.intercept (users) ->
     cb null, users.map (user) ->
       user = user.toJSON()
