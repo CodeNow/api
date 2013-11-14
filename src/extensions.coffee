@@ -44,5 +44,6 @@ module.exports = [
   '.styl'
   '.slim'
   '.rdoc'
+  '.feature'
   ''
 ]
