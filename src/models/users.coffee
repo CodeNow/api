@@ -23,7 +23,7 @@ userSchema = new Schema
     index: true
   lower_username:
     type: String
-    index: true
+    index: {sparse:true}
   show_email:
     type: Boolean
   permission_level:
