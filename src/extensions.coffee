@@ -45,5 +45,6 @@ module.exports = [
   '.slim'
   '.rdoc'
   '.feature'
+  '.sh'
   ''
 ]
