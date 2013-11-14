@@ -90,6 +90,12 @@ containerSchema = new Schema
     default: [ ]
   specification:
     type: ObjectId
+  status:
+    type: String
+    default: 'editable'
+  commit_error:
+    type: String
+    default: ''
 
 containerSchema.set 'toJSON', virtuals: true
 containerSchema.set 'autoIndex', false

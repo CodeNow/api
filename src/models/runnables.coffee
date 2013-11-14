@@ -156,16 +156,32 @@ Runnables =
   updateContainer: (domain, userId, runnableId, updateSet, cb) ->
     runnableId = decodeId runnableId
     containers.findOne _id: runnableId, domain.intercept (container) ->
+      save = ->
+        _.extend container, updateSet
+        container.save domain.intercept ->
+          json = container.toJSON()
+          encode domain, json, cb
       if not container
         cb error 404, 'runnable not found'
       else if container.owner.toString() isnt userId.toString()
         cb error 403, 'permission denied'
+      else if updateSet.status is 'committing_new' or updateSet.status is 'committing_back'
+        request
+          pool: false
+          url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
+          method: 'POST'
+          qs:
+            repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
+            m: "#{container.parent} => #{image._id}"
+            author: image.owner.toString()
+            tag: 'latest'
+          json: _.extend(container, updateSet).toJSON()
+        , domain.intercept (res) ->
+          if (res.statusCode isnt 200)
+            domain.emit new Error "Error committing: #{res.body}"
+          else
+            save()
       else
-        save = ->
-          _.extend container, updateSet
-          container.save domain.intercept ->
-            json = container.toJSON()
-            encode domain, json, cb
         save()
 
   updateImage: (domain, userId, runnableId, from, cb) ->
