@@ -238,20 +238,8 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
       copyPublishProperties image, container
       image.synced = true
       encodedId = encodeId image._id.toString()
-      request
-        pool: false
-        url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
-        method: 'POST'
-        qs:
-          repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
-          m: "#{container.parent} => #{image._id}"
-          author: image.owner.toString()
-          tag: 'latest'
-      , domain.intercept (res) ->
-        if res.statusCode isnt 201 then cb error 500, "error committing docker image: #{res.body}" else
-          res.body = JSON.parse res.body
-          image.save domain.intercept () ->
-            cb null, image
+      image.save domain.intercept () ->
+        cb null, image
 
 imageSchema.statics.search = (domain, searchText, limit, cb) ->
   opts =
@@ -268,19 +256,8 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   @revisions = @revisions or [ ]
   length = @revisions.push { }
   encodedId = encodeId @revisions[length-1]._id.toString()
-  request
-    pool: false
-    url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
-    method: 'POST'
-    qs:
-      repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
-      m: "#{container.parent} => #{@_id}"
-      tag: 'latest'
-      author: @owner.toString()
-  , domain.intercept (res) =>
-    if res.statusCode isnt 201 then cb error 500, "error committing docker image: #{res.body}" else
-      @save domain.intercept () =>
-        cb null, @
+  @save domain.intercept () =>
+    cb null, @
 
 imageSchema.statics.destroy = (domain, id, cb) ->
   @findOne _id: id, domain.intercept (image) =>
