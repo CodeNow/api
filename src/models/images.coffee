@@ -45,18 +45,27 @@ imageSchema = new Schema
   copies:
     type: Number
     default: 0
+    index: true
   pastes:
     type: Number
     default: 0
+    index: true
   cuts:
     type: Number
     default: 0
+    index: true
   runs:
     type: Number
     default: 0
+    index: true
   views:
     type: Number
     default: 0
+    index: true
+  votes:
+    type: Number
+    default: 0
+    index: true
   port:
     type: Number
   synced:
