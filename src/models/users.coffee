@@ -176,7 +176,6 @@ userSchema.methods.getVotes = () ->
   for vote in @votes
     json_vote = vote.toJSON()
     json_vote.runnable = encodeId json_vote.runnable
-    json_vote = vote.toJSON()
     votes.push json_vote
   votes
 

@@ -99,6 +99,7 @@ module.exports = (parentDomain) ->
       if err then res.json err.code, message: err.msg else
         if not user then res.json 404, message: 'user doesnt exist' else
           json_user = user.toJSON()
+          json_user.votes = user.getVotes()
           delete json_user.password
           res.json json_user
 
