@@ -238,8 +238,10 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
       copyPublishProperties image, container
       image.synced = true
       encodedId = encodeId image._id.toString()
-      image.save domain.intercept () ->
-        cb null, image
+      container.child = image._id
+      container.save domain.intercept () ->
+        image.save domain.intercept () ->
+          cb null, image
 
 imageSchema.statics.search = (domain, searchText, limit, cb) ->
   opts =
@@ -256,8 +258,10 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   @revisions = @revisions or [ ]
   length = @revisions.push { }
   encodedId = encodeId @revisions[length-1]._id.toString()
-  @save domain.intercept () =>
-    cb null, @
+  container.child = @_id
+  container.save domain.intercept () =>
+    @save domain.intercept () =>
+      cb null, @
 
 imageSchema.statics.destroy = (domain, id, cb) ->
   @findOne _id: id, domain.intercept (image) =>

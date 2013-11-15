@@ -26,6 +26,8 @@ containerSchema = new Schema
   parent:
     type: ObjectId
     index: true
+  child:
+    type: ObjectId
   created:
     type: Date
     default: Date.now
