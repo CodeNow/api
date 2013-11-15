@@ -273,7 +273,7 @@ imageSchema.statics.search = (domain, searchText, limit, cb) ->
       cb null, images
 
 imageSchema.statics.incVote = (domain, runnableId, cb) ->
-  @update _id:runnableId, domain.intercept (success) ->
+  @update _id:runnableId, $inc:votes:1, domain.intercept (success) ->
     cb null, success
 
 imageSchema.methods.updateFromContainer = (domain, container, cb) ->
