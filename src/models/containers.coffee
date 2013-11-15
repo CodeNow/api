@@ -92,7 +92,7 @@ containerSchema = new Schema
     type: ObjectId
   status:
     type: String
-    default: 'editable'
+    default: 'Draft'
   commit_error:
     type: String
     default: ''

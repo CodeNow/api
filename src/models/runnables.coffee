@@ -153,7 +153,7 @@ Runnables =
                       vote.remove()
                   remove()
 
-  updateContainer: (domain, userId, runnableId, updateSet, cb) ->
+  updateContainer: (domain, userId, runnableId, updateSet, token, cb) ->
     runnableId = decodeId runnableId
     containers.findOne _id: runnableId, domain.intercept (container) ->
       save = ->
@@ -165,7 +165,7 @@ Runnables =
         cb error 404, 'runnable not found'
       else if container.owner.toString() isnt userId.toString()
         cb error 403, 'permission denied'
-      else if updateSet.status is 'committing_new' or updateSet.status is 'committing_back'
+      else if updateSet.status is 'Committing new' or updateSet.status is 'Committing back'
         request
           pool: false
           url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
@@ -176,6 +176,8 @@ Runnables =
             author: image.owner.toString()
             tag: 'latest'
           json: _.extend(container, updateSet).toJSON()
+          headers:
+            'runnable-token': token
         , domain.intercept (res) ->
           if (res.statusCode isnt 200)
             domain.emit new Error "Error committing: #{res.body}"

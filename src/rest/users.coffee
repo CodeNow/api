@@ -207,7 +207,7 @@ module.exports = (parentDomain) ->
           set[attr] = req.body[attr]
       optional.forEach (attr) ->
         if req.body[attr] isnt undefined then set[attr] = req.body[attr]
-      runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
+      runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, req.get 'runnable-token', (err, runnable) ->
         if err then res.json err.code, message: err.msg else
           if req.body.running
             runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
@@ -222,8 +222,8 @@ module.exports = (parentDomain) ->
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
 
   patchrunnable = (req, res) ->
-    set = _.pick(req.body, 'specification', 'saved', 'start_cmd', 'build_cmd', 'output_format', 'status', 'commit_error');
-    runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
+    set = _.pick req.body, 'specification', 'saved', 'start_cmd', 'build_cmd', 'output_format', 'status', 'commit_error'
+    runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, req.get 'runnable-token', (err, runnable) ->
       if err then res.json err.code, message: err.msg else
         res.json runnable
 
