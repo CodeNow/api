@@ -8,6 +8,11 @@ images = require './images'
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
+Vote = new Schema
+  runnable:
+    type: ObjectId
+    index: {sparse:true}
+
 userSchema = new Schema
   email:
     type: String
@@ -48,11 +53,7 @@ userSchema = new Schema
     type: Number
     default: 0
   votes:
-    type: [
-      runnable:
-        type: ObjectId
-        index: {sparse:true}
-    ]
+    type: [Vote]
     default: [ ]
 
 # common user lookup
@@ -153,6 +154,17 @@ userSchema.statics.publicList = (domain, query, cb) ->
       user = user.toJSON()
       if !user.show_email then user.email = undefined
       user
+
+userSchema.statics.addVote = (domain, userId, runnableId, cb) ->
+  query =
+    _id: userId
+    $not:'votes.runnable':runnableId
+  update =
+    $push:
+      votes: new Vote runnable:runnableId
+  @update query, update, domain.intercept (success) ->
+    if !success then cb error 403, 'you already voted on this runnable' else
+      cb null, vote
 
 userSchema.methods.getVotes = () ->
   votes = [ ]

@@ -272,6 +272,10 @@ imageSchema.statics.search = (domain, searchText, limit, cb) ->
       images = output.results.map (result) -> result.obj
       cb null, images
 
+imageSchema.statics.incVote = (domain, runnableId, cb) ->
+  @update _id:runnableId, domain.intercept (success) ->
+    cb null, success
+
 imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   copyPublishProperties @, container, true
   @revisions = @revisions or [ ]
@@ -306,7 +310,7 @@ imageSchema.statics.relatedChannelIds = (domain, channelIds, cb) ->
     cb null, channelIds
 
 imageSchema.statics.isOwner = (domain, userId, runnableId, cb) ->
-  @findOne _id: runnableId, domain.intercept (image) ->
+  @findOne _id: runnableId, {_id:1, owner:1}, domain.intercept (image) ->
     if not image then cb error 404, 'runnable not found' else
       cb null, image.owner.toString() is userId.toString()
 

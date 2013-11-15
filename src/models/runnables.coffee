@@ -244,12 +244,18 @@ Runnables =
 
   vote: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    images.isOwner domain, userId, runnableId, (err, owner) ->
-      if owner then cb error 403, 'cannot vote for own runnables' else
-        users.findOne _id: userId, domain.intercept (user) ->
-          if not user then cb error 403, 'user not found' else
-            user.addVote domain, runnableId, cb
-            caching.markCacheAsDirty()
+    async.series [
+      (cb) ->
+        images.isOwner domain, userId, runnableId, (err, isOwner) ->
+          if (isOwner) then cb error 403, 'cannot vote for own runnables' else cb()
+      (cb) ->
+        users.addVote domain, userId, runnableId, cb
+      (cb) ->
+        images.incVote domain, runnableId, cb
+    ], (err, results) ->
+      if err? then cb err else
+        vote = results[1]
+        cb null, vote
 
   listAll: (domain, sortByVotes, limit, page, cb) ->
     sort = if sortByVotes then {votes:-1} else {};
