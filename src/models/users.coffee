@@ -162,7 +162,7 @@ userSchema.statics.addVote = (domain, userId, runnableId, cb) ->
     return newrunnable.votes[0]
   query =
     _id: userId
-    $not:'votes.runnable':runnableId
+    'votes.runnable':$ne:runnableId
   update =
     $push:
       votes: createVote runnable:runnableId
