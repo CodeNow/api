@@ -50,8 +50,8 @@ userSchema = new Schema
   votes:
     type: [
       runnable:
-      type: ObjectId
-      index: {sparse:true}
+        type: ObjectId
+        index: {sparse:true}
     ]
     default: [ ]
 
