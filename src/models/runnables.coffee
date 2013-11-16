@@ -170,11 +170,6 @@ Runnables =
           pool: false
           url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
           method: 'POST'
-          qs:
-            repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
-            m: "#{container.parent} => #{image._id}"
-            author: image.owner.toString()
-            tag: 'latest'
           json: _.extend(container, updateSet).toJSON()
           headers:
             'runnable-token': token
