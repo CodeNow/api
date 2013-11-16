@@ -294,7 +294,7 @@ Runnables =
   listFiltered: (domain, query, sortByVotes, limit, page, fields, cb) ->
     fields = fields or listFields
     sort = if sortByVotes then {votes:-1} else {};
-    images.find(query).sort(sort).skip(page*limit).limit(limit).exec domain.intercept (results) ->
+    images.find(query).sort(sort).skip(page*limit).limit(limit).lean().exec domain.intercept (results) ->
       arrayToJSON(domain, results, cb)
 
   listNames: (domain, cb) ->
@@ -532,7 +532,7 @@ fetchContainer = (domain, userId, runnableId, cb) ->
 
 arrayToJSON = (domain, res, cb) ->
   async.map res, (item, cb) ->
-    json = item.toJSON()
+    json = if item.toJSON then item.toJSON() else item
     encode domain, json, cb
   , cb
 
