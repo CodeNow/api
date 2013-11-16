@@ -156,6 +156,23 @@ userSchema.statics.publicList = (domain, query, cb) ->
       if !user.show_email then user.email = undefined
       user
 
+userSchema.statics.addVote = (domain, userId, runnableId, cb) ->
+  self = @
+  createVote = (data) ->
+    newrunnable = (new self)
+    newrunnable.votes.push(data)
+    return newrunnable.votes[0]
+  vote = createVote runnable:runnableId
+  query =
+    _id: userId
+    'votes.runnable':$ne:runnableId
+  update =
+    $push:
+      votes: vote
+  @update query, update, domain.intercept (success) ->
+    if !success then cb error 403, 'you already voted on this runnable' else
+      cb null, vote
+
 userSchema.methods.getVotes = () ->
   votes = [ ]
   for vote in @votes
