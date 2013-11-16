@@ -127,7 +127,9 @@ userSchema.statics.registerUser = (domain, userId, data, cb) ->
           email: data.email
           password: password
           permission_level: 1
-        if data.username then cmd.$set.username = data.username
+        if data.username
+          cmd.$set.username = data.username
+          cmd.$set.lower_username = data.username.toLowerCase();
         @findByIdAndUpdate userId, cmd, domain.intercept (user) ->
           cb null, user
   if not configs.passwordSalt then setPassword data.password else
