@@ -175,7 +175,7 @@ Runnables =
             'runnable-token': token
         , domain.intercept (res) ->
           if (res.statusCode isnt 200)
-            domain.emit new Error "Error committing: #{res.body}"
+            cb error 502, "Error committing: #{res.body}"
           else
             save()
       else
