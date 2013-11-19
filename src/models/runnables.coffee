@@ -166,6 +166,7 @@ Runnables =
       else if container.owner.toString() isnt userId.toString()
         cb error 403, 'permission denied'
       else if updateSet.status is 'Committing new' or updateSet.status is 'Committing back'
+        console.log 'COMMITTING'
         request
           pool: false
           url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
@@ -179,6 +180,7 @@ Runnables =
           else
             save()
       else
+        console.log 'NOT COMMITTING'
         save()
 
   updateImage: (domain, userId, runnableId, from, cb) ->
