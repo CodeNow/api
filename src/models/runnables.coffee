@@ -174,8 +174,8 @@ Runnables =
           headers:
             'runnable-token': token
         , domain.intercept (res) ->
-          if (res.statusCode isnt 200)
-            cb error 502, "Error committing: #{res.statusCode}"
+          if (res.statusCode isnt 204)
+            cb error 502, "Error committing: #{JSON.stringify(res.body)}"
           else
             save()
       else
