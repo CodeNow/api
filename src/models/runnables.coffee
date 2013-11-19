@@ -18,7 +18,10 @@ listFields =
   tags:1,
   owner:1,
   created:1,
-  votes:1
+  votes:1,
+  views:1,
+  copies:1,
+  runs:1
 
 Runnables =
 
