@@ -195,11 +195,8 @@ Runnables =
       decodedRunnableId = decodeId runnableId
       images.findOne {_id: decodedRunnableId}, {files:0}, domain.intercept (image) =>
         if not image then cb error 404, 'runnable not found' else
-          @getVotes domain, runnableId, (err, votes) ->
-            if err then cb err else
-              json_project = image.toJSON()
-              json_project.votes = votes.count
-              encode domain, json_project, cb
+          json_project = image.toJSON()
+          encode domain, json_project, cb
 
   startContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
