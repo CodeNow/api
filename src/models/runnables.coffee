@@ -294,7 +294,7 @@ Runnables =
   listFiltered: (domain, query, sortByVotes, limit, page, fields, cb) ->
     fields = fields or listFields
     sort = if sortByVotes then {votes:-1} else {};
-    images.find(query).sort(sort).skip(page*limit).limit(limit).lean().exec domain.intercept (results) ->
+    images.find(query, fields).sort(sort).skip(page*limit).limit(limit).lean().exec domain.intercept (results) ->
       arrayToJSON(domain, results, cb)
 
   listNames: (domain, cb) ->
