@@ -120,7 +120,7 @@ imageSchema = new Schema
 imageSchema.plugin(textSearch)
 
 imageSchema.set 'toJSON', virtuals: true
-imageSchema.set 'autoIndex', false
+imageSchema.set 'autoIndex', true
 
 imageSchema.index
   tags: 1
