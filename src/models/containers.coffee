@@ -143,7 +143,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
       if image.revisions and image.revisions.length
         length = image.revisions.length
         revision = image.revisions[length-1]
-        repo = encodeId if revision._id then revision._id.toString() else revision.repo
+        repo = encodeId if revision.repo then revision.repo else revision._id.toString()
       else
         repo = encodeId image._id.toString()
       console.log 'Image', "#{configs.dockerRegistry}/runnable/#{repo}"
