@@ -146,6 +146,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         repo = encodeId if revision._id then revision._id.toString() else revision.repo
       else
         repo = encodeId image._id.toString()
+      console.log 'Image', "#{configs.dockerRegistry}/runnable/#{repo}"
       request
         url: "#{configs.harbourmaster}/containers"
         method: 'POST'
