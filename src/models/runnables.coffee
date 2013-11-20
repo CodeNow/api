@@ -170,18 +170,19 @@ Runnables =
           json = container.toJSON()
           encode domain, json, cb
       commit = ->
-        request
-          pool: false
-          url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
-          method: 'POST'
-          json: _.extend(container, updateSet).toJSON()
-          headers:
-            'runnable-token': token
-        , domain.intercept (res) ->
-          if (res.statusCode isnt 204)
-            cb error 502, "Error committing: #{JSON.stringify(res.body)}"
-          else
-            save()
+        encode domain, _.extend(container, updateSet).toJSON(), domain.intercept (json) ->
+          request
+            pool: false
+            url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
+            method: 'POST'
+            json: json
+            headers:
+              'runnable-token': token
+          , domain.intercept (res) ->
+            if (res.statusCode isnt 204)
+              cb error 502, "Error committing: #{JSON.stringify(res.body)}"
+            else
+              save()
       if not container
         cb error 404, 'runnable not found'
       else if container.owner.toString() isnt userId.toString()
