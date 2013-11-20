@@ -22,7 +22,7 @@
     }
   },
   "rollbar": {
-    "key": "3452187560b847028e7b2442ad8c17d9",
+    "key": "119509f9ba314df8a9ffbaf7b4812fb6",
     "options":  {
       "root": "/home/ubuntu/docklet",
       "branch": "master",
