@@ -123,8 +123,6 @@ Runnables =
           cb error 404, 'runnable not found' 
         else if container.owner.toString() isnt userId.toString() 
           cb error 403, 'permission denied' 
-        else if container.status is 'Finished'
-          cb error 301, container.child
         else
           container.getRunningState domain, (err, state) ->
             if err then cb err else
@@ -607,6 +605,7 @@ encode = (domain, json, cb) ->
   if json.files? then delete json.files
   if json.parent? then json.parent = encodeId json.parent
   if json.target? then json.target = encodeId json.target
+  if json.child? then json.child = encodeId json.child
   json.tags = json.tags or []
   async.forEach json.tags, (tag, cb) ->
     channels.findOne _id: tag.channel, domain.intercept (channel) ->
