@@ -123,6 +123,9 @@ Runnables =
           cb error 404, 'runnable not found' 
         else if container.owner.toString() isnt userId.toString() 
           cb error 403, 'permission denied' 
+        else if container.status is 'Finished'
+          json = container.toJSON()
+          encode domain, json, cb
         else
           container.getRunningState domain, (err, state) ->
             if err then cb err else
