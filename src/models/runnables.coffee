@@ -161,12 +161,7 @@ Runnables =
         container.save domain.intercept ->
           json = container.toJSON()
           encode domain, json, cb
-      if not container
-        cb error 404, 'runnable not found'
-      else if container.owner.toString() isnt userId.toString()
-        cb error 403, 'permission denied'
-      else if updateSet.status is 'Committing new' or updateSet.status is 'Committing back'
-        console.log 'COMMITTING'
+      commit = ->
         request
           pool: false
           url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
@@ -179,6 +174,18 @@ Runnables =
             cb error 502, "Error committing: #{JSON.stringify(res.body)}"
           else
             save()
+      if not container
+        cb error 404, 'runnable not found'
+      else if container.owner.toString() isnt userId.toString()
+        cb error 403, 'permission denied'
+      else if updateSet.status is 'Committing new'
+        images.findOne name: updateSet.name or container.name, domain.intercept (existing) =>
+          if existing 
+            cb error 403, 'a shared runnable by that name already exists' 
+          else
+            commit()
+      else if updateSet.status is 'Committing back'
+        commit()
       else
         console.log 'NOT COMMITTING'
         save()

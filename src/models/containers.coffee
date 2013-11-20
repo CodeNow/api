@@ -142,9 +142,10 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         container.tags.push tag.toJSON()
       if image.revisions and image.revisions.length
         length = image.revisions.length
-        encodedId = encodeId image.revisions[length-1]._id.toString()
+        revision = image.revisions[length-1]
+        repo = encodeId if revision._id then revision._id.toString() else revision.repo
       else
-        encodedId = encodeId image._id.toString()
+        repo = encodeId image._id.toString()
       request
         url: "#{configs.harbourmaster}/containers"
         method: 'POST'
@@ -154,7 +155,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
           webToken: container.webToken
           Env: env
           Hostname: 'runnable'
-          Image: "#{configs.dockerRegistry}/runnable/#{encodedId}"
+          Image: "#{configs.dockerRegistry}/runnable/#{repo}"
           PortSpecs: [ container.port.toString() ]
           Cmd: [ container.cmd ]
       , domain.intercept (res) ->

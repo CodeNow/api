@@ -34,6 +34,7 @@ imageSchema = new Schema
   image:
     type: String
   revisions: [
+    repo: String 
     created:
       type: Date
       default: Date.now
@@ -236,6 +237,9 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
     if existing then cb error 403, 'a shared runnable by that name already exists' else
       image = new @
       copyPublishProperties image, container
+      image.revisions = [ ]
+      image.revisions.push 
+        repo: container._id.toString()
       image.synced = true
       encodedId = encodeId image._id.toString()
       container.child = image._id
@@ -256,8 +260,8 @@ imageSchema.statics.search = (domain, searchText, limit, cb) ->
 imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   copyPublishProperties @, container, true
   @revisions = @revisions or [ ]
-  length = @revisions.push { }
-  encodedId = encodeId @revisions[length-1]._id.toString()
+  @revisions.push
+    repo: container._id.toString()
   container.child = @_id
   container.save domain.intercept () =>
     @save domain.intercept () =>
