@@ -115,15 +115,22 @@ Runnables =
 
   getContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    if not isObjectId runnableId then cb error, 404, 'runnable not found' else
+    if not isObjectId runnableId 
+      cb error, 404, 'runnable not found' 
+    else
       containers.findOne _id: runnableId, domain.intercept (container) ->
-        if not container then cb error 404, 'runnable not found' else
-          if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-            container.getRunningState domain, (err, state) ->
-              if err then cb err else
-                json = container.toJSON()
-                _.extend json, state
-                encode domain, json, cb
+        if not container 
+          cb error 404, 'runnable not found' 
+        else if container.owner.toString() isnt userId.toString() 
+          cb error 403, 'permission denied' 
+        else if container.status is 'Finished'
+          cb error 301, container.child
+        else
+          container.getRunningState domain, (err, state) ->
+            if err then cb err else
+              json = container.toJSON()
+              _.extend json, state
+              encode domain, json, cb
 
   removeContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
