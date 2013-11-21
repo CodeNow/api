@@ -46,5 +46,6 @@ module.exports = [
   '.rdoc'
   '.feature'
   '.sh'
+  '.mustache'
   ''
 ]

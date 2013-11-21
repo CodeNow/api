@@ -17,7 +17,11 @@ listFields =
   name:1,
   tags:1,
   owner:1,
-  created:1
+  created:1,
+  votes:1,
+  views:1,
+  copies:1,
+  runs:1
 
 Runnables =
 
@@ -225,11 +229,8 @@ Runnables =
       decodedRunnableId = decodeId runnableId
       images.findOne {_id: decodedRunnableId}, {files:0}, domain.intercept (image) =>
         if not image then cb error 404, 'runnable not found' else
-          @getVotes domain, runnableId, (err, votes) ->
-            if err then cb err else
-              json_project = image.toJSON()
-              json_project.votes = votes.count
-              encode domain, json_project, cb
+          json_project = image.toJSON()
+          encode domain, json_project, cb
 
   startContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -274,38 +275,29 @@ Runnables =
 
   vote: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    images.isOwner domain, userId, runnableId, (err, owner) ->
-      if owner then cb error 403, 'cannot vote for own runnables' else
-        users.findOne _id: userId, domain.intercept (user) ->
-          if not user then cb error 403, 'user not found' else
-            user.addVote domain, runnableId, cb
-            caching.markCacheAsDirty()
+    async.series [
+      (cb) ->
+        images.isOwner domain, userId, runnableId, (err, isOwner) ->
+          if (isOwner) then cb error 403, 'cannot vote for own runnables' else cb()
+      (cb) ->
+        users.addVote domain, userId, runnableId, cb
+      (cb) ->
+        images.incVote domain, runnableId, cb
+    ], (err, results) ->
+      if err? then cb err else
+        vote = results[1]
+        cb null, vote
 
   listAll: (domain, sortByVotes, limit, page, cb) ->
-    if not sortByVotes
-      images.find({}, listFields).skip(page*limit).limit(limit).exec domain.intercept (results) ->
-        arrayToJSON(domain, results, cb)
-    else
-      caching.getUnfilteredCachedResults limit, limit*page, domain.intercept (results) ->
-        async.map results, (result, cb) ->
-          images.findOne _id: result._id, listFields, domain.intercept (runnable) ->
-            if not runnable then cb() else
-              json = runnable.toJSON()
-              json.votes = result.number - 1
-              encode domain, json, cb
-        , (err, runnables) ->
-          if err then cb err else
-            runnables = runnables.filter exists
-            cb null, runnables
+    sort = if sortByVotes then {votes:-1} else {};
+    images.find({}, listFields).sort(sort).skip(page*limit).limit(limit).exec domain.intercept (results) ->
+      arrayToJSON(domain, results, cb)
 
   listByPublished: (domain, sortByVotes, limit, page, cb) ->
     @listFiltered domain, { tags: $not: $size: 0 }, sortByVotes, limit, page, null, cb
 
   listByChannelMembership: (domain, channelIds, sortByVotes, limit, page, cb) ->
-    if sortByVotes and channelIds.length is 1
-      @listCachedChannelsFiltered domain, channelIds, true, limit, page, cb
-    else
-      @listFiltered domain, 'tags.channel': $in: channelIds, sortByVotes, limit, page, null, cb
+    @listFiltered domain, 'tags.channel': $in: channelIds, sortByVotes, limit, page, null, cb
 
   listByOwner: (domain, owner, sortByVotes, limit, page, cb) ->
     fields = _.clone listFields
@@ -317,40 +309,24 @@ Runnables =
       views:1
     @listFiltered domain, { owner: owner }, sortByVotes, limit, page, fields, cb
 
-  listCachedChannelsFiltered: (domain, channels, sortByVotes, limit, page, cb) ->
-    caching.getFilteredCachedResults limit, limit*page, channels, domain.intercept (results) ->
-      async.map results, (result, cb) ->
-        images.findOne { _id: result._id }, listFields, domain.intercept (runnable) ->
-          if not runnable then cb() else
-            json = runnable.toJSON()
-            json.votes = result.number - 1
-            encode domain, json, cb
-      , (err, runnables) ->
-        if err then cb err else
-          runnables = runnables.filter exists
-          cb null, runnables
+  # listCachedChannelsFiltered: (domain, channels, sortByVotes, limit, page, cb) ->
+  #   caching.getFilteredCachedResults limit, limit*page, channels, domain.intercept (results) ->
+  #     async.map results, (result, cb) ->
+  #       images.findOne { _id: result._id }, listFields, domain.intercept (runnable) ->
+  #         if not runnable then cb() else
+  #           json = runnable.toJSON()
+  #           json.votes = result.number - 1
+  #           encode domain, json, cb
+  #     , (err, runnables) ->
+  #       if err then cb err else
+  #         runnables = runnables.filter exists
+  #         cb null, runnables
 
   listFiltered: (domain, query, sortByVotes, limit, page, fields, cb) ->
     fields = fields or listFields
-    if not sortByVotes
-      images.find(query).skip(page*limit).limit(limit).exec domain.intercept (results) ->
-        arrayToJSON(domain, results, cb)
-    else
-      images.find query, fields, domain.intercept (selected) ->
-        filter = [ ]
-        for image in selected
-          filter.push image._id
-        users.aggregate caching.voteSortPipelineFiltered(limit, limit*page, filter), domain.intercept (results) ->
-          async.map results, (result, cb) ->
-            images.findOne { _id: result._id }, fields, domain.intercept (runnable) ->
-              if not runnable then cb() else
-                json = runnable.toJSON()
-                json.votes = result.number - 1
-                encode domain, json, cb
-          , (err, runnables) ->
-            if err then cb err else
-              runnables = runnables.filter exists
-              cb null, runnables
+    sort = if sortByVotes then {votes:-1} else {};
+    images.find(query, fields).sort(sort).skip(page*limit).limit(limit).lean().exec domain.intercept (results) ->
+      arrayToJSON(domain, results, cb)
 
   listNames: (domain, cb) ->
     images.find(tags:$not:$size:0, {_id:1,name:1,tags:1}).exec domain.intercept (results) ->
@@ -587,7 +563,7 @@ fetchContainer = (domain, userId, runnableId, cb) ->
 
 arrayToJSON = (domain, res, cb) ->
   async.map res, (item, cb) ->
-    json = item.toJSON()
+    json = if item.toJSON then item.toJSON() else item
     encode domain, json, cb
   , cb
 
