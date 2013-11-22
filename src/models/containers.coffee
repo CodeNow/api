@@ -26,6 +26,8 @@ containerSchema = new Schema
   parent:
     type: ObjectId
     index: true
+  child:
+    type: ObjectId
   created:
     type: Date
     default: Date.now
@@ -90,6 +92,12 @@ containerSchema = new Schema
     default: [ ]
   specification:
     type: ObjectId
+  status:
+    type: String
+    default: 'Draft'
+  commit_error:
+    type: String
+    default: ''
 
 containerSchema.set 'toJSON', virtuals: true
 containerSchema.set 'autoIndex', false
@@ -134,9 +142,11 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         container.tags.push tag.toJSON()
       if image.revisions and image.revisions.length
         length = image.revisions.length
-        encodedId = encodeId image.revisions[length-1]._id.toString()
+        revision = image.revisions[length-1]
+        repo = encodeId if revision.repo then revision.repo else revision._id.toString()
       else
-        encodedId = encodeId image._id.toString()
+        repo = encodeId image._id.toString()
+      console.log 'Image', "#{configs.dockerRegistry}/runnable/#{repo}"
       request
         url: "#{configs.harbourmaster}/containers"
         method: 'POST'
@@ -146,7 +156,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
           webToken: container.webToken
           Env: env
           Hostname: 'runnable'
-          Image: "#{configs.dockerRegistry}/runnable/#{encodedId}"
+          Image: "#{configs.dockerRegistry}/runnable/#{repo}"
           PortSpecs: [ container.port.toString() ]
           Cmd: [ container.cmd ]
       , domain.intercept (res) ->

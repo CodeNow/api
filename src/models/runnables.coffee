@@ -119,15 +119,23 @@ Runnables =
 
   getContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    if not isObjectId runnableId then cb error, 404, 'runnable not found' else
+    if not isObjectId runnableId 
+      cb error, 404, 'runnable not found' 
+    else
       containers.findOne _id: runnableId, domain.intercept (container) ->
-        if not container then cb error 404, 'runnable not found' else
-          if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-            container.getRunningState domain, (err, state) ->
-              if err then cb err else
-                json = container.toJSON()
-                _.extend json, state
-                encode domain, json, cb
+        if not container 
+          cb error 404, 'runnable not found' 
+        else if container.owner.toString() isnt userId.toString() 
+          cb error 403, 'permission denied' 
+        else if container.status not in ['Draft', 'Editing']
+          json = container.toJSON()
+          encode domain, json, cb
+        else
+          container.getRunningState domain, (err, state) ->
+            if err then cb err else
+              json = container.toJSON()
+              _.extend json, state
+              encode domain, json, cb
 
   removeContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
@@ -157,19 +165,42 @@ Runnables =
                       vote.remove()
                   remove()
 
-  updateContainer: (domain, userId, runnableId, updateSet, cb) ->
+  updateContainer: (domain, userId, runnableId, updateSet, token, cb) ->
     runnableId = decodeId runnableId
     containers.findOne _id: runnableId, domain.intercept (container) ->
+      save = ->
+        _.extend container, updateSet
+        container.save domain.intercept ->
+          json = container.toJSON()
+          encode domain, json, cb
+      commit = ->
+        encode domain, _.extend(container, updateSet).toJSON(), domain.intercept (json) ->
+          request
+            pool: false
+            url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
+            method: 'POST'
+            json: json
+            headers:
+              'runnable-token': token
+          , domain.intercept (res) ->
+            if (res.statusCode isnt 204)
+              cb error 502, "Error committing: #{JSON.stringify(res.body)}"
+            else
+              save()
       if not container
         cb error 404, 'runnable not found'
       else if container.owner.toString() isnt userId.toString()
         cb error 403, 'permission denied'
+      else if updateSet.status is 'Committing new'
+        images.findOne name: updateSet.name or container.name, domain.intercept (existing) =>
+          if existing 
+            cb error 403, 'a shared runnable by that name already exists' 
+          else
+            commit()
+      else if updateSet.status is 'Committing back'
+        commit()
       else
-        save = ->
-          _.extend container, updateSet
-          container.save domain.intercept ->
-            json = container.toJSON()
-            encode domain, json, cb
+        console.log 'NOT COMMITTING'
         save()
 
   updateImage: (domain, userId, runnableId, from, cb) ->
@@ -552,6 +583,7 @@ encode = (domain, json, cb) ->
   if json.files? then delete json.files
   if json.parent? then json.parent = encodeId json.parent
   if json.target? then json.target = encodeId json.target
+  if json.child? then json.child = encodeId json.child
   json.tags = json.tags or []
   async.forEach json.tags, (tag, cb) ->
     channels.findOne _id: tag.channel, domain.intercept (channel) ->
