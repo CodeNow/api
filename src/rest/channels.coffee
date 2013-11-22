@@ -21,6 +21,10 @@ module.exports = (parentDomain) ->
       channels.getChannelByName req.domain, categories, req.query.name, (err, channel) ->
         if err then res.json err.code, message: err.msg else
           res.json channel
+    else if req.query.names?
+      channels.getChannelsWithNames req.domain, categories, req.query.names, (err, channels) ->
+        if err then res.json err.code, message: err.msg else
+          res.json channels
     else if req.query.category?
       channels.listChannelsInCategory req.domain, categories, req.query.category, (err, channels) ->
         if err then res.json err.code, message: err.msg else

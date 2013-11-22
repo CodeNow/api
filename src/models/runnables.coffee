@@ -257,18 +257,17 @@ Runnables =
         vote = results[1]
         cb null, vote
 
-  listAll: (domain, sortByVotes, limit, page, cb) ->
-    sort = if sortByVotes then {votes:-1} else {};
+  listAll: (domain, sort, limit, page, cb) ->
     images.find({}, listFields).sort(sort).skip(page*limit).limit(limit).exec domain.intercept (results) ->
       arrayToJSON(domain, results, cb)
 
-  listByPublished: (domain, sortByVotes, limit, page, cb) ->
-    @listFiltered domain, { tags: $not: $size: 0 }, sortByVotes, limit, page, null, cb
+  listByPublished: (domain, sort, limit, page, cb) ->
+    @listFiltered domain, { tags: $not: $size: 0 }, sort, limit, page, null, cb
 
-  listByChannelMembership: (domain, channelIds, sortByVotes, limit, page, cb) ->
-    @listFiltered domain, 'tags.channel': $in: channelIds, sortByVotes, limit, page, null, cb
+  listByChannelMembership: (domain, channelIds, sort, limit, page, cb) ->
+    @listFiltered domain, 'tags.channel': $in: channelIds, sort, limit, page, null, cb
 
-  listByOwner: (domain, owner, sortByVotes, limit, page, cb) ->
+  listByOwner: (domain, owner, sort, limit, page, cb) ->
     fields = _.clone listFields
     _.extend fields,
       copies:1
@@ -276,9 +275,9 @@ Runnables =
       cuts:1
       runs:1
       views:1
-    @listFiltered domain, { owner: owner }, sortByVotes, limit, page, fields, cb
+    @listFiltered domain, { owner: owner }, sort, limit, page, fields, cb
 
-  # listCachedChannelsFiltered: (domain, channels, sortByVotes, limit, page, cb) ->
+  # listCachedChannelsFiltered: (domain, channels, sort, limit, page, cb) ->
   #   caching.getFilteredCachedResults limit, limit*page, channels, domain.intercept (results) ->
   #     async.map results, (result, cb) ->
   #       images.findOne { _id: result._id }, listFields, domain.intercept (runnable) ->
@@ -291,9 +290,8 @@ Runnables =
   #         runnables = runnables.filter exists
   #         cb null, runnables
 
-  listFiltered: (domain, query, sortByVotes, limit, page, fields, cb) ->
+  listFiltered: (domain, query, sort, limit, page, fields, cb) ->
     fields = fields or listFields
-    sort = if sortByVotes then {votes:-1} else {};
     images.find(query, fields).sort(sort).skip(page*limit).limit(limit).lean().exec domain.intercept (results) ->
       arrayToJSON(domain, results, cb)
 

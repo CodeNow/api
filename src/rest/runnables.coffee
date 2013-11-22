@@ -29,31 +29,32 @@ module.exports = (parentDomain) ->
     page = 0
     if req.query.page?
       page = Number req.query.page
-    sortByVotes = req.query.sort is 'votes'
+    allowedSort = ~['-votes', '-created', '-views', '-runs'].indexOf(req.query.sort);
+    sort = if allowedSort then req.query.sort else '';
     if req.query.search?
       runnables.searchImages req.domain, req.query.search, limit, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.published?
-      runnables.listByPublished req.domain, sortByVotes, limit, page, (err, results) ->
+      runnables.listByPublished req.domain, sort, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.channel?
       channels.getChannelsWithNames req.domain, categories, req.query.channel, (err, results) ->
         if err then res.json err.code, message: err.msg else
           channelIds = results.map (channel) -> channel._id
-          runnables.listByChannelMembership req.domain, channelIds, sortByVotes, limit, page, (err, results) ->
+          runnables.listByChannelMembership req.domain, channelIds, sort, limit, page, (err, results) ->
             if err then res.json err.code, message: err.msg else
               res.json results
     else if req.query.owner?
-      runnables.listByOwner req.domain, req.query.owner, sortByVotes, limit, page, (err, results) ->
+      runnables.listByOwner req.domain, req.query.owner, sort, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
     else if req.query.ownerUsername?
       users.findUser req.domain, lower_username:req.query.ownerUsername.toLowerCase(), (err, user) ->
         if err then res.json err.code, message: err.msg else
           if !user then res.json [] else
-            runnables.listByOwner req.domain, user._id, sortByVotes, limit, page, (err, results) ->
+            runnables.listByOwner req.domain, user._id, sort, limit, page, (err, results) ->
               if err then res.json err.code, message: err.msg else
                 res.json results
     else if req.query.map?
@@ -61,7 +62,7 @@ module.exports = (parentDomain) ->
         if err then next err else
           res.json results
     else
-      runnables.listAll req.domain, sortByVotes, limit, page, (err, results) ->
+      runnables.listAll req.domain, sort, limit, page, (err, results) ->
         if err then res.json err.code, message: err.msg else
           res.json results
 
