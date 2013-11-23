@@ -119,14 +119,14 @@ Runnables =
 
   getContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
-    if not isObjectId runnableId 
-      cb error, 404, 'runnable not found' 
+    if not isObjectId runnableId
+      cb error, 404, 'runnable not found'
     else
       containers.findOne _id: runnableId, domain.intercept (container) ->
-        if not container 
-          cb error 404, 'runnable not found' 
-        else if container.owner.toString() isnt userId.toString() 
-          cb error 403, 'permission denied' 
+        if not container
+          cb error 404, 'runnable not found'
+        else if container.owner.toString() isnt userId.toString()
+          cb error 403, 'permission denied'
         else if container.status not in ['Draft', 'Editing']
           json = container.toJSON()
           encode domain, json, cb
@@ -193,8 +193,8 @@ Runnables =
         cb error 403, 'permission denied'
       else if updateSet.status is 'Committing new'
         images.findOne name: updateSet.name or container.name, domain.intercept (existing) =>
-          if existing 
-            cb error 403, 'a shared runnable by that name already exists' 
+          if existing
+            cb error 403, 'a shared runnable by that name already exists'
           else
             commit()
       else if updateSet.status is 'Committing back'
@@ -308,23 +308,22 @@ Runnables =
       views:1
     @listFiltered domain, { owner: owner }, sort, limit, page, fields, cb
 
-  # listCachedChannelsFiltered: (domain, channels, sort, limit, page, cb) ->
-  #   caching.getFilteredCachedResults limit, limit*page, channels, domain.intercept (results) ->
-  #     async.map results, (result, cb) ->
-  #       images.findOne { _id: result._id }, listFields, domain.intercept (runnable) ->
-  #         if not runnable then cb() else
-  #           json = runnable.toJSON()
-  #           json.votes = result.number - 1
-  #           encode domain, json, cb
-  #     , (err, runnables) ->
-  #       if err then cb err else
-  #         runnables = runnables.filter exists
-  #         cb null, runnables
-
   listFiltered: (domain, query, sort, limit, page, fields, cb) ->
     fields = fields or listFields
-    images.find(query, fields).sort(sort).skip(page*limit).limit(limit).lean().exec domain.intercept (results) ->
-      arrayToJSON(domain, results, cb)
+    countQuery = images.find(query, fields).sort(sort).skip(page*limit).limit(limit).count()
+    query = images.find(query, fields).sort(sort).skip(page*limit).limit(limit).lean()
+
+    async.parallel
+      data:(cb) ->
+        query.exec domain.intercept (images) ->
+          arrayToJSON(domain, images, cb)
+      count:(cb) ->
+        countQuery.exec domain.intercept (images) ->
+
+    , (err, results) ->
+      if err then cb err else
+        lastPage = Math.ceil(results.count/limit) - 1
+        cb null, results[0], paging:lastPage:lastPage
 
   listNames: (domain, cb) ->
     images.find(tags:$not:$size:0, {_id:1,name:1,tags:1}).exec domain.intercept (results) ->

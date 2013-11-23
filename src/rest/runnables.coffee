@@ -43,28 +43,36 @@ module.exports = (parentDomain) ->
       channels.getChannelsWithNames req.domain, categories, req.query.channel, (err, results) ->
         if err then res.json err.code, message: err.msg else
           channelIds = results.map (channel) -> channel._id
-          runnables.listByChannelMembership req.domain, channelIds, sort, limit, page, (err, results) ->
+          runnables.listByChannelMembership req.domain, channelIds, sort, limit, page, (err, results, paging) ->
             if err then res.json err.code, message: err.msg else
-              res.json results
+              res.json
+                data:results
+                paging:paging
     else if req.query.owner?
-      runnables.listByOwner req.domain, req.query.owner, sort, limit, page, (err, results) ->
+      runnables.listByOwner req.domain, req.query.owner, sort, limit, page, (err, results, paging) ->
         if err then res.json err.code, message: err.msg else
-          res.json results
+          res.json
+            data:results
+            paging:paging
     else if req.query.ownerUsername?
       users.findUser req.domain, lower_username:req.query.ownerUsername.toLowerCase(), (err, user) ->
         if err then res.json err.code, message: err.msg else
           if !user then res.json [] else
-            runnables.listByOwner req.domain, user._id, sort, limit, page, (err, results) ->
+            runnables.listByOwner req.domain, user._id, sort, limit, page, (err, results, paging) ->
               if err then res.json err.code, message: err.msg else
-                res.json results
+                res.json
+                  data:results
+                  paging:paging
     else if req.query.map?
       runnables.listNames req.domain, (err, results) ->
         if err then next err else
           res.json results
     else
-      runnables.listAll req.domain, sort, limit, page, (err, results) ->
+      runnables.listAll req.domain, sort, limit, page, (err, results, paging) ->
         if err then res.json err.code, message: err.msg else
-          res.json results
+          res.json
+            data:results
+            paging:paging
 
   app.put '/runnables/:id', (req, res) ->
     if not req.query.from? then res.json 400, message: 'must provide a runnable to save from' else
