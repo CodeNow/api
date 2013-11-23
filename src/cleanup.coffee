@@ -10,6 +10,7 @@ module.exports = (req, res) ->
       if not user then cb() else
         if not user.isModerator then res.json 403, message: 'permission denied' else
           containers.listSavedContainers req.domain, (containers) ->
+            console.log 'SAVED CONTAINERS', containers.length
             validContainers = [ ]
             async.forEach containers, (container, cb) ->
               users.findUser req.domain, _id: container.owner, (err, user) ->
@@ -20,6 +21,7 @@ module.exports = (req, res) ->
                       validContainers.push container.servicesToken
                     cb()
             , (err) ->
+              console.log 'VALID CONTAINERS', validContainers.length
               if err then res.json 500, message: 'error computing container whitelist' else
                 request
                   url: "#{configs.harbourmaster}/containers/cleanup"
