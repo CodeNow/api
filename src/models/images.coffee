@@ -34,6 +34,7 @@ imageSchema = new Schema
   image:
     type: String
   revisions: [
+    repo: String 
     created:
       type: Date
       default: Date.now
@@ -245,22 +246,15 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
     if existing then cb error 403, 'a shared runnable by that name already exists' else
       image = new @
       copyPublishProperties image, container
+      image.revisions = [ ]
+      image.revisions.push 
+        repo: container._id.toString()
       image.synced = true
       encodedId = encodeId image._id.toString()
-      request
-        pool: false
-        url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
-        method: 'POST'
-        qs:
-          repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
-          m: "#{container.parent} => #{image._id}"
-          author: image.owner.toString()
-          tag: 'latest'
-      , domain.intercept (res) ->
-        if res.statusCode isnt 201 then cb error 500, "error committing docker image: #{res.body}" else
-          res.body = JSON.parse res.body
-          image.save domain.intercept () ->
-            cb null, image
+      container.child = image._id
+      container.save domain.intercept () ->
+        image.save domain.intercept () ->
+          cb null, image
 
 imageSchema.statics.search = (domain, searchText, limit, cb) ->
   opts =
@@ -279,21 +273,12 @@ imageSchema.statics.incVote = (domain, runnableId, cb) ->
 imageSchema.methods.updateFromContainer = (domain, container, cb) ->
   copyPublishProperties @, container, true
   @revisions = @revisions or [ ]
-  length = @revisions.push { }
-  encodedId = encodeId @revisions[length-1]._id.toString()
-  request
-    pool: false
-    url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
-    method: 'POST'
-    qs:
-      repo: "#{configs.dockerRegistry}/runnable/#{encodedId}"
-      m: "#{container.parent} => #{@_id}"
-      tag: 'latest'
-      author: @owner.toString()
-  , domain.intercept (res) =>
-    if res.statusCode isnt 201 then cb error 500, "error committing docker image: #{res.body}" else
-      @save domain.intercept () =>
-        cb null, @
+  @revisions.push
+    repo: container._id.toString()
+  container.child = @_id
+  container.save domain.intercept () =>
+    @save domain.intercept () =>
+      cb null, @
 
 imageSchema.statics.destroy = (domain, id, cb) ->
   @findOne _id: id, domain.intercept (image) =>

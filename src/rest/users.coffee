@@ -188,7 +188,10 @@ module.exports = (parentDomain) ->
 
   getrunnable = (req, res) ->
     runnables.getContainer req.domain, req.user_id, req.params.runnableid, (err, container) ->
-      if err then res.json err.code or 500, message: err.msg or error.message else
+      if err 
+        console.dir err
+        res.json err.code or 500, message: err.msg or err.message 
+      else
         res.json container
 
   app.get '/users/me/runnables/:runnableid', getrunnable
@@ -197,7 +200,7 @@ module.exports = (parentDomain) ->
   putrunnable = (req, res) ->
     if not req.body.running? then res.json 400, message: 'must provide a running parameter' else
       required = ['name', 'description']
-      optional = ['specification', 'saved', 'start_cmd', 'build_cmd', 'output_format']
+      optional = ['specification', 'saved', 'start_cmd', 'build_cmd', 'output_format', 'status', 'commit_error']
       set = {}
       # for loop for early return
       for attr in required
@@ -207,7 +210,7 @@ module.exports = (parentDomain) ->
           set[attr] = req.body[attr]
       optional.forEach (attr) ->
         if req.body[attr] isnt undefined then set[attr] = req.body[attr]
-      runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
+      runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, req.get('runnable-token'), (err, runnable) ->
         if err then res.json err.code, message: err.msg else
           if req.body.running
             runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
@@ -222,8 +225,8 @@ module.exports = (parentDomain) ->
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
 
   patchrunnable = (req, res) ->
-    set = _.pick(req.body, 'specification', 'start_cmd', 'build_cmd', 'output_format');
-    runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, (err, runnable) ->
+    set = _.pick req.body, 'specification', 'saved', 'start_cmd', 'build_cmd', 'output_format', 'status', 'commit_error'
+    runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, req.get('runnable-token'), (err, runnable) ->
       if err then res.json err.code, message: err.msg else
         res.json runnable
 
