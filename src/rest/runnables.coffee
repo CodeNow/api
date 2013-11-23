@@ -30,7 +30,7 @@ module.exports = (parentDomain) ->
     if req.query.page?
       page = Number req.query.page
     allowedSort = ~['-votes', '-created', '-views', '-runs'].indexOf(req.query.sort);
-    sort = if allowedSort then req.query.sort else '';
+    sort = if allowedSort then req.query.sort else '-runs';
     if req.query.search?
       runnables.searchImages req.domain, req.query.search, limit, (err, results) ->
         if err then res.json err.code, message: err.msg else
