@@ -318,7 +318,7 @@ Runnables =
         query.exec domain.intercept (images) ->
           arrayToJSON(domain, images, cb)
       count:(cb) ->
-        countQuery.exec domain.intercept (images) ->
+        countQuery.exec domain.intercept (count) -> cb(null, count)
 
     , (err, results) ->
       if err then cb err else
