@@ -323,7 +323,7 @@ Runnables =
     , (err, results) ->
       if err then cb err else
         lastPage = Math.ceil(results.count/limit) - 1
-        cb null, results.images, paging:lastPage:lastPage
+        cb null, results.images, lastPage:lastPage
 
   listNames: (domain, cb) ->
     images.find(tags:$not:$size:0, {_id:1,name:1,tags:1}).exec domain.intercept (results) ->
