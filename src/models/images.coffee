@@ -34,10 +34,11 @@ imageSchema = new Schema
   image:
     type: String
   revisions: [
-    repo: String 
+    repo: String
     created:
       type: Date
       default: Date.now
+      index: true
   ]
   dockerfile:
     type: String
@@ -247,7 +248,7 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
       image = new @
       copyPublishProperties image, container
       image.revisions = [ ]
-      image.revisions.push 
+      image.revisions.push
         repo: container._id.toString()
       image.synced = true
       encodedId = encodeId image._id.toString()
