@@ -290,7 +290,7 @@ Runnables =
 
   listAll: (domain, sort, limit, page, cb) ->
     query = images.find({}, listFields).sort(sort).skip(page*limit).limit(limit)
-    count = images.find({}, listFields).sort(sort).skip(page*limit).limit(limit).count()
+    countQuery = images.find({}, listFields).sort(sort).skip(page*limit).limit(limit).count()
 
     async.parallel
       images:(cb) ->
