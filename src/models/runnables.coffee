@@ -289,8 +289,20 @@ Runnables =
         cb null, vote
 
   listAll: (domain, sort, limit, page, cb) ->
-    images.find({}, listFields).sort(sort).skip(page*limit).limit(limit).exec domain.intercept (results) ->
-      arrayToJSON(domain, results, cb)
+    query = images.find({}, listFields).sort(sort).skip(page*limit).limit(limit)
+    count = images.find({}, listFields).sort(sort).skip(page*limit).limit(limit).count()
+
+    async.parallel
+      images:(cb) ->
+        query.exec domain.intercept (images) ->
+          arrayToJSON(domain, images, cb)
+      count:(cb) ->
+        countQuery.exec domain.intercept (count) -> cb(null, count)
+
+    , (err, results) ->
+      if err then cb err else
+        lastPage = Math.ceil(results.count/limit) - 1
+        cb null, results.images, lastPage:lastPage
 
   listByPublished: (domain, sort, limit, page, cb) ->
     @listFiltered domain, { tags: $not: $size: 0 }, sort, limit, page, null, cb
