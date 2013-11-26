@@ -3,7 +3,6 @@ mailchimp = require 'mailchimp'
 domains = require '../domains'
 configs = require '../configs'
 _ = require 'lodash'
-
 mailchimpApi = if configs.mailchimp? then new mailchimp.MailChimpAPI(configs.mailchimp.key);
 
 module.exports = (parentDomain) ->
@@ -26,3 +25,5 @@ module.exports = (parentDomain) ->
         mailchimpApi.listSubscribe opts, (err) ->
           if err then res.json 400, message:err.message else
             res.json 201, req.body
+
+  app
