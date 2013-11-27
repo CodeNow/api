@@ -27,12 +27,12 @@ module.exports = (parentDomain) ->
           if err then res.json 400, message:err.message else
             res.json 201, req.body
 
-  app.post "/request/Improve", (req, res, next) ->
+  app.post "/request/improve", (req, res, next) ->
     requestEmailBody = "Improve Description: \n[\n\t" + req.body.description + "\n]\n\n" + "sender url: \n[\n\t" + req.body.url + "\n]"
     requestEmail = new Email(
       from: "newsuggestsions@runnable.com"
       to: "praful@runnable.com"
-      cc: ["sundip@runnable.com"]
+      cc: ["sundip@runnable.com", "yash@runnable.com"]
       subject: "New Improve Request"
       body: requestEmailBody
     )
