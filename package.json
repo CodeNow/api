@@ -33,6 +33,7 @@
     "fstream": "~0.1.24",
     "tar": "~0.1.18",
     "mu2": "~0.5.19",
+    "email": "0.2.5",
     "formidable": "~1.0.14",
     "concat-stream": "~1.0.1",
     "mongoose-text-search": "0.0.2",
