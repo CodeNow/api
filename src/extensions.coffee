@@ -47,5 +47,6 @@ module.exports = [
   '.feature'
   '.sh'
   '.mustache'
+  '.haml'
   ''
 ]
