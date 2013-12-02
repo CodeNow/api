@@ -101,7 +101,7 @@ def boot():
   Start process with forever
   """
   run('NODE_ENV=%(settings)s forever start api-server/server.js' % env)
-  # run('NODE_ENV=%(settings)s forever start api-server/scripts/meetyourmaker.js' % env)
+  run('NODE_ENV=%(settings)s forever start api-server/scripts/meetyourmaker.js' % env)
   # run('NODE_ENV=%(settings)s forever start api-server/scripts/refreshcache.js' % env)
 
 
