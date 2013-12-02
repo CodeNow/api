@@ -31,6 +31,7 @@ imageSchema = new Schema
   created:
     type: Date
     default: Date.now
+    index: true
   image:
     type: String
   revisions: [

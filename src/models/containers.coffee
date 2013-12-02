@@ -31,6 +31,7 @@ containerSchema = new Schema
   created:
     type: Date
     default: Date.now
+    index: true
   target:
     type: ObjectId
   image:
