@@ -46,5 +46,9 @@
       "publishers": "b7a679ddc3",
       "contact": "43330e29a9"
     }
+  },
+  "strongloop": {
+    "key": "1b996aa8f5b3b0a56103437dc60b20a9",
+    "appName": "api-production"
   }
 }
