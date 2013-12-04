@@ -232,13 +232,14 @@ Runnables =
           json_project = image.toJSON()
           encode domain, json_project, cb
 
+  # rename, move into update
   startContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
     containers.findOne {_id: runnableId}, {files:0}, domain.intercept (container) ->
       if not container then cb error 404, 'runnable not found' else
         if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
           start = () ->
-            container.updateRunOptionsAndStart domain, (err) ->
+            container.updateRunOptions domain, (err) ->
               if err then cb err else
                 container.save domain.intercept () ->
                   json_project = container.toJSON()
@@ -254,19 +255,6 @@ Runnables =
                 start()
           else
             start()
-
-  stopContainer: (domain, userId, runnableId, cb) ->
-    runnableId = decodeId runnableId
-    containers.findOne {_id: runnableId}, {files:0}, domain.intercept (container) ->
-      if not container then cb error 404, 'runnable not found' else
-        if container.owner.toString() isnt userId.toString()
-          cb error 403, 'permission denied'
-        else
-          container.stop domain, (err) ->
-            if err then cb err else
-              json_project = container.toJSON()
-              _.extend json_project, { running: false }
-              encode domain, json_project, cb
 
   getVotes: (domain, runnableId, cb) ->
     runnableId = decodeId runnableId

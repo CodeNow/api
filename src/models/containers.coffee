@@ -206,7 +206,7 @@ containerSchema.methods.getRunningState = (domain, cb) ->
           cb null, running: res.body.running
 
 #  START  EDIT
-containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
+containerSchema.methods.updateRunOptions = (domain, cb) ->
   self = @
   operations = [
     self.updateBuildCommand.bind self, domain
@@ -215,11 +215,7 @@ containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
 #  END  EDIT
   if @specification?
     operations.push self.updateEnvVariables.bind self, domain
-  async.series [
-    (cb) ->
-      async.parallel operations, cb
-    self.start.bind(self, domain)
-  ], cb
+  async.parallel operations, cb
 
 
 containerSchema.methods.updateEnvVariables = (domain, cb) ->
@@ -247,33 +243,6 @@ containerSchema.methods.updateStartCommand = (domain, cb) ->
     json:
       cmd: @start_cmd
   , domain.intercept () -> cb()
-
-#  START DELETION
-containerSchema.methods.start = (domain, cb) ->
-  request
-    url: "http://#{@servicesToken}.#{configs.domain}/api/start"
-    method: 'GET'
-    pool: false
-  , domain.intercept (res) ->
-    if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
-      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-        if res.statusCode isnt 200
-          cb error res.statusCode, 'unknown runnable error'
-        else
-          @running = true
-          cb()
-
-containerSchema.methods.stop = (domain, cb) ->
-  request
-    url: "http://#{@servicesToken}.#{configs.domain}/api/stop"
-    method: 'GET'
-    pool: false
-  , domain.intercept (res) ->
-    if res.statusCode is 502 then cb error 500, 'runnable not responding to stop request' else
-      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-        if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
-          cb()
-#  END DELETION
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]
