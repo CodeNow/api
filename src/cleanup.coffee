@@ -22,8 +22,8 @@ getOwners = (domain, containers, cb) ->
 
 cleanupContainersNotIn = (domain, whitelist, cb) ->
   if whitelist.length is 0 then cb()
-  containerIds = []
-  serviceTokens = []
+  whiteContainerIds = []
+  whiteServiceTokens = []
   whitelist.forEach (container) ->
     whiteContainerIds.push container._id
     whiteServiceTokens.push container.serviceToken
