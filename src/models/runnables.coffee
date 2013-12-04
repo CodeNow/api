@@ -201,7 +201,7 @@ Runnables =
             else
               save()
       if not container
-        cb error 404, 'runnable not found'
+        cb error 404, 'runnable not found NO CON'
       else if container.owner.toString() isnt userId.toString()
         cb error 403, 'permission denied'
       if container.specification?
