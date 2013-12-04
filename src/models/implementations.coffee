@@ -165,19 +165,14 @@ updateEnv = (domain, opts, cb) ->
         (cb) =>
           #  START  EDIT
           url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
-          request.get { url: url, pool: false }, domain.intercept (res, body) =>
-            async.each opts.requirements, (requirement, cb) =>
-              request.post
-                pool: false
-                url: url
-                json:
-                  key: requirement.name
-                  value: requirement.value
-              , cb
-            , domain.intercept () =>
-              request.get { url: url, pool: false }, domain.intercept (res, body) =>
-                cb null
-          #  END  EDIT
+          requirements = {}
+          opts.requirements.forEach (requirement) ->
+            requirements[requirement.name] = requirement.value
+          request.post
+            pool: false
+            url: url
+            json: requirements
+          , cb
         (cb) =>
           url = "#{configs.harbourmaster}/containers/#{container.servicesToken}/route"
           request
@@ -186,8 +181,7 @@ updateEnv = (domain, opts, cb) ->
             json:
               webToken: opts.subdomain
             url: url
-          , domain.intercept (res, body) =>
-            cb null
+          , cb
       ], domain.intercept cb
     else
      cb error 404, 'container not found'
