@@ -15,7 +15,7 @@ getOwners = (domain, containers, cb) ->
   users.publicListWithIds domain, userIds, domain.intercept (users) ->
     userHash = {}
     users.forEach (user) ->
-      userHash[user._id] = user.toJSON()
+      userHash[user._id] = user
     containers.forEach (container) ->
       container.ownerJSON = userHash[container.owner]
     cb null, containers
