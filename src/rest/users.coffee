@@ -212,6 +212,7 @@ module.exports = (parentDomain) ->
         if req.body[attr] isnt undefined then set[attr] = req.body[attr]
       runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, req.get('runnable-token'), (err, runnable) ->
         if err then res.json err.code, message: err.msg else
+          #  START DELETION
           if req.body.running
             runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
               if err then res.json err.code, message: err.msg else
@@ -220,6 +221,7 @@ module.exports = (parentDomain) ->
             runnables.stopContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
               if err then res.json err.code, message: err.msg else
                 res.json runnable
+          #  END DELETION
 
   app.put '/users/me/runnables/:runnableid', putrunnable
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable

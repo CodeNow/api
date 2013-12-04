@@ -205,12 +205,14 @@ containerSchema.methods.getRunningState = (domain, cb) ->
           res.body = JSON.parse res.body
           cb null, running: res.body.running
 
+#  START  EDIT
 containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
   self = @
   operations = [
     self.updateBuildCommand.bind self, domain
     self.updateStartCommand.bind self, domain
   ]
+#  END  EDIT
   if @specification?
     operations.push self.updateEnvVariables.bind self, domain
   async.series [
@@ -218,6 +220,7 @@ containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
       async.parallel operations, cb
     self.start.bind(self, domain)
   ], cb
+
 
 containerSchema.methods.updateEnvVariables = (domain, cb) ->
   encodedId = encodeId @_id
@@ -245,6 +248,7 @@ containerSchema.methods.updateStartCommand = (domain, cb) ->
       cmd: @start_cmd
   , domain.intercept () -> cb()
 
+#  START DELETION
 containerSchema.methods.start = (domain, cb) ->
   request
     url: "http://#{@servicesToken}.#{configs.domain}/api/start"
@@ -269,6 +273,7 @@ containerSchema.methods.stop = (domain, cb) ->
       if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
         if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
           cb()
+#  END DELETION
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]

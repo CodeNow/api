@@ -163,6 +163,7 @@ updateEnv = (domain, opts, cb) ->
     if container
       async.parallel [
         (cb) =>
+          #  START  EDIT
           url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
           request.get { url: url, pool: false }, domain.intercept (res, body) =>
             async.each opts.requirements, (requirement, cb) =>
@@ -176,6 +177,7 @@ updateEnv = (domain, opts, cb) ->
             , domain.intercept () =>
               request.get { url: url, pool: false }, domain.intercept (res, body) =>
                 cb null
+          #  END  EDIT
         (cb) =>
           url = "#{configs.harbourmaster}/containers/#{container.servicesToken}/route"
           request
