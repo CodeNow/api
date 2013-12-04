@@ -23,6 +23,7 @@ containerSchema = new Schema
     default: ''
   owner:
     type: ObjectId
+    index: true
   parent:
     type: ObjectId
     index: true
@@ -101,7 +102,7 @@ containerSchema = new Schema
     default: ''
 
 containerSchema.set 'toJSON', virtuals: true
-containerSchema.set 'autoIndex', false
+containerSchema.set 'autoIndex', true
 
 
 containerSchema.index
