@@ -167,7 +167,7 @@ Runnables =
 
   updateContainer: (domain, userId, runnableId, updateSet, token, cb) ->
     runnableId = decodeId runnableId
-    containers.findOne _id: runnableId, files: 0, domain.intercept (container) ->
+    containers.findOne _id: runnableId, domain.intercept (container) ->
       update = ->
         container.updateRunOptions domain, saveOrCommit
       saveOrCommit = ->
@@ -201,7 +201,7 @@ Runnables =
             else
               save()
       if not container
-        cb error 404, 'runnable not found NO CON'
+        cb error 404, 'runnable not found' + runnableId
       else if container.owner.toString() isnt userId.toString()
         cb error 403, 'permission denied'
       if container.specification?
