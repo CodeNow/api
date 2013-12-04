@@ -163,7 +163,6 @@ updateEnv = (domain, opts, cb) ->
     if container
       async.parallel [
         (cb) =>
-          #  START  EDIT
           url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
           requirements = {}
           opts.requirements.forEach (requirement) ->
