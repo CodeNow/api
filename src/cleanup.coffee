@@ -21,7 +21,7 @@ getOwners = (domain, containers, cb) ->
     cb null, containers
 
 cleanupContainersNotIn = (domain, whitelist, cb) ->
-  if whitelist.length === 0 then cb()
+  if whitelist.length is 0 then cb()
   containerIds = []
   serviceTokens = []
   whitelist.forEach (container) ->
@@ -41,7 +41,7 @@ cleanupContainersNotIn = (domain, whitelist, cb) ->
         pool: false
       , (err, res, body) ->
         if err then domain.emit 'error', err else
-          if res.statusCode !== 200
+          if res.statusCode isnt 200
             cb status: 500, message: 'whitelist not accepted by harbourmaster', body: body
           else
             cb()
@@ -66,5 +66,4 @@ module.exports = (req, res) ->
               console.log 'VALID CONTAINERS: ', validContainers.length
               cleanupContainersNotIn domain, validContainers, (err) ->
                 if err then appError err else
-                  res.json 200, message: 'successfuly send prune request harbourmaster'
-
+                  res.json 200, message: 'successfuly sent prune request to harbourmaster and cleaned mongodb'
