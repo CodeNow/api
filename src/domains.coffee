@@ -13,6 +13,8 @@ module.exports = (parentDomain) ->
     d.add req
     d.add res
     d.on 'error', (e) ->
+      console.error 'DOMAIN'
+      console.error e
       if parentDomain and configs.throwErrors
         console.log e.stack
         throw e
