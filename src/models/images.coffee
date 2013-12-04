@@ -25,6 +25,7 @@ imageSchema = new Schema
     default: ''
   owner:
     type: ObjectId
+    index: true
   parent:
     type: ObjectId
     index: true
