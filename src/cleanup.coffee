@@ -12,7 +12,9 @@ hasRegisteredOwner = (container) ->
 getOwners = (domain, containers, cb) ->
   userIds = containers.map (container) ->
     container.owner.toString()
-  users.publicListWithIds domain, userIds, domain.intercept (users) ->
+  query  = _id:$in:userIds
+  fields = permission_level:1, _id:1
+  users.find query, fields, domain.intercept (users) ->
     userHash = {}
     users.forEach (user) ->
       userHash[user._id] = user
