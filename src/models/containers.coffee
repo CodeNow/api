@@ -194,18 +194,6 @@ containerSchema.statics.listSavedContainers = (domain, cb) ->
   timeout = (new Date()).getTime() - configs.containerTimeout
   @find { $or: [ { saved: true }, { created: $gte: timeout } ] }, domain.intercept cb
 
-containerSchema.methods.getRunningState = (domain, cb) ->
-  request
-    url: "http://#{@servicesToken}.#{configs.domain}/api/running"
-    method: 'GET'
-    pool: false
-  , domain.intercept (res) ->
-    if res.statusCode is 502 then cb error 500, 'runnable not responding to status requests' else
-      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-        if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
-          res.body = JSON.parse res.body
-          cb null, running: res.body.running
-
 containerSchema.methods.updateRunOptions = (domain, cb) ->
   self = @
   operations = [

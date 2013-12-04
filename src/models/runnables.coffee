@@ -127,15 +127,9 @@ Runnables =
           cb error 404, 'runnable not found'
         else if container.owner.toString() isnt userId.toString()
           cb error 403, 'permission denied'
-        else if container.status not in ['Draft', 'Editing']
+        else 
           json = container.toJSON()
           encode domain, json, cb
-        else
-          container.getRunningState domain, (err, state) ->
-            if err then cb err else
-              json = container.toJSON()
-              _.extend json, state
-              encode domain, json, cb
 
   removeContainer: (domain, userId, runnableId, cb) ->
     runnableId = decodeId runnableId
