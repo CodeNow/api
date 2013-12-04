@@ -205,14 +205,12 @@ containerSchema.methods.getRunningState = (domain, cb) ->
           res.body = JSON.parse res.body
           cb null, running: res.body.running
 
-#  START  EDIT
 containerSchema.methods.updateRunOptions = (domain, cb) ->
   self = @
   operations = [
     self.updateBuildCommand.bind self, domain
     self.updateStartCommand.bind self, domain
   ]
-#  END  EDIT
   if @specification?
     operations.push self.updateEnvVariables.bind self, domain
   async.parallel operations, cb

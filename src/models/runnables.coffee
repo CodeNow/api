@@ -167,7 +167,20 @@ Runnables =
 
   updateContainer: (domain, userId, runnableId, updateSet, token, cb) ->
     runnableId = decodeId runnableId
-    containers.findOne _id: runnableId, domain.intercept (container) ->
+    containers.findOne _id: runnableId, files: 0, domain.intercept (container) ->
+      update = ->
+        container.updateRunOptions domain, saveOrCommit
+      saveOrCommit = ->
+        if updateSet.status is 'Committing new'
+          images.findOne name: updateSet.name or container.name, domain.intercept (existing) =>
+            if existing
+              cb error 403, 'a shared runnable by that name already exists'
+            else
+              commit()
+        else if updateSet.status is 'Committing back'
+          commit()
+        else
+          save()
       save = ->
         _.extend container, updateSet
         container.save domain.intercept ->
@@ -191,17 +204,15 @@ Runnables =
         cb error 404, 'runnable not found'
       else if container.owner.toString() isnt userId.toString()
         cb error 403, 'permission denied'
-      else if updateSet.status is 'Committing new'
-        images.findOne name: updateSet.name or container.name, domain.intercept (existing) =>
-          if existing
-            cb error 403, 'a shared runnable by that name already exists'
+      if container.specification?
+        implementations.findOne
+          owner: userId
+          implements: container.specification
+        , domain.intercept (implementation) ->
+          if not implementation?
+            cb error 400, 'no implementation'
           else
-            commit()
-      else if updateSet.status is 'Committing back'
-        commit()
-      else
-        console.log 'NOT COMMITTING'
-        save()
+            update()
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -231,30 +242,6 @@ Runnables =
         if not image then cb error 404, 'runnable not found' else
           json_project = image.toJSON()
           encode domain, json_project, cb
-
-  # rename, move into update
-  startContainer: (domain, userId, runnableId, cb) ->
-    runnableId = decodeId runnableId
-    containers.findOne {_id: runnableId}, {files:0}, domain.intercept (container) ->
-      if not container then cb error 404, 'runnable not found' else
-        if container.owner.toString() isnt userId.toString() then cb error 403, 'permission denied' else
-          start = () ->
-            container.updateRunOptions domain, (err) ->
-              if err then cb err else
-                container.save domain.intercept () ->
-                  json_project = container.toJSON()
-                  encode domain, json_project, cb
-        if container.specification?
-            implementations.findOne
-              owner: userId
-              implements: container.specification
-            , domain.intercept (implementation) ->
-              if not implementation?
-                cb error 400, 'no implementation'
-              else
-                start()
-          else
-            start()
 
   getVotes: (domain, runnableId, cb) ->
     runnableId = decodeId runnableId
