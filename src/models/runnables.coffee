@@ -206,6 +206,8 @@ Runnables =
             cb error 400, 'no implementation'
           else
             update()
+      else
+        update()
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
