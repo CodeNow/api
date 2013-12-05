@@ -35,7 +35,7 @@
   "logExpress": true,
   "logErrorStack": true,
   "throwErrors": false,
-  "adminToken": "ecd64597-ad2e-4442-848f-411db25247f0",
+  "adminToken": "e6f5a32a-4be0-4d84-91cb-782c65ae320f",
   "cleanInterval": "2 minutes",
   "cacheRefreshInterval": "2 minutes",
   "containerTimeout": "5 minutes",

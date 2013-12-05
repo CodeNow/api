@@ -48,6 +48,13 @@ module.exports = (parentDomain) ->
                     json_user.access_token = access_token
                     res.json 201, json_user
 
+  app.get '/token', (req, res) ->
+    token = req.get 'runnable-token'
+    if token
+      res.send 200, token
+    else
+      res.send 404
+
   app.post '/token', (req, res) ->
     if not req.body.username? and not req.body.email? then res.json 400, message: 'username or email required' else
       if not req.body.password? then res.json 400, message: 'password required' else
@@ -188,9 +195,9 @@ module.exports = (parentDomain) ->
 
   getrunnable = (req, res) ->
     runnables.getContainer req.domain, req.user_id, req.params.runnableid, (err, container) ->
-      if err 
+      if err
         console.dir err
-        res.json err.code or 500, message: err.msg or err.message 
+        res.json err.code or 500, message: err.msg or err.message
       else
         res.json container
 
