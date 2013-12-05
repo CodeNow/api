@@ -100,7 +100,6 @@ Runnables =
         containers.create domain, userId, image, (err, container) ->
           if err then cb err else
             json_container = container.toJSON()
-            _.extend json_container, { running: false }
             encode domain, json_container, cb
     ], cb
 
