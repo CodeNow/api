@@ -65,7 +65,7 @@ cleanupContainersNotIn = (domain, whitelist, cb) ->
   ], cb
 
 module.exports = (req, res) ->
-  appError = (err) ->
+  sendError = (err) ->
     console.error 'ERROR:::\n', err
     status = err.status
     delete err.status
