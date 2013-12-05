@@ -5,6 +5,19 @@ request = require 'request'
 users = require './models/users'
 _ = require 'lodash'
 
+# initial mongodb cleanup
+# If this script has not been run in a while, it's possible that the whitelist is large
+# and the cron mongodb remove query uses an $in operator which is not the most efficient..
+# Here we will remove unsaved, very expired containers from mongodb
+week = (Date.now() - 1000*60*60*24*7)
+query = saved:false, created:$lte:week
+containers.count query, (err, count) ->
+  if err then console.error(err) else
+    containers.remove query, (err) ->
+      if err then console.error(err) else
+        console.log 'PURGE VERY EXPIRED DB CONTAINERS: ', count
+
+
 hasRegisteredOwner = (container) ->
   registeredOwner = container.ownerJSON and container.ownerJSON.permission_level > 0
   return registeredOwner
@@ -63,7 +76,7 @@ module.exports = (req, res) ->
           console.log 'SAVED CONTAINERS: ', containers.length
           getOwners domain, containers, (err) ->
             if err then sendError err else
-              dateNow = (new Date()).getTime()
+              dateNow = Date.now()
               validContainers = containers.filter hasRegisteredOwner # technically filtering by reg. owners is not necessary bc only reg. users can save containers...
               console.log 'VALID CONTAINERS: ', validContainers.length
               cleanupContainersNotIn domain, validContainers, (err) ->
