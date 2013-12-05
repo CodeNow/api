@@ -9,14 +9,16 @@ _ = require 'lodash'
 # If this script has not been run in a while, it's possible that the whitelist is large
 # and the cron mongodb remove query uses an $in operator which is not the most efficient..
 # Here we will remove unsaved, very expired containers from mongodb
-week = (Date.now() - 1000*60*60*24*7)
-query = saved:false, created:$lte:week
-containers.count query, (err, count) ->
-  if err then console.error(err) else
-    containers.remove query, (err) ->
+onFirstRun = (firstRun, cb) ->
+  if not firstRun then cb() else #runs on first run only then just calls back immediately
+    week = new Date(Date.now() - 1000*60*60*24*7)
+    unsavedAndWayExpired = saved:false, created:$lte:week
+    containers.count unsavedAndWayExpired, (err, count) ->
       if err then console.error(err) else
-        console.log 'PURGE VERY EXPIRED DB CONTAINERS: ', count
-
+        containers.remove unsavedAndWayExpired, (err) ->
+          if err then console.error(err) else
+            console.log 'PURGE VERY EXPIRED DB CONTAINERS: ', count
+            cb()
 
 hasRegisteredOwner = (container) ->
   registeredOwner = container.ownerJSON and container.ownerJSON.permission_level > 0
@@ -43,11 +45,12 @@ cleanupContainersNotIn = (domain, whitelist, cb) ->
     whiteContainerIds.push container._id
     whiteServiceTokens.push container.serviceToken
   async.parallel [
-    (cb) ->
-      console.log('whitelistContainerIds: ', whiteContainerIds)
-      containers.find _id:$nin:whiteContainerIds, domain.intercept (containers) -> # mongodb
-        console.log 'PURGE DB CONTAINERS: ', containers.length
-        cb()
+    (cb) -> # mongodb containers
+      notInWhitelist = _id:$nin:whiteContainerIds
+      containers.count notInWhitelist, domain.intercept (count) ->
+        containers.remove notInWhitelist, domain.intercept () ->
+          console.log 'PURGE DB CONTAINERS: ', count
+          cb()
   , (cb) -> # docker containers
       request
         url: "#{configs.harbourmaster}/containers/cleanup"
@@ -68,17 +71,18 @@ module.exports = (req, res) ->
     status = err.status
     delete err.status
     res.json status || 403, err
-  domain = req.domain
-  users.findUser domain, _id: req.user_id, domain.intercept (user) ->
-    if not user then appError message:'permission denied: no user' else
-      if not user.isModerator then appError message:'permission denied' else
-        containers.listSavedContainers req.domain, (containers) ->
-          console.log 'SAVED CONTAINERS: ', containers.length
-          getOwners domain, containers, (err) ->
-            if err then sendError err else
-              dateNow = Date.now()
-              validContainers = containers.filter hasRegisteredOwner # technically filtering by reg. owners is not necessary bc only reg. users can save containers...
-              console.log 'VALID CONTAINERS: ', validContainers.length
-              cleanupContainersNotIn domain, validContainers, (err) ->
-                if err then appError err else
-                  res.json 200, message: 'successfuly sent prune request to harbourmaster and cleaned mongodb'
+  onFirstRun req.params.firstRun, ()->
+    domain = req.domain
+    users.findUser domain, _id: req.user_id, domain.intercept (user) ->
+      if not user then appError message:'permission denied: no user' else
+        if not user.isModerator then appError message:'permission denied' else
+          containers.listSavedContainers req.domain, (containers) ->
+            console.log 'SAVED CONTAINERS: ', containers.length
+            getOwners domain, containers, (err) ->
+              if err then sendError err else
+                dateNow = Date.now()
+                validContainers = containers.filter hasRegisteredOwner # technically filtering by reg. owners is not necessary bc only reg. users can save containers...
+                console.log 'VALID CONTAINERS: ', validContainers.length
+                cleanupContainersNotIn domain, validContainers, (err) ->
+                  if err then appError err else
+                    res.json 200, message: 'successfuly sent prune request to harbourmaster and cleaned mongodb'

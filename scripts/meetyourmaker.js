@@ -1,9 +1,9 @@
 var configs = require('../lib/configs');
 var request = require('request');
 
-var clean = function() {
+var clean = function(firstRun) {
   request({
-    url: 'http://api.' + configs.domain + '/cleanup',
+    url: 'http://api.' + configs.domain + '/cleanup' + firstRun? '?firstRun=true': '',
     method: 'GET',
     headers: {
       'runnable-token': configs.adminToken
@@ -17,5 +17,5 @@ var clean = function() {
   });
 }
 
-clean();
+clean(true);
 setInterval(clean, configs.cleanInterval);
