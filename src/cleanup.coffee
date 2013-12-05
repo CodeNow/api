@@ -87,5 +87,5 @@ module.exports = (req, res) ->
                   console.log 'VALID CONTAINERS: ', validContainers.length
                   cleanupContainersNotIn domain, validContainers, cb
   ], (err) -> #done
-    if (err) sendError err else
+    if err then sendError err else
       res.json 200, message: 'successfuly sent prune request to harbourmaster and cleaned mongodb'

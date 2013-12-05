@@ -3,7 +3,7 @@ var request = require('request');
 
 var clean = function(firstRun) {
   request({
-    url: 'http://api.' + configs.domain + '/cleanup' + firstRun? '?firstRun=true': '',
+    url: 'http://api.' + configs.domain + '/cleanup' + (firstRun ? '?firstRun=true' : ''),
     method: 'GET',
     headers: {
       'runnable-token': configs.adminToken
