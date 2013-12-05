@@ -9,16 +9,15 @@ _ = require 'lodash'
 # If this script has not been run in a while, it's possible that the whitelist is large
 # and the cron mongodb remove query uses an $in operator which is not the most efficient..
 # Here we will remove unsaved, very expired containers from mongodb
-onFirstRun = (firstRun, cb) ->
-  if not firstRun then cb() else #runs on first run only then just calls back immediately
-    week = new Date(Date.now() - 1000*60*60*24*7)
-    unsavedAndWayExpired = saved:false, created:$lte:week
-    containers.count unsavedAndWayExpired, (err, count) ->
-      if err then console.error(err) else
-        containers.remove unsavedAndWayExpired, (err) ->
-          if err then console.error(err) else
-            console.log 'PURGE VERY EXPIRED DB CONTAINERS: ', count
-            cb()
+onFirstRun = (cb) ->
+  week = new Date(Date.now() - 1000*60*60*24*7)
+  unsavedAndWayExpired = saved:false, created:$lte:week
+  containers.count unsavedAndWayExpired, (err, count) ->
+    if err then console.error(err) else
+      containers.remove unsavedAndWayExpired, (err) ->
+        if err then console.error(err) else
+          console.log 'PURGE VERY EXPIRED DB CONTAINERS: ', count
+          cb()
 
 hasRegisteredOwner = (container) ->
   registeredOwner = container.ownerJSON and container.ownerJSON.permission_level > 0
@@ -71,18 +70,22 @@ module.exports = (req, res) ->
     status = err.status
     delete err.status
     res.json status || 403, err
-  onFirstRun req.params.firstRun, ()->
-    domain = req.domain
-    users.findUser domain, _id: req.user_id, domain.intercept (user) ->
-      if not user then appError message:'permission denied: no user' else
-        if not user.isModerator then appError message:'permission denied' else
-          containers.listSavedContainers req.domain, (containers) ->
-            console.log 'SAVED CONTAINERS: ', containers.length
-            getOwners domain, containers, (err) ->
-              if err then sendError err else
-                dateNow = Date.now()
-                validContainers = containers.filter hasRegisteredOwner # technically filtering by reg. owners is not necessary bc only reg. users can save containers...
-                console.log 'VALID CONTAINERS: ', validContainers.length
-                cleanupContainersNotIn domain, validContainers, (err) ->
-                  if err then appError err else
-                    res.json 200, message: 'successfuly sent prune request to harbourmaster and cleaned mongodb'
+  async.series [
+    (cb) ->
+      if req.query.firstRun then onFirstRun(cb) else cb()
+  , (cb) ->
+      domain = req.domain
+      users.findUser domain, _id: req.user_id, domain.intercept (user) ->
+        if not user then cb message:'permission denied: no user' else
+          if not user.isModerator then cb message:'permission denied' else
+            containers.listSavedContainers req.domain, (containers) ->
+              console.log 'SAVED CONTAINERS: ', containers.length
+              getOwners domain, containers, (err) ->
+                if err then cb err else
+                  dateNow = Date.now()
+                  validContainers = containers.filter hasRegisteredOwner # technically filtering by reg. owners is not necessary bc only reg. users can save containers...
+                  console.log 'VALID CONTAINERS: ', validContainers.length
+                  cleanupContainersNotIn domain, validContainers, cb
+  ], (err) -> #done
+    if (err) sendError err else
+      res.json 200, message: 'successfuly sent prune request to harbourmaster and cleaned mongodb'
