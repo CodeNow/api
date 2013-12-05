@@ -104,6 +104,9 @@ containerSchema = new Schema
 containerSchema.set 'toJSON', virtuals: true
 containerSchema.set 'autoIndex', true
 
+containerSchema.index #for cleanup
+  saved: 1
+  created: 1
 
 containerSchema.index
   tags: 1
