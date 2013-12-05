@@ -218,8 +218,7 @@ containerSchema.methods.updateBuildCommand = (domain, cb) ->
   request.post
     url: url
     pool: false
-    json:
-      cmd: @build_cmd
+    json: @build_cmd
   , domain.intercept () -> cb()
 
 containerSchema.methods.updateStartCommand = (domain, cb) ->
@@ -227,8 +226,7 @@ containerSchema.methods.updateStartCommand = (domain, cb) ->
   request.post
     url: url
     pool: false
-    json:
-      cmd: @start_cmd
+    json: @start_cmd
   , domain.intercept () -> cb()
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
