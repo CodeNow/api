@@ -205,28 +205,20 @@ module.exports = (parentDomain) ->
   app.get '/users/:userid/runnables/:runnableid', fetchuser, getrunnable
 
   putrunnable = (req, res) ->
-    if not req.body.running? then res.json 400, message: 'must provide a running parameter' else
-      required = ['name', 'description']
-      optional = ['specification', 'saved', 'start_cmd', 'build_cmd', 'output_format', 'status', 'commit_error']
-      set = {}
-      # for loop for early return
-      for attr in required
-        if req.body[attr] is undefined
-          return res.json 400, message: 'must provide a runnable ' + attr
-        else
-          set[attr] = req.body[attr]
-      optional.forEach (attr) ->
-        if req.body[attr] isnt undefined then set[attr] = req.body[attr]
-      runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, req.get('runnable-token'), (err, runnable) ->
-        if err then res.json err.code, message: err.msg else
-          if req.body.running
-            runnables.startContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
-              if err then res.json err.code, message: err.msg else
-                res.json runnable
-          else
-            runnables.stopContainer req.domain, req.user_id, req.params.runnableid, (err, runnable) ->
-              if err then res.json err.code, message: err.msg else
-                res.json runnable
+    required = ['name', 'description']
+    optional = ['specification', 'saved', 'start_cmd', 'build_cmd', 'output_format', 'status', 'commit_error']
+    set = {}
+    # for loop for early return
+    for attr in required
+      if req.body[attr] is undefined
+        return res.json 400, message: 'must provide a runnable ' + attr
+      else
+        set[attr] = req.body[attr]
+    optional.forEach (attr) ->
+      if req.body[attr] isnt undefined then set[attr] = req.body[attr]
+    runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, req.get('runnable-token'), (err, runnable) ->
+      if err then res.json err.code, message: err.msg else
+        res.json runnable
 
   app.put '/users/me/runnables/:runnableid', putrunnable
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable

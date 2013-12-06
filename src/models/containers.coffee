@@ -197,19 +197,7 @@ containerSchema.statics.listSavedContainers = (domain, cb) ->
   timeout = (new Date()).getTime() - configs.containerTimeout
   @find { $or: [ { saved: true }, { created: $gte: timeout } ] }, domain.intercept cb
 
-containerSchema.methods.getRunningState = (domain, cb) ->
-  request
-    url: "http://#{@servicesToken}.#{configs.domain}/api/running"
-    method: 'GET'
-    pool: false
-  , domain.intercept (res) ->
-    if res.statusCode is 502 then cb error 500, 'runnable not responding to status requests' else
-      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-        if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
-          res.body = JSON.parse res.body
-          cb null, running: res.body.running
-
-containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
+containerSchema.methods.updateRunOptions = (domain, cb) ->
   self = @
   operations = [
     self.updateBuildCommand.bind self, domain
@@ -217,11 +205,8 @@ containerSchema.methods.updateRunOptionsAndStart = (domain, cb) ->
   ]
   if @specification?
     operations.push self.updateEnvVariables.bind self, domain
-  async.series [
-    (cb) ->
-      async.parallel operations, cb
-    self.start.bind(self, domain)
-  ], cb
+  async.parallel operations, cb
+
 
 containerSchema.methods.updateEnvVariables = (domain, cb) ->
   encodedId = encodeId @_id
@@ -236,8 +221,7 @@ containerSchema.methods.updateBuildCommand = (domain, cb) ->
   request.post
     url: url
     pool: false
-    json:
-      cmd: @build_cmd
+    json: @build_cmd
   , domain.intercept () -> cb()
 
 containerSchema.methods.updateStartCommand = (domain, cb) ->
@@ -245,34 +229,8 @@ containerSchema.methods.updateStartCommand = (domain, cb) ->
   request.post
     url: url
     pool: false
-    json:
-      cmd: @start_cmd
+    json: @start_cmd
   , domain.intercept () -> cb()
-
-containerSchema.methods.start = (domain, cb) ->
-  request
-    url: "http://#{@servicesToken}.#{configs.domain}/api/start"
-    method: 'GET'
-    pool: false
-  , domain.intercept (res) ->
-    if res.statusCode is 502 then cb error 500, 'runnable not responding to start request' else
-      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-        if res.statusCode isnt 200
-          cb error res.statusCode, 'unknown runnable error'
-        else
-          @running = true
-          cb()
-
-containerSchema.methods.stop = (domain, cb) ->
-  request
-    url: "http://#{@servicesToken}.#{configs.domain}/api/stop"
-    method: 'GET'
-    pool: false
-  , domain.intercept (res) ->
-    if res.statusCode is 502 then cb error 500, 'runnable not responding to stop request' else
-      if res.statusCode is 400 then cb error 500, 'runnable is not configured on subdomain' else
-        if res.statusCode isnt 200 then cb error res.statusCode, 'unknown runnable error' else
-          cb()
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]
