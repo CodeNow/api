@@ -162,7 +162,7 @@ Runnables =
   updateContainer: (domain, userId, runnableId, updateSet, token, cb) ->
     runnableId = decodeId runnableId
     commit = (container, cb) ->
-      json = encodeIdsFor container.toJSON()
+      json = encodeIdsIn container.toJSON()
       harbourmaster.commitContainer domain, json, token, cb
     containers.findOne _id:runnableId, {files:0}, domain.intercept (container) ->
       if not container? then cb error else
@@ -174,7 +174,7 @@ Runnables =
                 if existing
                   cb error 403, 'a shared runnable by that name already exists'
                 else
-                  commit(container, cb)
+                  commit container, cb
             else if updateSet.status is 'Committing back'
               commit container, cb
             else
@@ -540,7 +540,7 @@ stats = [
 encode = (domain, json, cb) ->
   json._id = encodeId json._id
   if json.files? then delete json.files
-  json = encodeIdsFor json
+  json = encodeIdsIn json
   json.tags = json.tags or []
   async.forEach json.tags, (tag, cb) ->
     channels.findOne _id: tag.channel, domain.intercept (channel) ->
@@ -549,7 +549,7 @@ encode = (domain, json, cb) ->
   , (err) ->
     cb err, json
 
-encodeIdsFor = (json) ->
+encodeIdsIn = (json) ->
   if json.parent? then json.parent = encodeId json.parent
   if json.target? then json.target = encodeId json.target
   if json.child? then json.child = encodeId json.child
