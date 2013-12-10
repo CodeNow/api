@@ -180,7 +180,7 @@ Runnables =
             else
               cb()
         , (cb) ->
-            container.updateRunOptions domain, updateSet, cb
+            container.updateRunOptions domain, cb
         , (cb) ->
             container.save domain.intercept () -> cb()
         ], (err) ->
