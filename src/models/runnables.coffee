@@ -165,7 +165,7 @@ Runnables =
       json = encodeIdsIn container.toJSON()
       harbourmaster.commitContainer domain, json, token, cb
     containers.findOne _id:runnableId, {files:0}, domain.intercept (container) ->
-      if not container? then cb error else
+      if not container? then cb error 404, 'runnable not found' else
         container.set updateSet
         async.series [
           (cb) ->
