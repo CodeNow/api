@@ -214,7 +214,7 @@ containerSchema.methods.updateEnvVariables = (domain, cb) ->
     userId: @owner
     specification: @specification
     containerId: encodedId
-  , domain.intercept(cb)
+  , cb
 
 containerSchema.methods.updateBuildCommand = (domain, cb) ->
   url = "http://#{@servicesToken}.#{configs.domain}/api/buildCmd"

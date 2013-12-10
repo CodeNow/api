@@ -143,8 +143,7 @@ implementationSchema.statics.updateEnvBySpecification = (domain, opts, cb) ->
   , (err, implementation) =>
     if err or (not implementation)
       # to handle the specification but no implementation case
-      console.error err or new Error 'no implementation'
-      cb null
+      cb err or error 400, 'no implementation'
     else
       updateEnv domain, {
         userId: opts.userId
