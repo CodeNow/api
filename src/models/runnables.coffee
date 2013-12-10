@@ -162,8 +162,8 @@ Runnables =
   updateContainer: (domain, userId, runnableId, updateSet, token, cb) ->
     runnableId = decodeId runnableId
     commit = (container, cb) ->
-      encode domain, container.toJSON(), domain.intercept (json) ->
-        harbourmaster.commitContainer domain, json, token, cb
+      json = encodeIdsFor container.toJSON()
+      harbourmaster.commitContainer domain, json, token, cb
     container.findOne _id:runnableId, {files:0}, domain.intercept (container) ->
       if not container? then cb error else
         container.set updateSet
@@ -180,13 +180,12 @@ Runnables =
             else
               cb()
         , (cb) ->
-          container.updateRunOptions domain, updateSet, cb
+            container.updateRunOptions domain, updateSet, cb
         , (cb) ->
-            containers.findOneAndUpdate _id:runnableId, $set:updateSet, domain.intercept (container) ->
-              cb null, container
-        ], (err, results) ->
+            container.save domain.intercept () -> cb()
+        ], (err) ->
           if err then cb err else
-            cb null, results[1]
+            encode domain, container, cb
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -541,9 +540,7 @@ stats = [
 encode = (domain, json, cb) ->
   json._id = encodeId json._id
   if json.files? then delete json.files
-  if json.parent? then json.parent = encodeId json.parent
-  if json.target? then json.target = encodeId json.target
-  if json.child? then json.child = encodeId json.child
+  json = encodeIdsFor json
   json.tags = json.tags or []
   async.forEach json.tags, (tag, cb) ->
     channels.findOne _id: tag.channel, domain.intercept (channel) ->
@@ -551,6 +548,12 @@ encode = (domain, json, cb) ->
       cb()
   , (err) ->
     cb err, json
+
+encodeIdsFor = (json) ->
+  if json.parent? then json.parent = encodeId json.parent
+  if json.target? then json.target = encodeId json.target
+  if json.child? then json.child = encodeId json.child
+  return json
 
 encodeId = (id) -> id
 decodeId = (id) -> id
