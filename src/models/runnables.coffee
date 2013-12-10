@@ -8,6 +8,7 @@ error = require '../error'
 images = require './images'
 users = require './users'
 implementations = require './implementations'
+harbourmaster = require './harbourmaster'
 _ = require 'lodash'
 ObjectId = require('mongoose').Types.ObjectId
 request = require 'request'
@@ -126,7 +127,7 @@ Runnables =
           cb error 404, 'runnable not found'
         else if container.owner.toString() isnt userId.toString()
           cb error 403, 'permission denied'
-        else 
+        else
           json = container.toJSON()
           encode domain, json, cb
 
@@ -160,54 +161,31 @@ Runnables =
 
   updateContainer: (domain, userId, runnableId, updateSet, token, cb) ->
     runnableId = decodeId runnableId
-    containers.findOne _id: runnableId, domain.intercept (container) ->
-      update = ->
-        container.updateRunOptions domain, saveOrCommit
-      saveOrCommit = ->
-        if updateSet.status is 'Committing new'
-          images.findOne name: updateSet.name or container.name, domain.intercept (existing) =>
-            if existing
-              cb error 403, 'a shared runnable by that name already exists'
+    commit = (container, cb) ->
+      json = encodeIdsIn container.toJSON()
+      harbourmaster.commitContainer domain, json, token, cb
+    containers.findOne _id:runnableId, {files:0}, domain.intercept (container) ->
+      if not container? then cb error 404, 'runnable not found' else
+        container.set updateSet
+        async.series [
+          (cb) ->
+            if updateSet.status is 'Committing new'
+              images.findOne name: updateSet.name or container.name, domain.intercept (existing) =>
+                if existing
+                  cb error 403, 'a shared runnable by that name already exists'
+                else
+                  commit container, cb
+            else if updateSet.status is 'Committing back'
+              commit container, cb
             else
-              commit()
-        else if updateSet.status is 'Committing back'
-          commit()
-        else
-          save()
-      save = ->
-        _.extend container, updateSet
-        container.save domain.intercept ->
-          json = container.toJSON()
-          encode domain, json, cb
-      commit = ->
-        encode domain, _.extend(container, updateSet).toJSON(), domain.intercept (json) ->
-          request
-            pool: false
-            url: "#{configs.harbourmaster}/containers/#{container.servicesToken}/commit"
-            method: 'POST'
-            json: json
-            headers:
-              'runnable-token': token
-          , domain.intercept (res) ->
-            if (res.statusCode isnt 204)
-              cb error 502, "Error committing: #{JSON.stringify(res.body)}"
-            else
-              save()
-      if not container
-        cb error 404, 'runnable not found' + runnableId
-      else if container.owner.toString() isnt userId.toString()
-        cb error 403, 'permission denied'
-      if container.specification?
-        implementations.findOne
-          owner: userId
-          implements: container.specification
-        , domain.intercept (implementation) ->
-          if not implementation?
-            cb error 400, 'no implementation'
-          else
-            update()
-      else
-        update()
+              cb()
+        , (cb) ->
+            container.updateRunOptions domain, cb
+        , (cb) ->
+            container.save domain.intercept () -> cb()
+        ], (err) ->
+          if err then cb err else
+            encode domain, container.toJSON(), cb
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -560,11 +538,8 @@ stats = [
 ]
 
 encode = (domain, json, cb) ->
-  json._id = encodeId json._id
   if json.files? then delete json.files
-  if json.parent? then json.parent = encodeId json.parent
-  if json.target? then json.target = encodeId json.target
-  if json.child? then json.child = encodeId json.child
+  json = encodeIdsIn json
   json.tags = json.tags or []
   async.forEach json.tags, (tag, cb) ->
     channels.findOne _id: tag.channel, domain.intercept (channel) ->
@@ -572,6 +547,13 @@ encode = (domain, json, cb) ->
       cb()
   , (err) ->
     cb err, json
+
+encodeIdsIn = (json) ->
+  json._id = encodeId json._id
+  if json.parent? then json.parent = encodeId json.parent
+  if json.target? then json.target = encodeId json.target
+  if json.child?  then json.child  = encodeId json.child
+  return json
 
 encodeId = (id) -> id
 decodeId = (id) -> id
