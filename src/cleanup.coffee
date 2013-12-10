@@ -39,10 +39,10 @@ getOwners = (domain, containers, cb) ->
 cleanupContainersNotIn = (domain, whitelist, cb) ->
   if whitelist.length is 0 then cb()
   whiteContainerIds = []
-  whiteServiceTokens = []
+  whiteServicesTokens = []
   whitelist.forEach (container) ->
     whiteContainerIds.push container._id
-    whiteServiceTokens.push container.serviceToken
+    whiteServicesTokens.push container.servicesToken
   async.parallel [
     (cb) -> # mongodb containers
       notInWhitelist = _id:$nin:whiteContainerIds
@@ -54,7 +54,7 @@ cleanupContainersNotIn = (domain, whitelist, cb) ->
       request
         url: "#{configs.harbourmaster}/containers/cleanup"
         method: 'POST'
-        json: whiteServiceTokens
+        json: whiteServicesTokens
         pool: false
       , (err, res, body) ->
         if err then domain.emit 'error', err else
