@@ -164,7 +164,7 @@ Runnables =
     commit = (container, cb) ->
       json = encodeIdsFor container.toJSON()
       harbourmaster.commitContainer domain, json, token, cb
-    container.findOne _id:runnableId, {files:0}, domain.intercept (container) ->
+    containers.findOne _id:runnableId, {files:0}, domain.intercept (container) ->
       if not container? then cb error else
         container.set updateSet
         async.series [

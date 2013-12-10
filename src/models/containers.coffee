@@ -222,7 +222,7 @@ containerSchema.methods.updateBuildCommand = (domain, cb) ->
     url: url
     pool: false
     json: @build_cmd
-  , domain.intercept () -> cb()
+  , domain.intercept cb
 
 containerSchema.methods.updateStartCommand = (domain, cb) ->
   url = "http://#{@servicesToken}.#{configs.domain}/api/cmd"
@@ -230,7 +230,7 @@ containerSchema.methods.updateStartCommand = (domain, cb) ->
     url: url
     pool: false
     json: @start_cmd
-  , domain.intercept () -> cb()
+  , domain.intercept cb
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]
