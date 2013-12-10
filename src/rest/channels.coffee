@@ -17,27 +17,22 @@ module.exports = (parentDomain) ->
         res.json 201, channel
 
   app.get '/channels', (req, res) ->
+    sendJSON = (err, result) ->
+      if err then res.json err.code, message: err.msg else
+        res.json result
     if req.query.name?
-      channels.getChannelByName req.domain, categories, req.query.name, (err, channel) ->
-        if err then res.json err.code, message: err.msg else
-          res.json channel
+      channels.getChannelByName req.domain, categories, req.query.name, sendJSON
     else if req.query.names?
-      channels.getChannelsWithNames req.domain, categories, req.query.names, (err, channels) ->
-        if err then res.json err.code, message: err.msg else
-          res.json channels
+      channels.getChannelsWithNames req.domain, categories, req.query.names, sendJSON
     else if req.query.category?
-      channels.listChannelsInCategory req.domain, categories, req.query.category, (err, channels) ->
-        if err then res.json err.code, message: err.msg else
-          res.json channels
+      channels.listChannelsInCategory req.domain, categories, req.query.category, sendJSON
     else if req.query.channel?
       channelNames = if Array.isArray(req.query.channel) then req.query.channel else [req.query.channel]
-      channels.relatedChannels req.domain, channelNames, (err, channels) ->
-        if err then res.json err.code, message: err.msg else
-          res.json channels
+      channels.relatedChannels req.domain, channelNames, sendJSON
+    else if req.query.ids? and req.query.leader?
+      channels.getChannelsAndFilterIfLeader req.domain, req.query.ids, req.query.leader, sendJSON
     else
-      channels.listChannels req.domain, categories, (err, channels) ->
-        if err then res.json err.code, message: err.msg else
-          res.json channels
+      channels.listChannels req.domain, categories, sendJSON
 
   app.get '/channels/:id', (req, res) ->
     channels.getChannel req.domain, categories, req.params.id, (err, channel) ->

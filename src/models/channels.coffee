@@ -128,6 +128,35 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
               redis_client.set 'listChannelsCache', JSON.stringify(result)
               cb null, result
 
+channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
+  lastPlaceForLeader = 2
+  images.distinct 'owner', 'tags.channel':channelId, (err, ownerIds) ->
+    if err then callback err else
+      async.reduce ownerIds, [],
+        (leaders, ownerId, cb) ->
+          images.countInChannelByOwner domain, channelId, ownerId, (err, count) -> # err not possible
+            if leaders.length < lastPlaceForLeader
+              leaders.push { _id:ownerId, count:count }
+            else
+              leaders.forEach (leader, i) ->
+                if count > leaders[i].count and i < lastPlaceForLeader
+                  leaders.splice(i, 0, { _id:ownerId, count:count })
+                  leaders.pop()
+            cb null, leaders
+      , (err, leaders) ->
+          if err then cb err else
+            isLeader = leaders.some (leader) ->
+              leader._id is owner._id
+            cb null, isLeader
+
+channelSchema.statics.getChannelsAndFilterIfLeader = (domain, channelIds, userId, cb) ->
+  if not Array.isArray channelIds then channelIds = [channelIds]
+  async.filter channelIds,
+    @isLeader.bind(@, userId)
+  , (err, channelsUserLeadsIds) ->
+    channels.find _id:$in:channelsUserLeadsIds, { name:1, aliases:1 }, domain.intercept (channels) ->
+      cb null, channels
+
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
     if not category then cb error 404, 'could not find category' else

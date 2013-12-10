@@ -259,6 +259,10 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         image.save domain.intercept () ->
           cb null, image
 
+imageSchema.statics.countInChannelByOwner = (domain, channelId, ownerId, cb) ->
+  @count {'owner':ownerId, 'tags.channel':channelId}, domain.intercept (count) ->
+    cb null, count
+
 imageSchema.statics.search = (domain, searchText, limit, cb) ->
   opts =
     filter : tags:$not:$size:0
