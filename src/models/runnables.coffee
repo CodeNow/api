@@ -185,7 +185,7 @@ Runnables =
             container.save domain.intercept () -> cb()
         ], (err) ->
           if err then cb err else
-            encode domain, container, cb
+            encode domain, container.toJSON(), cb
 
   updateImage: (domain, userId, runnableId, from, cb) ->
     runnableId = decodeId runnableId
@@ -538,7 +538,6 @@ stats = [
 ]
 
 encode = (domain, json, cb) ->
-  json._id = encodeId json._id
   if json.files? then delete json.files
   json = encodeIdsIn json
   json.tags = json.tags or []
@@ -550,9 +549,10 @@ encode = (domain, json, cb) ->
     cb err, json
 
 encodeIdsIn = (json) ->
+  json._id = encodeId json._id
   if json.parent? then json.parent = encodeId json.parent
   if json.target? then json.target = encodeId json.target
-  if json.child? then json.child = encodeId json.child
+  if json.child?  then json.child  = encodeId json.child
   return json
 
 encodeId = (id) -> id
