@@ -1,4 +1,5 @@
 configs = require '../configs'
+request = require 'request'
 
 Harbourmaster = (url) ->
   this.url = url
