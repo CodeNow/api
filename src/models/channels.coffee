@@ -166,7 +166,7 @@ channelSchema.statics.getChannelLeaderBadges = (domain, channelIds, userId, call
   , (channelsUserLeadsIds) -> # async.filter doesnt bubble error...
     self.find(_id:$in:channelsUserLeadsIds, { name:1, aliases:1 }).lean().exec domain.intercept (channels) ->
       channels.forEach (channel) ->
-        channel.leaderPosition = positionHash[channel._id]
+        channel.leaderPosition = positionHash[channel._id]+1
       callback null, channels
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
