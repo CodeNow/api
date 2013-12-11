@@ -128,27 +128,29 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
               redis_client.set 'listChannelsCache', JSON.stringify(result)
               cb null, result
 
+highestCountItems = (size, memo, id, cb) ->
+  (err, count) ->
+    if err then cb err else
+      if memo.length < size
+        memo.push { _id:id, count:count }
+      else
+        memo.forEach (leader, i) ->
+          if val > memo[i][key] and i < size
+            memo.splice i, 0, { _id:id, count:count }
+            memo.pop()
+      cb null, memo
+
 channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
-  lastPlaceForLeader = 2
   images.distinct 'owner', 'tags.channel':channelId, domain.intercept (ownerIds) ->
     async.reduce ownerIds, [],
       (leaders, ownerId, cb) ->
-        images.countInChannelByOwner domain, channelId, ownerId, (err, count) ->
-          if err then cb err else
-            if leaders.length < lastPlaceForLeader
-              leaders.push { _id:ownerId, count:count }
-            else
-              leaders.forEach (leader, i) ->
-                if count > leaders[i].count and i < lastPlaceForLeader
-                  leaders.splice(i, 0, { _id:ownerId, count:count })
-                  leaders.pop()
-            cb null, leaders
+        images.countInChannelByOwner domain, channelId, ownerId, highestCountItems(3, leaders, ownerId, cb)
       , (err, leaders) ->
           if err then cb err else
             position = -1
             leaders.some (leader, i) ->
               if leader._id.toString() is userId.toString()
-                position = i
+                position = i+1
                 return true
             cb null, position
 
@@ -159,15 +161,20 @@ channelSchema.statics.getChannelLeaderBadges = (domain, channelIds, userId, call
   positionHash = {}
   async.filter channelIds, (channelId, cb) ->
     self.isLeader domain, userId, channelId, (err, position) ->
-      if errored then return else # async filter doesnt manage errors
+      if errored then return else     # async filter doesnt manage errors
         if err then callback err else # callback vs cb here is correct
           positionHash[channelId] = position
           cb position isnt -1
   , (channelsUserLeadsIds) -> # async.filter doesnt bubble error...
-    self.find(_id:$in:channelsUserLeadsIds, { name:1, aliases:1 }).lean().exec domain.intercept (channels) ->
-      channels.forEach (channel) ->
-        channel.leaderPosition = positionHash[channel._id]+1
-      callback null, channels
+    async.reduce channelsUserLeadsIds, [],
+      (mostPopular, channelId, cb) ->
+        images.count 'tags.channel':channelId, highestCountItems(2, mostPopular, channelId, cb)
+    , (err, mostPopular) ->
+      mostPopUserLedChannelIds = mostPopular.map (channel) -> channel._id
+      self.find(_id:$in:mostPopUserLedChannelIds, { name:1, aliases:1 }).lean().exec domain.intercept (channels) ->
+        channels.forEach (channel) ->
+          channel.leaderPosition = positionHash[channel._id]
+        callback null, channels
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
