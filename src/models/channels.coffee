@@ -135,7 +135,7 @@ highestCountItems = (size, memo, id, cb) ->
         memo.push { _id:id, count:count }
       else
         memo.forEach (leader, i) ->
-          if count > memo[i][key] and i < size
+          if count > memo[i].count and i < size
             memo.splice i, 0, { _id:id, count:count }
             memo.pop()
       cb null, memo
