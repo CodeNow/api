@@ -156,7 +156,7 @@ channelSchema.statics.getChannelLeaderBadges = (domain, channelIds, userId, cb) 
   self = @
   positionHash = {}
   async.filter channelIds, (channelId, cb) ->
-    self.isLeader userId, (err, position) ->
+    self.isLeader userId, channelId, (err, position) ->
       if err then cb err else
         positionHash[channelId] = position
   , (err, channelsUserLeadsIds) ->
