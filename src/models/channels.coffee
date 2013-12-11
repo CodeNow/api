@@ -145,9 +145,11 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
             cb null, leaders
       , (err, leaders) ->
           if err then cb err else
-            position = null;
+            position = -1
             leaders.some (leader, i) ->
-              if leader._id.toString() is userId.toString() then position = i
+            if leader._id.toString() is userId.toString()
+              position = i
+              return true
             cb null, position
 
 channelSchema.statics.getChannelLeaderBadges = (domain, channelIds, userId, callback) ->
@@ -160,7 +162,7 @@ channelSchema.statics.getChannelLeaderBadges = (domain, channelIds, userId, call
       if errored then return else # async filter doesnt manage errors
         if err then callback err else # callback vs cb here is correct
           positionHash[channelId] = position
-          cb null, position isnt -1
+          cb position isnt -1
   , (channelsUserLeadsIds) -> # async.filter doesnt bubble error...
     self.find _id:$in:channelsUserLeadsIds, { name:1, aliases:1 }, domain.intercept (channels) ->
       channels.forEach (channel) ->
