@@ -147,9 +147,9 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
           if err then cb err else
             position = -1
             leaders.some (leader, i) ->
-            if leader._id.toString() is userId.toString()
-              position = i
-              return true
+              if leader._id.toString() is userId.toString()
+                position = i
+                return true
             cb null, position
 
 channelSchema.statics.getChannelLeaderBadges = (domain, channelIds, userId, callback) ->
