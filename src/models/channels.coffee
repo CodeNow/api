@@ -130,20 +130,19 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
 
 channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
   lastPlaceForLeader = 2
-  images.distinct 'owner', 'tags.channel':channelId, (err, ownerIds) ->
-    if err then callback err else
-      async.reduce ownerIds, [],
-        (leaders, ownerId, cb) ->
-          images.countInChannelByOwner domain, channelId, ownerId, (err, count) ->
-            if err then cb err else
-              if leaders.length < lastPlaceForLeader
-                leaders.push { _id:ownerId, count:count }
-              else
-                leaders.forEach (leader, i) ->
-                  if count > leaders[i].count and i < lastPlaceForLeader
-                    leaders.splice(i, 0, { _id:ownerId, count:count })
-                    leaders.pop()
-              cb null, leaders
+  images.distinct 'owner', 'tags.channel':channelId, domain.intercept (count) ->
+    async.reduce ownerIds, [],
+      (leaders, ownerId, cb) ->
+        images.countInChannelByOwner domain, channelId, ownerId, (err, count) ->
+          if err then cb err else
+            if leaders.length < lastPlaceForLeader
+              leaders.push { _id:ownerId, count:count }
+            else
+              leaders.forEach (leader, i) ->
+                if count > leaders[i].count and i < lastPlaceForLeader
+                  leaders.splice(i, 0, { _id:ownerId, count:count })
+                  leaders.pop()
+            cb null, leaders
       , (err, leaders) ->
           if err then cb err else
             position = null;
