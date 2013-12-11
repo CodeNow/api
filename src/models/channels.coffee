@@ -150,20 +150,21 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
               if leader._id is owner._id then position = i
             cb null, position
 
-channelSchema.statics.getChannelLeaderBadges = (domain, channelIds, userId, cb) ->
+channelSchema.statics.getChannelLeaderBadges = (domain, channelIds, userId, callback) ->
   if not Array.isArray channelIds then channelIds = [channelIds]
   self = @
+  errored = false
   positionHash = {}
   async.filter channelIds, (channelId, cb) ->
     self.isLeader domain, userId, channelId, (err, position) ->
-      if err then cb err else
-        positionHash[channelId] = position
-  , (err, channelsUserLeadsIds) ->
-    if err then cb err else
-      channels.find _id:$in:channelsUserLeadsIds, { name:1, aliases:1 }, domain.intercept (channels) ->
-        channels.forEach (channel) ->
-          channel.leaderPosition = positionHash[channel._id]
-        cb null, channels
+      if errored then return else # async filter doesnt manage errors
+        if err then callback err else # callback vs cb here is correct
+          positionHash[channelId] = position
+  , (channelsUserLeadsIds) -> # async.filter doesnt bubble error...
+    channels.find _id:$in:channelsUserLeadsIds, { name:1, aliases:1 }, domain.intercept (channels) ->
+      channels.forEach (channel) ->
+        channel.leaderPosition = positionHash[channel._id]
+      callback null, channels
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
