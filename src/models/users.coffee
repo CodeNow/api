@@ -80,6 +80,15 @@ userSchema.virtual('isVerified').get () ->
 userSchema.virtual('isModerator').get () ->
   this.permission_level >= 5
 
+publicFields =
+  username : 1
+  name     : 1
+  fb_userid: 1
+  email    : 1
+  created  : 1
+  show_email: 1
+  company  : 1,
+
 userSchema.statics.createUser = (domain, cb) ->
   user = new @
   user.save domain.intercept () ->
@@ -142,15 +151,7 @@ userSchema.statics.publicListWithIds = (domain, userIds, cb) ->
   @publicList domain, query, cb
 
 userSchema.statics.publicList = (domain, query, cb) ->
-  fields =
-    username : 1
-    name     : 1
-    fb_userid: 1
-    email    : 1
-    created  : 1
-    show_email: 1
-    company  : 1,
-  @find query, fields, domain.intercept (users) ->
+  @find query, publicFields, domain.intercept (users) ->
     cb null, users.map (user) ->
       user = user.toJSON()
       if !user.show_email then user.email = undefined
@@ -172,6 +173,28 @@ userSchema.statics.addVote = (domain, userId, runnableId, cb) ->
   @update query, update, domain.intercept (success) ->
     if !success then cb error 403, 'you already voted on this runnable' else
       cb null, vote
+
+userSchema.statics.channelLeaders = (domain, channelId, idsOnly, cb) ->
+  self = @
+  images.distinct 'owner', 'tags.channel':channelId, (err, userIds) ->
+    if err then cb err else
+    async.waterfall [
+      (cb) ->
+        if idsOnly
+          users = userIds.map (userId) -> {_id:userId}
+          cb null, users
+        else
+          self.find _id:$in:userIds, publicFields, domain.intercept (users) ->
+            cb null, users
+    , (users, cb) ->
+        async.map users, (user, cb) ->
+          images.countInChannelByOwner domain, channelId, user._id, (err, count) ->
+            if err then cb err else
+              user.count = count
+              cb null, user
+        , cb
+    ], cb
+
 
 userSchema.methods.getVotes = () ->
   votes = [ ]

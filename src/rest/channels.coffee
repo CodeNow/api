@@ -30,7 +30,7 @@ module.exports = (parentDomain) ->
       channelNames = if Array.isArray(req.query.channel) then req.query.channel else [req.query.channel]
       channels.relatedChannels req.domain, channelNames, sendJSON
     else if req.query.ids? and req.query.leader?
-      channels.getChannelsAndFilterIfLeader req.domain, req.query.ids, req.query.leader, sendJSON
+      channels.getChannelLeaderBadges req.domain, req.query.ids, req.query.leader, sendJSON
     else
       channels.listChannels req.domain, categories, sendJSON
 

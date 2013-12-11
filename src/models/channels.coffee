@@ -134,28 +134,37 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
     if err then callback err else
       async.reduce ownerIds, [],
         (leaders, ownerId, cb) ->
-          images.countInChannelByOwner domain, channelId, ownerId, (err, count) -> # err not possible
-            if leaders.length < lastPlaceForLeader
-              leaders.push { _id:ownerId, count:count }
-            else
-              leaders.forEach (leader, i) ->
-                if count > leaders[i].count and i < lastPlaceForLeader
-                  leaders.splice(i, 0, { _id:ownerId, count:count })
-                  leaders.pop()
-            cb null, leaders
+          images.countInChannelByOwner domain, channelId, ownerId, (err, count) ->
+            if err then cb err else
+              if leaders.length < lastPlaceForLeader
+                leaders.push { _id:ownerId, count:count }
+              else
+                leaders.forEach (leader, i) ->
+                  if count > leaders[i].count and i < lastPlaceForLeader
+                    leaders.splice(i, 0, { _id:ownerId, count:count })
+                    leaders.pop()
+              cb null, leaders
       , (err, leaders) ->
           if err then cb err else
-            isLeader = leaders.some (leader) ->
-              leader._id is owner._id
-            cb null, isLeader
+            position = null;
+            leaders.some (leader, i) ->
+              if leader._id is owner._id then position = i
+            cb null, position
 
-channelSchema.statics.getChannelsAndFilterIfLeader = (domain, channelIds, userId, cb) ->
+channelSchema.statics.getChannelLeaderBadges = (domain, channelIds, userId, cb) ->
   if not Array.isArray channelIds then channelIds = [channelIds]
-  async.filter channelIds,
-    @isLeader.bind(@, userId)
+  self = @
+  positionHash = {}
+  async.filter channelIds, (channelId, cb) ->
+    self.isLeader userId, (err, position) ->
+      if err then cb err else
+        positionHash[channelId] = position
   , (err, channelsUserLeadsIds) ->
-    channels.find _id:$in:channelsUserLeadsIds, { name:1, aliases:1 }, domain.intercept (channels) ->
-      cb null, channels
+    if err then cb err else
+      channels.find _id:$in:channelsUserLeadsIds, { name:1, aliases:1 }, domain.intercept (channels) ->
+        channels.forEach (channel) ->
+          channel.leaderPosition = positionHash[channel._id]
+        cb null, channels
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>

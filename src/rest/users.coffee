@@ -96,6 +96,8 @@ module.exports = (parentDomain) ->
       users.publicListWithIds req.domain, userIds, sendUsers
     else if req.query.username
      users.publicList req.domain, lower_username:req.query.username.toLowerCase(), sendUsers
+    else if req.query.channel
+      users.channelLeaders req.domain, req.query.channel, req.query.idsOnly, sendUsers
     else
       res.json 400, message: 'must provide ids or username for users to get'
 
