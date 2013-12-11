@@ -130,7 +130,7 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
 
 channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
   lastPlaceForLeader = 2
-  images.distinct 'owner', 'tags.channel':channelId, domain.intercept (count) ->
+  images.distinct 'owner', 'tags.channel':channelId, domain.intercept (ownerIds) ->
     async.reduce ownerIds, [],
       (leaders, ownerId, cb) ->
         images.countInChannelByOwner domain, channelId, ownerId, (err, count) ->
