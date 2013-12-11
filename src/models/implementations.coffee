@@ -180,7 +180,7 @@ updateEnv = (domain, opts, cb) ->
               webToken: opts.subdomain
             url: url
           , cb
-      ], domain.intercept cb
+      ], domain.intercept () -> cb()
     else
      cb error 404, 'container not found'
 
