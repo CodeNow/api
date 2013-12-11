@@ -1,9 +1,10 @@
 configs = require '../configs'
+request = require 'request'
 
 Harbourmaster = (url) ->
   this.url = url
 
-Harbourmaster.prototype.commitContainer == (domain, encodedContainer, token, cb) ->
+Harbourmaster.prototype.commitContainer = (domain, encodedContainer, token, cb) ->
   container = encodedContainer
   request
     pool: false
