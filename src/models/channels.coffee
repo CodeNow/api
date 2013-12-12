@@ -192,7 +192,7 @@ channelSchema.statics.getChannelLeaderBadges = (domain, count, userId, channelId
       getBadges(channelIds)
   else
     if not Array.isArray channelIds then channelIds = [channelIds]
-      getBadges(channelIds)
+    getBadges(channelIds)
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
