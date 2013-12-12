@@ -94,7 +94,7 @@ Runnables =
                   if not images.length then cb error 400, "could not find runnable in #{tags.name} to fork from" else
                     cb null, images[0]
               # determine if the container should be saved as a draft
-              user.findOne _id:userId, {permission_level:1} domain.intercept (user) ->
+              user.findOne _id:userId, {permission_level:1}, domain.intercept (user) ->
                 if user.registered then data.saved = true
                 if not channel.base then useOldestProject() else
                   images.findById channel.base, domain.intercept (image) ->
