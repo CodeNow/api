@@ -158,13 +158,13 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
                 return true
             cb null, data
 
-channelSchema.statics.getChannelLeaderBadges = (domain, count, userId, channelIds, checkLeader, callback) ->
+channelSchema.statics.getChannelLeaderBadges = (domain, count, userId, channelIds, checkIsLeader, callback) ->
   self = @
   getBadges = (channelIds) ->
     errored = false
     leaderDataHash = {}
     async.filter channelIds, (channelId, cb) ->
-      if checkLeader
+      if checkIsLeader
         self.isLeader domain, userId, channelId, (err, data) ->
           if errored then return else     # async filter doesnt manage errors
             if err then callback err else # callback vs cb here is correct
@@ -174,7 +174,9 @@ channelSchema.statics.getChannelLeaderBadges = (domain, count, userId, channelId
               else
                 cb false
       else
-        cb true
+        images.countInChannelByOwner domain, channelId, userId, domain.intercept (count) ->
+          leaderDataHash[channelId] = { count:count }
+          cb true
     , (channelsUserLeadsIds) -> # async.filter doesnt bubble error...
       async.reduce channelsUserLeadsIds, [],
         (mostPopular, channelId, cb) ->
