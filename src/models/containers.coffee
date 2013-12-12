@@ -112,7 +112,11 @@ containerSchema.index
   tags: 1
   parent: 1
 
-containerSchema.statics.create = (domain, owner, image, cb) ->
+containerSchema.statics.create = (domain, owner, image, data, cb) ->
+  if typeof data is 'function'
+    cb = data
+    data = {}
+  data = if data? then data else {}
   image.sync domain, () =>
     servicesToken = 'services-' + uuid.v4()
     env = [
@@ -151,6 +155,7 @@ containerSchema.statics.create = (domain, owner, image, cb) ->
         repo = encodeId if revision.repo then revision.repo else revision._id.toString()
       else
         repo = encodeId image._id.toString()
+      _.extend container, data
       console.log 'Image', "#{configs.dockerRegistry}/runnable/#{repo}"
       request
         url: "#{configs.harbourmaster}/containers"
