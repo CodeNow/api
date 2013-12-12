@@ -32,7 +32,7 @@ module.exports = (parentDomain) ->
     else if req.query.leader?
       count = req.query.count
       count = if count and count < 5 then count else 5
-      channels.getChannelLeaderBadges req.domain, count, req.query.leader, req.query._ids, sendJSON
+      channels.getChannelLeaderBadges req.domain, count, req.query.leader, req.query._ids, req.query.userLeads, sendJSON
     else
       channels.listChannels req.domain, categories, sendJSON
 
