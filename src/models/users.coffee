@@ -1,3 +1,4 @@
+async = require 'async'
 bcrypt = require 'bcrypt'
 configs = require '../configs'
 crypto = require 'crypto'
