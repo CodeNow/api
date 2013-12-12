@@ -152,10 +152,13 @@ userSchema.statics.publicListWithIds = (domain, userIds, cb) ->
 
 userSchema.statics.publicList = (domain, query, cb) ->
   @find query, publicFields, domain.intercept (users) ->
-    cb null, users.map (user) ->
+    async.map users, (user) ->
       user = user.toJSON()
       if !user.show_email then user.email = undefined
-      user
+      images.count owner:user._id, req.domain.intercept (imagesCount) ->
+        user.imagesCount = imagesCount
+        cb null, user
+    , cb
 
 userSchema.statics.addVote = (domain, userId, runnableId, cb) ->
   self = @

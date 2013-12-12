@@ -110,7 +110,9 @@ module.exports = (parentDomain) ->
           json_user = user.toJSON()
           json_user.votes = user.getVotes()
           delete json_user.password
-          res.json json_user
+          images.count owner:user._id, req.domain.intercept (imagesCount) ->
+            json_user.imagesCount = imagesCount
+            res.json json_user
 
   app.get '/users/me', getuser
   app.get '/users/:userid', fetchuser, getuser
