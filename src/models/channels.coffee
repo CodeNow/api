@@ -173,7 +173,7 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
                 return true
             cb null, data
 
-leaderBadgesInChannelsForUser = (domain, size, filterChannelIds, userId, callback) ->
+channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChannelIds, userId, callback) ->
   self = @
   async.reduce filterChannelIds, [], (channelsUserLeadsData, channelId, cb) ->
     self.isLeader domain, userId, channelId, (err, data) ->
