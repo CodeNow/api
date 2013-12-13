@@ -32,7 +32,7 @@ module.exports = (parentDomain) ->
     else if req.query.popular?
       count = req.query.count
       count = if count and count <= 5 then count else 5
-      channels.mostPopAffectedByUser req.domain, count, req,query.userId, sendJSON
+      channels.mostPopAffectedByUser req.domain, count, req.query.userId, sendJSON
     else if req.query.badges?
       count = req.query.count
       count = if count and count <= 5 then count else 5
