@@ -156,8 +156,12 @@ userSchema.statics.publicList = (domain, query, cb) ->
     async.map users, (user) ->
       user = user.toJSON()
       if !user.show_email then user.email = undefined
-      images.count owner:user._id, domain.intercept (imagesCount) ->
-        user.imagesCount = imagesCount
+      if users.length is 1
+        # right now image count is only required for public profile, which is a publicList of one user
+        images.count owner:user._id, domain.intercept (imagesCount) ->
+          user.imagesCount = imagesCount
+          cb null, user
+      else
         cb null, user
     , cb
 
