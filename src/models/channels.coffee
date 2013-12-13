@@ -160,7 +160,7 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
   images.distinct 'owner', 'tags.channel':channelId, domain.intercept (ownerIds) ->
     async.reduce ownerIds, [],
       (leaders, ownerId, cb) ->
-        images.countInChannelByOwner domain, channelId, ownerId, highestCountItems(3, leaders, ownerId, cb)
+        images.countInChannelByOwner domain, channelId, ownerId, highestCountItems(3, leaders, {_id:ownerId}, cb)
       , (err, leaders) ->
           if err then cb err else
             data = null
@@ -199,6 +199,23 @@ channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChann
             if err then cb err else
               badges = badges.sort sortBy('-leaderPosition')
               callback null, badges
+
+channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChannelIds, userId, callback) ->
+  self = @
+  async.reduce filterChannelIds, [], (badges, channelId, cb) ->
+    self.isLeader domain, userId, channelId, (err, leaderData) ->
+      if err then cb err else
+        if leaderData
+          self.findOne(_id:channelId, {name:1, aliases:1}).lean().exec domain.intercept (channel) ->
+            _.extend channel, leaderData
+            images.count _id:channelId, domain.intercept (count) ->
+              highestCountItems(size, badges, channel, cb)(null, count)
+        else
+          cb null, badges
+  , (err, badges) ->
+    if err then cb err else
+      badges = badges.sort sortBy('-leaderPosition')
+      callback null, badges
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
@@ -328,15 +345,17 @@ toStringDifference = (arr1, arr2) ->
   filtered2 = arr2.filter (i) -> strArr1.indexOf(i.toString()) is -1
   filtered1.concat filtered2
 
-highestCountItems = (size, memo, id, cb) ->
+highestCountItems = (size, memo, doc, cb) ->
   (err, count) ->
     if err then cb err else
       if memo.length < size
-        memo.push { _id:id, count:count }
+        doc.count = count
+        memo.push doc
       else
         memo.forEach (leader, i) ->
           if count > memo[i].count and i < size
-            memo.splice i, 0, { _id:id, count:count }
+            doc.count = count
+            memo.splice i, 0, doc
             memo.pop()
       cb null, memo
 
@@ -350,7 +369,7 @@ highestImageCount = (domain, size, channelIds, callback) ->
   async.reduce channelIds, [],
     (popularChannelsData, channelId, cb) ->
       images.count _id:channelId, domain.intercept (count) ->
-        highestCountItems(size, popularChannelsData, channelId, cb)(null, count)
+        highestCountItems(size, popularChannelsData, {_id:channelId}, cb)(null, count)
   , callback
 
 sortBy = (attr) ->
