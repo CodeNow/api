@@ -31,11 +31,11 @@ module.exports = (parentDomain) ->
       channels.relatedChannels req.domain, channelNames, sendJSON
     else if req.query.popular?
       count = req.query.count
-      count = if count and count =< 5 then count else 5
+      count = if count and count <= 5 then count else 5
       channels.mostPopAffectedByUser req.domain, count, req,query.userId, sendJSON
     else if req.query.badges?
       count = req.query.count
-      count = if count and count =< 5 then count else 5
+      count = if count and count <= 5 then count else 5
       channels.leaderBadgesInChannelsForUser req.domain, count, req.query.channelIds, req.query.userId, req.query.userLeads, sendJSON
     else
       channels.listChannels req.domain, categories, sendJSON
