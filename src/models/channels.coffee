@@ -183,7 +183,7 @@ channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChann
   , (err, channelsUserLeadsData) ->
     if err then callback err else
       if channelsUserLeadsData.length <= size
-        async.map channelsUserLeadsData, extendWithNameAndCount(domain).bind(this)
+        async.map channelsUserLeadsData, self.extendWithNameAndCount(domain).bind(this)
         , callback
       else
         channelsLeadDataHash = {}
