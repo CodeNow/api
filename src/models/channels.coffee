@@ -153,7 +153,7 @@ channelSchema.statics.mostPopAffectedByUser = (domain, size, userId, callback) -
                   cb null, channel
         , (err, channels) ->
           if err then cb err else
-            channels.sort sortBy('ratio')
+            channels = channels.sort sortBy('ratio')
             callback null, channels
 
 channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
@@ -197,7 +197,7 @@ channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChann
               cb null, channel
           , (err, badges) ->
             if err then cb err else
-              badges.sort sortBy('-leaderPosition')
+              badges = badges.sort sortBy('-leaderPosition')
               cb null, badges
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
