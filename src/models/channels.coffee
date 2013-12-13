@@ -198,7 +198,7 @@ channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChann
           , (err, badges) ->
             if err then cb err else
               badges = badges.sort sortBy('-leaderPosition')
-              cb null, badges
+              callback null, badges
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
