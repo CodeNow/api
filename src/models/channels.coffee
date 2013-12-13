@@ -175,33 +175,6 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
 
 channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChannelIds, userId, callback) ->
   self = @
-  async.reduce filterChannelIds, [], (channelsUserLeadsData, channelId, cb) ->
-    self.isLeader domain, userId, channelId, (err, data) ->
-      if err then cb err else
-        if data then channelsUserLeadsData.push(data)
-        cb null, channelsUserLeadsData
-  , (err, channelsUserLeadsData) ->
-    if err then callback err else
-      if channelsUserLeadsData.length <= size
-        async.map channelsUserLeadsData, self.extendWithNameAndCount(domain).bind(self)
-        , callback
-      else
-        channelsLeadDataHash = {}
-        channelIds = channelsUserLeadsData.map (channelData) ->
-          channelsLeadDataHash[channelData._id]
-          channelData._id
-        highestImageCount domain, size, channelIds, (err, channelsData) ->
-          async.map channelsData, (channelData, cb) ->
-            self.findOne(_id:channelData._id, {name:1, aliases:1}).lean().exec domain.intercept (channel) ->
-              _.extend(channel, channelData, channelsLeadDataHash[channelData._id]) # get channel name and merge all count data
-              cb null, channel
-          , (err, badges) ->
-            if err then cb err else
-              badges = badges.sort sortBy('-leaderPosition')
-              callback null, badges
-
-channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChannelIds, userId, callback) ->
-  self = @
   async.reduce filterChannelIds, [], (badges, channelId, cb) ->
     self.isLeader domain, userId, channelId, (err, leaderData) ->
       if err then cb err else
