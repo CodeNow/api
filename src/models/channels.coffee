@@ -195,7 +195,10 @@ channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChann
             self.findOne(_id:channelData._id, {name:1, aliases:1}).lean().exec domain.intercept (channel) ->
               _extend(channel, channelData, channelsLeadDataHash[channelData._id]) # get channel name and merge all count data
               cb null, channel
-            , callback
+          , (err, badges) ->
+            if err then cb err else
+              badges.sort sortBy('-leaderPosition')
+              cb null, badges
 
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
@@ -351,9 +354,13 @@ highestImageCount = (domain, size, channelIds, callback) ->
   , callback
 
 sortBy = (attr) ->
+  inv = 1
+  if attr[1] is '-'
+    attr = attr.slice(1)
+    inv  = -1
   (a, b) ->
-    if a[attr] > b[attr] then return -1 else
-      if a[attr] < b[attr] then return 1 else
+    if a[attr] > b[attr] then return -1*inv else
+      if a[attr] < b[attr] then return 1*inv else
         return 0
 
 module.exports = mongoose.model 'Channels', channelSchema
