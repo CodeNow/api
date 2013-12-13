@@ -128,6 +128,7 @@ containerSchema.statics.create = (domain, owner, image, data, cb) ->
       "APACHE_RUN_USER=www-data"
       "APACHE_RUN_GROUP=www-data"
       "APACHE_LOG_DIR=/var/log/apache2"
+      "PATH=/dart-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     ]
     createContainer = (env, subdomain) =>
       container = new @
