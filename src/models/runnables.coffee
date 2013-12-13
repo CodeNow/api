@@ -76,6 +76,7 @@ Runnables =
                             caching.markCacheAsDirty()
 
   createContainer: (domain, userId, from, cb) ->
+    data = {}
     async.waterfall [
       (cb) ->
         if isObjectId64 from
@@ -92,13 +93,16 @@ Runnables =
                 images.find 'tags.channel': channel._id, null, options, domain.intercept (images) ->
                   if not images.length then cb error 400, "could not find runnable in #{tags.name} to fork from" else
                     cb null, images[0]
-              if not channel.base then useOldestProject() else
-                images.findById channel.base, domain.intercept (image) ->
-                  if not image then useOldestProject() else
-                    cb null, image
+              # determine if the container should be saved as a draft
+              users.findOne _id:userId, {permission_level:1}, domain.intercept (user) ->
+                if user.registered then data.saved = true
+                if not channel.base then useOldestProject() else
+                  images.findById channel.base, domain.intercept (image) ->
+                    if not image then useOldestProject() else
+                      cb null, image
 
       (image, cb)->
-        containers.create domain, userId, image, (err, container) ->
+        containers.create domain, userId, image, data, (err, container) ->
           if err then cb err else
             json_container = container.toJSON()
             encode domain, json_container, cb
