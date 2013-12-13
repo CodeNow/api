@@ -193,7 +193,7 @@ channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChann
         highestImageCount domain, size, channelIds, (err, channelsData) ->
           async.map channelsData, (channelData, cb) ->
             self.findOne(_id:channelData._id, {name:1, aliases:1}).lean().exec domain.intercept (channel) ->
-              _extend(channel, channelData, channelsLeadDataHash[channelData._id]) # get channel name and merge all count data
+              _.extend(channel, channelData, channelsLeadDataHash[channelData._id]) # get channel name and merge all count data
               cb null, channel
           , (err, badges) ->
             if err then cb err else
