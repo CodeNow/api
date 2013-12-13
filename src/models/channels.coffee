@@ -199,6 +199,75 @@ channelSchema.statics.getChannelLeaderBadges = (domain, count, userId, channelId
     if not Array.isArray channelIds then channelIds = [channelIds]
     getBadges(channelIds)
 
+channelSchema.statics.extendWithNameAndCount = (domain) ->
+  self = @
+  (channelData, cb) ->
+    channelId = channelData._id
+    self.findOne(_id:channelData._id, {name:1, aliases:1}).lean().exec domain.intercept (channel) ->
+      _.extend channel, channelData # get channel name
+      images.find('tags.channel':channelId).count().exec domain.intercept (count) ->
+        channel.count = count # get count
+        cb null, channel
+
+channelSchema.statics.mostPopAffectedByUser = (domain, size, userId, callback) ->
+  self = @
+  images.distinct 'tags.channel', { owner:userId }, domain.intercept (channelIds) ->
+    highestImageCount domain, size, channelIds, (err, popularChannelsData) ->
+      if err then cb err else
+        async.map popularChannelsData, (channelData, cb) ->
+          self.extendWithNameAndCount(domain).call self, channelData, (err, channel) ->
+            if err then cb err else
+              images.countInChannelByOwner domain, channel._id, userId, (err, userImagesCount) ->
+                if err then cb err else
+                  channel.userImagesCount = userImagesCount
+                  channel.ratio = channel.userImagesCount/channel.count
+                  cb null, channel
+        , (err, channels) ->
+          if err then cb err else
+            channels.sort sortBy('ratio')
+            callback null, channels
+
+channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
+  images.distinct 'owner', 'tags.channel':channelId, domain.intercept (ownerIds) ->
+    async.reduce ownerIds, [],
+      (leaders, ownerId, cb) ->
+        images.countInChannelByOwner domain, channelId, ownerId, highestCountItems(3, leaders, ownerId, cb)
+      , (err, leaders) ->
+          if err then cb err else
+            data = null
+            leaders.some (leader, i) ->
+              if leader._id.toString() is userId.toString()
+                data =
+                  _id: channelId
+                  leaderPosition: i+1,
+                  leaderImagesCount: leader.count
+                return true
+            cb null, data
+
+leaderBadgesInChannelsForUser = (domain, size, filterChannelIds, userId, callback) ->
+  self = @
+  async.reduce filterChannelIds, [], (channelsUserLeadsData, channelId, cb) ->
+    self.isLeader domain, userId, channelId, (err, data) ->
+      if err then cb err else
+        if data then channelsUserLeadsData.push(data)
+        cb null, channelsUserLeadsData
+  , (err, channelsUserLeadsData) ->
+    if err then callback err else
+      if channelsUserLeadsData.length <= size
+        async.map channelsUserLeadsData, extendWithNameAndCount(domain).bind(this)
+        , callback
+      else
+        channelsLeadDataHash = {}
+        channelIds = channelsUserLeadsData.map (channelData) ->
+          channelsLeadDataHash[channelData._id]
+          channelData._id
+        highestImageCount domain, size, channelIds, (err, channelsData) ->
+          async.map channelsData, (channelData, cb) ->
+            self.findOne(_id:channelData._id, {name:1, aliases:1}).lean().exec domain.intercept (channel) ->
+              _extend(channel, channelData, channelsLeadDataHash[channelData._id]) # get channel name and merge all count data
+              cb null, channel
+            , callback
+
 channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName, cb) ->
   categories.findOne aliases: categoryName.toLowerCase(), domain.intercept (category) =>
     if not category then cb error 404, 'could not find category' else
@@ -326,5 +395,36 @@ toStringDifference = (arr1, arr2) ->
   filtered1 = arr1.filter (i) -> strArr2.indexOf(i.toString()) is -1
   filtered2 = arr2.filter (i) -> strArr1.indexOf(i.toString()) is -1
   filtered1.concat filtered2
+
+highestCountItems = (size, memo, id, cb) ->
+  (err, count) ->
+    if err then cb err else
+      if memo.length < size
+        memo.push { _id:id, count:count }
+      else
+        memo.forEach (leader, i) ->
+          if count > memo[i].count and i < size
+            memo.splice i, 0, { _id:id, count:count }
+            memo.pop()
+      cb null, memo
+
+highestImagesOwnedByCount = (domain, size, channelIds, ownerId, callback) ->
+  async.reduce channelIds, [],
+    (popularChannelsData, channelId, cb) ->
+      images.countInChannelByOwner domain, channelId, ownerId, highestCountItems(size, popularChannelsData, channelId, cb)
+  , callback
+
+highestImageCount = (domain, size, channelIds, callback) ->
+  async.reduce channelIds, [],
+    (popularChannelsData, channelId, cb) ->
+      images.count _id:channelId, domain.intercept (count) ->
+        highestCountItems(size, popularChannelsData, channelId, cb)(null, count)
+  , callback
+
+sortBy = (attr) ->
+  (a, b) ->
+    if a[attr] > b[attr] then return -1 else
+      if a[attr] < b[attr] then return 1 else
+        return 0
 
 module.exports = mongoose.model 'Channels', channelSchema
