@@ -355,7 +355,7 @@ highestImageCount = (domain, size, channelIds, callback) ->
 
 sortBy = (attr) ->
   inv = 1
-  if attr[1] is '-'
+  if attr[0] is '-'
     attr = attr.slice(1)
     inv  = -1
   (a, b) ->
