@@ -153,7 +153,7 @@ userSchema.statics.publicListWithIds = (domain, userIds, cb) ->
 
 userSchema.statics.publicList = (domain, query, cb) ->
   @find query, publicFields, domain.intercept (users) ->
-    async.map users, (user) ->
+    async.map users, (user, cb) ->
       user = user.toJSON()
       if !user.show_email then user.email = undefined
       if users.length is 1
