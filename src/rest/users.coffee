@@ -145,6 +145,7 @@ module.exports = (parentDomain) ->
       'name'
       'company'
       'show_email'
+      'initial_referrer'
     ]
     data = _.pick(req.body, allowed);
     users.updateUser req.domain, req.user_id, data, {password:0, votes:0}, (err, user) ->
