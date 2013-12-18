@@ -33,6 +33,8 @@ userSchema = new Schema
   created:
     type: Date
     default: Date.now
+  initial_referrer:
+    type: String
   copies:
     type: Number
     default: 0
