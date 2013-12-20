@@ -321,15 +321,20 @@ toStringDifference = (arr1, arr2) ->
 highestCountItems = (size, memo, doc, cb) ->
   (err, count) ->
     if err then cb err else
-      if memo.length < size
+      if memo.length is 0
         doc.count = count
         memo.push doc
       else
-        memo.forEach (leader, i) ->
-          if count > memo[i].count and i < size
+        inserted = memo.some (memoItem, i) ->
+          if count > memoItem.count
             doc.count = count
             memo.splice i, 0, doc
-            memo.pop()
+            if memo.length > size
+              memo.pop()
+            return true
+        if not inserted and memo.length<size
+          doc.count = count
+          memo.push doc
       cb null, memo
 
 highestImagesOwnedByCount = (domain, size, channelIds, ownerId, callback) ->
@@ -341,7 +346,7 @@ highestImagesOwnedByCount = (domain, size, channelIds, ownerId, callback) ->
 highestImageCount = (domain, size, channelIds, callback) ->
   async.reduce channelIds, [],
     (popularChannelsData, channelId, cb) ->
-      images.count _id:channelId, domain.intercept (count) ->
+      images.count 'tags.channel':channelId, domain.intercept (count) ->
         highestCountItems(size, popularChannelsData, {_id:channelId}, cb)(null, count)
   , callback
 
