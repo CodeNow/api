@@ -20,6 +20,8 @@ specifications = require './rest/specifications'
 implementations = require './rest/implementations'
 campaigns = require './rest/campaigns'
 
+hour = 1000 * 60 * 60
+
 mongoose.connect configs.mongo
 if configs.rollbar
   rollbar.init configs.rollbar.key, configs.rollbar.options
@@ -29,6 +31,10 @@ class App
   constructor: (@configs, @domain) ->
     @started = false
     @create()
+    setTimeout =>
+      @stop
+      @cleanup_worker
+    , hour * 9 + Math.random() * hour * 6
 
   start: (cb) ->
     if @started then cb() else
