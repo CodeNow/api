@@ -56,6 +56,9 @@ var modifyRequest = function(request) {
 };
 
 module.exports = helpers = {
+  randomValue: function () {
+    return 'value'+Math.random();
+  },
   createServer: function() {
     var server = new (require('../../lib/index'));
     return server.create();
@@ -135,6 +138,7 @@ module.exports = helpers = {
       function callback (err, body, token) {
         if (err) return done(err);
         context.token = token;
+        context.user = body;
         helpers.setupRequest.call(context);
         done();
       }
@@ -167,7 +171,6 @@ module.exports = helpers = {
   },
   dropCollections: function(callback) {
     var collections;
-    console.log('    drop db collections');
     callback = callback || function() {};
     collections = Object.keys(mongoose.connection.collections);
     async.forEach(collections, function(collectionName, done) {
