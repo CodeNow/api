@@ -1,12 +1,11 @@
 machine:
   environment:
-    NODE_ENV: circle
+    NODE_ENV: testing
 dependencies:
   override:
-    - nvm install 0.10.12
-    - nvm alias default 0.10.12
+    - nvm install 0.10.22
+    - nvm alias default 0.10.22
     - npm install
-    - make build
 test:
   override:
-    - ./node_modules/.bin/mocha --reporter spec
+    - npm test
