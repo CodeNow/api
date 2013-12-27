@@ -1,7 +1,7 @@
 {
   "tokenExpires": "5 minutes",
   "passwordSalt" : "$up3r,$3<r3t",
-  "mongo": "mongodb://127.0.0.1:27017/runnable_{RAND_NUM}",
+  "mongo": "mongodb://127.0.0.1:27017/runnable_test123",
   "port": 3031,
   "redis": {
     "ipaddress": "127.0.0.1",

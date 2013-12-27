@@ -1,6 +1,6 @@
 --ui bdd
 --compilers coffee:coffee-script
---reporter spec
+--bail
 --require should
 --slow 120000
 --timeout 240000
