@@ -135,6 +135,7 @@ containerSchema.statics.create = (domain, owner, image, data, cb) ->
         parent: image
         name: image.name
         owner: owner
+        description: image.description
         port: image.port
         cmd: image.cmd
         image: image.image
