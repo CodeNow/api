@@ -177,7 +177,9 @@ syncDockerImage = (domain, image, cb) ->
       Cmd: [ image.cmd ]
   , domain.intercept (res, body) ->
     if res.statusCode isnt 201 then cb error res.statusCode, body else
+      console.log('SYNC')
       sync domain, servicesToken, image, (err) ->
+        console.log('SYNC ocmplete')
         if err then cb err else
           request
             pool: false
@@ -188,12 +190,14 @@ syncDockerImage = (domain, image, cb) ->
               cb()
 
 imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
+  console.log('IMAGES.CREATEFROMDISK')
   fs.exists "#{runnablePath}/runnable.json", (exists) =>
     if not exists then cb error 400, 'runnable.json not found' else
       try
         runnable = require "#{runnablePath}/runnable.json"
       catch err
         err = err
+      console.log('before runnable.json')
       if err then cb error 400, 'runnable.json is not valid' else
         if not runnable.name then cb error 400, 'runnable.json is not valid' else
           fs.exists "#{runnablePath}/Dockerfile", (exists) =>
@@ -211,6 +215,7 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
                     writestream.on 'error', (err) ->
                       throw err
                     writestream.on 'close', () =>
+                      console.log('before findOne')
                       @findOne name: runnable.name, domain.intercept (existing) =>
                         if existing then cb error 403, 'a runnable by that name already exists' else
                           image = new @()
