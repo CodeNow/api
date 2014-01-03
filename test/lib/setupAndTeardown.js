@@ -1,3 +1,4 @@
+var db = require('db');
 // BEFORE ALL
 
 // AFTER ALL
