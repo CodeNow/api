@@ -13,7 +13,7 @@ var db = module.exports = {
       if (collectionName === 'images' || collectionName === 'containers') {
         var url = (collectionName === 'images') ? '/runnables/' : '/me/runnables'
         collection.find(function (err, runnables) {
-          if (err) return cb(err);
+          if (err) return callback(err);
           async.each(runnables, function (runnable, cb) {
             users.createAdmin({}, function (err, user) {
               if (err) return cb(err);
@@ -21,7 +21,7 @@ var db = module.exports = {
                 .expect(200)
                 .done(cb);
             })
-          }, cb)
+          }, callback);
         });
       }
       else {
