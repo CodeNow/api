@@ -53,10 +53,11 @@
   "scripts": {
     "start": "npm build; node server.js",
     "build": "coffee -m -o lib src",
-    "watch": "npm build; coffee -m -w -o lib src & nodemon -w lib -w configs -q server.js",
+    "watch": "npm run build; coffee -m -w -o lib src & nodemon -w lib -w configs -q server.js",
     "testwatch": "coffee -m -w -o lib src & NODE_ENV=testing nodemon --delay 1 -w lib -w test -w configs -x mocha test",
-    "coverage": "npm build; jscoverage l ib lib-cov; rm -rf lib; mv lib-cov lib; mkdir ./coverage; mocha -t 10000 --reporter html-cov > ./coverage/index.html",
-    "test": "npm build; NODE_ENV=testing mocha",
+    "coverage": "npm run build; jscoverage l ib lib-cov; rm -rf lib; mv lib-cov lib; mkdir ./coverage; mocha -t 10000 --reporter html-cov > ./coverage/index.html",
+    "test": "npm run build; NODE_ENV=testing mocha",
+    "test-int": "npm run build; NODE_ENV=testing-integration mocha",
     "clean": "rm -rf ./lib; rm -rf ./coverage"
   }
 }
