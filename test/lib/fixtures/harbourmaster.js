@@ -40,10 +40,14 @@ app.all('*', function (req, res, next) {
 module.exports = {
   app: app,
   start: function (callback) {
+    // hack block mocks on testing int for now
+    if (process.env.NODE_ENV === 'testing-integration') return callback();
     console.log('harbourmasterport', port)
     app.listen(port, callback);
   },
   stop: function (callback) {
+    // hack block mocks on testing int for now
+    if (process.env.NODE_ENV === 'testing-integration') return callback();
     app.close(callback);
   }
 };
