@@ -51,23 +51,14 @@ module.exports = (parentDomain) ->
           fs.readdir tmpdir, (err, files) ->
             if err then throw err
             newPath = "#{tmpdir}/#{files[0]}"
-            console.log('checkexists')
             fs.exists "#{newPath}/runnable.json", (exists) ->
-              console.log('exists')
-              console.log('runnables.createImageFromDisk', exists);
               if not exists
-                console.log('COUNT NOT FOIND RUNNABLE.JSON')
                 res.json 403, message: 'could not find runnable.json'
               else
-                console.log('runnables.beforecreateImageFromDisk123');
                 runnables.createImageFromDisk req.domain, req.user_id, newPath, sync, (err, runnable) ->
-                  console.log('runnables.createImageFromDisk123');
                   if err then res.json err.code, message: err.msg else
                     rimraf tmpdir, (err) ->
                       if err then throw err
-                      console.log(runnable._id)
-                      console.log(runnable._id)
-                      console.log(runnable._id)
                       res.json 201, runnable
 
   app.get '/runnables/:id/export', (req, res) ->

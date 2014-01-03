@@ -167,19 +167,19 @@ syncDockerImage = (domain, image, cb) ->
         "RUNNABLE_SERVICE_CMDS=#{image.service_cmds}"
         "RUNNABLE_START_CMD=#{image.start_cmd}"
         "RUNNABLE_BUILD_CMD=#{image.build_cmd}"
+        "SERVICES_TOKEN=#{servicesToken}"
         "APACHE_RUN_USER=www-data"
         "APACHE_RUN_GROUP=www-data"
         "APACHE_LOG_DIR=/var/log/apache2"
+        "PATH=/dart-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
       ]
       Hostname: image._id.toString()
       Image: imageTag
       PortSpecs: [ image.port.toString() ]
       Cmd: [ image.cmd ]
   , domain.intercept (res, body) ->
-    if res.statusCode isnt 201 then cb error res.statusCode, body else
-      console.log('SYNC')
+    if res.statusCode isnt 204 then cb error res.statusCode, body else
       sync domain, servicesToken, image, (err) ->
-        console.log('SYNC ocmplete')
         if err then cb err else
           request
             pool: false
@@ -190,14 +190,12 @@ syncDockerImage = (domain, image, cb) ->
               cb()
 
 imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
-  console.log('IMAGES.CREATEFROMDISK')
   fs.exists "#{runnablePath}/runnable.json", (exists) =>
     if not exists then cb error 400, 'runnable.json not found' else
       try
         runnable = require "#{runnablePath}/runnable.json"
       catch err
         err = err
-      console.log('before runnable.json')
       if err then cb error 400, 'runnable.json is not valid' else
         if not runnable.name then cb error 400, 'runnable.json is not valid' else
           fs.exists "#{runnablePath}/Dockerfile", (exists) =>
@@ -215,7 +213,6 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
                     writestream.on 'error', (err) ->
                       throw err
                     writestream.on 'close', () =>
-                      console.log('before findOne')
                       @findOne name: runnable.name, domain.intercept (existing) =>
                         if existing then cb error 403, 'a runnable by that name already exists' else
                           image = new @()

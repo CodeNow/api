@@ -1,3 +1,4 @@
+require('./setupAndTeardown');
 var coffee = require('coffee-script');
 var async = require('async');
 var _ = require('lodash')
@@ -46,12 +47,6 @@ module.exports = helpers = {
       });
     }
   },
-  specHttpMethod: function (context) {
-    return spec.title.split(' ')[0];
-  },
-  specUrlPath: function () {
-    spec.title.split(' ')
-  },
   randomValue: function () {
     return 'value'+Math.random();
   },
@@ -69,7 +64,10 @@ module.exports = helpers = {
     users.createAdmin(function (err, user) {
       if (err) return callback(err);
       user.createImageFromFixture(name)
-        .streamEnd(callback);
+        .streamEnd(function (err, res) {
+          if (err) return callback(err);
+          callback(null, res.body);
+        });
     });
   }
 };
@@ -82,11 +80,3 @@ httpMethods.forEach(function (method) {
     return request;
   }
 });
-
-
-
-
-// BEFORE ALL
-
-// AFTER ALL
-process.on('exit', db.dropDatabase);

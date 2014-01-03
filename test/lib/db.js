@@ -11,7 +11,7 @@ var db = module.exports = {
       var collection = mongoose.connection.collections[collectionName];
       // if (false) {
       if (collectionName === 'images' || collectionName === 'containers') {
-        var url = (collectionName === 'images') '/runnables/' : '/me/runnables'
+        var url = (collectionName === 'images') ? '/runnables/' : '/me/runnables'
         collection.find.toArray(function (err, runnables) {
           if (err) return cb(err);
           async.each(runnables, function (runnable, cb) {
