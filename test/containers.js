@@ -1,4 +1,4 @@
-require('console-trace')({always:true, right:true})
+//require('console-trace')({always:true, right:true})
 var _ = require('lodash');
 var async = require('async');
 var db = require('./lib/db');
