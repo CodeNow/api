@@ -203,7 +203,7 @@ containerSchema.statics.destroy = (domain, id, cb) ->
 
 containerSchema.statics.listSavedContainers = (domain, cb) ->
   timeout = (new Date()).getTime() - configs.containerTimeout
-  @find { $or: [ { saved: true }, { created: $gte: timeout } ] }, domain.intercept cb
+  @find { $or: [ { saved: true }, { created: $gte: timeout } ] }, { files:0 }, domain.intercept cb # exclude files to avoid parse error
 
 containerSchema.methods.updateRunOptions = (domain, cb) ->
   self = @
