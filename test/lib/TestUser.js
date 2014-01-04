@@ -13,7 +13,6 @@ var TestUser = module.exports = function (properties) {
 httpMethods.forEach(function (method) {
   TestUser.prototype[method] = function (path, token) {
     token = token || this.access_token;
-    console.log('token', path, token);
     return helpers.request[method](path, token)
   };
 });
@@ -23,7 +22,7 @@ TestUser.prototype.specRequest = function (query) {
   var path   = titlesplit[1];
   var querystring = query ? '?'+qs.stringify(query) : '';
   if (typeof this[method] !== 'function') {
-    console.log('"' +method+ '" is not an http method');
+    console.error('"' +method+ '" is not an http method');
   }
   return this[method](path+querystring);
 };
