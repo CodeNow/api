@@ -48,5 +48,7 @@ module.exports = [
   '.sh'
   '.mustache'
   '.haml'
+  '.cfm'
+  '.cfc'
   ''
 ]

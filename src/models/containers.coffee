@@ -135,6 +135,7 @@ containerSchema.statics.create = (domain, owner, image, data, cb) ->
         parent: image
         name: image.name
         owner: owner
+        description: image.description
         port: image.port
         cmd: image.cmd
         image: image.image
@@ -201,7 +202,7 @@ containerSchema.statics.destroy = (domain, id, cb) ->
 
 containerSchema.statics.listSavedContainers = (domain, cb) ->
   timeout = (new Date()).getTime() - configs.containerTimeout
-  @find { $or: [ { saved: true }, { created: $gte: timeout } ] }, domain.intercept cb
+  @find { $or: [ { saved: true }, { created: $gte: timeout } ] }, { files:0 }, domain.intercept cb # exclude files to avoid parse error
 
 containerSchema.methods.updateRunOptions = (domain, cb) ->
   self = @
