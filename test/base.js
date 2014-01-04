@@ -36,3 +36,15 @@ describe('GET /cleanup', function () {
       .end(done);
   });
 });
+
+describe('GET /cache', function () {
+  beforeEach(extendContext({
+    user : users.createAdmin
+  }));
+  afterEach(db.dropCollections);
+  it('should respond 200', function (done) {
+    this.user.specRequest()
+      .expect(200)
+      .end(done);
+  });
+});
