@@ -157,7 +157,6 @@ containerSchema.statics.create = (domain, owner, image, data, cb) ->
       else
         repo = encodeId image._id.toString()
       _.extend container, data
-      console.log 'Image', "#{configs.dockerRegistry}/runnable/#{repo}"
       request
         url: "#{configs.harbourmaster}/containers"
         method: 'POST'
