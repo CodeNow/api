@@ -17,6 +17,7 @@ httpMethods.forEach(function (method) {
     return helpers.request[method](path, token)
   };
 });
+// path args ... [query]
 TestUser.prototype.specRequest = function () {
   var reqsplit = this.requestStr.split(' ')
   var method = reqsplit[0].toLowerCase();
@@ -24,9 +25,7 @@ TestUser.prototype.specRequest = function () {
   if (!method || !path) throw new Error('spec request was not found');
 
   var args = Array.prototype.slice(arguments);
-  var lastArg = args[args.length - 1];
-  var query;
-  if (_.isObject(lastArg)) query = args.pop();
+  if (_.isObject(args[args.length - 1])) query = args.pop();
 
   var pathArgRegExp = /(\/):[^\/]*/;
   args.forEach(function (arg) {
