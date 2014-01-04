@@ -24,7 +24,7 @@ TestUser.prototype.specRequest = function () {
   var method = reqsplit[0].toLowerCase();
   var path   = reqsplit[1];
 
-  var args = Array.prototype.slice(arguments);
+  var args = Array.prototype.slice.call(arguments);
   var query;
   if (_.isObject(args[args.length - 1])) query = args.pop();
 
