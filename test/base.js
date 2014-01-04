@@ -25,6 +25,7 @@ describe('GET /super-fake-route', function() {
   });
 });
 
+// needs normal user
 describe('GET /cleanup', function () {
   beforeEach(extendContext({
     user : users.createAdmin
@@ -37,6 +38,7 @@ describe('GET /cleanup', function () {
   });
 });
 
+// needs normal user
 describe('GET /cache', function () {
   beforeEach(extendContext({
     user : users.createAdmin
