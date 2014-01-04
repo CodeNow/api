@@ -3,11 +3,15 @@ debug = require('debug')('volumes')
 error = require '../error'
 request = require 'request'
 
+if (configs.dockworkerProxy)
+  proxy = configs.dockworkerProxy
+
 Volumes =
 
   createFile: (domain, subDomain, srcDir, name, path, content, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/create"
       method: 'POST'
       json:
@@ -24,6 +28,7 @@ Volumes =
   streamFile: (domain, subDomain, srcDir, name, path, stream, cb) ->
     r = request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/stream"
       method: 'POST'
     form = r.form()
@@ -42,6 +47,7 @@ Volumes =
   readFile: (domain, subDomain, srcDir, name, path, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/read"
       method: 'POST'
       json:
@@ -57,6 +63,7 @@ Volumes =
   updateFile: (domain, subDomain, srcDir, name, path, content, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/update"
       method: 'POST'
       json:
@@ -73,6 +80,7 @@ Volumes =
   deleteFile: (domain, subDomain, srcDir, name, path, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/delete"
       method: 'POST'
       json:
@@ -88,6 +96,7 @@ Volumes =
   renameFile: (domain, subDomain, srcDir, name, path, newName, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/rename"
       method: 'POST'
       json:
@@ -104,6 +113,7 @@ Volumes =
   moveFile: (domain, subDomain, srcDir, name, path, newPath, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/move"
       method: 'POST'
       json:
@@ -120,6 +130,7 @@ Volumes =
   readAllFiles: (domain, subDomain, srcDir, ignores, exts, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/readall"
       method: 'POST'
       json:
@@ -135,6 +146,7 @@ Volumes =
   createDirectory: (domain, subDomain, srcDir, name, path, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/mkdir"
       method: 'POST'
       json:
@@ -150,6 +162,7 @@ Volumes =
   readDirectory: (domain, subDomain, srcDir, subDir, exts, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/readdir"
       method: 'POST'
       json:
@@ -165,6 +178,7 @@ Volumes =
   removeDirectory: (domain, subDomain, srcDir, name, path, recursive, cb) ->
     request
       pool: false
+      proxy: proxy
       url: "http://#{subDomain}.#{configs.domain}/api/files/rmdir"
       method: 'POST'
       json:

@@ -8,15 +8,23 @@ var extendContext = helpers.extendContext;
 var asyncExtend = helpers.asyncExtend;
 var mongoose = require('mongoose');
 var hb = require('./lib/fixtures/harbourmaster')
+var dw = require('./lib/fixtures/dockworker')
 
 describe('containers', function () {
   var image;
 
   before(function (done) {
-    helpers.createImageFromFixture('node.js', function (err, data) {
+    async.parallel([
+      hb.start,
+      dw.start
+    ],
+    function (err) {
       if (err) return done(err);
-      image = data;
-      done();
+      helpers.createImageFromFixture('node.js', function (err, data) {
+        if (err) return done(err);
+        image = data;
+        done();
+      });
     });
   });
   after(function (done) {
