@@ -2,12 +2,12 @@ var _ = require('lodash');
 var async = require('async');
 var db = require('./db');
 var helpers = require('./helpers');
-var user = require('./userFactory');
+var users = require('./userFactory');
 
 function createCategory (name, cb) {
   async.waterfall([
     function (cb) {
-      user.createAdmin({
+      users.createAdmin({
         'username': helpers.randomValue(),
         'email': helpers.randomValue() + '@fake.com'
       }, cb);
