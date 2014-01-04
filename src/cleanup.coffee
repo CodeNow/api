@@ -56,7 +56,6 @@ cleanupContainersNotIn = (domain, whitelist, cb) ->
         json: whiteServicesTokens
         pool: false
       , (err, res, body) ->
-        console.log err, 'sup'
         if err then domain.emit 'error', err else
           if res.statusCode isnt 200
             cb status: 500, message: 'whitelist not accepted by harbourmaster', body: body

@@ -9,6 +9,9 @@ app.post('/build', function (req, res, next) {
 app.post('/containers', function (req, res, next) {
   res.send(204);
 });
+app.post('/containers/cleanup', function (req, res, next) {
+  res.send(200);
+});
 app.post('/containers/:token', function (req, res, next) {
   res.send(204);
 });
@@ -17,6 +20,7 @@ app.del('/containers/:token', function (req, res, next) {
 })
 app.all('*', express.logger(), function (req, res, next) {
   res.send(404);
+  console.log(req.url, req.method);
 });
 
 if (process.env.NODE_ENV !== 'testing-integration') {
