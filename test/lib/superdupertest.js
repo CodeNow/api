@@ -9,6 +9,11 @@ function error(msg, expected, actual) {
   return err;
 }
 
+Test.prototype.expectArray = function () {
+  this._bodyIsArray = true;
+  return this;
+}
+
 Test.prototype.expectBody = function (key, value) {
   this._bodyKeysExist = this._bodyKeysExist || [];
   this._bodyValues    = this._bodyValues    || {};
@@ -57,6 +62,13 @@ Test.prototype._checkExpectedBodyValues = function (res) {
       }
     }
   };
+
+  if (self._bodyIsArray) {
+    if (!Array.isArray(res.body)) {
+      err = error('expected "res.body" to be an array, got', res.body);
+    }
+    if (err) return err;
+  }
 
   if (self._bodyKeysExist) {
     self._bodyKeysExist.every(bodyKeyExists);
