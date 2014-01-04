@@ -25,6 +25,7 @@ TestUser.prototype.specRequest = function () {
   if (!method || !path) throw new Error('spec request was not found');
 
   var args = Array.prototype.slice(arguments);
+  var query;
   if (_.isObject(args[args.length - 1])) query = args.pop();
 
   var pathArgRegExp = /(\/):[^\/]*/;
