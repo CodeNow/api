@@ -14,6 +14,18 @@ var extendWith = function (obj2) {
 };
 
 module.exports = helpers = {
+  getRequestStr: function (context) {
+    var spec = context.runnable();
+    var title = false;
+    while (spec) {
+      if (/^[^ ]* \/[^ ]*$/.test(spec.title)) {
+        title = spec.title
+        break;
+      }
+      spec = spec.parent;
+    }
+    return title;
+  },
   asyncExtend: function (dst, src, cb) {
     async.parallel(src, function (err, results) {
       if (err) return cb(err);
@@ -39,10 +51,10 @@ module.exports = helpers = {
           context[key] = val;
         }
       });
-      var specTitle = context.runnable().parent.title;
+      var requestStr = helpers.getRequestStr(context);
       helpers.asyncExtend(context, tasks, function (err, ctx, results) {
         if (err) return done(err);
-        _.values(results).forEach(extendWith({specTitle:specTitle}));
+        _.values(results).forEach(extendWith({requestStr:requestStr}));
         done()
       });
     }
