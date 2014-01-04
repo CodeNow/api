@@ -11,6 +11,7 @@ var TestUser = module.exports = function (properties) {
 };
 /* TestUser.prototype[post, get, put, patch, delete, ...] */
 httpMethods.forEach(function (method) {
+  if (method === 'delete') method = 'del';
   TestUser.prototype[method] = function (path, token) {
     token = token || this.access_token;
     return helpers.request[method](path, token)

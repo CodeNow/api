@@ -69,10 +69,26 @@ module.exports = helpers = {
           callback(null, res.body);
         });
     });
+  },
+  deleteImage: function (imageId, callback) {
+    helpers.deleteRunnable('/runnables/', imageId, callback)
+  },
+  deleteContainer: function (containerId, callback) {
+    helpers.deleteRunnable('/users/me/runnables/', containerId, callback)
+  },
+  deleteRunnable: function (urlPath, runnableId, callback) {
+    var users = require('./userFactory');
+    users.createAdmin({}, function (err, user) {
+      if (err) return callback(err);
+      user.del(urlPath + runnableId)
+        .expect(200)
+        .end(callback);
+    });
   }
 };
 helpers.request = { /* post, get, put, patch, delete, ... */ };
 httpMethods.forEach(function (method) {
+  if (method === 'delete') method = 'del';
   helpers.request[method] = function (urlPath, token) {
     var app = helpers.createServer();
     var request = st(app)[method.toLowerCase()](urlPath);
