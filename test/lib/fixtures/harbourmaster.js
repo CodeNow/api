@@ -9,6 +9,9 @@ app.post('/build', function (req, res, next) {
 app.post('/containers', function (req, res, next) {
   res.send(204);
 });
+app.post('/containers/cleanup', function (req, res, next) {
+  res.send(200);
+});
 app.post('/containers/:token', function (req, res, next) {
   res.send(204);
 });
@@ -17,19 +20,9 @@ app.del('/containers/:token', function (req, res, next) {
 })
 app.all('*', express.logger(), function (req, res, next) {
   res.send(404);
+  console.log(req.url, req.method);
 });
 
-
-module.exports = {
-  app: app,
-  start: function (callback) {
-    // hack block mocks on testing int for now
-    if (process.env.NODE_ENV === 'testing-integration') return callback();
-    app.listen(port, callback);
-  },
-  stop: function (callback) {
-    // hack block mocks on testing int for now
-    if (process.env.NODE_ENV === 'testing-integration') return callback();
-    app.close(callback);
-  }
-};
+if (process.env.NODE_ENV !== 'testing-integration') {
+  app.listen(port);
+}

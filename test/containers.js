@@ -1,4 +1,4 @@
-require('console-trace')({always:true, right:true})
+//require('console-trace')({always:true, right:true})
 var _ = require('lodash');
 var async = require('async');
 var db = require('./lib/db');
@@ -14,17 +14,10 @@ describe('containers', function () {
   var image;
 
   before(function (done) {
-    async.parallel([
-      hb.start,
-      dw.start
-    ],
-    function (err) {
+    helpers.createImageFromFixture('node.js', function (err, data) {
       if (err) return done(err);
-      helpers.createImageFromFixture('node.js', function (err, data) {
-        if (err) return done(err);
-        image = data;
-        done();
-      });
+      image = data;
+      done();
     });
   });
   after(function (done) {
@@ -33,7 +26,6 @@ describe('containers', function () {
 
   describe('POST /users/me/runnables', function () {
     beforeEach(extendContext({
-      hb   : hb.start,
       user : users.createAnonymous
     }));
     afterEach(async.series.bind(async, [
