@@ -7,11 +7,14 @@ app.post('/build', function (req, res, next) {
   res.send(200, 'Successfully built');
 });
 app.post('/containers', function (req, res, next) {
-  res.send(201);
+  res.send(204);
 });
 app.post('/containers/:token', function (req, res, next) {
   res.send(204);
 });
+app.del('/containers/:token', function (req, res, next) {
+  res.send(204);
+})
 app.all('*', express.logger(), function (req, res, next) {
   res.send(404);
 });
@@ -22,7 +25,6 @@ module.exports = {
   start: function (callback) {
     // hack block mocks on testing int for now
     if (process.env.NODE_ENV === 'testing-integration') return callback();
-    console.log('harbourmasterport', port)
     app.listen(port, callback);
   },
   stop: function (callback) {

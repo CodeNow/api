@@ -7,11 +7,13 @@ var helpers = require('./lib/helpers');
 var extendContext = helpers.extendContext;
 var asyncExtend = helpers.asyncExtend;
 var mongoose = require('mongoose');
-var hb = require('./lib/fixtures/harbourmaster')
+var hb = require('./lib/fixtures/harbourmaster');
+var dw = require('./lib/fixtures/dockworker');
 
 describe('POST /users/me/runnables', function () {
   beforeEach(extendContext({
     hb   : hb.start,
+    dw   : dw.start,
     user : users.createAnonymous,
     image: helpers.createImageFromFixture.bind(helpers, 'node.js')
   }));
