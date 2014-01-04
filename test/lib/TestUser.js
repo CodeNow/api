@@ -17,10 +17,23 @@ httpMethods.forEach(function (method) {
     return helpers.request[method](path, token)
   };
 });
-TestUser.prototype.specRequest = function (query) {
-  var titlesplit = this.specTitle.split(' ')
-  var method = titlesplit[0].toLowerCase();
-  var path   = titlesplit[1];
+// path args ... [query]
+TestUser.prototype.specRequest = function () {
+  if (!(typeof this.requestStr === 'string')) throw new Error('spec request was not found');
+  var reqsplit = this.requestStr.split(' ')
+  var method = reqsplit[0].toLowerCase();
+  var path   = reqsplit[1];
+
+  var args = Array.prototype.slice(arguments);
+  var query;
+  if (_.isObject(args[args.length - 1])) query = args.pop();
+
+  var pathArgRegExp = /(\/):[^\/]*/;
+  args.forEach(function (arg) {
+    path = path.replace(pathArgRegExp, '$1'+arg);
+  });
+  if (pathArgRegExp.test(path)) throw new Error('missing args for path')
+
   var querystring = query ? '?'+qs.stringify(query) : '';
   if (typeof this[method] !== 'function') {
     console.error('"' +method+ '" is not an http method');
