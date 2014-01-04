@@ -7,12 +7,6 @@ var httpMethods = require('methods');
 var configs = require('../../lib/configs');
 var db = require('./db');
 
-var extendWith = function (obj2) {
-  return function (obj1) {
-    _.extend(obj1, obj2);
-  }
-};
-
 module.exports = helpers = {
   getRequestStr: function (context) {
     var spec = context.runnable();
@@ -33,8 +27,23 @@ module.exports = helpers = {
       cb(null, dst, results);
     });
   },
+  deleteKeys: function (obj, keys) {
+    keys = Array.isArray(keys) ?
+      keys :
+      Array.prototype.slice.call(arguments, 1);
+
+    keys.forEach(function (key) {
+      delete obj[key];
+    });
+  },
+  extendWith: function (obj2) {
+    return function (obj1) {
+      _.extend(obj1, obj2);
+    }
+  },
   extendContext: function (key, value) {
     var obj;
+    var extendWith = helpers.extendWith;
     if (typeof key === 'object') obj = key; else {
       obj = {}
       obj[key] = value;
@@ -71,31 +80,36 @@ module.exports = helpers = {
     });
     return server.create();
   },
-  createImageFromFixture: function (name, callback) {
-    var users = require('./userFactory');
-    users.createAdmin(function (err, user) {
-      if (err) return callback(err);
-      user.createImageFromFixture(name)
-        .streamEnd(function (err, res) {
-          if (err) return callback(err);
-          callback(null, res.body);
-        });
-    });
+  cleanup: function (callback) {
+    return helpers.cleanupExcept()(callback);
   },
-  deleteImage: function (imageId, callback) {
-    helpers.deleteRunnable('/runnables/', imageId, callback)
-  },
-  deleteContainer: function (containerId, callback) {
-    helpers.deleteRunnable('/users/me/runnables/', containerId, callback)
-  },
-  deleteRunnable: function (urlPath, runnableId, callback) {
-    var users = require('./userFactory');
-    users.createAdmin({}, function (err, user) {
-      if (err) return callback(err);
-      user.del(urlPath + runnableId)
-        .expect(200)
-        .end(callback);
-    });
+  cleanupExcept: function (exclude) {
+    exclude = Array.isArray(exclude) ?
+      exclude :
+      Array.prototype.slice.call(arguments);
+    return function (callback) {
+      var images = require('./imageFactory');
+      var containers = require('./containerFactory');
+      var tasks = {
+        images:
+          async.waterfall.bind(async, [
+            db.images.find.bind(db.images),
+            images.deleteImages
+          ]),
+        containers:
+          async.waterfall.bind(async, [
+            db.containers.find.bind(db.containers),
+            containers.deleteContainers
+          ])
+      };
+      // helpers.deleteKeys(tasks, exclude);
+      async.waterfall([
+        async.parallel.bind(async, tasks),
+        function (results, cb) {
+          db.dropCollectionsExcept(exclude)(cb)
+        }
+      ], callback)
+    }
   }
 };
 helpers.request = { /* post, get, put, patch, delete, ... */ };
