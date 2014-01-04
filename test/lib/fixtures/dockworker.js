@@ -1,24 +1,14 @@
 var express = require('express');
-var configs = require('../../../lib/configs');
-var port = configs.harbourmaster.split(':')[2]
 var app = express();
+var port = 3600;
 
-app.post('/build', function (req, res, next) {
-  res.send(200, 'Successfully built');
+app.post('/api/files/readall', function (req, res) {
+  res.json(201, []);
 });
-app.post('/containers', function (req, res, next) {
-  res.send(204);
-});
-app.post('/containers/:token', function (req, res, next) {
-  res.send(204);
-});
-app.del('/containers/:token', function (req, res, next) {
-  res.send(204);
-})
-app.all('*', express.logger(), function (req, res, next) {
+
+app.all('*', express.logger(), function (req, res) {
   res.send(404);
 });
-
 
 module.exports = {
   app: app,
