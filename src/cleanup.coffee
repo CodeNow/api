@@ -48,7 +48,6 @@ cleanupContainersNotIn = (domain, whitelist, cb) ->
       notInWhitelist = _id:$nin:whiteContainerIds
       containers.count notInWhitelist, domain.intercept (count) ->
         containers.remove notInWhitelist, domain.intercept () ->
-          console.log 'PURGE DB CONTAINERS: ', count
           cb()
   , (cb) -> # docker containers
       request
@@ -57,6 +56,7 @@ cleanupContainersNotIn = (domain, whitelist, cb) ->
         json: whiteServicesTokens
         pool: false
       , (err, res, body) ->
+        console.log err, 'sup'
         if err then domain.emit 'error', err else
           if res.statusCode isnt 200
             cb status: 500, message: 'whitelist not accepted by harbourmaster', body: body
@@ -79,12 +79,12 @@ module.exports = (req, res) ->
         if not user then cb message:'permission denied: no user' else
           if not user.isModerator then cb message:'permission denied' else
             containers.listSavedContainers req.domain, (containers) ->
-              console.log 'SAVED CONTAINERS: ', containers.length
               getOwners domain, containers, (err) ->
                 if err then cb err else
                   dateNow = Date.now()
-                  validContainers = containers.filter hasRegisteredOwner # technically filtering by reg. owners is not necessary bc only reg. users can save containers...
-                  console.log 'VALID CONTAINERS: ', validContainers.length
+                  # technically filtering by reg. owners is not necessary 
+                  # bc only reg. users can save containers...
+                  validContainers = containers.filter hasRegisteredOwner 
                   cleanupContainersNotIn domain, validContainers, cb
   ], (err) -> #done
     if err then sendError err else

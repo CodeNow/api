@@ -12,8 +12,6 @@ var dw = require('./lib/fixtures/dockworker');
 
 describe('POST /users/me/runnables', function () {
   beforeEach(extendContext({
-    hb   : hb.start,
-    dw   : dw.start,
     user : users.createAnonymous,
     image: helpers.createImageFromFixture.bind(helpers, 'node.js')
   }));
