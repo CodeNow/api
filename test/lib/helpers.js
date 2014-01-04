@@ -16,7 +16,7 @@ var extendWith = function (obj2) {
 module.exports = helpers = {
   getRequestStr: function (context) {
     var spec = context.runnable();
-    var title = ' ';
+    var title = -1;
     while (spec) {
       if (/^[^ ]* \/[^ ]*$/.test(spec.title)) {
         title = spec.title

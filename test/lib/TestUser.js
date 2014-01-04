@@ -19,10 +19,10 @@ httpMethods.forEach(function (method) {
 });
 // path args ... [query]
 TestUser.prototype.specRequest = function () {
+  if (!(typeof this.requestStr === 'string')) throw new Error('spec request was not found');
   var reqsplit = this.requestStr.split(' ')
   var method = reqsplit[0].toLowerCase();
   var path   = reqsplit[1];
-  if (!method || !path) throw new Error('spec request was not found');
 
   var args = Array.prototype.slice(arguments);
   var query;
