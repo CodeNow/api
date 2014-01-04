@@ -6,9 +6,10 @@ var hb = require('./lib/fixtures/harbourmaster');
 
 describe('Base', function () {
 
+  afterEach(db.dropCollections);
+  
   describe('GET /', function () {
     beforeEach(extendContext('user', users.createAnonymous));
-    afterEach(db.dropCollections);
     it('should respond "runnable api"', function (done) {
       this.user.specRequest()
         .expect(200, {message: 'runnable api'})
@@ -18,7 +19,6 @@ describe('Base', function () {
 
   describe('GET /super-fake-route', function() {
     beforeEach(extendContext('user', users.createAnonymous));
-    afterEach(db.dropCollections);
     it('should respond 404', function (done) {
       this.user.specRequest()
         .expect(404)
@@ -32,7 +32,6 @@ describe('Base', function () {
       beforeEach(extendContext({
         user : users.createAdmin
       }));
-      afterEach(db.dropCollections);
       it('should respond 200', function (done) {
         this.user.specRequest()
           .expect(200)
@@ -43,7 +42,6 @@ describe('Base', function () {
       beforeEach(extendContext({
         user : users.createAnonymous
       }));
-      afterEach(db.dropCollections);
       it('should respond 403', function (done) {
         this.user.specRequest()
           .expect(403)
@@ -54,14 +52,25 @@ describe('Base', function () {
 
   // needs normal user
   describe('GET /cache', function () {
-    beforeEach(extendContext({
-      user : users.createAdmin
-    }));
-    afterEach(db.dropCollections);
-    it('should respond 200', function (done) {
-      this.user.specRequest()
-        .expect(200)
-        .end(done);
+    describe('admin', function () {
+      beforeEach(extendContext({
+        user : users.createAdmin
+      }));
+      it('should respond 200', function (done) {
+        this.user.specRequest()
+          .expect(200)
+          .end(done);
+      });
+    });
+    describe('anonymous', function () {
+      beforeEach(extendContext({
+        user : users.createAnonymous
+      }));
+      it('should respond 403', function (done) {
+        this.user.specRequest()
+          .expect(403)
+          .end(done);
+      });
     });
   });
 
