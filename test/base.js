@@ -28,14 +28,27 @@ describe('Base', function () {
 
   // needs normal user
   describe('GET /cleanup', function () {
-    beforeEach(extendContext({
-      user : users.createAdmin
-    }));
-    afterEach(db.dropCollections);
-    it('should respond 200', function (done) {
-      this.user.specRequest()
-        .expect(200)
-        .end(done);
+    describe('admin', function () {
+      beforeEach(extendContext({
+        user : users.createAdmin
+      }));
+      afterEach(db.dropCollections);
+      it('should respond 200', function (done) {
+        this.user.specRequest()
+          .expect(200)
+          .end(done);
+      });
+    });
+    describe('anonymous', function () {
+      beforeEach(extendContext({
+        user : users.createAnonymous
+      }));
+      afterEach(db.dropCollections);
+      it('should respond 403', function (done) {
+        this.user.specRequest()
+          .expect(403)
+          .end(done);
+      });
     });
   });
 

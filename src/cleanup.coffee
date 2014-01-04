@@ -65,7 +65,6 @@ cleanupContainersNotIn = (domain, whitelist, cb) ->
 
 module.exports = (req, res) ->
   sendError = (err) ->
-    console.error 'ERROR:::\n', err
     status = err.status
     delete err.status
     res.json status || 403, err
