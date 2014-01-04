@@ -11,7 +11,7 @@ var mongoose = require('mongoose');
 var hb = require('./lib/fixtures/harbourmaster')
 var dw = require('./lib/fixtures/dockworker')
 
-describe('containers', function () {
+describe('Containers', function () {
   var image;
 
   before(function (done) {
