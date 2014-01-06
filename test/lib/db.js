@@ -17,13 +17,22 @@ var db = module.exports = {
       });
     };
   },
+  dropCollectionsExcept: function (exclude) {
+    exclude = Array.isArray(exclude) ?
+      exclude :
+      Array.prototype.slice.call(arguments);
+    return function (callback) {
+      callback = callback || function() {};
+      var names = Object.keys(mongoose.connection.collections);
+      names = _.difference(names, exclude);
+      var users = require('./userFactory');
+      async.forEach(names, function(name, done) {
+        db.dropCollection(name)(done);
+      }, callback);
+    };
+  },
   dropCollections: function(callback) {
-    callback = callback || function() {};
-    var collections = Object.keys(mongoose.connection.collections);
-    //var users = require('./userFactory');
-    async.forEach(collections, function(collectionName, done) {
-      db.dropCollection(collectionName)(done);
-    }, callback);
+    db.dropCollectionsExcept([])(callback);
   },
   dropDatabase: function (callback) {
     callback = callback || function () {};
@@ -32,5 +41,5 @@ var db = module.exports = {
   }
 };
 mongoose.connection.once('connected', function() {
-  _.extend(db, _.pick(mongoose.connection.collections, 'users', 'images'));
+  _.extend(db, mongoose.connection.collections);
 });

@@ -2,6 +2,7 @@
 var async = require('async');
 var db = require('./lib/db');
 var users = require('./lib/userFactory');
+var images = require('./lib/imageFactory');
 var helpers = require('./lib/helpers');
 var extendContext = helpers.extendContext;
 require('./lib/fixtures/harbourmaster');
@@ -11,7 +12,7 @@ describe('Containers', function () {
   var image;
 
   before(function (done) {
-    helpers.createImageFromFixture('node.js', function (err, data) {
+    images.createImageFromFixture('node.js', function (err, data) {
       if (err) {
         return done(err);
       }
@@ -19,18 +20,13 @@ describe('Containers', function () {
       done();
     });
   });
-  after(function (done) {
-    helpers.deleteImage(image._id, done);
-  });
+  after(helpers.cleanup);
 
   describe('POST /users/me/runnables', function () {
     beforeEach(extendContext({
       user : users.createAnonymous
     }));
-    afterEach(async.series.bind(async, [
-      db.dropCollection('users'),
-      db.dropCollection('containers')
-    ]));
+    afterEach(helpers.cleanupExcept('images'));
 
     it ('should create a container', function (done) {
       var imageId = image._id;
