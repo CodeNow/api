@@ -25,7 +25,7 @@ var db = module.exports = {
       callback = callback || function() {};
       var names = Object.keys(mongoose.connection.collections);
       names = _.difference(names, exclude);
-      var users = require('./userFactory');
+      // var users = require('./userFactory');
       async.forEach(names, function(name, done) {
         db.dropCollection(name)(done);
       }, callback);

@@ -1,6 +1,4 @@
 //require('console-trace')({always:true, right:true})
-var async = require('async');
-var db = require('./lib/db');
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var helpers = require('./lib/helpers');
