@@ -47,7 +47,8 @@
     "superagent": "~0.14.6",
     "nock": "~0.27.0",
     "supertest": "~0.8.2",
-    "methods": "~0.1.0"
+    "methods": "~0.1.0",
+    "jshint": "~2.4.1"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
