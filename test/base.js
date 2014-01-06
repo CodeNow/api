@@ -2,7 +2,7 @@ var helpers = require('./lib/helpers');
 var db = require('./lib/db');
 var users = require('./lib/userFactory');
 var extendContext = helpers.extendContext;
-var hb = require('./lib/fixtures/harbourmaster');
+require('./lib/fixtures/harbourmaster');
 
 describe('Base', function () {
 

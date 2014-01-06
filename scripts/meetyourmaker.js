@@ -15,7 +15,7 @@ var clean = function(firstRun) {
       console.log(res.statusCode + ': ' + res.body);
     }
   });
-}
+};
 
 clean(true);
 setInterval(clean, configs.cleanInterval);

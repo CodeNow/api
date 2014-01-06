@@ -15,7 +15,7 @@ db.channels.find().forEach(function (channel) {
 });
 for(id in aliasUpdate) {
   var update = aliasUpdate[id];
-  db.channels.update({_id:ObjectId(id)}, update);
+  db.channels.update({_id:new ObjectId(id)}, update);
 }
 
 function createCategory(name) {
@@ -109,13 +109,13 @@ db.containers.find().forEach(function (container) {
 // push updates
 for(id in channelUpdates) {
   var update = channelUpdates[id];
-  db.channels.update({_id:ObjectId(id)}, update);
+  db.channels.update({_id:new ObjectId(id)}, update);
 }
 for(id in imageUpdates) {
   var update = imageUpdates[id];
-  db.images.update({_id:ObjectId(id)}, update);
+  db.images.update({_id:new ObjectId(id)}, update);
 }
 for(id in containerUpdates) {
   var update = containerUpdates[id];
-  db.containers.update({_id:ObjectId(id)}, update);
+  db.containers.update({_id:new ObjectId(id)}, update);
 }

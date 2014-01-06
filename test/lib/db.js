@@ -6,9 +6,13 @@ var db = module.exports = {
   dropCollection: function (collectionName) {
     var collection = mongoose.connection.collections[collectionName];
     return function (callback) {
-      if (!collection) return callback();
+      if (!collection) {
+        return callback();
+      }
       collection.drop(function(err) {
-        if (err && err.message !== 'ns not found') return callback(err);
+        if (err && err.message !== 'ns not found') {
+          return callback(err);
+        }
         callback();
       });
     };
@@ -16,7 +20,7 @@ var db = module.exports = {
   dropCollections: function(callback) {
     callback = callback || function() {};
     var collections = Object.keys(mongoose.connection.collections);
-    var users = require('./userFactory');
+    //var users = require('./userFactory');
     async.forEach(collections, function(collectionName, done) {
       db.dropCollection(collectionName)(done);
     }, callback);
@@ -28,5 +32,5 @@ var db = module.exports = {
   }
 };
 mongoose.connection.once('connected', function() {
-  _.extend(db, _.pick(mongoose.connection.collections, 'users', 'images'))
+  _.extend(db, _.pick(mongoose.connection.collections, 'users', 'images'));
 });

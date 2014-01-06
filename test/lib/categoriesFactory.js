@@ -1,6 +1,4 @@
-var _ = require('lodash');
 var async = require('async');
-var db = require('./db');
 var helpers = require('./helpers');
 var users = require('./userFactory');
 
@@ -26,7 +24,7 @@ function createCategories (names, cb) {
   async.each(names, createCategory, cb);
 }
 
-var categories = module.exports = {
+module.exports = {
   createCategory: function (name) {
     return function (callback) {
       createCategory(name, callback);

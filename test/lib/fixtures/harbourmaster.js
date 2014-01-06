@@ -1,6 +1,6 @@
 var express = require('express');
 var configs = require('../../../lib/configs');
-var port = configs.harbourmaster.split(':')[2]
+var port = configs.harbourmaster.split(':')[2];
 var app = express();
 
 app.post('/build', function (req, res, next) {
@@ -17,7 +17,7 @@ app.post('/containers/:token', function (req, res, next) {
 });
 app.del('/containers/:token', function (req, res, next) {
   res.send(204);
-})
+});
 app.all('*', express.logger(), function (req, res, next) {
   res.send(404);
   console.log(req.url, req.method);

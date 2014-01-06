@@ -8,7 +8,7 @@ describe('Categories', function () {
 
   afterEach(db.dropCollections);
   
-  describe('POST /categories', function (done) {
+  describe('POST /categories', function () {
     describe('admin', function () {
       beforeEach(extendContext({
         user : users.createAdmin
@@ -47,7 +47,7 @@ describe('Categories', function () {
     });
   });
 
-  describe('GET /categories', function (done) {
+  describe('GET /categories', function () {
     beforeEach(extendContext({
       user : users.createAnonymous,
       categories : categories.createCategories('facebook', 'jquery')
@@ -59,7 +59,7 @@ describe('Categories', function () {
         .end(done);
     });
 
-    it('should allow for queries', function (done) {  
+    it('should allow for queries', function (done) {
       this.user.specRequest({
         name: 'facebook'
       })
@@ -69,7 +69,7 @@ describe('Categories', function () {
     });
   });
 
-  describe('GET /categories/:id', function (done) {
+  describe('GET /categories/:id', function () {
     beforeEach(extendContext({
       user : users.createAnonymous,
       category : categories.createCategory('facebook')
@@ -83,4 +83,4 @@ describe('Categories', function () {
     });
   });
 
-});	
+});
