@@ -7,17 +7,9 @@ require('./lib/fixtures/harbourmaster');
 require('./lib/fixtures/dockworker');
 
 describe('Containers', function () {
-  var image;
-
-  before(function (done) {
-    images.createImageFromFixture('node.js', function (err, data) {
-      if (err) {
-        return done(err);
-      }
-      image = data;
-      done();
-    });
-  });
+  before(extendContext({
+    image: images.createImageFromFixture.bind(images, 'node.js')
+  }));
   after(helpers.cleanup);
 
   describe('POST /users/me/runnables', function () {
@@ -27,8 +19,7 @@ describe('Containers', function () {
     afterEach(helpers.cleanupExcept('images'));
 
     it ('should create a container', function (done) {
-      var imageId = image._id;
-      this.user.specRequest({ from: imageId })
+      this.user.specRequest({ from: this.image._id })
         .expect(201)
         .end(done);
     });
