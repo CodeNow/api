@@ -27,6 +27,8 @@ describe('Containers', function () {
     });
   });
 
+  describe('GET /users/me/runnables/:id');
+
   describe('POST /users/me/runnables', function () {
     beforeEach(extendContext({
       user : users.createAnonymous
@@ -39,6 +41,24 @@ describe('Containers', function () {
         .expectBody('parent', this.image._id)
         .expectBody('owner', this.user._id)
         .expectBody('servicesToken')
+        .end(done);
+    });
+  });
+
+  describe('PUT /users/me/runnables/:id');
+
+  describe('PATCH /users/me/runnables/:id');
+
+  describe('DEL /users/me/runnables/:id', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainerFromFixture', 'node.js']
+    }));
+    afterEach(helpers.cleanupExcept('images'));
+    it('should query by image', function (done) {
+      this.user.specRequest(this.container._id)
+        .expect(200)
+        .expectBody('message', 'runnable deleted')
         .end(done);
     });
   });
