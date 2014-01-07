@@ -6,8 +6,8 @@ require('./lib/fixtures/harbourmaster');
 
 describe('Base', function () {
 
-  afterEach(db.dropCollections);
-  
+  afterEach(helpers.cleanup);
+
   describe('GET /', function () {
     beforeEach(extendContext('user', users.createAnonymous));
     it('should respond "runnable api"', function (done) {
