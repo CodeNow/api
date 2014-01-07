@@ -6,9 +6,9 @@ var extendContext = helpers.extendContext;
 
 describe('Categories', function () {
 
-  afterEach(db.dropCollections);
-  
-  describe('POST /categories', function () {
+  afterEach(helpers.cleanup);
+
+  describe('POST /categories', function (done) {
     describe('admin', function () {
       beforeEach(extendContext({
         user : users.createAdmin
