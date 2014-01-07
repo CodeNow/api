@@ -19,7 +19,7 @@ var refresh = function() {
       }
     });
   }
-}
+};
 
 refresh();
 setInterval(refresh, configs.cacheRefreshInterval);

@@ -1,19 +1,17 @@
 require('./setupAndTeardown');
-var coffee = require('coffee-script');
 var async = require('async');
-var _ = require('lodash')
+var _ = require('lodash');
 var st = require('./superdupertest');
 var httpMethods = require('methods');
-var configs = require('../../lib/configs');
 var db = require('./db');
 
-module.exports = helpers = {
+var helpers = module.exports = {
   getRequestStr: function (context) {
     var spec = context.runnable();
     var title = -1;
     while (spec) {
       if (/^[^ ]* \/[^ ]*$/.test(spec.title)) {
-        title = spec.title
+        title = spec.title;
         break;
       }
       spec = spec.parent;
@@ -22,7 +20,9 @@ module.exports = helpers = {
   },
   asyncExtend: function (dst, src, cb) {
     async.parallel(src, function (err, results) {
-      if (err) return cb(err);
+      if (err) {
+        return cb(err);
+      }
       _.extend(dst, results);
       cb(null, dst, results);
     });
@@ -39,18 +39,20 @@ module.exports = helpers = {
   extendWith: function (obj2) {
     return function (obj1) {
       _.extend(obj1, obj2);
-    }
+    };
   },
   extendContext: function (key, value) {
     var obj;
     var extendWith = helpers.extendWith;
-    if (typeof key === 'object') obj = key; else {
-      obj = {}
+    if (typeof key === 'object') {
+      obj = key;
+    } else {
+      obj = {};
       obj[key] = value;
     }
     return function (done) {
       var context = this;
-      var key, val, tasks = {};
+      var tasks = {};
       Object.keys(obj).forEach(function (key) {
         var val = obj[key];
         if (typeof val === 'function') {
@@ -62,21 +64,23 @@ module.exports = helpers = {
       });
       var requestStr = helpers.getRequestStr(context);
       helpers.asyncExtend(context, tasks, function (err, ctx, results) {
-        if (err) return done(err);
+        if (err) {
+          return done(err);
+        }
         _.values(results).forEach(extendWith({requestStr:requestStr}));
-        done()
+        done();
       });
-    }
+    };
   },
   randomValue: function () {
-    return 'value'+Math.random();
+    return 'value' + Math.random();
   },
   createServer: function () {
     var d = require('domain').create();
     var server = new (require('../../lib/index'))({}, d);
     d.on('error', function (err) {
-      console.log(err.message)
-      console.log(err.stack)
+      console.log(err.message);
+      console.log(err.stack);
     });
     return server.create();
   },
@@ -91,34 +95,36 @@ module.exports = helpers = {
       var images = require('./imageFactory');
       var containers = require('./containerFactory');
       var tasks = {
-        images:
-          async.waterfall.bind(async, [
-            db.images.find.bind(db.images),
-            images.deleteImages
-          ]),
-        containers:
-          async.waterfall.bind(async, [
-            db.containers.find.bind(db.containers),
-            containers.deleteContainers
-          ])
+        images: async.waterfall.bind(async, [
+          db.images.find.bind(db.images),
+          images.deleteImages
+        ]),
+        containers: async.waterfall.bind(async, [
+          db.containers.find.bind(db.containers),
+          containers.deleteContainers
+        ])
       };
       // helpers.deleteKeys(tasks, exclude);
       async.waterfall([
         async.parallel.bind(async, tasks),
         function (results, cb) {
-          db.dropCollectionsExcept(exclude)(cb)
+          db.dropCollectionsExcept(exclude)(cb);
         }
-      ], callback)
-    }
+      ], callback);
+    };
   }
 };
 helpers.request = { /* post, get, put, patch, delete, ... */ };
 httpMethods.forEach(function (method) {
-  if (method === 'delete') method = 'del';
+  if (method === 'delete') {
+    method = 'del';
+  }
   helpers.request[method] = function (urlPath, token) {
     var app = helpers.createServer();
     var request = st(app)[method.toLowerCase()](urlPath);
-    if (token) request.set('runnable-token', token);
+    if (token) {
+      request.set('runnable-token', token);
+    }
     return request;
-  }
+  };
 });

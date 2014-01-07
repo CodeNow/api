@@ -6,7 +6,9 @@ var TestUser = require('./TestUser');
 
 function callbackUser (cb) {
   return function (err, res) {
-    if (err) return cb(err);
+    if (err) {
+      return cb(err);
+    }
     var user = new TestUser(res.body);
     cb(null, user);
   };
@@ -18,13 +20,15 @@ function createUsername (suggestedUsername, ignoreConflictError, cb) {
     ignoreConflictError = true; //default ignore
   }
   db.users.distinct('username', {}, function (err, usernames) {
-    if (err) return cb(err);
+    if (err) {
+      return cb(err);
+    }
     while (~usernames.indexOf(suggestedUsername)) {
       suggestedUsername = suggestedUsername + (Math.random() * 100);
     }
     cb(null, suggestedUsername);
   });
-};
+}
 
 
 var users = module.exports = {
@@ -43,7 +47,9 @@ var users = module.exports = {
     var auth = _.pick(properties, authKeys);
     var ignoreConflictError = !Boolean(auth.username);
     createUsername('registered' || auth.username, ignoreConflictError, function (err, username) {
-      if (err) return callback(err);
+      if (err) {
+        return callback(err);
+      }
       var body = {
         username: username,
         password: 'password',
@@ -59,12 +65,14 @@ var users = module.exports = {
         },
         function (user, cb) {
           var customProperties = _.omit(properties, authKeys);
-          if (_.isEmpty(customProperties)) return cb(null, user);
+          if (_.isEmpty(customProperties)) {
+            return cb(null, user);
+          }
           user.dbUpdate(customProperties, function (err) {
             cb(err, user);
           });
         }
-      ], callback)
+      ], callback);
     });
   },
   createPublisher: function (properties, cb) {

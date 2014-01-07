@@ -12,12 +12,11 @@ function error(msg, expected, actual) {
 Test.prototype.expectArray = function () {
   this._bodyIsArray = true;
   return this;
-}
+};
 
 Test.prototype.expectBody = function (key, value) {
   this._bodyKeysExist = this._bodyKeysExist || [];
   this._bodyValues    = this._bodyValues    || {};
-  var o = {};
   if (value != null) {
     this._bodyValues[key] = value;
   }
@@ -36,18 +35,20 @@ Test.prototype._checkExpectedBodyValues = function (res) {
 
   var bodyKeyExists = function (key) {
     if (res.body[key] != null) {
-      return true
+      return true;
     }
     else {
       err = error('expected "res.body.' + key + '" to exist');
       return false;
     }
-  }
+  };
 
   var bodyValueMatchesExpected = function (key) {
     var val = self._bodyValues[key];
     var bodyVal = res.body[key];
-    if (val == bodyVal) return true;
+    if (val === bodyVal) {
+      return true;
+    }
     if (!val.test) {
       err = error('expected "res.body.' +key+ '" of "' +val+ '", got "' +bodyVal+ '"', val, bodyVal);
       return false;
@@ -67,17 +68,23 @@ Test.prototype._checkExpectedBodyValues = function (res) {
     if (!Array.isArray(res.body)) {
       err = error('expected "res.body" to be an array, got', res.body);
     }
-    if (err) return err;
+    if (err) {
+      return err;
+    }
   }
 
   if (self._bodyKeysExist) {
     self._bodyKeysExist.every(bodyKeyExists);
-    if (err) return err;
+    if (err) {
+      return err;
+    }
   }
 
   if (self._bodyValues) {
     Object.keys(self._bodyValues).every(bodyValueMatchesExpected);
-    if (err) return err;
+    if (err) {
+      return err;
+    }
   }
 
   return err;
@@ -88,8 +95,12 @@ Test.prototype.end = function (callback) {
 
   superEnd.call(this, function (err, res) {
     err = err || self._checkExpectedBodyValues(res);
-    if (err && res) console.error('\n', res.body);
-    if (callback) callback(err, res);
+    if (err && res) {
+      console.error('\n', res.body);
+    }
+    if (callback) {
+      callback(err, res);
+    }
   });
 };
 
@@ -101,7 +112,9 @@ Test.prototype.streamEnd = function (callback) {
   this.on('response', function (res) {
     self.assert(res, function (err) {
       err = err || self._checkExpectedBodyValues(res);
-      if (err) return callback(err);
+      if (err) {
+        return callback(err);
+      }
       callback(null, res);
     });
   });

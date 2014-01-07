@@ -35,7 +35,7 @@ describe('Users', function () {
           .send(body)
           .expectBody('message', new RegExp(field))
           .end(done);
-      }
+      };
     };
 
     it('should register a user', function (done) {
@@ -65,7 +65,9 @@ describe('Users', function () {
       var self = this;
       var body = _.clone(userAuth);
       users.createRegistered(body, function (err, user) {
-        if (err) return done(err);
+        if (err) {
+          return done(err);
+        }
         body.email = 'noconflict@runnable.com'; // prevent email collision
         self.user.specRequest()
           .send(body)
@@ -77,7 +79,9 @@ describe('Users', function () {
       var self = this;
       var body = _.clone(userAuth);
       users.createRegistered(body, function (err, user) {
-        if (err) return done(err);
+        if (err) {
+          return done(err);
+        }
         body.username = 'noconflict'; // prevent username collision
         self.user.specRequest()
           .send(body)

@@ -8,7 +8,7 @@ if (configs.nodetime && cluster.isWorker) {
 
 var debug = require('debug')('master');
 
-require('source-map-support').install()
+require('source-map-support').install();
 var api_server = require('./lib');
 var os = require('os');
 
@@ -22,7 +22,7 @@ if (cluster.isMaster) {
         create_worker();
       }
     });
-  }
+  };
 
   var numCPUs = os.cpus().length;
   var numWorkers = numCPUs * 5;
