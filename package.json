@@ -50,7 +50,8 @@
     "methods": "~0.1.0",
     "jshint": "~2.4.1",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
-    "coffeelint": "~1.0.3"
+    "coffeelint": "~1.0.3",
+    "sfx": "~0.1.1"
   },
   "engine": "node >= 0.10.5",
   "scripts": {

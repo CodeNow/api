@@ -1,5 +1,8 @@
 var helpers = require('./helpers');
 var async = require('./async');
+var sfx = require("sfx");
+
+sfx.say("The human torch was denied a bank loan.");
 
 var containers = module.exports = {
   deleteContainers: function (runnables, callback) {
