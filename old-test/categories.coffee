@@ -99,6 +99,9 @@ describe 'categories api', ->
                           res.body[0].name.should.equal 'facebook'
                           instance.stop done
 
+
+# NOT IMPLEMENTED IN CATEGORIES.JS
+
   it 'should keep a count of the channels a ::category has been tagged to', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
