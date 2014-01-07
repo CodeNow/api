@@ -75,22 +75,35 @@ var users = module.exports = {
       ], callback);
     });
   },
-  createPublisher: function (properties, cb) {
+  createPublisher: function (properties, callback) {
     if (typeof properties === 'function') {
-      // function (cb)
-      cb = properties;
+      // function (callback)
+      callback = properties;
       properties = {};
     }
     properties = _.extend(properties || {}, {permission_level:3});
-    users.createRegistered(properties, cb);
+    users.createRegistered(properties, callback);
   },
-  createAdmin: function (properties, cb) {
+  createAdmin: function (properties, callback) {
     if (typeof properties === 'function') {
-      // function (cb)
-      cb = properties;
+      // function (callback)
+      callback = properties;
       properties = {};
     }
     properties = _.extend(properties || {}, {permission_level:5});
-    users.createRegistered(properties, cb);
+    users.createRegistered(properties, callback);
+  },
+  createUserByType: function (userType, properties, callback) {
+    if (typeof properties === 'function') {
+      callback = properties;
+      properties = {};
+    }
+    var method = 'create' + helpers.capitalize(userType);
+    var args = [];
+    if (userType.toLowerCase() !== 'anonymous') {
+      args.push(properties);
+    }
+    args.push(callback);
+    users[method].apply(users, args);
   }
 };

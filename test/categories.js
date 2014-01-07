@@ -43,7 +43,7 @@ describe('Categories', function () {
     });
   });
 
-  describe('POST /categories', function (done) {
+  describe('POST /categories', function () {
     describe('admin', function () {
       beforeEach(extendContext({
         user : users.createAdmin

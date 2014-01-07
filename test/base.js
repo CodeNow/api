@@ -1,5 +1,4 @@
 var helpers = require('./lib/helpers');
-var db = require('./lib/db');
 var users = require('./lib/userFactory');
 var extendContext = helpers.extendContext;
 require('./lib/fixtures/harbourmaster');

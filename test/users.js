@@ -54,7 +54,7 @@ describe('Users', function () {
       var body = _.clone(userAuth);
       this.user.specRequest()
         .send(body)
-        .end(function (err, res) {
+        .end(function () {
           self.user.specRequest()
             .send(body)
             .expectBody('message', /already registered/)
@@ -64,7 +64,7 @@ describe('Users', function () {
     it('should respond error if user with username already exists', function (done) {
       var self = this;
       var body = _.clone(userAuth);
-      users.createRegistered(body, function (err, user) {
+      users.createRegistered(body, function (err) {
         if (err) {
           return done(err);
         }
@@ -78,7 +78,7 @@ describe('Users', function () {
     it('should respond error if user with email already exists', function (done) {
       var self = this;
       var body = _.clone(userAuth);
-      users.createRegistered(body, function (err, user) {
+      users.createRegistered(body, function (err) {
         if (err) {
           return done(err);
         }

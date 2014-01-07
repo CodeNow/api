@@ -17,7 +17,6 @@ describe('Containers', function () {
       user : users.createAnonymous
     }));
     afterEach(helpers.cleanupExcept('images'));
-
     it ('should create a container', function (done) {
       this.user.specRequest({ from: this.image._id })
         .expect(201)
