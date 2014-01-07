@@ -4,12 +4,13 @@ var async = require('async');
 function getPath (obj, pathStr) {
   var ptr = obj;
   var split = pathStr.split('.');
-  split.forEach(function (key) {
+  for (var i = 0, key; i < split.length; i++) {
+    key = split[i];
     if (!ptr[key]) {
-      throw new Error('no "'+pathStr+'" of '+ptr+' ('+key+')');
+      return new Error('no "'+pathStr+'" of '+ptr+' ('+key+')');
     }
     ptr = ptr[key];
-  });
+  }
   return ptr;
 }
 
@@ -20,30 +21,38 @@ function invoke (methodStr, args, ctx) {
     split = methodStr.split('.');
     split.pop();
     ctxPath = split.join('.');
-    ctx = getPath(obj, ctxPath);
+    ctx = getPath(this, ctxPath);
   }
 
   return method.apply(ctx, args);
 }
 
+function replacePlaceholderArgs (obj, args) {
+  var newargs = [];
+  args.forEach(function (arg, i) {
+    if (arg && arg.indexOf && ~arg.indexOf('.')) {
+      var val = getPath(obj, arg);
+      newargs[i] = (val instanceof Error) ?
+        args[i] :
+        val;
+    }
+  });
+  return newargs;
+}
+
 function invokeBind (methodStr, args, ctx) {
   var self = this;
-  return function () {
-    args = args || []; // args[1] are the args for method being invoke
-    args = args.concat(arguments);
-    args.forEach(function (arg, i) {
-      if (arg && arg.indexOf && ~arg.index('.')) {
-        var valueOnCtx = getPath(self, arg);
-        if (valueOnCtx != null) {
-          args[i] = valueOnCtx;
-        }
-      }
-    });
+  args = args || []; // args[1] are the args for method being invoke
+  return function (cb) {
+    var newargs = Array.prototype.slice.call(arguments);
+    args = replacePlaceholderArgs(self, args);
+    args = args.concat(newargs);
     invoke.call(self, methodStr, args, ctx);
   };
 }
 
-function _replacePlaceholders (self, src) {
+function _replaceInvokePlaceholders (self, src) {
+  var tasks = {};
   Object.keys(src).forEach(function (key) {
     var val = src[key];
     if (typeof val === 'string') {
@@ -54,6 +63,7 @@ function _replacePlaceholders (self, src) {
       val;
     tasks[key] = fn;
   });
+  return tasks;
 }
 
 var a = {
@@ -86,13 +96,15 @@ var a = {
   },
   extendSeries: function (dst, src, callback) {
     var argSlice = a.argSlice;
-    var self = this;
-    var tasks = _replacePlaceholders(this, src);
-    var keys = Object.keys(task);
+    var keys = Object.keys(src);
     async.eachSeries(keys, function (key, cb) {
       var task = {};
-      task[key] = task[key];
-      a.extend(dst, task, a.argSlice(0, 2, callback));
+      task[key] = src[key];
+      task = _replaceInvokePlaceholders(dst, task);
+      // a.extend(dst, task, a.argSlice(0, 2, callback));
+      a.extend(dst, task, function (err, val) {
+        cb(err, val);
+      });
     }, callback);
   },
   extendWaterfall: function (dst, src, callback) {
