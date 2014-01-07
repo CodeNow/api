@@ -68,6 +68,8 @@ describe 'channels api', ->
                       res.body.should.have.property 'message', 'a channel by that name already exists'
                       instance.stop done
 
+# NOT IMPLEMENTED IN CHANNELS.JS
+
   it 'should be able to create a ::channel implicitly by tagging an image', (done) ->
     helpers.createServer configs, done, (err, instance) ->
       if err then done err else
@@ -128,6 +130,8 @@ describe 'channels api', ->
                       res.should.have.status 200
                       res.body.should.eql channel
                       instance.stop done
+
+# NOT IMPLEMENTED IN CHANNELS.JS
 
   it 'should keep a count of the number of images tagged with a particular ::channel', (done) ->
     helpers.createServer configs, done, (err, instance) ->

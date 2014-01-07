@@ -9,8 +9,9 @@ function error(msg, expected, actual) {
   return err;
 }
 
-Test.prototype.expectArray = function () {
+Test.prototype.expectArray = function (length) {
   this._bodyIsArray = true;
+  this._length = length;
   return this;
 };
 
@@ -68,6 +69,12 @@ Test.prototype._checkExpectedBodyValues = function (res) {
     }
     if (err) {
       return err;
+    }
+  }
+
+  if (self._length) {
+    if (res.body.length !== self._length) {
+      err = error('expected "res.body" to be length ' + self._length + ', got ' + res.body.length);
     }
   }
 
