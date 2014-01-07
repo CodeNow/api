@@ -25,7 +25,7 @@ categorySchema = new Schema
 
 categorySchema.set 'autoIndex', false
 
-categorySchema.statics.getCategory = (domain, categoryId, cb) ->
+categorySchema.statics.getCategory = (domain, categoryId, cb) =>
   @findOne _id: categoryId , domain.intercept (category) ->
     if not category then cb error 404, 'not found' else
       channels.find('tags.category': category._id).count().exec domain.intercept (count) ->
@@ -33,7 +33,7 @@ categorySchema.statics.getCategory = (domain, categoryId, cb) ->
         json.count = count
         cb null, json
 
-categorySchema.statics.getCategoryByName = (domain, categoryName, cb) ->
+categorySchema.statics.getCategoryByName = (domain, categoryName, cb) =>
   @findOne aliases: categoryName.toLowerCase(), domain.intercept (category) ->
     if not category then cb error 404, 'not found' else
       channels.find('tags.category': category._id).count().exec domain.intercept (count) ->
@@ -41,7 +41,7 @@ categorySchema.statics.getCategoryByName = (domain, categoryName, cb) ->
         json.count = count
         cb null, json
 
-categorySchema.statics.listCategories = (domain, cb) ->
+categorySchema.statics.listCategories = (domain, cb) =>
   @find { }, domain.intercept (categories) ->
     async.map categories, (category, cb) ->
       channels.find('tags.category': category._id).count().exec domain.intercept (count) ->
@@ -58,7 +58,7 @@ categorySchema.statics.createCategory = (domain, userId, name, desc, cb) ->
           if not name? then cb error 400, 'name required' else
             @findOne aliases: name.toLowerCase(), domain.intercept (existing) =>
               if existing then cb error 403, 'category by that name already exists' else
-                category = new @
+                category = new @()
                 category.name = name
                 if desc then category.description = desc
                 category.aliases = [name.toLowerCase()]
@@ -66,7 +66,7 @@ categorySchema.statics.createCategory = (domain, userId, name, desc, cb) ->
                 category.save domain.intercept () ->
                   cb null, category.toJSON()
 
-categorySchema.statics.createImplicitCategory = (domain, name, cb) ->
+categorySchema.statics.createImplicitCategory = (domain, name, cb) =>
   category = new @
   category.name = name
   category.aliases = [name.toLowerCase()]

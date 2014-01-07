@@ -4,7 +4,7 @@ domains = require '../domains'
 Email = require('email').Email
 configs = require '../configs'
 _ = require 'lodash'
-mailchimpApi = if configs.mailchimp? then new mailchimp.MailChimpAPI(configs.mailchimp.key);
+mailchimpApi = if configs.mailchimp? then new mailchimp.MailChimpAPI(configs.mailchimp.key)
 
 module.exports = (parentDomain) ->
 

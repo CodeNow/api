@@ -42,6 +42,7 @@ var containers = module.exports = {
   },
   createContainerFromFixture: function (name, callback) {
     var images = require('./imageFactory');
+    var users = require('./userFactory');
     async.extendWaterfall({}, {
       user: users.createAdmin,
       image: ['user.createImageFromFixture', 'node.js'],

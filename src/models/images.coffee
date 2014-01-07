@@ -246,7 +246,7 @@ imageSchema.statics.createFromDisk = (domain, owner, runnablePath, sync, cb) ->
                                   cb null, image, runnable.tags
                     rendered.pipe writestream
 
-imageSchema.statics.createFromContainer = (domain, container, cb) ->
+imageSchema.statics.createFromContainer = (domain, container, cb) =>
   @findOne name: container.name, domain.intercept (existing) =>
     if existing then cb error 403, 'a shared runnable by that name already exists' else
       image = new @
@@ -261,25 +261,25 @@ imageSchema.statics.createFromContainer = (domain, container, cb) ->
         image.save domain.intercept () ->
           cb null, image
 
-imageSchema.statics.countInChannelByOwner = (domain, channelId, ownerId, cb) ->
+imageSchema.statics.countInChannelByOwner = (domain, channelId, ownerId, cb) =>
   @count {'owner':ownerId, 'tags.channel':channelId}, domain.intercept (count) ->
     cb null, count
 
-imageSchema.statics.search = (domain, searchText, limit, cb) ->
+imageSchema.statics.search = (domain, searchText, limit, cb) =>
   opts =
     filter : tags:$not:$size:0
     project: name:1, description:1, tags:1, owner:1, created:1
     limit  : if (limit <= configs.defaultPageLimit) then limit else configs.defaultPageLimit
-  this.textSearch searchText, opts, (err, output) ->
+  @textSearch searchText, opts, (err, output) ->
     if err then throw err else
       images = output.results.map (result) -> result.obj
       cb null, images
 
-imageSchema.statics.incVote = (domain, runnableId, cb) ->
+imageSchema.statics.incVote = (domain, runnableId, cb) =>
   @update _id:runnableId, {$inc:votes:1}, domain.intercept (success) ->
     cb null, success
 
-imageSchema.methods.updateFromContainer = (domain, container, cb) ->
+imageSchema.methods.updateFromContainer = (domain, container, cb) =>
   copyPublishProperties @, container, true
   @revisions = @revisions or [ ]
   @revisions.push
@@ -289,26 +289,26 @@ imageSchema.methods.updateFromContainer = (domain, container, cb) ->
     @save domain.intercept () =>
       cb null, @
 
-imageSchema.statics.destroy = (domain, id, cb) ->
+imageSchema.statics.destroy = (domain, id, cb) =>
   @findOne _id: id, domain.intercept (image) =>
     if not image then cb error 404, 'image not found' else
       @remove { _id: id }, domain.intercept () ->
         cb()
 
-imageSchema.statics.listTags = (domain, cb) ->
+imageSchema.statics.listTags = (domain, cb) =>
   @find().distinct 'tags.name', domain.intercept (tagNames) ->
     cb null, tagNames
 
-imageSchema.statics.relatedChannelIds = (domain, channelIds, cb) ->
+imageSchema.statics.relatedChannelIds = (domain, channelIds, cb) =>
   @distinct 'tags.channel', 'tags.channel':$in:channelIds, domain.intercept (channelIds) ->
     cb null, channelIds
 
-imageSchema.statics.isOwner = (domain, userId, runnableId, cb) ->
+imageSchema.statics.isOwner = (domain, userId, runnableId, cb) =>
   @findOne _id: runnableId, {_id:1, owner:1}, domain.intercept (image) ->
     if not image then cb error 404, 'runnable not found' else
       cb null, image.owner.toString() is userId.toString()
 
-imageSchema.methods.sync = (domain, cb) ->
+imageSchema.methods.sync = (domain, cb) =>
   if @synced then cb() else
     syncDockerImage domain, @, (err) =>
       if err then cb err else

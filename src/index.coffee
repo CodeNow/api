@@ -94,7 +94,7 @@ class App
     cluster.worker.send 'exception'
     if configs.nodetime then nodetime.destroy()
     if configs.rollbar then rollbar.shutdown()
-    setTimeout () =>
+    setTimeout () ->
       try
         debug 'waiting for worker to shut down gracefully', workerId
         timer = setTimeout () ->
