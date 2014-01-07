@@ -1,4 +1,3 @@
-var db = require('./lib/db');
 var users = require('./lib/userFactory');
 var channels = require('./lib/channelsFactory');
 var helpers = require('./lib/helpers');
@@ -6,7 +5,7 @@ var extendContext = helpers.extendContext;
 
 describe('Channels', function () {
 
-  afterEach(db.dropCollections);
+  afterEach(helpers.cleanup);
 
   describe('GET /channels', function () {
     beforeEach(extendContext({

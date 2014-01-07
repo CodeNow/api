@@ -1,4 +1,3 @@
-var db = require('./lib/db');
 var users = require('./lib/userFactory');
 var categories = require('./lib/categoriesFactory');
 var helpers = require('./lib/helpers');
