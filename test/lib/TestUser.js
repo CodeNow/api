@@ -69,7 +69,7 @@ TestUser.prototype.dbUpdate = function (updateSet, cb) {
 };
 TestUser.prototype.createImageFromFixture = function (name, callback) {
   if (this.permission_level < 5) {
-    throw new Error('only admin users can create images from fixtures');
+    return callback(new Error('only admin users can create images from fixtures'));
   }
   var path = __dirname+"/fixtures/images/"+name;
   var compress = zlib.createGzip();
@@ -93,16 +93,18 @@ TestUser.prototype.createContainer = function (from, body, callback) {
     callback = body;
     body = null;
   }
-  return this.post('/users/me/runnables?from'+from)
+  console.log(from);
+  return this.post('/users/me/runnables?from=' + from)
     .send(body || {})
     .expect(201)
     .end(callback);
 };
 TestUser.prototype.createContainerFromFixture = function (name, callback) {
+  var self = this;
   this.createImageFromFixture(name, function (err, image) {
     if (err) {
       return callback(err);
     }
-    this.createContainer(image._id, callback);
+    self.createContainer(image._id, callback);
   });
 };

@@ -6,6 +6,9 @@ var db = require('./db');
 var async = require('./async');
 
 var helpers = module.exports = {
+  fakeId: function () {
+    return '123456789012345678901234';
+  },
   capitalize: function (str) {
     var firstChar = str[0];
     return firstChar ?
