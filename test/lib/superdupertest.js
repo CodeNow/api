@@ -26,8 +26,6 @@ Test.prototype.expectBody = function (key, value) {
   return this;
 };
 
-var superEnd = Test.prototype.end;
-
 Test.prototype._checkExpectedBodyValues = function (res) {
   var self = this;
   // check expected bodies
@@ -90,6 +88,7 @@ Test.prototype._checkExpectedBodyValues = function (res) {
   return err;
 };
 
+var superEnd = Test.prototype.end;
 Test.prototype.end = function (callback) {
   var self = this;
 
@@ -102,6 +101,7 @@ Test.prototype.end = function (callback) {
       callback(err, res);
     }
   });
+  return this;
 };
 
 // when using request as a stream, end does not work as expected
@@ -118,6 +118,7 @@ Test.prototype.streamEnd = function (callback) {
       callback(null, res);
     });
   });
+  return this;
 };
 
 module.exports = supertest;

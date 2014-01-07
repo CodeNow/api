@@ -1,11 +1,17 @@
 require('./setupAndTeardown');
-var async = require('async');
 var _ = require('lodash');
 var st = require('./superdupertest');
 var httpMethods = require('methods');
 var db = require('./db');
+var async = require('./async');
 
 var helpers = module.exports = {
+  capitalize: function (str) {
+    var firstChar = str[0];
+    return firstChar ?
+      str[0].toUpperCase()+str.slice(1).toLowerCase() :
+      str;
+  },
   getRequestStr: function (context) {
     var spec = context.runnable();
     var title = -1;
@@ -17,15 +23,6 @@ var helpers = module.exports = {
       spec = spec.parent;
     }
     return title;
-  },
-  asyncExtend: function (dst, src, cb) {
-    async.parallel(src, function (err, results) {
-      if (err) {
-        return cb(err);
-      }
-      _.extend(dst, results);
-      cb(null, dst, results);
-    });
   },
   deleteKeys: function (obj, keys) {
     keys = Array.isArray(keys) ?
@@ -63,13 +60,18 @@ var helpers = module.exports = {
         }
       });
       var requestStr = helpers.getRequestStr(context);
-      helpers.asyncExtend(context, tasks, function (err, ctx, results) {
+      async.extend(context, tasks, function (err, ctx, results) {
         if (err) {
           return done(err);
         }
         _.values(results).forEach(extendWith({requestStr:requestStr}));
         done();
       });
+    };
+  },
+  extendContextSeries: function (tasks) {
+    return function (done) {
+      async.extendSeries(this, tasks, done);
     };
   },
   randomValue: function () {

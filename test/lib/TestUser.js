@@ -6,6 +6,7 @@ var fstream = require('fstream');
 var tar = require('tar');
 var zlib = require('zlib');
 var helpers = require('./helpers');
+var async = require('./async');
 
 var TestUser = module.exports = function (properties) {
   _.extend(this, properties);
@@ -66,7 +67,7 @@ TestUser.prototype.dbUpdate = function (updateSet, cb) {
     cb();
   });
 };
-TestUser.prototype.createImageFromFixture = function (name) {
+TestUser.prototype.createImageFromFixture = function (name, callback) {
   if (this.permission_level < 5) {
     throw new Error('only admin users can create images from fixtures');
   }
@@ -80,15 +81,28 @@ TestUser.prototype.createImageFromFixture = function (name) {
   });
   var request = this.post('/runnables/import')
     .set('content-type', 'application/x-gzip')
-    .expect(201);
+    .expect(201)
+    .streamEnd(async.pick('body', callback));
   compress.pipe(request);
   packer.pipe(compress);
   reader.pipe(packer);
   reader.resume();
-  return request;
 };
-TestUser.prototype.createContainer = function (from, body) {
+TestUser.prototype.createContainer = function (from, body, callback) {
+  if (typeof body === 'function') {
+    callback = body;
+    body = null;
+  }
   return this.post('/users/me/runnables?from'+from)
-    .send(body)
-    .expect(201);
+    .send(body || {})
+    .expect(201)
+    .end(callback);
+};
+TestUser.prototype.createContainerFromFixture = function (name, callback) {
+  this.createImageFromFixture(name, function (err, image) {
+    if (err) {
+      return callback(err);
+    }
+    this.createContainer(image._id, callback);
+  });
 };

@@ -1,4 +1,3 @@
-var db = require('./lib/db');
 var users = require('./lib/userFactory');
 var categories = require('./lib/categoriesFactory');
 var helpers = require('./lib/helpers');
@@ -8,7 +7,7 @@ describe('Categories', function () {
 
   afterEach(helpers.cleanup);
 
-  describe('POST /categories', function (done) {
+  describe('POST /categories', function () {
     describe('admin', function () {
       beforeEach(extendContext({
         user : users.createAdmin

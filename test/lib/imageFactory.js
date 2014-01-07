@@ -25,13 +25,7 @@ var images = module.exports = {
       if (err) {
         return callback(err);
       }
-      user.createImageFromFixture(name)
-        .streamEnd(function (err, res) {
-          if (err) {
-            return callback(err);
-          }
-          callback(null, res.body);
-        });
+      user.createImageFromFixture(name, callback);
     });
   }
 };
