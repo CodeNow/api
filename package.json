@@ -48,7 +48,8 @@
     "nock": "~0.27.0",
     "supertest": "~0.8.2",
     "methods": "~0.1.0",
-    "jshint": "~2.4.1"
+    "jshint": "~2.4.1",
+    "console-trace": "git://github.com/numbcoder/console-trace.git"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
