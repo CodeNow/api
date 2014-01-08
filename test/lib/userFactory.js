@@ -46,6 +46,11 @@ var users = module.exports = {
     var authKeys = ['username', 'password', 'email'];
     var auth = _.pick(properties, authKeys);
     var ignoreConflictError = !Boolean(auth.username);
+    if (typeof properties === 'function') {
+      // function (callback)
+      callback = properties;
+      properties = {};
+    }
     createUsername('registered' || auth.username, ignoreConflictError, function (err, username) {
       if (err) {
         return callback(err);

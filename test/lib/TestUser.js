@@ -20,6 +20,20 @@ httpMethods.forEach(function (method) {
     token = token || this.access_token;
     return helpers.request[method](path, token);
   };
+  var bodyMethods = ['post', 'put', 'patch', 'del'];
+  TestUser.prototype[method + 'Container'] = function (id, opts, callback) {
+    if (!opts.qs) { // opts is body or querystring
+      opts = ~bodyMethods.indexOf(method) ?
+        { body: opts } :
+        { qs: opts };
+    }
+    var querystring = opts.qs ? '?' + qs.stringify(opts.qs) : '';
+    var req = this[method]('/users/me/' + id + querystring);
+    if (opts.body) {
+      req.send(opts.body);
+    }
+    req.end(async.pick('body', callback));
+  };
 });
 // path args ... [query]
 TestUser.prototype.specRequest = function () {
