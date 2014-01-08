@@ -27,12 +27,12 @@ var containers = module.exports = {
   createContainer: function (imageId, callback) {
     var users = require('./userFactory');
     async.waterfall([
-      asyncExtend.bind({}, {
+      async.extend.bind({}, {
         user: users.anonymousUser
       }),
       function (results, cb) {
         var user = results.user;
-        asyncExtend(results, {
+        async.extend(results, {
           container: user.createContainer(imageId).end.bind(user)
         }, cb);
       }
