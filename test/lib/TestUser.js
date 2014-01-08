@@ -97,7 +97,7 @@ TestUser.prototype.createContainer = function (from, body, callback) {
   return this.post('/users/me/runnables?from=' + from)
     .send(body || {})
     .expect(201)
-    .end(callback);
+    .end(async.pick('body', callback));
 };
 TestUser.prototype.createContainerFromFixture = function (name, callback) {
   var self = this;

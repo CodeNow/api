@@ -15,7 +15,7 @@ describe('Containers', function () {
   after(helpers.cleanup);
 
   // describe('GET /users/me/runnables', function () {
-    
+
   //   afterEach(helpers.cleanupExcept('images'));
 
   //   describe('owner', function () {
@@ -53,7 +53,7 @@ describe('Containers', function () {
   //         .end(done);
   //     });
   //   });
-    
+
   // });
 
   // describe('GET /users/me/runnables/:id', function () {
@@ -100,7 +100,7 @@ describe('Containers', function () {
   describe('DEL /users/me/runnables/:id', function () {
 
     afterEach(helpers.cleanupExcept('images'));
-    
+
     // describe('owner');
     // describe('not owner');
     // describe('admin');
@@ -110,6 +110,7 @@ describe('Containers', function () {
       container: ['user.createContainer', ['image._id']]
     }));
     it('should query by image', function (done) {
+      console.log(this.container._id);
       this.user.specRequest(this.container._id)
         .expect(200)
         .expectBody('message', 'runnable deleted')

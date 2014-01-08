@@ -51,7 +51,19 @@ var helpers = module.exports = {
       if (err) {
         return callback(err);
       }
-      callback(null, _.values(data).forEach(extendWith(reqData)));
+      _.values(data).forEach(extendWith(reqData));
+      callback(null, data);
+    };
+  },
+  extendWithReqStr1: function (ctx, callback) {
+    var extendWith = helpers.extendWith;
+    var reqData = { requestStr: helpers.getRequestStr(ctx) };
+    return function (err, data, results) {
+      if (err) {
+        return callback(err);
+      }
+      _.values(data).forEach(extendWith(reqData));
+      callback(null, data);
     };
   },
   extendContext: function (key, value) {
@@ -84,7 +96,7 @@ var helpers = module.exports = {
   },
   extendContextSeries: function (tasks) {
     return function (done) {
-      async.extendSeries(this, tasks, helpers.extendWithReqStr(this, done));
+      async.extendSeries(this, tasks, helpers.extendWithReqStr1(this, done));
       // set cleanup keys
       this._cleanupKeys = (this._cleanupKeys || []).concat(Object.keys(tasks));
     };
@@ -102,13 +114,15 @@ var helpers = module.exports = {
     return server.create();
   },
   cleanup: function (callback) {
-    helpers.deleteKeys(this, this._cleanupKeys);
+    helpers.deleteKeys(this, this._cleanupKeys); // clean context keys
     return helpers.cleanupExcept()(callback);
   },
   cleanupExcept: function (exclude) {
     exclude = Array.isArray(exclude) ?
       exclude :
       Array.prototype.slice.call(arguments);
+    // clean context keys
+    helpers.deleteKeys(this, _.difference(this._cleanupKeys, exclude));
     return function (callback) {
       var images = require('./imageFactory');
       var containers = require('./containerFactory');
