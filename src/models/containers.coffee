@@ -12,6 +12,9 @@ volumes = require  "./volumes"
 implementations = require './implementations'
 _ = require 'lodash'
 
+if (configs.dockworkerProxy)
+  proxy = configs.dockworkerProxy
+
 Schema = mongoose.Schema
 ObjectId = Schema.ObjectId
 
@@ -229,6 +232,7 @@ containerSchema.methods.updateBuildCommand = (domain, cb) ->
     url: url
     pool: false
     json: @build_cmd
+    proxy: proxy
   , domain.intercept () -> cb()
 
 containerSchema.methods.updateStartCommand = (domain, cb) ->
@@ -237,6 +241,7 @@ containerSchema.methods.updateStartCommand = (domain, cb) ->
     url: url
     pool: false
     json: @start_cmd
+    proxy: proxy
   , domain.intercept () -> cb()
 
 containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
