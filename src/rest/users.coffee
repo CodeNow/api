@@ -229,6 +229,7 @@ module.exports = (parentDomain) ->
   app.put '/users/:userid/runnables/:runnableid', fetchuser, putrunnable
 
   patchrunnable = (req, res) ->
+    console.log('HIT ME')
     set = _.pick req.body, 'specification', 'saved', 'start_cmd', 'build_cmd', 'output_format', 'status', 'commit_error', 'service_cmds'
     runnables.updateContainer req.domain, req.user_id, req.params.runnableid, set, req.get('runnable-token'), (err, runnable) ->
       if err then res.json err.code, message: err.msg else
