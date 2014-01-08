@@ -22,23 +22,31 @@ httpMethods.forEach(function (method) {
   };
   var bodyMethods = ['post', 'put', 'patch', 'del'];
   TestUser.prototype[method + 'Container'] = function (id, opts, callback) {
-    if (!opts.qs) { // opts is body or querystring
+    if (!opts.qs && !opts.body) { // opts is body or querystring
       opts = ~bodyMethods.indexOf(method) ?
         { body: opts } :
         { qs: opts };
     }
-    var querystring = opts.qs ? '?' + qs.stringify(opts.qs) : '';
-    var req = this[method]('/users/me/' + id + querystring);
+    var path = '/users/me/runnables/' + id + (opts.qs ? '?' + qs.stringify(opts.qs) : '');
+    var req = this[method]();
     if (opts.body) {
       req.send(opts.body);
     }
-    req.end(async.pick('body', callback));
+    if (opts.expect) {
+      req.expect(opts.expect);
+    }
+    req.end(function (err, res) {
+      if (err) {
+        console.log(method.toUpperCase() + ' ' + path);
+        return callback(err);
+      }
+      callback(null, res.body);
+    });
   };
 });
 // path args ... [query]
 TestUser.prototype.specRequest = function () {
   if (typeof this.requestStr !== 'string') {
-    console.log('spec', this.requestStr);
     throw new Error('spec request was not found');
   }
   var reqsplit = this.requestStr.split(' ');

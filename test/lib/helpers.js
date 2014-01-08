@@ -1,4 +1,5 @@
 require('./setupAndTeardown');
+require('console-trace')({always:true, right:true});
 var _ = require('lodash');
 var st = require('./superdupertest');
 var httpMethods = require('methods');
@@ -55,17 +56,6 @@ var helpers = module.exports = {
       callback(null, data);
     };
   },
-  extendWithReqStr1: function (ctx, callback) {
-    var extendWith = helpers.extendWith;
-    var reqData = { requestStr: helpers.getRequestStr(ctx) };
-    return function (err, data, results) {
-      if (err) {
-        return callback(err);
-      }
-      _.values(data).forEach(extendWith(reqData));
-      callback(null, data);
-    };
-  },
   extendContext: function (key, value) {
     var obj;
     var extendWith = helpers.extendWith;
@@ -96,7 +86,7 @@ var helpers = module.exports = {
   },
   extendContextSeries: function (tasks) {
     return function (done) {
-      async.extendSeries(this, tasks, helpers.extendWithReqStr1(this, done));
+      async.extendSeries(this, tasks, helpers.extendWithReqStr(this, done));
       // set cleanup keys
       this._cleanupKeys = (this._cleanupKeys || []).concat(Object.keys(tasks));
     };
