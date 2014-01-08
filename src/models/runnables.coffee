@@ -109,7 +109,7 @@ Runnables =
     ], cb
 
   listContainers: (domain, userId, parent, cb) ->
-    query = { owner: userId, saved: true }
+    query = { owner: userId }
     if parent then query.parent = decodeId parent
     containers.find query, domain.intercept (containers) ->
       async.map containers, (item, cb) ->
