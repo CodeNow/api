@@ -1,5 +1,4 @@
 var helpers = require('./lib/helpers');
-require('console-trace')({always:true, right:true});
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var extendContext = helpers.extendContext;
@@ -17,7 +16,7 @@ describe('Images', function () {
     }));
     afterEach(helpers.cleanupExcept('images'));
     it('should respond 404 if image not found', function (done) {
-      this.user.specRequest(helpers.fakeId())
+      this.user.specRequest(helpers.fakeShortId())
         .expect(404)
         .end(done);
     });
@@ -35,6 +34,7 @@ describe('Images', function () {
     afterEach(helpers.cleanup);
 
     // describe('anonymous', function () {
+    //   beforeEach(extendContext('user', users.createAnonymous));
     //   it('should respond 403', function (done) {
     //     this.user.specRequest({ from: this.container._id })
     //       .expect(403)
@@ -43,6 +43,7 @@ describe('Images', function () {
     // });
 
     // describe('registered', function () {
+    //   beforeEach(extendContext('user', users.createRegistered));
     //   it('should respond 403', function (done) {
     //     this.user.specRequest({ from: this.container._id })
     //       .expect(403)
@@ -51,6 +52,7 @@ describe('Images', function () {
     // });
 
     // describe('publisher', function () {
+    //   beforeEach(extendContext('user', users.createPublisher));
     //   it('should 201', function (done) {
     //     this.user.specRequest({ from: this.container._id })
     //       .expect(201)

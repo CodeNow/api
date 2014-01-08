@@ -6,6 +6,9 @@ var db = require('./db');
 var async = require('./async');
 
 var helpers = module.exports = {
+  fakeShortId: function () {
+    return '1234567890123456';
+  },
   fakeId: function () {
     return '123456789012345678901234';
   },
@@ -19,7 +22,7 @@ var helpers = module.exports = {
     var spec = context.runnable();
     var title = -1;
     while (spec) {
-      if (/^[^ ]* \/[^ ]*$/.test(spec.title)) {
+      if (/^[A-Z]* \/[^ ]*$/.test(spec.title)) {
         title = spec.title;
         break;
       }
@@ -53,7 +56,8 @@ var helpers = module.exports = {
     return function (done) {
       var context = this;
       var tasks = {};
-      Object.keys(obj).forEach(function (key) {
+      var keys = Object.keys(obj);
+      keys.forEach(function (key) {
         var val = obj[key];
         if (typeof val === 'function') {
           tasks[key] = val; // tasks for async values
@@ -70,9 +74,13 @@ var helpers = module.exports = {
         _.values(results).forEach(extendWith({requestStr:requestStr}));
         done();
       });
+      // set cleanup keys
+      this._cleanupKeys = (this._cleanupKeys || []).concat(keys);
     };
   },
   extendContextSeries: function (tasks) {
+    // set cleanup keys
+    this._cleanupKeys = (this._cleanupKeys || []).concat(Object.keys(tasks));
     return function (done) {
       async.extendSeries(this, tasks, done);
     };
@@ -90,6 +98,7 @@ var helpers = module.exports = {
     return server.create();
   },
   cleanup: function (callback) {
+    helpers.deleteKeys(this, this._cleanupKeys);
     return helpers.cleanupExcept()(callback);
   },
   cleanupExcept: function (exclude) {

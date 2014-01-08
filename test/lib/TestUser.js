@@ -93,7 +93,6 @@ TestUser.prototype.createContainer = function (from, body, callback) {
     callback = body;
     body = null;
   }
-  console.log(from);
   return this.post('/users/me/runnables?from=' + from)
     .send(body || {})
     .expect(201)
