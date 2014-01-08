@@ -99,7 +99,6 @@ describe('Containers', function () {
         container: ['user.createContainer', ['image._id']]
       }));
       it('should update the container', function (done) {
-        console.log(this.container);
         this.user.specRequest(this.container._id)
           .send(this.container)
           .expect(200)
