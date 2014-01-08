@@ -136,7 +136,7 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
           else
             cb null
 
-implementationSchema.statics.updateEnvBySpecification = (domain, opts, cb) =>
+implementationSchema.statics.updateEnvBySpecification = (domain, opts, cb) ->
   @findOne
     owner: opts.userId
     implements: opts.specification

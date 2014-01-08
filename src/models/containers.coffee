@@ -189,7 +189,7 @@ containerSchema.statics.create = (domain, owner, image, data, cb) ->
     else
       createContainer env
 
-containerSchema.statics.destroy = (domain, id, cb) =>
+containerSchema.statics.destroy = (domain, id, cb) ->
   @findOne { _id: id } , domain.intercept (container) =>
     if not container then cb error 404, 'container not found' else
       request
@@ -200,11 +200,11 @@ containerSchema.statics.destroy = (domain, id, cb) =>
         @remove { _id: id }, domain.intercept () ->
           cb()
 
-containerSchema.statics.listSavedContainers = (domain, cb) =>
+containerSchema.statics.listSavedContainers = (domain, cb) ->
   timeout = (new Date()).getTime() - configs.containerTimeout
   @find { $or: [ { saved: true }, { created: $gte: timeout } ] }, { files:0 }, domain.intercept cb # exclude files to avoid parse error
 
-containerSchema.methods.updateRunOptions = (domain, cb) =>
+containerSchema.methods.updateRunOptions = (domain, cb) ->
   self = @
   operations = [
     self.updateBuildCommand.bind self, domain
@@ -215,7 +215,7 @@ containerSchema.methods.updateRunOptions = (domain, cb) =>
   async.parallel operations, cb
 
 
-containerSchema.methods.updateEnvVariables = (domain, cb) =>
+containerSchema.methods.updateEnvVariables = (domain, cb) ->
   encodedId = encodeId @_id
   implementations.updateEnvBySpecification domain,
     userId: @owner
@@ -223,7 +223,7 @@ containerSchema.methods.updateEnvVariables = (domain, cb) =>
     containerId: encodedId
   , cb
 
-containerSchema.methods.updateBuildCommand = (domain, cb) =>
+containerSchema.methods.updateBuildCommand = (domain, cb) ->
   url = "http://#{@servicesToken}.#{configs.domain}/api/buildCmd"
   request.post
     url: url
@@ -231,7 +231,7 @@ containerSchema.methods.updateBuildCommand = (domain, cb) =>
     json: @build_cmd
   , domain.intercept () -> cb()
 
-containerSchema.methods.updateStartCommand = (domain, cb) =>
+containerSchema.methods.updateStartCommand = (domain, cb) ->
   url = "http://#{@servicesToken}.#{configs.domain}/api/cmd"
   request.post
     url: url
@@ -239,7 +239,7 @@ containerSchema.methods.updateStartCommand = (domain, cb) =>
     json: @start_cmd
   , domain.intercept () -> cb()
 
-containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) =>
+containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb) ->
   files = [ ]
   if default_tag
     content = true
@@ -264,14 +264,14 @@ containerSchema.methods.listFiles = (domain, content, dir, default_tag, path, cb
 cacheContents = (ext) ->
   ext.toLowerCase() in exts
 
-containerSchema.methods.syncFiles = (domain, cb) =>
+containerSchema.methods.syncFiles = (domain, cb) ->
   sync domain, @servicesToken, @, (err) =>
     if err then cb err else
       @last_write = new Date()
       @save domain.intercept () =>
         cb null, @
 
-containerSchema.methods.createFile = (domain, name, filePath, content, cb) =>
+containerSchema.methods.createFile = (domain, name, filePath, content, cb) ->
   filePath = path.normalize filePath
   if typeof content is 'string'
     volumes.createFile domain, @servicesToken, @file_root, name, filePath, content, (err) =>
@@ -310,7 +310,7 @@ containerSchema.methods.createFile = (domain, name, filePath, content, cb) =>
           @save domain.intercept () ->
             cb null, { _id: file._id, name: file.name, path: file.path }
 
-containerSchema.methods.updateFile = (domain, fileId, content, cb) =>
+containerSchema.methods.updateFile = (domain, fileId, content, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     volumes.updateFile domain, @servicesToken, @file_root, file.name, file.path, content, (err) =>
@@ -322,7 +322,7 @@ containerSchema.methods.updateFile = (domain, fileId, content, cb) =>
         @save domain.intercept () ->
           cb null, file
 
-containerSchema.methods.updateFileContents = (domain, filePath, content, cb) =>
+containerSchema.methods.updateFileContents = (domain, filePath, content, cb) ->
   foundFile = null
   filePath = path.normalize filePath
   @files.forEach (file) ->
@@ -345,7 +345,7 @@ containerSchema.methods.updateFileContents = (domain, filePath, content, cb) =>
           @save domain.intercept () ->
             cb null, { _id: foundFile._id, name: foundFile.name, path: foundFile.path }
 
-containerSchema.methods.renameFile = (domain, fileId, newName, cb) =>
+containerSchema.methods.renameFile = (domain, fileId, newName, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     volumes.renameFile domain, @servicesToken, @file_root, file.name, file.path, newName, (err) =>
@@ -381,7 +381,7 @@ containerSchema.methods.renameFile = (domain, fileId, newName, cb) =>
             @save domain.intercept () ->
               cb null, file
 
-containerSchema.methods.moveFile = (domain, fileId, newPath, cb) =>
+containerSchema.methods.moveFile = (domain, fileId, newPath, cb) ->
   file = @files.id fileId
   newPath = path.normalize newPath
   if not file then cb error 404, 'file does not exist' else
@@ -399,7 +399,7 @@ containerSchema.methods.moveFile = (domain, fileId, newPath, cb) =>
         @save domain.intercept () ->
           cb null, file
 
-containerSchema.methods.createDirectory = (domain, name, path, cb) =>
+containerSchema.methods.createDirectory = (domain, name, path, cb) ->
   volumes.createDirectory domain, @servicesToken, @file_root, name, path, (err) =>
     if err then cb err else
       @files.push
@@ -411,12 +411,12 @@ containerSchema.methods.createDirectory = (domain, name, path, cb) =>
       @save domain.intercept () ->
         cb null, file
 
-containerSchema.methods.readFile = (domain, fileId, cb) =>
+containerSchema.methods.readFile = (domain, fileId, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     cb null, file.toJSON()
 
-containerSchema.methods.tagFile = (domain, fileId, isDefault, cb) =>
+containerSchema.methods.tagFile = (domain, fileId, isDefault, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if file.dir then cb error 403, 'cannot tag directory as default' else
@@ -425,7 +425,7 @@ containerSchema.methods.tagFile = (domain, fileId, isDefault, cb) =>
         @save domain.intercept () ->
           cb null, file
 
-containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) =>
+containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if not file.dir
@@ -451,7 +451,7 @@ containerSchema.methods.deleteFile = (domain, fileId, recursive, cb) =>
           @save domain.intercept () ->
             cb()
 
-containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) =>
+containerSchema.methods.getMountedFiles = (domain, fileId, mountDir, cb) ->
   file = @files.id fileId
   if not file then cb error 404, 'file does not exist' else
     if not file.ignore then cb error 403, 'entry is not a valid mount point' else

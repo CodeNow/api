@@ -67,20 +67,20 @@ userSchema.index
 userSchema.set 'toJSON', { virtuals: true }
 userSchema.set 'autoIndex', false
 
-userSchema.virtual('gravitar').get () =>
+userSchema.virtual('gravitar').get () ->
   if not @email then undefined else
     hash = crypto.createHash 'md5'
     hash.update @email
     ghash = hash.digest 'hex'
     "http://www.gravatar.com/avatar/#{ghash}"
 
-userSchema.virtual('registered').get () =>
+userSchema.virtual('registered').get () ->
   this.permission_level >= 1
 
-userSchema.virtual('isVerified').get () =>
+userSchema.virtual('isVerified').get () ->
   this.permission_level >= 2
 
-userSchema.virtual('isModerator').get () =>
+userSchema.virtual('isModerator').get () ->
   this.permission_level >= 5
 
 publicFields =
@@ -92,22 +92,22 @@ publicFields =
   show_email: 1
   company  : 1,
 
-userSchema.statics.createUser = (domain, cb) =>
+userSchema.statics.createUser = (domain, cb) ->
   user = new @
   user.save domain.intercept () ->
     cb null, user
 
-userSchema.statics.findUser = (domain, params, cb) =>
+userSchema.statics.findUser = (domain, params, cb) ->
   minCreated = Date.now() - configs.tokenExpires
   params['$or'] = [ { created: $gte: minCreated }, { permission_level: $gt: 0 } ]
   @findOne params, domain.intercept (user) ->
     cb null, user
 
-userSchema.statics.removeUser = (domain, userId, cb) =>
+userSchema.statics.removeUser = (domain, userId, cb) ->
   @remove { _id: userId }, domain.intercept () ->
     cb()
 
-userSchema.statics.loginUser = (domain, login, password, cb) =>
+userSchema.statics.loginUser = (domain, login, password, cb) ->
   query = { $or: [ {username: login}, {email: login} ] }
   @findOne query, domain.intercept (user) ->
     if not user then cb error 404, 'user not found' else
@@ -120,7 +120,7 @@ userSchema.statics.loginUser = (domain, login, password, cb) =>
         if password isnt user.password then cb error 403, 'invalid password' else
           cb null, user._id
 
-userSchema.statics.updateUser = (domain, userId, data, fields, cb) =>
+userSchema.statics.updateUser = (domain, userId, data, fields, cb) ->
   if typeof fields is 'function'
     cb = fields
     fields = null
@@ -149,11 +149,11 @@ userSchema.statics.registerUser = (domain, userId, data, cb) ->
       if err then throw err
       setPassword hash
 
-userSchema.statics.publicListWithIds = (domain, userIds, cb) =>
+userSchema.statics.publicListWithIds = (domain, userIds, cb) ->
   query = _id: $in: userIds
   @publicList domain, query, cb
 
-userSchema.statics.publicList = (domain, query, cb) =>
+userSchema.statics.publicList = (domain, query, cb) ->
   @find query, publicFields, domain.intercept (users) ->
     async.map users, (user, cb) ->
       user = user.toJSON()
@@ -167,7 +167,7 @@ userSchema.statics.publicList = (domain, query, cb) =>
         cb null, user
     , cb
 
-userSchema.statics.addVote = (domain, userId, runnableId, cb) =>
+userSchema.statics.addVote = (domain, userId, runnableId, cb) ->
   self = @
   createVote = (data) ->
     newrunnable = new self()
@@ -184,7 +184,7 @@ userSchema.statics.addVote = (domain, userId, runnableId, cb) =>
     if !success then cb error 403, 'you already voted on this runnable' else
       cb null, vote
 
-userSchema.statics.channelLeaders = (domain, channelId, idsOnly, cb) =>
+userSchema.statics.channelLeaders = (domain, channelId, idsOnly, cb) ->
   self = @
   images.distinct 'owner', 'tags.channel':channelId, (err, userIds) ->
     if err then cb err else
@@ -206,7 +206,7 @@ userSchema.statics.channelLeaders = (domain, channelId, idsOnly, cb) =>
     ], cb
 
 
-userSchema.methods.getVotes = () =>
+userSchema.methods.getVotes = () ->
   votes = [ ]
   for vote in @votes
     json_vote = vote.toJSON()
@@ -214,7 +214,7 @@ userSchema.methods.getVotes = () =>
     votes.push json_vote
   votes
 
-userSchema.methods.addVote = (domain, runnableId, cb) =>
+userSchema.methods.addVote = (domain, runnableId, cb) ->
   found = false
   for vote in @votes
     if vote.runnable.toString() is runnableId.toString()
@@ -226,7 +226,7 @@ userSchema.methods.addVote = (domain, runnableId, cb) =>
       vote.runnable = encodeId vote.runnable
       cb null, vote
 
-userSchema.methods.removeVote = (domain, voteId, cb) =>
+userSchema.methods.removeVote = (domain, voteId, cb) ->
   vote = @votes.id voteId
   if not vote then cb error 404, 'vote not found' else
     vote.remove()

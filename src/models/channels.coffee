@@ -34,7 +34,7 @@ channelSchema.set 'autoIndex', false
 
 redis_client = redis.createClient(configs.redis.port, configs.redis.ipaddress)
 
-channelSchema.statics.getChannel = (domain, categories, id, cb) =>
+channelSchema.statics.getChannel = (domain, categories, id, cb) ->
   @findOne _id: id, domain.intercept (channel) ->
     if not channel then cb error 404, 'channel not found' else
       json = channel.toJSON()
@@ -49,7 +49,7 @@ channelSchema.statics.getChannel = (domain, categories, id, cb) =>
           if err then cb err else
             cb null, json
 
-channelSchema.statics.getChannelByName = (domain, categories, name, cb) =>
+channelSchema.statics.getChannelByName = (domain, categories, name, cb) ->
   lower = name.toLowerCase()
   @findOne aliases:lower, domain.intercept (channel) ->
     if not channel then cb error 404, 'channel not found' else
@@ -63,7 +63,7 @@ channelSchema.statics.getChannelByName = (domain, categories, name, cb) =>
         , (err) ->
           cb err, json
 
-channelSchema.statics.getChannelsWithNames = (domain, categories, names, cb) =>
+channelSchema.statics.getChannelsWithNames = (domain, categories, names, cb) ->
   if not Array.isArray names then names = [names]
   lowers = names.map (name) -> name.toLowerCase()
   @find aliases:$in:lowers, domain.intercept (channels) ->
@@ -97,7 +97,7 @@ channelSchema.statics.createChannel = (domain, userId, name, desc, cb) ->
                   json.count = 0
                   cb null, json
 
-channelSchema.statics.createImplicitChannel = (domain, name, cb) =>
+channelSchema.statics.createImplicitChannel = (domain, name, cb) ->
   channel = new @
   channel.name = name
   channel.aliases = [name.toLowerCase()]
@@ -128,7 +128,7 @@ channelSchema.statics.listChannels = (domain, categories, cb) ->
               redis_client.set 'listChannelsCache', JSON.stringify(result)
               cb null, result
 
-channelSchema.statics.extendWithNameAndCount = (domain) =>
+channelSchema.statics.extendWithNameAndCount = (domain) ->
   self = @
   (channelData, cb) ->
     channelId = channelData._id
@@ -138,7 +138,7 @@ channelSchema.statics.extendWithNameAndCount = (domain) =>
         channel.count = count # get count
         cb null, channel
 
-channelSchema.statics.mostPopAffectedByUser = (domain, size, userId, callback) =>
+channelSchema.statics.mostPopAffectedByUser = (domain, size, userId, callback) ->
   self = @
   images.distinct 'tags.channel', { owner:userId }, domain.intercept (channelIds) ->
     highestImageCount domain, size, channelIds, (err, popularChannelsData) ->
@@ -173,7 +173,7 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
               return true
           cb null, data
 
-channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChannelIds, userId, callback) =>
+channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChannelIds, userId, callback) ->
   self = @
   async.reduce filterChannelIds, [], (badges, channelId, cb) ->
     self.isLeader domain, userId, channelId, (err, leaderData) ->
@@ -215,7 +215,7 @@ channelSchema.statics.listChannelsInCategory = (domain, categories, categoryName
                   redis_client.set "listChannelsInCategory:#{category._id}", JSON.stringify(result)
                   cb null, result
 
-channelSchema.statics.relatedChannels = (domain, channelNames, cb) =>
+channelSchema.statics.relatedChannels = (domain, channelNames, cb) ->
   lowerNames = channelNames.map (name) -> name.toLowerCase()
   @find aliases:$in:lowerNames, domain.bind (err, channels) =>
     if err then throw err else
@@ -260,7 +260,7 @@ channelSchema.statics.deleteChannel = (domain, userId, channelId, cb) ->
         @remove _id: channelId, domain.intercept () ->
           cb()
 
-channelSchema.statics.getTags = (domain, categories, channelId, cb) =>
+channelSchema.statics.getTags = (domain, categories, channelId, cb) ->
   @findOne _id: channelId, domain.intercept (channel) ->
     if not channel then cb error 404, 'channel not found' else
       async.map channel.tags, (tag, cb) ->
@@ -270,7 +270,7 @@ channelSchema.statics.getTags = (domain, categories, channelId, cb) =>
           cb null, json
       , cb
 
-channelSchema.statics.getTag = (domain, categories, channelId, tagId, cb) =>
+channelSchema.statics.getTag = (domain, categories, channelId, tagId, cb) ->
   @findOne _id: channelId, domain.intercept (channel) ->
     if not channel then cb error 404, 'channel not found' else
       tag = channel.tags.id tagId
@@ -301,7 +301,7 @@ channelSchema.statics.addTag = (domain, categories, userId, channelId, text, cb)
                       channel.save domain.intercept () ->
                         cb null, { name: category.name, _id: tagId }
 
-channelSchema.statics.removeTag = (domain, userId, channelId, tagId, cb) =>
+channelSchema.statics.removeTag = (domain, userId, channelId, tagId, cb) ->
   @findOne _id: channelId, domain.intercept (channel) ->
     if not channel then cb error 404, 'channel not found' else
       users.findOne _id: userId, domain.intercept (user) ->

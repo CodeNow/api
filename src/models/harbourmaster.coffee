@@ -2,10 +2,10 @@ configs = require '../configs'
 request = require 'request'
 error = require '../error'
 
-Harbourmaster = (url) =>
+Harbourmaster = (url) ->
   @url = url
 
-Harbourmaster.prototype.commitContainer = (domain, encodedContainer, token, cb) =>
+Harbourmaster.prototype.commitContainer = (domain, encodedContainer, token, cb) ->
   container = encodedContainer
   request
     pool: false

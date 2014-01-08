@@ -256,13 +256,13 @@ Runnables =
         lastPage = Math.ceil(results.count/limit) - 1
         cb null, results.images, lastPage:lastPage
 
-  listByPublished: (domain, sort, limit, page, cb) =>
+  listByPublished: (domain, sort, limit, page, cb) ->
     @listFiltered domain, { tags: $not: $size: 0 }, sort, limit, page, null, cb
 
-  listByChannelMembership: (domain, channelIds, sort, limit, page, cb) =>
+  listByChannelMembership: (domain, channelIds, sort, limit, page, cb) ->
     @listFiltered domain, 'tags.channel': $in: channelIds, sort, limit, page, null, cb
 
-  listByOwner: (domain, owner, sort, limit, page, cb) =>
+  listByOwner: (domain, owner, sort, limit, page, cb) ->
     fields = _.clone listFields
     _.extend fields,
       copies:1

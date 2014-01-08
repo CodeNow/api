@@ -44,13 +44,13 @@ specificationSchema.statics.createSpecification = (domain, opts, cb) ->
             specification.save domain.intercept () ->
               cb null, specification.toJSON()
 
-specificationSchema.statics.listSpecifications = (domain, cb) =>
+specificationSchema.statics.listSpecifications = (domain, cb) ->
   @find {}, domain.intercept (specifications) =>
     async.map specifications, (spec, cb) =>
       @getVirtuals(domain, spec, cb)
     , cb
 
-specificationSchema.statics.getSpecification = (domain, id, cb) =>
+specificationSchema.statics.getSpecification = (domain, id, cb) ->
   @findOne
     _id: id
   , domain.intercept (specification) =>
