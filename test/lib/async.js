@@ -85,6 +85,7 @@ var a = {
       callback(null, data[key]);
     };
   },
+
   extend: function (dst, src, cb) {
     async.parallel(src, function (err, results) {
       if (err) {
@@ -97,15 +98,21 @@ var a = {
   extendSeries: function (dst, src, callback) {
     var argSlice = a.argSlice;
     var keys = Object.keys(src);
+    var results = {};
     async.eachSeries(keys, function (key, cb) {
       var task = {};
       task[key] = src[key];
       task = _replaceInvokePlaceholders(dst, task);
-      // a.extend(dst, task, a.argSlice(0, 2, callback));
-      a.extend(dst, task, function (err, val) {
+      a.extend(dst, task, function (err, val, res) {
+        _.extend(results, res);
         cb(err, val);
       });
-    }, callback);
+    }, function (err) {
+      if (err) {
+        return callback(err);
+      }
+      callback(err, dst, results);
+    });
   },
   extendWaterfall: function (dst, src, callback) {
     var lastKey = Object.keys(src).pop();

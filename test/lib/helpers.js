@@ -44,6 +44,16 @@ var helpers = module.exports = {
       _.extend(obj1, obj2);
     };
   },
+  extendWithReqStr: function (ctx, callback) {
+    var extendWith = helpers.extendWith;
+    var reqData = { requestStr: helpers.getRequestStr(ctx) };
+    return function (err, data) {
+      if (err) {
+        return callback(err);
+      }
+      callback(null, _.values(data).forEach(extendWith(reqData)));
+    };
+  },
   extendContext: function (key, value) {
     var obj;
     var extendWith = helpers.extendWith;
@@ -67,22 +77,16 @@ var helpers = module.exports = {
         }
       });
       var requestStr = helpers.getRequestStr(context);
-      async.extend(context, tasks, function (err, ctx, results) {
-        if (err) {
-          return done(err);
-        }
-        _.values(results).forEach(extendWith({requestStr:requestStr}));
-        done();
-      });
+      async.extend(context, tasks, helpers.extendWithReqStr(this, done));
       // set cleanup keys
       this._cleanupKeys = (this._cleanupKeys || []).concat(keys);
     };
   },
   extendContextSeries: function (tasks) {
-    // set cleanup keys
-    this._cleanupKeys = (this._cleanupKeys || []).concat(Object.keys(tasks));
     return function (done) {
-      async.extendSeries(this, tasks, done);
+      async.extendSeries(this, tasks, helpers.extendWithReqStr(this, done));
+      // set cleanup keys
+      this._cleanupKeys = (this._cleanupKeys || []).concat(Object.keys(tasks));
     };
   },
   randomValue: function () {
