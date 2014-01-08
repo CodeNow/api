@@ -7,7 +7,7 @@ function getPath (obj, pathStr) {
   for (var i = 0, key; i < split.length; i++) {
     key = split[i];
     if (!ptr[key]) {
-      return new Error('no "'+pathStr+'" of '+ptr+' ('+key+')');
+      return new Error('no "'+key+'" of '+ptr+' ('+pathStr+')');
     }
     ptr = ptr[key];
   }
@@ -16,6 +16,9 @@ function getPath (obj, pathStr) {
 
 function invoke (methodStr, args, ctx) {
   var method = getPath(this, methodStr);
+  if (method instanceof Error) {
+    throw method;
+  }
   var split, ctxPath;
   if (!ctx) { // if no ctx maintain ctx
     split = methodStr.split('.');
@@ -35,6 +38,9 @@ function replacePlaceholderArgs (obj, args) {
       newargs[i] = (val instanceof Error) ?
         args[i] :
         val;
+    }
+    else {
+      newargs[i] = args[i];
     }
   });
   return newargs;

@@ -28,36 +28,50 @@ describe('Images', function () {
   });
 
   describe('POST /runnables', function () {
-    beforeEach(extendContextSeries({
-      container: ['user.createContainer', ['image._id']]
-    }));
-    afterEach(helpers.cleanup);
+    afterEach(helpers.cleanupExcept('images'));
 
-    // describe('anonymous', function () {
-    //   beforeEach(extendContext('user', users.createAnonymous));
-    //   it('should respond 403', function (done) {
-    //     this.user.specRequest({ from: this.container._id })
-    //       .expect(403)
-    //       .end(done);
-    //   });
-    // });
+    describe('anonymous', function () {
+      beforeEach(extendContextSeries({
+        user: users.createAnonymous,
+        container: ['user.createContainer', ['image._id']]
+      }));
+      it('should respond 403', function (done) {
+        this.user.specRequest({ from: this.container._id })
+          .expect(403)
+          .end(done);
+      });
+    });
 
-    // describe('registered', function () {
-    //   beforeEach(extendContext('user', users.createRegistered));
-    //   it('should respond 403', function (done) {
-    //     this.user.specRequest({ from: this.container._id })
-    //       .expect(403)
-    //       .end(done);
-    //   });
-    // });
+    describe('registered', function () {
+      beforeEach(extendContextSeries({
+        user: users.createRegistered,
+        container: ['user.createContainer', ['image._id']]
+      }));
+      it('should respond 403', function (done) {
+        this.user.specRequest({ from: this.container._id })
+          .expect(403)
+          .end(done);
+      });
+    });
 
-    // describe('publisher', function () {
-    //   beforeEach(extendContext('user', users.createPublisher));
-    //   it('should 201', function (done) {
-    //     this.user.specRequest({ from: this.container._id })
-    //       .expect(201)
-    //       .end(done);
-    //   });
-    // });
+    describe('publisher', function () {
+      beforeEach(extendContextSeries({
+        user: users.createRegistered,
+        container: ['user.createContainer', ['image._id']],
+        rename: ['user.patchContainer', ['container._id', { name: 'newname' }]]
+      }));
+      it('should respond error if name already exists', function (done) {
+        this.user.specRequest({ from: this.container._id })
+          .expect(403)
+          .expectBody('message', /name already exists/)
+          .end(done);
+      });
+      it('should respond 201', function (done) {
+        this.user.specRequest({ from: this.container._id })
+          .expect(403)
+          .expectBody('message', /name already exists/)
+          .end(done);
+      });
+    });
   });
 });
