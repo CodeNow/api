@@ -42,7 +42,7 @@
  
  
     // Personal styling preferences.
-    "newcap"        : true,   // Require capitalization of all constructor functions e.g. `new F()`.
+    "newcap"        : false,   // Require capitalization of all constructor functions e.g. `new F()`.  TEMP
     "noempty"       : true,   // Prohibit use of empty blocks.
     "nonew"         : true,   // Prohibit use of constructors for side-effects.
     "nomen"         : false,   // Prohibit use of initial or trailing underbars in names.
@@ -54,8 +54,9 @@
     "indent"        : 2,       // Specify indentation spacing
 
     // Metrics
-    "maxparams"     : 4,
-    "maxdepth"      : 2,
-    "maxstatements" : 20, // this needs to be brought down
-    "maxcomplexity" : 8 // this also needs to come down
+
+    "maxparams"     : 8,  // dang
+    "maxdepth"      : 10, // oye
+    "maxstatements" : 96, // this needs to be brought WAY WAY down
+    "maxcomplexity" : 11 // this also needs to come down
 }
