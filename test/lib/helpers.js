@@ -1,5 +1,4 @@
 require('./setupAndTeardown');
-require('console-trace')({always:true, right:true});
 var _ = require('lodash');
 var st = require('./superdupertest');
 var httpMethods = require('methods');

@@ -71,7 +71,6 @@ describe('Images', function () {
           }]]
         }));
         it('should respond 201', function (done) {
-          console.log(this.rename);
           this.user.specRequest({ from: this.container._id })
             .expect(201)
             .end(done);

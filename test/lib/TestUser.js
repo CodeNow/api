@@ -28,7 +28,7 @@ httpMethods.forEach(function (method) {
         { qs: opts };
     }
     var path = '/users/me/runnables/' + id + (opts.qs ? '?' + qs.stringify(opts.qs) : '');
-    var req = this[method]();
+    var req = this[method](path);
     if (opts.body) {
       req.send(opts.body);
     }
