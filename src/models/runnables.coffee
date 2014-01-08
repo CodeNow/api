@@ -101,7 +101,7 @@ Runnables =
                     if not image then useOldestProject() else
                       cb null, image
 
-      (image, cb)->
+      (image, cb) ->
         containers.create domain, userId, image, data, (err, container) ->
           if err then cb err else
             json_container = container.toJSON()
@@ -174,7 +174,7 @@ Runnables =
         async.series [
           (cb) ->
             if updateSet.status is 'Committing new'
-              images.findOne name: updateSet.name or container.name, domain.intercept (existing) =>
+              images.findOne name: updateSet.name or container.name, domain.intercept (existing) ->
                 if existing
                   cb error 403, 'a shared runnable by that name already exists'
                 else
@@ -215,7 +215,7 @@ Runnables =
   getImage: (domain, runnableId, cb) ->
     if not isObjectId64 runnableId then cb error 404, 'runnable not found' else
       decodedRunnableId = decodeId runnableId
-      images.findOne {_id: decodedRunnableId}, {files:0}, domain.intercept (image) =>
+      images.findOne {_id: decodedRunnableId}, {files:0}, domain.intercept (image) ->
         if not image then cb error 404, 'runnable not found' else
           json_project = image.toJSON()
           encode domain, json_project, cb
@@ -328,7 +328,7 @@ Runnables =
                     createTag = (channel, cb) ->
                       image.tags.push channel:channel._id
                       image.save domain.intercept () ->
-                        newTag = (_.last image.tags).toJSON();
+                        newTag = (_.last image.tags).toJSON()
                         newTag.name = channel.name
                         cb null, newTag
                     if channel then createTag channel, cb else
@@ -388,7 +388,7 @@ Runnables =
                   createTag = (channel, cb) ->
                     container.tags.push channel:channel._id
                     container.save domain.intercept () ->
-                      newTag = (_.last container.tags).toJSON();
+                      newTag = (_.last container.tags).toJSON()
                       newTag.name = channel.name
                       cb null, newTag
                   if channel then createTag channel, cb else
@@ -564,7 +564,7 @@ decodeId = (id) -> id
 
 if configs.shortProjectIds
   encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
-  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');
+  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex')
 
 isObjectId = (str) ->
   Boolean(str.match(/^[0-9a-fA-F]{24}$/))

@@ -58,7 +58,7 @@ categorySchema.statics.createCategory = (domain, userId, name, desc, cb) ->
           if not name? then cb error 400, 'name required' else
             @findOne aliases: name.toLowerCase(), domain.intercept (existing) =>
               if existing then cb error 403, 'category by that name already exists' else
-                category = new @
+                category = new @()
                 category.name = name
                 if desc then category.description = desc
                 category.aliases = [name.toLowerCase()]

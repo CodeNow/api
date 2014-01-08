@@ -80,9 +80,9 @@ module.exports = (req, res) ->
               getOwners domain, containers, (err) ->
                 if err then cb err else
                   dateNow = Date.now()
-                  # technically filtering by reg. owners is not necessary 
+                  # technically filtering by reg. owners is not necessary
                   # bc only reg. users can save containers...
-                  validContainers = containers.filter hasRegisteredOwner 
+                  validContainers = containers.filter hasRegisteredOwner
                   cleanupContainersNotIn domain, validContainers, cb
   ], (err) -> #done
     if err then sendError err else

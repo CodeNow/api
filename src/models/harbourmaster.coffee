@@ -3,7 +3,7 @@ request = require 'request'
 error = require '../error'
 
 Harbourmaster = (url) ->
-  this.url = url
+  @url = url
 
 Harbourmaster.prototype.commitContainer = (domain, encodedContainer, token, cb) ->
   container = encodedContainer

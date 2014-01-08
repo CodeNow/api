@@ -162,16 +162,16 @@ channelSchema.statics.isLeader = (domain, userId, channelId, cb) ->
       (leaders, ownerId, cb) ->
         images.countInChannelByOwner domain, channelId, ownerId, highestCountItems(3, leaders, {_id:ownerId}, cb)
       , (err, leaders) ->
-          if err then cb err else
-            data = null
-            leaders.some (leader, i) ->
-              if leader._id.toString() is userId.toString()
-                data =
-                  _id: channelId
-                  leaderPosition: i+1,
-                  leaderImagesCount: leader.count
-                return true
-            cb null, data
+        if err then cb err else
+          data = null
+          leaders.some (leader, i) ->
+            if leader._id.toString() is userId.toString()
+              data =
+                _id: channelId
+                leaderPosition: i+1,
+                leaderImagesCount: leader.count
+              return true
+          cb null, data
 
 channelSchema.statics.leaderBadgesInChannelsForUser = (domain, size, filterChannelIds, userId, callback) ->
   self = @

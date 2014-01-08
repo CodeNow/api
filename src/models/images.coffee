@@ -265,12 +265,12 @@ imageSchema.statics.countInChannelByOwner = (domain, channelId, ownerId, cb) ->
   @count {'owner':ownerId, 'tags.channel':channelId}, domain.intercept (count) ->
     cb null, count
 
-imageSchema.statics.search = (domain, searchText, limit, cb) ->
+imageSchema.statics.search = (domain, searchText, limit, cb) =>
   opts =
     filter : tags:$not:$size:0
     project: name:1, description:1, tags:1, owner:1, created:1
     limit  : if (limit <= configs.defaultPageLimit) then limit else configs.defaultPageLimit
-  this.textSearch searchText, opts, (err, output) ->
+  @textSearch searchText, opts, (err, output) ->
     if err then throw err else
       images = output.results.map (result) -> result.obj
       cb null, images
@@ -279,7 +279,7 @@ imageSchema.statics.incVote = (domain, runnableId, cb) ->
   @update _id:runnableId, {$inc:votes:1}, domain.intercept (success) ->
     cb null, success
 
-imageSchema.methods.updateFromContainer = (domain, container, cb) ->
+imageSchema.methods.updateFromContainer = (domain, container, cb) =>
   copyPublishProperties @, container, true
   @revisions = @revisions or [ ]
   @revisions.push

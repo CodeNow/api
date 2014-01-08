@@ -141,7 +141,7 @@ userSchema.statics.registerUser = (domain, userId, data, cb) ->
           permission_level: 1
         if data.username
           cmd.$set.username = data.username
-          cmd.$set.lower_username = data.username.toLowerCase();
+          cmd.$set.lower_username = data.username.toLowerCase()
         @findByIdAndUpdate userId, cmd, domain.intercept (user) ->
           cb null, user
   if not configs.passwordSalt then setPassword data.password else
@@ -170,7 +170,7 @@ userSchema.statics.publicList = (domain, query, cb) ->
 userSchema.statics.addVote = (domain, userId, runnableId, cb) ->
   self = @
   createVote = (data) ->
-    newrunnable = (new self)
+    newrunnable = new self()
     newrunnable.votes.push(data)
     return newrunnable.votes[0]
   vote = createVote runnable:runnableId
@@ -245,4 +245,4 @@ decodeId = (id) -> id
 
 if configs.shortProjectIds
   encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
-  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');
+  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex')

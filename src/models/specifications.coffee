@@ -61,7 +61,7 @@ specificationSchema.statics.updateSpecification = (domain, opts, cb) ->
     if not user then cb error 403, 'user not found' else
       query = _id:opts.specificationId
       if not user.isModerator then query.owner = opts.userId
-      @findOne query, domain.intercept (specification) =>
+      @findOne query, domain.intercept (specification) ->
         if not specification? then cb error 404, 'specification not found' else
           specification.name = opts.name
           specification.description = opts.description
@@ -76,7 +76,7 @@ specificationSchema.statics.deleteSpecification = (domain, opts, cb) ->
       if user.isModerator
         @remove
           _id: opts.specificationId
-        , domain.intercept (count) =>
+        , domain.intercept (count) ->
           if count is 0
             cb error 404, 'specification not found'
           else
@@ -85,17 +85,17 @@ specificationSchema.statics.deleteSpecification = (domain, opts, cb) ->
         @remove
           owner: opts.userId
           _id: opts.specificationId
-        , domain.intercept (count) =>
+        , domain.intercept (count) ->
           if count is 0
             cb error 404, 'specification not found'
           else
-           cb null
+            cb null
 
 specificationSchema.statics.getVirtuals = (domain, spec, cb) ->
   json = spec.toJSON()
   specId = json._id
   owner = json.owner
-  console.log(specId, owner);
+  console.log(specId, owner)
   async.parallel [
     (cb) ->
       images.findOne {specification:specId}, {_id:1}, domain.intercept (image) ->
@@ -105,8 +105,8 @@ specificationSchema.statics.getVirtuals = (domain, spec, cb) ->
         cb null, Boolean(image)
   ]
   , (err, results) ->
-    json.inUse = results[0];
-    json.inUseByNonOwner = results[1];
+    json.inUse = results[0]
+    json.inUseByNonOwner = results[1]
     cb null, json
 
 module.exports = mongoose.model 'Specifications', specificationSchema

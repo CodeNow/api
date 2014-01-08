@@ -84,10 +84,6 @@ class App
           if cluster.isWorker then @cleanup_worker()
     app.get '/cleanup', cleanup
     app.get '/cache', caching.updateAllCaches
-    app.get '/test/throw/express', (req, res) -> throw new Error 'express'
-    app.get '/test/throw/express_async', (req, res) -> process.nextTick () -> throw new Error 'express_async'
-    app.get '/test/throw/mongo_pool', (req, res) -> musers.findOne { }, req.domain.intercept () -> throw new Error 'mongo_pool'
-    app.get '/test/throw/no_domain', (req, res) -> musers.findOne { }, () -> throw new Error 'no_domain'
     app.get '/', (req, res) -> res.json { message: 'runnable api' }
     app.all '*', (req, res) -> res.json 404, { message: 'resource not found' }
     @server = http.createServer app
@@ -98,7 +94,7 @@ class App
     cluster.worker.send 'exception'
     if configs.nodetime then nodetime.destroy()
     if configs.rollbar then rollbar.shutdown()
-    setTimeout () =>
+    setTimeout () ->
       try
         debug 'waiting for worker to shut down gracefully', workerId
         timer = setTimeout () ->

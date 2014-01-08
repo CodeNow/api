@@ -49,7 +49,9 @@
     "supertest": "~0.8.2",
     "methods": "~0.1.0",
     "jshint": "~2.4.1",
-    "console-trace": "git://github.com/numbcoder/console-trace.git"
+    "console-trace": "git://github.com/numbcoder/console-trace.git",
+    "coffeelint": "~1.0.3",
+    "sfx": "~0.1.1"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
@@ -61,6 +63,6 @@
     "test": "npm run build && npm run lint && NODE_ENV=testing mocha",
     "test-int": "npm run build && npm run lint && NODE_ENV=testing-integration mocha",
     "clean": "rm -rf ./lib; rm -rf ./coverage",
-    "lint": "jshint --verbose --show-non-errors ."
+    "lint": "coffeelint src && jshint --verbose --show-non-errors ."
   }
 }

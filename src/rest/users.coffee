@@ -96,7 +96,7 @@ module.exports = (parentDomain) ->
       if !Array.isArray(userIds) then userIds = [ userIds ]
       users.publicListWithIds req.domain, userIds, sendUsers
     else if req.query.username
-     users.publicList req.domain, lower_username:req.query.username.toLowerCase(), sendUsers
+      users.publicList req.domain, lower_username:req.query.username.toLowerCase(), sendUsers
     else if req.query.channel
       users.channelLeaders req.domain, req.query.channel, req.query.idsOnly, sendUsers
     else
@@ -147,7 +147,7 @@ module.exports = (parentDomain) ->
       'show_email'
       'initial_referrer'
     ]
-    data = _.pick(req.body, allowed);
+    data = _.pick(req.body, allowed)
     users.updateUser req.domain, req.user_id, data, {password:0, votes:0}, (err, user) ->
       if err then res.json err.code, message: err.msg else
         res.json user
@@ -294,7 +294,7 @@ module.exports = (parentDomain) ->
   syncfiles = (req, res) ->
     runnables.syncFiles req.domain, req.user_id, req.params.id, (err) ->
       if err then res.json err.code, message: err.msg else
-        res.json 201, { message: 'files synced successfully', date: new Date }
+        res.json 201, { message: 'files synced successfully', date: new Date() }
 
   app.post '/users/me/runnables/:id/sync', syncfiles
   app.post '/users/:userid/runnables/:id/sync', fetchuser, syncfiles

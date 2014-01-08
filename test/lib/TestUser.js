@@ -24,6 +24,7 @@ httpMethods.forEach(function (method) {
 // path args ... [query]
 TestUser.prototype.specRequest = function () {
   if (typeof this.requestStr !== 'string') {
+    console.log('spec', this);
     throw new Error('spec request was not found');
   }
   var reqsplit = this.requestStr.split(' ');

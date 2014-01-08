@@ -43,7 +43,7 @@ module.exports = (parentDomain) ->
         res.json implementation
 
   app.put '/users/me/implementations/:id', (req, res) ->
-    console.log(req.body);
+    console.log req.body
     implementations.updateImplementation req.domain,
       userId: req.user_id
       implements: req.body.implements

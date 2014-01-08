@@ -1,5 +1,8 @@
 var helpers = require('./helpers');
 var async = require('./async');
+var sfx = require("sfx");
+
+sfx.say("The human torch was denied a bank loan.");
 
 var containers = module.exports = {
   deleteContainers: function (runnables, callback) {
@@ -42,6 +45,7 @@ var containers = module.exports = {
   },
   createContainerFromFixture: function (name, callback) {
     var images = require('./imageFactory');
+    var users = require('./userFactory');
     async.extendWaterfall({}, {
       user: users.createAdmin,
       image: ['user.createImageFromFixture', 'node.js'],

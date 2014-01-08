@@ -178,7 +178,7 @@ containerSchema.statics.create = (domain, owner, image, data, cb) ->
       implementations.findOne
         owner: owner
         implements: image.specification
-      , domain.intercept (implementation) =>
+      , domain.intercept (implementation) ->
         if implementation?
           envFull = env.concat implementation.toJSON().requirements.map (requirement) ->
             "#{requirement.name}=#{requirement.value}"
@@ -470,6 +470,6 @@ decodeId = (id) -> id
 
 if configs.shortProjectIds
   encodeId = (id) -> (new Buffer(id.toString(), 'hex')).toString('base64').replace(plus,'-').replace(slash,'_')
-  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');
+  decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex')
 
 module.exports = mongoose.model 'Containers', containerSchema

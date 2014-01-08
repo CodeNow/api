@@ -36,8 +36,8 @@ implementationSchema.statics.createImplementation = (domain, opts, cb) ->
           owner: opts.userId
           implements: opts.implements
         , domain.intercept (implementation) =>
-          save = () =>
-            implementation.save domain.intercept () =>
+          save = () ->
+            implementation.save domain.intercept () ->
               cb null, implementation.toJSON()
           if implementation then cb error 403, 'implementation already exists' else
             implementation = new @
@@ -54,7 +54,7 @@ implementationSchema.statics.listImplementations = (domain, userId, cb) ->
   users.findUser domain, _id: userId, domain.intercept (user) =>
     if not user then cb error 403, 'user not found' else
       if user.isModerator
-        @find {}, domain.intercept (implementations) =>
+        @find {}, domain.intercept (implementations) ->
           cb null, implementations.map (implementation) -> implementation.toJSON()
       else
         cb error 403, 'access denied'
@@ -64,7 +64,7 @@ implementationSchema.statics.listImplementationsForUser = (domain, userId, cb) -
     if not user then cb error 403, 'user not found' else
       @find
         owner: userId
-      , domain.intercept (implementations) =>
+      , domain.intercept (implementations) ->
         cb null, implementations.map (implementation) -> implementation.toJSON()
 
 implementationSchema.statics.getImplementationBySpecification = (domain, opts, cb) ->
@@ -73,7 +73,7 @@ implementationSchema.statics.getImplementationBySpecification = (domain, opts, c
       @findOne
         owner: opts.userId
         implements: opts.implements
-      , domain.intercept (implementation) =>
+      , domain.intercept (implementation) ->
         cb null, implementation.toJSON()
 
 implementationSchema.statics.getImplementation = (domain, opts, cb) ->
@@ -82,7 +82,7 @@ implementationSchema.statics.getImplementation = (domain, opts, cb) ->
       if user.isModerator
         @findOne
           _id: opts.implementationId
-        , domain.intercept (implementation) =>
+        , domain.intercept (implementation) ->
           if not implementation?
             cb error 404, 'implementation not found'
           else
@@ -91,7 +91,7 @@ implementationSchema.statics.getImplementation = (domain, opts, cb) ->
         @findOne
           owner: opts.userId
           _id: opts.implementationId
-        , domain.intercept (implementation) =>
+        , domain.intercept (implementation) ->
           if not implementation?
             cb error 404, 'implementation not found'
           else
@@ -102,8 +102,8 @@ implementationSchema.statics.updateImplementation = (domain, opts, cb) ->
     if not user then cb error 403, 'user not found' else
       query = _id: opts.implementationId
       if !user.isModerator then query.owner = opts.userId
-      @findOne query, domain.intercept (implementation) =>
-        save = () =>
+      @findOne query, domain.intercept (implementation) ->
+        save = () ->
           implementation.save domain.intercept () ->
             cb null, implementation.toJSON()
         if not implementation?
@@ -121,7 +121,7 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
       if user.isModerator
         @remove
           _id: opts.implementationId
-        , domain.intercept (count) =>
+        , domain.intercept (count) ->
           if count is 0
             cb error 404, 'implementation not found'
           else
@@ -130,7 +130,7 @@ implementationSchema.statics.deleteImplementation = (domain, opts, cb) ->
         @remove
           owner: opts.userId
           _id: opts.implementationId
-        , domain.intercept (count) =>
+        , domain.intercept (count) ->
           if count is 0
             cb error 404, 'implementation not found'
           else
@@ -140,7 +140,7 @@ implementationSchema.statics.updateEnvBySpecification = (domain, opts, cb) ->
   @findOne
     owner: opts.userId
     implements: opts.specification
-  , (err, implementation) =>
+  , (err, implementation) ->
     if err or (not implementation)
       # to handle the specification but no implementation case
       cb err or error 400, 'no implementation'
@@ -158,10 +158,10 @@ updateEnv = (domain, opts, cb) ->
   containers.findOne
     owner: opts.userId
     _id: decodeId opts.containerId
-  , domain.intercept (container) =>
+  , domain.intercept (container) ->
     if container
       async.parallel [
-        (cb) =>
+        (cb) ->
           url = "http://#{container.servicesToken}.#{configs.rootDomain}/api/envs"
           requirements = {}
           opts.requirements.forEach (requirement) ->
@@ -171,7 +171,7 @@ updateEnv = (domain, opts, cb) ->
             url: url
             json: requirements
           , cb
-        (cb) =>
+        (cb) ->
           url = "#{configs.harbourmaster}/containers/#{container.servicesToken}/route"
           request
             pool: false
@@ -182,11 +182,11 @@ updateEnv = (domain, opts, cb) ->
           , cb
       ], domain.intercept () -> cb()
     else
-     cb error 404, 'container not found'
+      cb error 404, 'container not found'
 
 module.exports = mongoose.model 'Implementation', implementationSchema
 
 minus = /-/g
 underscore = /_/g
 
-decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex');
+decodeId = (id) -> (new Buffer(id.toString().replace(minus,'+').replace(underscore,'/'), 'base64')).toString('hex')
