@@ -24,7 +24,7 @@ httpMethods.forEach(function (method) {
 // path args ... [query]
 TestUser.prototype.specRequest = function () {
   if (typeof this.requestStr !== 'string') {
-    console.log('spec', this);
+    console.log('spec', this.requestStr);
     throw new Error('spec request was not found');
   }
   var reqsplit = this.requestStr.split(' ');
@@ -94,11 +94,10 @@ TestUser.prototype.createContainer = function (from, body, callback) {
     callback = body;
     body = null;
   }
-  console.log(from);
   return this.post('/users/me/runnables?from=' + from)
     .send(body || {})
     .expect(201)
-    .end(callback);
+    .end(async.pick('body', callback));
 };
 TestUser.prototype.createContainerFromFixture = function (name, callback) {
   var self = this;
