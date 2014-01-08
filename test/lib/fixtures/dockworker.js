@@ -6,6 +6,14 @@ app.post('/api/files/readall', function (req, res) {
   res.json(201, []);
 });
 
+app.post('/api/buildCmd', function (req, res) {
+  res.send(200);
+});
+
+app.post('/api/cmd', function (req, res) {
+  res.send(200);
+});
+
 app.all('*', express.logger(), function (req, res) {
   res.send(404);
 });
