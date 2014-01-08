@@ -104,13 +104,11 @@ describe('Containers', function () {
     // describe('owner');
     // describe('not owner');
     // describe('admin');
-    console.log('DEL', this);
     beforeEach(extendContextSeries({
       user: users.createAnonymous,
       container: ['user.createContainer', ['image._id']]
     }));
     it('should query by image', function (done) {
-      console.log(this.container._id);
       this.user.specRequest(this.container._id)
         .expect(200)
         .expectBody('message', 'runnable deleted')
