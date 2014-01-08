@@ -1,6 +1,0 @@
---ui bdd
---compilers coffee:coffee-script
---bail
---require should
---slow 120000
---timeout 240000
