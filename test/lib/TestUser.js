@@ -54,6 +54,13 @@ TestUser.prototype.specRequest = function () {
   var path   = reqsplit[1];
 
   var args = Array.prototype.slice.call(arguments);
+  args.forEach(function (i) {
+    if (i === null || i === undefined) {
+      var err = new Error('specRequest: invoked with undefined args [ '+ args +' ]');
+      console.error(err.message);
+      throw err;
+    }
+  }); // filter out undef/null
   var query;
   if (_.isObject(args[args.length - 1])) {
     query = args.pop();
@@ -127,6 +134,7 @@ TestUser.prototype.createContainerFromFixture = function (name, callback) {
     if (err) {
       return callback(err);
     }
+    console.log(image._id);
     self.createContainer(image._id, callback);
   });
 };

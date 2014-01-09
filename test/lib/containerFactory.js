@@ -2,8 +2,6 @@ var helpers = require('./helpers');
 var async = require('./async');
 var sfx = require("sfx");
 
-sfx.say("mongoDB mongoDB mongoDB mongoDB mongoDB mongoDB mongoDB mongoDB mongoDB mongoDB mongoDB mongoDB");
-
 var containers = module.exports = {
   deleteContainers: function (runnables, callback) {
     async.forEach(runnables, containers.deleteContainer, callback);
@@ -48,8 +46,10 @@ var containers = module.exports = {
     var users = require('./userFactory');
     async.extendWaterfall({}, {
       user: users.createAdmin,
-      image: ['user.createImageFromFixture', 'node.js'],
-      container: ['user.createContainer', 'image._id']
-    }, callback);
+      image: ['user.createImageFromFixture', ['node.js']],
+      container: ['user.createContainer', ['image._id']]
+    }, function (err, results) {
+      callback(err, results);
+    });
   }
 };

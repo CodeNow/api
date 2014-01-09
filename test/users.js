@@ -8,7 +8,7 @@ describe('Users', function () {
 
   describe('POST /users', function() {
     beforeEach(extendContext('user', users.createTokenless));
-    afterEach(db.dropCollections);
+    afterEach(helpers.cleanup);
     it('should create an anonymous user', function(done) {
       this.user.specRequest()
         .expect(201)
@@ -20,7 +20,7 @@ describe('Users', function () {
 
   describe('PUT /users/me', function() {
     beforeEach(extendContext('user', users.createAnonymous));
-    afterEach(db.dropCollections);
+    afterEach(helpers.cleanup);
 
     var userAuth = {
       username: 'tjmehta',
@@ -93,7 +93,7 @@ describe('Users', function () {
 
   describe('PATCH /users/me', function () {
     beforeEach(extendContext('user', users.createAnonymous));
-    afterEach(db.dropCollections);
+    afterEach(helpers.cleanup);
 
     var checkUpdate = function (key, value) {
       return function (done) {
@@ -114,7 +114,7 @@ describe('Users', function () {
 
   describe('GET /users/me', function () {
     beforeEach(extendContext('user', users.createAnonymous));
-    afterEach(db.dropCollections);
+    afterEach(helpers.cleanup);
     it('should fetch the current user', function (done) {
       var self = this;
       this.user.specRequest()
