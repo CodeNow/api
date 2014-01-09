@@ -1,5 +1,4 @@
 --ui bdd
---compilers coffee:coffee-script
 --reporter spec
 --require should
 --slow 120000
