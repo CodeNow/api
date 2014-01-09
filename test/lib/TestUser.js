@@ -11,37 +11,58 @@ var async = require('./async');
 var TestUser = module.exports = function (properties) {
   _.extend(this, properties);
 };
-/* TestUser.prototype[post, get, put, patch, delete, ...] */
 httpMethods.forEach(function (method) {
   if (method === 'delete') {
     method = 'del';
   }
-  TestUser.prototype[method] = function (path, token) {
-    token = token || this.access_token;
-    return helpers.request[method](path, token);
-  };
   var bodyMethods = ['post', 'put', 'patch', 'del'];
-  TestUser.prototype[method + 'Container'] = function (id, opts, callback) {
-    if (!opts.qs && !opts.body) { // opts is body or querystring
+  /* TestUser.prototype[post, get, put, patch, delete, ...] */
+  TestUser.prototype[method] = function (path, token, opts, callback) {
+    if (typeof token === 'object') {
+      // (path, opts, callback)
+      callback = opts;
+      opts = token;
+      token = null;
+    }
+    else if (typeof token === 'function') {
+      // (path, callback)
+      callback = token;
+      token = null;
+    }
+    if (typeof opts === 'function') {
+      callback = opts;
+      opts = {};
+    }
+    opts = opts || {};
+    if (!_.isEmpty(opts) && !opts.qs && !opts.body) { // opts is body or querystring
       opts = ~bodyMethods.indexOf(method) ?
         { body: opts } :
         { qs: opts };
     }
-    var path = '/users/me/runnables/' + id + (opts.qs ? '?' + qs.stringify(opts.qs) : '');
-    var req = this[method](path);
-    if (opts.body) {
+    token = token || this.access_token;
+    path = path + (opts.qs ? '?' + qs.stringify(opts.qs) : '');
+    var req = helpers.request[method](path, token);
+    if (!_.isEmpty(opts.body)) {
       req.send(opts.body);
     }
     if (opts.expect) {
       req.expect(opts.expect);
     }
-    req.end(function (err, res) {
-      if (err) {
-        console.log(method.toUpperCase() + ' ' + path);
-        return callback(err);
-      }
-      callback(null, res.body);
-    });
+    if (!callback) {
+      return req;
+    }
+    else {
+      req.end(callback);
+    }
+  };
+  /* TestUser.prototype[postContainer, getContainer, putContainer, patchContainer, deleteContainer, ...] */
+  TestUser.prototype[method + 'Container'] = function (id, opts, callback) {
+    if (typeof opts === 'function') {
+      callback = opts;
+      opts = {};
+    }
+    var path = '/users/me/runnables/' + id + (opts.qs ? '?' + qs.stringify(opts.qs) : '');
+    var req = this[method](path, opts, async.pick('body', callback));
   };
 });
 // path args ... [query]
@@ -72,11 +93,10 @@ TestUser.prototype.specRequest = function () {
   if (pathArgRegExp.test(path)) {
     throw new Error('missing args for path');
   }
-  var querystring = query ? '?'+qs.stringify(query) : '';
   if (typeof this[method] !== 'function') {
     console.error('"' +method+ '" is not an http method');
   }
-  return this[method](path+querystring);
+  return this[method](path, { qs:query });
 };
 TestUser.prototype.register = function (auth) {
   return this.put('/users/me')
@@ -134,7 +154,6 @@ TestUser.prototype.createContainerFromFixture = function (name, callback) {
     if (err) {
       return callback(err);
     }
-    console.log(image._id);
     self.createContainer(image._id, callback);
   });
 };

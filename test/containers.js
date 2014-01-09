@@ -15,36 +15,62 @@ describe('Containers', function () {
   after(helpers.cleanup);
 
   describe('GET /users/me/runnables', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']],
+      container2: ['user.createContainer', ['image._id']],
+      user2: users.createAnonymous,
+      container3: ['user2.createContainer', ['image._id']],
+      user3: users.createRegistered
+    }));
     afterEach(helpers.cleanupExcept('image'));
 
-    describe('owner', function () {
-      beforeEach(extendContextSeries({
-        user: users.createAnonymous,
-        container: ['user.createContainer', ['image._id']]
-      }));
-      it('should query by image', function (done) {
-        this.user.specRequest({ parent: this.image._id })
-          .expect(200)
-          .expectArray(1)
-          .end(done);
-      });
+    it ('should list containers owned by user', function (done) {
+      var checkDone = helpers.createCheckDone(done);
+      this.user.specRequest()
+        .expect(200)
+        .expectArray(2)
+        .end(checkDone.done());
+      this.user2.specRequest()
+        .expect(200)
+        .expectArray(1)
+        .end(checkDone.done());
     });
-    describe('not owner', function () {
+    it ('should list zero containers for user that owns none', function (done) {
+      this.user3.specRequest()
+        .expect(200)
+        .expectArray(0)
+        .end(done);
+    });
+    describe('after cleanup', function () {
       beforeEach(extendContextSeries({
-        owner: users.createAnonymous,
-        container: ['owner.createContainer', ['image._id']],
-        user: users.createAnonymous
+        admin: users.createAdmin,
+        savedContainer: ['user3.createContainer', ['image._id']],
+        save: ['user3.patchContainer', ['savedContainer._id', {
+          body: { saved: true },
+          expect: 200
+        }]],
+        cleanup: ['admin.get', ['/cleanup', { expect: 200 }]]
       }));
-      it('should not query by image', function (done) {
-        this.user.specRequest({ parent: this.image._id })
+      it ('should not list unsaved containers', function (done) {
+        var checkDone = helpers.createCheckDone(done);
+        this.user.specRequest()
           .expect(200)
           .expectArray(0)
+          .end(checkDone.done());
+        this.user2.specRequest()
+          .expect(200)
+          .expectArray(0)
+          .end(checkDone.done());
+      });
+      it ('should list saved containers', function (done) {
+        this.user3.specRequest()
+          .expect(200)
+          .expectArray(1)
+          .expectArrayContains({ _id: this.savedContainer._id })
           .end(done);
       });
     });
-
-    // ADMIN FAIL
-
   });
 
   describe('GET /users/me/runnables/:id', function () {
@@ -72,6 +98,7 @@ describe('Containers', function () {
           .end(done);
       });
     });
+    // TODO: Admin's should be able to fetch other's containers
   });
 
   describe('POST /users/me/runnables', function () {

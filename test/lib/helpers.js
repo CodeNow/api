@@ -1,4 +1,4 @@
-//require('console-trace')({always:true, right:true})
+// require('console-trace')({always:true, right:true});
 require('./setupAndTeardown');
 var _ = require('lodash');
 var st = require('./superdupertest');
@@ -12,6 +12,30 @@ var helpers = module.exports = {
   },
   fakeId: function () {
     return '123456789012345678901234';
+  },
+  createCheckDone: function (done) {
+    var CheckDone = function () {
+      this.count = 0;
+      this.doneCount = 0;
+    };
+    CheckDone.prototype.done = function () {
+      this.count++;
+      var self = this;
+      return function (err, data) {
+        self.doneCount++;
+        if (this.err) {
+          return;
+        }
+        if (err) {
+          this.err = err;
+          return done(err);
+        }
+        if (self.count === self.doneCount) {
+          done(err, data);
+        }
+      };
+    };
+    return new CheckDone(done);
   },
   pluralize: function (str) {
     var re = /[sxz]/;
