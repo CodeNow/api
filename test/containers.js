@@ -15,8 +15,7 @@ describe('Containers', function () {
   after(helpers.cleanup);
 
   describe('GET /users/me/runnables', function () {
-
-    afterEach(helpers.cleanupExcept('images'));
+    afterEach(helpers.cleanupExcept('image'));
 
     describe('owner', function () {
       beforeEach(extendContextSeries({
@@ -49,7 +48,7 @@ describe('Containers', function () {
   });
 
   describe('GET /users/me/runnables/:id', function () {
-    afterEach(helpers.cleanupExcept('images'));
+    afterEach(helpers.cleanupExcept('image'));
     describe('owner', function () {
       beforeEach(extendContextSeries({
         user: users.createAnonymous,
@@ -79,7 +78,7 @@ describe('Containers', function () {
     beforeEach(extendContext({
       user : users.createAnonymous
     }));
-    afterEach(helpers.cleanupExcept('images'));
+    afterEach(helpers.cleanupExcept('image'));
     it ('should create a container', function (done) {
       this.user.specRequest({ from: this.image._id })
         .expect(201)
@@ -93,7 +92,7 @@ describe('Containers', function () {
 
   describe('PUT /users/me/runnables/:id', function () {
 
-    afterEach(helpers.cleanupExcept('images'));
+    afterEach(helpers.cleanupExcept('image'));
 
     describe('owner', function () {
       beforeEach(extendContextSeries({
@@ -125,7 +124,7 @@ describe('Containers', function () {
 
   describe('PATCH /users/me/runnables/:id', function () {
 
-    afterEach(helpers.cleanupExcept('images'));
+    afterEach(helpers.cleanupExcept('image'));
 
     describe('owner', function () {
       beforeEach(extendContextSeries({
@@ -157,7 +156,7 @@ describe('Containers', function () {
 
   describe('DEL /users/me/runnables/:id', function () {
 
-    afterEach(helpers.cleanupExcept('images'));
+    afterEach(helpers.cleanupExcept('image'));
 
     describe('owner', function () {
       beforeEach(extendContextSeries({

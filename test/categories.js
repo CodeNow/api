@@ -6,7 +6,7 @@ var extendContext = helpers.extendContext;
 describe('Categories', function () {
 
   afterEach(helpers.cleanup);
-  
+
   describe('GET /categories', function () {
     beforeEach(extendContext({
       user : users.createAnonymous,

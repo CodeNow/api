@@ -9,7 +9,7 @@ describe('Images', function () {
     image: images.createImageFromFixture.bind(images, 'node.js')
   }));
   after(helpers.cleanup);
-  afterEach(helpers.cleanupExcept('images'));
+  afterEach(helpers.cleanupExcept('image'));
 
   describe('GET /runnables/:id', function () {
     beforeEach(extendContext({

@@ -17,6 +17,7 @@ function getPath (obj, pathStr) {
 function invoke (methodStr, args, ctx) {
   var method = getPath(this, methodStr);
   if (method instanceof Error) {
+    console.error(err.message); // log before throw bc mocha isnt always displaying throws
     throw method;
   }
   var split, ctxPath;
@@ -64,9 +65,17 @@ function _replaceInvokePlaceholders (self, src) {
     if (typeof val === 'string') {
       val = [val];
     }
-    var fn = Array.isArray(val) ?
-      invokeBind.apply(self, val) : // val is [methodStr, args, ctx], eg: ['user.createContainerFromFixture', 'node.js', {}]
-      val;
+    if (Array.isArray(val)) {
+      if (val[1] && !Array.isArray(val[1])) {
+        var err = new Error('Placeholder args must be an array: [' + val + ']');
+        console.error(err.message); // log before throw bc mocha isnt always displaying throws
+        throw err;
+      }
+      fn = invokeBind.apply(self, val); // val is [methodStr, args, ctx], eg: ['user.createContainerFromFixture', 'node.js', {}]
+    }
+    else {
+      fn = val;
+    }
     tasks[key] = fn;
   });
   return tasks;

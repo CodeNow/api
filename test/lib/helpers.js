@@ -1,3 +1,4 @@
+//require('console-trace')({always:true, right:true})
 require('./setupAndTeardown');
 var _ = require('lodash');
 var st = require('./superdupertest');
@@ -11,6 +12,12 @@ var helpers = module.exports = {
   },
   fakeId: function () {
     return '123456789012345678901234';
+  },
+  pluralize: function (str) {
+    var re = /[sxz]/;
+    return (re.test(_.last(str))) ?
+      str+'es' :
+      str+'s';
   },
   capitalize: function (str) {
     var firstChar = str[0];
@@ -80,14 +87,14 @@ var helpers = module.exports = {
       var requestStr = helpers.getRequestStr(context);
       async.extend(context, tasks, helpers.extendWithReqStr(this, done));
       // set cleanup keys
-      this._cleanupKeys = (this._cleanupKeys || []).concat(keys);
+      this._cleanupKeys = _.unique((this._cleanupKeys || []).concat(keys));
     };
   },
   extendContextSeries: function (tasks) {
     return function (done) {
       async.extendSeries(this, tasks, helpers.extendWithReqStr(this, done));
       // set cleanup keys
-      this._cleanupKeys = (this._cleanupKeys || []).concat(Object.keys(tasks));
+      this._cleanupKeys = _.unique((this._cleanupKeys || []).concat());
     };
   },
   randomValue: function () {
@@ -104,6 +111,7 @@ var helpers = module.exports = {
   },
   cleanup: function (callback) {
     helpers.deleteKeys(this, this._cleanupKeys); // clean context keys
+    this._cleanupKeys = [];
     return helpers.cleanupExcept()(callback);
   },
   cleanupExcept: function (exclude) {
@@ -111,8 +119,8 @@ var helpers = module.exports = {
       exclude :
       Array.prototype.slice.call(arguments);
     // clean context keys
-    helpers.deleteKeys(this, _.difference(this._cleanupKeys, exclude));
     return function (callback) {
+      helpers.deleteKeys(this, _.difference(this._cleanupKeys, exclude));
       var images = require('./imageFactory');
       var containers = require('./containerFactory');
       var tasks = {
@@ -125,11 +133,12 @@ var helpers = module.exports = {
           containers.deleteContainers
         ])
       };
-      // helpers.deleteKeys(tasks, exclude);
+      var excludeWithPlurals = exclude.concat(exclude.map(helpers.pluralize)); // pluralize since images end in s
+      helpers.deleteKeys(tasks, excludeWithPlurals);
       async.waterfall([
         async.parallel.bind(async, tasks),
         function (results, cb) {
-          db.dropCollectionsExcept(exclude)(cb);
+          db.dropCollectionsExcept(excludeWithPlurals)(cb);
         }
       ], callback);
     };
