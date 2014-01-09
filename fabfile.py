@@ -62,7 +62,6 @@ def setup():
   clone_repo()
   checkout_latest()
   install_requirements()
-  make()
   boot()
 
 def clone_repo():
@@ -89,13 +88,6 @@ def install_requirements():
   with cd('api-server'):
     run('npm install')
 
-def make():
-  """
-  Run make
-  """
-  with cd('api-server'):
-    run('make')
-
 def boot():
   """
   Start process with forever
@@ -117,7 +109,6 @@ def deploy():
 
   checkout_latest()
   install_requirements()
-  make()
   reboot()
 
 def reboot():
@@ -143,7 +134,6 @@ def rollback(commit_id):
   checkout_latest()
   git_reset(commit_id)
   install_requirements()
-  make()
   reboot()
 
 def git_reset(commit_id):
