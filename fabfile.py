@@ -84,16 +84,16 @@ def install_requirements():
   """
   Install the required packages using npm.
   """
-  sudo('npm install forever -g')
+  sudo('npm install pm2 -g')
   with cd('api-server'):
     run('npm install')
 
 def boot():
   """
-  Start process with forever
+  Start process with pm2
   """
-  run('NODE_ENV=%(settings)s forever start api-server/server.js' % env)
-  run('NODE_ENV=%(settings)s forever start api-server/scripts/meetyourmaker.js' % env)
+  run('NODE_ENV=%(settings)s pm2 start api-server/server.js -n api-server -i 10' % env)
+  run('NODE_ENV=%(settings)s pm2 start api-server/scripts/meetyourmaker.js -n cleanup' % env)
   # run('NODE_ENV=%(settings)s forever start api-server/scripts/refreshcache.js' % env)
 
 
@@ -116,6 +116,7 @@ def reboot():
   Restart the server.
   """
   run('forever stopall || echo not started')
+  run('pm2 kill || echo no pm2')
   boot()
 
 """
