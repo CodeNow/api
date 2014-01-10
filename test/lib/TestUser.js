@@ -65,7 +65,7 @@ httpMethods.forEach(function (method) {
     var req = this[method](path, opts, async.pick('body', callback));
   };
 });
-// path args ... [query]
+// path args ... [query] [callback]
 TestUser.prototype.specRequest = function () {
   if (typeof this.requestStr !== 'string') {
     throw new Error('spec request was not found');
@@ -82,7 +82,10 @@ TestUser.prototype.specRequest = function () {
       throw err;
     }
   }); // filter out undef/null
-  var query;
+  var query, callback;
+  if (typeof args[args.length - 1] === 'function') {
+    callback = args.pop();
+  }
   if (_.isObject(args[args.length - 1])) {
     query = args.pop();
   }
@@ -96,7 +99,7 @@ TestUser.prototype.specRequest = function () {
   if (typeof this[method] !== 'function') {
     console.error('"' +method+ '" is not an http method');
   }
-  return this[method](path, { qs:query });
+  return this[method](path, { qs:query }, callback);
 };
 TestUser.prototype.register = function (auth) {
   return this.put('/users/me')

@@ -3,6 +3,15 @@ var async = require('async');
 var _ = require('lodash');
 
 var db = module.exports = {
+  onceConnected: function (callback) {
+    if (this.connected) {
+      console.error('already connected calling back immediately');
+      callback();
+    }
+    else {
+      mongoose.connection.once('connected', callback);
+    }
+  },
   dropCollection: function (collectionName) {
     var collection = mongoose.connection.collections[collectionName];
     return function (callback) {
@@ -40,6 +49,8 @@ var db = module.exports = {
     mongoose.connection.db.dropDatabase(callback);
   }
 };
-mongoose.connection.once('connected', function() {
+
+db.onceConnected(function() {
   _.extend(db, mongoose.connection.collections);
+  db.connected = true;
 });

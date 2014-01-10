@@ -14,27 +14,7 @@ var helpers = module.exports = {
     return '123456789012345678901234';
   },
   createCheckDone: function (done) {
-    var CheckDone = function () {
-      this.count = 0;
-      this.doneCount = 0;
-    };
-    CheckDone.prototype.done = function () {
-      this.count++;
-      var self = this;
-      return function (err, data) {
-        self.doneCount++;
-        if (this.err) {
-          return;
-        }
-        if (err) {
-          this.err = err;
-          return done(err);
-        }
-        if (self.count === self.doneCount) {
-          done(err, data);
-        }
-      };
-    };
+    var CheckDone = require('./CheckDone');
     return new CheckDone(done);
   },
   pluralize: function (str) {

@@ -1,4 +1,5 @@
 //require('console-trace')({always:true, right:true})
+var async = require('async');
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var containers = require('./lib/containerFactory');
@@ -71,10 +72,62 @@ describe('Containers', function () {
           .end(done);
       });
     });
+    // TODO: container paging
+    // describe('pagination', function () {
+    //   beforeEach(extendContextSeries({
+    //     container4: ['user.createContainer', ['image._id']],
+    //     container5: ['user.createContainer', ['image._id']],
+    //     container6: ['user.createContainer', ['image._id']],
+    //     container7: ['user.createContainer', ['image._id']]
+    //   }));
+    //   it('should return page 1 by default', function (done) {
+    //     var checkDone = helpers.createCheckDone(done);
+    //     this.user.specRequest({ page: 0, limit: 0 })
+    //       .expect(200)
+    //       .expectArray(6)
+    //       .end(async.pick('body', checkDone.equal()));
+    //     this.user.specRequest()
+    //       .expect(200)
+    //       .expectArray(6)
+    //       .end(async.pick('body', checkDone.equal()));
+    //   });
+    //   it('should page', function (done) {
+    //     this.user.specRequest({ page: 1, limit: 4 })
+    //       .expect(200)
+    //       .expectArray(2)
+    //       .end(async.pick('body', done));
+    //   });
+    //   it('should limit', function (done) {
+    //     this.user.specRequest({ page: 0, limit: 3 })
+    //       .expect(200)
+    //       .expectArray(3)
+    //       .end(async.pick('body', done));
+    //   });
+    // });
+  });
+
+  describe('GET /users/:userId/runnables', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']],
+      container2: ['user.createContainer', ['image._id']],
+      user2: users.createAnonymous,
+      container3: ['user2.createContainer', ['image._id']],
+    }));
+    afterEach(helpers.cleanupExcept('image'));
+
+    it ('should not list containers for other anonymous users', function (done) {
+      var checkDone = helpers.createCheckDone(done);
+      this.user.specRequest(this.user2._id)
+        .expect(403)
+        .end(checkDone.done());
+      this.user2.specRequest(this.user._id)
+        .expect(403)
+        .end(checkDone.done());
+    });
   });
 
   describe('GET /users/me/runnables/:id', function () {
-    afterEach(helpers.cleanupExcept('image'));
     describe('owner', function () {
       beforeEach(extendContextSeries({
         user: users.createAnonymous,
@@ -83,6 +136,7 @@ describe('Containers', function () {
       it('should get the container', function (done) {
         this.user.specRequest(this.container._id)
           .expect(200)
+          .expectBody('_id')
           .end(done);
       });
     });
@@ -105,7 +159,6 @@ describe('Containers', function () {
     beforeEach(extendContext({
       user : users.createAnonymous
     }));
-    afterEach(helpers.cleanupExcept('image'));
     it ('should create a container', function (done) {
       this.user.specRequest({ from: this.image._id })
         .expect(201)
@@ -118,9 +171,6 @@ describe('Containers', function () {
   });
 
   describe('PUT /users/me/runnables/:id', function () {
-
-    afterEach(helpers.cleanupExcept('image'));
-
     describe('owner', function () {
       beforeEach(extendContextSeries({
         user: users.createAnonymous,
@@ -150,9 +200,6 @@ describe('Containers', function () {
   });
 
   describe('PATCH /users/me/runnables/:id', function () {
-
-    afterEach(helpers.cleanupExcept('image'));
-
     describe('owner', function () {
       beforeEach(extendContextSeries({
         user: users.createAnonymous,
@@ -182,9 +229,6 @@ describe('Containers', function () {
   });
 
   describe('DEL /users/me/runnables/:id', function () {
-
-    afterEach(helpers.cleanupExcept('image'));
-
     describe('owner', function () {
       beforeEach(extendContextSeries({
         user: users.createAnonymous,
