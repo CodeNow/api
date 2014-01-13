@@ -25,7 +25,6 @@ describe('Base', function () {
     });
   });
 
-  // needs normal user
   describe('GET /cleanup', function () {
     describe('admin', function () {
       beforeEach(extendContext({
@@ -49,7 +48,6 @@ describe('Base', function () {
     });
   });
 
-  // needs normal user
   describe('GET /cache', function () {
     describe('admin', function () {
       beforeEach(extendContext({
