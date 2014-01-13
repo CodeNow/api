@@ -68,7 +68,6 @@ var helpers = module.exports = {
   },
   extendContext: function (key, value) {
     var obj;
-    var extendWith = helpers.extendWith;
     if (typeof key === 'object') {
       obj = key;
     } else {
@@ -88,7 +87,6 @@ var helpers = module.exports = {
           context[key] = val;
         }
       });
-      var requestStr = helpers.getRequestStr(context);
       async.extend(context, tasks, helpers.extendWithReqStr(this, done));
       // set cleanup keys
       this._cleanupKeys = _.unique((this._cleanupKeys || []).concat(keys));

@@ -13,7 +13,6 @@
 pids
 logs
 results
-/lib
 lib-cov
 coverage
 node_modules

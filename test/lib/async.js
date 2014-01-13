@@ -17,7 +17,7 @@ function getPath (obj, pathStr) {
 function invoke (methodStr, args, ctx) {
   var method = getPath(this, methodStr);
   if (method instanceof Error) {
-    console.error(err.message); // log before throw bc mocha isnt always displaying throws
+    console.error(method.message); // log before throw bc mocha isnt always displaying throws
     throw method;
   }
   var split, ctxPath;
@@ -50,7 +50,7 @@ function replacePlaceholderArgs (obj, args) {
 function invokeBind (methodStr, args, ctx) {
   var self = this;
   args = args || []; // args[1] are the args for method being invoke
-  return function (cb) {
+  return function () {
     var newargs = Array.prototype.slice.call(arguments);
     args = replacePlaceholderArgs(self, args);
     args = args.concat(newargs);
@@ -59,7 +59,7 @@ function invokeBind (methodStr, args, ctx) {
 }
 
 function _replaceInvokePlaceholders (self, src) {
-  var tasks = {};
+  var tasks = {}, fn;
   Object.keys(src).forEach(function (key) {
     var val = src[key];
     if (typeof val === 'string') {
@@ -111,7 +111,6 @@ var a = {
     });
   },
   extendSeries: function (dst, src, callback) {
-    var argSlice = a.argSlice;
     var keys = Object.keys(src);
     var results = {};
     async.eachSeries(keys, function (key, cb) {
