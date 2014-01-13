@@ -14,6 +14,19 @@ Test.prototype.expectArray = function (length) {
   this._length = length;
   return this;
 };
+// match:  obj
+// strict: specifies whether object is an exact match (all properties) or just matching properties
+Test.prototype.expectArrayContains = function (match, strict) {
+  if (!this._bodyIsArray) {
+    this.expectArray();
+  }
+  this._arrayContainsRules = this._arrayContainsRules || [];
+  this._arrayContainsRules.push({
+    match: match,
+    strict: strict
+  });
+  return this;
+};
 
 Test.prototype.expectBody = function (key, value) {
   this._bodyKeysExist = this._bodyKeysExist || [];
@@ -25,6 +38,18 @@ Test.prototype.expectBody = function (key, value) {
     this._bodyKeysExist.push(key);
   }
   return this;
+};
+
+Test.prototype._checkArrayContains = function (res) {
+  var self = this;
+  this._arrayContainsRules = this._arrayContainsRules || [];
+  return this._arrayContainsRules.every(function (rule) {
+    return (rule.strict) ?
+      _.findWhere(res.body, obj) :
+      res.body.some(function (item) {
+        return Boolean(_.isEqual(item, rule.match));
+      });
+  });
 };
 
 Test.prototype._checkExpectedBodyValues = function (res) {
