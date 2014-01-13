@@ -1,4 +1,5 @@
 var supertest = require('supertest');
+var _ = require('lodash');
 var Test = supertest.Test;
 
 function error(msg, expected, actual) {
@@ -41,11 +42,10 @@ Test.prototype.expectBody = function (key, value) {
 };
 
 Test.prototype._checkArrayContains = function (res) {
-  var self = this;
   this._arrayContainsRules = this._arrayContainsRules || [];
   return this._arrayContainsRules.every(function (rule) {
     return (rule.strict) ?
-      _.findWhere(res.body, obj) :
+      _.findWhere(res.body, rule.match) :  // not sure if this is right
       res.body.some(function (item) {
         return Boolean(_.isEqual(item, rule.match));
       });

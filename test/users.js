@@ -1,5 +1,4 @@
 var _ = require('lodash');
-var db = require('./lib/db');
 var users = require('./lib/userFactory');
 var helpers = require('./lib/helpers');
 var extendContext = helpers.extendContext;

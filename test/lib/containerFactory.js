@@ -1,6 +1,4 @@
-var helpers = require('./helpers');
 var async = require('./async');
-var sfx = require("sfx");
 
 var containers = module.exports = {
   deleteContainers: function (runnables, callback) {
@@ -42,7 +40,7 @@ var containers = module.exports = {
     });
   },
   createContainerFromFixture: function (name, callback) {
-    var images = require('./imageFactory');
+    console.log('NAME', name);
     var users = require('./userFactory');
     async.extendWaterfall({}, {
       user: users.createAdmin,
