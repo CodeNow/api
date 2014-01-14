@@ -1,5 +1,3 @@
-var _ = require('lodash');
-var db = require('./lib/db');
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var helpers = require('./lib/helpers');
