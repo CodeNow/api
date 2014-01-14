@@ -16,18 +16,17 @@ describe('Votes', function () {
       user : users.createAnonymous
     }));
     it('should create a vote', function (done) {
-      this.user.specRequest({ runnable: this.image._id })
-        .send({ runnable: helpers.fakeShortId() })
+      this.user.specRequest()
+        .send({ runnable: this.image._id })
         .expect(201)
         .end(done);
     });
-    // TODO:
-    // it('should respond 404 if image not found', function (done) {
-    //   this.user.specRequest()
-    //     .send({ runnable: helpers.fakeShortId() })
-    //     .expect(404)
-    //     .end(done);
-    // });
+    it('should respond 404 if image not found', function (done) {
+      this.user.specRequest()
+        .send({ runnable: helpers.fakeShortId() })
+        .expect(404)
+        .end(done);
+    });
   });
 
   describe('GET /users/me', function () {
