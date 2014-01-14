@@ -69,6 +69,21 @@ describe('Containers', function () {
           .end(done);
       });
     });
+    describe('saved query param', function () {
+      beforeEach(extendContextSeries({
+        save: ['user.patchContainer', ['container._id', {
+          body: { saved: true },
+          expect: 200
+        }]]
+      }));
+
+      it('should only list saved containers', function (done) {
+        this.user.specRequest({ saved: true })
+          .expect(200)
+          .expectArray(1)
+          .end(done);
+      });
+    });
     // TODO: container paging
     // describe('pagination', function () {
     //   beforeEach(extendContextSeries({
