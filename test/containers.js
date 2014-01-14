@@ -1,4 +1,3 @@
-//require('console-trace')({always:true, right:true})
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var helpers = require('./lib/helpers');
