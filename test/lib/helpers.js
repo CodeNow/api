@@ -5,6 +5,7 @@ var st = require('./superdupertest');
 var httpMethods = require('methods');
 var db = require('./db');
 var async = require('./async');
+var server = null; // createServer reuses server if it exists
 
 var helpers = module.exports = {
   fakeShortId: function () {
@@ -103,13 +104,17 @@ var helpers = module.exports = {
     return 'value' + Math.random();
   },
   createServer: function () {
+    if (server) {
+      return server;
+    }
     var d = require('domain').create();
-    var server = new (require('../../lib/index'))({}, d);
+    var serverIndex = new (require('../../lib/index'))({}, d);
     d.on('error', function (err) {
       console.log(err.message);
       console.log(err.stack);
     });
-    return server.create();
+    server = serverIndex.create();
+    return server;
   },
   cleanup: function (callback) {
     helpers.deleteKeys(this, this._cleanupKeys); // clean context keys
