@@ -4,7 +4,6 @@ var helpers = require('./lib/helpers');
 var extendContext = helpers.extendContext;
 
 describe('Users', function () {
-
   describe('POST /users', function() {
     beforeEach(extendContext('user', users.createTokenless));
     afterEach(helpers.cleanup);

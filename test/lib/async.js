@@ -32,19 +32,26 @@ function invoke (methodStr, args, ctx) {
 }
 
 function replacePlaceholderArgs (obj, args) {
-  var newargs = [];
-  args.forEach(function (arg, i) {
-    if (arg && arg.indexOf && ~arg.indexOf('.')) {
+  var replaceArg = function (arg) {
+    if (typeof arg === 'string' && ~arg.indexOf('.')) {
       var val = getPath(obj, arg);
-      newargs[i] = (val instanceof Error) ?
-        args[i] :
+      return (val instanceof Error) ?
+        arg :
         val;
     }
-    else {
-      newargs[i] = args[i];
+    else if (typeof arg === 'object') {
+      var clone = _.clone(arg);
+      Object.keys(clone).forEach(function (key) {
+        clone[key] = replaceArg(clone[key]);
+      });
+      return clone;
     }
-  });
-  return newargs;
+    else {
+      return arg;
+    }
+  };
+
+  return args.map(replaceArg);
 }
 
 function invokeBind (methodStr, args, ctx) {

@@ -94,7 +94,7 @@ TestUser.prototype.specRequest = function () {
     path = path.replace(pathArgRegExp, '$1'+arg);
   });
   if (pathArgRegExp.test(path)) {
-    throw new Error('missing args for path');
+    throw new Error('missing args for spec request url');
   }
   if (typeof this[method] !== 'function') {
     console.error('"' +method+ '" is not an http method');

@@ -30,6 +30,11 @@ Test.prototype.expectArrayContains = function (match, strict) {
 };
 
 Test.prototype.expectBody = function (key, value) {
+  if (typeof key === 'function') {
+    this._expectBodyFunctions = this._expectBodyFunctions || [];
+    this._expectBodyFunctions.push(key);
+    return this;
+  }
   this._bodyKeysExist = this._bodyKeysExist || [];
   this._bodyValues    = this._bodyValues    || {};
   if (value != null) {
@@ -49,6 +54,32 @@ Test.prototype._checkArrayContains = function (res) {
       res.body.some(function (item) {
         return Boolean(_.isEqual(item, rule.match));
       });
+  });
+};
+
+Test.prototype._checkExpectedArray = function (res) {
+  var err = null;
+  if (this._bodyIsArray) {
+    if (!Array.isArray(res.body)) {
+      err = error('expected "res.body" to be an array, got', res.body);
+    }
+    if (err) {
+      return err;
+    }
+  }
+
+  if (this._length) {
+    if (res.body.length !== this._length) {
+      err = error('expected "res.body" to be length ' + this._length + ', got ' + res.body.length);
+    }
+  }
+  return err;
+};
+
+Test.prototype._checkExpectedBodyFunctions = function (res) {
+  var tests = this._expectBodyFunctions || [];
+  tests.forEach(function (test) {
+    test.call(null, res.body);
   });
 };
 
@@ -88,21 +119,6 @@ Test.prototype._checkExpectedBodyValues = function (res) {
     }
   };
 
-  if (self._bodyIsArray) {
-    if (!Array.isArray(res.body)) {
-      err = error('expected "res.body" to be an array, got', res.body);
-    }
-    if (err) {
-      return err;
-    }
-  }
-
-  if (self._length) {
-    if (res.body.length !== self._length) {
-      err = error('expected "res.body" to be length ' + self._length + ', got ' + res.body.length);
-    }
-  }
-
   if (self._bodyKeysExist) {
     self._bodyKeysExist.every(bodyKeyExists);
     if (err) {
@@ -120,12 +136,18 @@ Test.prototype._checkExpectedBodyValues = function (res) {
   return err;
 };
 
+Test.prototype._checkExpected = function (res) {
+  return this._checkExpectedArray(res) ||
+    this._checkExpectedBodyValues(res) ||
+    this._checkExpectedBodyFunctions(res);
+};
+
 var superEnd = Test.prototype.end;
 Test.prototype.end = function (callback) {
   var self = this;
 
   superEnd.call(this, function (err, res) {
-    err = err || self._checkExpectedBodyValues(res);
+    err = err || self._checkExpected(res);
     if (err && res) {
       console.error('\n', res.body);
     }
@@ -143,7 +165,7 @@ Test.prototype.streamEnd = function (callback) {
   this.on('error', callback);
   this.on('response', function (res) {
     self.assert(res, function (err) {
-      err = err || self._checkExpectedBodyValues(res);
+      err = err || self._checkExpected(res);
       if (err) {
         return callback(err);
       }
