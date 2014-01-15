@@ -119,7 +119,10 @@ Test.prototype._checkExpectedBody = function (res) {
     if (strict && !_.isEqual(res.body, expectedBody)) {
       return error('unexpected "res.body"', expectedBody, res.body);
     }
-    else if (_.findWhere([res.body], expectedBody) != null) {
+    else if (_.findWhere([res.body], expectedBody) == null) {
+      if (subArraysApproxEqual()) {
+        return false;
+      }
       return error('unexpected "res.body"', expectedBody, res.body);
     }
     return false;
@@ -131,6 +134,20 @@ Test.prototype._checkExpectedBody = function (res) {
     else {
       return error('expected "res.body" to match ' +expectedBody+ '", got "' +bodyVal+ '"');
     }
+  }
+  function subArraysApproxEqual () {
+    return Object.keys(expectedBody).every(function (key) {
+      if (Array.isArray(res.body[key])) {
+        return res.body[key].every(function (item) {
+          return expectedBody[key].some(function (expItem) {
+            return _.findWhere([item], expItem) != null;
+          });
+        });
+      }
+      else {
+        return _.isEqual(expectedBody[key], res.body[key]);
+      }
+    });
   }
 };
 
