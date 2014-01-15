@@ -64,6 +64,6 @@
     // Metrics
     "maxparams"     : 4,
     "maxdepth"      : 2,
-    "maxstatements" : 25, // this needs to be brought down
-    "maxcomplexity" : 15 // this needs to come down
+    "maxstatements" : 22, // this needs to be brought down
+    "maxcomplexity" : 12 // this needs to come down
 }

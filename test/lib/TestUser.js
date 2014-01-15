@@ -29,8 +29,7 @@ httpMethods
         callback = opts;
         opts = token;
         token = null;
-      }
-      else if (typeof token === 'function') {
+      } else if (typeof token === 'function') {
         // (path, callback)
         callback = token;
         token = null;
@@ -56,8 +55,7 @@ httpMethods
       }
       if (!callback) {
         return req;
-      }
-      else {
+      } else {
         req.end(callback);
       }
     };
