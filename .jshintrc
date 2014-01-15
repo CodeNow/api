@@ -57,6 +57,6 @@
 
     "maxparams"     : 8,  // dang
     "maxdepth"      : 10, // oye
-    "maxstatements" : 96, // this needs to be brought WAY WAY down
-    "maxcomplexity" : 11 // this also needs to come down
+    "maxstatements" : 26, // this needs to be brought WAY WAY down
+    "maxcomplexity" : 10 // this also needs to come down
 }
