@@ -78,9 +78,13 @@ describe('Containers', function () {
       }));
 
       it('should only list saved containers', function (done) {
+        var self = this;
         this.user.specRequest({ saved: true })
           .expect(200)
           .expectArray(1)
+          .expectBody(function (body) {
+            body[0].should.have.property('_id', self.container._id);
+          })
           .end(done);
       });
     });

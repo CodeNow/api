@@ -6,6 +6,7 @@ var httpMethods = require('methods');
 var db = require('./db');
 var async = require('./async');
 var server = null; // createServer reuses server if it exists
+var uuid = require('node-uuid');
 
 var helpers = module.exports = {
   fakeShortId: function () {
@@ -149,6 +150,32 @@ var helpers = module.exports = {
         }
       ], callback);
     };
+  },
+  specData: function (name) {
+    return {
+      name: name || 'name',
+      description: 'description',
+      instructions: 'instructions',
+      requirements: ['one', 'two']
+    };
+  },
+  implData: function (spec, containerId) {
+    return {
+      'implements': spec._id,
+      subdomain: 'specname-'+uuid.v4(),
+      requirements: reqsFor(spec.requirements),
+      containerId: containerId
+    };
+    function reqsFor (keys) {
+      var reqs = [];
+      keys.forEach(function (key) {
+        reqs.push({
+          name: key,
+          value: 'val-'+uuid.v4()
+        });
+      });
+      return reqs;
+    }
   }
 };
 helpers.request = { /* post, get, put, patch, delete, ... */ };

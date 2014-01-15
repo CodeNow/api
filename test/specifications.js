@@ -2,20 +2,12 @@ var users = require('./lib/userFactory');
 var helpers = require('./lib/helpers');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
-require('./lib/fixtures/harbourmaster');
-require('./lib/fixtures/dockworker');
-var specData = function () {
-  return {
-    name: 'name',
-    description: 'description',
-    instructions: 'instructions',
-    requirements: ['one', 'two']
-  };
-};
+var specData = helpers.specData;
 
 describe('Specifications', function () {
+  afterEach(helpers.cleanup);
+
   describe('POST /specifications', function () {
-    afterEach(helpers.cleanup);
     describe('anonymous', function () {
       beforeEach(extendContext({
         user : users.createAnonymous
@@ -57,13 +49,10 @@ describe('Specifications', function () {
       // });
       describe('already exists', function () {
         beforeEach(extendContextSeries({
-          spec: ['user.post', [ '/specifications', {
-            body: specData(),
-            expect: 201
-          }]]
+          spec: ['user.createSpecification', [specData()]],
         }));
         it('should error if duplicate name', function (done) {
-          this.user.specRequest(specData())
+          this.user.specRequest()
             .send(specData())
             .expect(403)
             .expectBody('message', /already exists/)
@@ -85,15 +74,11 @@ describe('Specifications', function () {
     describe('GET /specifications/:id', function () {
       beforeEach(extendContextSeries({
         admin: users.createAdmin,
-        spec: ['admin.post', [ '/specifications', {
-          body: specData(),
-          expect: 201
-        }]],
+        spec: ['admin.createSpecification'],
         user: users.createAnonymous
       }));
       it('should get a specification', function (done) {
-        var specId = this.spec.body._id;
-        this.user.specRequest(specId)
+        this.user.specRequest(this.spec._id)
           .expect(200)
           .end(done);
       });
@@ -105,11 +90,69 @@ describe('Specifications', function () {
     });
 
     describe('PUT /specifications/:id', function () {
-      // body...
+      beforeEach(extendContextSeries({
+        publ: users.createPublisher,
+        spec: ['publ.createSpecification']
+      }));
+      describe('owner', function () {
+        var updateField = function (key) {
+          return function (done) {
+            var update = specData();
+            update[key] = 'new';
+            this.publ.specRequest(this.spec._id)
+              .send(update)
+              .expect(200)
+              .end(done);
+          };
+        };
+        it('should allow update name', updateField('name'));
+        it('should allow update description', updateField('description'));
+        it('should allow update instructions', updateField('instructions'));
+        it('should allow update requirements', updateField('requirements'));
+      });
+      describe('nonowner', function () {
+        beforeEach(extendContext({
+          user: users.createAnonymous
+        }));
+        it('should deny update', function (done) {
+          var update = specData();
+          update.name = 'newname';
+          this.user.specRequest(this.spec._id)
+            .send(update)
+            .expect(403)
+            .end(done);
+        });
+      });
     });
 
     describe('GET /specifications', function () {
-      // body...
+      describe('no specification', function () {
+        beforeEach(extendContext({
+          user: users.createAnonymous
+        }));
+        it('should respond empty array', function (done) {
+          this.user.specRequest()
+            .expect(200)
+            .expectArray(0)
+            .end(done);
+        });
+      });
+      describe('specifications exist', function () {
+        beforeEach(extendContextSeries({
+          publ: users.createPublisher,
+          spec: ['publ.createSpecification'],
+          publ2: users.createPublisher,
+          spec2: ['publ2.createSpecification'],
+          spec3: ['publ2.createSpecification'],
+          user: users.createAnonymous
+        }));
+        it('should return all specifications', function (done) {
+          this.user.specRequest()
+            .expect(200)
+            .expectArray(3)
+            .end(done);
+        });
+      });
     });
   });
 

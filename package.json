@@ -49,7 +49,7 @@
   "scripts": {
     "start": "node server.js",
     "watch": "nodemon -w lib -w configs -q server.js",
-    "testwatch": "NODE_ENV=testing nodemon --delay 1 -w lib -w test -w configs -x mocha test",
+    "testwatch": "nodemon --delay 1 -w lib -w test -w configs -x npm test",
     "coverage": "jscoverage lib lib-cov; rm -rf lib; mv lib-cov lib; mkdir ./coverage; mocha -t 10000 --reporter html-cov > ./coverage/index.html",
     "test": "npm run lint && NODE_ENV=testing mocha",
     "test-int": "npm run lint && NODE_ENV=testing-integration mocha",
