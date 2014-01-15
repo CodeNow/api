@@ -7,5 +7,5 @@ if (configs.nodetime) {
 
 var api_server = require('./lib');
 
-var worker = new api_server(configs, null);
+var worker = new api_server();
 worker.start(function () { });
