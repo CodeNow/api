@@ -1,3 +1,4 @@
+var _ = require('lodash');
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var helpers = require('./lib/helpers');
@@ -23,10 +24,11 @@ describe('Implementations', function () {
     }));
     it('should create an implementation', function (done) {
       var data = implData(this.spec, this.container._id);
+      var expected = _.omit(_.clone(data), 'containerId');
       this.user.specRequest()
         .send(data)
         .expect(201)
-        .expectBody(data)
+        .expectBody(expected)
         .end(done);
     });
   });
@@ -40,11 +42,9 @@ describe('Implementations', function () {
     }));
     // TODO: this really should return an array....
     it('should get an implementation by "implements"', function (done) {
-      var data = implData(this.spec, this.container._id);
       this.user.specRequest({ 'implements': this.spec._id })
-        .send(data)
         .expect(200)
-        .expectBody(data)
+        .expectBody(this.impl)
         .end(done);
     });
   });

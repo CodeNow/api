@@ -1,5 +1,6 @@
 var users = require('./lib/userFactory');
 var helpers = require('./lib/helpers');
+var expect = require('./lib/expect');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 var specData = helpers.specData;
@@ -12,32 +13,19 @@ describe('Specifications', function () {
       beforeEach(extendContext({
         user : users.createAnonymous
       }));
-      it('should error access denied', function (done) {
-        this.user.specRequest()
-          .expect(403)
-          .end(done);
-      });
+      it('should error access denied', expect.accessDenied);
     });
     describe('registered', function () {
       beforeEach(extendContext({
         user : users.createRegistered
       }));
-      it('should error access denied', function (done) {
-        this.user.specRequest()
-          .expect(403)
-          .end(done);
-      });
+      it('should error access denied', expect.accessDenied);
     });
     describe('publisher', function () {
       beforeEach(extendContext({
         user : users.createPublisher
       }));
-      it('should create a specification', function (done) {
-        this.user.specRequest()
-          .send(specData())
-          .expect(201)
-          .end(done);
-      });
+      it('should create a specification', expect.create(specData()));
       // TODO: this is not working::
       // it('should error if missing name', function (done) {
       //   var data = _.clone(specData());
@@ -64,12 +52,7 @@ describe('Specifications', function () {
       beforeEach(extendContext({
         user : users.createAdmin
       }));
-      it('should create a specification', function (done) {
-        this.user.specRequest()
-          .send(specData())
-          .expect(201)
-          .end(done);
-      });
+      it('should create a specification', expect.create(specData()));
     });
     describe('GET /specifications/:id', function () {
       beforeEach(extendContextSeries({
