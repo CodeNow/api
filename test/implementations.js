@@ -48,4 +48,39 @@ describe('Implementations', function () {
         .end(done);
     });
   });
+  describe('PUT /users/me/implementations/:implementationId', function () {
+    beforeEach(extendContextSeries({
+      publ: users.createPublisher,
+      spec: ['publ.createSpecification'],
+      spec2: ['publ.createSpecification'],
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']],
+      container2: ['user.createContainer', ['image._id']],
+      impl: ['user.createImplementation', ['spec', 'container._id']]
+    }));
+    var updateField = function (key, val, done) {
+      var update = implData(this.spec, this.containerId);
+      update[key] = val || 'new';
+      this.user.specRequest(this.impl._id)
+        .send(update)
+        .expect(200)
+        .end(done);
+    };
+    it('should allow update implements', function (done) {
+      updateField.call(this, 'implements', this.spec2._id, done);
+    });
+    it('should allow update requirements', function (done) {
+      var reqs = [];
+      this.spec.requirements.forEach(function (name) {
+        reqs.push({
+          name: name,
+          value: 'newvalue'
+        });
+      });
+      updateField.call(this, 'requirements', reqs, done);
+    });
+    it('should allow update containerId', function (done) {
+      updateField.call(this, 'containerId', this.container2._id, done);
+    });
+  });
 });

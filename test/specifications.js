@@ -95,10 +95,10 @@ describe('Specifications', function () {
         spec: ['publ.createSpecification']
       }));
       describe('owner', function () {
-        var updateField = function (key) {
+        var updateField = function (key, val) {
           return function (done) {
             var update = specData();
-            update[key] = 'new';
+            update[key] = val && 'new';
             this.publ.specRequest(this.spec._id)
               .send(update)
               .expect(200)
@@ -108,7 +108,7 @@ describe('Specifications', function () {
         it('should allow update name', updateField('name'));
         it('should allow update description', updateField('description'));
         it('should allow update instructions', updateField('instructions'));
-        it('should allow update requirements', updateField('requirements'));
+        it('should allow update requirements', updateField('requirements', ['two', 'three']));
       });
       describe('nonowner', function () {
         beforeEach(extendContext({
