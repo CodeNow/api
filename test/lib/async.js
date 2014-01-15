@@ -27,13 +27,12 @@ function invoke (methodStr, args, ctx) {
     ctxPath = split.join('.');
     ctx = getPath(this, ctxPath);
   }
-
   return method.apply(ctx, args);
 }
 
 function replacePlaceholderArgs (obj, args) {
   var replaceArg = function (arg) {
-    if (typeof arg === 'string' && ~arg.indexOf('.')) {
+    if (typeof arg === 'string') {
       var val = getPath(obj, arg);
       return (val instanceof Error) ?
         arg :

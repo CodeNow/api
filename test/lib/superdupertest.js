@@ -15,6 +15,7 @@ Test.prototype.expectArray = function (length) {
   this._length = length;
   return this;
 };
+
 // match:  obj
 // strict: specifies whether object is an exact match (all properties) or just matching properties
 Test.prototype.expectArrayContains = function (match, strict) {
@@ -31,8 +32,17 @@ Test.prototype.expectArrayContains = function (match, strict) {
 
 Test.prototype.expectBody = function (key, value) {
   if (typeof key === 'function') {
+    // (expectBodyFunction)
     this._expectBodyFunctions = this._expectBodyFunctions || [];
     this._expectBodyFunctions.push(key);
+    return this;
+  }
+  if (typeof key === 'object') {
+    // (expectedBody, strict)
+    this._expectBody = {
+      match: key,
+      strict: value || false
+    };
     return this;
   }
   this._bodyKeysExist = this._bodyKeysExist || [];
@@ -48,6 +58,9 @@ Test.prototype.expectBody = function (key, value) {
 
 Test.prototype._checkArrayContains = function (res) {
   this._arrayContainsRules = this._arrayContainsRules || [];
+  if (this._arrayContainsRules.length === 0) {
+    return false;
+  }
   return this._arrayContainsRules.every(function (rule) {
     return (rule.strict) ?
       _.findWhere(res.body, rule.match) :  // not sure if this is right
@@ -61,7 +74,7 @@ Test.prototype._checkExpectedArray = function (res) {
   var err = null;
   if (this._bodyIsArray) {
     if (!Array.isArray(res.body)) {
-      err = error('expected "res.body" to be an array, got', res.body);
+      err = error('expected "res.body" to be an array, got ' + JSON.stringify(res.body));
     }
     if (err) {
       return err;
@@ -81,6 +94,44 @@ Test.prototype._checkExpectedBodyFunctions = function (res) {
   tests.forEach(function (test) {
     test.call(null, res.body);
   });
+};
+
+Test.prototype._checkExpectedBody = function (res) {
+  if (this._expectBody) {
+    var expectedBody = this._expectBody.match;
+    var strict = this._expectBody.strict;
+    var type = typeof expectedBody;
+    if (type === 'object') {
+      return checkAsObject();
+    }
+    if (res.body === expectedBody) {
+      return false;
+    }
+    if (!expectedBody.test) {
+      return error('expected "res.body" of "' +expectedBody+ '", got "' +bodyVal+ '"', expectedBody, bodyVal);
+    }
+    else { //regexp
+      return checkAsRegexp();
+    }
+    return false;
+  }
+  function checkAsObject() {
+    if (strict && !_.isEqual(res.body, expectedBody)) {
+      return error('unexpected "res.body"', expectedBody, res.body);
+    }
+    else if (_.findWhere([res.body], expectedBody) != null) {
+      return error('unexpected "res.body"', expectedBody, res.body);
+    }
+    return false;
+  }
+  function checkAsRegExp() {
+    if (expectedBody.test(res.body)) {
+      return false;
+    }
+    else {
+      return error('expected "res.body" to match ' +expectedBody+ '", got "' +bodyVal+ '"');
+    }
+  }
 };
 
 Test.prototype._checkExpectedBodyValues = function (res) {
@@ -138,6 +189,8 @@ Test.prototype._checkExpectedBodyValues = function (res) {
 
 Test.prototype._checkExpected = function (res) {
   return this._checkExpectedArray(res) ||
+    this._checkArrayContains(res) ||
+    this._checkExpectedBody(res) ||
     this._checkExpectedBodyValues(res) ||
     this._checkExpectedBodyFunctions(res);
 };

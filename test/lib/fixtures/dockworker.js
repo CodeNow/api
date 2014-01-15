@@ -14,6 +14,10 @@ app.post('/api/cmd', function (req, res) {
   res.send(200);
 });
 
+app.post('/api/envs', function (req, res) {
+  res.send(200);
+});
+
 app.all('*', express.logger(), function (req, res) {
   res.send(404);
 });

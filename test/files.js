@@ -11,6 +11,7 @@ describe('Files', function () {
     image: images.createImageFromFixture.bind(images, 'node.js')
   }));
   after(helpers.cleanup);
+
   describe('GET /users/me/runnables/:containerId/files', function () {
     beforeEach(extendContextSeries({
       user: users.createAnonymous,
