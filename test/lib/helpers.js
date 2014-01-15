@@ -57,14 +57,19 @@ var helpers = module.exports = {
       _.extend(obj1, obj2);
     };
   },
-  extendWithReqStr: function (ctx, callback) {
+  extendUsersWithReqStr: function (ctx, callback) {
+    var TestUser = require('./TestUser');
     var extendWith = helpers.extendWith;
     var reqData = { requestStr: helpers.getRequestStr(ctx) };
     return function (err, data) {
       if (err) {
         return callback(err);
       }
-      _.values(data).forEach(extendWith(reqData));
+      _.values(data)
+        .filter(function (val) {
+          return val instanceof TestUser;
+        })
+        .forEach(extendWith(reqData));
       callback(null, data);
     };
   },
@@ -89,14 +94,14 @@ var helpers = module.exports = {
           context[key] = val;
         }
       });
-      async.extend(context, tasks, helpers.extendWithReqStr(this, done));
+      async.extend(context, tasks, helpers.extendUsersWithReqStr(this, done));
       // set cleanup keys
       this._cleanupKeys = _.unique((this._cleanupKeys || []).concat(keys));
     };
   },
   extendContextSeries: function (tasks) {
     return function (done) {
-      async.extendSeries(this, tasks, helpers.extendWithReqStr(this, done));
+      async.extendSeries(this, tasks, helpers.extendUsersWithReqStr(this, done));
       // set cleanup keys
       this._cleanupKeys = _.unique((this._cleanupKeys || []).concat());
     };
