@@ -56,7 +56,7 @@
     // Metrics
 
     "maxparams"     : 8,  // dang
-    "maxdepth"      : 10, // oye
-    "maxstatements" : 26, // this needs to be brought WAY WAY down
-    "maxcomplexity" : 10 // this also needs to come down
+    "maxdepth"      : 2,
+    "maxstatements" : 11, // this needs to be brought down
+    "maxcomplexity" : 9 // this also needs to come down
 }

@@ -108,10 +108,10 @@ Test.prototype._checkExpectedBody = function (res) {
       return false;
     }
     if (!expectedBody.test) {
-      return error('expected "res.body" of "' +expectedBody+ '", got "' +bodyVal+ '"', expectedBody, bodyVal);
+      return error('expected "res.body" of "' +expectedBody+ '", got "' +res.body+ '"', expectedBody, res.body);
     }
     else { //regexp
-      return checkAsRegexp();
+      return checkAsRegExp();
     }
     return false;
   }
@@ -132,7 +132,7 @@ Test.prototype._checkExpectedBody = function (res) {
       return false;
     }
     else {
-      return error('expected "res.body" to match ' +expectedBody+ '", got "' +bodyVal+ '"');
+      return error('expected "res.body" to match ' +expectedBody+ '", got "' +res.body+ '"');
     }
   }
   function subArraysApproxEqual () {
