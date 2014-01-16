@@ -1,4 +1,5 @@
 .DS_Store
+.tern-port
 .vagrant
 *.seed
 *.log
@@ -12,7 +13,6 @@
 pids
 logs
 results
-lib
 lib-cov
 coverage
 node_modules
