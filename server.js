@@ -8,4 +8,4 @@ if (configs.nodetime) {
 var api_server = require('./lib');
 
 var worker = new api_server();
-worker.start(function () { });
+worker.start(function noop () {});

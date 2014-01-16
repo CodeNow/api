@@ -220,6 +220,7 @@ Test.prototype.end = function (callback) {
     err = err || self._checkExpected(res);
     if (err && res) {
       console.error('\n', res.body);
+      console.error(res.status);
     }
     if (callback) {
       callback(err, res);
