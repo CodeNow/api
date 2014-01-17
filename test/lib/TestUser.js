@@ -9,19 +9,16 @@ var zlib = require('zlib');
 var helpers = require('./helpers');
 var async = require('./async');
 var uuid = require('node-uuid');
+var bodyMethods = ['post', 'put', 'patch', 'del'];
 
 var TestUser = module.exports = function (properties) {
   _.extend(this, properties);
 };
-httpMethods
-  .filter(function (method) { // methods we actually yes
-    return ~['get', 'post', 'put', 'patch', 'delete'].indexOf(method);
-  })
+['get', 'post', 'put', 'patch', 'delete'] // http methods we actually use
   .forEach(function (method) {
     if (method === 'delete') {
       method = 'del';
     }
-    var bodyMethods = ['post', 'put', 'patch', 'del'];
     /* TestUser.prototype[post, get, put, patch, delete, ...] */
     TestUser.prototype[method] = function (path, token, opts, callback) {
       if (typeof token === 'object') {
