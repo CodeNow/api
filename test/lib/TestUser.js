@@ -152,21 +152,16 @@ TestUser.prototype.createImageFromFixture = function (name, callback) {
     return callback(new Error('only admin users can create images from fixtures'));
   }
   var path = __dirname+"/fixtures/images/"+name;
-  var compress = zlib.createGzip();
-  var packer = tar.Pack();
-  var reader = fstream.Reader({
+  fstream.Reader({
     path: path,
     type: 'Directory',
     mode: '0755'
-  });
-  var request = this.post('/runnables/import')
-    .set('content-type', 'application/x-gzip')
-    .expect(201)
-    .streamEnd(async.pick('body', callback));
-  compress.pipe(request);
-  packer.pipe(compress);
-  reader.pipe(packer);
-  reader.resume();
+  }).pipe(tar.Pack())
+    .pipe(zlib.createGzip())
+    .pipe(this.post('/runnables/import')
+      .set('content-type', 'application/x-gzip')
+      .expect(201)
+      .streamEnd(async.pick('body', callback)));
 };
 TestUser.prototype.createContainer = function (from, body, callback) {
   if (typeof body === 'function') {
