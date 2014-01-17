@@ -158,7 +158,7 @@ TestUser.prototype.createImageFromFixture = function (name, callback) {
     mode: '0755'
   }).pipe(tar.Pack())
     .pipe(zlib.createGzip())
-    .pipe(this.post('/runnables/import')
+    .pipe(this.post('/runnables/import?name=' + name)
       .set('content-type', 'application/x-gzip')
       .expect(201)
       .streamEnd(async.pick('body', callback)));
