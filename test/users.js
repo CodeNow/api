@@ -55,7 +55,7 @@ describe('Users', function () {
         .end(function () {
           self.user.specRequest()
             .send(body)
-            .expectBody('message', /already registered/)
+            .expectBody('message', /email already exists/)
             .end(done);
         });
     });
