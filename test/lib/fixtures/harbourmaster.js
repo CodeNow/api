@@ -4,7 +4,10 @@ var port = configs.harbourmaster.split(':')[2];
 var app = express();
 
 app.post('/build', function (req, res, next) {
-  res.send(200, 'Successfully built');
+  req.resume();
+  req.on('end', function () {
+    res.send(200, 'Successfully built');
+  });
 });
 app.post('/containers', function (req, res, next) {
   res.send(204);
