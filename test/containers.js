@@ -212,7 +212,7 @@ describe('Containers', function () {
         beforeEach(extendContextSeries({
           user: users.createAdmin
         }));
-        it('should not get the container', function (done) {
+        it('should get the container', function (done) {
           this.user.specRequest(this.container._id)
             .expect(200)
             .expectBody(this.container)
