@@ -110,6 +110,8 @@ def deploy():
   checkout_latest()
   install_requirements()
   reboot()
+  if env.settings is 'integration':
+    test_int()
 
 def reboot():
   """
@@ -118,6 +120,13 @@ def reboot():
   run('forever stopall || echo not started')
   run('pm2 kill || echo no pm2')
   boot()
+
+def test_int():
+  """
+  Restart the server.
+  """
+  with cd('api-server'):
+    run('npm run test-int')
 
 """
 Commands - rollback

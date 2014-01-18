@@ -52,7 +52,7 @@
     "testwatch": "nodemon --delay 1 -w lib -w test -w configs -x npm test",
     "coverage": "jscoverage lib lib-cov; rm -rf lib; mv lib-cov lib; mkdir ./coverage; mocha -t 10000 --reporter html-cov > ./coverage/index.html",
     "test": "npm run lint && NODE_ENV=testing mocha",
-    "test-int": "npm run lint && NODE_ENV=testing-integration mocha",
+    "test-int": "npm run lint && NODE_ENV=testing-integration mocha --timeout 20000",
     "clean": "rm -rf ./coverage",
     "lint": "jshint --verbose --show-non-errors ."
   }

@@ -126,21 +126,50 @@
 //     beforeEach(extendContextSeries({
 //       user: users.createAnonymous,
 //       container: ['user.createContainer', ['image._id']],
+//       save: ['user.patchContainer', ['container._id', {
+//         body: { saved: true },
+//         expect: 200
+//       }]],
 //       container2: ['user.createContainer', ['image._id']],
+//       save2: ['user.patchContainer', ['container2._id', {
+//         body: { saved: true },
+//         expect: 200
+//       }]],
 //       user2: users.createAnonymous,
 //       container3: ['user2.createContainer', ['image._id']],
 //     }));
 //     afterEach(helpers.cleanupExcept('image'));
 
-//     it ('should not list containers for other anonymous users', function (done) {
-//       var checkDone = helpers.createCheckDone(done);
-//       this.user.specRequest(this.user2._id)
-//         .expect(403)
-//         .end(checkDone.done());
-//       this.user2.specRequest(this.user._id)
-//         .expect(403)
-//         .end(checkDone.done());
+//     describe('saved query param', function () {
+//       describe('anonymous', function () {
+//         beforeEach(extendContext('user3', users.createAnonymous));
+//         it('should not list containers', accessDeniedError);
+//       });
+//       describe('registered', function () {
+//         beforeEach(extendContext('user3', users.createRegistered));
+//         it('should not list containers', accessDeniedError);
+//       });
+//       describe('publisher', function () {
+//         beforeEach(extendContext('user3', users.createPublisher));
+//         it('should not list containers', accessDeniedError);
+//       });
+//       describe('admin', function () {
+//         beforeEach(extendContext('user3', users.createAdmin));
+//         it('should list containers', function (done) {
+//           this.user3.specRequest(this.user._id, { saved: true })
+//             .expect(200)
+//             .expectArray(2)
+//             .expectArrayContains({ _id: this.container._id })
+//             .expectArrayContains({ _id: this.container2._id })
+//             .end(done);
+//         });
+//       });
 //     });
+//     function accessDeniedError (done) {
+//       this.user3.specRequest(this.user._id, { saved: true })
+//         .expect(403)
+//         .end(done);
+//     }
 //   });
 
 //   describe('GET /users/me/runnables/:id', function () {
@@ -183,7 +212,7 @@
 //         beforeEach(extendContextSeries({
 //           user: users.createAdmin
 //         }));
-//         it('should not get the container', function (done) {
+//         it('should get the container', function (done) {
 //           this.user.specRequest(this.container._id)
 //             .expect(200)
 //             .expectBody(this.container)

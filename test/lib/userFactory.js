@@ -19,6 +19,9 @@ function createUsername (suggestedUsername, ignoreConflictError, cb) {
     cb = ignoreConflictError;
     ignoreConflictError = true; //default ignore
   }
+  if (!db.users) {
+    return cb(null, suggestedUsername);
+  }
   db.users.distinct('username', {}, function (err, usernames) {
     if (err) {
       return cb(err);
