@@ -2,7 +2,6 @@ var qs = require('querystring');
 var p = require('path');
 var _ = require('lodash');
 var db = require('./db');
-var httpMethods = require('methods');
 var fstream = require('fstream');
 var tar = require('tar');
 var zlib = require('zlib');
