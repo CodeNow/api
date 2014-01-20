@@ -4,8 +4,7 @@ var _ = require('lodash');
 
 var db = module.exports = {
   onceConnected: function (callback) {
-    if (this.connected) {
-      console.error('already connected calling back immediately');
+    if (mongoose.connection.readyState === 1) {
       callback();
     }
     else {
@@ -52,5 +51,4 @@ var db = module.exports = {
 
 db.onceConnected(function() {
   _.extend(db, mongoose.connection.collections);
-  db.connected = true;
 });

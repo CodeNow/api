@@ -1,16 +1,16 @@
-// var users = require('./lib/userFactory');
-// var images = require('./lib/imageFactory');
-// var helpers = require('./lib/helpers');
-// var extendContext = helpers.extendContext;
-// var extendContextSeries = helpers.extendContextSeries;
-// require('./lib/fixtures/harbourmaster');
-// require('./lib/fixtures/dockworker');
+var users = require('./lib/userFactory');
+var images = require('./lib/imageFactory');
+var helpers = require('./lib/helpers');
+var extendContext = helpers.extendContext;
+var extendContextSeries = helpers.extendContextSeries;
+require('./lib/fixtures/harbourmaster');
+require('./lib/fixtures/dockworker');
 
-// describe('Containers', function () {
-//   before(extendContext({
-//     image: images.createImageFromFixture.bind(images, 'node.js')
-//   }));
-//   after(helpers.cleanup);
+describe('Containers', function () {
+  before(extendContext({
+    image: images.createImageFromFixture.bind(images, 'node.js')
+  }));
+  after(helpers.cleanup);
 
 //   describe('GET /users/me/runnables', function () {
 //     beforeEach(extendContextSeries({
@@ -228,20 +228,20 @@
 //     // TODO: Admin's should be able to fetch other's containers
 //   });
 
-//   describe('POST /users/me/runnables', function () {
-//     beforeEach(extendContext({
-//       user : users.createAnonymous
-//     }));
-//     it ('should create a container', function (done) {
-//       this.user.specRequest({ from: this.image._id })
-//         .expect(201)
-//         .expectBody('_id')
-//         .expectBody('parent', this.image._id)
-//         .expectBody('owner', this.user._id)
-//         .expectBody('servicesToken')
-//         .end(done);
-//     });
-//   });
+  describe('POST /users/me/runnables', function () {
+    beforeEach(extendContext({
+      user : users.createAnonymous
+    }));
+    it ('should create a container', function (done) {
+      this.user.specRequest({ from: this.image._id })
+        .expect(201)
+        .expectBody('_id')
+        .expectBody('parent', this.image._id)
+        .expectBody('owner', this.user._id)
+        .expectBody('servicesToken')
+        .end(done);
+    });
+  });
 
 //   describe('PUT /users/me/runnables/:id', function () {
 //     describe('owner', function () {
@@ -331,4 +331,4 @@
 //         .end(done);
 //     }
 //   });
-// });
+});

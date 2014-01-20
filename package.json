@@ -32,7 +32,8 @@
     "concat-stream": "~1.0.1",
     "mongoose-text-search": "0.0.2",
     "mailchimp": "~1.1.0",
-    "strong-agent": "*"
+    "strong-agent": "*",
+    "express-trace": "0.0.3"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
