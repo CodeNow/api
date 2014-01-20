@@ -219,8 +219,8 @@ Test.prototype.end = function (callback) {
   superEnd.call(this, function (err, res) {
     err = err || self._checkExpected(res);
     if (err && res) {
-      console.error('\n', res.req.method, res.req.path, res.status);
-      console.error(res.body);
+      console.error('\n', res.req.method, res.req.path, res.status, res.body && res.body.message || '');
+      console.error(res.body.stack || res.body);
     }
     if (callback) {
       callback(err, res);

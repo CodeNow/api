@@ -201,5 +201,5 @@ TestUser.prototype.createTag = function (containerId, tagName, callback) {
   var url = p.join('/users/me/containers/', containerId, '/tags/');
   this.post(url)
     .send({ name: tagName })
-    .end(async.pluck('body', callback));
+    .end(async.pick('body', callback));
 };
