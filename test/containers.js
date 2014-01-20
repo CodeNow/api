@@ -172,61 +172,61 @@ describe('Containers', function () {
     }
   });
 
-//   describe('GET /users/me/runnables/:id', function () {
-//     describe('owner', function () {
-//       beforeEach(extendContextSeries({
-//         user: users.createAnonymous,
-//         container: ['user.createContainer', ['image._id']]
-//       }));
-//       it('should get the container', function (done) {
-//         this.user.specRequest(this.container._id)
-//           .expect(200)
-//           .expectBody(this.container)
-//           .end(done);
-//       });
-//     });
-//     describe('not owner', function () {
-//       beforeEach(extendContextSeries({
-//         owner: users.createAnonymous,
-//         container: ['owner.createContainer', ['image._id']],
-//       }));
-//       describe('anonymous', function () {
-//         beforeEach(extendContextSeries({
-//           user: users.createAnonymous
-//         }));
-//         it('should not get the container', accessDenied);
-//       });
-//       describe('registered', function () {
-//         beforeEach(extendContextSeries({
-//           user: users.createRegistered
-//         }));
-//         it('should not get the container', accessDenied);
-//       });
-//       describe('publisher', function () {
-//         beforeEach(extendContextSeries({
-//           user: users.createPublisher
-//         }));
-//         it('should not get the container', accessDenied);
-//       });
-//       describe('admin', function () {
-//         beforeEach(extendContextSeries({
-//           user: users.createAdmin
-//         }));
-//         it('should get the container', function (done) {
-//           this.user.specRequest(this.container._id)
-//             .expect(200)
-//             .expectBody(this.container)
-//             .end(done);
-//         });
-//       });
-//       function accessDenied (done) {
-//         this.user.specRequest(this.container._id)
-//           .expect(403)
-//           .end(done);
-//       }
-//     });
-//     // TODO: Admin's should be able to fetch other's containers
-//   });
+  describe('GET /users/me/runnables/:id', function () {
+    describe('owner', function () {
+      beforeEach(extendContextSeries({
+        user: users.createAnonymous,
+        container: ['user.createContainer', ['image._id']]
+      }));
+      it('should get the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .expect(200)
+          .expectBody(this.container)
+          .end(done);
+      });
+    });
+    describe('not owner', function () {
+      beforeEach(extendContextSeries({
+        owner: users.createAnonymous,
+        container: ['owner.createContainer', ['image._id']],
+      }));
+      describe('anonymous', function () {
+        beforeEach(extendContextSeries({
+          user: users.createAnonymous
+        }));
+        it('should not get the container', accessDenied);
+      });
+      describe('registered', function () {
+        beforeEach(extendContextSeries({
+          user: users.createRegistered
+        }));
+        it('should not get the container', accessDenied);
+      });
+      describe('publisher', function () {
+        beforeEach(extendContextSeries({
+          user: users.createPublisher
+        }));
+        it('should not get the container', accessDenied);
+      });
+      describe('admin', function () {
+        beforeEach(extendContextSeries({
+          user: users.createAdmin
+        }));
+        it('should get the container', function (done) {
+          this.user.specRequest(this.container._id)
+            .expect(200)
+            .expectBody(this.container)
+            .end(done);
+        });
+      });
+      function accessDenied (done) {
+        this.user.specRequest(this.container._id)
+          .expect(403)
+          .end(done);
+      }
+    });
+    // TODO: Admin's should be able to fetch other's containers
+  });
 
   describe('POST /users/me/runnables', function () {
     beforeEach(extendContext({
@@ -243,92 +243,92 @@ describe('Containers', function () {
     });
   });
 
-//   describe('PUT /users/me/runnables/:id', function () {
-//     describe('owner', function () {
-//       beforeEach(extendContextSeries({
-//         user: users.createAnonymous,
-//         container: ['user.createContainer', ['image._id']]
-//       }));
-//       it('should update the container', function (done) {
-//         this.user.specRequest(this.container._id)
-//           .send(this.container)
-//           .expect(200)
-//           .end(done);
-//       });
-//     });
-//     // not owner FAIL
-//     describe('admin', function () {
-//       beforeEach(extendContextSeries({
-//         owner: users.createAnonymous,
-//         container: ['owner.createContainer', ['image._id']],
-//         user: users.createAdmin
-//       }));
-//       it('should update the container', function (done) {
-//         this.user.specRequest(this.container._id)
-//           .send(this.container)
-//           .expect(200)
-//           .end(done);
-//       });
-//     });
-//   });
+  describe('PUT /users/me/runnables/:id', function () {
+    describe('owner', function () {
+      beforeEach(extendContextSeries({
+        user: users.createAnonymous,
+        container: ['user.createContainer', ['image._id']]
+      }));
+      it('should update the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(200)
+          .end(done);
+      });
+    });
+    // not owner FAIL
+    describe('admin', function () {
+      beforeEach(extendContextSeries({
+        owner: users.createAnonymous,
+        container: ['owner.createContainer', ['image._id']],
+        user: users.createAdmin
+      }));
+      it('should update the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(200)
+          .end(done);
+      });
+    });
+  });
 
-//   describe('PATCH /users/me/runnables/:id', function () {
-//     describe('owner', function () {
-//       beforeEach(extendContextSeries({
-//         user: users.createAnonymous,
-//         container: ['user.createContainer', ['image._id']]
-//       }));
-//       it('should update the container', updateNameSuccess);
-//     });
-//     // not owner FAIL
-//     describe('admin', function () {
-//       beforeEach(extendContextSeries({
-//         owner: users.createAnonymous,
-//         container: ['owner.createContainer', ['image._id']],
-//         user: users.createAdmin
-//       }));
-//       it('should update the container', updateNameSuccess);
-//     });
-//     function updateNameSuccess (done) {
-//       this.user.specRequest(this.container._id)
-//         .send({ name: this.container.name })
-//         .expect(200)
-//         .end(done);
-//     }
-//   });
+  describe('PATCH /users/me/runnables/:id', function () {
+    describe('owner', function () {
+      beforeEach(extendContextSeries({
+        user: users.createAnonymous,
+        container: ['user.createContainer', ['image._id']]
+      }));
+      it('should update the container', updateNameSuccess);
+    });
+    // not owner FAIL
+    describe('admin', function () {
+      beforeEach(extendContextSeries({
+        owner: users.createAnonymous,
+        container: ['owner.createContainer', ['image._id']],
+        user: users.createAdmin
+      }));
+      it('should update the container', updateNameSuccess);
+    });
+    function updateNameSuccess (done) {
+      this.user.specRequest(this.container._id)
+        .send({ name: this.container.name })
+        .expect(200)
+        .end(done);
+    }
+  });
 
-//   describe('DEL /users/me/runnables/:id', function () {
-//     describe('owner', function () {
-//       beforeEach(extendContextSeries({
-//         user: users.createAnonymous,
-//         container: ['user.createContainer', ['image._id']]
-//       }));
-//       it('should delete', deleteSuccess);
-//     });
-//     describe('not owner', function () {
-//       beforeEach(extendContextSeries({
-//         owner: users.createAnonymous,
-//         container: ['owner.createContainer', ['image._id']],
-//         user: users.createAnonymous
-//       }));
-//       it('should not delete', function (done) {
-//         this.user.specRequest(this.container._id)
-//           .expect(403)
-//           .end(done);
-//       });
-//     });
-//     describe('admin', function () {
-//       beforeEach(extendContextSeries({
-//         owner: users.createAnonymous,
-//         container: ['owner.createContainer', ['image._id']],
-//         user: users.createAdmin
-//       }));
-//       it('should delete', deleteSuccess);
-//     });
-//     function deleteSuccess (done) {
-//       this.user.specRequest(this.container._id)
-//         .expect(200)
-//         .end(done);
-//     }
-//   });
+  describe('DEL /users/me/runnables/:id', function () {
+    describe('owner', function () {
+      beforeEach(extendContextSeries({
+        user: users.createAnonymous,
+        container: ['user.createContainer', ['image._id']]
+      }));
+      it('should delete', deleteSuccess);
+    });
+    describe('not owner', function () {
+      beforeEach(extendContextSeries({
+        owner: users.createAnonymous,
+        container: ['owner.createContainer', ['image._id']],
+        user: users.createAnonymous
+      }));
+      it('should not delete', function (done) {
+        this.user.specRequest(this.container._id)
+          .expect(403)
+          .end(done);
+      });
+    });
+    describe('admin', function () {
+      beforeEach(extendContextSeries({
+        owner: users.createAnonymous,
+        container: ['owner.createContainer', ['image._id']],
+        user: users.createAdmin
+      }));
+      it('should delete', deleteSuccess);
+    });
+    function deleteSuccess (done) {
+      this.user.specRequest(this.container._id)
+        .expect(200)
+        .end(done);
+    }
+  });
 });
