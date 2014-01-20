@@ -50,12 +50,12 @@ describe('Images', function () {
           user: users.createPublisher,
           container: ['user.createContainer', ['image._id']]
         }));
-        // it('should respond error if name already exists', function (done) {
-        //   this.user.specRequest({ from: this.container._id })
-        //     .expect(403)
-        //     .expectBody('message', /name already exists/)
-        //     .end(done);
-        // });
+        it('should respond error if name already exists', function (done) {
+          this.user.specRequest({ from: this.container._id })
+            .expect(403)
+            .expectBody('message', /name already exists/)
+            .end(done);
+        });
         describe('rename container', function () {
           beforeEach(extendContextSeries({
             rename: ['user.patchContainer', ['container._id', {
