@@ -151,7 +151,7 @@ var helpers = module.exports = {
       async.waterfall([
         async.parallel.bind(async, tasks),
         function (results, cb) {
-          db.dropCollectionsExcept(excludeWithPlurals)(cb);
+          db.removeCollectionsExcept(excludeWithPlurals)(cb);
         }
       ], callback);
     };
