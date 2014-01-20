@@ -12,115 +12,115 @@ describe('Containers', function () {
   }));
   after(helpers.cleanup);
 
-//   describe('GET /users/me/runnables', function () {
-//     beforeEach(extendContextSeries({
-//       user: users.createAnonymous,
-//       container: ['user.createContainer', ['image._id']],
-//       container2: ['user.createContainer', ['image._id']],
-//       user2: users.createAnonymous,
-//       container3: ['user2.createContainer', ['image._id']],
-//       user3: users.createRegistered
-//     }));
-//     afterEach(helpers.cleanupExcept('image'));
+  describe('GET /users/me/runnables', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']],
+      container2: ['user.createContainer', ['image._id']],
+      user2: users.createAnonymous,
+      container3: ['user2.createContainer', ['image._id']],
+      user3: users.createRegistered
+    }));
+    afterEach(helpers.cleanupExcept('image'));
 
-//     it ('should list containers owned by user', function (done) {
-//       var checkDone = helpers.createCheckDone(done);
-//       this.user.specRequest()
-//         .expect(200)
-//         .expectArray(2)
-//         .end(checkDone.done());
-//       this.user2.specRequest()
-//         .expect(200)
-//         .expectArray(1)
-//         .end(checkDone.done());
-//     });
-//     it ('should list zero containers for user that owns none', function (done) {
-//       this.user3.specRequest()
-//         .expect(200)
-//         .expectArray(0)
-//         .end(done);
-//     });
-//     describe('after cleanup', function () {
-//       beforeEach(extendContextSeries({
-//         admin: users.createAdmin,
-//         savedContainer: ['user3.createContainer', ['image._id']],
-//         save: ['user3.patchContainer', ['savedContainer._id', {
-//           body: { saved: true },
-//           expect: 200
-//         }]],
-//         cleanup: ['admin.get', ['/cleanup', { expect: 200 }]]
-//       }));
-//       it ('should not list unsaved containers', function (done) {
-//         var checkDone = helpers.createCheckDone(done);
-//         this.user.specRequest()
-//           .expect(200)
-//           .expectArray(0)
-//           .end(checkDone.done());
-//         this.user2.specRequest()
-//           .expect(200)
-//           .expectArray(0)
-//           .end(checkDone.done());
-//       });
-//       it ('should list saved containers', function (done) {
-//         this.user3.specRequest()
-//           .expect(200)
-//           .expectArray(1)
-//           .expectArrayContains({ _id: this.savedContainer._id })
-//           .end(done);
-//       });
-//     });
-//     describe('saved query param', function () {
-//       beforeEach(extendContextSeries({
-//         save: ['user.patchContainer', ['container._id', {
-//           body: { saved: true },
-//           expect: 200
-//         }]]
-//       }));
+    it ('should list containers owned by user', function (done) {
+      var checkDone = helpers.createCheckDone(done);
+      this.user.specRequest()
+        .expect(200)
+        .expectArray(2)
+        .end(checkDone.done());
+      this.user2.specRequest()
+        .expect(200)
+        .expectArray(1)
+        .end(checkDone.done());
+    });
+    it ('should list zero containers for user that owns none', function (done) {
+      this.user3.specRequest()
+        .expect(200)
+        .expectArray(0)
+        .end(done);
+    });
+    describe('after cleanup', function () {
+      beforeEach(extendContextSeries({
+        admin: users.createAdmin,
+        savedContainer: ['user3.createContainer', ['image._id']],
+        save: ['user3.patchContainer', ['savedContainer._id', {
+          body: { saved: true },
+          expect: 200
+        }]],
+        cleanup: ['admin.get', ['/cleanup', { expect: 200 }]]
+      }));
+      it ('should not list unsaved containers', function (done) {
+        var checkDone = helpers.createCheckDone(done);
+        this.user.specRequest()
+          .expect(200)
+          .expectArray(0)
+          .end(checkDone.done());
+        this.user2.specRequest()
+          .expect(200)
+          .expectArray(0)
+          .end(checkDone.done());
+      });
+      it ('should list saved containers', function (done) {
+        this.user3.specRequest()
+          .expect(200)
+          .expectArray(1)
+          .expectArrayContains({ _id: this.savedContainer._id })
+          .end(done);
+      });
+    });
+    describe('saved query param', function () {
+      beforeEach(extendContextSeries({
+        save: ['user.patchContainer', ['container._id', {
+          body: { saved: true },
+          expect: 200
+        }]]
+      }));
 
-//       it('should only list saved containers', function (done) {
-//         var self = this;
-//         this.user.specRequest({ saved: true })
-//           .expect(200)
-//           .expectArray(1)
-//           .expectBody(function (body) {
-//             body[0].should.have.property('_id', self.container._id);
-//           })
-//           .end(done);
-//       });
-//     });
-//     // TODO: container paging
-//     // describe('pagination', function () {
-//     //   beforeEach(extendContextSeries({
-//     //     container4: ['user.createContainer', ['image._id']],
-//     //     container5: ['user.createContainer', ['image._id']],
-//     //     container6: ['user.createContainer', ['image._id']],
-//     //     container7: ['user.createContainer', ['image._id']]
-//     //   }));
-//     //   it('should return page 1 by default', function (done) {
-//     //     var checkDone = helpers.createCheckDone(done);
-//     //     this.user.specRequest({ page: 0, limit: 0 })
-//     //       .expect(200)
-//     //       .expectArray(6)
-//     //       .end(async.pick('body', checkDone.equal()));
-//     //     this.user.specRequest()
-//     //       .expect(200)
-//     //       .expectArray(6)
-//     //       .end(async.pick('body', checkDone.equal()));
-//     //   });
-//     //   it('should page', function (done) {
-//     //     this.user.specRequest({ page: 1, limit: 4 })
-//     //       .expect(200)
-//     //       .expectArray(2)
-//     //       .end(async.pick('body', done));
-//     //   });
-//     //   it('should limit', function (done) {
-//     //     this.user.specRequest({ page: 0, limit: 3 })
-//     //       .expect(200)
-//     //       .expectArray(3)
-//     //       .end(async.pick('body', done));
-//     //   });
-//     // });
-//   });
+      it('should only list saved containers', function (done) {
+        var self = this;
+        this.user.specRequest({ saved: true })
+          .expect(200)
+          .expectArray(1)
+          .expectBody(function (body) {
+            body[0].should.have.property('_id', self.container._id);
+          })
+          .end(done);
+      });
+    });
+    // TODO: container paging
+    // describe('pagination', function () {
+    //   beforeEach(extendContextSeries({
+    //     container4: ['user.createContainer', ['image._id']],
+    //     container5: ['user.createContainer', ['image._id']],
+    //     container6: ['user.createContainer', ['image._id']],
+    //     container7: ['user.createContainer', ['image._id']]
+    //   }));
+    //   it('should return page 1 by default', function (done) {
+    //     var checkDone = helpers.createCheckDone(done);
+    //     this.user.specRequest({ page: 0, limit: 0 })
+    //       .expect(200)
+    //       .expectArray(6)
+    //       .end(async.pick('body', checkDone.equal()));
+    //     this.user.specRequest()
+    //       .expect(200)
+    //       .expectArray(6)
+    //       .end(async.pick('body', checkDone.equal()));
+    //   });
+    //   it('should page', function (done) {
+    //     this.user.specRequest({ page: 1, limit: 4 })
+    //       .expect(200)
+    //       .expectArray(2)
+    //       .end(async.pick('body', done));
+    //   });
+    //   it('should limit', function (done) {
+    //     this.user.specRequest({ page: 0, limit: 3 })
+    //       .expect(200)
+    //       .expectArray(3)
+    //       .end(async.pick('body', done));
+    //   });
+    // });
+  });
 
 //   describe('GET /users/:userId/runnables', function () {
 //     beforeEach(extendContextSeries({
