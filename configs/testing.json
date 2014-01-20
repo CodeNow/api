@@ -31,5 +31,6 @@
       "contact": "43330e29a9"
     }
   },
-  "dockworkerProxy": "http://localhost:3600"
+  "dockworkerProxy": "http://localhost:3600",
+  "logExpress": false
 }
