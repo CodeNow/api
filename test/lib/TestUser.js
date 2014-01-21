@@ -197,9 +197,10 @@ TestUser.prototype.createImplementation = function (spec, containerId, callback)
     expect: 201
   }, callback);
 };
-TestUser.prototype.createTag = function (containerId, tagName, callback) {
-  var url = p.join('/users/me/containers/', containerId, '/tags/');
+TestUser.prototype.createChannel = function (name, callback) {
+  var url = p.join('/channels');
   this.post(url)
-    .send({ name: tagName })
+    .send({ name: name })
+    .expect(201)
     .end(async.pick('body', callback));
 };
