@@ -1,11 +1,11 @@
-// var users = require('./lib/userFactory');
-// var channels = require('./lib/channelsFactory');
-// var helpers = require('./lib/helpers');
-// var extendContext = helpers.extendContext;
+var users = require('./lib/userFactory');
+var channels = require('./lib/channelsFactory');
+var helpers = require('./lib/helpers');
+var extendContext = helpers.extendContext;
 
-// describe('Channels', function () {
+describe('Channels', function () {
 
-//   afterEach(helpers.cleanup);
+  afterEach(helpers.cleanup);
 
 //   describe('GET /channels', function () {
 //     beforeEach(extendContext({
@@ -40,48 +40,49 @@
 //         .end(done);
 //     });
 //   });
-  
-//   describe('POST /channels', function () {
-//     describe('admin', function () {
-//       beforeEach(extendContext({
-//         user : users.createAdmin
-//       }));
-//       it('should respond 201', function (done) {
-//         this.user.specRequest()
-//           .send({ name: 'newChannel' })
-//           .expect(201)
-//           .expectBody('_id')
-//           .end(done);
-//       });
-//       it('should respond 400 if not given a name', function (done) {
-//         this.user.specRequest()
-//           .expect(400)
-//           .end(done);
-//       });
-//     });
-//     describe('anonymous', function () {
-//       beforeEach(extendContext({
-//         user : users.createAnonymous
-//       }));
-//       it('should respond 403', function (done) {
-//         this.user.specRequest()
-//           .send({ name: 'newChannel' })
-//           .expect(403)
-//           .end(done);
-//       });
-//     });
-//     describe('already existing', function () {
-//       beforeEach(extendContext({
-//         user : users.createAdmin,
-//         channel : channels.createChannel('facebook')
-//       }));
-//       it('should respond 403', function (done) {
-//         this.user.specRequest()
-//           .send({ name: 'facebook' })
-//           .expect(403)
-//           .end(done);
-//       });
-//     });
-//   });
 
-// });
+  describe('POST /channels', function () {
+    describe('admin', function () {
+      beforeEach(extendContext({
+        user : users.createAdmin
+      }));
+      it('should respond 201', function (done) {
+        this.user.specRequest()
+          .send({ name: 'newChannel' })
+          .expect(201)
+          .expectBody('_id')
+          .end(done);
+      });
+      it('should respond 400 if not given a name', function (done) {
+        this.user.specRequest()
+          .expect(400)
+          .end(done);
+      });
+    });
+    describe('anonymous', function () {
+      beforeEach(extendContext({
+        user : users.createAnonymous
+      }));
+      it('should respond 403', function (done) {
+        this.user.specRequest()
+          .send({ name: 'newChannel' })
+          .expect(403)
+          .end(done);
+      });
+    });
+    describe('already existing', function () {
+      beforeEach(extendContext({
+        user : users.createAdmin,
+        channel : channels.createChannel('facebook')
+      }));
+      it('should respond 403', function (done) {
+        this.user.specRequest()
+          .send({ name: 'facebook' })
+          .expect(409)
+          .expectBody('message', /name/)
+          .end(done);
+      });
+    });
+  });
+
+});
