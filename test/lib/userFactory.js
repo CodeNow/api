@@ -61,13 +61,14 @@ var users = module.exports = {
       var body = {
         username: username,
         password: 'password',
-        email   : username+'@runnable.com'
+        email   : auth.email || username+'@runnable.com'
       };
       _.extend(body, auth);
       async.waterfall([
         users.createAnonymous,
         function (user, cb) {
           user.register(body).end(function (err) {
+            _.extend(user, body);
             cb(err, user);
           });
         },
