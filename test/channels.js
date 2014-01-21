@@ -7,39 +7,39 @@ describe('Channels', function () {
 
   afterEach(helpers.cleanup);
 
-//   describe('GET /channels', function () {
-//     beforeEach(extendContext({
-//       user : users.createAnonymous,
-//       channel : channels.createChannels('facebook', 'google', 'twitter', 'jquery')
-//     }));
-//     it('should list channels', function (done) {
-//       this.user.specRequest()
-//         .expect(200)
-//         .expectArray(4)
-//         .end(done);
-//     });
-//     it('should get by name', function (done) {
-//       this.user.specRequest({
-//         name: 'facebook'
-//       })
-//         .expect(200)
-//         .expectBody('name', 'facebook')
-//         .end(done);
-//     });
-//   });
+  describe('GET /channels', function () {
+    beforeEach(extendContext({
+      user : users.createAnonymous,
+      channel : channels.createChannels('facebook', 'google', 'twitter', 'jquery')
+    }));
+    it('should list channels', function (done) {
+      this.user.specRequest()
+        .expect(200)
+        .expectArray(4)
+        .end(done);
+    });
+    it('should get by name', function (done) {
+      this.user.specRequest({
+        name: 'facebook'
+      })
+        .expect(200)
+        .expectBody('name', 'facebook')
+        .end(done);
+    });
+  });
 
-//   describe('GET /channels/:id', function () {
-//     beforeEach(extendContext({
-//       user : users.createAnonymous,
-//       channel : channels.createChannel('facebook')
-//     }));
-//     it('should get by id', function (done) {
-//       this.user.specRequest(this.channel._id)
-//         .expect(200)
-//         .expectBody('name', 'facebook')
-//         .end(done);
-//     });
-//   });
+  describe('GET /channels/:id', function () {
+    beforeEach(extendContext({
+      user : users.createAnonymous,
+      channel : channels.createChannel('facebook')
+    }));
+    it('should get by id', function (done) {
+      this.user.specRequest(this.channel._id)
+        .expect(200)
+        .expectBody('name', 'facebook')
+        .end(done);
+    });
+  });
 
   describe('POST /channels', function () {
     describe('admin', function () {
