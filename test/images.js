@@ -52,7 +52,7 @@ describe('Images', function () {
         }));
         it('should respond error if name already exists', function (done) {
           this.user.specRequest({ from: this.container._id })
-            .expect(403)
+            .expect(409)
             .expectBody('message', /name already exists/)
             .end(done);
         });
