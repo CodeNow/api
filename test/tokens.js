@@ -79,23 +79,23 @@ describe('Tokens', function () {
         .expect(200)
         .end(done);
     });
-    // it('should work for anonymous', function (done) {
-    //   this.anonymous.specRequest()
-    //     .send({
-    //       username: this.registered.username,
-    //       password: this.registered.password
-    //     })
-    //     .expect(200)
-    //     .end(done);
-    // });
-    // it('should while logged in', function (done) {
-    //   this.registered.specRequest()
-    //     .send({
-    //       username: this.registered.username,
-    //       password: this.registered.password
-    //     })
-    //     .expect(200)
-    //     .end(done);
-    // });
+    it('should work for anonymous', function (done) {
+      this.anonymous.specRequest()
+        .send({
+          username: this.registered.username,
+          password: this.registered.password
+        })
+        .expect(200)
+        .end(done);
+    });
+    it('should while logged in', function (done) {
+      this.registered.specRequest()
+        .send({
+          username: this.registered.username,
+          password: this.registered.password
+        })
+        .expect(200)
+        .end(done);
+    });
   });
 });
