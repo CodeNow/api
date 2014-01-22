@@ -53,6 +53,7 @@ var helpers = module.exports = {
     });
   },
   extendWith: function (obj2) {
+    var TestUser = require('./TestUser');
     return function (obj1) {
       _.extend(obj1, obj2);
     };
@@ -68,6 +69,9 @@ var helpers = module.exports = {
       _.values(data)
         .filter(function (val) {
           return val instanceof TestUser;
+        })
+        .map(function (user) {
+          return Object.getPrototypeOf(user);
         })
         .forEach(extendWith(reqData));
       callback(null, data);

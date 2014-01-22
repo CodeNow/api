@@ -55,11 +55,13 @@ var TestUser = module.exports = function (properties) {
         req.end(callback);
       }
     };
+    /* TestUser.prototype[postUser, getUser, putUser, patchUser, deleteUser, ...] */
     /* TestUser.prototype[postContainer, getContainer, putContainer, patchContainer, deleteContainer, ...] */
     /* TestUser.prototype[postSpecification, getSpecification, putSpecification, patchSpecification, deleteSpecification, ...] */
     /* TestUser.prototype[postImplementation, getImplementation, putImplementation, patchImplementation, deleteImplementation, ...] */
     /* TestUser.prototype[postImage, getImage, putImage, patchImage, deleteImage, ...] */
     var modelUrlMap = {
+      User          : '/users',
       Container     : '/users/me/runnables',
       Specification : '/specifications',
       Implementation: '/users/me/implementations',
@@ -103,13 +105,13 @@ TestUser.prototype.specRequest = function () {
   var path   = reqsplit[1];
 
   var args = Array.prototype.slice.call(arguments);
-  args.forEach(function (i) {
+  args.forEach(function (i) { // filter out undef/null
     if (i === null || i === undefined) {
       var err = new Error('specRequest: invoked with undefined args [ '+ args +' ]');
       console.error(err.message);
       throw err;
     }
-  }); // filter out undef/null
+  });
   var query, callback;
   if (typeof args[args.length - 1] === 'function') {
     callback = args.pop();
@@ -117,17 +119,20 @@ TestUser.prototype.specRequest = function () {
   if (_.isObject(args[args.length - 1])) {
     query = args.pop();
   }
+  // replace url params
   var pathArgRegExp = /(\/):[^\/]*/;
   args.forEach(function (arg) {
     path = path.replace(pathArgRegExp, '$1'+arg);
   });
   if (pathArgRegExp.test(path)) {
-    throw new Error('missing args for spec request url');
+    throw new Error('specRequest: missing args');
   }
+  // make sure describe has an http method
   if (typeof this[method] !== 'function') {
-    console.error('"' +method+ '" is not an http method');
+    console.error('specRequest: check your describes, "' +method+ '" is not an http method');
   }
-  return this[method](path, { qs:query }, callback);
+  var opts = _.isEmpty(query) ? {} : { qs:query };
+  return this[method](path, opts, callback);
 };
 
 // TestUser Requests

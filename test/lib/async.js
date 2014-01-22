@@ -108,6 +108,7 @@ var a = {
   },
 
   extend: function (dst, src, cb) {
+    src = _replaceInvokePlaceholders(dst, src);
     async.parallel(src, function (err, results) {
       if (err) {
         return cb(err);
@@ -122,7 +123,6 @@ var a = {
     async.eachSeries(keys, function (key, cb) {
       var task = {};
       task[key] = src[key];
-      task = _replaceInvokePlaceholders(dst, task);
       a.extend(dst, task, function (err, val, res) {
         _.extend(results, res);
         cb(err, val);

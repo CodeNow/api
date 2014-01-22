@@ -46,6 +46,7 @@ var users = module.exports = {
       .end(callbackUser(callback));
   },
   createRegistered: function (properties, callback) {
+    properties = _.clone(properties);
     var authKeys = ['username', 'password', 'email'];
     var auth = _.pick(properties, authKeys);
     var ignoreConflictError = !Boolean(auth.username);
@@ -67,8 +68,8 @@ var users = module.exports = {
       async.waterfall([
         users.createAnonymous,
         function (user, cb) {
-          user.register(body).end(function (err) {
-            _.extend(user, body);
+          user.register(body).end(function (err, res) {
+            _.extend(user, res.body);
             cb(err, user);
           });
         },
@@ -78,6 +79,7 @@ var users = module.exports = {
             return cb(null, user);
           }
           user.dbUpdate(customProperties, function (err) {
+            _.extend(user, customProperties);
             cb(err, user);
           });
         }

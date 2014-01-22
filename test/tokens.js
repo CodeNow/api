@@ -4,7 +4,11 @@ var extendContext = helpers.extendContext;
 
 describe('Tokens', function () {
   afterEach(helpers.cleanup);
-
+  var auth = {
+    username: 'bob',
+    email: 'bob@hotmail.com',
+    password: 'good password'
+  };
   describe('GET /token', function () {
     describe('logged in', function () {
       beforeEach(extendContext('user', users.createAnonymous));
@@ -26,11 +30,7 @@ describe('Tokens', function () {
 
   describe('POST /token', function () {
     beforeEach(extendContext({
-      'registered': users.createRegistered.bind(users, {
-        username: 'bob',
-        email: 'bob@hotmail.com',
-        password: 'good password'
-      }),
+      'registered': users.createRegistered.bind(users, auth),
       'tokenless': users.createTokenless,
       'anonymous': users.createAnonymous
     }));
@@ -38,24 +38,20 @@ describe('Tokens', function () {
       this.tokenless.specRequest()
         .send({})
         .expect(400)
-        .expectBody({
-          message: '"username" body parameter is required'
-        })
+        .expectBody('message', '"username" body parameter is required')
         .end(done);
     });
     it('should require a password', function (done) {
       this.tokenless.specRequest()
         .send({ username: 'username'})
         .expect(400)
-        .expectBody({
-          message: '"password" body parameter is required'
-        })
+        .expectBody('message', '"password" body parameter is required')
         .end(done);
     });
     it('should error on a bad password', function (done) {
       this.tokenless.specRequest()
         .send({
-          username: this.registered.username,
+          username: auth.username,
           password: 'bad password'
         })
         .expect(403)
@@ -64,8 +60,8 @@ describe('Tokens', function () {
     it('should login by username', function (done) {
       this.tokenless.specRequest()
         .send({
-          username: this.registered.username,
-          password: this.registered.password
+          username: auth.username,
+          password: auth.password
         })
         .expect(200)
         .end(done);
@@ -73,8 +69,8 @@ describe('Tokens', function () {
     it('should login by email', function (done) {
       this.tokenless.specRequest()
         .send({
-          email: this.registered.email,
-          password: this.registered.password
+          email: auth.email,
+          password: auth.password
         })
         .expect(200)
         .end(done);
@@ -82,8 +78,8 @@ describe('Tokens', function () {
     it('should work for anonymous', function (done) {
       this.anonymous.specRequest()
         .send({
-          username: this.registered.username,
-          password: this.registered.password
+          username: auth.username,
+          password: auth.password
         })
         .expect(200)
         .end(done);
@@ -91,8 +87,8 @@ describe('Tokens', function () {
     it('should while logged in', function (done) {
       this.registered.specRequest()
         .send({
-          username: this.registered.username,
-          password: this.registered.password
+          username: auth.username,
+          password: auth.password
         })
         .expect(200)
         .end(done);
