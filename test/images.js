@@ -20,10 +20,35 @@ describe('Images', function () {
         .expect(404)
         .end(done);
     });
-    it('should respond 200', function (done) {
+    it('should return an image', function (done) {
       this.user.specRequest(this.image._id)
         .expect(200)
         .end(done);
+    });
+    describe('tags', function () {
+      beforeEach(extendContextSeries({
+        publ: users.createPublisher,
+        container: ['publ.createContainer', ['image._id']],
+        rename: ['publ.patchContainer', ['container._id', {
+          body: { name: 'new-name' },
+          expect: 200
+        }]],
+        tag: ['publ.tagContainerWithChannel', ['container._id', 'brand-new-channel']],
+        image2: ['publ.postImage', [{
+          qs: { from: 'container._id' },
+          expect: 201
+        }]]
+      }));
+      it('should include the container\'s tags', function (done) {
+        var self = this;
+        this.user.specRequest(this.image2._id)
+          .expect(200)
+          .expectBody(function (body) {
+            body.tags.should.be.instanceof(Array).and.have.lengthOf(1);
+            body.tags[0].name.should.equal(self.tag.name);
+          })
+          .end(done);
+      });
     });
   });
 

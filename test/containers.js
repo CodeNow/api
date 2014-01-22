@@ -189,13 +189,14 @@ describe('Containers', function () {
         beforeEach(extendContextSeries({
           tag: ['user.tagContainerWithChannel', ['container._id', 'node.js']]
         }));
-        it('should get the containers tags', function (done) {
+        it('should include the container\'s tags', function (done) {
           var self = this;
-          var expected = _.clone(this.container);
-          expected.tags = [this.tag];
           this.user.specRequest(this.container._id)
             .expect(200)
-            .expectBody(expected)
+            .expectBody(function (body) {
+              body.tags.should.be.instanceof(Array).and.have.lengthOf(1);
+              body.tags[0].name.should.equal(self.tag.name);
+            })
             .end(done);
         });
       });
