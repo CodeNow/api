@@ -15,7 +15,7 @@
     "async": "~0.2.9",
     "docker.js": "git://github.com/CodeNow/docker.js.git",
     "bcrypt": "~0.7.5",
-    "mongoose": "~3.6.11",
+    "mongoose": "~3.6.20",
     "rimraf": "~2.1.4",
     "mkdirp": "~0.3.5",
     "wrench": "~1.5.1",

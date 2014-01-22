@@ -58,7 +58,7 @@ describe('Users', function () {
   });
 
   describe('PUT /users/me', putUser);
-  // describe('PUT /users/:userId', putUser);
+  describe('PUT /users/:userId', putUser);
   function putUser () {
     beforeEach(extendContext('user', users.createAnonymous));
 
@@ -123,7 +123,7 @@ describe('Users', function () {
   }
 
   describe('PATCH /users/me', patchUser);
-  // describe('PATCH /users/:userId', patchUser);
+  describe('PATCH /users/:userId', patchUser);
   function patchUser () {
     beforeEach(extendContext('user', users.createRegistered));
 
