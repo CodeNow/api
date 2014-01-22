@@ -43,7 +43,8 @@
     "jshint": "~2.4.1",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
     "should": "~2.1.1",
-    "mocha": "~1.17.0"
+    "mocha": "~1.17.0",
+    "osx-notifier": "~0.2.1"
   },
   "engine": "node >= 0.10.5",
   "scripts": {

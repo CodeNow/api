@@ -1,6 +1,37 @@
 var supertest = require('supertest');
 var _ = require('lodash');
 var Test = supertest.Test;
+var notify = require('osx-notifier');
+
+function notifier (err, res) {
+  // var errorMsg, successMsg, stackSplit;
+  // if (err && res) {
+  //   if (res.body.stack) {
+  //     stackSplit = res.body.stack.split('\n');
+  //     errorMsg = {
+  //       title: stackSplit[0],
+  //       subtitle: stackSplit[1].split('/api-server/')[1].slice(0, -1),
+  //       message: res.body.stack
+  //     };
+  //   }
+  //   else {
+  //     stackSplit = err.stack && err.stack.split('\n');
+  //     errorMsg = {
+  //       title: err.message,
+  //       subtitle: err.stack && stackSplit[1].split('/api-server/')[1].slice(0, -1),
+  //       message: err.stack
+  //     };
+  //   }
+  //   notify(errorMsg);
+  // }
+  // else {
+  //   notify({
+  //     type: 'pass',
+  //     title: 'Test Passed!',
+  //     message: 'Test Passed!'
+  //   });
+  // }
+}
 
 function error(msg, expected, actual) {
   var err = new Error(msg);
@@ -10,9 +41,24 @@ function error(msg, expected, actual) {
   return err;
 }
 
-Test.prototype.expectArray = function (length) {
-  this._bodyIsArray = true;
-  this._length = length;
+Test.prototype.expectArray = function (lengthOrMatches, strict) {
+  var length, matches;
+  if (typeof lengthOrMatches === 'number') {
+    length = lengthOrMatches;
+  }
+  else {
+    matches = lengthOrMatches;
+  }
+  if (length) {
+    this._bodyIsArray = true;
+    this._length = length;
+  }
+  if (matches) {
+    var self = this;
+    matches.forEach(function (match) {
+      self.expectArrayContains(match, strict);
+    });
+  }
   return this;
 };
 
@@ -61,13 +107,22 @@ Test.prototype._checkArrayContains = function (res) {
   if (this._arrayContainsRules.length === 0) {
     return false;
   }
-  return this._arrayContainsRules.every(function (rule) {
-    return (rule.strict) ?
-      _.findWhere(res.body, rule.match) :  // not sure if this is right
-      res.body.some(function (item) {
-        return Boolean(_.isEqual(item, rule.match));
+  // TODO: make this return a real error..
+  var err = null;
+  this._arrayContainsRules.every(function (rule) {
+    if (rule.strict) {
+      var pass = res.body.some(function (item) {
+        return _.isEqual(item, rule.match);
       });
+      if (!pass) {
+        err = error('expected "res.body" array to contain an item equal to ' + JSON.stringify(rule.match));
+      }
+    }
+    else if (!_.findWhere(res.body, rule.match)) {
+      err = error('expected "res.body" array to contain a match for ' + JSON.stringify(rule.match));
+    }
   });
+  return err;
 };
 
 Test.prototype._checkExpectedArray = function (res) {
@@ -117,9 +172,11 @@ Test.prototype._checkExpectedBody = function (res) {
   }
   function checkAsObject() {
     if (strict && !_.isEqual(res.body, expectedBody)) {
-      return error('unexpected "res.body"', expectedBody, res.body);
+      console.log('STRICT!!');
+      return error('unexpected "res.body" strict', expectedBody, res.body);
     }
     else if (_.findWhere([res.body], expectedBody) == null) {
+      console.log('NOTTT!!! STRICT!!');
       if (subArraysApproxEqual()) {
         return false;
       }
@@ -222,6 +279,7 @@ Test.prototype.end = function (callback) {
       console.error('\n', res.req.method, res.req.path, res.status, res.body && res.body.message || '');
       console.error(res.body.stack || res.body);
     }
+    notifier(err, res);
     if (callback) {
       callback(err, res);
     }
