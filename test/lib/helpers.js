@@ -53,7 +53,6 @@ var helpers = module.exports = {
     });
   },
   extendWith: function (obj2) {
-    var TestUser = require('./TestUser');
     return function (obj1) {
       _.extend(obj1, obj2);
     };

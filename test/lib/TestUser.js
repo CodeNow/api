@@ -1,13 +1,8 @@
 var qs = require('querystring');
 var p = require('path');
 var _ = require('lodash');
-var db = require('./db');
-var fstream = require('fstream');
-var tar = require('tar');
-var zlib = require('zlib');
 var helpers = require('./helpers');
 var async = require('./async');
-var uuid = require('node-uuid');
 var bodyMethods = ['post', 'put', 'patch', 'del'];
 
 var TestUser = module.exports = function (properties) {
