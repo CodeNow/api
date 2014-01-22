@@ -80,7 +80,7 @@ describe('Images', function () {
     //   beforeEach(extendContextSeries({
     //     user: users.createAnonymous,
     //     container: ['user.createContainer', ['image._id']],
-    //     tag: ['user.createTag', ['container._id',' node.js']]
+    //     tag: ['user.createChannel', ['container._id',' node.js']]
     //   }));
     //   it('should create a container', function (done) {
     //     this.user.specRequest({ from: this.tag.name })
