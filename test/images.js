@@ -4,8 +4,6 @@ var images = require('./lib/imageFactory');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 
-// describe.only('Nothing', function () {});
-
 describe('Images', function () {
   before(extendContext({
     image: images.createImageFromFixture.bind(images, 'node.js')
@@ -76,17 +74,5 @@ describe('Images', function () {
           .end(done);
       }
     });
-    // describe('from channel name', function () {
-    //   beforeEach(extendContextSeries({
-    //     user: users.createAnonymous,
-    //     container: ['user.createContainer', ['image._id']],
-    //     tag: ['user.createChannel', ['container._id',' node.js']]
-    //   }));
-    //   it('should create a container', function (done) {
-    //     this.user.specRequest({ from: this.tag.name })
-    //       .expect(201)
-    //       .end(done);
-    //   });
-    // });
   });
 });

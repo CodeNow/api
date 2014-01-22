@@ -76,8 +76,13 @@ var TestUser = module.exports = function (properties) {
           callback = opts;
           opts = {};
         }
-        var path = p.join('/', baseUrl, id) + (opts.qs ? '?' + qs.stringify(opts.qs) : '');
-        var req = this[method](path, opts, async.pick('body', callback));
+        var path = p.join('/', baseUrl, id);
+        if (!callback) {
+          return this[method](path, opts);
+        }
+        else {
+          this[method](path, opts, async.pick('body', callback));
+        }
       };
     };
     Object.keys(modelUrlMap).forEach(function (modelName) {
@@ -124,83 +129,6 @@ TestUser.prototype.specRequest = function () {
   }
   return this[method](path, { qs:query }, callback);
 };
-TestUser.prototype.register = function (auth) {
-  return this.put('/users/me')
-    .send(auth)
-    .expect(200)
-    .expectBody('_id');
-};
-TestUser.prototype.dbUpdate = function (updateSet, cb) {
-  var self = this;
-  var oid = require('mongodb').ObjectID;
-  var userId = oid.createFromHexString(this._id);
-  db.users.update({_id:userId}, updateSet, function (err, docsUpdated) {
-    err = err || (docsUpdated === 0 && new Error('db update failed, user not found'));
-    if (err) {
-      return cb(err);
-    }
-    _.extend(self, updateSet);
-    cb();
-  });
-};
-TestUser.prototype.createImageFromFixture = function (name, callback) {
-  if (this.permission_level < 5) {
-    return callback(new Error('only admin users can create images from fixtures'));
-  }
-  var path = __dirname+"/fixtures/images/"+name;
-  fstream.Reader({
-    path: path,
-    type: 'Directory',
-    mode: '0755'
-  }).pipe(tar.Pack())
-    .pipe(zlib.createGzip())
-    .pipe(this.post('/runnables/import?name=' + name)
-      .set('content-type', 'application/x-gzip')
-      .expect(201)
-      .streamEnd(async.pick('body', callback)));
-};
-TestUser.prototype.createContainer = function (from, body, callback) {
-  if (typeof body === 'function') {
-    callback = body;
-    body = null;
-  }
-  return this.post('/users/me/runnables?from=' + from)
-    .send(body || {})
-    .expect(201)
-    .end(async.pick('body', callback));
-};
-TestUser.prototype.createContainerFromFixture = function (name, callback) {
-  var self = this;
-  this.createImageFromFixture(name, function (err, image) {
-    if (err) {
-      return callback(err);
-    }
-    self.createContainer(image._id, callback);
-  });
-};
-TestUser.prototype.createSpecification = function (body, callback) {
-  if (typeof body === 'function') {
-    callback = body;
-    body = null;
-  }
-  body = body || {};
-  body = _.extend(helpers.specData(),  { name: 'name-'+uuid.v4() }, body);
-  this.postSpecification({
-    body: body,
-    expect: 201
-  }, callback);
-};
-TestUser.prototype.createImplementation = function (spec, containerId, callback) {
-  var body = _.extend(helpers.implData(spec, containerId));
-  this.postImplementation({
-    body: body,
-    expect: 201
-  }, callback);
-};
-TestUser.prototype.createChannel = function (name, callback) {
-  var url = p.join('/channels');
-  this.post(url)
-    .send({ name: name })
-    .expect(201)
-    .end(async.pick('body', callback));
-};
+
+// TestUser Requests
+require('./extendTestUser')(TestUser);
