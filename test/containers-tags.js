@@ -61,23 +61,12 @@ describe('Containers Tags', function () {
     }
     function createNewChannelTag (userKey) {
       return function (done) {
-        var self = this;
         var newBody =  { name: 'newtag' };
-        async.waterfall([
-          function (cb) {
-            self[userKey].specRequest(self.owner._id, self.container._id)
-              .send(newBody)
-              .expect(201)
-              .expectBody(newBody)
-              .end(async.pick('body', cb));
-          },
-          function (channel, cb) {
-            self[userKey].get('/channels/'+channel._id)
-              .expect(200)
-              .expectBody(channel)
-              .end(cb);
-          }
-        ], done);
+        this[userKey].specRequest(this.owner._id, this.container._id)
+          .send(newBody)
+          .expect(201)
+          .expectBody(newBody)
+          .end(done);
       };
     }
   });
