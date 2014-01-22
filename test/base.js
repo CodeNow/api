@@ -1,7 +1,6 @@
 var helpers = require('./lib/helpers');
 var users = require('./lib/userFactory');
 var extendContext = helpers.extendContext;
-var db = require('./lib/db');
 require('./lib/fixtures/harbourmaster');
 
 describe('Base', function () {
@@ -26,29 +25,6 @@ describe('Base', function () {
   });
 
   describe('GET /cleanup', function () {
-    describe('admin', function () {
-      beforeEach(extendContext({
-        user : users.createAdmin
-      }));
-      it('should respond 200', function (done) {
-        this.user.specRequest()
-          .expect(200)
-          .end(done);
-      });
-    });
-    describe('anonymous', function () {
-      beforeEach(extendContext({
-        user : users.createAnonymous
-      }));
-      it('should respond 403', function (done) {
-        this.user.specRequest()
-          .expect(403)
-          .end(done);
-      });
-    });
-  });
-
-  describe('GET /cache', function () {
     describe('admin', function () {
       beforeEach(extendContext({
         user : users.createAdmin
