@@ -1,3 +1,4 @@
+var _ = require('lodash');
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var helpers = require('./lib/helpers');
@@ -184,6 +185,21 @@ describe('Containers', function () {
           .expectBody(this.container)
           .end(done);
       });
+      describe('tags', function () {
+        beforeEach(extendContextSeries({
+          tag: ['user.tagContainerWithChannel', ['container._id', 'node.js']]
+        }));
+        it('should include the container\'s tags', function (done) {
+          var self = this;
+          this.user.specRequest(this.container._id)
+            .expect(200)
+            .expectBody(function (body) {
+              body.tags.should.be.instanceof(Array).and.have.lengthOf(1);
+              body.tags[0].name.should.equal(self.tag.name);
+            })
+            .end(done);
+        });
+      });
     });
     describe('not owner', function () {
       beforeEach(extendContextSeries({
@@ -232,14 +248,33 @@ describe('Containers', function () {
     beforeEach(extendContext({
       user : users.createAnonymous
     }));
-    it ('should create a container', function (done) {
-      this.user.specRequest({ from: this.image._id })
-        .expect(201)
-        .expectBody('_id')
-        .expectBody('parent', this.image._id)
-        .expectBody('owner', this.user._id)
-        .expectBody('servicesToken')
-        .end(done);
+    describe('from image id', function () {
+      it ('should create a container', function (done) {
+        this.user.specRequest({ from: this.image._id })
+          .expect(201)
+          .expectBody('_id')
+          .expectBody('parent', this.image._id)
+          .expectBody('owner', this.user._id)
+          .expectBody('servicesToken')
+          .end(done);
+      });
+    });
+    describe('from channel name', function () {
+      before(extendContextSeries({
+        publ: users.createPublisher,
+        container: ['publ.createContainer', ['image._id']],
+        rename: ['publ.patchContainer', ['container._id', { name: 'unique-name' }]],
+        tag: ['publ.tagContainerWithChannel', ['container._id', 'node.js']],
+        taggedImage: ['publ.postImage', [{
+          qs: { from: 'container._id' },
+          expect: 201
+        }]]
+      }));
+      it('should create a container', function (done) {
+        this.user.specRequest({ from: this.tag.name })
+          .expect(201)
+          .end(done);
+      });
     });
   });
 

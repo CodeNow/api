@@ -1,7 +1,9 @@
 var users = require('./lib/userFactory');
+var images = require('./lib/imageFactory');
 var channels = require('./lib/channelsFactory');
 var helpers = require('./lib/helpers');
 var extendContext = helpers.extendContext;
+var extendContextSeries = helpers.extendContextSeries;
 
 describe('Channels', function () {
 
@@ -19,9 +21,7 @@ describe('Channels', function () {
         .end(done);
     });
     it('should get by name', function (done) {
-      this.user.specRequest({
-        name: 'facebook'
-      })
+      this.user.specRequest({ name: 'facebook' })
         .expect(200)
         .expectBody('name', 'facebook')
         .end(done);
@@ -30,14 +30,31 @@ describe('Channels', function () {
 
   describe('GET /channels/:id', function () {
     beforeEach(extendContext({
-      user : users.createAnonymous,
-      channel : channels.createChannel('facebook')
+      user: users.createAnonymous
     }));
-    it('should get by id', function (done) {
-      this.user.specRequest(this.channel._id)
-        .expect(200)
-        .expectBody('name', 'facebook')
-        .end(done);
+    describe('channel created directly', function () {
+      before(extendContext({
+        channel: channels.createChannel('facebook'),
+      }));
+      it('should get by id', function (done) {
+        this.user.specRequest(this.channel._id)
+          .expect(200)
+          .expectBody('name', 'facebook')
+          .end(done);
+      });
+    });
+    describe('channel created from tag', function () {
+      beforeEach(extendContextSeries({
+        image: images.createImageFromFixture.bind(null, 'node.js'),
+        container: ['user.createContainer', ['image._id']],
+        tag: ['user.tagContainerWithChannel', ['container._id', 'brand-new-channel']] // should create a new channel
+      }));
+      it('should get by id', function (done) {
+        this.user.specRequest(this.tag._id)
+          .expect(200)
+          .expectBody(this.tag)
+          .end(done);
+      });
     });
   });
 

@@ -4,8 +4,6 @@ var images = require('./lib/imageFactory');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 
-// describe.only('Nothing', function () {});
-
 describe('Images', function () {
   before(extendContext({
     image: images.createImageFromFixture.bind(images, 'node.js')
@@ -22,10 +20,35 @@ describe('Images', function () {
         .expect(404)
         .end(done);
     });
-    it('should respond 200', function (done) {
+    it('should return an image', function (done) {
       this.user.specRequest(this.image._id)
         .expect(200)
         .end(done);
+    });
+    describe('tags', function () {
+      beforeEach(extendContextSeries({
+        publ: users.createPublisher,
+        container: ['publ.createContainer', ['image._id']],
+        rename: ['publ.patchContainer', ['container._id', {
+          body: { name: 'new-name' },
+          expect: 200
+        }]],
+        tag: ['publ.tagContainerWithChannel', ['container._id', 'brand-new-channel']],
+        image2: ['publ.postImage', [{
+          qs: { from: 'container._id' },
+          expect: 201
+        }]]
+      }));
+      it('should include the container\'s tags', function (done) {
+        var self = this;
+        this.user.specRequest(this.image2._id)
+          .expect(200)
+          .expectBody(function (body) {
+            body.tags.should.be.instanceof(Array).and.have.lengthOf(1);
+            body.tags[0].name.should.equal(self.tag.name);
+          })
+          .end(done);
+      });
     });
   });
 
@@ -76,17 +99,5 @@ describe('Images', function () {
           .end(done);
       }
     });
-    // describe('from channel name', function () {
-    //   beforeEach(extendContextSeries({
-    //     user: users.createAnonymous,
-    //     container: ['user.createContainer', ['image._id']],
-    //     tag: ['user.createChannel', ['container._id',' node.js']]
-    //   }));
-    //   it('should create a container', function (done) {
-    //     this.user.specRequest({ from: this.tag.name })
-    //       .expect(201)
-    //       .end(done);
-    //   });
-    // });
   });
 });
