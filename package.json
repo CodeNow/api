@@ -48,14 +48,13 @@
   },
   "engine": "node >= 0.10.5",
   "scripts": {
-    "start": "npm run path && node server.js",
-    "watch": "npm run path && nodemon -w lib -w configs -q server.js",
-    "testwatch": "npm run path && nodemon --delay 1 -w lib -w test -w configs -x npm test",
+    "start": "NODE_PATH=./lib node server.js",
+    "watch": "NODE_PATH=./lib nodemon -w lib -w configs -q server.js",
+    "testwatch": "NODE_PATH=./lib nodemon --delay 1 -w lib -w test -w configs -x npm test",
     "coverage": "jscoverage lib lib-cov; rm -rf lib; mv lib-cov lib; mkdir ./coverage; mocha -t 10000 --reporter html-cov > ./coverage/index.html",
-    "test": "npm run path && npm run lint && NODE_ENV=testing mocha",
-    "test-int": "npm run path && npm run lint && NODE_ENV=testing-integration mocha --timeout 20000",
+    "test": "NODE_ENV=testing NODE_PATH=./lib mocha",
+    "test-int": "npm run lint && NODE_ENV=testing-integration NODE_PATH=./lib mocha --timeout 20000",
     "clean": "rm -rf ./coverage",
-    "lint": "jshint --verbose --show-non-errors .",
-    "path": "NODE_PATH=./lib"
+    "lint": "jshint --verbose --show-non-errors ."
   }
 }
