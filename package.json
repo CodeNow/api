@@ -53,7 +53,7 @@
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs -q server.js",
     "testwatch": "NODE_PATH=./lib nodemon --delay 1 -w lib -w test -w configs -x npm test",
     "coverage": "jscoverage lib lib-cov; rm -rf lib; mv lib-cov lib; mkdir ./coverage; mocha -t 10000 --reporter html-cov > ./coverage/index.html",
-    "test": "NODE_ENV=testing NODE_PATH=./lib mocha",
+    "test": "npm run lint && NODE_ENV=testing NODE_PATH=./lib mocha",
     "test-int": "npm run lint && NODE_ENV=testing-integration NODE_PATH=./lib mocha --timeout 20000",
     "clean": "rm -rf ./coverage",
     "lint": "jshint --verbose --show-non-errors ."
