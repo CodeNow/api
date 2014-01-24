@@ -225,11 +225,11 @@ Test.prototype._checkExpectedBodyValues = function (res) {
   var bodyValueMatchesExpected = function (key) {
     var val = self._bodyValues[key];
     var bodyVal = res.body[key];
-    if (val === bodyVal) {
+    if (_.isEqual(val, bodyVal)) {
       return true;
     }
     if (!val.test) {
-      err = error('expected "res.body.' +key+ '" of "' +val+ '", got "' +bodyVal+ '"', val, bodyVal);
+      err = error('expected "res.body.' +key+ '" of "' +val+ '", got "' +bodyVal+ '"');
       return false;
     }
     else { //regexp

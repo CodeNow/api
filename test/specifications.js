@@ -1,3 +1,4 @@
+var _ = require('lodash');
 var users = require('./lib/userFactory');
 var helpers = require('./lib/helpers');
 var expect = require('./lib/expect');
@@ -25,7 +26,7 @@ describe('Specifications', function () {
       beforeEach(extendContext({
         user : users.createPublisher
       }));
-      it('should create a specification', expect.create(specData()));
+      it('should create a specification', createSpec);
       it('should error if missing name', function (done) {
         var data = specData();
         delete data.name;
@@ -51,9 +52,17 @@ describe('Specifications', function () {
       beforeEach(extendContext({
         user : users.createAdmin
       }));
-      it('should create a specification', expect.create(specData()));
+      it('should create a specification', createSpec);
     });
   });
+  function createSpec (done) {
+    var data = specData();
+    var expect = _.extend(_.clone(data), { owner: this.user._id });
+    this.user.specRequest()
+      .send(data)
+      .expectBody(expect)
+      .end(done);
+  }
   describe('GET /specifications/:id', function () {
     beforeEach(extendContextSeries({
       admin: users.createAdmin,
@@ -63,6 +72,7 @@ describe('Specifications', function () {
     it('should get a specification', function (done) {
       this.user.specRequest(this.spec._id)
         .expect(200)
+        .expectBody(specData())
         .end(done);
     });
     it('should 404 when not found', function (done) {
@@ -84,11 +94,13 @@ describe('Specifications', function () {
       it('should allow update requirements', updateField('requirements', ['two', 'three']));
       function updateField (key, val) {
         return function (done) {
+          val = val || 'new';
           var update = specData();
-          update[key] = val && 'new';
+          update[key] = val;
           this.publ.specRequest(this.spec._id)
             .send(update)
             .expect(200)
+            .expectBody(key, val)
             .end(done);
         };
       }
@@ -99,7 +111,6 @@ describe('Specifications', function () {
       }));
       it('should deny update', function (done) {
         var update = specData();
-        update.name = 'newname';
         this.user.specRequest(this.spec._id)
           .send(update)
           .expect(403)
