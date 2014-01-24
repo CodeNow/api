@@ -72,70 +72,70 @@ describe('Specifications', function () {
     });
   });
 
-//     describe('PUT /specifications/:id', function () {
-//       beforeEach(extendContextSeries({
-//         publ: users.createPublisher,
-//         spec: ['publ.createSpecification']
-//       }));
-//       describe('owner', function () {
-//         it('should allow update name', updateField('name'));
-//         it('should allow update description', updateField('description'));
-//         it('should allow update instructions', updateField('instructions'));
-//         it('should allow update requirements', updateField('requirements', ['two', 'three']));
-//         function updateField (key, val) {
-//           return function (done) {
-//             var update = specData();
-//             update[key] = val && 'new';
-//             this.publ.specRequest(this.spec._id)
-//               .send(update)
-//               .expect(200)
-//               .end(done);
-//           };
-//         }
-//       });
-//       describe('nonowner', function () {
-//         beforeEach(extendContext({
-//           user: users.createAnonymous
-//         }));
-//         it('should deny update', function (done) {
-//           var update = specData();
-//           update.name = 'newname';
-//           this.user.specRequest(this.spec._id)
-//             .send(update)
-//             .expect(403)
-//             .end(done);
-//         });
-//       });
-//     });
+  describe('PUT /specifications/:id', function () {
+    beforeEach(extendContextSeries({
+      publ: users.createPublisher,
+      spec: ['publ.createSpecification', [specData()]]
+    }));
+    describe('owner', function () {
+      it('should allow update name', updateField('name'));
+      it('should allow update description', updateField('description'));
+      it('should allow update instructions', updateField('instructions'));
+      it('should allow update requirements', updateField('requirements', ['two', 'three']));
+      function updateField (key, val) {
+        return function (done) {
+          var update = specData();
+          update[key] = val && 'new';
+          this.publ.specRequest(this.spec._id)
+            .send(update)
+            .expect(200)
+            .end(done);
+        };
+      }
+    });
+    describe('nonowner', function () {
+      beforeEach(extendContext({
+        user: users.createAnonymous
+      }));
+      it('should deny update', function (done) {
+        var update = specData();
+        update.name = 'newname';
+        this.user.specRequest(this.spec._id)
+          .send(update)
+          .expect(403)
+          .end(done);
+      });
+    });
+  });
 
-//     describe('GET /specifications', function () {
-//       describe('no specification', function () {
-//         beforeEach(extendContext({
-//           user: users.createAnonymous
-//         }));
-//         it('should respond empty array', function (done) {
-//           this.user.specRequest()
-//             .expect(200)
-//             .expectArray(0)
-//             .end(done);
-//         });
-//       });
-//       describe('specifications exist', function () {
-//         beforeEach(extendContextSeries({
-//           publ: users.createPublisher,
-//           spec: ['publ.createSpecification'],
-//           publ2: users.createPublisher,
-//           spec2: ['publ2.createSpecification'],
-//           spec3: ['publ2.createSpecification'],
-//           user: users.createAnonymous
-//         }));
-//         it('should return all specifications', function (done) {
-//           this.user.specRequest()
-//             .expect(200)
-//             .expectArray(3)
-//             .end(done);
-//         });
-//       });
-//     });
+  describe('GET /specifications', function () {
+    describe('no specification', function () {
+      beforeEach(extendContext({
+        user: users.createAnonymous
+      }));
+      it('should respond empty array', function (done) {
+        this.user.specRequest()
+          .expect(200)
+          .expectArray(0)
+          .end(done);
+      });
+    });
+    describe('specifications exist', function () {
+      beforeEach(extendContextSeries({
+        publ: users.createPublisher,
+        spec: ['publ.createSpecification'],
+        publ2: users.createPublisher,
+        spec2: ['publ2.createSpecification'],
+        spec3: ['publ2.createSpecification'],
+        user: users.createAnonymous
+      }));
+      it('should return all specifications', function (done) {
+        this.user.specRequest()
+          .expect(200)
+          .expectArray(3)
+          .end(done);
+      });
+    });
+  });
 
 });
