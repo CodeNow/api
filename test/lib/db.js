@@ -26,8 +26,7 @@ var db = module.exports = {
     };
   },
   removeCollectionsExcept: function (exclude) {
-    exclude = Array.isArray(exclude) ?
-      exclude :
+    exclude = Array.isArray(exclude) ? exclude :
       Array.prototype.slice.call(arguments);
     return function (callback) {
       callback = callback || function() {};

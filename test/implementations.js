@@ -1,37 +1,37 @@
-// var _ = require('lodash');
-// var users = require('./lib/userFactory');
-// var images = require('./lib/imageFactory');
-// var helpers = require('./lib/helpers');
-// var extendContext = helpers.extendContext;
-// var extendContextSeries = helpers.extendContextSeries;
-// require('./lib/fixtures/harbourmaster');
-// require('./lib/fixtures/dockworker');
-// var implData = helpers.implData;
+var _ = require('lodash');
+var users = require('./lib/userFactory');
+var images = require('./lib/imageFactory');
+var helpers = require('./lib/helpers');
+var extendContext = helpers.extendContext;
+var extendContextSeries = helpers.extendContextSeries;
+require('./lib/fixtures/harbourmaster');
+require('./lib/fixtures/dockworker');
+var implData = helpers.implData;
 
-// describe('Implementations', function () {
-//   before(extendContext({
-//     image: images.createImageFromFixture.bind(images, 'node.js')
-//   }));
-//   afterEach(helpers.cleanupExcept('image'));
-//   after(helpers.cleanup);
+describe('Implementations', function () {
+  before(extendContext({
+    image: images.createImageFromFixture.bind(images, 'node.js')
+  }));
+  afterEach(helpers.cleanupExcept('image'));
+  after(helpers.cleanup);
 
-//   describe('POST /users/me/implementations', function () {
-//     beforeEach(extendContextSeries({
-//       publ: users.createPublisher,
-//       spec: ['publ.createSpecification'],
-//       user: users.createAnonymous,
-//       container: ['user.createContainer', ['image._id']]
-//     }));
-//     it('should create an implementation', function (done) {
-//       var data = implData(this.spec, this.container._id);
-//       var expected = _.omit(_.clone(data), 'containerId');
-//       this.user.specRequest()
-//         .send(data)
-//         .expect(201)
-//         .expectBody(expected)
-//         .end(done);
-//     });
-//   });
+  describe('POST /users/me/implementations', function () {
+    beforeEach(extendContextSeries({
+      publ: users.createPublisher,
+      spec: ['publ.createSpecification'],
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    it('should create an implementation', function (done) {
+      var data = implData(this.spec, this.container._id);
+      var expected = _.omit(_.clone(data), 'containerId');
+      this.user.specRequest()
+        .send(data)
+        .expect(201)
+        .expectBody(expected)
+        .end(done);
+    });
+  });
 //   describe('GET /users/me/implementations', function () {
 //     beforeEach(extendContextSeries({
 //       publ: users.createPublisher,
@@ -83,4 +83,4 @@
 //       updateField.call(this, 'containerId', this.container2._id, done);
 //     });
 //   });
-// });
+});

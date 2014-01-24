@@ -8,9 +8,10 @@ function notifier (err, res) {
   // if (err && res) {
   //   if (res.body.stack) {
   //     stackSplit = res.body.stack.split('\n');
+  //     var split = stackSplit[1].split('/api-server/')[1];
   //     errorMsg = {
   //       title: stackSplit[0],
-  //       subtitle: stackSplit[1].split('/api-server/')[1].slice(0, -1),
+  //       subtitle: split && split.slice(0, -1),
   //       message: res.body.stack
   //     };
   //   }
@@ -172,11 +173,9 @@ Test.prototype._checkExpectedBody = function (res) {
   }
   function checkAsObject() {
     if (strict && !_.isEqual(res.body, expectedBody)) {
-      console.log('STRICT!!');
       return error('unexpected "res.body" strict', expectedBody, res.body);
     }
     else if (_.findWhere([res.body], expectedBody) == null) {
-      console.log('NOTTT!!! STRICT!!');
       if (subArraysApproxEqual()) {
         return false;
       }
@@ -226,11 +225,11 @@ Test.prototype._checkExpectedBodyValues = function (res) {
   var bodyValueMatchesExpected = function (key) {
     var val = self._bodyValues[key];
     var bodyVal = res.body[key];
-    if (val === bodyVal) {
+    if (_.isEqual(val, bodyVal)) {
       return true;
     }
     if (!val.test) {
-      err = error('expected "res.body.' +key+ '" of "' +val+ '", got "' +bodyVal+ '"', val, bodyVal);
+      err = error('expected "res.body.' +key+ '" of "' +val+ '", got "' +bodyVal+ '"');
       return false;
     }
     else { //regexp

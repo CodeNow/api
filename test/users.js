@@ -110,7 +110,7 @@ describe('Users', function () {
             return done(err);
           }
           if (noconflictField) {
-            body[noconflictField] = 'noconflict@runnable.com'; // prevent email collision
+            body[noconflictField] = 'noconflict@runnable.com'; // prevent collision
           }
           self.user.specRequest(self.user._id)
             .send(body)
