@@ -1,12 +1,12 @@
-// var _ = require('lodash');
-// var users = require('./lib/userFactory');
-// var images = require('./lib/imageFactory');
-// var helpers = require('./lib/helpers');
-// var extendContext = helpers.extendContext;
-// var extendContextSeries = helpers.extendContextSeries;
-// require('./lib/fixtures/harbourmaster');
-// require('./lib/fixtures/dockworker');
-// var implData = helpers.implData;
+var _ = require('lodash');
+var users = require('./lib/userFactory');
+var images = require('./lib/imageFactory');
+var helpers = require('./lib/helpers');
+var extendContext = helpers.extendContext;
+var extendContextSeries = helpers.extendContextSeries;
+require('./lib/fixtures/harbourmaster');
+require('./lib/fixtures/dockworker');
+var implData = helpers.implData;
 
 // describe('Implementations', function () {
 //   before(extendContext({
