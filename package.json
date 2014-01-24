@@ -32,7 +32,8 @@
     "concat-stream": "~1.0.1",
     "mongoose-text-search": "0.0.2",
     "mailchimp": "~1.1.0",
-    "strong-agent": "*"
+    "strong-agent": "*",
+    "underscore.inflections": "~0.2.1"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
