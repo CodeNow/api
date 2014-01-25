@@ -50,6 +50,10 @@ describe('Users', function () {
         .expect(200)
         .expectArray(3)
         .expectArray(expected)
+        .expectBody(function (body) {
+          body[0].should.not.have.property('email');
+          body[0].should.not.have.property('votes');
+        })
         .end(done);
       // describe('show_email', function () {
 
@@ -164,6 +168,10 @@ describe('Users', function () {
         this.user2.specRequest(this.user._id)
           .expect(200)
           .expectBody(expected)
+          .expectBody(function (body) {
+            body.should.not.have.property('email');
+            body.should.not.have.property('votes');
+          })
           .end(done);
       });
       describe('email', function () {
@@ -178,6 +186,9 @@ describe('Users', function () {
           this.user2.specRequest(this.user._id)
             .expect(200)
             .expectBody(expected)
+            .expectBody(function (body) {
+              body.should.not.have.property('votes');
+            })
             .end(done);
         });
       });
