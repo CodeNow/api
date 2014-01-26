@@ -1,4 +1,4 @@
-// require('console-trace')({always:true, right:true});
+require('console-trace')({always:true, right:true});
 require('./setupAndTeardown');
 var _ = require('lodash');
 var st = require('./superdupertest');
@@ -138,16 +138,19 @@ var helpers = module.exports = {
       helpers.deleteKeys(this, _.difference(this._cleanupKeys, exclude));
       var images = require('./imageFactory');
       var containers = require('./containerFactory');
-      var tasks = {
-        images: async.waterfall.bind(async, [
+      var tasks = {};
+      if (db.images) {
+        tasks.images =  async.waterfall.bind(async, [
           db.images.find.bind(db.images),
           images.deleteImages
-        ]),
-        containers: async.waterfall.bind(async, [
+        ]);
+      }
+      if (db.containers) {
+        tasks.containers = async.waterfall.bind(async, [
           db.containers.find.bind(db.containers),
           containers.deleteContainers
-        ])
-      };
+        ]);
+      }
       var excludeWithPlurals = exclude.concat(exclude.map(helpers.pluralize)); // pluralize since images end in s
       helpers.deleteKeys(tasks, excludeWithPlurals);
       async.waterfall([
