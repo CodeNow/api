@@ -64,5 +64,53 @@ describe('Files', function () {
           .end(done);
       }
     });
+    describe('dir', function () {
+      describe('owner', function () {
+        it('should get container\'s folders', function (done) {
+          this.user.specRequest(this.container._id, {
+            dir: true
+          })
+            .expect(200)
+            .expectArray(0)
+            .end(done);
+        });
+      });
+    });
+    describe('contents', function () {
+      describe('default', function () {
+        it('should not exist by default', function (done) {
+          this.user.specRequest(this.container._id)
+            .expect(200)
+            .expectArray([{
+              content: undefined
+            }])
+            .end(done);
+        });
+        it('should exist if specified', function (done) {
+          this.user.specRequest(this.container._id, {
+            content: true
+          })
+            .expect(200)
+            .expectArray([{
+              content: '{\n  "name": "hello",\n  '+
+                '"description": "hello world using core http module",\n'+
+                '  "version": "0.1.0",\n  "dependencies": {\n  }\n}'
+            }])
+            .end(done);
+        });
+        it('should exist for default_files', function (done) {
+          this.user.specRequest(this.container._id, {
+            default: true
+          })
+            .expect(200)
+            .expectArray([{
+              content: '{\n  "name": "hello",\n  '+
+                '"description": "hello world using core http module",\n'+
+                '  "version": "0.1.0",\n  "dependencies": {\n  }\n}'
+            }])
+            .end(done);
+        });
+      });
+    });
   });
 });
