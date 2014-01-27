@@ -51,7 +51,6 @@ Test.prototype.expectArray = function (lengthOrMatches, strict) {
     matches = lengthOrMatches;
   }
   if (length) {
-    this._bodyIsArray = true;
     this._length = length;
   }
   if (matches) {
@@ -59,6 +58,8 @@ Test.prototype.expectArray = function (lengthOrMatches, strict) {
     matches.forEach(function (match) {
       self.expectArrayContains(match, strict);
     });
+  } else {
+    this._bodyIsArray = true;
   }
   return this;
 };
