@@ -13,7 +13,7 @@ var publicFields = [
   // 'show_email'
 ];
 
-describe.only('Users', function () {
+describe('Users', function () {
   afterEach(helpers.cleanup);
 
   describe('POST /users', function() {

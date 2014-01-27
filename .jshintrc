@@ -2,22 +2,22 @@
     // Settings
     "passfail"      : false,  // Stop on first error.
     "maxerr"        : 100,    // Maximum error before stopping.
- 
- 
+
+
     // Predefined globals whom JSHint will ignore.
     "node"          : true,
- 
- 
+
+
     // Development.
     "debug"         : false,  // Allow debugger statements e.g. browser breakpoints.
     "devel"         : true,   // Allow developments statements e.g. `console.log();`.
- 
- 
+
+
     // ECMAScript 5.
     "strict"        : false,  // Require `use strict` pragma  in every file.
     "globalstrict"  : false,  // Allow global "use strict" (also enables 'strict').
- 
- 
+
+
     // The Good Parts.
     "asi"           : false,  // Tolerate Automatic Semicolon Insertion (no semicolons).
     "laxbreak"      : false,   // Tolerate unsafe line breaks e.g. `return [\n] x` without semicolons.
@@ -39,8 +39,8 @@
     "shadow"        : false,  // Allows re-define variables later in code e.g. `var x=1; x=2;`.
     "supernew"      : false,  // Tolerate `new function () { ... };` and `new Object;`.
     "undef"         : false,   // Require all non-global variables be declared before they are used.
- 
- 
+
+
     // Personal styling preferences.
     "newcap"        : false,   // Require capitalization of all constructor functions e.g. `new F()`.  TEMP
     "noempty"       : true,   // Prohibit use of empty blocks.
@@ -57,7 +57,7 @@
 
     "maxparams"     : 8,  // dang
     "maxdepth"      : 2,
-    "maxstatements" : 11, // this needs to be brought down
+    "maxstatements" : 110, // this needs to be brought down
     "maxcomplexity" : 5,
     "maxlen"        : 100
 }

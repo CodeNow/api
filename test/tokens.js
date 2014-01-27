@@ -38,7 +38,7 @@ describe('Tokens', function () {
       this.tokenless.specRequest()
         .send({})
         .expect(400)
-        .expectBody('message', '"username" body parameter is required')
+        .expectBody('message', 'username or email body parameter is required')
         .end(done);
     });
     it('should require a password', function (done) {
