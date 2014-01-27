@@ -13,6 +13,7 @@ function createCategory (name, cb) {
     function (admin, cb) {
       admin.post('/categories')
         .send({ name: name })
+        .expect(201)
         .end(function (err, category) {
           cb(err, category.res.body);
         });

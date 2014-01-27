@@ -1,4 +1,4 @@
-require('console-trace')({always:true, right:true});
+// require('console-trace')({always:true, right:true});
 require('./setupAndTeardown');
 var _ = require('lodash');
 var st = require('./superdupertest');

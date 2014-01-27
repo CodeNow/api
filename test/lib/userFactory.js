@@ -59,6 +59,7 @@ var users = module.exports = {
       if (err) {
         return callback(err);
       }
+      console.log(username);
       var body = {
         username: username,
         password: 'password',
