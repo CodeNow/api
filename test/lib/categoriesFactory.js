@@ -1,28 +1,16 @@
-var async = require('async');
+var async = require('./async');
 var helpers = require('./helpers');
 var users = require('./userFactory');
 
 function createCategory (name, cb) {
-  async.waterfall([
-    function (cb) {
-      users.createAdmin({
-        'username': helpers.randomValue(),
-        'email': helpers.randomValue() + '@fake.com'
-      }, cb);
-    },
-    function (admin, cb) {
-      admin.post('/categories')
-        .send({ name: name })
-        .expect(201)
-        .end(function (err, category) {
-          cb(err, category.res.body);
-        });
-    }
-  ], cb);
+  async.extendWaterfall({}, {
+    admin: users.createAdmin,
+    category: ['admin.createCategory', [name]]
+  }, cb);
 }
 
 function createCategories (names, cb) {
-  async.each(names, createCategory, cb);
+  async.map(names, createCategory, cb);
 }
 
 module.exports = {

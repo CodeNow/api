@@ -1,27 +1,16 @@
-var async = require('async');
+var async = require('./async');
 var helpers = require('./helpers');
 var users = require('./userFactory');
 
 function createChannel (name, cb) {
-  async.waterfall([
-    function (cb) {
-      users.createAdmin({
-        'username': helpers.randomValue(),
-        'email': helpers.randomValue() + '@fake.com'
-      }, cb);
-    },
-    function (admin, cb) {
-      admin.post('/channels')
-        .send({ name: name })
-        .end(function (err, channel) {
-          cb(err, channel.res.body);
-        });
-    }
-  ], cb);
+  async.extendWaterfall({}, {
+    admin: users.createAdmin,
+    channel: ['admin.createChannel', [name]]
+  }, cb);
 }
 
 function createChannels (names, cb) {
-  async.each(names, createChannel, cb);
+  async.map(names, createChannel, cb);
 }
 
 module.exports = {

@@ -6,10 +6,17 @@ function getPath (obj, pathStr) {
   var split = pathStr.split('.');
   for (var i = 0, key; i < split.length; i++) {
     key = split[i];
-    if (!ptr[key]) {
+    var match = key.match(/^(.*)\[([0-9])\]$/);
+    if (match) {
+      ptr = ptr[match[1]];
+      ptr = ptr && ptr[parseInt(match[2])];
+    }
+    else {
+      ptr = ptr[key];
+    }
+    if (!ptr) {
       return new Error('no "'+key+'" of '+ptr+' ('+pathStr+')');
     }
-    ptr = ptr[key];
   }
   return ptr;
 }

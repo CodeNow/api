@@ -94,10 +94,31 @@ module.exports = function (TestUser) {
       .expect(201)
       .end(async.pick('body', callback));
   };
+  TestUser.prototype.createChannel = function (name, callback) {
+    var url = p.join('/channels');
+    this.post(url)
+      .send({ name: name })
+      .expect(201)
+      .end(async.pick('body', callback));
+  };
+  TestUser.prototype.createCategory = function (name, callback) {
+    var url = p.join('/categories');
+    this.post(url)
+      .send({ name: name })
+      .expect(201)
+      .end(async.pick('body', callback));
+  };
   TestUser.prototype.tagContainerWithChannel = function (containerId, channelName, callback) {
     var url = p.join('/users/me/runnables/', containerId, 'tags');
     this.post(url)
       .send({ name: channelName })
+      .expect(201)
+      .end(async.pick('body', callback));
+  };
+  TestUser.prototype.tagChannelWithCategory = function (channelId, categoryName, callback) {
+    var url = p.join('/channels/', channelId, 'tags');
+    this.post(url)
+      .send({ category: categoryName })
       .expect(201)
       .end(async.pick('body', callback));
   };

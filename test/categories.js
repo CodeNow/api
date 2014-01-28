@@ -15,16 +15,7 @@ describe('Categories', function () {
     it('should respond with an array', function (done) {
       this.user.specRequest()
         .expect(200)
-        .expectArray()
-        .end(done);
-    });
-
-    it('should allow for queries', function (done) {
-      this.user.specRequest({
-        name: 'facebook'
-      })
-        .expect(200)
-        .expectArray(1)
+        .expectArray(2)
         .end(done);
     });
   });
