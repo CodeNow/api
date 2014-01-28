@@ -114,7 +114,7 @@ describe('Files', function () {
     });
   });
 
-  describe('GET /users/me/runnables/:containerId/sync', function () {
+  describe('POST /users/me/runnables/:containerId/sync', function () {
     beforeEach(extendContextSeries({
       user: users.createAnonymous,
       container: ['user.createContainer', ['image._id']]
