@@ -113,4 +113,31 @@ describe('Files', function () {
       });
     });
   });
+
+  describe('GET /users/me/runnables/:containerId/sync/', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    afterEach(helpers.cleanupExcept('image'));
+    it('should sync files from disk', function (done) {
+      this.user.specRequest(this.container._id)
+        .expect(201)
+        .end(done);
+    });
+  });
+
+  describe('POST /users/me/runnables/:containerId/files/', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    afterEach(helpers.cleanupExcept('image'));
+    it('should create a file', function (done) {
+      this.user.specRequest(this.container._id)
+        .send({})
+        .expect(201)
+        .end(done);
+    });
+  });
 });

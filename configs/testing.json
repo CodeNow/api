@@ -16,7 +16,7 @@
   "dockerRegistry": "registry.runnable.com",
   "harbourmaster": "http://localhost:3033",
   "runnable_access_timeout": "5 seconds",
-  "logExpress": true,
+  "logExpress": false,
   "logErrorStack": false,
   "throwErrors": true,
   "adminToken": "e6f5a32a-4be0-4d84-91cb-782c65ae320f",
