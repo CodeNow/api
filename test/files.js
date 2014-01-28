@@ -76,7 +76,7 @@ describe('Files', function () {
         });
       });
     });
-    describe('contents', function () {
+    describe('content', function () {
       describe('default', function () {
         it('should not exist by default', function (done) {
           this.user.specRequest(this.container._id)
@@ -114,7 +114,7 @@ describe('Files', function () {
     });
   });
 
-  describe('GET /users/me/runnables/:containerId/sync/', function () {
+  describe('GET /users/me/runnables/:containerId/sync', function () {
     beforeEach(extendContextSeries({
       user: users.createAnonymous,
       container: ['user.createContainer', ['image._id']]
@@ -127,17 +127,217 @@ describe('Files', function () {
     });
   });
 
-  describe('POST /users/me/runnables/:containerId/files/', function () {
+  describe('POST /users/me/runnables/:containerId/files', function () {
     beforeEach(extendContextSeries({
       user: users.createAnonymous,
       container: ['user.createContainer', ['image._id']]
     }));
     afterEach(helpers.cleanupExcept('image'));
-    it('should create a file', function (done) {
-      this.user.specRequest(this.container._id)
-        .send({})
-        .expect(201)
+    describe('file', function () {
+      it('should require a name', function (done) {
+        this.user.specRequest(this.container._id)
+          .send({
+            path: '/',
+            content: 'foo'
+          })
+          .expect(400)
+          .end(done);
+      });
+      it('should require a path', function (done) {
+        this.user.specRequest(this.container._id)
+          .send({
+            name: 'foo.txt',
+            content: 'foo'
+          })
+          .expect(400)
+          .end(done);
+      });
+      it('should require content', function (done) {
+        this.user.specRequest(this.container._id)
+          .send({
+            name: 'foo.txt',
+            path: '/'
+          })
+          .expect(400)
+          .end(done);
+      });
+      it('should create a file', function (done) {
+        this.user.specRequest(this.container._id)
+          .send({
+            name: 'foo.txt',
+            path: '/',
+            content: 'foo'
+          })
+          .expect(201)
+          .end(done);
+      });
+    });
+    describe('directory', function () {
+      it('should require a name', function (done) {
+        this.user.specRequest(this.container._id)
+          .send({
+            path: '/',
+            dir: true
+          })
+          .expect(400)
+          .end(done);
+      });
+      it('should require a path', function (done) {
+        this.user.specRequest(this.container._id)
+          .send({
+            name: 'foo',
+            dir: true
+          })
+          .expect(400)
+          .end(done);
+      });
+      it('should create a directory', function (done) {
+        this.user.specRequest(this.container._id)
+          .send({
+            name: 'foo',
+            path: '/',
+            dir: true
+          })
+          .expect(201)
+          .end(done);
+      });
+    });
+    describe('multipart', function () {
+      it('should create a file', function (done) {
+        this.user.specRequest(this.container._id)
+          .attach('code', __filename, 'sample.js')
+          .expect(201)
+          .end(done);
+      });
+    });
+  });
+  describe('PUT /users/me/runnables/:containerId/files', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    afterEach(helpers.cleanupExcept('image'));
+    describe('multipart', function () {
+      it('should update a file', function (done) {
+        this.user.specRequest(this.container._id)
+          .attach('code', __filename, 'sample.js')
+          .expect(200)
+          .end(done);
+      });
+    });
+  });
+  describe('POST /users/me/runnables/:containerId/files/:fileid', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    afterEach(helpers.cleanupExcept('image'));
+    describe('multipart', function () {
+      it('should create a file in a directory', function (done) {
+        this.user.specRequest(this.container._id, 'foo')
+          .attach('code', __filename, 'sample.js')
+          .expect(201)
+          .end(done);
+      });
+    });
+  });
+  describe('GET /users/me/runnables/:containerId/files/:fileid', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    afterEach(helpers.cleanupExcept('image'));
+    describe('multipart', function () {
+      it('should create a file in a directory', function (done) {
+        this.user.specRequest(this.container._id, this.container.files[0]._id)
+          .expect(200)
+          .end(done);
+      });
+    });
+  });
+  describe('PUT /users/me/runnables/:containerId/files/:fileid', updateFile);
+  describe('PUT /users/me/runnables/:containerId/files/:fileid', updateFile);
+  describe('DEL /users/me/runnables/:containerId/files/:fileid', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    afterEach(helpers.cleanupExcept('image'));
+    it('should delete the file', function (done) {
+      this.user.specRequest(this.container._id, this.container.files[0]._id)
+        .expect(200)
         .end(done);
     });
   });
 });
+
+function updateFile () {
+  beforeEach(extendContextSeries({
+    user: users.createAnonymous,
+    container: ['user.createContainer', ['image._id']]
+  }));
+  afterEach(helpers.cleanupExcept('image'));
+  describe('file', function () {
+    it('should work with just a name', function (done) {
+      this.user.specRequest(this.container._id, this.container.files[0]._id)
+        .send({
+          name: 'foo.txt'
+        })
+        .expect(200)
+        .end(done);
+    });
+    it('should work with just a path', function (done) {
+      this.user.specRequest(this.container._id, this.container.files[0]._id)
+        .send({
+          path: '/'
+        })
+        .expect(200)
+        .end(done);
+    });
+    it('should work with just content', function (done) {
+      this.user.specRequest(this.container._id, this.container.files[0]._id)
+        .send({
+          content: 'foo'
+        })
+        .expect(200)
+        .end(done);
+    });
+    it('should create a file', function (done) {
+      this.user.specRequest(this.container._id, this.container.files[0]._id)
+        .send({
+          name: 'foo.txt',
+          path: '/',
+          content: 'foo'
+        })
+        .expect(200)
+        .end(done);
+    });
+  });
+  describe('directory', function () {
+    it('should work with just a name', function (done) {
+      this.user.specRequest(this.container._id, this.container.files[0]._id)
+        .send({
+          name: 'bar',
+          dir: true
+        })
+        .expect(200)
+        .end(done);
+    });
+    it('should work with just a path', function (done) {
+      this.user.specRequest(this.container._id, this.container.files[0]._id)
+        .send({
+          path: '/'
+        })
+        .expect(200)
+        .end(done);
+    });
+  });
+  describe('multipart', function () {
+    it('should create a file', function (done) {
+      this.user.specRequest(this.container._id, this.container.files[0]._id)
+        .attach('code', __filename, 'sample.js')
+        .expect(200)
+        .end(done);
+    });
+  });
+}
