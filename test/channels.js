@@ -20,6 +20,9 @@ describe('Channels', function () {
         .expectArray(4)
         .end(done);
     });
+    // it('should list channels by category', function (done) {
+    //   this.user.specRequest({ category: })
+    // });
     it('should get by name', function (done) {
       this.user.specRequest({ name: 'facebook' })
         .expect(200)
@@ -50,9 +53,9 @@ describe('Channels', function () {
         tag: ['user.tagContainerWithChannel', ['container._id', 'brand-new-channel']] // should create a new channel
       }));
       it('should get by id', function (done) {
-        this.user.specRequest(this.tag._id)
+        this.user.specRequest(this.tag.channel)
           .expect(200)
-          .expectBody(this.tag)
+          .expectBody('name', this.tag.name)
           .end(done);
       });
     });
@@ -64,10 +67,12 @@ describe('Channels', function () {
         user : users.createAdmin
       }));
       it('should respond 201', function (done) {
+        var body = { name: 'newChannel' };
         this.user.specRequest()
-          .send({ name: 'newChannel' })
+          .send(body)
           .expect(201)
           .expectBody('_id')
+          .expectBody('name', body.name)
           .end(done);
       });
       it('should respond 400 if not given a name', function (done) {

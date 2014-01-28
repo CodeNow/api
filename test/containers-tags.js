@@ -54,7 +54,9 @@ describe('Containers Tags', function () {
         this[userKey].specRequest(this.owner._id, this.container._id)
           .send(body)
           .expect(201)
-          .expectBody(body)
+          .expectBody('_id')
+          .expectBody('channel', this.channel._id)
+          .expectBody('name', body.name)
           .end(done);
       };
     }
@@ -64,7 +66,9 @@ describe('Containers Tags', function () {
         this[userKey].specRequest(this.owner._id, this.container._id)
           .send(newBody)
           .expect(201)
-          .expectBody(newBody)
+          .expectBody('_id')
+          .expectBody('channel')
+          .expectBody('name', newBody.name)
           .end(done);
       };
     }
