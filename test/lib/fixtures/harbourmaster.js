@@ -5,16 +5,38 @@ var tar = require('tar');
 var zlib = require('zlib');
 var app = express();
 
+var images = {};
+
 app.post('/build', function (req, res, next) {
+  images[req.query.t] = true;
+  var dockerFileFound = false;
   req
     .pipe(zlib.createGunzip())
     .pipe(tar.Parse())
+    .on("entry", function (e) {
+      if (e.props.path === 'Dockerfile') {
+        dockerFileFound = true;
+      }
+    })
     .on('end', function () {
-      res.send(200, 'Successfully built');
+      if (dockerFileFound) {
+        res.send(200, 'Successfully built');
+      } else {
+        res.send(200, 'I need a dockerfile bro');
+      }
     });
 });
-app.post('/containers', function (req, res, next) {
-  res.send(204);
+app.post('/containers', express.json(), function (req, res, next) {
+  if (typeof res.body.servicesToken !== 'string' ||
+    typeof res.body.webToken !== 'string' ||
+    !Array.isArray(req.body.Env) ||
+    typeof res.body.Hostname !== 'string') {
+    res.send(400);
+  } else if (!images[req.body.Image]) {
+    res.send(404);
+  } else {
+    res.send(204);
+  }
 });
 app.post('/containers/cleanup', function (req, res, next) {
   res.send(200);
