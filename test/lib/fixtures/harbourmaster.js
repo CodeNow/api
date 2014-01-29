@@ -33,6 +33,7 @@ app.post('/containers', express.json(), function (req, res, next) {
     typeof req.body.Hostname !== 'string') {
     res.send(400);
   } else if (!images[req.body.Image]) {
+    console.log(images, req.body.Image);
     res.send(404);
   } else {
     res.send(204);
