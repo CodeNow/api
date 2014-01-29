@@ -27,10 +27,10 @@ app.post('/build', function (req, res, next) {
     });
 });
 app.post('/containers', express.json(), function (req, res, next) {
-  if (typeof res.body.servicesToken !== 'string' ||
-    typeof res.body.webToken !== 'string' ||
+  if (typeof req.body.servicesToken !== 'string' ||
+    typeof req.body.webToken !== 'string' ||
     !Array.isArray(req.body.Env) ||
-    typeof res.body.Hostname !== 'string') {
+    typeof req.body.Hostname !== 'string') {
     res.send(400);
   } else if (!images[req.body.Image]) {
     res.send(404);
