@@ -23,7 +23,7 @@
     "nodetime": "0.8.12",
     "rollbar": "~0.2.5",
     "fstream": "~0.1.24",
-    "tar": "~0.1.18",
+    "tar": "gyllstromk/node-tar",
     "email": "0.2.5",
     "mongoose-text-search": "0.0.2",
     "mailchimp": "~1.1.0",
@@ -38,7 +38,8 @@
     "console-trace": "git://github.com/numbcoder/console-trace.git",
     "should": "~2.1.1",
     "mocha": "~1.17.0",
-    "osx-notifier": "~0.2.1"
+    "osx-notifier": "~0.2.1",
+    "methods": "~0.1.0"
   },
   "engine": "node >= 0.10.5",
   "scripts": {

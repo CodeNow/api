@@ -1,13 +1,17 @@
 var express = require('express');
 var configs = require('../../../lib/configs');
 var port = configs.harbourmaster.split(':')[2];
+var tar = require('tar');
+var zlib = require('zlib');
 var app = express();
 
 app.post('/build', function (req, res, next) {
-  req.resume();
-  req.on('end', function () {
-    res.send(200, 'Successfully built');
-  });
+  req
+    .pipe(zlib.createGunzip())
+    .pipe(tar.Parse())
+    .on('end', function () {
+      res.send(200, 'Successfully built');
+    });
 });
 app.post('/containers', function (req, res, next) {
   res.send(204);
