@@ -19,9 +19,6 @@ app.post('/containers', function (req, res, next) {
 app.post('/containers/cleanup', function (req, res, next) {
   res.send(200);
 });
-app.post('/containers/:token', function (req, res, next) {
-  res.send(204);
-});
 app.del('/containers/:token', function (req, res, next) {
   res.send(204);
 });
