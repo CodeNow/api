@@ -258,23 +258,23 @@ describe('Containers', function () {
           .end(done);
       });
     });
-    describe('from channel name', function () {
-      before(extendContextSeries({
-        publ: users.createPublisher,
-        container: ['publ.createContainer', ['image._id']],
-        rename: ['publ.patchContainer', ['container._id', { name: 'unique-name' }]],
-        tag: ['publ.tagContainerWithChannel', ['container._id', 'node.js']],
-        taggedImage: ['publ.postImage', [{
-          qs: { from: 'container._id' },
-          expect: 201
-        }]]
-      }));
-      it('should create a container', function (done) {
-        this.user.specRequest({ from: this.tag.name })
-          .expect(201)
-          .end(done);
-      });
-    });
+    // describe('from channel name', function () {
+    //   before(extendContextSeries({
+    //     publ: users.createPublisher,
+    //     container: ['publ.createContainer', ['image._id']],
+    //     rename: ['publ.patchContainer', ['container._id', { name: 'unique-name' }]],
+    //     tag: ['publ.tagContainerWithChannel', ['container._id', 'node.js']],
+    //     taggedImage: ['publ.postImage', [{
+    //       qs: { from: 'container._id' },
+    //       expect: 201
+    //     }]]
+    //   }));
+    //   it('should create a container', function (done) {
+    //     this.user.specRequest({ from: this.tag.name })
+    //       .expect(201)
+    //       .end(done);
+    //   });
+    // });
   });
 
   describe('PUT /users/me/runnables/:id', function () {
