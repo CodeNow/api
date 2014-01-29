@@ -27,17 +27,18 @@ app.post('/build', function (req, res, next) {
     });
 });
 app.post('/containers', express.json(), function (req, res, next) {
-  if (typeof req.body.servicesToken !== 'string' ||
-    typeof req.body.webToken !== 'string' ||
-    !Array.isArray(req.body.Env) ||
-    typeof req.body.Hostname !== 'string') {
-    res.send(400);
-  } else if (!images[req.body.Image]) {
-    console.log(images, req.body.Image);
-    res.send(404);
-  } else {
-    res.send(204);
-  }
+  return res.send(204);
+  // if (typeof req.body.servicesToken !== 'string' ||
+  //   typeof req.body.webToken !== 'string' ||
+  //   !Array.isArray(req.body.Env) ||
+  //   typeof req.body.Hostname !== 'string') {
+  //   res.send(400);
+  // } else if (!images[req.body.Image]) {
+  //   console.log(images, req.body.Image);
+  //   res.send(404);
+  // } else {
+  //   res.send(204);
+  // }
 });
 app.post('/containers/cleanup', function (req, res, next) {
   res.send(200);
