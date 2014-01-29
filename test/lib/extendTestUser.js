@@ -28,7 +28,12 @@ module.exports = function (TestUser) {
       cb();
     });
   };
-  TestUser.prototype.createImageFromFixture = function (name, callback) {
+  TestUser.prototype.createImageFromFixture = function (name, imageName, callback) {
+    if (typeof imageName === 'function') {
+      callback = imageName;
+      imageName = null;
+    }
+    imageName = imageName || name;
     if (this.permission_level < 5) {
       return callback(new Error('only admin users can create images from fixtures'));
     }
@@ -39,7 +44,7 @@ module.exports = function (TestUser) {
       mode: '0755'
     }).pipe(tar.Pack())
       .pipe(zlib.createGzip())
-      .pipe(this.post('/runnables/import?name=' + name)
+      .pipe(this.post('/runnables/import?name=' + imageName)
         .set('content-type', 'application/x-gzip')
         .expect(201)
         .streamEnd(async.pick('body', callback)));
@@ -49,24 +54,53 @@ module.exports = function (TestUser) {
       callback = body;
       body = null;
     }
+    if (typeof callback !== 'function') {
+      console.log(arguments);
+    }
     this.postContainer({ qs: { from: from } })
       .send(body || {})
       .expect(201)
       .end(async.pick('body', callback));
   };
   TestUser.prototype.createImage = function (from, callback) {
-    this.postImage({ from: from })
+    this.postImage({ qs: { from: from } })
       .expect(201)
       .end(async.pick('body', callback));
   };
-  TestUser.prototype.createContainerFromFixture = function (name, callback) {
+  TestUser.prototype.createTaggedImage = function (fixtureName, channelNames, callback) {
+    if (channelNames && !Array.isArray(channelNames)) {
+      channelNames = [channelNames];
+    }
     var self = this;
-    this.createImageFromFixture(name, function (err, image) {
-      if (err) {
-        return callback(err);
+    var containerId;
+    async.waterfall([
+      this.createContainerFromFixture.bind(this, fixtureName, fixtureName+helpers.randomValue()),
+      function (container, cb) {
+        async.map(channelNames, function (channelName, cb) {
+          self.tagContainerWithChannel(container, channelName, cb);
+        },
+        function (err) {
+          cb(err, container);
+        });
+      },
+      function (container, cb) { // rename container to prevent image name conflict
+        self.patchContainer(container._id, { name: fixtureName+helpers.randomValue() }, cb);
+      },
+      function (container, cb) {
+        self.createImage(container._id, cb); // TODO: change to publish back..
       }
-      self.createContainer(image._id, callback);
-    });
+    ], callback);
+  };
+  TestUser.prototype.createContainerFromFixture = function (name, imageName, callback) {
+    var self = this;
+    async.waterfall([
+      function (cb) {
+        self.createImageFromFixture(name, imageName, cb);
+      },
+      function (image, cb) {
+        self.createContainer(image._id, cb);
+      }
+    ], callback);
   };
   TestUser.prototype.createSpecification = function (body, callback) {
     if (typeof body === 'function') {
@@ -109,6 +143,8 @@ module.exports = function (TestUser) {
       .end(async.pick('body', callback));
   };
   TestUser.prototype.tagContainerWithChannel = function (containerId, channelName, callback) {
+    containerId = containerId._id || containerId;
+    channelName = channelName.name || channelName;
     var url = p.join('/users/me/runnables/', containerId, 'tags');
     this.post(url)
       .send({ name: channelName })
@@ -116,6 +152,8 @@ module.exports = function (TestUser) {
       .end(async.pick('body', callback));
   };
   TestUser.prototype.tagChannelWithCategory = function (channelId, categoryName, callback) {
+    channelId = channelId._id || channelId;
+    categoryName = categoryName.name || categoryName;
     var url = p.join('/channels/', channelId, 'tags');
     this.post(url)
       .send({ category: categoryName })

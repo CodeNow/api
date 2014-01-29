@@ -12,7 +12,7 @@
     "redis": "~0.8.3",
     "eson": "~0.4.1",
     "node-uuid": "~1.4.0",
-    "async": "~0.2.9",
+    "async": "~0.2.10",
     "bcrypt": "~0.7.5",
     "mongoose": "~3.8.5",
     "rimraf": "~2.1.4",
@@ -48,6 +48,7 @@
     "testwatch": "NODE_PATH=./lib nodemon --delay 1 -w lib -w test -w configs -x npm test",
     "coverage": "jscoverage lib lib-cov; rm -rf lib; mv lib-cov lib; mkdir ./coverage; mocha -t 10000 --reporter html-cov > ./coverage/index.html",
     "test": "npm run lint && NODE_ENV=testing NODE_PATH=./lib mocha",
+    "test-debug": "npm run lint && NODE_ENV=testing NODE_PATH=./lib mocha --debug-brk",
     "test-int": "npm run lint && NODE_ENV=testing-integration NODE_PATH=./lib mocha --timeout 20000",
     "clean": "rm -rf ./coverage",
     "lint": "jshint --verbose --show-non-errors ."

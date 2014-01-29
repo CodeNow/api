@@ -1,6 +1,8 @@
 var helpers = require('./lib/helpers');
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
+var containers = require('./lib/containerFactory');
+var channels = require('./lib/channelsFactory');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 
@@ -98,6 +100,49 @@ describe('Images', function () {
           .expect(403)
           .end(done);
       }
+    });
+  });
+});
+
+describe('Image Pagination', function () {
+  describe('GET /runnables', function () {
+    describe('all', function () {
+      beforeEach(extendContext({
+        image: images.createImageFromFixture.bind(images, 'node.js', 'namfdsfse0'),
+        image2: images.createImageFromFixture.bind(images, 'node.js', 'name1'),
+        image3: images.createImageFromFixture.bind(images, 'node.js', 'name2'),
+        image4: images.createImageFromFixture.bind(images, 'node.js', 'name3'),
+        image5: images.createImageFromFixture.bind(images, 'node.js', 'name4'),
+        user: users.createAnonymous
+      }));
+      it('should list all runnables (no query)', function (done) {
+        this.user.specRequest()
+          .expect(200)
+          .expectArray(5)
+          .end(done);
+      });
+    });
+    describe('channel runnables', function () {
+      beforeEach(extendContextSeries({
+        admin: users.createAdmin,
+        channels: channels.createChannels('one', 'two'),
+        image:  ['admin.createTaggedImage', ['node.js', 'channels[0]']],
+        image2: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
+        image3: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]],
+        image4: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
+        image5: ['admin.createTaggedImage', ['node.js', 'channels[1]']]
+      }));
+      it('should list runnable by channel', function (done) {
+        var checkDone = helpers.createCheckDone(done);
+        this.user.specRequest({ channel: this.channels[0].name })
+          .expect(200)
+          .expectArray(3)
+          .end(checkDone.done());
+        this.user.specRequest({ channel: this.channels[1].name })
+          .expect(200)
+          .expectArray(3)
+          .end(checkDone.done());
+      });
     });
   });
 });

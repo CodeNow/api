@@ -3,4 +3,4 @@
 --reporter spec
 --require should
 --slow 120000
---timeout 200000
+--timeout 2000

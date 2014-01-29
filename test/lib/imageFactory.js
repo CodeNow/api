@@ -18,13 +18,13 @@ var images = module.exports = {
         .end(callback);
     });
   },
-  createImageFromFixture: function (name, callback) {
+  createImageFromFixture: function (name, imageName, callback) {
     var users = require('./userFactory');
     users.createAdmin(function (err, user) {
       if (err) {
         return callback(err);
       }
-      user.createImageFromFixture(name, callback);
+      user.createImageFromFixture(name, imageName, callback);
     });
   }
 };

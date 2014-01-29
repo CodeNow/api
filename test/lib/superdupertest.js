@@ -298,6 +298,9 @@ Test.prototype.streamEnd = function (callback) {
       if (err) {
         return callback(err);
       }
+      if (!res) {
+        console.log('NO RESPONSE');
+      }
       callback(null, res);
     });
   });
