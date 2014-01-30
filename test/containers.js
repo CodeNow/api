@@ -262,11 +262,10 @@ describe('Containers', function () {
       before(extendContextSeries({
         publ: users.createPublisher,
         container: ['publ.createContainer', ['image._id']],
-        rename: ['publ.patchContainer', ['container._id', { name: 'unique-name' }]],
         tag: ['publ.tagContainerWithChannel', ['container._id', 'node.js']],
-        taggedImage: ['publ.postImage', [{
-          qs: { from: 'container._id' },
-          expect: 201
+        renameAndPublish: ['publ.patchContainer', ['container._id', {
+          name: 'unique-name',
+          status: 'Committing new'
         }]]
       }));
       it('should create a container', function (done) {

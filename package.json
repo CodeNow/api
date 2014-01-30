@@ -51,6 +51,6 @@
     "test-debug": "npm run lint && NODE_ENV=testing NODE_PATH=./lib mocha --debug-brk",
     "test-int": "npm run lint && NODE_ENV=testing-integration NODE_PATH=./lib mocha --timeout 20000",
     "clean": "rm -rf ./coverage",
-    "lint": "jshint --verbose --show-non-errors ."
+    "lint": "jshint ."
   }
 }

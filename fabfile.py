@@ -110,8 +110,6 @@ def deploy():
   checkout_latest()
   install_requirements()
   reboot()
-  if env.settings is 'integration':
-    test_int()
 
 def reboot():
   """
@@ -123,7 +121,7 @@ def reboot():
 
 def test_int():
   """
-  Restart the server.
+  run integration tests.
   """
   with cd('api-server'):
     run('npm run test-int')
