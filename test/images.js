@@ -137,6 +137,10 @@ describe('Image Pagination', function () {
         this.user.specRequest({ channel: this.channels[0].name })
           .expect(200)
           .expectArray(3)
+          .expectBody(function (body) {
+            body[0].tags.should.be.an.instanceOf(Array);
+            body[0].tags[0].should.have.property('name');
+          })
           .end(checkDone.done());
         this.user.specRequest({ channel: this.channels[1].name, sort:'created' })
           .expect(200)
