@@ -123,7 +123,7 @@ describe('Image Pagination', function () {
       });
     });
     describe('channel runnables', function () {
-      beforeEach(extendContextSeries({
+      before(extendContextSeries({
         admin: users.createAdmin,
         channels: channels.createChannels('one', 'two'),
         image:  ['admin.createTaggedImage', ['node.js', 'channels[0]']],
@@ -142,11 +142,12 @@ describe('Image Pagination', function () {
             body[0].tags[0].should.have.property('name');
           })
           .end(checkDone.done());
-        this.user.specRequest({ channel: this.channels[1].name, sort:'created' })
+        this.user.specRequest({ channel: this.channels[1].name, sort:'-created' })
           .expect(200)
           .expectArray(3)
           .end(checkDone.done());
       });
+      // TODO Paging sort skip...
     });
   });
 });
