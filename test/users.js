@@ -59,6 +59,12 @@ describe('Users', function () {
 
       // });
     });
+    it('should get a user by username', function (done) {
+      this.user.specRequest({ username: this.user2.username })
+        .expect(200)
+        .expectArray(1)
+        .end(done);
+    });
   });
 
   describe('PUT /users/me', putUser);

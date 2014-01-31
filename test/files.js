@@ -43,15 +43,15 @@ describe('Files', function () {
         }));
         it('should not get container\'s files', accessDenied);
       });
-      // describe('admin', function () {
-      //   beforeEach(extendContextSeries({
-      //     user: users.createAdmin
-      //   }));
-      //   it('should get container\'s files', accessPermitted);
-      // });
-      // describe('owner', function () {
-      //   it('should get container\'s files', accessPermitted);
-      // });
+      describe('admin', function () {
+        beforeEach(extendContextSeries({
+          user: users.createAdmin
+        }));
+        it('should get container\'s files', accessPermitted);
+      });
+      describe('owner', function () {
+        it('should get container\'s files', accessPermitted);
+      });
       function accessDenied (done) {
         this.user.specRequest(this.container._id)
           .expect(403)
@@ -78,38 +78,38 @@ describe('Files', function () {
     });
     describe('content', function () {
       describe('default', function () {
-        // it('should not exist by default', function (done) {
-        //   this.user.specRequest(this.container._id)
-        //     .expect(200)
-        //     .expectArray([{
-        //       content: undefined
-        //     }])
-        //     .end(done);
-        // });
-        // it('should exist if specified', function (done) {
-        //   this.user.specRequest(this.container._id, {
-        //     content: true
-        //   })
-        //     .expect(200)
-        //     .expectArray([{
-        //       content: '{\n  "name": "hello",\n  '+
-        //         '"description": "hello world using core http module",\n'+
-        //         '  "version": "0.1.0",\n  "dependencies": {\n  }\n}'
-        //     }])
-        //     .end(done);
-        // });
-        // it('should exist for default_files', function (done) {
-        //   this.user.specRequest(this.container._id, {
-        //     default: true
-        //   })
-        //     .expect(200)
-        //     .expectArray([{
-        //       content: '{\n  "name": "hello",\n  '+
-        //         '"description": "hello world using core http module",\n'+
-        //         '  "version": "0.1.0",\n  "dependencies": {\n  }\n}'
-        //     }])
-        //     .end(done);
-        // });
+        it('should not exist by default', function (done) {
+          this.user.specRequest(this.container._id)
+            .expect(200)
+            .expectArray([{
+              content: undefined
+            }])
+            .end(done);
+        });
+        it('should exist if specified', function (done) {
+          this.user.specRequest(this.container._id, {
+            content: true
+          })
+            .expect(200)
+            .expectArray([{
+              content: '{\n  "name": "hello",\n  '+
+                '"description": "hello world using core http module",\n'+
+                '  "version": "0.1.0",\n  "dependencies": {\n  }\n}'
+            }])
+            .end(done);
+        });
+        it('should exist for default_files', function (done) {
+          this.user.specRequest(this.container._id, {
+            default: true
+          })
+            .expect(200)
+            .expectArray([{
+              content: '{\n  "name": "hello",\n  '+
+                '"description": "hello world using core http module",\n'+
+                '  "version": "0.1.0",\n  "dependencies": {\n  }\n}'
+            }])
+            .end(done);
+        });
       });
     });
   });

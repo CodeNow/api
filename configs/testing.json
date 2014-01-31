@@ -23,7 +23,7 @@
   "cleanInterval": "2 minutes",
   "cacheRefreshInterval": "2 minutes",
   "containerTimeout": "5 minutes",
-  "domain": "localhost:3031",
+  "domain": "runnable.com",
   "mailchimp": {
     "key":  "5fb2e67f84c1be89cf4ddf2252fc3de3-us5",
     "lists": {
