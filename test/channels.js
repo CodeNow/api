@@ -27,6 +27,20 @@ describe('Channels', function () {
         .expectBody('name', 'facebook')
         .end(done);
     });
+    describe('related channels', function () {
+      beforeEach(extendContextSeries({
+        admin: users.createAdmin,
+        channels: channels.createChannels('one', 'two'),
+        image: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]]
+      }));
+      it('should list related channels by intersection of channel tags on images', function (done) {
+        this.user.specRequest({ channel: this.channels[0].name })
+          .expect(200)
+          .expectArray(1)
+          .expectArrayContains({ name: this.channels[1].name })
+          .end(done);
+      });
+    });
     describe('category channels', function () {
       var channels = this.channels;
       beforeEach(extendContextSeries({
