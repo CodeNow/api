@@ -151,3 +151,30 @@ describe('Image Pagination', function () {
     });
   });
 });
+
+describe('Image Stats', function () {
+  describe('POST /runnables/:runnableId/stats/views', function () {
+    beforeEach(extendContext('user', users.createAnonymous));
+    it('should increment runnable views', incStat('views'));
+  });
+  describe('POST /runnables/:runnableId/stats/copies', function () {
+    beforeEach(extendContext('user', users.createAnonymous));
+    it('should increment runnable copies', incStat('copies'));
+  });
+  describe('POST /runnables/:runnableId/stats/pastes', function () {
+    beforeEach(extendContext('user', users.createAnonymous));
+    it('should increment runnable pastes', incStat('pastes'));
+  });
+  describe('POST /runnables/:runnableId/stats/cuts', function () {
+    beforeEach(extendContext('user', users.createAnonymous));
+    it('should increment runnable cuts', incStat('cuts'));
+  });
+  function incStat (stat) {
+    return function (done) {
+      this.user.specRequest(this.image._id)
+        .expect(201)
+        .expectBody(stat, 1)
+        .end(done);
+    };
+  }
+});
