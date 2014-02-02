@@ -28,7 +28,8 @@
     "mongoose-text-search": "0.0.2",
     "mailchimp": "~1.1.0",
     "strong-agent": "*",
-    "underscore.inflections": "~0.2.1"
+    "underscore.inflections": "~0.2.1",
+    "concat-stream": "~1.4.1"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
@@ -39,7 +40,8 @@
     "should": "~2.1.1",
     "mocha": "~1.17.0",
     "osx-notifier": "~0.2.1",
-    "methods": "~0.1.0"
+    "methods": "~0.1.0",
+    "findit": "~1.1.0"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
