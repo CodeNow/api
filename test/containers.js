@@ -272,6 +272,7 @@ describe('Containers', function () {
         }]]
       }));
       it('should create a container', function (done) {
+        this.timeout(1000 * 60 * 2);
         var self = this;
         // this is a bit hacky
         pubsub.on('pmessage', function (pattern, channel, message) {
