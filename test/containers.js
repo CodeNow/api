@@ -6,7 +6,7 @@ var extendContextSeries = helpers.extendContextSeries;
 require('./lib/fixtures/harbourmaster');
 require('./lib/fixtures/dockworker');
 var configs = require('../lib/configs');
-var pubsub = require('redis').createClient(configs.redisPort, configs.redisHost);
+var pubsub = require('redis').createClient(configs.redis.port, configs.redis.ipaddress);
 pubsub.psubscribe('events:*');
 
 describe('Containers', function () {

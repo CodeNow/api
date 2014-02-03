@@ -5,7 +5,7 @@ var tar = require('tar');
 var zlib = require('zlib');
 var helpers = require('../helpers');
 var app = express();
-var redis = require('redis').createClient(configs.redisPort, configs.redisHost);
+var redis = require('redis').createClient(configs.redis.port, configs.redis.ipaddress);
 
 var images = {};
 
