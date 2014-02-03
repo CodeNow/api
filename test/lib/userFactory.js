@@ -3,6 +3,7 @@ var async = require('async');
 var db = require('./db');
 var helpers = require('./helpers');
 var TestUser = require('./TestUser');
+var uuid = require('node-uuid');
 
 function callbackUser (cb) {
   return function (err, res) {
@@ -14,11 +15,7 @@ function callbackUser (cb) {
   };
 }
 
-function createUsername (suggestedUsername, ignoreConflictError, cb) {
-  if (typeof ignoreConflictError === 'function') {
-    cb = ignoreConflictError;
-    ignoreConflictError = true; //default ignore
-  }
+function createUsername (suggestedUsername, cb) {
   if (!db.users) {
     return cb(null, suggestedUsername);
   }
@@ -55,7 +52,7 @@ var users = module.exports = {
       callback = properties;
       properties = {};
     }
-    createUsername('registered' || auth.username, ignoreConflictError, function (err, username) {
+    createUsername(auth.username || 'registered-'+uuid.v1(), function (err, username) {
       if (err) {
         return callback(err);
       }
