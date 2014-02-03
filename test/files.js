@@ -219,7 +219,7 @@ describe('Files', function () {
     afterEach(helpers.cleanupExcept('image'));
     describe('multipart', function () {
       it('should update a file', function (done) {
-        this.user.specRequest(this.container._id)
+        this.user.specRequest(this.container._id, this.container.files[0]._id)
           .attach('code', __filename, 'sample.js')
           .expect(200)
           .end(done);
@@ -234,7 +234,7 @@ describe('Files', function () {
     afterEach(helpers.cleanupExcept('image'));
     describe('multipart', function () {
       it('should create a file in a directory', function (done) {
-        this.user.specRequest(this.container._id, 'foo')
+        this.user.specRequest(this.container._id, this.container.files[0]._id)
           .attach('code', __filename, 'sample.js')
           .expect(201)
           .end(done);

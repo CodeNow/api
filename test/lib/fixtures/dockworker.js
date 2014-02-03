@@ -95,6 +95,32 @@ app.get('/api/files/list', function (req, res) {
   });
 });
 
+app.put('/api/files', function (req, res) {
+  req
+    .pipe(zlib.createGunzip())
+    .on('finish', function () {
+      res.send(200);
+    });
+});
+
+app.post('/api/files', function (req, res) {
+  fs.exists(path.join(folderPath, req.query.path), function (exists) {
+    if (exists) {
+      res.send(409, 'conflict: file exists');
+    } else {
+      req
+        .pipe(zlib.createGunzip())
+        .on('end', function () {
+          res.send(200);
+        });
+    }
+  });
+});
+
+app.get('/api/runcommand', function (req, res) {
+  res.send(200);
+});
+
 app.post('/api/buildCmd', function (req, res) {
   res.send(200);
 });
