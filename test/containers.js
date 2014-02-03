@@ -5,6 +5,9 @@ var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 require('./lib/fixtures/harbourmaster');
 require('./lib/fixtures/dockworker');
+var configs = require('../lib/configs');
+var pubsub = require('redis').createClient(configs.redisPort, configs.redisHost);
+pubsub.psubscribe('events:*');
 
 describe('Containers', function () {
   before(extendContext({
@@ -269,9 +272,16 @@ describe('Containers', function () {
         }]]
       }));
       it('should create a container', function (done) {
-        this.user.specRequest({ from: this.tag.name })
-          .expect(201)
-          .end(done);
+        var self = this;
+        // this is a bit hacky
+        pubsub.on('pmessage', function (pattern, channel, message) {
+          if (channel === 'events:' + self.container.servicesToken + ':progress' &&
+            message === 'Finished') {
+            self.user.specRequest({ from: self.tag.name })
+              .expect(201)
+              .end(done);
+          }
+        });
       });
     });
   });

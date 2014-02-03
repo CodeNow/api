@@ -5,6 +5,7 @@ var tar = require('tar');
 var zlib = require('zlib');
 var helpers = require('../helpers');
 var app = express();
+var redis = require('redis').createClient(configs.redisPort, configs.redisHost);
 
 var images = {};
 
@@ -58,7 +59,7 @@ app.post('/containers/:token/commit', express.json(),
         req.body._id,
         req.headers['runnable-token'])
         .expect(201)
-        .end();
+        .end(finished);
     } else {
       helpers.request.put('/runnables/' +
         req.body.parent +
@@ -66,7 +67,12 @@ app.post('/containers/:token/commit', express.json(),
         req.body._id,
         req.headers['runnable-token'])
         .expect(200)
-        .end();
+        .end(finished);
+    }
+    function finished () {
+      setTimeout(function () {
+        redis.publish('events:' + req.body.servicesToken + ':progress', 'Finished');
+      }, 10);
     }
   });
 app.all('*', express.logger(), function (req, res, next) {

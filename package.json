@@ -29,7 +29,8 @@
     "mailchimp": "~1.1.0",
     "strong-agent": "*",
     "underscore.inflections": "~0.2.1",
-    "concat-stream": "~1.4.1"
+    "concat-stream": "~1.4.1",
+    "multiparty": "~3.2.2"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
