@@ -41,6 +41,82 @@ describe('Channels', function () {
           .end(done);
       });
     });
+    describe('channel badges', function () {
+      beforeEach(extendContextSeries({
+        publ: users.createPublisher,
+        publ2: users.createPublisher,
+        publ3: users.createPublisher,
+        publ4: users.createPublisher,
+        publ5: users.createPublisher,
+        channels: channels.createChannels('node.js', 'hello world'),
+        image:  ['publ.createTaggedImage', ['node.js', 'channels[0].name']], //publ
+        image2: ['publ.createTaggedImage', ['node.js', 'channels[0].name']],
+        image3: ['publ.createTaggedImage', ['node.js', 'channels[0].name']],
+        image4: ['publ2.createTaggedImage', ['node.js', 'channels[0].name']], //publ2
+        image5: ['publ2.createTaggedImage', ['node.js', 'channels[0].name']],
+        image6: ['publ2.createTaggedImage', ['node.js', 'channels[1].name']],
+        image7: ['publ3.createTaggedImage', ['node.js', 'channels[0].name']], //publ3
+        image8: ['publ3.createTaggedImage', ['node.js', 'channels[1].name']],
+        image9: ['publ4.createTaggedImage', ['node.js', 'channels[1].name']], //publ4
+        image0: ['publ4.createTaggedImage', ['node.js', 'channels[1].name']],
+        image1: ['publ4.createTaggedImage', ['node.js', 'channels[1].name']]
+      }));
+      it('should list channel badges for user', function (done) {
+        var checkDone = helpers.createCheckDone(done);
+        // publ
+        this.user.specRequest({
+          badge: true,
+          _ids: [this.channels[0]._id, this.channels[1]._id],
+          userId: this.publ._id
+        }).expect(200)
+          .expectArray(1)
+          .expectArrayContains({
+            name: this.channels[0].name,
+            leaderPosition: 1
+          })
+          .end(checkDone.done());
+        // publ2
+        this.user.specRequest({
+          badge: true,
+          _ids: [this.channels[0]._id, this.channels[1]._id],
+          userId: this.publ2._id
+        }).expect(200)
+          .expectArray(2)
+          .expectArrayContains({
+            name: this.channels[0].name,
+            leaderPosition: 2
+          })
+          .expectArrayContains({
+            name: this.channels[1].name,
+            leaderPosition: 2 // tie!
+          })
+          .end(checkDone.done());
+        // publ3
+        this.user.specRequest({
+          badge: true,
+          _ids: [this.channels[0]._id, this.channels[1]._id],
+          userId: this.publ3._id
+        }).expect(200)
+          .expectArray(1)
+          .expectArrayContains({
+            name: this.channels[1].name,
+            leaderPosition: 2 // tie!
+          })
+          .end(checkDone.done());
+        // publ4
+        this.user.specRequest({
+          badge: true,
+          _ids: [this.channels[0]._id, this.channels[1]._id],
+          userId: this.publ4._id
+        }).expect(200)
+          .expectArray(1)
+          .expectArrayContains({
+            name: this.channels[1].name,
+            leaderPosition: 1
+          })
+          .end(checkDone.done());
+      });
+    });
     describe('category channels', function () {
       var channels = this.channels;
       beforeEach(extendContextSeries({

@@ -55,9 +55,6 @@ describe('Users', function () {
           body[0].should.not.have.property('votes');
         })
         .end(done);
-      // describe('show_email', function () {
-
-      // });
     });
     it('should get a user by username', function (done) {
       this.user.specRequest({ username: this.user2.username })

@@ -34,8 +34,8 @@ module.exports = function (TestUser) {
       imageName = null;
     }
     imageName = imageName || name;
-    if (this.permission_level < 5) {
-      return callback(new Error('only admin users can create images from fixtures'));
+    if (this.permission_level < 3) {
+      return callback(new Error('only publishers and admin users can create images from fixtures'));
     }
     var path = p.join(__dirname, '/fixtures/images/', name);
     fstream.Reader({
