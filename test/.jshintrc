@@ -2,11 +2,11 @@
     // Settings
     "passfail"      : false,  // Stop on first error.
     "maxerr"        : 100,    // Maximum error before stopping.
- 
- 
+
+
     // Predefined globals whom JSHint will ignore.
     "node"          : true,
- 
+
     "predef"        : [  // Custom globals.
         "describe",
         "it",
@@ -15,17 +15,17 @@
         "beforeEach",
         "afterEach"
     ],
- 
+
     // Development.
     "debug"         : false,  // Allow debugger statements e.g. browser breakpoints.
     "devel"         : true,   // Allow developments statements e.g. `console.log();`.
- 
- 
+
+
     // ECMAScript 5.
     "strict"        : false,  // Require `use strict` pragma  in every file.
     "globalstrict"  : false,  // Allow global "use strict" (also enables 'strict').
- 
- 
+
+
     // The Good Parts.
     "asi"           : false,  // Tolerate Automatic Semicolon Insertion (no semicolons).
     "laxbreak"      : false,   // Tolerate unsafe line breaks e.g. `return [\n] x` without semicolons.
@@ -34,7 +34,7 @@
     "curly"         : true,   // Require {} for every new block or scope.
     "eqeqeq"        : true,   // Require triple equals i.e. `===`.
     "eqnull"        : true,  // Tolerate use of `== null`.
-    "evil"          : false,  // Tolerate use of `eval`.
+    "evil"          : true,  // Tolerate use of `eval`.
     "expr"          : false,  // Tolerate `ExpressionStatement` as Programs.
     "forin"         : false,  // Tolerate `for in` loops without `hasOwnPrototype`.
     "immed"         : true,   // Require immediate invocations to be wrapped in parens e.g. `( function(){}() );`
@@ -47,8 +47,8 @@
     "shadow"        : false,  // Allows re-define variables later in code e.g. `var x=1; x=2;`.
     "supernew"      : false,  // Tolerate `new function () { ... };` and `new Object;`.
     "undef"         : false,   // Require all non-global variables be declared before they are used.
- 
- 
+
+
     // Personal styling preferences.
     "newcap"        : true,   // Require capitalization of all constructor functions e.g. `new F()`.
     "noempty"       : true,   // Prohibit use of empty blocks.

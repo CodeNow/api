@@ -64,19 +64,26 @@ describe('Files', function () {
           .end(done);
       }
     });
-    describe('dir', function () {
-      describe('owner', function () {
-        it('should get container\'s folders', function (done) {
-          this.user.specRequest(this.container._id, {
-            dir: true
-          })
-            .expect(200)
-            .expectArray(0)
-            .end(done);
-        });
+    describe('dir query param', function () {
+      it('should only get container\'s folders', function (done) {
+        this.user.specRequest(this.container._id, { dir: true })
+          .expect(200)
+          .expectArray(0)
+          .end(done);
+      });
+    });
+    describe('path query param', function () {
+      it('should only get fs at path', function (done) {
+        this.user.specRequest(this.container._id, { path: '/' })
+          .expect(200)
+          .expectArray(2)
+          .end(done);
       });
     });
     describe('content', function () {
+      var content = '{\n  "name": "hello",\n  '+
+        '"description": "hello world using core http module",\n'+
+        '  "version": "0.1.0",\n  "dependencies": {\n  }\n}';
       describe('default', function () {
         it('should not exist by default', function (done) {
           this.user.specRequest(this.container._id)
@@ -87,26 +94,18 @@ describe('Files', function () {
             .end(done);
         });
         it('should exist if specified', function (done) {
-          this.user.specRequest(this.container._id, {
-            content: true
-          })
+          this.user.specRequest(this.container._id, { content: true })
             .expect(200)
             .expectArray([{
-              content: '{\n  "name": "hello",\n  '+
-                '"description": "hello world using core http module",\n'+
-                '  "version": "0.1.0",\n  "dependencies": {\n  }\n}'
+              content: content
             }])
             .end(done);
         });
         it('should exist for default_files', function (done) {
-          this.user.specRequest(this.container._id, {
-            default: true
-          })
+          this.user.specRequest(this.container._id, { 'default': true })
             .expect(200)
             .expectArray([{
-              content: '{\n  "name": "hello",\n  '+
-                '"description": "hello world using core http module",\n'+
-                '  "version": "0.1.0",\n  "dependencies": {\n  }\n}'
+              content: content
             }])
             .end(done);
         });
@@ -247,12 +246,15 @@ describe('Files', function () {
       container: ['user.createContainer', ['image._id']]
     }));
     afterEach(helpers.cleanupExcept('image'));
-    describe('multipart', function () {
-      it('should create a file in a directory', function (done) {
-        this.user.specRequest(this.container._id, this.container.files[0]._id)
-          .expect(200)
-          .end(done);
-      });
+    it('should get a file by id', function (done) {
+      this.user.specRequest(this.container._id, this.container.files[0]._id)
+        .expect(200)
+        .end(done);
+    });
+    it('should 404 if file does not exist', function (done) {
+      this.user.specRequest(this.container._id, helpers.fakeId())
+        .expect(404)
+        .end(done);
     });
   });
   describe('PUT /users/me/runnables/:containerId/files/:fileid', updateFile);
@@ -340,4 +342,4 @@ function updateFile () {
         .end(done);
     });
   });
-}
+});
