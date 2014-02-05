@@ -342,4 +342,4 @@ function updateFile () {
         .end(done);
     });
   });
-});
+}
