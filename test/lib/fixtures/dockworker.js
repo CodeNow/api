@@ -76,7 +76,7 @@ app.get('/api/files/list', function (req, res) {
       stop();
     }
   });
-  
+
   if (!req.query.directoriesOnly) {
     finder.on('file', function (file, stat) {
       var base = path.basename(file);
@@ -101,6 +101,30 @@ app.put('/api/files', function (req, res) {
     .on('finish', function () {
       res.send(200);
     });
+});
+
+app.post('/api/files/mkdir', function (req, res) {
+  res.send(201);
+});
+
+app.post('/api/files/read', function (req, res) {
+  res.send(201);
+});
+
+app.post('/api/files/move', function (req, res) {
+  res.send(201);
+});
+
+app.post('/api/files/rename', function (req, res) {
+  res.send(201);
+});
+
+app.post('/api/files/create', function (req, res) {
+  res.send(201);
+});
+
+app.post('/api/files/update', function (req, res) {
+  res.send(201);
 });
 
 app.post('/api/files', function (req, res) {

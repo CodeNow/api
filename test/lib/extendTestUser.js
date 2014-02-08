@@ -67,6 +67,13 @@ module.exports = function (TestUser) {
       .expect(201)
       .end(async.pick('body', callback));
   };
+  TestUser.prototype.containerCreateFile = function (containerId, dirData, callback) {
+    var url = p.join('/users/me/runnables/', containerId, '/files');
+    this.post(url)
+      .send(dirData)
+      .expect(201)
+      .end(async.pick('body', callback));
+  };
   TestUser.prototype.createTaggedImage = function (fixtureName, channelNames, callback) {
     if (channelNames && !Array.isArray(channelNames)) {
       channelNames = [channelNames];
