@@ -370,76 +370,29 @@ describe('Files', function () {
             .end(done);
         });
     });
+    describe('directory', function () {
+      var dirData = { name:'folder', path:'/', dir:true };
+      beforeEach(extendContextSeries({
+        dir: ['user.containerCreateFile', ['container._id', dirData]]
+      }));
+      it('should delete the dir', function (done) {
+        var self = this;
+        var container = this.container;
+        this.user.specRequest(container._id, this.dir._id)
+          .expect(200)
+          .end(function (err) {
+            if (err) {
+              return done(err);
+            }
+            self.user.getContainer(container._id)
+              .expect(200)
+              .expectBody(function (body) {
+                // container was not retrieved after dir create.. so count is off by one
+                body.files.should.have.lengthOf(container.files.length);
+              })
+              .end(done);
+          });
+      });
+    });
   });
 });
-
-function updateFile () {
-  beforeEach(extendContextSeries({
-    user: users.createAnonymous,
-    container: ['user.createContainer', ['image._id']]
-  }));
-  afterEach(helpers.cleanupExcept('image'));
-  describe('file', function () {
-    it('should work with just a name', function (done) {
-      this.user.specRequest(this.container._id, this.container.files[0]._id)
-        .send({
-          name: 'foo.txt'
-        })
-        .expect(200)
-        .end(done);
-    });
-    it('should work with just a path', function (done) {
-      this.user.specRequest(this.container._id, this.container.files[0]._id)
-        .send({
-          path: '/'
-        })
-        .expect(200)
-        .end(done);
-    });
-    it('should work with just content', function (done) {
-      this.user.specRequest(this.container._id, this.container.files[0]._id)
-        .send({
-          content: 'foo'
-        })
-        .expect(200)
-        .end(done);
-    });
-    it('should create a file', function (done) {
-      this.user.specRequest(this.container._id, this.container.files[0]._id)
-        .send({
-          name: 'foo.txt',
-          path: '/',
-          content: 'foo'
-        })
-        .expect(200)
-        .end(done);
-    });
-  });
-  describe('directory', function () {
-    it('should work with just a name', function (done) {
-      this.user.specRequest(this.container._id, this.container.files[0]._id)
-        .send({
-          name: 'bar',
-          dir: true
-        })
-        .expect(200)
-        .end(done);
-    });
-    it('should work with just a path', function (done) {
-      this.user.specRequest(this.container._id, this.container.files[0]._id)
-        .send({
-          path: '/'
-        })
-        .expect(200)
-        .end(done);
-    });
-  });
-  describe('multipart', function () {
-    it('should create a file', function (done) {
-      this.user.specRequest(this.container._id, this.container.files[0]._id)
-        .attach('code', __filename, 'sample.js')
-        .expect(200)
-        .end(done);
-    });
-  });
-}

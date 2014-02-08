@@ -127,6 +127,14 @@ app.post('/api/files/update', function (req, res) {
   res.send(201);
 });
 
+app.post('/api/files/delete', function (req, res) {
+  res.send(201);
+});
+
+app.post('/api/files/rmdir', function (req, res) {
+  res.send(201);
+});
+
 app.post('/api/files', function (req, res) {
   fs.exists(path.join(folderPath, req.query.path), function (exists) {
     if (exists) {
