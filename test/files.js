@@ -346,20 +346,31 @@ describe('Files', function () {
         .end(done);
     });
   });
-  // describe('PUT /users/me/runnables/:containerId/files/:fileid', updateFile);
-  // describe('PUT /users/me/runnables/:containerId/files/:fileid', updateFile);
-  // describe('DEL /users/me/runnables/:containerId/files/:fileid', function () {
-  //   beforeEach(extendContextSeries({
-  //     user: users.createAnonymous,
-  //     container: ['user.createContainer', ['image._id']]
-  //   }));
-  //   afterEach(helpers.cleanupExcept('image'));
-  //   it('should delete the file', function (done) {
-  //     this.user.specRequest(this.container._id, this.container.files[0]._id)
-  //       .expect(200)
-  //       .end(done);
-  //   });
-  // });
+
+  describe('DEL /users/me/runnables/:containerId/files/:fileid', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    afterEach(helpers.cleanupExcept('image'));
+    it('should delete the file', function (done) {
+      var container = this.container;
+      var self = this;
+      this.user.specRequest(container._id, container.files[0]._id)
+        .expect(200)
+        .end(function (err) {
+          if (err) {
+            return done(err);
+          }
+          self.user.getContainer(container._id)
+            .expect(200)
+            .expectBody(function (body) {
+              body.files.should.have.lengthOf(container.files.length - 1);
+            })
+            .end(done);
+        });
+    });
+  });
 });
 
 function updateFile () {
