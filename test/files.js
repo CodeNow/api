@@ -114,18 +114,18 @@ describe('Files', function () {
     });
   });
 
-  // describe('POST /users/me/runnables/:containerId/sync', function () {
-  //   beforeEach(extendContextSeries({
-  //     user: users.createAnonymous,
-  //     container: ['user.createContainer', ['image._id']]
-  //   }));
-  //   afterEach(helpers.cleanupExcept('image'));
-  //   it('should sync files from disk', function (done) {
-  //     this.user.specRequest(this.container._id)
-  //       .expect(201)
-  //       .end(done);
-  //   });
-  // });
+  describe('POST /users/me/runnables/:containerId/sync', function () {
+    beforeEach(extendContextSeries({
+      user: users.createAnonymous,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    afterEach(helpers.cleanupExcept('image'));
+    it('should sync files from disk', function (done) {
+      this.user.specRequest(this.container._id)
+        .expect(200)
+        .end(done);
+    });
+  });
 
   describe('POST /users/me/runnables/:containerId/files', function () {
     beforeEach(extendContextSeries({
@@ -134,33 +134,9 @@ describe('Files', function () {
     }));
     afterEach(helpers.cleanupExcept('image'));
     describe('file', function () {
-      it('should require a name', function (done) {
-        this.user.specRequest(this.container._id)
-          .send({
-            path: '/',
-            content: 'foo'
-          })
-          .expect(400)
-          .end(done);
-      });
-      it('should require a path', function (done) {
-        this.user.specRequest(this.container._id)
-          .send({
-            name: 'foo.txt',
-            content: 'foo'
-          })
-          .expect(400)
-          .end(done);
-      });
-      it('should require content', function (done) {
-        this.user.specRequest(this.container._id)
-          .send({
-            name: 'foo.txt',
-            path: '/'
-          })
-          .expect(400)
-          .end(done);
-      });
+      it('should require a name', missingField('name'));
+      it('should require a path', missingField('path'));
+      it('should require content', missingField('content'));
       it('should create a file', function (done) {
         this.user.specRequest(this.container._id)
           .send({
@@ -173,24 +149,8 @@ describe('Files', function () {
       });
     });
     describe('directory', function () {
-      it('should require a name', function (done) {
-        this.user.specRequest(this.container._id)
-          .send({
-            path: '/',
-            dir: true
-          })
-          .expect(400)
-          .end(done);
-      });
-      it('should require a path', function (done) {
-        this.user.specRequest(this.container._id)
-          .send({
-            name: 'foo',
-            dir: true
-          })
-          .expect(400)
-          .end(done);
-      });
+      it('should require a name', missingField('name', true));
+      it('should require a path', missingField('path', true));
       it('should create a directory', function (done) {
         this.user.specRequest(this.container._id)
           .send({
@@ -202,6 +162,24 @@ describe('Files', function () {
           .end(done);
       });
     });
+    function missingField (field, isDir) {
+      return function (done) {
+        var data = {
+          path: '/',
+          content: 'foo',
+          name: 'foo.txt'
+        };
+        delete data[field];
+        if (isDir) {
+          delete data.content;
+          data.dir = true;
+        }
+        this.user.specRequest(this.container._id)
+          .send(data)
+          .expect(400)
+          .end(done);
+      };
+    }
     describe('multipart', function () {
       it('should create a file', function (done) {
         this.user.specRequest(this.container._id)
@@ -327,24 +305,20 @@ describe('Files', function () {
         .expectBody('path', newPath)
         .end(done);
     });
-    it('should rename the file', function (done) {
-      var file = this.container.files[0];
-      var newName = file.name+'hello';
-      this.user.specRequest(this.container._id, file._id)
-        .expect(200)
-        .send({ name: newName })
-        .expectBody('name', newName)
-        .end(done);
-    });
-    it('should update the file\'s content', function (done) {
-      var file = this.container.files[0];
-      var newContent = 'new content here';
-      this.user.specRequest(this.container._id, file._id)
-        .expect(200)
-        .send({ content: newContent })
-        .expectBody('content', newContent)
-        .end(done);
-    });
+    it('should rename the file', updateField('name', 'newnewname'));
+    it('should update the file\'s content', updateField('content', 'new content'));
+    function updateField (key, val) {
+      return function (done) {
+        var file = this.container.files[0];
+        var data = {};
+        data[key] = val;
+        this.user.specRequest(this.container._id, file._id)
+          .expect(200)
+          .send(data)
+          .expectBody(key, val)
+          .end(done);
+      };
+    }
   });
 
   describe('DEL /users/me/runnables/:containerId/files/:fileid', function () {

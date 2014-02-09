@@ -95,6 +95,45 @@ app.get('/api/files/list', function (req, res) {
   });
 });
 
+app.post('/api/files/readall', function (req, res) {
+  // TODO: handle req.body.ignores
+  var finder = findit(folderPath);
+  var files = [];
+  var filter = createFilter(req.query);
+
+  finder.on('directory', function (dir, stat, stop) {
+    var base = path.basename(dir);
+    if (filter(base)) {
+      if (dir !== folderPath) {
+        files.push({
+          name: base,
+          path: path.dirname(dir),
+          dir: true
+        });
+      }
+    } else {
+      stop();
+    }
+  });
+
+  if (!req.query.directoriesOnly) {
+    finder.on('file', function (file, stat) {
+      var base = path.basename(file);
+      if (filter(base)) {
+        files.push({
+          name: base,
+          path: path.dirname(file),
+          dir: false
+        });
+      }
+    });
+  }
+
+  finder.on('end', function () {
+    res.json(201, files);
+  });
+});
+
 app.put('/api/files', function (req, res) {
   req
     .pipe(zlib.createGunzip())
