@@ -111,7 +111,10 @@ describe('Image Pagination', function () {
       it('should list all runnables (no query)', function (done) {
         this.user.specRequest()
           .expect(200)
-          .expectArray(5)
+          .expectBody(function (body) {
+            body.data.should.be.an.instanceOf(Array);
+            body.data.should.have.a.lengthOf(5);
+          })
           .end(done);
       });
     });
@@ -129,15 +132,19 @@ describe('Image Pagination', function () {
         var checkDone = helpers.createCheckDone(done);
         this.user.specRequest({ channel: this.channels[0].name })
           .expect(200)
-          .expectArray(3)
           .expectBody(function (body) {
-            body[0].tags.should.be.an.instanceOf(Array);
-            body[0].tags[0].should.have.property('name');
+            body.data.should.have.a.lengthOf(3);
+            body.data[0].tags.should.be.an.instanceOf(Array);
+            body.data[0].tags[0].should.have.property('name');
+            body.paging.should.have.property('lastPage', 0);
           })
           .end(checkDone.done());
         this.user.specRequest({ channel: this.channels[1].name, sort:'-created' })
           .expect(200)
-          .expectArray(3)
+          .expectBody(function (body) {
+            body.data.should.have.a.lengthOf(3);
+            body.paging.should.have.property('lastPage', 0);
+          })
           .end(checkDone.done());
       });
       // TODO Paging sort skip...
