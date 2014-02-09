@@ -68,13 +68,6 @@ describe('Images', function () {
           user: users.createRegistered,
           container: ['user.createContainer', ['image._id']]
         }));
-        it('should respond 403', accessDeniedErrorFromContainerId);
-      });
-      describe('publisher', function () {
-        beforeEach(extendContextSeries({
-          user: users.createPublisher,
-          container: ['user.createContainer', ['image._id']]
-        }));
         it('should respond error if name already exists', function (done) {
           this.user.specRequest({ from: this.container._id })
             .expect(409)

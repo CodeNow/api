@@ -20,12 +20,6 @@ describe('Specifications', function () {
       beforeEach(extendContext({
         user : users.createRegistered
       }));
-      it('should error access denied', expect.accessDenied);
-    });
-    describe('publisher', function () {
-      beforeEach(extendContext({
-        user : users.createPublisher
-      }));
       it('should create a specification', createSpec);
       it('should error if missing name', function (done) {
         var data = specData();
