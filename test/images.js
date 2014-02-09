@@ -100,21 +100,31 @@ describe('Images', function () {
 describe('Image Pagination', function () {
   describe('GET /runnables', function () {
     describe('all', function () {
-      beforeEach(extendContext({
-        image: images.createImageFromFixture.bind(images, 'node.js', 'namfdsfse0'),
-        image2: images.createImageFromFixture.bind(images, 'node.js', 'name1'),
-        image3: images.createImageFromFixture.bind(images, 'node.js', 'name2'),
-        image4: images.createImageFromFixture.bind(images, 'node.js', 'name3'),
-        image5: images.createImageFromFixture.bind(images, 'node.js', 'name4'),
+      beforeEach(extendContextSeries({
+        admin: users.createAdmin,
+        channels: channels.createChannels('one', 'two'),
+        image:  ['admin.createTaggedImage', ['node.js', 'channels[0]']],
+        image2: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
+        image3: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]],
+        image4: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
+        image5: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
+        image6: images.createImageFromFixture.bind(images, 'node.js', 'name4'),
         user: users.createAnonymous
       }));
-      it('should list all runnables (no query)', function (done) {
+      afterEach(helpers.cleanup);
+      it('should list only tagged runnables (no query)', function (done) {
         this.user.specRequest()
           .expect(200)
           .expectBody(function (body) {
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(5);
           })
+          .end(done);
+      });
+      it('should list all runnables for site map (map query)', function (done) {
+        this.user.specRequest({ map: true })
+          .expect(200)
+          .expectArray(5)
           .end(done);
       });
     });
