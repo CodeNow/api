@@ -116,6 +116,41 @@ describe('Channels', function () {
           })
           .end(checkDone.done());
       });
+      it('should list popular channel badges for user', function (done) {
+        var self = this;
+        var checkDone = helpers.createCheckDone(done);
+        // publ
+        this.user.specRequest({
+          popular:true,
+          userId: this.publ._id
+        }).expect(200)
+          .expectArray(1)
+          .expectArrayContains({
+            name: this.channels[0].name,
+            userImagesCount: 3,
+            count: 6,
+            ratio: 3/6
+          })
+          .end(checkDone.done());
+        // publ2
+        this.user.specRequest({
+          popular:true,
+          userId: this.publ2._id
+        }).expect(200)
+          .expectArray(2)
+          .expectBody(function (body) {
+            // order matters sorted by badge.ratio
+            body[0].should.have.property('name', self.channels[0].name);
+            body[0].should.have.property('userImagesCount', 2);
+            body[0].should.have.property('count', 6);
+            body[0].should.have.property('ratio', 2/6);
+            body[1].should.have.property('name', self.channels[1].name);
+            body[1].should.have.property('userImagesCount', 1);
+            body[1].should.have.property('count', 5);
+            body[1].should.have.property('ratio', 1/5);
+          })
+          .end(checkDone.done());
+      });
     });
     describe('category channels', function () {
       var channels = this.channels;
