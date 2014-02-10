@@ -66,6 +66,15 @@ describe('Tokens', function () {
         .expect(200)
         .end(done);
     });
+    it('should login by username (as email)', function (done) {
+      this.tokenless.specRequest()
+        .send({
+          email: auth.username,
+          password: auth.password
+        })
+        .expect(200)
+        .end(done);
+    });
     it('should login by email', function (done) {
       this.tokenless.specRequest()
         .send({
