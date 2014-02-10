@@ -48,7 +48,7 @@ app.del('/containers/:token', function (req, res, next) {
   res.send(204);
 });
 app.put('/containers/:token/route', function (req, res, next) {
-  res.send(200);
+  res.send(204);
 });
 app.post('/containers/:token/commit', express.json(),
   function (req, res) {

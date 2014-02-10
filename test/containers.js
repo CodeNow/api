@@ -6,6 +6,7 @@ var extendContextSeries = helpers.extendContextSeries;
 require('./lib/fixtures/harbourmaster');
 require('./lib/fixtures/dockworker');
 var configs = require('../lib/configs');
+var specData = helpers.specData;
 var pubsub = require('redis').createClient(configs.redis.port, configs.redis.ipaddress);
 pubsub.psubscribe('events:*');
 
@@ -316,13 +317,27 @@ describe('Containers', function () {
     });
   });
 
-  describe('PATCH /users/me/runnables/:id', function () {
+  describe('PATCH /users/me/runnables/:id', updateRunnable);
+
+  function updateRunnable () {
     describe('owner', function () {
       beforeEach(extendContextSeries({
-        user: users.createAnonymous,
+        user: users.createRegistered,
         container: ['user.createContainer', ['image._id']]
       }));
-      it('should update the container', updateNameSuccess);
+      it('should update the container name', updateValue('name', 'newname'));
+      it('should update the container description', updateValue('description', 'newdescription'));
+      it('should update the container start_cmd', updateValue('start_cmd', 'new start command'));
+      it('should update the container build_cmd', updateValue('build_cmd', 'new build command'));
+      describe('specification', function () {
+        beforeEach(extendContextSeries({
+          spec: ['user.createSpecification', [specData()]],
+          impl: ['user.createImplementation', ['spec', 'container._id']]
+        }));
+        it('should update the container specification', function (done) {
+          updateValue('specification', this.spec._id).call(this, done);
+        });
+      });
     });
     // not owner FAIL
     describe('admin', function () {
@@ -331,15 +346,24 @@ describe('Containers', function () {
         container: ['owner.createContainer', ['image._id']],
         user: users.createAdmin
       }));
-      it('should update the container', updateNameSuccess);
+      it('should update the container name', updateValue('name', 'newname'));
+      it('should update the container description', updateValue('description', 'newdescription'));
+      it('should update the container start_cmd', updateValue('start_cmd', 'new start command'));
+      it('should update the container build_cmd', updateValue('build_cmd', 'new build command'));
     });
-    function updateNameSuccess (done) {
-      this.user.specRequest(this.container._id)
-        .send({ name: this.container.name })
-        .expect(200)
-        .end(done);
+    // TODO: more test cases here.
+    function updateValue (key, value) {
+      var data = {};
+      data[key] = value;
+      return function (done) {
+        this.user.specRequest(this.container._id)
+          .send(data)
+          .expect(200)
+          .expectBody(key, value)
+          .end(done);
+      };
     }
-  });
+  }
 
   describe('DEL /users/me/runnables/:id', function () {
     describe('owner', function () {

@@ -193,15 +193,15 @@ app.get('/api/runcommand', function (req, res) {
 });
 
 app.post('/api/buildCmd', function (req, res) {
-  res.send(200);
+  res.send(204);
 });
 
 app.post('/api/cmd', function (req, res) {
-  res.send(200);
+  res.send(204);
 });
 
 app.post('/api/envs', function (req, res) {
-  res.send(200);
+  res.send(204);
 });
 
 app.all('*', express.logger(), function (req, res) {
