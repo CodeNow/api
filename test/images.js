@@ -121,10 +121,28 @@ describe('Image Pagination', function () {
           })
           .end(done);
       });
-      it('should list all runnables for site map (map query)', function (done) {
+      it('should list all (tagged) runnables for site map (map query)', function (done) {
         this.user.specRequest({ map: true })
           .expect(200)
           .expectArray(5)
+          .end(done);
+      });
+      it('should list all (tagged) runnables by owner', function (done) {
+        this.user.specRequest({ owner: this.admin._id })
+          .expect(200)
+          .expectBody(function (body) {
+            body.data.should.be.an.instanceOf(Array);
+            body.data.should.have.a.lengthOf(5);
+          })
+          .end(done);
+      });
+      it('should list all (tagged) runnables by ownerUsername', function (done) {
+        this.user.specRequest({ ownerUsername: this.admin.username })
+          .expect(200)
+          .expectBody(function (body) {
+            body.data.should.be.an.instanceOf(Array);
+            body.data.should.have.a.lengthOf(5);
+          })
           .end(done);
       });
     });

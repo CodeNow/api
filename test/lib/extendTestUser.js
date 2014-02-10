@@ -13,7 +13,8 @@ module.exports = function (TestUser) {
     return this.put('/users/me')
       .send(auth)
       .expect(200)
-      .expectBody('_id');
+      .expectBody('_id')
+      .expectBody('username');
   };
   TestUser.prototype.dbUpdate = function (updateSet, cb) {
     var self = this;

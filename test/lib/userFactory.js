@@ -65,17 +65,19 @@ var users = module.exports = {
       async.waterfall([
         users.createAnonymous,
         function (user, cb) {
-          user.register(body).end(function (err, res) {
-            _.extend(user, res.body);
-            cb(err, user);
-          });
+          user.register(body)
+            .expect(200)
+            .end(function (err, res) {
+              _.extend(user, res.body);
+              cb(err, user);
+            });
         },
         function (user, cb) {
           var customProperties = _.omit(properties, authKeys);
           if (_.isEmpty(customProperties)) {
             return cb(null, user);
           }
-          user.dbUpdate(customProperties, function (err) {
+          user.dbUpdate({ $set: customProperties }, function (err) {
             _.extend(user, customProperties);
             cb(err, user);
           });

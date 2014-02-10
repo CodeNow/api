@@ -57,9 +57,13 @@ describe('Users', function () {
         .end(done);
     });
     it('should get a user by username', function (done) {
-      this.user.specRequest({ username: this.user2.username })
+      var username = this.user2.username;
+      this.user.specRequest({ username: username })
         .expect(200)
         .expectArray(1)
+        .expectBody(function (body) {
+          body[0].should.have.a.property('username', username);
+        })
         .end(done);
     });
   });
