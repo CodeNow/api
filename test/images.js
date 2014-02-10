@@ -1,3 +1,5 @@
+var utils = require('middleware/utils');
+var _ = require('lodash');
 var helpers = require('./lib/helpers');
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
@@ -7,11 +9,12 @@ var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 
 describe('Images', function () {
-  before(extendContext({
-    image: images.createImageFromFixture.bind(images, 'node.js')
+  before(extendContextSeries({
+    owner: users.createPublisher,
+    image: ['owner.createImageFromFixture', ['node.js']]
   }));
   after(helpers.cleanup);
-  afterEach(helpers.cleanupExcept('image'));
+  afterEach(helpers.cleanupExcept('image', 'user'));
 
   describe('GET /runnables/:id', function () {
     beforeEach(extendContext({
@@ -93,6 +96,22 @@ describe('Images', function () {
           .expect(403)
           .end(done);
       }
+    });
+  });
+
+  describe('PUT /runnables/:imageId', function () {
+    beforeEach(extendContextSeries({
+      container: ['owner.createContainer', ['image._id']]
+    }));
+    it('should publish container back to image', function (done) {
+      var self = this;
+      this.owner.specRequest(this.image._id, { from: this.container._id })
+        .expect(200)
+        .expectBody(function (body) {
+          var longId = utils.decodeId(self.container._id);
+          _.last(body.revisions).should.have.property('repo', longId);
+        })
+        .end(done);
     });
   });
 });
