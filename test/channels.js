@@ -65,7 +65,7 @@ describe('Channels', function () {
         var checkDone = helpers.createCheckDone(done);
         // publ
         this.user.specRequest({
-          badge: true,
+          badges: true,
           _ids: [this.channels[0]._id, this.channels[1]._id],
           userId: this.publ._id
         }).expect(200)
@@ -77,7 +77,7 @@ describe('Channels', function () {
           .end(checkDone.done());
         // publ2
         this.user.specRequest({
-          badge: true,
+          badges: true,
           _ids: [this.channels[0]._id, this.channels[1]._id],
           userId: this.publ2._id
         }).expect(200)
@@ -93,7 +93,7 @@ describe('Channels', function () {
           .end(checkDone.done());
         // publ3
         this.user.specRequest({
-          badge: true,
+          badges: true,
           _ids: [this.channels[0]._id, this.channels[1]._id],
           userId: this.publ3._id
         }).expect(200)
@@ -105,7 +105,7 @@ describe('Channels', function () {
           .end(checkDone.done());
         // publ4
         this.user.specRequest({
-          badge: true,
+          badges: true,
           _ids: [this.channels[0]._id, this.channels[1]._id],
           userId: this.publ4._id
         }).expect(200)
