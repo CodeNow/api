@@ -53,6 +53,7 @@ describe('Users', function () {
         .expectBody(function (body) {
           body[0].should.not.have.property('email');
           body[0].should.not.have.property('votes');
+          body[0].should.have.property('gravitar');
         })
         .end(done);
     });
@@ -63,6 +64,7 @@ describe('Users', function () {
         .expectArray(1)
         .expectBody(function (body) {
           body[0].should.have.a.property('username', username);
+          body[0].should.have.property('gravitar');
         })
         .end(done);
     });
@@ -181,6 +183,7 @@ describe('Users', function () {
           .expectBody(function (body) {
             body.should.not.have.property('email');
             body.should.not.have.property('votes');
+            body.should.have.property('gravitar');
           })
           .end(done);
       });
@@ -198,6 +201,8 @@ describe('Users', function () {
             .expectBody(expected)
             .expectBody(function (body) {
               body.should.not.have.property('votes');
+              body.should.have.property('email');
+              body.should.have.property('gravitar');
             })
             .end(done);
         });
