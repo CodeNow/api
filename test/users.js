@@ -54,6 +54,8 @@ describe('Users', function () {
           body[0].should.not.have.property('email');
           body[0].should.not.have.property('votes');
           body[0].should.have.property('gravitar');
+          body[0].should.not.have.property('imagesCount');
+          body[0].should.not.have.property('taggedImagesCount');
         })
         .end(done);
     });
@@ -65,6 +67,8 @@ describe('Users', function () {
         .expectBody(function (body) {
           body[0].should.have.a.property('username', username);
           body[0].should.have.property('gravitar');
+          body[0].should.have.property('imagesCount');
+          body[0].should.have.property('taggedImagesCount');
         })
         .end(done);
     });
@@ -203,6 +207,8 @@ describe('Users', function () {
               body.should.not.have.property('votes');
               body.should.have.property('email');
               body.should.have.property('gravitar');
+              body.should.have.property('imagesCount');
+              body.should.have.property('taggedImagesCount');
             })
             .end(done);
         });
