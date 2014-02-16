@@ -1,7 +1,7 @@
 {
   "tokenExpires": "1 year",
   "passwordSalt" : "$up3r,$3<r3t",
-  "mongo": "mongodb://127.0.0.1:27017/runnable",
+  "mongo": "mongodb://127.0.0.1:27017/runnable2",
   "redis": {
     "ipaddress": "127.0.0.1",
     "port": "6379"
@@ -21,7 +21,7 @@
     }
   },
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "http://localhost:4244",
+  "harbourmaster": "http://localhost:4245",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
