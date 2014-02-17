@@ -1,3 +1,4 @@
+var _ = require('lodash');
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var helpers = require('./lib/helpers');
@@ -291,7 +292,7 @@ describe('Containers', function () {
   describe('PUT /users/me/runnables/:id', function () {
     describe('owner', function () {
       beforeEach(extendContextSeries({
-        user: users.createAnonymous,
+        user: users.createRegistered,
         container: ['user.createContainer', ['image._id']]
       }));
       it('should update the container', function (done) {
@@ -304,7 +305,7 @@ describe('Containers', function () {
     // not owner FAIL
     describe('admin', function () {
       beforeEach(extendContextSeries({
-        owner: users.createAnonymous,
+        owner: users.createRegistered,
         container: ['owner.createContainer', ['image._id']],
         user: users.createAdmin
       }));
@@ -313,6 +314,46 @@ describe('Containers', function () {
           .send(this.container)
           .expect(200)
           .end(done);
+      });
+      describe('container commit', function () {
+        describe('already committing', function () {
+          var commitStatus = 'Committing new';
+          beforeEach(extendContextSeries({
+            commit: ['owner.patchContainer', ['container._id', {
+              body: { status: commitStatus, name: 'new name' },
+              expect: 200
+            }]]
+          }));
+          it ('should not update status', function (done) {
+            var data = _.clone(this.container);
+            data.status = 'Committing back';
+            this.user.specRequest(this.container._id)
+              .expect(200)
+              .send(data)
+              .expectBody('_id')
+              .expectBody('status', commitStatus)
+              .end(done);
+          });
+        });
+        describe('commit error', function () {
+          var commitStatus = 'Committing new';
+          beforeEach(extendContextSeries({
+            commit: ['owner.patchContainer', ['container._id', {
+              body: { status: 'Editing', commit_error: 'some error' },
+              expect: 200
+            }]]
+          }));
+          it ('should update status', function (done) {
+            var data = _.clone(this.container);
+            data.status = 'Committing back';
+            this.user.specRequest(this.container._id)
+              .expect(200)
+              .send(data)
+              .expectBody('_id')
+              .expectBody('status', data.status)
+              .end(done);
+          });
+        });
       });
     });
   });
