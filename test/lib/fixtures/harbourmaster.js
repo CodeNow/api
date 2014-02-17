@@ -1,5 +1,6 @@
 var express = require('express');
 var configs = require('../../../lib/configs');
+var helpers = require('../helpers');
 var port = configs.harbourmaster.split(':')[2];
 var tar = require('tar');
 var zlib = require('zlib');
@@ -53,13 +54,14 @@ app.put('/containers/:token/route', function (req, res, next) {
 app.post('/containers/:token/commit', express.json(),
   function (req, res) {
     res.send(204);
+    var checkDone = helpers.createCheckDone(finished);
     images['registry.runnable.com/runnable/' + req.body._id] = true;
     if (req.body.status === 'Committing new') {
       helpers.request.post('/runnables?from=' +
         req.body._id,
         req.headers['runnable-token'])
         .expect(201)
-        .end(finished);
+        .end(checkDone.done());
     } else {
       helpers.request.put('/runnables/' +
         req.body.parent +
@@ -67,9 +69,13 @@ app.post('/containers/:token/commit', express.json(),
         req.body._id,
         req.headers['runnable-token'])
         .expect(200)
-        .end(finished);
+        .end(checkDone.done());
     }
-    function finished () {
+    function finished (err, res) {
+      if (err) {
+        err.message = 'Harbourmaster commit error: '+err.message+' (triggered from second to last test)';
+        throw err;
+      }
       setTimeout(function () {
         redis.publish('events:' + req.body.servicesToken + ':progress', 'Finished');
       }, 10);
