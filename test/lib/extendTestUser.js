@@ -61,11 +61,13 @@ module.exports = function (TestUser) {
     this.postContainer({ qs: { from: from } })
       .send(body || {})
       .expect(201)
+      .expectBody('_id')
       .end(async.pick('body', callback));
   };
   TestUser.prototype.createImage = function (from, callback) {
     this.postImage({ qs: { from: from } })
       .expect(201)
+      .expectBody('_id')
       .end(async.pick('body', callback));
   };
   TestUser.prototype.containerCreateFile = function (containerId, dirData, callback) {
@@ -92,7 +94,10 @@ module.exports = function (TestUser) {
         });
       },
       function (container, cb) { // rename container to prevent image name conflict
-        self.patchContainer(container._id, { name: fixtureName+helpers.randomValue() }, cb);
+        self.patchContainer(container._id, { name: fixtureName+helpers.randomValue() })
+          .expect(200)
+          .expectBody('_id')
+          .end(async.pick('body', cb));
       },
       function (container, cb) {
         self.createImage(container._id, cb); // TODO: change to publish back..
@@ -157,6 +162,7 @@ module.exports = function (TestUser) {
     this.post(url)
       .send({ name: channelName })
       .expect(201)
+      .expectBody('_id')
       .end(async.pick('body', callback));
   };
   TestUser.prototype.tagChannelWithCategory = function (channelId, categoryName, callback) {
