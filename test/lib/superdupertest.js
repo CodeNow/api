@@ -272,12 +272,14 @@ Test.prototype._checkExpected = function (res) {
 var superEnd = Test.prototype.end;
 Test.prototype.end = function (callback) {
   var self = this;
+  var stack = (new Error('tracker')).stack;
 
   superEnd.call(this, function (err, res) {
     err = err || self._checkExpected(res);
     if (err && res) {
       console.error('\n', res.req.method, res.req.path, res.status, res.body && res.body.message || '');
       console.error(res.body.stack || res.body);
+      console.error(stack);
     }
     notifier(err, res);
     if (callback) {
