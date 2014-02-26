@@ -87,6 +87,7 @@ describe('Users', function () {
         .expect(200)
         .expectBody('_id')
         .expectBody('username')
+        .expectBody('gravitar')
         .end(done);
     });
     it('should respond error if missing email',    missingFieldError('email'));
