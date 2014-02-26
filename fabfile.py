@@ -26,6 +26,14 @@ def integration():
     'api-int'
   ]
 
+def staging():
+  """
+  Work on staging environment
+  """
+  env.settings = 'staging'
+  env.hosts = [
+    'api-rep_int'
+  ]
 
 """
 Branches
@@ -56,7 +64,7 @@ def setup():
   """
   Install and start the server.
   """
-  require('settings', provided_by=[production, integration])
+  require('settings', provided_by=[production, integration, staging])
   require('branch', provided_by=[stable, master, branch])
 
   clone_repo()
@@ -92,8 +100,8 @@ def boot():
   """
   Start process with pm2
   """
-  run('NODE_ENV=%(settings)s NODE_PATH=api-server/lib pm2 start api-server/server.js -n api-server -i 10' % env)
-  run('NODE_ENV=%(settings)s NODE_PATH=api-server/lib pm2 start api-server/scripts/meetyourmaker.js -n cleanup' % env)
+  run('NODE_ENV=%(settings)s pm2 start api-server/server.js -n api-server -i 10' % env)
+  run('NODE_ENV=%(settings)s pm2 start api-server/scripts/meetyourmaker.js -n cleanup' % env)
   # run('NODE_ENV=%(settings)s forever start api-server/scripts/refreshcache.js' % env)
 
 
@@ -104,12 +112,14 @@ def deploy():
   """
   Deploy the latest version of the site to the server.
   """
-  require('settings', provided_by=[production, integration])
+  require('settings', provided_by=[production, integration, staging])
   require('branch', provided_by=[stable, master, branch])
 
   checkout_latest()
   install_requirements()
   reboot()
+  # if env.settings is 'integration':
+  #   test_int()
 
 def reboot():
   """
@@ -121,7 +131,7 @@ def reboot():
 
 def test_int():
   """
-  run integration tests.
+  Restart the server.
   """
   with cd('api-server'):
     run('npm run test-int')
@@ -136,7 +146,7 @@ def rollback(commit_id):
   There is NO guarantee we have committed a valid dataset for an arbitrary
   commit hash.
   """
-  require('settings', provided_by=[production, integration])
+  require('settings', provided_by=[production, integration, staging])
   require('branch', provided_by=[stable, master, branch])
 
   checkout_latest()
@@ -155,7 +165,7 @@ def list():
   """
   List processes running inside forever
   """
-  require('settings', provided_by=[production, integration])
+  require('settings', provided_by=[production, integration, staging])
   run('forever list')
 
 """
