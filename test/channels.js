@@ -21,6 +21,17 @@ describe('Channels', function () {
         .expectArray(4)
         .end(done);
     });
+    it('should list all channels for site map (map=true)', function (done) {
+      this.user.specRequest({ map: true })
+        .expect(200)
+        .expectArray(4)
+        .expectBody(function (body) {
+          body[0].should.have.property('name');
+          body[0].should.not.have.property('aliases');
+          body[0].should.not.have.property('tags');
+        })
+        .end(done);
+    });
     it('should get by name', function (done) {
       this.user.specRequest({ name: 'facebook' })
         .expect(200)
