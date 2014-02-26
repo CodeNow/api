@@ -100,7 +100,8 @@ def boot():
   """
   Start process with pm2
   """
-  run('NODE_ENV=%(settings)s NODE_PATH=lib pm2 start api-server/server.js -n api-server -i 10' % env)
+  with cd('api-server'):
+    run('NODE_ENV=%(settings)s NODE_PATH=lib pm2 start server.js -n api-server -i 10' % env)
   run('NODE_ENV=%(settings)s pm2 start api-server/scripts/meetyourmaker.js -n cleanup' % env)
   # run('NODE_ENV=%(settings)s forever start api-server/scripts/refreshcache.js' % env)
 
