@@ -30,7 +30,8 @@
     "strong-agent": "*",
     "underscore.inflections": "~0.2.1",
     "concat-stream": "~1.4.1",
-    "multiparty": "~3.2.2"
+    "multiparty": "~3.2.2",
+    "githubNabber": "CodeNow/githubNabber"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
