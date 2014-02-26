@@ -198,7 +198,39 @@ describe('Image Pagination', function () {
     });
   });
 });
-
+describe('DEL /runnables/:id', function () {
+  describe('owner', function () {
+    before(extendContextSeries({
+      user: users.createPublisher,
+      image: ['user.createImageFromFixture', ['node.js']]
+    }));
+    it('should delete', deleteSuccess);
+  });
+  describe('not owner', function () {
+    before(extendContextSeries({
+      owner: users.createPublisher,
+      image: ['owner.createImageFromFixture', ['node.js']]
+    }));
+    it('should not delete', function (done) {
+      this.user.specRequest(this.container._id)
+        .expect(403)
+        .end(done);
+    });
+  });
+  describe('admin', function () {
+    before(extendContextSeries({
+      owner: users.createPublisher,
+      image: ['owner.createImageFromFixture', ['node.js']],
+      admin: users.createAdmin
+    }));
+    it('should delete', deleteSuccess);
+  });
+  function deleteSuccess (done) {
+    this.user.specRequest(this.image._id)
+      .expect(200)
+      .end(done);
+  }
+});
 describe('Image Stats', function () {
   describe('POST /runnables/:runnableId/stats/views', function () {
     beforeEach(extendContext('user', users.createAnonymous));
