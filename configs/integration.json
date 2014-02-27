@@ -34,7 +34,7 @@
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
-  "throwErrors": false,
+  "throwErrors": true,
   "adminToken": "a9e6c662-aa39-478f-9689-99b655342e8f",
   "cleanInterval": "2 minutes",
   "cacheRefreshInterval": "2 minutes",
