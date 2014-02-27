@@ -7,6 +7,7 @@ var containers = require('./lib/containerFactory');
 var channels = require('./lib/channelsFactory');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
+var uuid = require('node-uuid');
 
 describe('Images', function () {
   before(extendContextSeries({
@@ -202,17 +203,18 @@ describe('DEL /runnables/:id', function () {
   describe('owner', function () {
     before(extendContextSeries({
       user: users.createPublisher,
-      image: ['user.createImageFromFixture', ['node.js']]
+      image2: ['user.createImageFromFixture', ['node.js', uuid.v4()]]
     }));
     it('should delete', deleteSuccess);
   });
   describe('not owner', function () {
     before(extendContextSeries({
       owner: users.createPublisher,
-      image: ['owner.createImageFromFixture', ['node.js']]
+      image2: ['owner.createImageFromFixture', ['node.js', uuid.v4()]],
+      user: users.createPublisher
     }));
     it('should not delete', function (done) {
-      this.user.specRequest(this.container._id)
+      this.user.specRequest(this.image2._id)
         .expect(403)
         .end(done);
     });
@@ -220,13 +222,13 @@ describe('DEL /runnables/:id', function () {
   describe('admin', function () {
     before(extendContextSeries({
       owner: users.createPublisher,
-      image: ['owner.createImageFromFixture', ['node.js']],
-      admin: users.createAdmin
+      image2: ['owner.createImageFromFixture', ['node.js', uuid.v4()]],
+      user: users.createAdmin
     }));
     it('should delete', deleteSuccess);
   });
   function deleteSuccess (done) {
-    this.user.specRequest(this.image._id)
+    this.user.specRequest(this.image2._id)
       .expect(200)
       .end(done);
   }
