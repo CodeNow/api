@@ -307,6 +307,8 @@ describe('Files', function () {
     });
     it('should rename the file', updateField('name', 'newnewname'));
     it('should update the file\'s content', updateField('content', 'new content'));
+    it('should update the file\'s default file', updateField('default', false));
+    it('should update the file\'s default file', updateField('default', true));
     function updateField (key, val) {
       return function (done) {
         var file = this.container.files[0];
