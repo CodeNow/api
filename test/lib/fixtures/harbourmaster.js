@@ -55,7 +55,7 @@ app.post('/containers/:token/commit', express.json(),
   function (req, res) {
     res.send(204);
     var checkDone = helpers.createCheckDone(finished);
-    images['registry.runnable.com/runnable/' + req.body._id] = true;
+    images['registry.runnable.com/runnable/' + req.body.id] = true;
     if (req.body.status === 'Committing new') {
       helpers.request.post('/runnables?from=' +
         req.body._id,
