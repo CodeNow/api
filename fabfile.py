@@ -83,10 +83,8 @@ def checkout_latest():
   Pull the latest code on the specified branch.
   """
   with cd('api-server'):
-    run('git reset --hard')
-    run('git fetch')
-    run('git checkout %(branch)s' % env)
-    run('git pull origin %(branch)s' % env)
+    run('git fetch --all')
+    run('git reset --hard origin/%(branch)s' % env)
 
 def install_requirements():
   """
