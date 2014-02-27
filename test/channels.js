@@ -74,6 +74,14 @@ describe('Channels', function () {
       }));
       it('should list channel badges for user', function (done) {
         var checkDone = helpers.createCheckDone(done);
+        // empty
+        this.user.specRequest({
+          badges: true,
+          _ids: [],
+          userId: this.publ._id
+        }).expect(200)
+          .expectArray(0)
+          .end(checkDone.done());
         // publ
         this.user.specRequest({
           badges: true,
