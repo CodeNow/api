@@ -184,9 +184,11 @@ describe('Containers', function () {
         container: ['user.createContainer', ['image._id']]
       }));
       it('should get the container', function (done) {
+        var container = _.clone(this.container);
+        delete container.files; // No Files!, files are fetched separately
         this.user.specRequest(this.container._id)
           .expect(200)
-          .expectBody(this.container)
+          .expectBody(container)
           .end(done);
       });
       describe('tags', function () {
@@ -233,9 +235,11 @@ describe('Containers', function () {
           user: users.createAdmin
         }));
         it('should get the container', function (done) {
+          var container = _.clone(this.container);
+          delete container.files; // No Files!, files are fetched separately
           this.user.specRequest(this.container._id)
             .expect(200)
-            .expectBody(this.container)
+            .expectBody(container)
             .end(done);
         });
       });

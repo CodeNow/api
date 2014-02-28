@@ -338,10 +338,10 @@ describe('Files', function () {
           if (err) {
             return done(err);
           }
-          self.user.getContainer(container._id)
+          self.user.get('/users/me/runnables/'+container._id+'/files')
             .expect(200)
             .expectBody(function (body) {
-              body.files.should.have.lengthOf(container.files.length - 1);
+              body.should.have.lengthOf(container.files.length - 1);
             })
             .end(done);
         });
@@ -360,11 +360,11 @@ describe('Files', function () {
             if (err) {
               return done(err);
             }
-            self.user.getContainer(container._id)
+            self.user.get('/users/me/runnables/'+container._id+'/files')
               .expect(200)
               .expectBody(function (body) {
                 // container was not retrieved after dir create.. so count is off by one
-                body.files.should.have.lengthOf(container.files.length);
+                body.should.have.lengthOf(container.files.length);
               })
               .end(done);
           });
