@@ -264,6 +264,9 @@ describe('Containers', function () {
           .expectBody('parent', this.image._id)
           .expectBody('owner', this.user._id)
           .expectBody('servicesToken')
+          .expectBody(function (body) {
+            body.should.not.have.property('files');
+          })
           .end(done);
       });
     });

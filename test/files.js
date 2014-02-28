@@ -226,12 +226,13 @@ describe('Files', function () {
   // describe('PUT /users/me/runnables/:containerId/files', function () {
   //   beforeEach(extendContextSeries({
   //     user: users.createAnonymous,
-  //     container: ['user.createContainer', ['image._id']]
+  //     container: ['user.createContainer', ['image._id']],
+  //     files: ['user.getContainerFiles', ['container._id']]
   //   }));
   //   afterEach(helpers.cleanupExcept('image'));
   //   describe('multipart', function () {
   //     it('should update a file', function (done) {
-  //       this.user.specRequest(this.container._id, this.container.files[0]._id)
+  //       this.user.specRequest(this.container._id, .files[0]._id)
   //         .attach('code', __filename, 'sample.js')
   //         .expect(200)
   //         .end(done);
@@ -272,11 +273,12 @@ describe('Files', function () {
   describe('GET /users/me/runnables/:containerId/files/:fileid', function () {
     beforeEach(extendContextSeries({
       user: users.createAnonymous,
-      container: ['user.createContainer', ['image._id']]
+      container: ['user.createContainer', ['image._id']],
+      files: ['user.getContainerFiles', ['container._id']]
     }));
     afterEach(helpers.cleanupExcept('image'));
     it('should get a file by id', function (done) {
-      this.user.specRequest(this.container._id, this.container.files[0]._id)
+      this.user.specRequest(this.container._id, this.files[0]._id)
         .expect(200)
         .end(done);
     });
@@ -293,11 +295,12 @@ describe('Files', function () {
     beforeEach(extendContextSeries({
       user: users.createAnonymous,
       container: ['user.createContainer', ['image._id']],
+      files: ['user.getContainerFiles', ['container._id']],
       dir: ['user.containerCreateFile', ['container._id', dirData]],
       dir2: ['user.containerCreateFile', ['container._id', dirData2]]
     }));
     it('should move the file', function (done) {
-      var file = this.container.files[0];
+      var file = this.files[0];
       var newPath = path.join(this.dir.path, this.dir.name);
       this.user.specRequest(this.container._id, file._id)
         .expect(200)
@@ -311,7 +314,7 @@ describe('Files', function () {
     it('should update the file\'s default file', updateField('default', true));
     function updateField (key, val) {
       return function (done) {
-        var file = this.container.files[0];
+        var file = this.files[0];
         var data = {};
         data[key] = val;
         this.user.specRequest(this.container._id, file._id)
@@ -326,13 +329,15 @@ describe('Files', function () {
   describe('DEL /users/me/runnables/:containerId/files/:fileid', function () {
     beforeEach(extendContextSeries({
       user: users.createAnonymous,
-      container: ['user.createContainer', ['image._id']]
+      container: ['user.createContainer', ['image._id']],
+      files: ['user.getContainerFiles', ['container._id']]
     }));
     afterEach(helpers.cleanupExcept('image'));
     it('should delete the file', function (done) {
       var container = this.container;
+      var files = this.files;
       var self = this;
-      this.user.specRequest(container._id, container.files[0]._id)
+      this.user.specRequest(container._id, files[0]._id)
         .expect(200)
         .end(function (err) {
           if (err) {
@@ -341,7 +346,7 @@ describe('Files', function () {
           self.user.get('/users/me/runnables/'+container._id+'/files')
             .expect(200)
             .expectBody(function (body) {
-              body.should.have.lengthOf(container.files.length - 1);
+              body.should.have.lengthOf(files.length - 1);
             })
             .end(done);
         });
@@ -354,6 +359,7 @@ describe('Files', function () {
       it('should delete the dir', function (done) {
         var self = this;
         var container = this.container;
+        var files = this.files;
         this.user.specRequest(container._id, this.dir._id)
           .expect(200)
           .end(function (err) {
@@ -364,7 +370,7 @@ describe('Files', function () {
               .expect(200)
               .expectBody(function (body) {
                 // container was not retrieved after dir create.. so count is off by one
-                body.should.have.lengthOf(container.files.length);
+                body.should.have.lengthOf(files.length);
               })
               .end(done);
           });

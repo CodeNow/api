@@ -85,9 +85,13 @@ describe('Images', function () {
               expect: 200
             }]]
           }));
-          it('should create a container', function (done) {
+          it('should create an image', function (done) {
             this.user.specRequest({ from: this.container._id })
               .expect(201)
+              .expectBody('_id')
+              .expectBody(function (body) {
+                body.should.not.have.property('files');
+              })
               .end(done);
           });
         });

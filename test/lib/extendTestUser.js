@@ -174,4 +174,13 @@ module.exports = function (TestUser) {
       .expect(201)
       .end(async.pick('body', callback));
   };
+  TestUser.prototype.getContainerFiles = function (containerId, query, callback) {
+    if (typeof query === 'function') {
+      callback = query;
+      query = {};
+    }
+    this.get('/users/me/runnables/'+containerId+'/files', query)
+      .expect(200)
+      .end(async.pick('body', callback));
+  };
 };
