@@ -78,7 +78,7 @@ app.post('/containers/:token/commit', express.json(),
       }
       setTimeout(function () {
         redis.publish('events:' + req.body.servicesToken + ':progress', 'Finished');
-      }, 10);
+      }, 0);
     }
   });
 app.all('*', express.logger(), function (req, res, next) {
