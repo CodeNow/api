@@ -54,8 +54,8 @@
   "SES": {
     "sendMail": true,
     "auth": {
-      "username": "",
-      "pass":
+      "username": "AKIAIEPR357KCGSMAQAQ",
+      "pass": "Ag/xsyJ047+LTH3RNfmPG7JXR9b0yaeto2TyzuonjtjH"
     },
     "from": "Feedback <feedback@runnable.com>",
     "replyTo": "Feedback <feedback@runnable.mail.intercom.io>"

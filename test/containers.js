@@ -310,7 +310,7 @@ describe('Containers', function () {
   describe('PUT /users/me/runnables/:id', function () {
     describe('owner', function () {
       beforeEach(extendContextSeries({
-        user: users.createRegistered,
+        user: users.createPublisher,
         container: ['user.createContainer', ['image._id']]
       }));
       it('should update the container', function (done) {
@@ -319,16 +319,36 @@ describe('Containers', function () {
           .expect(200)
           .end(done);
       });
+      describe('container commit', function () {
+        describe('updating tags', function() {
+          beforeEach(extendContextSeries({
+            image: ['user.createTaggedImage', ['node.js', 'node']],
+            container: ['user.createContainer', ['image._id']],
+            untag: ['user.removeAllContainerTags', ['container']]
+          }));
+          it ('should not send email if delisted (owner delisted)', function (done) {
+            // no overriding the function above
+            var data = _.clone(this.container);
+            data.name = helpers.randomValue();
+            data.status = 'Committing back';
+            this.user.specRequest(this.container._id)
+              .expect(200)
+              .send(data)
+              .expectBody('_id')
+              .end(done);
+          });
+        });
+      });
     });
     // not owner FAIL
     describe('admin', function () {
       beforeEach(extendContextSeries({
         owner: users.createPublisher,
         container: ['owner.createContainer', ['image._id']],
-        user: users.createAdmin
+        admin: users.createAdmin
       }));
       it('should update the container', function (done) {
-        this.user.specRequest(this.container._id)
+        this.admin.specRequest(this.container._id)
           .send(this.container)
           .expect(200)
           .end(done);
@@ -346,7 +366,7 @@ describe('Containers', function () {
             var data = _.clone(this.container);
             data.name = helpers.randomValue();
             data.status = 'Committing back';
-            this.user.specRequest(this.container._id)
+            this.admin.specRequest(this.container._id)
               .expect(200)
               .send(data)
               .expectBody('_id')
@@ -357,16 +377,16 @@ describe('Containers', function () {
         describe('updating tags', function() {
           beforeEach(extendContextSeries({
             image: ['owner.createTaggedImage', ['node.js', 'node']],
-            container: ['user.createContainer', ['image._id']],
-            untag: ['user.removeAllContainerTags', ['container']]
+            container: ['admin.createContainer', ['image._id']],
+            untag: ['admin.removeAllContainerTags', ['container']]
           }));
-          it ('should send email if delisted', function (done) {
+          it ('should send email if delisted (admin delisted)', function (done) {
             var checkDone = helpers.createCheckDone(done);
             delistEmailCallback = checkDone.done();
             var data = _.clone(this.container);
             data.name = helpers.randomValue();
             data.status = 'Committing back';
-            this.user.specRequest(this.container._id)
+            this.admin.specRequest(this.container._id)
               .expect(200)
               .send(data)
               .expectBody('_id')
@@ -385,7 +405,7 @@ describe('Containers', function () {
             var data = _.clone(this.container);
             data.name = helpers.randomValue();
             data.status = 'Committing back';
-            this.user.specRequest(this.container._id)
+            this.admin.specRequest(this.container._id)
               .expect(200)
               .send(data)
               .expectBody('_id')
