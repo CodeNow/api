@@ -6,11 +6,12 @@ var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 var uuid = require('node-uuid');
 var emailer = require('../lib/emailer');
-var delistEmailCallback = function () {
+var defaultDelistEmailCallback = function () {
   var s = 'delistEmailCallback is not defined for testing purposes. ';
   s += 'Please update your tests to deal with this functionality';
   throw new Error(s);
 };
+var delistEmailCallback = defaultDelistEmailCallback;
 emailer.sendDelistEmail = function() { // Spy on this function
   delistEmailCallback();
 };
@@ -364,7 +365,6 @@ describe('Containers', function () {
           }));
           it ('should not update status', function (done) {
             var data = _.clone(this.container);
-            data.name = helpers.randomValue();
             data.status = 'Committing back';
             this.admin.specRequest(this.container._id)
               .expect(200)
@@ -384,13 +384,16 @@ describe('Containers', function () {
             var checkDone = helpers.createCheckDone(done);
             delistEmailCallback = checkDone.done();
             var data = _.clone(this.container);
-            data.name = helpers.randomValue();
             data.status = 'Committing back';
+            var reqDone = checkDone.done();
             this.admin.specRequest(this.container._id)
               .expect(200)
               .send(data)
               .expectBody('_id')
-              .end(checkDone.done());
+              .end(function (err) {
+                delistEmailCallback = defaultDelistEmailCallback;
+                reqDone(err);
+              });
           });
         });
         describe('commit error', function () {
@@ -403,7 +406,6 @@ describe('Containers', function () {
           }));
           it ('should update status', function (done) {
             var data = _.clone(this.container);
-            data.name = helpers.randomValue();
             data.status = 'Committing back';
             this.admin.specRequest(this.container._id)
               .expect(200)
