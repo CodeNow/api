@@ -50,5 +50,14 @@
   "strongloop": {
     "key": "1b996aa8f5b3b0a56103437dc60b20a9",
     "appName": "api-production"
+  },
+  "SES": {
+    "sendMail": true,
+    "auth": {
+      "username": "AKIAIEPR357KCGSMAQAQ",
+      "pass": "Ag/xsyJ047+LTH3RNfmPG7JXR9b0yaeto2TyzuonjtjH"
+    },
+    "from": "Feedback <feedback@runnable.com>",
+    "replyTo": "Feedback <feedback@runnable.mail.intercom.io>"
   }
 }
