@@ -7,6 +7,8 @@ var zlib = require('zlib');
 var helpers = require('./helpers');
 var async = require('./async');
 var uuid = require('node-uuid');
+var configs = require('configs');
+var client = require('redis').createClient(configs.redis.port, configs.redis.ipaddress);
 
 module.exports = function (TestUser) {
   TestUser.prototype.register = function (auth) {
@@ -55,9 +57,6 @@ module.exports = function (TestUser) {
       callback = body;
       body = null;
     }
-    if (typeof callback !== 'function') {
-      console.log(arguments);
-    }
     this.postContainer({ qs: { from: from } })
       .send(body || {})
       .expect(201)
@@ -85,7 +84,7 @@ module.exports = function (TestUser) {
     var containerId;
     async.waterfall([
       this.createContainerFromFixture.bind(this, fixtureName, fixtureName+helpers.randomValue()),
-      function (container, cb) {
+      function tagit (container, cb) {
         async.map(channelNames, function (channelName, cb) {
           self.tagContainerWithChannel(container, channelName, cb);
         },
@@ -93,16 +92,43 @@ module.exports = function (TestUser) {
           cb(err, container);
         });
       },
-      function (container, cb) { // rename container to prevent image name conflict
-        self.patchContainer(container._id, { name: fixtureName+helpers.randomValue() })
+      function (container, cb) {
+        self.patchContainer(container._id, {
+            status: 'Committing back',  // rename container to prevent image name conflict
+            name: fixtureName+helpers.randomValue()
+          })
           .expect(200)
           .expectBody('_id')
           .end(async.pick('body', cb));
       },
       function (container, cb) {
-        self.createImage(container._id, cb); // TODO: change to publish back..
+        var imageProgressChannel = 'events:' + container.servicesToken + ':progress';
+        client.subscribe(imageProgressChannel, function () {
+          client.on('message', function (channel, message) {
+            var channelMatch = (channel === imageProgressChannel);
+            var messageIsFinished = message.toLowerCase() === 'finished';
+            if (channelMatch && messageIsFinished) {
+              self.getImage(container.parent)
+                .expect(200)
+                .end(async.pick('body', function (err, body) {
+                  client.unsubscribe(imageProgressChannel, function () {
+                    cb(err, body);
+                  });
+                }));
+            }
+          });
+        });
       }
     ], callback);
+  };
+  TestUser.prototype.removeAllContainerTags = function (container, callback) {
+    // we have to do this call manually since we need the container id :)
+    var user = this;
+    async.forEach(container.tags, function (tag, cb) {
+      user.del('/users/me/runnables/' + container._id + '/tags/' + tag._id)
+        .expect(200)
+        .end(async.pick('body', cb));
+    }, callback);
   };
   TestUser.prototype.createContainerFromFixture = function (name, imageName, callback) {
     var self = this;
@@ -172,6 +198,15 @@ module.exports = function (TestUser) {
     this.post(url)
       .send({ category: categoryName })
       .expect(201)
+      .end(async.pick('body', callback));
+  };
+  TestUser.prototype.getContainerFiles = function (containerId, query, callback) {
+    if (typeof query === 'function') {
+      callback = query;
+      query = {};
+    }
+    this.get('/users/me/runnables/'+containerId+'/files', query)
+      .expect(200)
       .end(async.pick('body', callback));
   };
 };

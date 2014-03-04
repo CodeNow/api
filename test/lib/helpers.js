@@ -110,7 +110,7 @@ var helpers = module.exports = {
     };
   },
   randomValue: function () {
-    return 'value' + Math.random();
+    return uuid.v4();
   },
   createServer: function () {
     if (server) {

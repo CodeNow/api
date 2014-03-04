@@ -35,7 +35,10 @@
   "logExpress": true,
   "logErrorStack": true,
   "throwErrors": true,
-  "adminToken": "a9e6c662-aa39-478f-9689-99b655342e8f",
+  "adminAuth": {
+    "email": "tjadmin",
+    "password": "mehta"
+  },
   "cleanInterval": "2 minutes",
   "cacheRefreshInterval": "2 minutes",
   "containerTimeout": "5 minutes",
@@ -46,5 +49,8 @@
       "publishers": "b7a679ddc3",
       "contact": "43330e29a9"
     }
+  },
+  "SES": {
+    "sendMail": false
   }
 }

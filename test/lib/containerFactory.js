@@ -8,7 +8,6 @@ var containers = module.exports = {
     if (runnableId._id) {
       runnableId = runnableId._id;
     }
-    console.log(runnableId);
     var users = require('./userFactory');
     users.createAdmin({}, function (err, user) {
       if (err) {
@@ -40,7 +39,6 @@ var containers = module.exports = {
     });
   },
   createContainerFromFixture: function (name, callback) {
-    console.log('NAME', name);
     var users = require('./userFactory');
     async.extendWaterfall({}, {
       user: users.createAdmin,
