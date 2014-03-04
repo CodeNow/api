@@ -456,7 +456,7 @@ describe('Containers', function () {
             }
             // the date we get back should be later than the one we set, and within a minute
             var res_date = new Date(res.body.last_write);
-            if (res_date - d > 60*1000) {
+            if (res_date < d || res_date - d > 1000) {
               return done(new Error('last_write should be later, but not too late'));
             }
             done();
