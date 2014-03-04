@@ -444,6 +444,24 @@ describe('Containers', function () {
       it('should update the container description', updateValue('description', 'newdescription'));
       it('should update the container start_cmd', updateValue('start_cmd', 'new start command'));
       it('should update the container build_cmd', updateValue('build_cmd', 'new build command'));
+      it('should update the container last_write', function (done) {
+        var d = new Date();
+        this.user.specRequest(this.container._id)
+          .send({ last_write: true })
+          .expect(200)
+          .expectBody('last_write')
+          .end(function (err, res) {
+            if (err) {
+              return done(err);
+            }
+            // the date we get back should be later than the one we set, and within a minute
+            var res_date = new Date(res.body.last_write);
+            if (res_date - d > 60*1000) {
+              return done(new Error('last_write should be later, but not too late'));
+            }
+            done();
+          });
+      });
       describe('specification', function () {
         beforeEach(extendContextSeries({
           spec: ['user.createSpecification', [specData()]],
