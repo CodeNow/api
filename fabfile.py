@@ -85,6 +85,7 @@ def checkout_latest():
   with cd('api-server'):
     run('git fetch --all')
     run('git reset --hard origin/%(branch)s' % env)
+    run('git checkout %(branch)s' % env)
 
 def install_requirements():
   """
