@@ -35,7 +35,10 @@
   "logExpress": true,
   "logErrorStack": true,
   "throwErrors": false,
-  "adminToken": "d94dba96-daee-4d24-9ca4-139d68cd4b50",
+  "adminAuth": {
+    "email": "tjadmin",
+    "password": "mehta"
+  },
   "cleanInterval": "3 hours",
   "cacheRefreshInterval": "60 minutes",
   "containerTimeout": "5 minutes",
@@ -50,5 +53,14 @@
   "strongloop": {
     "key": "1b996aa8f5b3b0a56103437dc60b20a9",
     "appName": "api-production"
+  },
+  "SES": {
+    "sendMail": true,
+    "auth": {
+      "username": "AKIAIEPR357KCGSMAQAQ",
+      "pass": "Ag/xsyJ047+LTH3RNfmPG7JXR9b0yaeto2TyzuonjtjH"
+    },
+    "from": "Feedback <feedback@runnable.com>",
+    "replyTo": "Feedback <feedback@runnable.mail.intercom.io>"
   }
 }
