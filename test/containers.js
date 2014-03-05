@@ -368,6 +368,26 @@ describe('Containers', function () {
           .end(done);
       });
       describe('container commit', function () {
+        describe('updating metadata', function () {
+          var fileData = {
+            name: 'filename.txt',
+            path: '/',
+            content: 'file content'
+          };
+          var encodeId = require('../lib/middleware/utils').encodeId;
+          beforeEach(extendContextSeries({
+            // this only works because image does not have last_write...
+            file: ['owner.containerCreateFile', ['container._id', fileData]],
+            publish: ['admin.createImageFromContainer', ['container._id']],
+            newContainer: ['admin.createContainer', ['publish._id']]
+          }));
+          it ('should update the container', function (done) {
+            this.admin.specRequest(this.newContainer._id)
+              .send({ status: 'Committing back', name: 'project AWESOME' })
+              .expect(200)
+              .end(done);
+          });
+        });
         describe('already committing', function () {
           var commitStatus = 'Committing new';
           beforeEach(extendContextSeries({
