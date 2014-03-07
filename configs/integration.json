@@ -21,14 +21,7 @@
       "Draft Runnables": "/users/me/runnables"
     }
   },
-  "rollbar": {
-    "key": "119509f9ba314df8a9ffbaf7b4812fb6",
-    "options":  {
-      "root": "/home/ubuntu/api-server",
-      "branch": "master",
-      "environment": "integration"
-    }
-  },
+  "rollbar": "119509f9ba314df8a9ffbaf7b4812fb6",
   "dockerRegistry": "registry.runnable.com",
   "harbourmaster": "http://10.0.1.226:3000",
   "runnable_access_timeout": "5 seconds",
