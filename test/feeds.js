@@ -24,29 +24,37 @@ describe('Feeds', function () {
     beforeEach(extendContext({
       user : users.createAnonymous
     }));
-    it('should respond 200 and have 3 images', function (done) {
+    it('should respond 200 and have 5 images', function (done) {
       this.user.specRequest()
         .expect(200)
-        .expectArray(5)
-        .expectArrayContains({_id: this.image1._id})
-        .expectArrayContains({_id: this.image2._id})
-        .expectArrayContains({_id: this.image3._id})
-        .expectArrayContains({_id: this.image4._id})
-        .expectArrayContains({_id: this.image5._id})
+        .expectBody('data')
+        .expectBody('paging')
+        .expectBody(function (body) {
+          body.data.should.be.an.instanceOf(Array);
+          body.data.should.have.a.lengthOf(5);
+        })
         .end(done);
     });
     it('should filter by channel', function (done) {
       this.user.specRequest({ channel: this.channels[0].name })
         .expect(200)
-        .expectArray(1)
-        .expectArrayContains({_id: this.image1._id})
+        .expectBody('data')
+        .expectBody('paging')
+        .expectBody(function (body) {
+          body.data.should.be.an.instanceOf(Array);
+          body.data.should.have.a.lengthOf(1);
+        })
         .end(done);
     });
     it('should filter by channel', function (done) {
       this.user.specRequest({ channel: this.channels[2].name })
         .expect(200)
-        .expectArray(3)
-        .expectArrayContains({_id: this.image3._id})
+        .expectBody('data')
+        .expectBody('paging')
+        .expectBody(function (body) {
+          body.data.should.be.an.instanceOf(Array);
+          body.data.should.have.a.lengthOf(3);
+        })
         .end(done);
     });
   });
@@ -71,41 +79,70 @@ describe('Feeds Pagination', function () {
       user : users.createAnonymous
     }));
     it('should list a limited number of images, the newest (highest score) first', function (done) {
+      var image = this.image5;
       this.user.specRequest({ page: 0, limit: 1 })
         .expect(200)
-        .expectArray(1)
-        .expectArrayContains({_id: this.image5._id})
+        .expectBody('data')
+        .expectBody('paging')
+        .expectBody(function (body) {
+          body.paging.lastPage.should.equal(5);
+          body.data.should.be.an.instanceOf(Array);
+          body.data.should.have.a.lengthOf(1);
+          body.data[0]._id.should.equal(image._id);
+        })
         .end(done);
     });
     it('should list a limited number of images, the oldest (lowest score) last', function (done) {
+      var image = this.image3;
       this.user.specRequest({ page: 2, limit: 1 })
         .expect(200)
-        .expectArray(1)
-        .expectArrayContains({_id: this.image3._id})
+        .expectBody('data')
+        .expectBody('paging')
+        .expectBody(function (body) {
+          body.paging.lastPage.should.equal(5);
+          body.data.should.be.an.instanceOf(Array);
+          body.data.should.have.a.lengthOf(1);
+          body.data[0]._id.should.equal(image._id);
+        })
         .end(done);
     });
     it('should list a limited number of images, the two highest scoring', function (done) {
       this.user.specRequest({ page: 0, limit: 2 })
         .expect(200)
-        .expectArray(2)
-        .expectArrayContains({_id: this.image5._id})
-        .expectArrayContains({_id: this.image4._id})
+        .expectBody('data')
+        .expectBody('paging')
+        .expectBody(function (body) {
+          body.paging.lastPage.should.equal(3);
+          body.data.should.be.an.instanceOf(Array);
+          body.data.should.have.a.lengthOf(2);
+        })
         .end(done);
     });
     describe('while filtering by channel', function () {
       it('should paginate and filter for channel with multiple', function (done) {
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[2].name })
           .expect(200)
-          .expectArray(2)
-          .expectArrayContains({_id: this.image5._id})
-          .expectArrayContains({_id: this.image4._id})
+          .expectBody('data')
+          .expectBody('paging')
+          .expectBody(function (body) {
+            body.paging.lastPage.should.equal(2);
+            body.data.should.be.an.instanceOf(Array);
+            body.data.should.have.a.lengthOf(2);
+          })
           .end(done);
       });
       it('should list all available if limit is higher than available', function (done) {
+        var image = this.image1;
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[0].name })
           .expect(200)
-          .expectArray(1)
-          .expectArrayContains({_id: this.image1._id})
+          .expectBody('data')
+          .expectBody('paging')
+          .expectBody(function (body) {
+            body.paging.lastPage.should.equal(1);
+            body.data.should.be.an.instanceOf(Array);
+            body.data.should.have.a.lengthOf(1);
+            body.data[0]._id.should.equal(image._id);
+          })
           .end(done);
       });
     });
