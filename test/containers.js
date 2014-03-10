@@ -282,30 +282,42 @@ describe('Containers', function () {
           .end(done);
       });
     });
-    // describe('from channel name', function () {
-    //   before(extendContextSeries({
-    //     publ: users.createPublisher,
-    //     container: ['publ.createContainer', ['image._id']],
-    //     tag: ['publ.tagContainerWithChannel', ['container._id', 'node.js']],
-    //     renameAndPublish: ['publ.patchContainer', ['container._id', {
-    //       name: 'unique-name',
-    //       status: 'Committing new'
-    //     }]]
-    //   }));
-    //   it('should create a container', function (done) {
-    //     this.timeout(1000 * 60 * 2);
-    //     var self = this;
-    //     // this is a bit hacky
-    //     pubsub.on('pmessage', function (pattern, channel, message) {
-    //       if (channel === 'events:' + self.container.servicesToken + ':progress' &&
-    //         message === 'Finished') {
-    //         self.user.specRequest({ from: self.tag.name })
-    //           .expect(201)
-    //           .end(done);
-    //       }
-    //     });
-    //   });
-    // });
+    describe('from channel name', function () {
+      beforeEach(extendContextSeries({
+        publ: users.createPublisher,
+        image: ['publ.createTaggedImage', ['node.js', 'node']],
+      }));
+      describe('anonymous', function () {
+        beforeEach(extendContextSeries({
+          user: users.createAnonymous
+        }));
+        it('should create a container', function (done) {
+          this.timeout(1000 * 60 * 2);
+          var self = this;
+
+          self.user.specRequest({ from: 'node' })
+            .expect(201)
+            .expectBody('_id')
+            .expectBody('saved', false)
+            .end(done);
+        });
+      });
+      describe('registered', function () {
+        beforeEach(extendContextSeries({
+          user: users.createRegistered
+        }));
+        it('should create a container', function (done) {
+          this.timeout(1000 * 60 * 2);
+          var self = this;
+
+          self.user.specRequest({ from: 'node' })
+            .expect(201)
+            .expectBody('_id')
+            .expectBody('saved', true)
+            .end(done);
+        });
+      });
+    });
   });
 
   describe('PUT /users/me/runnables/:id', function () {
