@@ -10,6 +10,7 @@ describe('Feeds', function () {
   before(extendContextSeries({
     admin: users.createAdmin,
     channels: channels.createChannels('one', 'two', 'three'),
+    untaggedImage: ['admin.createImageFromFixture', ['node.js']],
     image1: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
     image2: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
     image3: ['admin.createTaggedImage', ['node.js', 'channels[2]']],
@@ -82,6 +83,7 @@ describe('Feeds Pagination', function () {
   before(extendContextSeries({
     admin: users.createAdmin,
     channels: channels.createChannels('one', 'two', 'three'),
+    untaggedImage: ['admin.createImageFromFixture', ['node.js']],
     image1: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
     image2: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
     image3: ['admin.createTaggedImage', ['node.js', 'channels[2]']],
