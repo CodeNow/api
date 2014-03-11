@@ -15,7 +15,7 @@ describe('Feeds', function () {
     image2: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
     image3: ['admin.createTaggedImage', ['node.js', 'channels[2]']],
     image4: ['admin.createTaggedImage', ['node.js', 'channels[2]']],
-    image5: ['admin.createTaggedImage', ['node.js', 'channels[2]']],
+    image5: ['admin.createTaggedImage', ['node.js', 'channels[2]']]
   }));
   after(helpers.cleanup);
   before(helpers.clearRedis('imagefeed_*'));
@@ -73,6 +73,22 @@ describe('Feeds', function () {
           body.data[0]._id.should.equal(images[0]._id);
           body.data[1]._id.should.equal(images[1]._id);
           body.data[2]._id.should.equal(images[2]._id);
+        })
+        .end(done);
+    });
+    it('should filter by multiple channels', function (done) {
+      var images = [this.image5, this.image4, this.image3, this.image1];
+      this.user.specRequest({ channel: [this.channels[2].name, this.channels[0].name] })
+        .expect(200)
+        .expectBody('data')
+        .expectBody('paging')
+        .expectBody(function (body) {
+          body.data.should.be.an.instanceOf(Array);
+          body.data.should.have.a.lengthOf(4);
+          body.data[0]._id.should.equal(images[0]._id);
+          body.data[1]._id.should.equal(images[1]._id);
+          body.data[2]._id.should.equal(images[2]._id);
+          body.data[3]._id.should.equal(images[3]._id);
         })
         .end(done);
     });
