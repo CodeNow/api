@@ -4,6 +4,7 @@ from fabric.api import *
 
 env.user = "ubuntu"
 env.use_ssh_config = True
+env.note = ""
 
 """
 Environments
