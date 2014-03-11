@@ -149,7 +149,7 @@ def track_deployment():
       'commit: `git log origin/master | head -1 | awk \'{print $2}\'`, ' \
       'push_date: `date +%d-%m-%Y`, ' \
       'push_time: `date +%H:%M:%S`, ' \
-      'project: harbourmaster, ' \
+      'project: api-server, ' \
       'author: `cat ~/.name`, '\
       'note: '+env.note+' } ' \
       '> ~/.notetmp')
