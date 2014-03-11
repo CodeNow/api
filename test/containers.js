@@ -368,6 +368,26 @@ describe('Containers', function () {
           .end(done);
       });
       describe('container commit', function () {
+        describe('updating metadata', function () {
+          var fileData = {
+            name: 'filename.txt',
+            path: '/',
+            content: 'file content'
+          };
+          var encodeId = require('../lib/middleware/utils').encodeId;
+          beforeEach(extendContextSeries({
+            // this only works because image does not have last_write...
+            file: ['owner.containerCreateFile', ['container._id', fileData]],
+            publish: ['admin.createImageFromContainer', ['container._id']],
+            newContainer: ['admin.createContainer', ['publish._id']]
+          }));
+          it ('should update the container', function (done) {
+            this.admin.specRequest(this.newContainer._id)
+              .send({ status: 'Committing back', name: 'project AWESOME' })
+              .expect(200)
+              .end(done);
+          });
+        });
         describe('already committing', function () {
           var commitStatus = 'Committing new';
           beforeEach(extendContextSeries({
@@ -444,6 +464,24 @@ describe('Containers', function () {
       it('should update the container description', updateValue('description', 'newdescription'));
       it('should update the container start_cmd', updateValue('start_cmd', 'new start command'));
       it('should update the container build_cmd', updateValue('build_cmd', 'new build command'));
+      it('should update the container last_write', function (done) {
+        var d = new Date();
+        this.user.specRequest(this.container._id)
+          .send({ last_write: true })
+          .expect(200)
+          .expectBody('last_write')
+          .end(function (err, res) {
+            if (err) {
+              return done(err);
+            }
+            // the date we get back should be later than the one we set, and within a minute
+            var res_date = new Date(res.body.last_write);
+            if (res_date < d || res_date - d > 1000) {
+              return done(new Error('last_write should be later, but not too late'));
+            }
+            done();
+          });
+      });
       describe('specification', function () {
         beforeEach(extendContextSeries({
           spec: ['user.createSpecification', [specData()]],

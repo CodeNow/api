@@ -63,11 +63,37 @@ module.exports = function (TestUser) {
       .expectBody('_id')
       .end(async.pick('body', callback));
   };
-  TestUser.prototype.createImage = function (from, callback) {
-    this.postImage({ qs: { from: from } })
-      .expect(201)
-      .expectBody('_id')
-      .end(async.pick('body', callback));
+  TestUser.prototype.createImageFromContainer = function (containerId, callback) {
+    var self = this;
+    async.waterfall([
+      function (cb) {
+        self.patchContainer(containerId, {
+            status: 'Committing back',  // rename container to prevent image name conflict
+            name: helpers.randomValue()
+          })
+          .expect(200)
+          .expectBody('_id')
+          .end(async.pick('body', cb));
+      },
+      function (container, cb) {
+        var imageProgressChannel = 'events:' + container.servicesToken + ':progress';
+        client.subscribe(imageProgressChannel, function () {
+          client.on('message', function (channel, message) {
+            var channelMatch = (channel === imageProgressChannel);
+            var messageIsFinished = message.toLowerCase() === 'finished';
+            if (channelMatch && messageIsFinished) {
+              self.getImage(container.parent)
+                .expect(200)
+                .end(async.pick('body', function (err, body) {
+                  client.unsubscribe(imageProgressChannel, function () {
+                    cb(err, body);
+                  });
+                }));
+            }
+          });
+        });
+      }
+    ], callback);
   };
   TestUser.prototype.containerCreateFile = function (containerId, dirData, callback) {
     var url = p.join('/users/me/runnables/', containerId, '/files');
@@ -93,31 +119,7 @@ module.exports = function (TestUser) {
         });
       },
       function (container, cb) {
-        self.patchContainer(container._id, {
-            status: 'Committing back',  // rename container to prevent image name conflict
-            name: fixtureName+helpers.randomValue()
-          })
-          .expect(200)
-          .expectBody('_id')
-          .end(async.pick('body', cb));
-      },
-      function (container, cb) {
-        var imageProgressChannel = 'events:' + container.servicesToken + ':progress';
-        client.subscribe(imageProgressChannel, function () {
-          client.on('message', function (channel, message) {
-            var channelMatch = (channel === imageProgressChannel);
-            var messageIsFinished = message.toLowerCase() === 'finished';
-            if (channelMatch && messageIsFinished) {
-              self.getImage(container.parent)
-                .expect(200)
-                .end(async.pick('body', function (err, body) {
-                  client.unsubscribe(imageProgressChannel, function () {
-                    cb(err, body);
-                  });
-                }));
-            }
-          });
-        });
+        self.createImageFromContainer(container._id, cb);
       }
     ], callback);
   };
