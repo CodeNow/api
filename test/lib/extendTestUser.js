@@ -211,4 +211,21 @@ module.exports = function (TestUser) {
       .expect(200)
       .end(async.pick('body', callback));
   };
+  TestUser.prototype.postToImageStatsRun = function (imageId, numberOfRuns, callback) {
+    if (typeof numberOfRuns === 'function') {
+      callback = numberOfRuns;
+      numberOfRuns = 1;
+    }
+    var self = this;
+    async.whilst(
+      function () { return 0 < numberOfRuns; },
+      function (cb) {
+        --numberOfRuns;
+        self.post('/runnables/' + imageId + '/stats/runs')
+          .expect(201)
+          .end(async.pick('body', cb));
+      },
+      callback
+    );
+  };
 };
