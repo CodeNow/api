@@ -33,7 +33,9 @@
     "concat-stream": "~1.4.1",
     "multiparty": "~3.2.2",
     "githubNabber": "CodeNow/githubNabber",
-    "jscoverage": "0.3.8"
+    "jscoverage": "0.3.8",
+    "keypather": "~1.1.0",
+    "map-utils": "~0.2.0"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",

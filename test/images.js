@@ -199,6 +199,17 @@ describe('Image Pagination', function () {
           })
           .end(checkDone.done());
       });
+      it('should list runnable by multiple channels', function (done) {
+        this.user.specRequest({ channel: [this.channels[0].name, this.channels[1].name] })
+          .expect(200)
+          .expectBody(function (body) {
+            body.data.should.have.a.lengthOf(1);
+            body.data[0].tags.should.be.an.instanceOf(Array);
+            // body.data[0].tags[0].should.have.property('name');
+            body.paging.should.have.property('lastPage', 0);
+          })
+          .end(done);
+      });
       // TODO Paging sort skip...
     });
   });
