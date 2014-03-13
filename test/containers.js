@@ -2,6 +2,7 @@ var _ = require('lodash');
 var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var helpers = require('./lib/helpers');
+var spy = require('./lib/spy');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 var uuid = require('node-uuid');
@@ -382,15 +383,24 @@ describe('Containers', function () {
             newContainer: ['admin.createContainer', ['publish._id']]
           }));
           it ('should update the container', function (done) {
+            var checkDone = helpers.createCheckDone(done);
+            var Container = require('models/containers');
+            spy.classMethod(Container, 'metaPublish', checkDone.done());
             this.admin.specRequest(this.newContainer._id)
               .send({ status: 'Committing back', name: 'project AWESOME' })
               .expect(200)
-              .end(done);
+              .end(checkDone.done());
           });
         });
         describe('already committing', function () {
           var commitStatus = 'Committing new';
+          var fileData = {
+            name: 'filename.txt',
+            path: '/',
+            content: 'file content'
+          };
           beforeEach(extendContextSeries({
+            file: ['owner.containerCreateFile', ['container._id', fileData]],
             commit: ['owner.patchContainer', ['container._id', {
               body: { status: commitStatus, name: 'new name' },
               expect: 200
