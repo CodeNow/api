@@ -65,10 +65,10 @@ describe('Images', function () {
           .end(done);
       });
       describe('filtering multiple channels', function () {
-        it('should list runnables and be sorted', function (done) {
-          var images = [this.image5, this.image3, this.image2, this.image1];
+        it('should list runnables with both tags and be sorted', function (done) {
+          var images = [this.image3];
           this.user.specRequest({
-              channel: [this.channels[0].name, this.channels[2].name],
+              channel: [this.channels[0].name, this.channels[1].name],
               sort:'-created'
             })
             .expect(200)
@@ -246,7 +246,8 @@ describe('Image Pagination', function () {
         image2: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
         image3: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]],
         image4: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
-        image5: ['admin.createTaggedImage', ['node.js', ['channels[1]', 'channels[2]']]]
+        image5: ['admin.createTaggedImage', ['node.js', ['channels[1]', 'channels[2]']]],
+        image6: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]]
       }));
       it('should list runnable by channel', function (done) {
         this.user.specRequest({
@@ -257,7 +258,7 @@ describe('Image Pagination', function () {
           .expect(200)
           .expectBody(function (body) {
             body.paging.lastPage.should.equal(1);
-            body.data.should.have.a.lengthOf(1);
+            body.data.should.have.a.lengthOf(2);
             body.data[0].tags.should.be.an.instanceOf(Array);
             body.data[0].tags[0].should.have.property('name');
             // not sorted any specific way
@@ -265,7 +266,7 @@ describe('Image Pagination', function () {
           .end(done);
       });
       it('should list runnables and sort -created', function (done) {
-        var images = [this.image4];
+        var images = [this.image5];
         this.user.specRequest({
             channel: this.channels[1].name,
             sort:'-created',
@@ -274,14 +275,14 @@ describe('Image Pagination', function () {
           })
           .expect(200)
           .expectBody(function (body) {
-            body.paging.lastPage.should.equal(2);
+            body.paging.lastPage.should.equal(3);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
           })
           .end(done);
       });
       it('should list runnables and sort (+)created', function (done) {
-        var images = [this.image3];
+        var images = [this.image3, this.image6];
         this.user.specRequest({
             channel: this.channels[0].name,
             sort:'created',
@@ -298,16 +299,16 @@ describe('Image Pagination', function () {
       });
       describe('filtering multiple channels', function () {
         it('should list runnables and be sorted', function (done) {
-          var images = [this.image2];
+          var images = [this.image6, this.image3];
           this.user.specRequest({
-              channel: [this.channels[0].name, this.channels[2].name],
+              channel: [this.channels[0].name, this.channels[1].name],
               sort:'-created',
-              page: 2,
-              limit: 1
+              page: 0,
+              limit: 2
             })
             .expect(200)
             .expectBody(function (body) {
-              body.paging.lastPage.should.equal(3);
+              body.paging.lastPage.should.equal(0);
               body.data.should.have.a.lengthOf(images.length);
               _.each(images, bodyImageDataCheck, body);
             })
