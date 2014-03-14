@@ -38,8 +38,8 @@ describe('Feeds', function () {
       this.user.specRequest()
         .expect(200)
         .expectBody('data')
-        .expectBody('paging', { lastPage: 0 })
         .expectBody(function (body) {
+          body.paging.lastPage.should.equal(0);
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
           _.each(images, bodyImageDataCheck, body);
@@ -64,8 +64,8 @@ describe('Feeds', function () {
         this.user.specRequest()
           .expect(200)
           .expectBody('data')
-          .expectBody('paging', { lastPage: 0 })
           .expectBody(function (body) {
+            body.paging.lastPage.should.equal(0);
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
@@ -79,8 +79,8 @@ describe('Feeds', function () {
       this.user.specRequest({ channel: this.channels[0].name })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging', { lastPage: 0 })
         .expectBody(function (body) {
+          body.paging.lastPage.should.equal(0);
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
           _.each(images, bodyImageDataCheck, body);
@@ -92,41 +92,47 @@ describe('Feeds', function () {
       this.user.specRequest({ channel: this.channels[2].name })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging', { lastPage: 0 })
         .expectBody(function (body) {
+          body.paging.lastPage.should.equal(0);
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
           _.each(images, bodyImageDataCheck, body);
         })
         .end(done);
     });
-    it('should filter by multiple channels', function (done) {
-      var images = [this.image6, this.image5, this.image4, this.image3, this.image1];
-      this.user.specRequest({ channel: [this.channels[2].name, this.channels[0].name] })
-        .expect(200)
-        .expectBody('data')
-        .expectBody('paging', { lastPage: 0 })
-        .expectBody(function (body) {
-          body.data.should.be.an.instanceOf(Array);
-          body.data.should.have.a.lengthOf(images.length);
-          _.each(images, bodyImageDataCheck, body);
-        })
-        .end(done);
+    describe('filtering multiple channels', function () {
+      it('should find images that have both channels', function (done) {
+        var images = [this.image6];
+        this.user.specRequest({ channel: [this.channels[1].name, this.channels[2].name] })
+          .expect(200)
+          .expectBody('data')
+          .expectBody(function (body) {
+            body.paging.lastPage.should.equal(0);
+            body.data.should.be.an.instanceOf(Array);
+            body.data.should.have.a.lengthOf(images.length);
+            _.each(images, bodyImageDataCheck, body);
+          })
+          .end(done);
+      });
     });
     describe('ordering multiple channels', function() {
-      describe('channel[1] being higher', function () {
+      describe('should display correct order', function () {
         before(extendContextSeries({
-          new_image6: ['admin.postToImageStatsRun', ['image6._id', 10]],
-          new_image2: ['admin.postToImageStatsRun', ['image2._id', 5]],
-          new_image1: ['admin.postToImageStatsRun', ['image1._id', 1]],
+          new_channels: channels.createChannels('four', 'five'),
+          image7: ['admin.createTaggedImage', ['node.js', ['new_channels[0]', 'new_channels[1]', 'channels[0]']]],
+          image8: ['admin.createTaggedImage', ['node.js', ['new_channels[0]', 'new_channels[1]', 'channels[1]']]],
+          image9: ['admin.createTaggedImage', ['node.js', ['new_channels[0]', 'new_channels[1]', 'channels[2]']]],
+          new_image7: ['admin.postToImageStatsRun', ['image7._id', 10]],
+          new_image8: ['admin.postToImageStatsRun', ['image8._id', 5]],
+          new_image9: ['admin.postToImageStatsRun', ['image9._id', 1]],
         }));
         it('should have image6 on top', function (done) {
-          var images = [this.image6, this.image2, this.image1];
-          this.user.specRequest({ channel: [this.channels[0].name, this.channels[1].name] })
+          var images = [this.image7, this.image8, this.image9];
+          this.user.specRequest({ channel: [this.new_channels[0].name, this.new_channels[1].name] })
             .expect(200)
             .expectBody('data')
-            .expectBody('paging', { lastPage: 0 })
             .expectBody(function (body) {
+              body.paging.lastPage.should.equal(0);
               body.data.should.be.an.instanceOf(Array);
               body.data.should.have.a.lengthOf(images.length);
               _.each(images, bodyImageDataCheck, body);
@@ -136,18 +142,18 @@ describe('Feeds', function () {
       });
       describe('channel[0] being higher', function () {
         before(extendContextSeries({
-          new_image1: ['admin.postToImageStatsRun', ['image1._id', 15]],
+          new_image9: ['admin.postToImageStatsRun', ['image9._id', 15]],
           // new_image6: IMAGE6 ALREADY HAS 10 RUNS AT THIS POINT. INCREMENT OTHERS.
-          new_image2: ['admin.postToImageStatsRun', ['image2._id', 1]],
+          new_image8: ['admin.postToImageStatsRun', ['image8._id', 1]],
         }));
         it('should have image1 on top', function (done) {
-          var images = [this.image1, this.image6, this.image2];
+          var images = [this.image9, this.image7, this.image8];
           // _.each(images, function (i) { console.log(i._id); });
-          this.user.specRequest({ channel: [this.channels[0].name, this.channels[1].name] })
+          this.user.specRequest({ channel: [this.new_channels[0].name, this.new_channels[1].name] })
             .expect(200)
             .expectBody('data')
-            .expectBody('paging', { lastPage: 0 })
             .expectBody(function (body) {
+              body.paging.lastPage.should.equal(0);
               body.data.should.be.an.instanceOf(Array);
               body.data.should.have.a.lengthOf(images.length);
               _.each(images, bodyImageDataCheck, body);
@@ -184,8 +190,8 @@ describe('Feeds Pagination', function () {
       this.user.specRequest({ page: 0, limit: 1 })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging', { lastPage: 5 })
         .expectBody(function (body) {
+          body.paging.lastPage.should.equal(5);
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
           _.each(images, bodyImageDataCheck, body);
@@ -197,8 +203,8 @@ describe('Feeds Pagination', function () {
       this.user.specRequest({ page: 3, limit: 1 })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging', { lastPage: 5 })
         .expectBody(function (body) {
+          body.paging.lastPage.should.equal(5);
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
           _.each(images, bodyImageDataCheck, body);
@@ -210,8 +216,8 @@ describe('Feeds Pagination', function () {
       this.user.specRequest({ page: 0, limit: 2 })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging', { lastPage: 2 })
         .expectBody(function (body) {
+          body.paging.lastPage.should.equal(2);
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
           _.each(images, bodyImageDataCheck, body);
@@ -224,8 +230,8 @@ describe('Feeds Pagination', function () {
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[2].name })
           .expect(200)
           .expectBody('data')
-          .expectBody('paging', { lastPage: 1 })
           .expectBody(function (body) {
+            body.paging.lastPage.should.equal(1);
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
@@ -237,8 +243,8 @@ describe('Feeds Pagination', function () {
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[1].name })
           .expect(200)
           .expectBody('data')
-          .expectBody('paging', { lastPage: 0 })
           .expectBody(function (body) {
+            body.paging.lastPage.should.equal(0);
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
@@ -250,8 +256,8 @@ describe('Feeds Pagination', function () {
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[0].name })
           .expect(200)
           .expectBody('data')
-          .expectBody('paging', { lastPage: 0 })
           .expectBody(function (body) {
+            body.paging.lastPage.should.equal(0);
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
