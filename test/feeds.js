@@ -38,7 +38,7 @@ describe('Feeds', function () {
       this.user.specRequest()
         .expect(200)
         .expectBody('data')
-        .expectBody('paging')
+        .expectBody('paging', { lastPage: 0 })
         .expectBody(function (body) {
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
@@ -64,7 +64,7 @@ describe('Feeds', function () {
         this.user.specRequest()
           .expect(200)
           .expectBody('data')
-          .expectBody('paging')
+          .expectBody('paging', { lastPage: 0 })
           .expectBody(function (body) {
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(images.length);
@@ -79,7 +79,7 @@ describe('Feeds', function () {
       this.user.specRequest({ channel: this.channels[0].name })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging')
+        .expectBody('paging', { lastPage: 0 })
         .expectBody(function (body) {
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
@@ -92,7 +92,7 @@ describe('Feeds', function () {
       this.user.specRequest({ channel: this.channels[2].name })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging')
+        .expectBody('paging', { lastPage: 0 })
         .expectBody(function (body) {
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
@@ -105,7 +105,7 @@ describe('Feeds', function () {
       this.user.specRequest({ channel: [this.channels[2].name, this.channels[0].name] })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging')
+        .expectBody('paging', { lastPage: 0 })
         .expectBody(function (body) {
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
@@ -125,9 +125,8 @@ describe('Feeds', function () {
           this.user.specRequest({ channel: [this.channels[0].name, this.channels[1].name] })
             .expect(200)
             .expectBody('data')
-            .expectBody('paging')
+            .expectBody('paging', { lastPage: 0 })
             .expectBody(function (body) {
-              body.paging.lastPage.should.equal(1);
               body.data.should.be.an.instanceOf(Array);
               body.data.should.have.a.lengthOf(images.length);
               _.each(images, bodyImageDataCheck, body);
@@ -147,9 +146,8 @@ describe('Feeds', function () {
           this.user.specRequest({ channel: [this.channels[0].name, this.channels[1].name] })
             .expect(200)
             .expectBody('data')
-            .expectBody('paging')
+            .expectBody('paging', { lastPage: 0 })
             .expectBody(function (body) {
-              body.paging.lastPage.should.equal(1);
               body.data.should.be.an.instanceOf(Array);
               body.data.should.have.a.lengthOf(images.length);
               _.each(images, bodyImageDataCheck, body);
@@ -186,9 +184,8 @@ describe('Feeds Pagination', function () {
       this.user.specRequest({ page: 0, limit: 1 })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging')
+        .expectBody('paging', { lastPage: 5 })
         .expectBody(function (body) {
-          body.paging.lastPage.should.equal(6); // total number of tagged images created
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
           _.each(images, bodyImageDataCheck, body);
@@ -200,9 +197,8 @@ describe('Feeds Pagination', function () {
       this.user.specRequest({ page: 3, limit: 1 })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging')
+        .expectBody('paging', { lastPage: 5 })
         .expectBody(function (body) {
-          body.paging.lastPage.should.equal(6); // total number of tagged images created
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
           _.each(images, bodyImageDataCheck, body);
@@ -214,9 +210,8 @@ describe('Feeds Pagination', function () {
       this.user.specRequest({ page: 0, limit: 2 })
         .expect(200)
         .expectBody('data')
-        .expectBody('paging')
+        .expectBody('paging', { lastPage: 2 })
         .expectBody(function (body) {
-          body.paging.lastPage.should.equal(3);
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
           _.each(images, bodyImageDataCheck, body);
@@ -229,9 +224,8 @@ describe('Feeds Pagination', function () {
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[2].name })
           .expect(200)
           .expectBody('data')
-          .expectBody('paging')
+          .expectBody('paging', { lastPage: 1 })
           .expectBody(function (body) {
-            body.paging.lastPage.should.equal(2);
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
@@ -243,9 +237,8 @@ describe('Feeds Pagination', function () {
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[1].name })
           .expect(200)
           .expectBody('data')
-          .expectBody('paging')
+          .expectBody('paging', { lastPage: 0 })
           .expectBody(function (body) {
-            body.paging.lastPage.should.equal(1);
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
@@ -257,9 +250,8 @@ describe('Feeds Pagination', function () {
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[0].name })
           .expect(200)
           .expectBody('data')
-          .expectBody('paging')
+          .expectBody('paging', { lastPage: 0 })
           .expectBody(function (body) {
-            body.paging.lastPage.should.equal(1);
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
