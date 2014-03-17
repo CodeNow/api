@@ -4,6 +4,7 @@ from fabric.api import *
 
 env.user = "ubuntu"
 env.use_ssh_config = True
+env.note = ""
 
 """
 Environments
@@ -12,6 +13,7 @@ def production():
   """
   Work on production environment
   """
+  env.requireNote = True;
   env.settings = 'production'
   env.hosts = [
     'api'
@@ -21,6 +23,7 @@ def integration():
   """
   Work on staging environment
   """
+  env.requireNote = False;
   env.settings = 'integration'
   env.hosts = [
     'api-int'
@@ -30,11 +33,21 @@ def staging():
   """
   Work on staging environment
   """
+  env.requireNote = False;
   env.settings = 'staging'
   env.hosts = [
     'api-rep_int'
   ]
 
+def runnable3():
+  """
+  Work on staging environment
+  """
+  env.requireNote = False;
+  env.settings = 'runnable3'
+  env.hosts = [
+    'runnable3.net'
+  ]
 """
 Branches
 """
@@ -104,6 +117,48 @@ def boot():
   run('NODE_ENV=%(settings)s pm2 start api-server/scripts/meetyourmaker.js -n cleanup' % env)
   # run('NODE_ENV=%(settings)s forever start api-server/scripts/refreshcache.js' % env)
 
+def validateNote(input):
+  """
+  ensures note is not empty
+  """
+  if(bool(not input or input.isspace())):
+    raise Exception('release note is REQUIRED. just jot down what is in this release alright')
+  if ";" in input:
+    raise Exception('can not use ; in note')
+  return input
+
+def addNote():
+  """
+  add note to deployment
+  """
+  if(env.requireNote):
+    prompt("add release note: ", "note", validate=validateNote)
+
+def track_deployment():
+  """
+  Update deployments for tracking
+  """
+  run('echo Track Deployment:')
+  if run('[ -d deployments ] && echo True || echo False') == 'False':
+    run('git clone https://github.com/Runnable/deployments.git')
+  with cd('deployments'):
+    run('git fetch --all')
+    run('git reset --hard origin/master')
+  with cd('runnable-web'):
+    run(
+      'echo { branch: `git rev-parse --abbrev-ref HEAD`, ' \
+      'commit: `git log origin/master | head -1 | awk \'{print $2}\'`, ' \
+      'push_date: `date +%d-%m-%Y`, ' \
+      'push_time: `date +%H:%M:%S`, ' \
+      'project: api-server, ' \
+      'author: `cat ~/.name`, '\
+      'note: '+env.note+' } ' \
+      '> ~/.notetmp')
+    run('cat ~/.notetmp | sed \'s_, _\", \"_g\' | sed \'s_: _\": \"_g\' | sed \'s_{ _{ \"_g\' | sed \'s_ }_\" }_g\' >> ~/deployments/'+env.settings)
+  with cd('deployments'):
+    run('git add '+env.settings)
+    run('git commit -m "update file"')
+    run('git push origin master')
 
 """
 Commands - deployment
@@ -115,7 +170,9 @@ def deploy():
   require('settings', provided_by=[production, integration, staging])
   require('branch', provided_by=[stable, master, branch])
 
+  addNote()
   checkout_latest()
+  track_deployment()
   install_requirements()
   reboot()
   # if env.settings is 'integration':
