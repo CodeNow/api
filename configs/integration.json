@@ -27,7 +27,7 @@
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
-  "throwErrors": false,
+  "throwErrors": true,
   "adminAuth": {
     "email": "tjadmin",
     "password": "mehta"
