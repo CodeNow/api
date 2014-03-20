@@ -202,6 +202,33 @@ describe('Image Pagination', function () {
       // TODO Paging sort skip...
     });
   });
+
+  describe('POST /runnables', function() {
+    var file = { name: 'filename.txt',
+                 content: 'some content',
+                 path: '/' };
+    describe('after adding a file', function () {
+      beforeEach(extendContextSeries({
+        user: users.createAdmin,
+        container: ['user.createContainer', ['image._id']],
+        rename: ['user.patchContainer', ['container._id', {
+          body: { name: 'newname2' },
+          expect: 200
+        }]],
+        add_file: ['user.containerCreateFile', ['container._id', file]],
+        new_container: ['user.getContainer', ['container._id', {
+          expect: 200
+        }]]
+      }));
+      it('should have a last_write property same as the container', function(done) {
+        this.user.specRequest({ from: this.container._id })
+          .expect(201)
+          .expectBody({ last_write: this.new_container.last_write })
+          .end(done);
+      });
+    });
+  });
+
 });
 describe('DEL /runnables/:id', function () {
   describe('owner', function () {
