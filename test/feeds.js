@@ -79,7 +79,9 @@ describe('Feeds', function () {
       this.user.specRequest({ channel: this.channels[0].name })
         .expect(200)
         .expectBody('data')
+        .expectBody('channels')
         .expectBody(function (body) {
+          body.channels.length.should.equal(1);
           body.paging.lastPage.should.equal(0);
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
@@ -92,7 +94,9 @@ describe('Feeds', function () {
       this.user.specRequest({ channel: this.channels[2].name })
         .expect(200)
         .expectBody('data')
+        .expectBody('channels')
         .expectBody(function (body) {
+          body.channels.length.should.equal(2);
           body.paging.lastPage.should.equal(0);
           body.data.should.be.an.instanceOf(Array);
           body.data.should.have.a.lengthOf(images.length);
@@ -106,7 +110,9 @@ describe('Feeds', function () {
         this.user.specRequest({ channel: [this.channels[1].name, this.channels[2].name] })
           .expect(200)
           .expectBody('data')
+          .expectBody('channels')
           .expectBody(function (body) {
+            body.channels.length.should.equal(2);
             body.paging.lastPage.should.equal(0);
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(images.length);
@@ -132,6 +138,7 @@ describe('Feeds', function () {
             .expect(200)
             .expectBody('data')
             .expectBody(function (body) {
+              body.channels.length.should.equal(5);
               body.paging.lastPage.should.equal(0);
               body.data.should.be.an.instanceOf(Array);
               body.data.should.have.a.lengthOf(images.length);
@@ -153,6 +160,7 @@ describe('Feeds', function () {
             .expect(200)
             .expectBody('data')
             .expectBody(function (body) {
+              body.channels.length.should.equal(5);
               body.paging.lastPage.should.equal(0);
               body.data.should.be.an.instanceOf(Array);
               body.data.should.have.a.lengthOf(images.length);
