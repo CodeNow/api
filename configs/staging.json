@@ -55,6 +55,7 @@
     },
     "from": "Feedback <feedback@runnable.com>",
     "replyTo": "Feedback <feedback@runnable.mail.intercom.io>",
-    "to": "support+staging@runnable.com"
+    "to": "support+staging@runnable.com",
+    "moderators": "moderators@runnable.com"
   }
 }
