@@ -3,6 +3,7 @@ var helpers = require('./lib/helpers');
 var users = require('./lib/userFactory');
 var channels = require('./lib/channelsFactory');
 var redis = require('models/redis');
+var utils = require('middleware/utils');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 
@@ -75,48 +76,54 @@ describe('Feeds', function () {
       });
     });
     it('should filter by channel[0]', function (done) {
-      var images = [this.image1];
+      var expectedImages = [this.image1];
+      var expectedChannels = [this.channels[0]];
       this.user.specRequest({ channel: this.channels[0].name })
         .expect(200)
         .expectBody('data')
         .expectBody('channels')
         .expectBody(function (body) {
-          body.channels.length.should.equal(1);
+          body.channels.length.should.equal(expectedChannels.length);
           body.paging.lastPage.should.equal(0);
           body.data.should.be.an.instanceOf(Array);
-          body.data.should.have.a.lengthOf(images.length);
-          _.each(images, bodyImageDataCheck, body);
+          body.data.should.have.a.lengthOf(expectedImages.length);
+          _.each(expectedImages, bodyImageDataCheck, body);
+          _.each(expectedChannels, bodyChannelDataCheck, body);
         })
         .end(done);
     });
     it('should filter by channel[2]', function (done) {
-      var images = [this.image6, this.image5, this.image4, this.image3];
+      var expectedImages = [this.image6, this.image5, this.image4, this.image3];
+      var expectedChannels = [this.channels[2], this.channels[1]];
       this.user.specRequest({ channel: this.channels[2].name })
         .expect(200)
         .expectBody('data')
         .expectBody('channels')
         .expectBody(function (body) {
-          body.channels.length.should.equal(2);
+          body.channels.length.should.equal(expectedChannels.length);
           body.paging.lastPage.should.equal(0);
           body.data.should.be.an.instanceOf(Array);
-          body.data.should.have.a.lengthOf(images.length);
-          _.each(images, bodyImageDataCheck, body);
+          body.data.should.have.a.lengthOf(expectedImages.length);
+          _.each(expectedImages, bodyImageDataCheck, body);
+          _.each(expectedChannels, bodyChannelDataCheck, body);
         })
         .end(done);
     });
     describe('filtering multiple channels', function () {
       it('should find images that have both channels', function (done) {
-        var images = [this.image6];
+        var expectedImages = [this.image6];
+        var expectedChannels = [this.channels[2], this.channels[1]];
         this.user.specRequest({ channel: [this.channels[1].name, this.channels[2].name] })
           .expect(200)
           .expectBody('data')
           .expectBody('channels')
           .expectBody(function (body) {
-            body.channels.length.should.equal(2);
+            body.channels.length.should.equal(expectedChannels.length);
             body.paging.lastPage.should.equal(0);
             body.data.should.be.an.instanceOf(Array);
-            body.data.should.have.a.lengthOf(images.length);
-            _.each(images, bodyImageDataCheck, body);
+            body.data.should.have.a.lengthOf(expectedImages.length);
+            _.each(expectedImages, bodyImageDataCheck, body);
+            _.each(expectedChannels, bodyChannelDataCheck, body);
           })
           .end(done);
       });
@@ -133,16 +140,18 @@ describe('Feeds', function () {
           new_image9: ['admin.postToImageStatsRun', ['image9._id', 1]],
         }));
         it('should have image6 on top', function (done) {
-          var images = [this.image7, this.image8, this.image9];
+          var expectedImages = [this.image7, this.image8, this.image9];
+          var expectedChannels = [this.channels[0], this.channels[1], this.channels[2], this.new_channels[0], this.new_channels[1]];
           this.user.specRequest({ channel: [this.new_channels[0].name, this.new_channels[1].name] })
             .expect(200)
             .expectBody('data')
             .expectBody(function (body) {
-              body.channels.length.should.equal(5);
+              body.channels.length.should.equal(expectedChannels.length);
               body.paging.lastPage.should.equal(0);
               body.data.should.be.an.instanceOf(Array);
-              body.data.should.have.a.lengthOf(images.length);
-              _.each(images, bodyImageDataCheck, body);
+              body.data.should.have.a.lengthOf(expectedImages.length);
+              _.each(expectedImages, bodyImageDataCheck, body);
+              _.each(expectedChannels, bodyChannelDataCheck, body);
             })
             .end(done);
         });
@@ -154,17 +163,19 @@ describe('Feeds', function () {
           new_image8: ['admin.postToImageStatsRun', ['image8._id', 1]],
         }));
         it('should have image1 on top', function (done) {
-          var images = [this.image9, this.image7, this.image8];
-          // _.each(images, function (i) { console.log(i._id); });
+          var expectedImages = [this.image9, this.image7, this.image8];
+          var expectedChannels = [this.channels[0], this.channels[1], this.channels[2], this.new_channels[0], this.new_channels[1]];
           this.user.specRequest({ channel: [this.new_channels[0].name, this.new_channels[1].name] })
             .expect(200)
             .expectBody('data')
+            .expectBody('channels')
             .expectBody(function (body) {
-              body.channels.length.should.equal(5);
+              body.channels.length.should.equal(expectedChannels.length);
               body.paging.lastPage.should.equal(0);
               body.data.should.be.an.instanceOf(Array);
-              body.data.should.have.a.lengthOf(images.length);
-              _.each(images, bodyImageDataCheck, body);
+              body.data.should.have.a.lengthOf(expectedImages.length);
+              _.each(expectedImages, bodyImageDataCheck, body);
+              _.each(expectedChannels, bodyChannelDataCheck, body);
             })
             .end(done);
         });
@@ -194,81 +205,90 @@ describe('Feeds Pagination', function () {
       user : users.createAnonymous
     }));
     it('should list a limited number of images, the newest (highest score) first', function (done) {
-      var images = [this.image6];
+      var expectedImages = [this.image6];
       this.user.specRequest({ page: 0, limit: 1 })
         .expect(200)
         .expectBody('data')
         .expectBody(function (body) {
           body.paging.lastPage.should.equal(5);
           body.data.should.be.an.instanceOf(Array);
-          body.data.should.have.a.lengthOf(images.length);
-          _.each(images, bodyImageDataCheck, body);
+          body.data.should.have.a.lengthOf(expectedImages.length);
+          _.each(expectedImages, bodyImageDataCheck, body);
         })
         .end(done);
     });
     it('should list a limited number of images, the oldest (lowest score) last', function (done) {
-      var images = [this.image3];
+      var expectedImages = [this.image3];
       this.user.specRequest({ page: 3, limit: 1 })
         .expect(200)
         .expectBody('data')
         .expectBody(function (body) {
           body.paging.lastPage.should.equal(5);
           body.data.should.be.an.instanceOf(Array);
-          body.data.should.have.a.lengthOf(images.length);
-          _.each(images, bodyImageDataCheck, body);
+          body.data.should.have.a.lengthOf(expectedImages.length);
+          _.each(expectedImages, bodyImageDataCheck, body);
         })
         .end(done);
     });
     it('should list a limited number of images, the two highest scoring', function (done) {
-      var images = [this.image6, this.image5];
+      var expectedImages = [this.image6, this.image5];
       this.user.specRequest({ page: 0, limit: 2 })
         .expect(200)
         .expectBody('data')
         .expectBody(function (body) {
           body.paging.lastPage.should.equal(2);
           body.data.should.be.an.instanceOf(Array);
-          body.data.should.have.a.lengthOf(images.length);
-          _.each(images, bodyImageDataCheck, body);
+          body.data.should.have.a.lengthOf(expectedImages.length);
+          _.each(expectedImages, bodyImageDataCheck, body);
         })
         .end(done);
     });
     describe('while filtering by channel', function () {
       it('should paginate and filter for channel with multiple images', function (done) {
-        var images = [this.image6, this.image5];
+        var expectedImages = [this.image6, this.image5];
+        var expectedChannels = [this.channels[2], this.channels[1]];
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[2].name })
           .expect(200)
           .expectBody('data')
+          .expectBody('channels')
           .expectBody(function (body) {
+            body.channels.length.should.equal(expectedChannels.length);
             body.paging.lastPage.should.equal(1);
             body.data.should.be.an.instanceOf(Array);
-            body.data.should.have.a.lengthOf(images.length);
-            _.each(images, bodyImageDataCheck, body);
+            body.data.should.have.a.lengthOf(expectedImages.length);
+            _.each(expectedImages, bodyImageDataCheck, body);
           })
           .end(done);
       });
       it('should paginate and filter for channel with images with multiple channels', function (done) {
-        var images = [this.image6, this.image2];
+        var expectedImages = [this.image6, this.image2];
+        var expectedChannels = [this.channels[2], this.channels[1]];
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[1].name })
           .expect(200)
           .expectBody('data')
+          .expectBody('channels')
           .expectBody(function (body) {
+            body.channels.length.should.equal(expectedChannels.length);
             body.paging.lastPage.should.equal(0);
             body.data.should.be.an.instanceOf(Array);
-            body.data.should.have.a.lengthOf(images.length);
-            _.each(images, bodyImageDataCheck, body);
+            body.data.should.have.a.lengthOf(expectedImages.length);
+            _.each(expectedImages, bodyImageDataCheck, body);
           })
           .end(done);
       });
       it('should list all available if limit is higher than available', function (done) {
-        var images = [this.image1];
+        var expectedImages = [this.image1];
+        var expectedChannels = [this.channels[0]];
         this.user.specRequest({ page: 0, limit: 2, channel: this.channels[0].name })
           .expect(200)
           .expectBody('data')
+          .expectBody('channels')
           .expectBody(function (body) {
+            body.channels.length.should.equal(expectedChannels.length);
             body.paging.lastPage.should.equal(0);
             body.data.should.be.an.instanceOf(Array);
-            body.data.should.have.a.lengthOf(images.length);
-            _.each(images, bodyImageDataCheck, body);
+            body.data.should.have.a.lengthOf(expectedImages.length);
+            _.each(expectedImages, bodyImageDataCheck, body);
           })
           .end(done);
       });
@@ -278,5 +298,10 @@ describe('Feeds Pagination', function () {
 });
 
 function bodyImageDataCheck(image, index, images) {
+  // for the list of images, order matters
   this.data[index]._id.should.equal(image._id);
+}
+function bodyChannelDataCheck(channel, index, channels) {
+  // for the list of channels, order does not matter
+  (_.find(this.channels, function (c) { return utils.equalObjectIds(c._id, channel._id); })).should.not.equal(undefined);
 }
