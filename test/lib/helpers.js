@@ -7,6 +7,7 @@ var db = require('./db');
 var async = require('./async');
 var server = null; // createServer reuses server if it exists
 var uuid = require('node-uuid');
+var redis = require('models/redis');
 
 var helpers = module.exports = {
   fakeShortId: function () {
@@ -124,6 +125,24 @@ var helpers = module.exports = {
     });
     server = serverIndex.create();
     return server;
+  },
+  clearRedis: function (pattern) {
+    return function (callback) {
+      redis.keys(pattern, function(err, keys) {
+        if (err) {
+          return callback(err);
+        }
+        if (keys.length === 0) {
+          return callback();
+        }
+        redis.del(keys, function(err, res) {
+          if (err) {
+            console.error('redis cleanup: ' + err);
+          }
+          callback();
+        });
+      });
+    };
   },
   cleanup: function (callback) {
     helpers.deleteKeys(this, this._cleanupKeys); // clean context keys

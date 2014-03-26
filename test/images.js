@@ -15,7 +15,73 @@ describe('Images', function () {
     image: ['owner.createImageFromFixture', ['node.js']]
   }));
   after(helpers.cleanup);
-  afterEach(helpers.cleanupExcept('image', 'user'));
+  afterEach(helpers.cleanupExcept('image', 'user', 'image1', 'image2', 'image3', 'image4', 'image5', 'channels'));
+
+  describe('GET /runnables', function () {
+    describe('channel runnables', function () {
+      before(extendContextSeries({
+        admin: users.createAdmin,
+        user : users.createAnonymous,
+        channels: channels.createChannels('one', 'two', 'three'),
+        image1: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
+        image2: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
+        image3: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]],
+        image4: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
+        image5: ['admin.createTaggedImage', ['node.js', ['channels[1]', 'channels[2]']]]
+      }));
+      it('should list runnable by channel', function (done) {
+        this.user.specRequest({ channel: this.channels[0].name })
+          .expect(200)
+          .expectBody(function (body) {
+            body.paging.lastPage.should.equal(0);
+            body.data.should.have.a.lengthOf(3);
+            body.data[0].tags.should.be.an.instanceOf(Array);
+            body.data[0].tags[0].should.have.property('name');
+            // not sorted any specific way
+          })
+          .end(done);
+      });
+      it('should list runnables and sort -created', function (done) {
+        var images = [this.image5, this.image4, this.image3];
+
+        this.user.specRequest({ channel: this.channels[1].name, sort:'-created' })
+          .expect(200)
+          .expectBody(function (body) {
+            body.paging.lastPage.should.equal(0);
+            body.data.should.have.a.lengthOf(images.length);
+            _.each(images, bodyImageDataCheck, body);
+          })
+          .end(done);
+      });
+      it('should list runnables and sort (+)created', function (done) {
+        var images = [this.image1, this.image2, this.image3];
+        this.user.specRequest({ channel: this.channels[0].name, sort:'created' })
+          .expect(200)
+          .expectBody(function (body) {
+            body.paging.lastPage.should.equal(0);
+            body.data.should.have.a.lengthOf(images.length);
+            _.each(images, bodyImageDataCheck, body);
+          })
+          .end(done);
+      });
+      describe('filtering multiple channels', function () {
+        it('should list runnables with both tags and be sorted', function (done) {
+          var images = [this.image3];
+          this.user.specRequest({
+              channel: [this.channels[0].name, this.channels[1].name],
+              sort:'-created'
+            })
+            .expect(200)
+            .expectBody(function (body) {
+              body.paging.lastPage.should.equal(0);
+              body.data.should.have.a.lengthOf(images.length);
+              _.each(images, bodyImageDataCheck, body);
+            })
+            .end(done);
+        });
+      });
+    });
+  });
 
   describe('GET /runnables/:id', function () {
     beforeEach(extendContext({
@@ -170,37 +236,87 @@ describe('Image Pagination', function () {
           .end(done);
       });
     });
+
+
     describe('channel runnables', function () {
       before(extendContextSeries({
         admin: users.createAdmin,
-        channels: channels.createChannels('one', 'two'),
+        channels: channels.createChannels('one', 'two', 'three'),
         image:  ['admin.createTaggedImage', ['node.js', 'channels[0]']],
         image2: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
         image3: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]],
         image4: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
-        image5: ['admin.createTaggedImage', ['node.js', 'channels[1]']]
+        image5: ['admin.createTaggedImage', ['node.js', ['channels[1]', 'channels[2]']]],
+        image6: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]]
       }));
       it('should list runnable by channel', function (done) {
-        var checkDone = helpers.createCheckDone(done);
-        this.user.specRequest({ channel: this.channels[0].name })
+        this.user.specRequest({
+            channel: this.channels[0].name,
+            page: 1,
+            limit: 2
+          })
           .expect(200)
           .expectBody(function (body) {
-            body.data.should.have.a.lengthOf(3);
+            body.paging.lastPage.should.equal(1);
+            body.data.should.have.a.lengthOf(2);
             body.data[0].tags.should.be.an.instanceOf(Array);
             body.data[0].tags[0].should.have.property('name');
-            body.paging.should.have.property('lastPage', 0);
+            // not sorted any specific way
           })
-          .end(checkDone.done());
-        this.user.specRequest({ channel: this.channels[1].name, sort:'-created' })
+          .end(done);
+      });
+      it('should list runnables and sort -created', function (done) {
+        var images = [this.image5];
+        this.user.specRequest({
+            channel: this.channels[1].name,
+            sort:'-created',
+            page: 1,
+            limit: 1
+          })
           .expect(200)
           .expectBody(function (body) {
-            body.data.should.have.a.lengthOf(3);
-            body.paging.should.have.property('lastPage', 0);
+            body.paging.lastPage.should.equal(3);
+            body.data.should.have.a.lengthOf(images.length);
+            _.each(images, bodyImageDataCheck, body);
           })
-          .end(checkDone.done());
+          .end(done);
       });
-      // TODO Paging sort skip...
+      it('should list runnables and sort (+)created', function (done) {
+        var images = [this.image3, this.image6];
+        this.user.specRequest({
+            channel: this.channels[0].name,
+            sort:'created',
+            page: 1,
+            limit: 2
+          })
+          .expect(200)
+          .expectBody(function (body) {
+            body.paging.lastPage.should.equal(1);
+            body.data.should.have.a.lengthOf(images.length);
+            _.each(images, bodyImageDataCheck, body);
+          })
+          .end(done);
+      });
+      describe('filtering multiple channels', function () {
+        it('should list runnables and be sorted', function (done) {
+          var images = [this.image6, this.image3];
+          this.user.specRequest({
+              channel: [this.channels[0].name, this.channels[1].name],
+              sort:'-created',
+              page: 0,
+              limit: 2
+            })
+            .expect(200)
+            .expectBody(function (body) {
+              body.paging.lastPage.should.equal(0);
+              body.data.should.have.a.lengthOf(images.length);
+              _.each(images, bodyImageDataCheck, body);
+            })
+            .end(done);
+        });
+      });
     });
+
   });
 
   describe('POST /runnables', function() {
@@ -290,3 +406,7 @@ describe('Image Stats', function () {
     };
   }
 });
+
+function bodyImageDataCheck(image, index, images) {
+  this.data[index]._id.should.equal(image._id);
+}
