@@ -5,6 +5,7 @@ from fabric.api import *
 env.user = "ubuntu"
 env.use_ssh_config = True
 env.note = ""
+env.dockerized = False
 
 """
 Environments
@@ -28,6 +29,7 @@ def integration():
   env.hosts = [
     'api-int'
   ]
+  env.dockerized = True
 
 def staging():
   """
@@ -182,9 +184,12 @@ def reboot():
   """
   Restart the server.
   """
-  run('forever stopall || echo not started')
-  run('pm2 kill || echo no pm2')
-  boot()
+  if (env.dockerized):
+    sudo("docker stop $(sudo docker ps -q)")
+  else: 
+    run('forever stopall || echo not started')
+    run('pm2 kill || echo no pm2')
+    boot()
 
 def test_int():
   """
