@@ -3,6 +3,7 @@ var users = require('./lib/userFactory');
 var images = require('./lib/imageFactory');
 var helpers = require('./lib/helpers');
 var spy = require('./lib/spy');
+var channels = require('./lib/channelsFactory');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 var uuid = require('node-uuid');
@@ -561,5 +562,29 @@ describe('Containers', function () {
         .expect(200)
         .end(done);
     }
+  });
+});
+
+describe('Github Import', function () {
+  before(extendContextSeries({
+    owner: users.createPublisher,
+    channels: channels.createChannels('node'),
+  }));
+  describe('POST /containers/import/github', function () {
+    it('should give us back an awesome imported image', function (done) {
+      var configs = require('configs');
+      var url = require('url');
+      var harbour = url.parse(configs.harbourmaster);
+      this.owner.post('/users/me/runnables/import/github?githubUrl=http://' + harbour.host + '/local/nabber&stack=node')
+        .expect(201)
+        .expectBody(function (body) {
+          body.name.should.equal('github import http://' + harbour.host + '/local/nabber');
+          body.tags.length.should.equal(1);
+          body.importSource.should.equal('http://' + harbour.host + '/local/nabber');
+        })
+        .end(function (err, res) {
+          done(err);
+        });
+    });
   });
 });
