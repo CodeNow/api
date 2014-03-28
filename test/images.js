@@ -423,9 +423,7 @@ describe('Github Import', function () {
         .expectBody(function (body) {
           body.name.should.equal('github import http://' + harbour.host + '/local/nabber');
           body.tags.length.should.equal(1);
-          body.revisions.length.should.equal(1);
-          body.revisions[0].repo.should.equal(body.id);
-          body.votes.should.equal(1);
+          body.importSource.should.equal('http://' + harbour.host + '/local/nabber');
         })
         .end(function (err, res) {
           done(err);
