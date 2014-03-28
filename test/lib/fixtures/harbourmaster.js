@@ -13,10 +13,12 @@ var images = {};
 app.post('/build', function (req, res, next) {
   images[req.query.t] = true;
   var dockerFileFound = false;
+  if (req.headers['content-type'] === 'application/x-gzip') {
+    req = req.pipe(zlib.createGunzip());
+  }
   req
-    .pipe(zlib.createGunzip())
     .pipe(tar.Parse())
-    .on("entry", function (e) {
+    .on('entry', function (e) {
       if (e.props.path === 'Dockerfile') {
         dockerFileFound = true;
       }
@@ -81,6 +83,18 @@ app.post('/containers/:token/commit', express.json(),
       }, 0);
     }
   });
+app.get('/local/nabber/archive/master.tar.gz', function (req, res, next) {
+  var fs = require('fs');
+  var path = require('path');
+  var archive = path.join(__dirname, 'master.tar.gz');
+  var stat = fs.statSync(archive);
+  var readStream = fs.createReadStream(archive);
+  res.writeHead(200, {
+    'content-type': 'application/x-gzip',
+    'content-length': stat.size
+  });
+  readStream.pipe(res);
+});
 app.all('*', express.logger(), function (req, res, next) {
   res.send(404);
   console.log(req.url, req.method);

@@ -8,6 +8,7 @@ var channels = require('./lib/channelsFactory');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 var uuid = require('node-uuid');
+var configs = require('configs');
 
 describe('Images', function () {
   before(extendContextSeries({
@@ -405,6 +406,32 @@ describe('Image Stats', function () {
         .end(done);
     };
   }
+});
+
+describe('Github Import', function () {
+  before(extendContextSeries({
+    owner: users.createPublisher,
+    channels: channels.createChannels('node'),
+  }));
+  describe('POST /runnables/import/github', function () {
+    it('should give us back an awesome imported image', function (done) {
+      var configs = require('configs');
+      var url = require('url');
+      var harbour = url.parse(configs.harbourmaster);
+      this.owner.post('/runnables/import/github?githubUrl=http://' + harbour.host + '/local/nabber&stack=node')
+        .expect(201)
+        .expectBody(function (body) {
+          body.name.indexOf('github import').should.equal(0);
+          body.tags.length.should.equal(1);
+          body.revisions.length.should.equal(1);
+          body.revisions[0].repo.should.equal(body.id);
+          body.votes.should.equal(1);
+        })
+        .end(function (err, res) {
+          done(err);
+        });
+    });
+  });
 });
 
 function bodyImageDataCheck(image, index, images) {
