@@ -421,7 +421,7 @@ describe('Github Import', function () {
       this.owner.post('/runnables/import/github?githubUrl=http://' + harbour.host + '/local/nabber&stack=node')
         .expect(201)
         .expectBody(function (body) {
-          body.name.indexOf('github import').should.equal(0);
+          body.name.should.equal('github import http://' + harbour.host + '/local/nabber');
           body.tags.length.should.equal(1);
           body.revisions.length.should.equal(1);
           body.revisions[0].repo.should.equal(body.id);
