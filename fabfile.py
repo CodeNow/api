@@ -29,7 +29,6 @@ def integration():
   env.hosts = [
     'api-int'
   ]
-  env.dockerized = True
 
 def staging():
   """
