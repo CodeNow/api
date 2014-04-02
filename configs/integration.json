@@ -8,6 +8,7 @@
   },
   "port": 3000,
   "maxPageLimit": 200,
+  "ipaddress": "10.0.1.86",
   "defaultPageLimit": 25,
   "rootDomain": "cloudcosmos.com",
   "shortProjectIds": true,
