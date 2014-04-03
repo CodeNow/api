@@ -37,7 +37,8 @@
     "keypather": "~1.1.0",
     "map-utils": "~0.2.0",
     "dat-middleware": "~1.0.2",
-    "middleware-flow": "~0.2.0"
+    "middleware-flow": "~0.2.0",
+    "function-proxy": "~0.5.1"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
