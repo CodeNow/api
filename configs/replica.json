@@ -7,7 +7,7 @@
     "port": "6379"
   },
   "newrelic": {
-    "name": "api-replica"
+    "name": "api-replica",
     "key": "338516e0826451c297d44dc60aeaf0a0ca4bfead"
   },
   "port": 3000,
