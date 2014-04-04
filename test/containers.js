@@ -572,6 +572,7 @@ describe('Github Import', function () {
   }));
   describe('POST /containers/import/github', function () {
     it('should give us back an awesome imported image', function (done) {
+      var self = this;
       var configs = require('configs');
       var url = require('url');
       var harbour = url.parse(configs.harbourmaster);
@@ -579,7 +580,10 @@ describe('Github Import', function () {
         .expect(201)
         .expectBody(function (body) {
           body.name.should.equal('nabber');
+          body.saved.should.be.equal(true);
+          body.owner.should.equal(self.owner._id.toString());
           body.tags.length.should.equal(1);
+          body.tags[0].name.should.equal('node');
           body.importSource.should.equal('http://' + harbour.host + '/local/nabber');
         })
         .end(function (err, res) {
