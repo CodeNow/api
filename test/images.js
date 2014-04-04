@@ -8,6 +8,7 @@ var channels = require('./lib/channelsFactory');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 var uuid = require('node-uuid');
+var configs = require('configs');
 
 describe('Images', function () {
   before(extendContextSeries({
