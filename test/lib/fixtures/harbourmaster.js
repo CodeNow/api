@@ -19,7 +19,7 @@ app.post('/build', function (req, res, next) {
   req
     .pipe(tar.Parse())
     .on('entry', function (e) {
-      if (e.props.path === 'Dockerfile') {
+      if (e.props.path === 'Dockerfile' || e.props.path === './Dockerfile') {
         dockerFileFound = true;
       }
     })
