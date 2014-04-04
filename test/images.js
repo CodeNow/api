@@ -49,6 +49,7 @@ describe('Images', function () {
           .expect(200)
           .expectBody(function (body) {
             body.paging.lastPage.should.equal(0);
+            body.channels.should.have.a.lengthOf(3);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
           })
@@ -60,6 +61,7 @@ describe('Images', function () {
           .expect(200)
           .expectBody(function (body) {
             body.paging.lastPage.should.equal(0);
+            body.channels.should.have.a.lengthOf(2);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
           })
@@ -75,6 +77,7 @@ describe('Images', function () {
             .expect(200)
             .expectBody(function (body) {
               body.paging.lastPage.should.equal(0);
+              body.channels.should.have.a.lengthOf(2);
               body.data.should.have.a.lengthOf(images.length);
               _.each(images, bodyImageDataCheck, body);
             })
@@ -259,6 +262,7 @@ describe('Image Pagination', function () {
           .expect(200)
           .expectBody(function (body) {
             body.paging.lastPage.should.equal(1);
+            body.channels.should.have.a.lengthOf(2);
             body.data.should.have.a.lengthOf(2);
             body.data[0].tags.should.be.an.instanceOf(Array);
             body.data[0].tags[0].should.have.property('name');
@@ -276,6 +280,7 @@ describe('Image Pagination', function () {
           })
           .expect(200)
           .expectBody(function (body) {
+            body.channels.should.have.a.lengthOf(3);
             body.paging.lastPage.should.equal(3);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
@@ -292,6 +297,7 @@ describe('Image Pagination', function () {
           })
           .expect(200)
           .expectBody(function (body) {
+            body.channels.should.have.a.lengthOf(2);
             body.paging.lastPage.should.equal(1);
             body.data.should.have.a.lengthOf(images.length);
             _.each(images, bodyImageDataCheck, body);
@@ -309,6 +315,7 @@ describe('Image Pagination', function () {
             })
             .expect(200)
             .expectBody(function (body) {
+              body.channels.should.have.a.lengthOf(2);
               body.paging.lastPage.should.equal(0);
               body.data.should.have.a.lengthOf(images.length);
               _.each(images, bodyImageDataCheck, body);
