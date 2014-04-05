@@ -212,7 +212,6 @@ describe('Containers', function () {
           var self = this;
           this.user.specRequest(this.container._id)
             .expect(200)
-            .expectBody("parentName")
             .expectBody(function (body) {
               body.tags.should.be.instanceof(Array).and.have.lengthOf(1);
               body.tags[0].name.should.equal(self.tag.name);
