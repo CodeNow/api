@@ -39,7 +39,8 @@
     "dat-middleware": "~1.0.2",
     "middleware-flow": "~0.2.0",
     "function-proxy": "~0.5.1",
-    "exists": "~1.0.0"
+    "exists": "~1.0.0",
+    "newrelic": "~1.4.0"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
