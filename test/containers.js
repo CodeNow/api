@@ -571,6 +571,7 @@ describe('Github Import', function () {
     channels: channels.createChannels('node'),
   }));
   describe('POST /containers/import/github', function () {
+    this.timeout(10*1000);
     it('should give us back an awesome imported image', function (done) {
       var self = this;
       var configs = require('configs');
@@ -584,6 +585,25 @@ describe('Github Import', function () {
           body.owner.should.equal(self.owner._id.toString());
           body.tags.length.should.equal(1);
           body.tags[0].name.should.equal('node');
+          body.importSource.should.equal('http://' + harbour.host + '/local/nabber');
+        })
+        .end(function (err, res) {
+          done(err);
+        });
+    });
+    it('should give us back a shiny new image AND tag!', function (done) {
+      var self = this;
+      var configs = require('configs');
+      var url = require('url');
+      var harbour = url.parse(configs.harbourmaster);
+      this.owner.post('/users/me/runnables/import/github?githubUrl=http://' + harbour.host + '/local/nabber&stack=rails')
+        .expect(201)
+        .expectBody(function (body) {
+          body.name.should.equal('nabber');
+          body.saved.should.be.equal(true);
+          body.owner.should.equal(self.owner._id.toString());
+          body.tags.length.should.equal(1);
+          body.tags[0].name.should.equal('rails');
           body.importSource.should.equal('http://' + harbour.host + '/local/nabber');
         })
         .end(function (err, res) {
