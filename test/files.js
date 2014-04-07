@@ -73,6 +73,32 @@ describe('Files', function () {
           .end(done);
       });
     });
+    describe('filepaths query param', function () {
+      beforeEach(function (done) {
+        var self = this;
+        this.user.specRequest(this.container._id)
+          .expect(200)
+          .end(function (err, response) {
+            if (err) {
+              done(err);
+            }
+            else {
+              self.files = response.body;
+              done();
+            }
+          });
+      });
+      it('should only get subset of files in container', function (done) {
+        var filepaths = this.files.map(function (file) {
+          return path.join(file.path, file.name);
+        });
+        // filepaths.slice(1);
+        this.user.specRequest(this.container._id, { filepaths: filepaths })
+          .expect(200)
+          .expectArray(0)
+          .end(done);
+      });
+    });
     describe('path query param', function () {
       it('should only get fs at path', function (done) {
         this.user.specRequest(this.container._id, { path: '/' })
