@@ -44,7 +44,6 @@ describe('Images', function () {
       });
       it('should list runnables and sort -created', function (done) {
         var images = [this.image5, this.image4, this.image3];
-
         this.user.specRequest({ channel: this.channels[1].name, sort:'-created' })
           .expect(200)
           .expectBody(function (body) {
@@ -197,11 +196,11 @@ describe('Image Pagination', function () {
       beforeEach(extendContextSeries({
         admin: users.createAdmin,
         channels: channels.createChannels('one', 'two'),
-        image:  ['admin.createTaggedImage', ['node.js', 'channels[0]']],
-        image2: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
-        image3: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]],
-        image4: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
-        image5: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
+        image:    ['admin.createTaggedImage', ['node.js', 'channels[0]']],
+        image2:   ['admin.createTaggedImage', ['node.js', 'channels[0]']],
+        image3:   ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]],
+        image4:   ['admin.createTaggedImage', ['node.js', 'channels[1]']],
+        image5:   ['admin.createTaggedImage', ['node.js', 'channels[1]']],
         image6: images.createImageFromFixture.bind(images, 'node.js', 'name4'),
         user: users.createAnonymous
       }));
@@ -212,6 +211,15 @@ describe('Image Pagination', function () {
           .expectBody(function (body) {
             body.data.should.be.an.instanceOf(Array);
             body.data.should.have.a.lengthOf(5);
+          })
+          .end(done);
+      });
+      it('should list all runnables (all query)', function (done) {
+        this.user.specRequest({ all:true })
+          .expect(200)
+          .expectBody(function (body) {
+            body.data.should.be.an.instanceOf(Array);
+            body.data.should.have.a.lengthOf(6);
           })
           .end(done);
       });
