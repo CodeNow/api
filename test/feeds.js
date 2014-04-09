@@ -247,7 +247,7 @@ describe('Feeds Pagination', function () {
       it('should paginate and filter for channel with multiple images', function (done) {
         var expectedImages = [this.image6, this.image5];
         var expectedChannels = [this.channels[2], this.channels[1]];
-        this.user.specRequest({ page: 0, limit: 2, channel: this.channels[2].name })
+        this.user.specRequest({ page: 0, limit: 2, channel: this.channels[2].name.toUpperCase() })
           .expect(200)
           .expectBody('data')
           .expectBody('channels')
@@ -292,7 +292,7 @@ describe('Feeds Pagination', function () {
           })
           .end(done);
       });
-      
+
     });
   });
 });
