@@ -32,7 +32,7 @@
     "underscore.inflections": "~0.2.1",
     "concat-stream": "~1.4.1",
     "multiparty": "~3.2.2",
-    "githubNabber": "Runnable/githubNabber#e2be09ee5daed4fc06a057f7830bcc06aca77b56",
+    "githubNabber": "0.0.1",
     "jscoverage": "0.3.8",
     "keypather": "~1.1.0",
     "map-utils": "~0.2.0",
