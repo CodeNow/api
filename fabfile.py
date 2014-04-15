@@ -6,6 +6,7 @@ env.user = "ubuntu"
 env.use_ssh_config = True
 env.note = ""
 env.dockerized = False
+env.newrelic_application_id = ""
 
 """
 Environments
@@ -19,6 +20,7 @@ def production():
   env.hosts = [
     'api'
   ]
+  env.newrelic_application_id = "3874131"
 
 def integration():
   """
@@ -29,6 +31,7 @@ def integration():
   env.hosts = [
     'api-int'
   ]
+  env.newrelic_application_id = "3864823"
 
 def staging():
   """
@@ -39,6 +42,7 @@ def staging():
   env.hosts = [
     'api-rep_int'
   ]
+  env.newrelic_application_id = "3865275"
 
 def runnable3():
   """
@@ -97,9 +101,11 @@ def checkout_latest():
   Pull the latest code on the specified branch.
   """
   with cd('api-server'):
+    run('git config --global credential.helper cache')
     run('git fetch --all')
     run('git reset --hard origin/%(branch)s' % env)
-    run('git checkout %(branch)s' % env)
+    run('git checkout -f %(branch)s' % env)
+    run('git pull origin %(branch)s' % env)
 
 def install_requirements():
   """
@@ -139,27 +145,19 @@ def track_deployment():
   """
   Update deployments for tracking
   """
-  run('echo Track Deployment:')
-  if run('[ -d deployments ] && echo True || echo False') == 'False':
-    run('git clone https://github.com/Runnable/deployments.git')
-  with cd('deployments'):
-    run('git fetch --all')
-    run('git reset --hard origin/master')
   with cd('api-server'):
-    run(
-      'echo { branch: `git rev-parse --abbrev-ref HEAD`, ' \
-      'commit: `git log origin/master | head -1 | awk \'{print $2}\'`, ' \
-      'push_date: `date +%d-%m-%Y`, ' \
-      'push_time: `date +%H:%M:%S`, ' \
-      'project: api-server, ' \
-      'author: `cat ~/.name`, '\
-      'note: '+env.note+' } ' \
-      '> ~/.notetmp')
-    run('cat ~/.notetmp | sed \'s_, _\", \"_g\' | sed \'s_: _\": \"_g\' | sed \'s_{ _{ \"_g\' | sed \'s_ }_\" }_g\' >> ~/deployments/'+env.settings)
-  with cd('deployments'):
-    run('git add '+env.settings)
-    run('git commit -m "update file"')
-    run('git push origin master')
+    branch = run('git rev-parse --abbrev-ref HEAD')
+    commit = run('git rev-parse HEAD');
+    author = env.author
+    note = env.note
+    cmd = 'curl -H "x-api-key:b04ef0fa7d124e606c0c480ac9207a85b78787bda4bfead" \
+      -d "deployment[application_id]=' + env.newrelic_application_id+'\" \
+      -d "deployment[description]=branch:'+branch+'" \
+      -d "deployment[revision]=' + commit + '" \
+      -d "deployment[changelog]=' + note + '" \
+      -d "deployment[user]=' + author + '" \
+      https://api.newrelic.com/deployments.xml'
+    run(cmd) 
 
 """
 Commands - deployment
@@ -170,7 +168,8 @@ def deploy():
   """
   require('settings', provided_by=[production, integration, staging])
   require('branch', provided_by=[stable, master, branch])
-
+  
+  prompt("your name please: ", "author")
   addNote()
   checkout_latest()
   track_deployment()
