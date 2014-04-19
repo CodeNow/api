@@ -31,7 +31,6 @@ def integration():
   env.hosts = [
     'api-int'
   ]
-  env.newrelic_application_id = "3864823"
 
 def staging():
   """
@@ -42,7 +41,6 @@ def staging():
   env.hosts = [
     'api-rep_int'
   ]
-  env.newrelic_application_id = "3865275"
 
 def runnable3():
   """
@@ -145,19 +143,20 @@ def track_deployment():
   """
   Update deployments for tracking
   """
-  with cd('api-server'):
-    branch = run('git rev-parse --abbrev-ref HEAD')
-    commit = run('git rev-parse HEAD');
-    author = env.author
-    note = env.note
-    cmd = 'curl -H "x-api-key:b04ef0fa7d124e606c0c480ac9207a85b78787bda4bfead" \
-      -d "deployment[application_id]=' + env.newrelic_application_id+'\" \
-      -d "deployment[description]=branch:'+branch+'" \
-      -d "deployment[revision]=' + commit + '" \
-      -d "deployment[changelog]=' + note + '" \
-      -d "deployment[user]=' + author + '" \
-      https://api.newrelic.com/deployments.xml'
-    run(cmd) 
+  if env.newrelic_application_id:
+    with cd('api-server'):
+      branch = run('git rev-parse --abbrev-ref HEAD')
+      commit = run('git rev-parse HEAD');
+      author = env.author
+      note = env.note
+      cmd = 'curl -H "x-api-key:b04ef0fa7d124e606c0c480ac9207a85b78787bda4bfead" \
+        -d "deployment[application_id]=' + env.newrelic_application_id+'\" \
+        -d "deployment[description]=branch:'+branch+'" \
+        -d "deployment[revision]=' + commit + '" \
+        -d "deployment[changelog]=' + note + '" \
+        -d "deployment[user]=' + author + '" \
+        https://api.newrelic.com/deployments.xml'
+      run(cmd) 
 
 """
 Commands - deployment
