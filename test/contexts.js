@@ -102,12 +102,18 @@ describe('Contexts', function () {
       },
       project: function (done) {
         users.createAdmin(function (err, user) {
-          user.post('/projects', validProjectData).expect(200).end(done);
+          user.post('/projects', validProjectData)
+            .expect(201)
+            .expectBody(function (body) {
+              body.contexts.length.should.equal(1);
+            })
+            .end(done);
         });
       }
     }));
 
     it('should give us details about a context', function (done) {
+      var self = this;
       this.admin.get('/contexts/' + this.project.body.contexts[0].context)
         .expect(200)
         .expectBody('name', 'web server')

@@ -84,7 +84,7 @@ describe('Projects', function () {
         });
 
       this.admin.post('/projects', validProjectData)
-        .expect(200)
+        .expect(201)
         .expectBody('name', 'new project')
         .expectBody(function (body) {
           body.contexts.length.should.equal(1);
@@ -125,7 +125,7 @@ describe('Projects', function () {
       },
       project: function (done) {
         users.createAdmin(function (err, user) {
-          user.post('/projects', validProjectData).expect(200).end(done);
+          user.post('/projects', validProjectData).expect(201).end(done);
         });
       }
     }));
