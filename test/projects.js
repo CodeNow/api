@@ -1,8 +1,8 @@
 var async = require('async');
 var helpers = require('./lib/helpers');
+var nock = require('nock');
 var users = require('./lib/userFactory');
 
-var nock = require('nock');
 
 var extendContextSeries = helpers.extendContextSeries;
 
