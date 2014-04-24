@@ -6,6 +6,10 @@
     "ipaddress": "10.0.1.125",
     "port": "6379"
   },
+  "sharedRedis": {
+    "ipaddress": "10.0.1.125",
+    "port": "6379"
+  },
   "newrelic": {
     "name": "api-staging",
     "key": "338516e0826451c297d44dc60aeaf0a0ca4bfead"
@@ -60,5 +64,14 @@
     "from": "Feedback <feedback@runnable.com>",
     "replyTo": "Feedback <feedback@runnable.mail.intercom.io>",
     "to": "support+staging@runnable.com"
+  },
+  "container": {
+    "binds": ["/home/ubuntu/dockworker:/dockworker:ro"],
+    "bindFolder": "/dockworker",
+    "portSpecs": [
+      "80",
+      "15000"
+    ],
+    "cmd": ["/dockworker/bin/node", "/dockworker"]
   }
 }

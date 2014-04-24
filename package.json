@@ -41,7 +41,10 @@
     "function-proxy": "~0.5.1",
     "exists": "~1.0.0",
     "newrelic": "~1.4.0",
-    "query-string": "~0.3.0"
+    "query-string": "~0.3.0",
+    "simple-api-client": "~0.2.3",
+    "fn-object": "~0.2.2",
+    "callback-count": "~0.1.0"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
@@ -53,7 +56,8 @@
     "mocha": "~1.17.0",
     "osx-notifier": "~0.2.1",
     "methods": "~0.1.0",
-    "findit": "~1.1.0"
+    "findit": "~1.1.0",
+    "docker-mock": "0.0.4"
   },
   "engine": "node >= 0.10.5",
   "scripts": {

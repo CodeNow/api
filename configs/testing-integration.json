@@ -4,7 +4,11 @@
   "mongo": "mongodb://10.0.1.176:27017/runnable_test123",
   "port": 3031,
   "redis": {
-    "ipaddress": "10.0.1.14",
+    "ipaddress": "127.0.0.1",
+    "port": "6379"
+  },
+  "sharedRedis": {
+    "ipaddress": "127.0.0.1",
     "port": "6379"
   },
   "ipaddress": "10.0.1.86",
@@ -33,5 +37,14 @@
   },
   "SES": {
     "sendMail": false
+  },
+  "container": {
+    "binds": ["/home/ubuntu/dockworker:/dockworker:ro"],
+    "bindFolder": "/dockworker",
+    "portSpecs": [
+      "80",
+      "15000"
+    ],
+    "cmd": ["/dockworker/bin/node", "/dockworker"]
   }
 }

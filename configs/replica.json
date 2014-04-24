@@ -54,5 +54,14 @@
   "strongloop": {
     "key": "1b996aa8f5b3b0a56103437dc60b20a9",
     "appName": "api-replica"
+  },
+  "container": {
+    "binds": ["/home/ubuntu/dockworker:/dockworker:ro"],
+    "bindFolder": "/dockworker",
+    "portSpecs": [
+      "80",
+      "15000"
+    ],
+    "cmd": ["/dockworker/bin/node", "/dockworker"]
   }
 }
