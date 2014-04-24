@@ -4,6 +4,8 @@ var nock = require('nock');
 var users = require('./lib/userFactory');
 var url = require('url');
 
+var Context = require('models/contexts');
+
 var extendContextSeries = helpers.extendContextSeries;
 
 var validProjectData = {
@@ -25,6 +27,34 @@ describe('Contexts', function () {
     admin: users.createAdmin
   }));
   afterEach(helpers.cleanup);
+
+  describe('working with context objects', function () {
+    it('should not allow a resource to be uploaded to the wrong bucket', function (done) {
+      var context = new Context();
+      var s3Url = url.format({
+        protocol: 's3:',
+        slashes: true,
+        host: 'runnable.context.resources.test',
+        pathname: '/nottherightid/source/file.txt'
+      });
+      context.uploadResource(s3Url, 'content', function (err, res) {
+        if (!err || (res && res.code !== 403)) {
+          return done(new Error('should have returned a 403 error'));
+        }
+        done();
+      });
+    });
+    it('should give us resource urls for the bucket', function () {
+      var context = new Context();
+      var s3Url = url.format({
+        protocol: 's3:',
+        slashes: true,
+        host: 'runnable.context.resources.test',
+        pathname: '/' + context._id.toString() + '/source/file.txt'
+      });
+      context.getResourceUrl('file.txt').should.equal(s3Url);
+    });
+  });
 
   describe('creating individual contexts', function () {
     before(extendContextSeries({
