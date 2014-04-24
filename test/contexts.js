@@ -5,6 +5,7 @@ var users = require('./lib/userFactory');
 var url = require('url');
 
 var Context = require('models/contexts');
+var Project = require('models/projects');
 
 var extendContextSeries = helpers.extendContextSeries;
 
@@ -21,6 +22,7 @@ var validProjectData = {
       'CMD ["web.js"]\n'
   }]
 };
+var projectId;
 
 describe('Contexts', function () {
   beforeEach(extendContextSeries({
@@ -57,7 +59,7 @@ describe('Contexts', function () {
   });
 
   describe('creating individual contexts', function () {
-    before(extendContextSeries({
+    beforeEach(extendContextSeries({
       nocks: function (done) {
         nock('https://s3.amazonaws.com:443')
           .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
@@ -75,33 +77,25 @@ describe('Contexts', function () {
         done();
       }
     }));
+    afterEach(helpers.cleanup);
 
     it('should error without all the required parameters', function (done) {
       this.admin.post('/contexts', { 'name': 'sample name' })
         .expect(400)
         .end(done);
     });
-    it('should create a context on request', function (done) {
-      var self = this;
+    it('should error without a parent', function (done) {
       this.admin.post('/contexts', {
         'name': 'sample name',
         'dockerfile': 'FROM ubuntu\n'
       })
-        .expect(201)
-        .expectBody('name', 'sample name')
-        .expectBody(function (body) {
-          var dockerfile = url.parse(body.dockerfile);
-          dockerfile.protocol.should.equal('s3:');
-          dockerfile.host.should.equal('runnable.context.resources.test');
-          dockerfile.path.should.equal('/' + body._id.toString() + '/dockerfile/Dockerfile');
-          body.owner.should.equal(self.admin._id.toString());
-        })
+        .expect(400)
         .end(done);
     });
   });
 
-  describe('getting contexts after building a project', function () {
-    before(extendContextSeries({
+  describe('after building a project with a context', function () {
+    beforeEach(extendContextSeries({
       nocks: function (done) {
         nock('https://s3.amazonaws.com:443')
           .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
@@ -137,10 +131,17 @@ describe('Contexts', function () {
             .expectBody(function (body) {
               body.contexts.length.should.equal(1);
             })
-            .end(done);
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+              projectId = res.body._id.toString();
+              done(err, res);
+            });
         });
       }
     }));
+    afterEach(helpers.cleanup);
 
     it('should give us details about a context', function (done) {
       var self = this;
@@ -152,8 +153,57 @@ describe('Contexts', function () {
           dockerfile.protocol.should.equal('s3:');
           dockerfile.host.should.equal('runnable.context.resources.test');
           dockerfile.path.should.equal('/' + body._id.toString() + '/dockerfile/Dockerfile');
+          body.versions.length.should.equal(1);
+          body.versions[0].tag.should.equal('v0');
         })
         .end(done);
+    });
+
+    describe('adding a new context to a project', function () {
+      it('should create a context on request', function (done) {
+        var self = this;
+        this.admin.post('/contexts', {
+          'name': 'sample name',
+          'dockerfile': 'FROM ubuntu\n',
+          'project': this.project.body._id.toString()
+        })
+          .expect(201)
+          .expectBody('name', 'sample name')
+          .expectBody(function (body) {
+            var dockerfile = url.parse(body.dockerfile);
+            dockerfile.protocol.should.equal('s3:');
+            dockerfile.host.should.equal('runnable.context.resources.test');
+            dockerfile.path.should.equal('/' + body._id.toString() + '/dockerfile/Dockerfile');
+            body.owner.should.equal(self.admin._id.toString());
+            body.versions.length.should.equal(1);
+            body.versions[0].tag.should.equal('v0');
+          })
+          .end(done);
+      });
+
+      describe('and asking for the project again', function () {
+        beforeEach(extendContextSeries({
+          context: function (done) {
+            users.createAdmin(function (err, user) {
+              user.post('/contexts', {
+                'name': 'sample name',
+                'dockerfile': 'FROM ubuntu\n',
+                'project': projectId
+              }).expect(201).end(done);
+            });
+          }
+        }));
+
+        it('should list both contexts', function (done) {
+          this.admin.get('/projects/' + projectId)
+            .expect(200)
+            .expectBody('name', 'new project')
+            .expectBody(function (body) {
+              body.contexts.length.should.equal(2);
+            })
+            .end(done);
+        });
+      });
     });
   });
 });
