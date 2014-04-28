@@ -74,22 +74,95 @@ describe('Contexts', function () {
             'content-length': '0',
             server: 'AmazonS3'
           });
+        nock('https://s3.amazonaws.com:443')
+          .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
+            '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+          .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+          .reply(200, "", {
+            'x-amz-id-2': 'e4seUs+fKRaXs3OrTnqDf+fAmUkPHtiphOwvnC5j+AObyJ+EFFargBPsM7DuLAIi',
+            'x-amz-request-id': '9094B9B8316CC426',
+            date: 'Wed, 23 Apr 2014 18:02:54 GMT',
+            etag: '"d41d8cd98f00b204e9800998ecf8427e"',
+            'content-length': '0',
+            server: 'AmazonS3'
+          });
+        nock('https://s3.amazonaws.com:443')
+          .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+            '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+          .filteringRequestBody(function(path) { return '*'; })
+          .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
+          .reply(200, "", {
+            'x-amz-id-2': 'x2zYLL9sEl921uBMQUKUOrvqXHPa1CjHt7+arsYFgE7OAQ0tRuwJlHltswXut9xl',
+            'x-amz-request-id': 'AD4E009CECA3A9C0',
+            date: 'Wed, 23 Apr 2014 18:02:54 GMT',
+            etag: '"ad3ec3801ee6ea18661bf5c61c6c72c7"',
+            'content-length': '0',
+            server: 'AmazonS3'
+          });
         done();
+      },
+      project: function (done) {
+        users.createAdmin(function (err, user) {
+          user.post('/projects', validProjectData)
+            .expect(201)
+            .expectBody(function (body) {
+              body.contexts.length.should.equal(1);
+            })
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+              done(err, res.body);
+            });
+        });
       }
     }));
     afterEach(helpers.cleanup);
 
-    it('should error without all the required parameters', function (done) {
-      this.admin.post('/contexts', { 'name': 'sample-name' })
-        .expect(400)
-        .end(done);
-    });
-    it('should error without a parent', function (done) {
+    it('should error without a dockerfile', function (done) {
       this.admin.post('/contexts', {
-        'name': 'sample-name',
-        'dockerfile': 'FROM ubuntu\n'
+        name: 'sample-name',
+        project: this.project._id
       })
         .expect(400)
+        .expectBody(function (body) {
+          /\"body.dockerfile\" is required/.test(body.message).should.equal(true);
+        })
+        .end(done);
+    });
+    it('should error without a project', function (done) {
+      this.admin.post('/contexts', {
+        name: 'sample-name',
+        dockerfile: 'FROM ubuntu\n'
+      })
+        .expect(400)
+        .expectBody(function (body) {
+          /\"body.project\" is required/.test(body.message).should.equal(true);
+        })
+        .end(done);
+    });
+    it('should error with an invalid name (invalid chars)', function (done) {
+      this.admin.post('/contexts', {
+        name: 'sample name',
+        project: this.project._id,
+        dockerfile: 'FROM ubuntu\n'
+      })
+        .expect(400)
+        .expectBody(function (body) {
+          /\"body.name\" should match/.test(body.message).should.equal(true);
+        })
+        .end(done);
+    });
+    it('should error with an invalid name (invalid chars)', function (done) {
+      this.admin.post('/contexts', {
+        name: '#$%^&',
+        project: this.project._id,
+        dockerfile: 'FROM ubuntu\n'
+      })
+        .expect(400)
+        .expectBody(function (body) {
+          /\"body.name\" should match/.test(body.message).should.equal(true);
+        })
         .end(done);
     });
   });
@@ -135,8 +208,8 @@ describe('Contexts', function () {
               if (err) {
                 return done(err);
               }
-              projectId = res.body._id.toString();
-              done(err, res);
+              projectId = res.body._id;
+              done(err, res.body);
             });
         });
       }
@@ -145,7 +218,7 @@ describe('Contexts', function () {
 
     it('should give us details about a context', function (done) {
       var self = this;
-      this.admin.get('/contexts/' + this.project.body.contexts[0].context)
+      this.admin.get('/contexts/' + this.project.contexts[0].context)
         .expect(200)
         .expectBody('name', 'web-server')
         .expectBody(function (body) {
@@ -163,9 +236,9 @@ describe('Contexts', function () {
       it('should create a context on request', function (done) {
         var self = this;
         this.admin.post('/contexts', {
-          'name': 'sample-name',
-          'dockerfile': 'FROM ubuntu\n',
-          'project': this.project.body._id.toString()
+          name: 'sample-name',
+          dockerfile: 'FROM ubuntu\n',
+          project: this.project._id
         })
           .expect(201)
           .expectBody('name', 'sample-name')
@@ -186,9 +259,9 @@ describe('Contexts', function () {
           context: function (done) {
             users.createAdmin(function (err, user) {
               user.post('/contexts', {
-                'name': 'sample-name',
-                'dockerfile': 'FROM ubuntu\n',
-                'project': projectId
+                name: 'sample-name',
+                dockerfile: 'FROM ubuntu\n',
+                project: projectId
               }).expect(201).end(done);
             });
           }

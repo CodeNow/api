@@ -37,21 +37,64 @@ describe('Projects', function () {
   // });
 
   describe('creating projects', function () {
-    it('should error when missing project parameters', function (done) {
+    it('should error when missing project parameters (name)', function (done) {
+      this.admin.post('/projects', {
+        contexts: []
+      })
+        .expect(400)
+        .expectBody(function (body) {
+          /\"body.name\" is required/.test(body.message).should.equal(true);
+        })
+        .end(done);
+    });
+    it('should error when missing project parameters (contexts)', function (done) {
       this.admin.post('/projects', {
         name: 'new project'
       })
         .expect(400)
+        .expectBody(function (body) {
+          /\"body.contexts\" is required/.test(body.message).should.equal(true);
+        })
         .end(done);
     });
     it('should error when missing context parameters', function (done) {
       this.admin.post('/projects', {
         name: 'new project',
         contexts: [{
-          'name': 'web-server'
+          name: 'web-server'
         }]
       })
         .expect(400)
+        .expectBody(function (body) {
+          /\"body.context.dockerfile\" is required/.test(body.message).should.equal(true);
+        })
+        .end(done);
+    });
+    it('should error when missing context parameters', function (done) {
+      this.admin.post('/projects', {
+        name: 'new project',
+        contexts: [{
+          dockerfile: 'FROM ubuntu\n'
+        }]
+      })
+        .expect(400)
+        .expectBody(function (body) {
+          /\"body.context.name\" is required/.test(body.message).should.equal(true);
+        })
+        .end(done);
+    });
+    it('should error when given an invalid name for a context', function (done) {
+      this.admin.post('/projects', {
+        name: 'new-project',
+        contexts: [{
+          name: 'web server',
+          dockerfile: 'FROM ubuntu\n'
+        }]
+      })
+        .expect(400)
+        .expectBody(function (body) {
+          /\"body.context.name\" should match/.test(body.message).should.equal(true);
+        })
         .end(done);
     });
     it('should create a new project given no files', function (done) {
