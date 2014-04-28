@@ -9,7 +9,7 @@ var extendContextSeries = helpers.extendContextSeries;
 var validProjectData = {
   name: 'new project',
   contexts: [{
-    'name': 'web server',
+    'name': 'web-server',
     'dockerfile': 'FROM ubuntu\n' +
       'WORKDIR /root\n' +
       'RUN git clone https://github.com/heroku/node-js-sample\n' +
@@ -41,15 +41,14 @@ describe('Projects', function () {
       this.admin.post('/projects', {
         name: 'new project'
       })
-        // .expect(400) // this should be the responce, but...
-        .expect(500) // TODO: pick in Boom handler
+        .expect(400)
         .end(done);
     });
     it('should error when missing context parameters', function (done) {
       this.admin.post('/projects', {
         name: 'new project',
         contexts: [{
-          'name': 'web server'
+          'name': 'web-server'
         }]
       })
         .expect(400)

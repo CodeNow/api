@@ -12,7 +12,7 @@ var extendContextSeries = helpers.extendContextSeries;
 var validProjectData = {
   name: 'new project',
   contexts: [{
-    'name': 'web server',
+    'name': 'web-server',
     'dockerfile': 'FROM ubuntu\n' +
       'WORKDIR /root\n' +
       'RUN git clone https://github.com/heroku/node-js-sample\n' +
@@ -80,13 +80,13 @@ describe('Contexts', function () {
     afterEach(helpers.cleanup);
 
     it('should error without all the required parameters', function (done) {
-      this.admin.post('/contexts', { 'name': 'sample name' })
+      this.admin.post('/contexts', { 'name': 'sample-name' })
         .expect(400)
         .end(done);
     });
     it('should error without a parent', function (done) {
       this.admin.post('/contexts', {
-        'name': 'sample name',
+        'name': 'sample-name',
         'dockerfile': 'FROM ubuntu\n'
       })
         .expect(400)
@@ -147,7 +147,7 @@ describe('Contexts', function () {
       var self = this;
       this.admin.get('/contexts/' + this.project.body.contexts[0].context)
         .expect(200)
-        .expectBody('name', 'web server')
+        .expectBody('name', 'web-server')
         .expectBody(function (body) {
           var dockerfile = url.parse(body.dockerfile);
           dockerfile.protocol.should.equal('s3:');
@@ -163,12 +163,12 @@ describe('Contexts', function () {
       it('should create a context on request', function (done) {
         var self = this;
         this.admin.post('/contexts', {
-          'name': 'sample name',
+          'name': 'sample-name',
           'dockerfile': 'FROM ubuntu\n',
           'project': this.project.body._id.toString()
         })
           .expect(201)
-          .expectBody('name', 'sample name')
+          .expectBody('name', 'sample-name')
           .expectBody(function (body) {
             var dockerfile = url.parse(body.dockerfile);
             dockerfile.protocol.should.equal('s3:');
@@ -186,7 +186,7 @@ describe('Contexts', function () {
           context: function (done) {
             users.createAdmin(function (err, user) {
               user.post('/contexts', {
-                'name': 'sample name',
+                'name': 'sample-name',
                 'dockerfile': 'FROM ubuntu\n',
                 'project': projectId
               }).expect(201).end(done);
