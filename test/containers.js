@@ -23,8 +23,22 @@ var configs = require('../lib/configs');
 var specData = helpers.specData;
 var pubsub = require('redis').createClient(configs.redis.port, configs.redis.ipaddress);
 pubsub.psubscribe('events:*');
+var createCount = require('callback-count');
+
+var docker = require('./lib/fixtures/docker');
+var docklet = require('./lib/fixtures/docklet');
 
 describe('Containers', function () {
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
   before(extendContext({
     image: images.createImageFromFixture.bind(images, 'node.js')
   }));
@@ -566,6 +580,16 @@ describe('Containers', function () {
 });
 
 describe('Github Import', function () {
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
   before(extendContextSeries({
     owner: users.createPublisher,
     channels: channels.createChannels('node'),

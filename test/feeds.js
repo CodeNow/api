@@ -6,8 +6,23 @@ var redis = require('models/redis');
 var utils = require('middleware/utils');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
+var createCount = require('callback-count');
+
+var docker = require('./lib/fixtures/docker');
+var docklet = require('./lib/fixtures/docklet');
 
 describe('Feeds', function () {
+
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
   before(extendContextSeries({
     admin: users.createAdmin,
     channels: channels.createChannels('one', 'two', 'three'),
@@ -185,6 +200,16 @@ describe('Feeds', function () {
 });
 
 describe('Feeds Pagination', function () {
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
   before(extendContextSeries({
     admin: users.createAdmin,
     channels: channels.createChannels('one', 'two', 'three'),

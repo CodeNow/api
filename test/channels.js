@@ -3,11 +3,24 @@ var images = require('./lib/imageFactory');
 var channels = require('./lib/channelsFactory');
 var categories = require('./lib/categoriesFactory');
 var helpers = require('./lib/helpers');
+var createCount = require('callback-count');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 
-describe('Channels', function () {
+var docker = require('./lib/fixtures/docker');
+var docklet = require('./lib/fixtures/docklet');
 
+describe('Channels', function () {
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
   afterEach(helpers.cleanup);
 
   describe('GET /channels', function () {

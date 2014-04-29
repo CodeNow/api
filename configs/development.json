@@ -6,6 +6,10 @@
     "ipaddress": "127.0.0.1",
     "port": "6379"
   },
+  "sharedRedis": {
+    "ipaddress": "127.0.0.1",
+    "port": "6379"
+  },
   "port": 3030,
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
@@ -38,5 +42,19 @@
   "cacheRefreshInterval": "60 minutes",
   "SES": {
     "sendMail": false
+  },
+  "container": {
+    "binds": ["/home/ubuntu/dockworker:/dockworker:ro"],
+    "bindFolder": "/dockworker",
+    "portSpecs": [
+      "80",
+      "15000"
+    ],
+    "cmd": ["/dockworker/bin/node", "/dockworker"]
+  },
+  "frontdoor": {
+    "protocol": "http:",
+    "host": "127.0.0.1",
+    "port": 7050
   }
 }

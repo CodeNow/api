@@ -6,6 +6,10 @@
     "ipaddress": "127.0.0.1",
     "port": "6379"
   },
+  "sharedRedis": {
+    "ipaddress": "10.0.1.20",
+    "port": "6379"
+  },
   "newrelic": {
     "name": "api-production",
     "key": "338516e0826451c297d44dc60aeaf0a0ca4bfead"
@@ -60,5 +64,19 @@
     "from": "Feedback <feedback@runnable.com>",
     "replyTo": "Feedback <feedback@runnable.mail.intercom.io>",
     "moderators": "moderators@runnable.com"
+  },
+  "container": {
+    "binds": ["/home/ubuntu/dockworker:/dockworker:ro"],
+    "bindFolder": "/dockworker",
+    "portSpecs": [
+      "80",
+      "15000"
+    ],
+    "cmd": ["/dockworker/bin/node", "/dockworker"]
+  },
+  "frontdoor": {
+    "protocol": "http:",
+    "host": "10.0.1.153",
+    "port": 7050
   }
 }
