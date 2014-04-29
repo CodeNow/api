@@ -21,7 +21,7 @@ app.all('*', express.logger(), function (req, res, next) {
 module.exports.started = false;
 module.exports.start = function (cb) {
   var self = this;
-  app.listen(4244, function (err) {
+  this.server = app.listen(4244, function (err) {
     self.started = true;
     cb(err);
   });
@@ -29,7 +29,7 @@ module.exports.start = function (cb) {
 };
 module.exports.stop = function (cb) {
   var self = this;
-  app.close(function (err) {
+  this.server.close(function (err) {
     self.started = false;
     cb(err);
   });

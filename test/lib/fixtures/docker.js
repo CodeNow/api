@@ -1,4 +1,5 @@
 var app = require('docker-mock');
+
 module.exports.started = false;
 module.exports.start = function (port, cb) {
   if (typeof port === 'function') {
@@ -7,8 +8,7 @@ module.exports.start = function (port, cb) {
   }
   port = port || 4243;
   var self = this;
-  app.listen(port, function (err) {
-    console.log('ODKCER IS LISTEN', port);
+  this.server = app.listen(port, function (err) {
     self.started = true;
     cb(err);
   });
@@ -16,7 +16,7 @@ module.exports.start = function (port, cb) {
 };
 module.exports.stop = function (cb) {
   var self = this;
-  app.close(function (err) {
+  this.server.close(function (err) {
     self.started = false;
     cb(err);
   });

@@ -48,5 +48,10 @@
       "15000"
     ],
     "cmd": ["/dockworker/bin/node", "/dockworker"]
+  },
+  "frontdoor": {
+    "protocol": "http:",
+    "host": "127.0.0.1",
+    "port": 7050
   }
 }
