@@ -76,22 +76,9 @@ module.exports = function (TestUser) {
           .end(async.pick('body', cb));
       },
       function (container, cb) {
-        var imageProgressChannel = 'events:' + container.servicesToken + ':progress';
-        client.subscribe(imageProgressChannel, function () {
-          client.on('message', function (channel, message) {
-            var channelMatch = (channel === imageProgressChannel);
-            var messageIsFinished = message.toLowerCase() === 'finished';
-            if (channelMatch && messageIsFinished) {
-              self.getImage(container.parent)
-                .expect(200)
-                .end(async.pick('body', function (err, body) {
-                  client.unsubscribe(imageProgressChannel, function () {
-                    cb(err, body);
-                  });
-                }));
-            }
-          });
-        });
+        self.getImage(container.parent)
+          .expect(200)
+          .end(async.pick('body', cb));
       }
     ], callback);
   };

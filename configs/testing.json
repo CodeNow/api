@@ -18,7 +18,6 @@
   "shortProjectIds": true,
   "socketTimeout": "2 minutes",
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "http://localhost:3033",
   "runnable_access_timeout": "5 seconds",
   "logExpress": false,
   "logErrorStack": false,

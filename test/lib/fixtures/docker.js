@@ -9,6 +9,7 @@ module.exports.start = function (port, cb) {
   port = port || 4243;
   var self = this;
   this.server = app.listen(port, function (err) {
+    if (err) { throw err; }
     self.started = true;
     cb(err);
   });

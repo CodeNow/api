@@ -2,7 +2,6 @@ var users = require('./lib/userFactory');
 var helpers = require('./lib/helpers');
 var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
-require('./lib/fixtures/harbourmaster');
 require('./lib/fixtures/dockworker');
 var createCount = require('callback-count');
 

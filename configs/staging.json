@@ -31,7 +31,6 @@
   },
   "rollbar": "119509f9ba314df8a9ffbaf7b4812fb6",
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "http://10.0.1.9:3000",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,

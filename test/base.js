@@ -1,7 +1,6 @@
 var helpers = require('./lib/helpers');
 var users = require('./lib/userFactory');
 var extendContext = helpers.extendContext;
-require('./lib/fixtures/harbourmaster');
 
 describe('Base', function () {
   afterEach(helpers.cleanup);

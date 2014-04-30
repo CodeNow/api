@@ -8,6 +8,7 @@
   },
   "private": true,
   "dependencies": {
+    "101": "~0.1.0",
     "express": "~3.2.6",
     "redis": "~0.8.3",
     "eson": "~0.4.1",
@@ -35,9 +36,7 @@
     "github-nabber": "0.0.2",
     "jscoverage": "0.3.8",
     "keypather": "~1.1.0",
-    "map-utils": "~0.2.0",
     "dat-middleware": "~1.0.2",
-    "middleware-flow": "~0.2.0",
     "function-proxy": "~0.5.1",
     "exists": "~1.0.0",
     "newrelic": "~1.4.0",
@@ -46,7 +45,8 @@
     "fn-object": "~0.2.2",
     "callback-count": "~0.1.0",
     "docker-mock": "0.0.5",
-    "dockerode": "~1.2.10"
+    "dockerode": "~1.2.10",
+    "middleware-flow": "~0.2.1"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
