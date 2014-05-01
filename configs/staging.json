@@ -79,7 +79,7 @@
   },
   "frontdoor": {
     "protocol": "http:",
-    "host": "10.0.1.121",
+    "hostname": "10.0.1.121",
     "port": 7050
   }
 }
