@@ -585,7 +585,10 @@ describe('Containers', function () {
       it('should start the container', function (done) {
         this.user.specRequest(this.container._id)
           .send(this.container)
-          .expect(204)
+          .expect(200)
+          .expectBody('host')
+          .expectBody('servicesPort')
+          .expectBody('webPort')
           .end(done);
       });
     });
