@@ -35,7 +35,7 @@
     "multiparty": "~3.2.2",
     "github-nabber": "0.0.2",
     "jscoverage": "0.3.8",
-    "keypather": "~1.1.0",
+    "keypather": "~1.4.0",
     "dat-middleware": "~1.0.2",
     "function-proxy": "~0.5.1",
     "exists": "~1.0.0",
