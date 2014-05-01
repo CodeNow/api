@@ -576,6 +576,35 @@ describe('Containers', function () {
     }
   }
 
+  describe('PUT /users/me/runnables/:id/start', function () {
+    describe('owner', function () {
+      beforeEach(extendContextSeries({
+        user: users.createPublisher,
+        container: ['user.createContainer', ['image._id']]
+      }));
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(204)
+          .end(done);
+      });
+    });
+  });
+  describe('PUT /users/me/runnables/:id/stop', function () {
+    describe('owner', function () {
+      beforeEach(extendContextSeries({
+        user: users.createPublisher,
+        container: ['user.createContainer', ['image._id']]
+      }));
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(204)
+          .end(done);
+      });
+    });
+  });
+
   describe('DEL /users/me/runnables/:id', function () {
     describe('owner', function () {
       beforeEach(extendContextSeries({
