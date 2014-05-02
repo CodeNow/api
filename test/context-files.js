@@ -53,12 +53,13 @@ describe('Context Files', function () {
   });
 
   afterEach(function (done) {
+    var self = this;
     async.series([
       function (cb) {
-        this.publisher.del(join('/contexts', this.project.contexts[0].id)).expect(204).end(cb);
+        self.publisher.del(join('/contexts', self.project.contexts[0].id)).expect(204).end(cb);
       },
       function (cb) {
-        this.publisher.del(join('/project', this.project.id)).expect(204).end(cb);
+        self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
       },
     ], done);
   });

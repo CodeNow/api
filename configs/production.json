@@ -31,7 +31,6 @@
   },
   "rollbar": "119509f9ba314df8a9ffbaf7b4812fb6",
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "http://10.0.1.243:3000",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
@@ -72,11 +71,15 @@
       "80",
       "15000"
     ],
+    "portBindings": {
+      "80/tcp": [{}],
+      "15000/tcp": [{}]
+    },
     "cmd": ["/dockworker/bin/node", "/dockworker"]
   },
   "frontdoor": {
     "protocol": "http:",
-    "host": "10.0.1.153",
+    "hostname": "10.0.1.153",
     "port": 7050
   }
 }

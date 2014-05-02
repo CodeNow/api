@@ -25,7 +25,6 @@
     }
   },
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "http://localhost:4245",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
@@ -57,11 +56,15 @@
       "80",
       "15000"
     ],
+    "portBindings": {
+      "80/tcp": [{}],
+      "15000/tcp": [{}]
+    },
     "cmd": ["/dockworker/bin/node", "/dockworker"]
   },
   "frontdoor": {
     "protocol": "http:",
-    "host": "127.0.0.1",
+    "hostname": "127.0.0.1",
     "port": 7050
   }
 }

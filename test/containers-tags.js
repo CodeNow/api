@@ -1,14 +1,32 @@
-// FIXME: tags will not be on containers. they will be on projects
 // var users = require('./lib/userFactory');
 // var helpers = require('./lib/helpers');
 // var extendContext = helpers.extendContext;
 // var extendContextSeries = helpers.extendContextSeries;
-// require('./lib/fixtures/harbourmaster');
 // require('./lib/fixtures/dockworker');
 // var createCount = require('callback-count');
 
 // var docker = require('./lib/fixtures/docker');
 // var docklet = require('./lib/fixtures/docklet');
+
+// describe('Containers Tags', function () {
+//   var channelName = 'node.js';
+
+//   before(function (done) {
+//     var count = createCount(done);
+//     this.docklet = docklet.start(count.inc().next);
+//     this.docker  = docker.start(count.inc().next);
+//   });
+//   after(function (done) {
+//     var count = createCount(done);
+//     this.docklet.stop(count.inc().next);
+//     this.docker.stop(count.inc().next);
+//   });
+//   before(extendContextSeries({
+//     admin: users.createAdmin,
+//     image: ['admin.createImageFromFixture', ['node.js']],
+//     channel: ['admin.createChannel', [channelName]]
+//   }));
+//   after(helpers.cleanup);
 
 // describe('Containers Tags', function () {
 //   var channelName = 'node.js';

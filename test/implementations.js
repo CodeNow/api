@@ -4,13 +4,29 @@
 // var helpers = require('./lib/helpers');
 // var extendContext = helpers.extendContext;
 // var extendContextSeries = helpers.extendContextSeries;
-// require('./lib/fixtures/harbourmaster');
 // require('./lib/fixtures/dockworker');
 // var implData = helpers.implData;
 // var createCount = require('callback-count');
 
 // var docker = require('./lib/fixtures/docker');
 // var docklet = require('./lib/fixtures/docklet');
+
+// describe('Implementations', function () {
+//   before(function (done) {
+//     var count = createCount(done);
+//     this.docklet = docklet.start(count.inc().next);
+//     this.docker  = docker.start(count.inc().next);
+//   });
+//   after(function (done) {
+//     var count = createCount(done);
+//     this.docklet.stop(count.inc().next);
+//     this.docker.stop(count.inc().next);
+//   });
+//   before(extendContext({
+//     image: images.createImageFromFixture.bind(images, 'node.js')
+//   }));
+//   afterEach(helpers.cleanupExcept('image'));
+//   after(helpers.cleanup);
 
 // describe('Implementations', function () {
 //   before(function (done) {

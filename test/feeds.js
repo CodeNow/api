@@ -38,6 +38,34 @@
 //   beforeEach(helpers.clearRedis('imagefeed_*'));
 //   afterEach(helpers.clearRedis('imagefeed_*'));
 
+// describe('Feeds', function () {
+
+// describe('Feeds Pagination', function () {
+//   before(function (done) {
+//     var count = createCount(done);
+//     this.docklet = docklet.start(count.inc().next);
+//     this.docker  = docker.start(count.inc().next);
+//   });
+//   after(function (done) {
+//     var count = createCount(done);
+//     this.docklet.stop(count.inc().next);
+//     this.docker.stop(count.inc().next);
+//   });
+//   before(extendContextSeries({
+//     admin: users.createAdmin,
+//     channels: channels.createChannels('one', 'two', 'three'),
+//     untaggedImage: ['admin.createImageFromFixture', ['node.js']],
+//     image1: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
+//     image2: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
+//     image3: ['admin.createTaggedImage', ['node.js', 'channels[2]']],
+//     image4: ['admin.createTaggedImage', ['node.js', 'channels[2]']],
+//     image5: ['admin.createTaggedImage', ['node.js', 'channels[2]']],
+//     image6: ['admin.createTaggedImage', ['node.js', ['channels[1]', 'channels[2]']]]
+//   }));
+//   after(helpers.cleanup);
+//   beforeEach(helpers.clearRedis('imagefeed_*'));
+//   afterEach(helpers.clearRedis('imagefeed_*'));
+
 //   describe('GET /feeds/images', function () {
 //     beforeEach(extendContext({
 //       user : users.createAnonymous

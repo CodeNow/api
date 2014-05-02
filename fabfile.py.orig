@@ -143,6 +143,21 @@ def track_deployment():
   """
   Update deployments for tracking
   """
+<<<<<<< HEAD
+  with cd('api-server'):
+    branch = run('git rev-parse --abbrev-ref HEAD')
+    commit = run('git rev-parse HEAD');
+    author = env.author
+    note = env.note
+    cmd = 'curl -H "x-api-key:b04ef0fa7d124e606c0c480ac9207a85b78787bda4bfead" \
+      -d "deployment[application_id]=' + env.newrelic_application_id+'\" \
+      -d "deployment[description]=branch:'+branch+'" \
+      -d "deployment[revision]=' + commit + '" \
+      -d "deployment[changelog]=' + note + '" \
+      -d "deployment[user]=' + author + '" \
+      https://api.newrelic.com/deployments.xml'
+    run(cmd)
+=======
   if env.newrelic_application_id:
     with cd('api-server'):
       branch = run('git rev-parse --abbrev-ref HEAD')
@@ -157,6 +172,7 @@ def track_deployment():
         -d "deployment[user]=' + author + '" \
         https://api.newrelic.com/deployments.xml'
       run(cmd) 
+>>>>>>> master
 
 """
 Commands - deployment

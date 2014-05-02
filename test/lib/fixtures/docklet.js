@@ -22,6 +22,7 @@ module.exports.started = false;
 module.exports.start = function (cb) {
   var self = this;
   this.server = app.listen(4244, function (err) {
+    if (err) { throw err; }
     self.started = true;
     cb(err);
   });
