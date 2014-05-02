@@ -47,7 +47,8 @@
     "callback-count": "~0.1.0",
     "docker-mock": "0.0.5",
     "fn-object": "~0.2.2",
-    "simple-api-client": "~0.2.3"
+    "simple-api-client": "~0.2.3",
+    "dogerode": "0.0.3"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
