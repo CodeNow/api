@@ -577,10 +577,24 @@ describe('Containers', function () {
   }
 
   describe('PUT /users/me/runnables/:id/start', function () {
+    beforeEach(extendContextSeries({
+      user: users.createPublisher,
+      container: ['user.createContainer', ['image._id']]
+    }));
     describe('owner', function () {
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(200)
+          .expectBody('host')
+          .expectBody('servicesPort')
+          .expectBody('webPort')
+          .end(done);
+      });
+    });
+    describe('admin', function () {
       beforeEach(extendContextSeries({
-        user: users.createPublisher,
-        container: ['user.createContainer', ['image._id']]
+        user: users.createAdmin
       }));
       it('should start the container', function (done) {
         this.user.specRequest(this.container._id)
@@ -592,16 +606,55 @@ describe('Containers', function () {
           .end(done);
       });
     });
+    describe('servicesToken', function () {
+      beforeEach(extendContextSeries({
+        user: users.createTokenless
+      }));
+      it('should start the container', function (done) {
+        console.log(this.container.servicesToken);
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .query({ servicesToken: this.container.servicesToken })
+          .expect(200)
+          .expectBody('host')
+          .expectBody('servicesPort')
+          .expectBody('webPort')
+          .end(done);
+      });
+    });
   });
   describe('PUT /users/me/runnables/:id/stop', function () {
+    beforeEach(extendContextSeries({
+      user: users.createPublisher,
+      container: ['user.createContainer', ['image._id']]
+    }));
     describe('owner', function () {
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(204)
+          .end(done);
+      });
+    });
+    describe('admin', function () {
       beforeEach(extendContextSeries({
-        user: users.createPublisher,
-        container: ['user.createContainer', ['image._id']]
+        user: users.createAdmin
       }));
       it('should start the container', function (done) {
         this.user.specRequest(this.container._id)
           .send(this.container)
+          .expect(204)
+          .end(done);
+      });
+    });
+    describe('servicesToken', function () {
+      beforeEach(extendContextSeries({
+        user: users.createTokenless
+      }));
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .query({ servicesToken: this.container.servicesToken })
           .expect(204)
           .end(done);
       });
