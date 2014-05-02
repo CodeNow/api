@@ -26,10 +26,13 @@ var projectId;
 
 describe('Contexts', function () {
   beforeEach(extendContextSeries({
-    admin: users.createAdmin
+    admin: users.createAdmin,
+    publisher: users.createPublisher,
+    anonymous: users.createAnonymous
   }));
   afterEach(helpers.cleanup);
 
+  // FIXME: this is a unit test
   describe('working with context objects', function () {
     it('should not allow a resource to be uploaded to the wrong bucket', function (done) {
       var context = new Context();
@@ -168,6 +171,7 @@ describe('Contexts', function () {
             .expect(201)
             .expectBody(function (body) {
               body.contexts.length.should.equal(1);
+              body.contexts[0].id.should.not.equal(undefined);
             })
             .end(function (err, res) {
               if (err) {
@@ -183,7 +187,7 @@ describe('Contexts', function () {
 
     it('should give us details about a context', function (done) {
       var self = this;
-      this.admin.get('/contexts/' + this.project.contexts[0].context)
+      this.admin.get('/contexts/' + this.project.contexts[0].id)
         .expect(200)
         .expectBody('name', 'web-server')
         .expectBody(function (body) {
@@ -242,6 +246,71 @@ describe('Contexts', function () {
             .end(done);
         });
       });
+    });
+  });
+
+  describe('deleting contexts', function () {
+    beforeEach(function (done) {
+      delete this.project;
+      var self = this;
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .reply(200, "");
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .filteringRequestBody(function(path) { return '*'; })
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
+        .reply(200, "");
+
+      users.createAdmin(function (err, user) {
+        user.post('/projects', validProjectData)
+          .expect(201)
+          .end(function (err, res) {
+            self.project = res ? res.body : undefined;
+            done(err);
+          });
+      });
+    });
+    afterEach(function (done) {
+      if (!this.project) {
+        return done();
+      }
+      var self = this;
+      users.createAdmin(function (err, user) {
+        user.del('/projects/' + self.project._id).expect(204).end(done);
+      });
+    });
+
+    it('should not be allowed by not the owner', function (done) {
+      var self = this;
+      self.anonymous.del('/contexts/' + self.project.contexts[0].id)
+        .expect(403)
+        .end(function (err, res) {
+          if (err) {
+            return done(err);
+          }
+          self.admin.get('/contexts/' + self.project.contexts[0].id)
+            .expect(200)
+            .end(done);
+        });
+    });
+    it('should delete the context', function (done) {
+      var self = this;
+      var id = self.project.contexts[0].id;
+      delete this.project;
+      self.admin.del('/contexts/' + id)
+        .expect(204)
+        .end(function (err, res) {
+          if (err) {
+            return done(err);
+          }
+          self.admin.get('/projects/' + id)
+            .expect(404)
+            .end(done);
+        });
     });
   });
 });

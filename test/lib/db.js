@@ -44,7 +44,9 @@ var db = module.exports = {
   dropDatabase: function (callback) {
     callback = callback || function () {};
     console.log('  drop db');
-    mongoose.connection.db.dropDatabase(callback);
+    if (mongoose.connection.db) {
+      mongoose.connection.db.dropDatabase(callback);
+    }
   },
   removeCollectionDocuments: function (callback) {
     var names =  Object.keys(mongoose.connection.collections);

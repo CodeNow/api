@@ -8,7 +8,7 @@
   },
   "private": true,
   "dependencies": {
-    "async": "~0.2.10",
+    "async": "~0.8.0",
     "bcrypt": "~0.7.5",
     "concat-stream": "~1.4.1",
     "debug": "~0.7.2",
@@ -26,7 +26,7 @@
     "mailchimp": "~1.1.0",
     "map-utils": "~0.2.0",
     "dat-middleware": "~1.3.0",
-    "middleware-flow": "~0.2.0",
+    "middleware-flow": "~0.2.1",
     "mkdirp": "~0.3.5",
     "mongoose": "~3.8.5",
     "mongoose-text-search": "0.0.2",
@@ -42,14 +42,14 @@
     "node-uuid": "~1.4.0",
     "nodemailer": "~0.6.1",
     "nodetime": "0.8.12",
-    "query-string": "~0.3.0",
     "redis": "~0.8.3",
     "request": "~2.21.0",
     "rimraf": "~2.1.4",
     "rollbar": "~0.2.5",
     "strong-agent": "*",
     "tar": "gyllstromk/node-tar",
-    "underscore.inflections": "~0.2.1"
+    "underscore.inflections": "~0.2.1",
+    "docker-image-builder": "git://github.com/Runnable/docker-image-builder"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
@@ -62,15 +62,19 @@
     "osx-notifier": "~0.2.1",
     "methods": "~0.1.0",
     "findit": "~1.1.0",
-    "nock": "~0.28.3"
+    "nock": "~0.28.3",
+    "lab": "~3.1.0"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
+    "fixme": "grep -nR FIXME lib test",
+    "todo": "grep -nR TODO lib test",
     "start": "NODE_PATH=./lib node server.js",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs -q server.js",
     "testwatch": "NODE_PATH=./lib nodemon --delay 1 -w lib -w test -w configs -x npm test",
     "coverage": "bash ./scripts/run_coverage.sh",
-    "test": "npm run lint && NODE_ENV=testing NODE_PATH=./lib mocha -t 5000",
+    "test": "NODE_ENV=testing NODE_PATH=./lib mocha",
+    "unit": "NODE_PATH=./lib lab -e testing -vG unit/",
     "test-debug": "npm run lint && NODE_ENV=testing NODE_PATH=./lib mocha --debug-brk",
     "test-int": "npm run lint && NODE_ENV=testing-integration NODE_PATH=./lib mocha --timeout 20000",
     "clean": "rm -rf ./coverage",
