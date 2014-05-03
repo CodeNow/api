@@ -6,6 +6,10 @@
     "ipaddress": "127.0.0.1",
     "port": "6379"
   },
+  "sharedRedis": {
+    "ipaddress": "127.0.0.1",
+    "port": "6379"
+  },
   "port": 3030,
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
@@ -21,7 +25,6 @@
     }
   },
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "http://localhost:4245",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
@@ -38,5 +41,23 @@
   "cacheRefreshInterval": "60 minutes",
   "SES": {
     "sendMail": false
+  },
+  "container": {
+    "binds": ["/home/ubuntu/dockworker:/dockworker:ro"],
+    "bindFolder": "/dockworker",
+    "portSpecs": [
+      "80",
+      "15000"
+    ],
+    "portBindings": {
+      "80/tcp": [{}],
+      "15000/tcp": [{}]
+    },
+    "cmd": ["/dockworker/bin/node", "/dockworker"]
+  },
+  "frontdoor": {
+    "protocol": "http:",
+    "hostname": "127.0.0.1",
+    "port": 7050
   }
 }

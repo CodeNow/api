@@ -18,7 +18,7 @@ def production():
   env.requireNote = True;
   env.settings = 'production'
   env.hosts = [
-    'api'
+    'prod-api'
   ]
   env.newrelic_application_id = "3874131"
 
@@ -29,7 +29,7 @@ def integration():
   env.requireNote = False;
   env.settings = 'integration'
   env.hosts = [
-    'api-int'
+    'int-api'
   ]
 
 def staging():
@@ -39,7 +39,7 @@ def staging():
   env.requireNote = False;
   env.settings = 'staging'
   env.hosts = [
-    'api-rep_int'
+    'stage-api'
   ]
 
 def runnable3():
@@ -119,7 +119,7 @@ def boot():
   """
   with cd('api-server'):
     run('NODE_ENV=%(settings)s NODE_PATH=lib pm2 start server.js -n api-server -i 10' % env)
-  run('NODE_ENV=%(settings)s pm2 start api-server/scripts/meetyourmaker.js -n cleanup' % env)
+    run('NODE_ENV=%(settings)s pm2 start api-server/scripts/meetyourmaker.js -n cleanup' % env)
   # run('NODE_ENV=%(settings)s forever start api-server/scripts/refreshcache.js' % env)
 
 def validateNote(input):
@@ -156,7 +156,7 @@ def track_deployment():
         -d "deployment[changelog]=' + note + '" \
         -d "deployment[user]=' + author + '" \
         https://api.newrelic.com/deployments.xml'
-      run(cmd) 
+      run(cmd)
 
 """
 Commands - deployment
@@ -167,7 +167,7 @@ def deploy():
   """
   require('settings', provided_by=[production, integration, staging])
   require('branch', provided_by=[stable, master, branch])
-  
+
   prompt("your name please: ", "author")
   addNote()
   checkout_latest()
@@ -183,7 +183,7 @@ def reboot():
   """
   if (env.dockerized):
     sudo("docker stop $(sudo docker ps -q)")
-  else: 
+  else:
     run('forever stopall || echo not started')
     run('pm2 kill || echo no pm2')
     boot()

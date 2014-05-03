@@ -9,8 +9,21 @@ var extendContext = helpers.extendContext;
 var extendContextSeries = helpers.extendContextSeries;
 var uuid = require('node-uuid');
 var configs = require('configs');
+var createCount = require('callback-count');
+var docker = require('./lib/fixtures/docker');
+var docklet = require('./lib/fixtures/docklet');
 
 describe('Images', function () {
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
   before(extendContextSeries({
     owner: users.createPublisher,
     image: ['owner.createImageFromFixture', ['node.js']]
@@ -188,152 +201,6 @@ describe('Images', function () {
         .end(done);
     });
   });
-});
-
-describe('Image Pagination', function () {
-  describe('GET /runnables', function () {
-    describe('all', function () {
-      beforeEach(extendContextSeries({
-        admin: users.createAdmin,
-        channels: channels.createChannels('one', 'two'),
-        image:    ['admin.createTaggedImage', ['node.js', 'channels[0]']],
-        image2:   ['admin.createTaggedImage', ['node.js', 'channels[0]']],
-        image3:   ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]],
-        image4:   ['admin.createTaggedImage', ['node.js', 'channels[1]']],
-        image5:   ['admin.createTaggedImage', ['node.js', 'channels[1]']],
-        image6: images.createImageFromFixture.bind(images, 'node.js', 'name4'),
-        user: users.createAnonymous
-      }));
-      afterEach(helpers.cleanup);
-      it('should list only tagged runnables (no query)', function (done) {
-        this.user.specRequest()
-          .expect(200)
-          .expectBody(function (body) {
-            body.data.should.be.an.instanceOf(Array);
-            body.data.should.have.a.lengthOf(5);
-          })
-          .end(done);
-      });
-      it('should list all runnables (all query)', function (done) {
-        this.user.specRequest({ all:true })
-          .expect(200)
-          .expectBody(function (body) {
-            body.data.should.be.an.instanceOf(Array);
-            body.data.should.have.a.lengthOf(6);
-          })
-          .end(done);
-      });
-      it('should list all (tagged) runnables for site map (map query)', function (done) {
-        this.user.specRequest({ map: true })
-          .expect(200)
-          .expectArray(5)
-          .end(done);
-      });
-      it('should list all (tagged) runnables by owner', function (done) {
-        this.user.specRequest({ owner: this.admin._id })
-          .expect(200)
-          .expectBody(function (body) {
-            body.data.should.be.an.instanceOf(Array);
-            body.data.should.have.a.lengthOf(5);
-          })
-          .end(done);
-      });
-      it('should list all (tagged) runnables by ownerUsername', function (done) {
-        this.user.specRequest({ ownerUsername: this.admin.username })
-          .expect(200)
-          .expectBody(function (body) {
-            body.data.should.be.an.instanceOf(Array);
-            body.data.should.have.a.lengthOf(5);
-          })
-          .end(done);
-      });
-    });
-
-
-    describe('channel runnables', function () {
-      before(extendContextSeries({
-        admin: users.createAdmin,
-        channels: channels.createChannels('one', 'two', 'three'),
-        image:  ['admin.createTaggedImage', ['node.js', 'channels[0]']],
-        image2: ['admin.createTaggedImage', ['node.js', 'channels[0]']],
-        image3: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]],
-        image4: ['admin.createTaggedImage', ['node.js', 'channels[1]']],
-        image5: ['admin.createTaggedImage', ['node.js', ['channels[1]', 'channels[2]']]],
-        image6: ['admin.createTaggedImage', ['node.js', ['channels[0]', 'channels[1]']]]
-      }));
-      it('should list runnable by channel', function (done) {
-        this.user.specRequest({
-            channel: this.channels[0].name,
-            page: 1,
-            limit: 2
-          })
-          .expect(200)
-          .expectBody(function (body) {
-            body.paging.lastPage.should.equal(1);
-            body.channels.should.have.a.lengthOf(2);
-            body.data.should.have.a.lengthOf(2);
-            body.data[0].tags.should.be.an.instanceOf(Array);
-            body.data[0].tags[0].should.have.property('name');
-            // not sorted any specific way
-          })
-          .end(done);
-      });
-      it('should list runnables and sort -created', function (done) {
-        var images = [this.image5];
-        this.user.specRequest({
-            channel: this.channels[1].name,
-            sort:'-created',
-            page: 1,
-            limit: 1
-          })
-          .expect(200)
-          .expectBody(function (body) {
-            body.channels.should.have.a.lengthOf(3);
-            body.paging.lastPage.should.equal(3);
-            body.data.should.have.a.lengthOf(images.length);
-            _.each(images, bodyImageDataCheck, body);
-          })
-          .end(done);
-      });
-      it('should list runnables and sort (+)created', function (done) {
-        var images = [this.image3, this.image6];
-        this.user.specRequest({
-            channel: this.channels[0].name,
-            sort:'created',
-            page: 1,
-            limit: 2
-          })
-          .expect(200)
-          .expectBody(function (body) {
-            body.channels.should.have.a.lengthOf(2);
-            body.paging.lastPage.should.equal(1);
-            body.data.should.have.a.lengthOf(images.length);
-            _.each(images, bodyImageDataCheck, body);
-          })
-          .end(done);
-      });
-      describe('filtering multiple channels', function () {
-        it('should list runnables and be sorted', function (done) {
-          var images = [this.image6, this.image3];
-          this.user.specRequest({
-              channel: [this.channels[0].name, this.channels[1].name],
-              sort:'-created',
-              page: 0,
-              limit: 2
-            })
-            .expect(200)
-            .expectBody(function (body) {
-              body.channels.should.have.a.lengthOf(2);
-              body.paging.lastPage.should.equal(0);
-              body.data.should.have.a.lengthOf(images.length);
-              _.each(images, bodyImageDataCheck, body);
-            })
-            .end(done);
-        });
-      });
-    });
-
-  });
 
   describe('POST /runnables', function() {
     var file = { name: 'filename.txt',
@@ -361,42 +228,58 @@ describe('Image Pagination', function () {
     });
   });
 
-});
-describe('DEL /runnables/:id', function () {
-  describe('owner', function () {
-    before(extendContextSeries({
-      user: users.createPublisher,
-      image2: ['user.createImageFromFixture', ['node.js', uuid.v4()]]
-    }));
-    it('should delete', deleteSuccess);
-  });
-  describe('not owner', function () {
-    before(extendContextSeries({
-      owner: users.createPublisher,
-      image2: ['owner.createImageFromFixture', ['node.js', uuid.v4()]],
-      user: users.createPublisher
-    }));
-    it('should not delete', function (done) {
-      this.user.specRequest(this.image2._id)
-        .expect(403)
-        .end(done);
+  describe('DEL /runnables/:id', function () {
+    describe('owner', function () {
+      before(extendContextSeries({
+        user: users.createPublisher,
+        image2: ['user.createImageFromFixture', ['node.js', uuid.v4()]]
+      }));
+      it('should delete', deleteSuccess);
     });
+    describe('not owner', function () {
+      before(extendContextSeries({
+        owner: users.createPublisher,
+        image2: ['owner.createImageFromFixture', ['node.js', uuid.v4()]],
+        user: users.createPublisher
+      }));
+      it('should not delete', function (done) {
+        this.user.specRequest(this.image2._id)
+          .expect(403)
+          .end(done);
+      });
+    });
+    describe('admin', function () {
+      before(extendContextSeries({
+        owner: users.createPublisher,
+        image2: ['owner.createImageFromFixture', ['node.js', uuid.v4()]],
+        user: users.createAdmin
+      }));
+      it('should delete', deleteSuccess);
+    });
+    function deleteSuccess (done) {
+      this.user.specRequest(this.image2._id)
+        .expect(200)
+        .end(done);
+    }
   });
-  describe('admin', function () {
-    before(extendContextSeries({
-      owner: users.createPublisher,
-      image2: ['owner.createImageFromFixture', ['node.js', uuid.v4()]],
-      user: users.createAdmin
-    }));
-    it('should delete', deleteSuccess);
-  });
-  function deleteSuccess (done) {
-    this.user.specRequest(this.image2._id)
-      .expect(200)
-      .end(done);
-  }
 });
+
 describe('Image Stats', function () {
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
+  before(extendContextSeries({
+    owner: users.createPublisher,
+    image: ['owner.createImageFromFixture', ['node.js']]
+  }));
+  after(helpers.cleanup);
   describe('POST /runnables/:runnableId/stats/views', function () {
     beforeEach(extendContext('user', users.createAnonymous));
     it('should increment runnable views', incStat('views'));

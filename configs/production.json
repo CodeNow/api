@@ -6,6 +6,10 @@
     "ipaddress": "127.0.0.1",
     "port": "6379"
   },
+  "sharedRedis": {
+    "ipaddress": "10.0.1.20",
+    "port": "6379"
+  },
   "newrelic": {
     "name": "api-production",
     "key": "338516e0826451c297d44dc60aeaf0a0ca4bfead"
@@ -27,7 +31,6 @@
   },
   "rollbar": "119509f9ba314df8a9ffbaf7b4812fb6",
   "dockerRegistry": "registry.runnable.com",
-  "harbourmaster": "http://10.0.1.243:3000",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
   "logErrorStack": true,
@@ -60,5 +63,23 @@
     "from": "Feedback <feedback@runnable.com>",
     "replyTo": "Feedback <feedback@runnable.mail.intercom.io>",
     "moderators": "moderators@runnable.com"
+  },
+  "container": {
+    "binds": ["/home/ubuntu/dockworker:/dockworker:ro"],
+    "bindFolder": "/dockworker",
+    "portSpecs": [
+      "80",
+      "15000"
+    ],
+    "portBindings": {
+      "80/tcp": [{}],
+      "15000/tcp": [{}]
+    },
+    "cmd": ["/dockworker/bin/node", "/dockworker"]
+  },
+  "frontdoor": {
+    "protocol": "http:",
+    "hostname": "10.0.1.153",
+    "port": 7050
   }
 }

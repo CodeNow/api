@@ -17,14 +17,27 @@ var delistEmailCallback = defaultDelistEmailCallback;
 emailer.sendDelistEmail = function() { // Spy on this function
   delistEmailCallback();
 };
-require('./lib/fixtures/harbourmaster');
 require('./lib/fixtures/dockworker');
 var configs = require('../lib/configs');
 var specData = helpers.specData;
-var pubsub = require('redis').createClient(configs.redis.port, configs.redis.ipaddress);
-pubsub.psubscribe('events:*');
+var redis = require('redis').createClient(configs.sharedRedis.port, configs.sharedRedis.ipaddress);
+var createCount = require('callback-count');
+
+var docker = require('./lib/fixtures/docker');
+var docklet = require('./lib/fixtures/docklet');
+var github = require('./lib/fixtures/github');
 
 describe('Containers', function () {
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
   before(extendContext({
     image: images.createImageFromFixture.bind(images, 'node.js')
   }));
@@ -342,16 +355,35 @@ describe('Containers', function () {
             container: ['user.createContainer', ['image._id']],
             untag: ['user.removeAllContainerTags', ['container']]
           }));
+          beforeEach(function (done) {
+            var self = this;
+            this.user.get('/runnables')
+              .expect(200)
+              .end(function (err, res) {
+                if (err) { return done(err); }
+                self.imageCount = res.body.data.length;
+                done();
+              });
+          });
           it ('should not send email if delisted (owner delisted)', function (done) {
             // no overriding the function above
+            var self = this;
             var data = _.clone(this.container);
             data.name = helpers.randomValue();
-            data.status = 'Committing back';
+            var count = createCount(2, done);
             this.user.specRequest(this.container._id)
               .expect(200)
               .send(data)
               .expectBody('_id')
-              .end(done);
+              .end(count.next);
+            this.user.get('/runnables')
+              .expect(200)
+              .end(function (err, res) {
+                if (err) { return done(err); }
+                // publish back - total image count stayed the same.
+                self.imageCount.should.equal(res.body.data.length);
+                count.next();
+              });
           });
         });
       });
@@ -384,13 +416,13 @@ describe('Containers', function () {
             newContainer: ['admin.createContainer', ['publish._id']]
           }));
           it ('should update the container', function (done) {
-            var checkDone = helpers.createCheckDone(done);
+            var count = createCount(done);
             var Container = require('models/containers');
-            spy.classMethod(Container, 'metaPublish', checkDone.done());
+            spy.classMethod(Container, 'metaPublish', count.inc().next);
             this.admin.specRequest(this.newContainer._id)
               .send({ status: 'Committing back', name: 'project AWESOME' })
               .expect(200)
-              .end(checkDone.done());
+              .end(count.inc().next);
           });
         });
         describe('already committing', function () {
@@ -401,21 +433,45 @@ describe('Containers', function () {
             content: 'file content'
           };
           beforeEach(extendContextSeries({
-            file: ['owner.containerCreateFile', ['container._id', fileData]],
-            commit: ['owner.patchContainer', ['container._id', {
-              body: { status: commitStatus, name: 'new name' },
-              expect: 200
-            }]]
+            file: ['owner.containerCreateFile', ['container._id', fileData]]
           }));
-          it ('should not update status', function (done) {
-            var data = _.clone(this.container);
-            data.status = 'Committing back';
-            this.admin.specRequest(this.container._id)
+          beforeEach(function (done) {
+            var self = this;
+            this.user.get('/runnables')
               .expect(200)
-              .send(data)
-              .expectBody('_id')
-              .expectBody('status', commitStatus)
-              .end(done);
+              .end(function (err, res) {
+                if (err) { return done(err); }
+                self.imageCount = res.body.data.length;
+                done();
+              });
+          });
+          it ('should not update status', function (done) {
+            var count = createCount(2, done);
+            var self = this;
+            var container = this.container;
+            this.owner.patchContainer(container._id)
+              .send({ status: commitStatus, name: 'new name' })
+              .expect(200)
+              .end(count.next);
+
+            var imageProgressChannel = 'events:' + container.servicesToken + ':progress';
+            redis.subscribe(imageProgressChannel, function () {
+              redis.on('message', function (channel, message) {
+                // on first message, commit again while commit in progress.
+                var data = _.clone(container);
+                data.status = 'Committing back';
+                redis.unsubscribe(imageProgressChannel, function () {
+                  self.admin.specRequest(container._id)
+                    .expect(200)
+                    .send(data)
+                    .expectBody('_id')
+                    .expectBody(function (body) {
+                      body.status.should.not.equal('Finished');
+                    })
+                    .end(count.next);
+                });
+              });
+            });
           });
         });
         describe('updating tags', function() {
@@ -455,7 +511,7 @@ describe('Containers', function () {
               .expect(200)
               .send(data)
               .expectBody('_id')
-              .expectBody('status', data.status)
+              .expectBody('status', 'Finished')
               .end(done);
           });
         });
@@ -493,15 +549,6 @@ describe('Containers', function () {
             done();
           });
       });
-      describe('specification', function () {
-        beforeEach(extendContextSeries({
-          spec: ['user.createSpecification', [specData()]],
-          impl: ['user.createImplementation', ['spec', 'container._id']]
-        }));
-        it('should update the container specification', function (done) {
-          updateValue('specification', this.spec._id).call(this, done);
-        });
-      });
     });
     // not owner FAIL
     describe('admin', function () {
@@ -528,6 +575,91 @@ describe('Containers', function () {
       };
     }
   }
+
+  describe('PUT /users/me/runnables/:id/start', function () {
+    beforeEach(extendContextSeries({
+      user: users.createPublisher,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    describe('owner', function () {
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(200)
+          .expectBody('host')
+          .expectBody('servicesPort')
+          .expectBody('webPort')
+          .end(done);
+      });
+    });
+    describe('admin', function () {
+      beforeEach(extendContextSeries({
+        user: users.createAdmin
+      }));
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(200)
+          .expectBody('host')
+          .expectBody('servicesPort')
+          .expectBody('webPort')
+          .end(done);
+      });
+    });
+    describe('servicesToken', function () {
+      beforeEach(extendContextSeries({
+        user: users.createTokenless
+      }));
+      it('should start the container', function (done) {
+        console.log(this.container.servicesToken);
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .query({ servicesToken: this.container.servicesToken })
+          .expect(200)
+          .expectBody('host')
+          .expectBody('servicesPort')
+          .expectBody('webPort')
+          .end(done);
+      });
+    });
+  });
+  describe('PUT /users/me/runnables/:id/stop', function () {
+    beforeEach(extendContextSeries({
+      user: users.createPublisher,
+      container: ['user.createContainer', ['image._id']]
+    }));
+    describe('owner', function () {
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(204)
+          .end(done);
+      });
+    });
+    describe('admin', function () {
+      beforeEach(extendContextSeries({
+        user: users.createAdmin
+      }));
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .expect(204)
+          .end(done);
+      });
+    });
+    describe('servicesToken', function () {
+      beforeEach(extendContextSeries({
+        user: users.createTokenless
+      }));
+      it('should start the container', function (done) {
+        this.user.specRequest(this.container._id)
+          .send(this.container)
+          .query({ servicesToken: this.container.servicesToken })
+          .expect(204)
+          .end(done);
+      });
+    });
+  });
 
   describe('DEL /users/me/runnables/:id', function () {
     describe('owner', function () {
@@ -566,6 +698,17 @@ describe('Containers', function () {
 });
 
 describe('Github Import', function () {
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+    this.github  = github.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
   before(extendContextSeries({
     owner: users.createPublisher,
     channels: channels.createChannels('node'),
@@ -576,8 +719,7 @@ describe('Github Import', function () {
       var self = this;
       var configs = require('configs');
       var url = require('url');
-      var harbour = url.parse(configs.harbourmaster);
-      this.owner.post('/users/me/runnables/import/github?githubUrl=http://' + harbour.host + '/local/nabber&stack=node')
+      this.owner.post('/users/me/runnables/import/github?githubUrl='+this.github.url+'&stack=node')
         .expect(201)
         .expectBody(function (body) {
           body.name.should.equal('nabber');
@@ -585,7 +727,7 @@ describe('Github Import', function () {
           body.owner.should.equal(self.owner._id.toString());
           body.tags.length.should.equal(1);
           body.tags[0].name.should.equal('node');
-          body.importSource.should.equal('http://' + harbour.host + '/local/nabber');
+          body.importSource.should.equal(self.github.url);
         })
         .end(function (err, res) {
           done(err);
@@ -595,8 +737,7 @@ describe('Github Import', function () {
       var self = this;
       var configs = require('configs');
       var url = require('url');
-      var harbour = url.parse(configs.harbourmaster);
-      this.owner.post('/users/me/runnables/import/github?githubUrl=http://' + harbour.host + '/local/nabber&stack=rails')
+      this.owner.post('/users/me/runnables/import/github?githubUrl='+this.github.url+'&stack=rails')
         .expect(201)
         .expectBody(function (body) {
           body.name.should.equal('nabber');
@@ -604,7 +745,7 @@ describe('Github Import', function () {
           body.owner.should.equal(self.owner._id.toString());
           body.tags.length.should.equal(1);
           body.tags[0].name.should.equal('rails');
-          body.importSource.should.equal('http://' + harbour.host + '/local/nabber');
+          body.importSource.should.equal(self.github.url);
         })
         .end(function (err, res) {
           done(err);
