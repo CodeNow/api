@@ -10,3 +10,5 @@ test:
   override:
     - npm test
     - npm run coverage
+  post:
+    - npm run docs
