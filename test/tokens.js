@@ -1,3 +1,5 @@
+'use strict';
+
 var helpers = require('./lib/helpers');
 var users = require('./lib/userFactory');
 var extendContext = helpers.extendContext;
@@ -38,14 +40,14 @@ describe('Tokens', function () {
       this.tokenless.specRequest()
         .send({})
         .expect(400)
-        .expectBody('message', 'username or email body parameter is required')
+        .expectBody('message', 'Error: body parameter "body.username" is required')
         .end(done);
     });
     it('should require a password', function (done) {
       this.tokenless.specRequest()
         .send({ username: 'username'})
         .expect(400)
-        .expectBody('message', '"password" body parameter is required')
+        .expectBody('message', 'Error: body parameter "body.password" is required')
         .end(done);
     });
     it('should error on a bad password', function (done) {

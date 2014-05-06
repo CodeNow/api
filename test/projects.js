@@ -129,7 +129,7 @@ describe('Projects', function () {
         .expect(201)
         .expectBody('name', 'new project')
         .expectBody(function (body) {
-          body.contexts.length.should.equal(1);
+          body.environments[0].contexts.length.should.equal(1);
           self.project = body;
         })
         .end(done);
@@ -170,7 +170,7 @@ describe('Projects', function () {
         .expect(200)
         .expectBody('name', 'new project')
         .expectBody(function (body) {
-          body.contexts.length.should.equal(1);
+          body.environments[0].contexts.length.should.equal(1);
         })
         .end(done);
     });
@@ -179,7 +179,7 @@ describe('Projects', function () {
         .expect(200)
         .expectBody('name', 'new project')
         .expectBody(function (body) {
-          body.contexts.length.should.equal(1);
+          body.environments[0].contexts.length.should.equal(1);
         })
         .end(done);
     });

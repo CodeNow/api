@@ -56,7 +56,7 @@ describe('Context Files', function () {
     var self = this;
     async.series([
       function (cb) {
-        self.publisher.del(join('/contexts', self.project.contexts[0].id)).expect(204).end(cb);
+        self.publisher.del(join('/contexts', self.project.environments[0].contexts[0].context)).expect(204).end(cb);
       },
       function (cb) {
         self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
@@ -69,8 +69,14 @@ describe('Context Files', function () {
       .filteringPath(/\/runnable.context.resources.test\?prefix=[0-9a-f]+%2Fsource%2F/,
         '/runnable.context.resources.test?prefix=5358004c171f1c06f8e0319b%2Fsource%2F')
       .get('/runnable.context.resources.test?prefix=5358004c171f1c06f8e0319b%2Fsource%2F')
-      .reply(200, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>runnable.context.resources.test</Name><Prefix>5358004c171f1c06f8e0319b/source/</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>5358004c171f1c06f8e0319b/source/</Key><LastModified>2014-04-16T21:32:00.000Z</LastModified><ETag>&quot;1&quot;</ETag><Size>0</Size><Owner><ID>2</ID><DisplayName>name</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>");
-    var id = this.project.contexts[0].id;
+      .reply(200, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult xmlns=\"http://" +
+        "s3.amazonaws.com/doc/2006-03-01/\"><Name>runnable.context.resources.test</Name><Prefix>" +
+        "5358004c171f1c06f8e0319b/source/</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys>" +
+        "<IsTruncated>false</IsTruncated><Contents><Key>5358004c171f1c06f8e0319b/source/</Key>" +
+        "<LastModified>2014-04-16T21:32:00.000Z</LastModified><ETag>&quot;1&quot;</ETag><Size>0" +
+        "</Size><Owner><ID>2</ID><DisplayName>name</DisplayName></Owner><StorageClass>STANDARD" +
+        "</StorageClass></Contents></ListBucketResult>");
+    var id = this.project.environments[0].contexts[0].context;
     this.publisher.get(join('/contexts', id, 'files') + '?prefix=%2F')
       // FIXME: not not implemented
       .expect(200)
@@ -87,8 +93,14 @@ describe('Context Files', function () {
       .filteringPath(/\/runnable.context.resources.test\?prefix=[0-9a-f]+%2Fsource%2F/,
         '/runnable.context.resources.test?prefix=5358004c171f1c06f8e0319b%2Fsource%2F')
       .get('/runnable.context.resources.test?prefix=5358004c171f1c06f8e0319b%2Fsource%2F')
-      .reply(200, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>runnable.context.resources.test</Name><Prefix>5358004c171f1c06f8e0319b/source/</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys><IsTruncated>false</IsTruncated><Contents><Key>5358004c171f1c06f8e0319b/source/</Key><LastModified>2014-04-16T21:32:00.000Z</LastModified><ETag>&quot;1&quot;</ETag><Size>0</Size><Owner><ID>2</ID><DisplayName>name</DisplayName></Owner><StorageClass>STANDARD</StorageClass></Contents></ListBucketResult>");
-    var id = this.project.contexts[0].id;
+      .reply(200, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult xmlns=\"http://" +
+        "s3.amazonaws.com/doc/2006-03-01/\"><Name>runnable.context.resources.test</Name><Prefix>" +
+        "5358004c171f1c06f8e0319b/source/</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys>" +
+        "<IsTruncated>false</IsTruncated><Contents><Key>5358004c171f1c06f8e0319b/source/</Key>" +
+        "<LastModified>2014-04-16T21:32:00.000Z</LastModified><ETag>&quot;1&quot;</ETag><Size>0" +
+        "</Size><Owner><ID>2</ID><DisplayName>name</DisplayName></Owner><StorageClass>STANDARD" +
+        "</StorageClass></Contents></ListBucketResult>");
+    var id = this.project.environments[0].contexts[0].context;
     this.publisher.get(join('/contexts', id, 'files'))
       // FIXME: not not implemented
       .expect(200)

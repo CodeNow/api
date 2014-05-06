@@ -252,188 +252,188 @@
 //     }
 //   });
 
-  // describe('PUT /users/me/runnables/:id', function () {
-  //   describe('owner', function () {
-  //     beforeEach(extendContextSeries({
-  //       user: users.createPublisher,
-  //       container: ['user.createContainer', ['image._id']]
-  //     }));
-  //     it('should update the container', function (done) {
-  //       this.user.specRequest(this.container._id)
-  //         .send(this.container)
-  //         .expect(200)
-  //         .end(done);
-  //     });
-  //     describe('container commit', function () {
-  //       describe('updating tags', function() {
-  //         beforeEach(extendContextSeries({
-  //           image: ['user.createTaggedImage', ['node.js', 'node']],
-  //           container: ['user.createContainer', ['image._id']],
-  //           untag: ['user.removeAllContainerTags', ['container']]
-  //         }));
-  //         beforeEach(function (done) {
-  //           var self = this;
-  //           this.user.get('/runnables')
-  //             .expect(200)
-  //             .end(function (err, res) {
-  //               if (err) { return done(err); }
-  //               self.imageCount = res.body.data.length;
-  //               done();
-  //             });
-  //         });
-  //         it ('should not send email if delisted (owner delisted)', function (done) {
-  //           // no overriding the function above
-  //           var self = this;
-  //           var data = _.clone(this.container);
-  //           data.name = helpers.randomValue();
-  //           var count = createCount(2, done);
-  //           this.user.specRequest(this.container._id)
-  //             .expect(200)
-  //             .send(data)
-  //             .expectBody('_id')
-  //             .end(count.next);
-  //           this.user.get('/runnables')
-  //             .expect(200)
-  //             .end(function (err, res) {
-  //               if (err) { return done(err); }
-  //               // publish back - total image count stayed the same.
-  //               self.imageCount.should.equal(res.body.data.length);
-  //               count.next();
-  //             });
-  //         });
-  //       });
-  //     });
-  //   });
-  //   // not owner FAIL
-  //   describe('admin', function () {
-  //     beforeEach(extendContextSeries({
-  //       owner: users.createPublisher,
-  //       container: ['owner.createContainer', ['image._id']],
-  //       admin: users.createAdmin
-  //     }));
-  //     it('should update the container', function (done) {
-  //       this.admin.specRequest(this.container._id)
-  //         .send(this.container)
-  //         .expect(200)
-  //         .end(done);
-  //     });
-  //     describe('container commit', function () {
-  //       describe('updating metadata', function () {
-  //         var fileData = {
-  //           name: 'filename.txt',
-  //           path: '/',
-  //           content: 'file content'
-  //         };
-  //         var encodeId = require('../lib/middleware/utils').encodeId;
-  //         beforeEach(extendContextSeries({
-  //           // this only works because image does not have last_write...
-  //           file: ['owner.containerCreateFile', ['container._id', fileData]],
-  //           publish: ['admin.createImageFromContainer', ['container._id']],
-  //           newContainer: ['admin.createContainer', ['publish._id']]
-  //         }));
-  //         it ('should update the container', function (done) {
-  //           var count = createCount(done);
-  //           var Container = require('models/containers');
-  //           spy.classMethod(Container, 'metaPublish', count.inc().next);
-  //           this.admin.specRequest(this.newContainer._id)
-  //             .send({ status: 'Committing back', name: 'project AWESOME' })
-  //             .expect(200)
-  //             .end(count.inc().next);
-  //         });
-  //       });
-  //       describe('already committing', function () {
-  //         var commitStatus = 'Committing new';
-  //         var fileData = {
-  //           name: 'filename.txt',
-  //           path: '/',
-  //           content: 'file content'
-  //         };
-  //         beforeEach(extendContextSeries({
-  //           file: ['owner.containerCreateFile', ['container._id', fileData]]
-  //         }));
-  //         beforeEach(function (done) {
-  //           var self = this;
-  //           this.user.get('/runnables')
-  //             .expect(200)
-  //             .end(function (err, res) {
-  //               if (err) { return done(err); }
-  //               self.imageCount = res.body.data.length;
-  //               done();
-  //             });
-  //         });
-  //         it ('should not update status', function (done) {
-  //           var count = createCount(2, done);
-  //           var self = this;
-  //           var container = this.container;
-  //           this.owner.patchContainer(container._id)
-  //             .send({ status: commitStatus, name: 'new name' })
-  //             .expect(200)
-  //             .end(count.next);
+//   describe('PUT /users/me/runnables/:id', function () {
+//     describe('owner', function () {
+//       beforeEach(extendContextSeries({
+//         user: users.createPublisher,
+//         container: ['user.createContainer', ['image._id']]
+//       }));
+//       it('should update the container', function (done) {
+//         this.user.specRequest(this.container._id)
+//           .send(this.container)
+//           .expect(200)
+//           .end(done);
+//       });
+//       describe('container commit', function () {
+//         describe('updating tags', function() {
+//           beforeEach(extendContextSeries({
+//             image: ['user.createTaggedImage', ['node.js', 'node']],
+//             container: ['user.createContainer', ['image._id']],
+//             untag: ['user.removeAllContainerTags', ['container']]
+//           }));
+//           beforeEach(function (done) {
+//             var self = this;
+//             this.user.get('/runnables')
+//               .expect(200)
+//               .end(function (err, res) {
+//                 if (err) { return done(err); }
+//                 self.imageCount = res.body.data.length;
+//                 done();
+//               });
+//           });
+//           it ('should not send email if delisted (owner delisted)', function (done) {
+//             // no overriding the function above
+//             var self = this;
+//             var data = _.clone(this.container);
+//             data.name = helpers.randomValue();
+//             var count = createCount(2, done);
+//             this.user.specRequest(this.container._id)
+//               .expect(200)
+//               .send(data)
+//               .expectBody('_id')
+//               .end(count.next);
+//             this.user.get('/runnables')
+//               .expect(200)
+//               .end(function (err, res) {
+//                 if (err) { return done(err); }
+//                 // publish back - total image count stayed the same.
+//                 self.imageCount.should.equal(res.body.data.length);
+//                 count.next();
+//               });
+//           });
+//         });
+//       });
+//     });
+//     // not owner FAIL
+//     describe('admin', function () {
+//       beforeEach(extendContextSeries({
+//         owner: users.createPublisher,
+//         container: ['owner.createContainer', ['image._id']],
+//         admin: users.createAdmin
+//       }));
+//       it('should update the container', function (done) {
+//         this.admin.specRequest(this.container._id)
+//           .send(this.container)
+//           .expect(200)
+//           .end(done);
+//       });
+//       describe('container commit', function () {
+//         describe('updating metadata', function () {
+//           var fileData = {
+//             name: 'filename.txt',
+//             path: '/',
+//             content: 'file content'
+//           };
+//           var encodeId = require('../lib/middleware/utils').encodeId;
+//           beforeEach(extendContextSeries({
+//             // this only works because image does not have last_write...
+//             file: ['owner.containerCreateFile', ['container._id', fileData]],
+//             publish: ['admin.createImageFromContainer', ['container._id']],
+//             newContainer: ['admin.createContainer', ['publish._id']]
+//           }));
+//           it ('should update the container', function (done) {
+//             var count = createCount(done);
+//             var Container = require('models/containers');
+//             spy.classMethod(Container, 'metaPublish', count.inc().next);
+//             this.admin.specRequest(this.newContainer._id)
+//               .send({ status: 'Committing back', name: 'project AWESOME' })
+//               .expect(200)
+//               .end(count.inc().next);
+//           });
+//         });
+//         describe('already committing', function () {
+//           var commitStatus = 'Committing new';
+//           var fileData = {
+//             name: 'filename.txt',
+//             path: '/',
+//             content: 'file content'
+//           };
+//           beforeEach(extendContextSeries({
+//             file: ['owner.containerCreateFile', ['container._id', fileData]]
+//           }));
+//           beforeEach(function (done) {
+//             var self = this;
+//             this.user.get('/runnables')
+//               .expect(200)
+//               .end(function (err, res) {
+//                 if (err) { return done(err); }
+//                 self.imageCount = res.body.data.length;
+//                 done();
+//               });
+//           });
+//           it ('should not update status', function (done) {
+//             var count = createCount(2, done);
+//             var self = this;
+//             var container = this.container;
+//             this.owner.patchContainer(container._id)
+//               .send({ status: commitStatus, name: 'new name' })
+//               .expect(200)
+//               .end(count.next);
 
-  //           var imageProgressChannel = 'events:' + container.servicesToken + ':progress';
-  //           redis.subscribe(imageProgressChannel, function () {
-  //             redis.on('message', function (channel, message) {
-  //               // on first message, commit again while commit in progress.
-  //               var data = _.clone(container);
-  //               data.status = 'Committing back';
-  //               redis.unsubscribe(imageProgressChannel, function () {
-  //                 self.admin.specRequest(container._id)
-  //                   .expect(200)
-  //                   .send(data)
-  //                   .expectBody('_id')
-  //                   .expectBody(function (body) {
-  //                     body.status.should.not.equal('Finished');
-  //                   })
-  //                   .end(count.next);
-  //               });
-  //             });
-  //           });
-  //         });
-  //       });
-  //       describe('updating tags', function() {
-  //         beforeEach(extendContextSeries({
-  //           image: ['owner.createTaggedImage', ['node.js', 'node']],
-  //           container: ['admin.createContainer', ['image._id']],
-  //           untag: ['admin.removeAllContainerTags', ['container']]
-  //         }));
-  //         it ('should send email if delisted (admin delisted)', function (done) {
-  //           var checkDone = helpers.createCheckDone(done);
-  //           delistEmailCallback = checkDone.done();
-  //           var data = _.clone(this.container);
-  //           data.status = 'Committing back';
-  //           var reqDone = checkDone.done();
-  //           this.admin.specRequest(this.container._id)
-  //             .expect(200)
-  //             .send(data)
-  //             .expectBody('_id')
-  //             .end(function (err) {
-  //               delistEmailCallback = defaultDelistEmailCallback;
-  //               reqDone(err);
-  //             });
-  //         });
-  //       });
-  //       describe('commit error', function () {
-  //         var commitStatus = 'Committing new';
-  //         beforeEach(extendContextSeries({
-  //           commit: ['owner.patchContainer', ['container._id', {
-  //             body: { status: 'Editing', commit_error: 'some error' },
-  //             expect: 200
-  //           }]]
-  //         }));
-  //         it ('should update status', function (done) {
-  //           var data = _.clone(this.container);
-  //           data.status = 'Committing back';
-  //           this.admin.specRequest(this.container._id)
-  //             .expect(200)
-  //             .send(data)
-  //             .expectBody('_id')
-  //             .expectBody('status', 'Finished')
-  //             .end(done);
-  //         });
-  //       });
-  //     });
-  //   });
-  // });
+//             var imageProgressChannel = 'events:' + container.servicesToken + ':progress';
+//             redis.subscribe(imageProgressChannel, function () {
+//               redis.on('message', function (channel, message) {
+//                 // on first message, commit again while commit in progress.
+//                 var data = _.clone(container);
+//                 data.status = 'Committing back';
+//                 redis.unsubscribe(imageProgressChannel, function () {
+//                   self.admin.specRequest(container._id)
+//                     .expect(200)
+//                     .send(data)
+//                     .expectBody('_id')
+//                     .expectBody(function (body) {
+//                       body.status.should.not.equal('Finished');
+//                     })
+//                     .end(count.next);
+//                 });
+//               });
+//             });
+//           });
+//         });
+//         describe('updating tags', function() {
+//           beforeEach(extendContextSeries({
+//             image: ['owner.createTaggedImage', ['node.js', 'node']],
+//             container: ['admin.createContainer', ['image._id']],
+//             untag: ['admin.removeAllContainerTags', ['container']]
+//           }));
+//           it ('should send email if delisted (admin delisted)', function (done) {
+//             var checkDone = helpers.createCheckDone(done);
+//             delistEmailCallback = checkDone.done();
+//             var data = _.clone(this.container);
+//             data.status = 'Committing back';
+//             var reqDone = checkDone.done();
+//             this.admin.specRequest(this.container._id)
+//               .expect(200)
+//               .send(data)
+//               .expectBody('_id')
+//               .end(function (err) {
+//                 delistEmailCallback = defaultDelistEmailCallback;
+//                 reqDone(err);
+//               });
+//           });
+//         });
+//         describe('commit error', function () {
+//           var commitStatus = 'Committing new';
+//           beforeEach(extendContextSeries({
+//             commit: ['owner.patchContainer', ['container._id', {
+//               body: { status: 'Editing', commit_error: 'some error' },
+//               expect: 200
+//             }]]
+//           }));
+//           it ('should update status', function (done) {
+//             var data = _.clone(this.container);
+//             data.status = 'Committing back';
+//             this.admin.specRequest(this.container._id)
+//               .expect(200)
+//               .send(data)
+//               .expectBody('_id')
+//               .expectBody('status', 'Finished')
+//               .end(done);
+//           });
+//         });
+//       });
+//     });
+//   });
 
 //   describe('POST /users/me/runnables', function () {
 //     beforeEach(extendContext({

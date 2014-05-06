@@ -19,5 +19,6 @@ node_modules
 npm-debug.log
 
 *.pyc
+docs
 
 !test/lib/fixtures/master.tar.gz
