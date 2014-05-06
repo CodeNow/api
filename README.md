@@ -1,4 +1,4 @@
-![Alt text](https://circleci.com/gh/CodeNow/api-server.png?circle-token=f2016db7bc53765c63d03a92fcfdf20330233a1f)
+[![Alt text](https://circleci.com/gh/CodeNow/api-server.png?circle-token=f2016db7bc53765c63d03a92fcfdf20330233a1f)](https://circleci.com/gh/CodeNow/api-server)
 
 Getting started
 ==========

@@ -18,7 +18,7 @@ def production():
   env.requireNote = True;
   env.settings = 'production'
   env.hosts = [
-    'api'
+    'prod-api'
   ]
   env.newrelic_application_id = "3874131"
 
@@ -29,7 +29,7 @@ def integration():
   env.requireNote = False;
   env.settings = 'integration'
   env.hosts = [
-    'api-int'
+    'int-api'
   ]
 
 def staging():
@@ -39,7 +39,7 @@ def staging():
   env.requireNote = False;
   env.settings = 'staging'
   env.hosts = [
-    'api-rep_int'
+    'stage-api'
   ]
 
 def runnable3():
@@ -156,7 +156,7 @@ def track_deployment():
         -d "deployment[changelog]=' + note + '" \
         -d "deployment[user]=' + author + '" \
         https://api.newrelic.com/deployments.xml'
-      run(cmd) 
+      run(cmd)
 
 """
 Commands - deployment
