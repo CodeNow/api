@@ -9,6 +9,10 @@ app.post('/find', function (req, res, next) {
   res.json('localhost');
 });
 
+app.put('/imageCache', function (req, res, next) {
+  res.json(201, res.body);
+});
+
 app.get('/ip', function (req, res, next) {
   res.json('localhost');
 });
