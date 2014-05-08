@@ -119,7 +119,7 @@ def boot():
   """
   with cd('api-server'):
     run('NODE_ENV=%(settings)s NODE_PATH=lib pm2 start server.js -n api-server -i 10' % env)
-    run('NODE_ENV=%(settings)s pm2 start api-server/scripts/meetyourmaker.js -n cleanup' % env)
+    run('NODE_ENV=%(settings)s pm2 start scripts/meetyourmaker.js -n cleanup' % env)
   # run('NODE_ENV=%(settings)s forever start api-server/scripts/refreshcache.js' % env)
 
 def validateNote(input):
