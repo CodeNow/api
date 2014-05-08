@@ -95,7 +95,6 @@ describe('Context Files', function () {
         "</StorageClass></Contents></ListBucketResult>");
     var id = this.project.environments[0].contexts[0].context;
     this.publisher.get(join('/contexts', id, 'files') + '?prefix=%2F')
-      // FIXME: not not implemented
       .expect(200)
       .expectBody(function (body) {
         body.files.Name.should.equal('runnable.context.resources.test');
@@ -119,7 +118,6 @@ describe('Context Files', function () {
         "</StorageClass></Contents></ListBucketResult>");
     var id = this.project.environments[0].contexts[0].context;
     this.publisher.get(join('/contexts', id, 'files'))
-      // FIXME: not not implemented
       .expect(200)
       .expectBody(function (body) {
         body.files.Name.should.equal('runnable.context.resources.test');
