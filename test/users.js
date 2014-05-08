@@ -1,3 +1,5 @@
+'use strict';
+
 var _ = require('lodash');
 var users = require('./lib/userFactory');
 var helpers = require('./lib/helpers');
@@ -229,4 +231,8 @@ describe('Users', function () {
     });
   }
 
+});
+
+describe('Groups', function () {
+  // FIXME: we are going to have to create some additional functionality for messing with groups...
 });

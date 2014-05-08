@@ -123,6 +123,12 @@ describe('Projects', function () {
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/dockerfile/Dockerfile', '*')
         .reply(200, "");
+      // for building the project/context
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+        .reply(200, "FROM ubuntu");
 
       var self = this;
       this.publisher.post('/projects', validProjectData)
@@ -138,7 +144,6 @@ describe('Projects', function () {
 
   describe('listing projects', function () {
     beforeEach(function (done) {
-      delete this.project;
       var self = this;
       // set up the nocks
       nock('https://s3.amazonaws.com:443')
@@ -152,6 +157,12 @@ describe('Projects', function () {
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
         .reply(200, "");
+      // for building the project/context
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+        .reply(200, "FROM ubuntu");
 
       // make the project
       this.admin.post('/projects', validProjectData)
@@ -162,7 +173,11 @@ describe('Projects', function () {
         });
     });
     afterEach(function (done) {
-      this.admin.del('/projects/' + this.project._id).expect(204).end(done);
+      var self = this;
+      this.admin.del('/projects/' + this.project._id).expect(204).end(function (err) {
+        delete self.project;
+        done(err);
+      });
     });
 
     it('should give us details about a project as an anonymous user', function (done) {
@@ -187,7 +202,6 @@ describe('Projects', function () {
 
   describe('building projects', function () {
     beforeEach(function (done) {
-      delete this.project;
       var self = this;
       // for creating the project/context
       nock('https://s3.amazonaws.com:443')
@@ -207,6 +221,12 @@ describe('Projects', function () {
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
         .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
         .reply(200, "FROM ubuntu");
+      // we are building twice now!
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+        .reply(200, "FROM ubuntu");
 
       this.admin.post('/projects', validProjectData)
         .expect(201)
@@ -216,7 +236,11 @@ describe('Projects', function () {
         });
     });
     afterEach(function (done) {
-      this.admin.del('/projects/' + this.project._id).expect(204).end(done);
+      var self = this;
+      this.admin.del('/projects/' + this.project._id).expect(204).end(function (err) {
+        delete self.project;
+        done(err);
+      });
     });
 
     it('should be allowed for an anonymous user', function (done) {
@@ -232,7 +256,6 @@ describe('Projects', function () {
 
   describe('deleting projects', function () {
     beforeEach(function (done) {
-      delete this.project;
       var self = this;
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
@@ -245,6 +268,12 @@ describe('Projects', function () {
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
         .reply(200, "");
+      // for building the project/context
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+        .reply(200, "FROM ubuntu");
 
       users.createAdmin(function (err, user) {
         user.post('/projects', validProjectData)
@@ -261,7 +290,10 @@ describe('Projects', function () {
       }
       var self = this;
       users.createAdmin(function (err, user) {
-        user.del('/projects/' + self.project._id).expect(204).end(done);
+        user.del('/projects/' + self.project._id).expect(204).end(function (err) {
+          delete self.project;
+          done(err);
+        });
       });
     });
 

@@ -1,4 +1,7 @@
+'use strict';
+
 var async = require('async');
+var createCount = require('callback-count');
 var helpers = require('./lib/helpers');
 var nock = require('nock');
 var users = require('./lib/userFactory');
@@ -6,6 +9,9 @@ var url = require('url');
 
 var Context = require('models/contexts');
 var Project = require('models/projects');
+
+var docklet = require('./lib/fixtures/docklet');
+var docker = require('./lib/fixtures/docker');
 
 var extendContextSeries = helpers.extendContextSeries;
 
@@ -31,6 +37,16 @@ describe('Contexts', function () {
     anonymous: users.createAnonymous
   }));
   afterEach(helpers.cleanup);
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
 
   // FIXME: this is a unit test
   describe('working with context objects', function () {
@@ -62,46 +78,43 @@ describe('Contexts', function () {
   });
 
   describe('creating individual contexts', function () {
-    beforeEach(extendContextSeries({
-      nocks: function (done) {
-        nock('https://s3.amazonaws.com:443')
-          .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
-            '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
-          .filteringRequestBody(function(path) { return '*'; })
-          .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
-          .reply(200, "");
-        nock('https://s3.amazonaws.com:443')
-          .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
-            '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-          .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-          .reply(200, "");
-        nock('https://s3.amazonaws.com:443')
-          .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
-            '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
-          .filteringRequestBody(function(path) { return '*'; })
-          .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
-          .reply(200, "");
-        done();
-      },
-      project: function (done) {
-        users.createAdmin(function (err, user) {
-          user.post('/projects', validProjectData)
-            .expect(201)
-            .expectBody(function (body) {
-              body.environments.length.should.equal(1);
-              body.environments[0].contexts.length.should.equal(1);
-              body.environments[0].isDefault.should.equal(true);
-              body.environments[0].owner.should.equal(body.owner);
-            })
-            .end(function (err, res) {
-              if (err) {
-                return done(err);
-              }
-              done(err, res.body);
-            });
-        });
-      }
-    }));
+    beforeEach(function (done) {
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .filteringRequestBody(function(path) { return '*'; })
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
+        .reply(200, "");
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .reply(200, "");
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .filteringRequestBody(function(path) { return '*'; })
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
+        .reply(200, "");
+      // for building the project/context
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+        .reply(200, "FROM ubuntu");
+
+      var self = this;
+      this.publisher.post('/projects', validProjectData)
+        .expect(201)
+        .expectBody(function (body) {
+          body.environments.length.should.equal(1);
+          body.environments[0].contexts.length.should.equal(1);
+          body.environments[0].isDefault.should.equal(true);
+          body.environments[0].owner.should.equal(body.owner);
+          self.project = body;
+        })
+        .end(done);
+    });
     afterEach(helpers.cleanup);
 
     it('should error without a dockerfile', function (done) {
@@ -153,40 +166,53 @@ describe('Contexts', function () {
   });
 
   describe('after building a project with a context', function () {
-    beforeEach(extendContextSeries({
-      nocks: function (done) {
-        nock('https://s3.amazonaws.com:443')
-          .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
-            '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-          .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-          .reply(200, "");
-        nock('https://s3.amazonaws.com:443')
-          .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
-            '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
-          .filteringRequestBody(function(path) { return '*'; })
-          .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
-          .reply(200, "");
-        done();
-      },
-      project: function (done) {
-        users.createAdmin(function (err, user) {
-          user.post('/projects', validProjectData)
-            .expect(201)
-            .expectBody(function (body) {
-              body.environments.length.should.equal(1);
-              body.environments[0].contexts[0].context.should.not.equal(undefined);
-            })
-            .end(function (err, res) {
-              if (err) {
-                return done(err);
-              }
-              projectId = res.body._id;
-              done(err, res.body);
-            });
+    beforeEach(function (done) {
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .reply(200, "");
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .filteringRequestBody(function(path) { return '*'; })
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
+        .reply(200, "");
+      // for building the project/context
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+        .reply(200, "FROM ubuntu");
+
+      var self = this;
+      this.publisher.post('/projects', validProjectData)
+        .expect(201)
+        .expectBody(function (body) {
+          body.environments.length.should.equal(1);
+          body.environments[0].contexts[0].context.should.not.equal(undefined);
+        })
+        .end(function (err, res) {
+          if (err) {
+            return done(err);
+          }
+          self.project = res.body;
+          projectId = res.body._id;
+          done(err);
         });
+    });
+    afterEach(function (done) {
+      if (!this.project) {
+        return done();
       }
-    }));
-    afterEach(helpers.cleanup);
+      var self = this;
+      users.createAdmin(function (err, user) {
+        user.del('/projects/' + self.project._id).expect(204).end(function (err) {
+          delete self.project;
+          done(err);
+        });
+      });
+    });
 
     it('should give us details about a context', function (done) {
       var self = this;
@@ -199,7 +225,7 @@ describe('Contexts', function () {
           dockerfile.host.should.equal('runnable.context.resources.test');
           dockerfile.path.should.equal('/' + body._id.toString() + '/dockerfile/Dockerfile');
           body.versions.length.should.equal(1);
-          body.versions[0].tag.should.equal('v0');
+          body.versions[0]._id.should.not.equal(undefined);
         })
         .end(done);
     });
@@ -220,8 +246,7 @@ describe('Contexts', function () {
             dockerfile.host.should.equal('runnable.context.resources.test');
             dockerfile.path.should.equal('/' + body._id.toString() + '/dockerfile/Dockerfile');
             body.owner.should.equal(self.admin._id.toString());
-            body.versions.length.should.equal(1);
-            body.versions[0].tag.should.equal('v0');
+            body.versions.length.should.equal(0);
           })
           .end(done);
       });
@@ -254,7 +279,6 @@ describe('Contexts', function () {
 
   describe('deleting contexts', function () {
     beforeEach(function (done) {
-      delete this.project;
       var self = this;
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
@@ -267,6 +291,12 @@ describe('Contexts', function () {
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
         .reply(200, "");
+      // for building the project/context
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+        .reply(200, "FROM ubuntu");
 
       users.createAdmin(function (err, user) {
         user.post('/projects', validProjectData)
@@ -283,7 +313,10 @@ describe('Contexts', function () {
       }
       var self = this;
       users.createAdmin(function (err, user) {
-        user.del('/projects/' + self.project._id).expect(204).end(done);
+        user.del('/projects/' + self.project._id).expect(204).end(function (err) {
+          delete self.project;
+          done(err);
+        });
       });
     });
 

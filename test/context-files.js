@@ -3,9 +3,13 @@
 var helpers = require('./lib/helpers');
 var extendContextSeries = helpers.extendContextSeries;
 var async = require('async');
+var createCount = require('callback-count');
 var nock = require('nock');
 var users = require('./lib/userFactory');
 var join = require('path').join;
+
+var docklet = require('./lib/fixtures/docklet');
+var docker = require('./lib/fixtures/docker');
 
 var validProjectData = {
   name: 'new project',
@@ -22,9 +26,18 @@ describe('Context Files', function () {
     anonymous: users.createAnonymous
   }));
   after(helpers.cleanup);
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
 
   beforeEach(function (done) {
-    delete this.project;
     var self = this;
     // uploading files
     nock('https://s3.amazonaws.com:443')
@@ -33,16 +46,17 @@ describe('Context Files', function () {
       .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
       .reply(200, "");
     nock('https://s3.amazonaws.com:443')
-      .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/index.js/,
-        '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/index.js')
-      .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/index.js')
-      .reply(200, "");
-    nock('https://s3.amazonaws.com:443')
       .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
         '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
       .filteringRequestBody(function(path) { return '*'; })
       .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
       .reply(200, "");
+      // for building the project/context
+    nock('https://s3.amazonaws.com:443')
+      .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+        '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+      .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+      .reply(200, "FROM ubuntu");
 
     this.publisher.post('/projects', validProjectData)
       .expect(201)
@@ -61,7 +75,10 @@ describe('Context Files', function () {
       function (cb) {
         self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
       },
-    ], done);
+    ], function (err) {
+      delete self.project;
+      done(err);
+    });
   });
 
   it('should let us list the files', function (done) {
