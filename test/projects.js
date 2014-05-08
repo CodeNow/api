@@ -1,3 +1,5 @@
+'use strict';
+
 var async = require('async');
 var createCount = require('callback-count');
 var helpers = require('./lib/helpers');
