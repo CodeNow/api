@@ -1,5 +1,8 @@
+'use strict';
+
 var express = require('express');
 var app = express();
+var morgan = require('morgan');
 
 app.post('/flatten', function (req, res, next) {
   res.send(201);
@@ -13,7 +16,7 @@ app.get('/ip', function (req, res, next) {
   res.json('localhost');
 });
 
-app.all('*', express.logger(), function (req, res, next) {
+app.all('*', morgan(), function (req, res, next) {
   res.send(404);
   console.log(req.url, req.method);
 });

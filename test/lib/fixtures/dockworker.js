@@ -1,3 +1,5 @@
+'use strict';
+
 var express = require('express');
 var app = express();
 var port = 3600;
@@ -8,6 +10,7 @@ var fs = require('fs');
 var findit = require('findit');
 var path = require('path');
 var async = require('async');
+var morgan = require('morgan');
 var folderPath = __dirname + '/images/node.js/src/';
 
 function createFilter (query) {
@@ -204,7 +207,7 @@ app.post('/api/envs', function (req, res) {
   res.send(204);
 });
 
-app.all('*', express.logger(), function (req, res) {
+app.all('*', morgan(), function (req, res) {
   res.send(404);
 });
 
