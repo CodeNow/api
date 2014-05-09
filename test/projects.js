@@ -202,6 +202,86 @@ describe('Projects', function () {
     });
   });
 
+  describe('working with projects', function () {
+    beforeEach(function (done) {
+      var self = this;
+      // set up the nocks
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .reply(200, "");
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .filteringRequestBody(function(path) { return '*'; })
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
+        .reply(200, "");
+      // for building the project/context
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+        .reply(200, "FROM ubuntu");
+      // for the copy
+      nock('https://s3.amazonaws.com:443:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test?prefix=5358004c171f1c06f8e0319b%2Fsource%2F')
+        .reply(200, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult " +
+          "xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>runnable.context.resources.test</Name>" +
+          "<Prefix>5358004c171f1c06f8e0319b/source/</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys>" +
+          "<IsTruncated>false</IsTruncated></ListBucketResult>");
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\?prefix=[0-9a-f]+%2Fsource%2F/,
+          '/runnable.context.resources.test?prefix=5358004c171f1c06f8e0319b%2Fsource%2F')
+        .get('/runnable.context.resources.test?prefix=5358004c171f1c06f8e0319b%2Fsource%2F')
+        .reply(200, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult xmlns=\"http://" +
+          "s3.amazonaws.com/doc/2006-03-01/\"><Name>runnable.context.resources.test</Name><Prefix>" +
+          "5358004c171f1c06f8e0319b/source/</Prefix><Marker></Marker><MaxKeys>1000</MaxKeys>" +
+          "<IsTruncated>false</IsTruncated><Contents><Key>5358004c171f1c06f8e0319b/source/</Key>" +
+          "<LastModified>2014-04-16T21:32:00.000Z</LastModified><ETag>&quot;1&quot;</ETag><Size>0" +
+          "</Size><Owner><ID>2</ID><DisplayName>name</DisplayName></Owner><StorageClass>STANDARD" +
+          "</StorageClass></Contents></ListBucketResult>");
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .reply(200, "");
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .filteringRequestBody(function(path) { return '*'; })
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
+        .reply(200, "");
+
+      // make the project
+      this.publisher.post('/projects', validProjectData)
+        .expect(201)
+        .end(function (err, res) {
+          self.project = res ? res.body : undefined;
+          done(err);
+        });
+    });
+    afterEach(function (done) {
+      var self = this;
+      this.admin.del('/projects/' + this.project._id).expect(204).end(function (err) {
+        delete self.project;
+        done(err);
+      });
+    });
+
+    it('should let us create a new environment', function (done) {
+      this.publisher.post('/projects/' + this.project._id + '/environments', { name: 'new environment' })
+        .expect(201)
+        .expectBody('name', 'new project')
+        .expectBody(function (body) {
+          body.environments[0].contexts.length.should.equal(1);
+        })
+        .end(done);
+    });
+  });
+
   describe('building projects', function () {
     beforeEach(function (done) {
       var self = this;

@@ -6,6 +6,7 @@ var helpers = require('./lib/helpers');
 var nock = require('nock');
 var users = require('./lib/userFactory');
 var url = require('url');
+var join = require('path').join;
 
 var Context = require('models/contexts');
 var Project = require('models/projects');
@@ -89,7 +90,7 @@ describe('Contexts', function () {
     afterEach(helpers.cleanup);
 
     it('should error without a dockerfile', function (done) {
-      this.admin.post('/contexts', {
+      this.admin.post(join('/', 'projects', this.project._id, 'contexts'), {
         name: 'sample-name',
         project: this.project._id
       })
@@ -100,7 +101,7 @@ describe('Contexts', function () {
         .end(done);
     });
     it('should error without a project', function (done) {
-      this.admin.post('/contexts', {
+      this.admin.post(join('/', 'projects', this.project._id, 'contexts'), {
         name: 'sample-name',
         dockerfile: 'FROM ubuntu\n'
       })
@@ -111,7 +112,7 @@ describe('Contexts', function () {
         .end(done);
     });
     it('should error with an invalid name (invalid chars)', function (done) {
-      this.admin.post('/contexts', {
+      this.admin.post(join('/', 'projects', this.project._id, 'contexts'), {
         name: 'sample name',
         project: this.project._id,
         dockerfile: 'FROM ubuntu\n'
@@ -123,7 +124,7 @@ describe('Contexts', function () {
         .end(done);
     });
     it('should error with an invalid name (invalid chars)', function (done) {
-      this.admin.post('/contexts', {
+      this.admin.post(join('/', 'projects', this.project._id, 'contexts'), {
         name: '#$%^&',
         project: this.project._id,
         dockerfile: 'FROM ubuntu\n'
@@ -204,7 +205,7 @@ describe('Contexts', function () {
     describe('adding a new context to a project', function () {
       it('should create a context on request', function (done) {
         var self = this;
-        this.admin.post('/contexts', {
+        this.admin.post(join('/', 'projects', this.project._id, 'contexts'), {
           name: 'sample-name',
           dockerfile: 'FROM ubuntu\n',
           project: this.project._id
@@ -223,20 +224,16 @@ describe('Contexts', function () {
       });
 
       describe('and asking for the project again', function () {
-        beforeEach(extendContextSeries({
-          context: function (done) {
-            users.createAdmin(function (err, user) {
-              user.post('/contexts', {
-                name: 'sample-name',
-                dockerfile: 'FROM ubuntu\n',
-                project: projectId
-              }).expect(201).end(done);
-            });
-          }
-        }));
+        beforeEach(function (done) {
+          this.admin.post(join('/', 'projects', this.project._id, 'contexts'), {
+            name: 'sample-name',
+            dockerfile: 'FROM ubuntu\n',
+            project: this.project._id
+          }).expect(201).end(done);
+        });
 
         it('should list both contexts', function (done) {
-          this.admin.get('/projects/' + projectId)
+          this.admin.get('/projects/' + this.project._id)
             .expect(200)
             .expectBody('name', 'new project')
             .expectBody(function (body) {

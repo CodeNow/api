@@ -6,6 +6,7 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 
 var url = require('url');
+var join = require('path').join;
 
 var Context = require('models/contexts');
 
@@ -40,9 +41,20 @@ suite('Contexts', function () {
       protocol: 's3:',
       slashes: true,
       host: 'runnable.context.resources.test',
-      pathname: '/' + this.context._id.toString() + '/source/file.txt'
+      pathname: join('/', this.context._id.toString(), 'source', 'file.txt')
     });
     expect(this.context.getResourceUrl('file.txt')).to.equal(s3Url);
+    done();
+  });
+
+  test('should refuse permissions for an incorrect path', function (done) {
+    var s3Url = url.format({
+      protocol: 's3:',
+      slashes: true,
+      host: 'runnable.context.resources.test',
+      pathname: join('/', 'someFakeId', 'source', 'file.txt')
+    });
+    expect(this.context.checkPathPermission(s3Url)).to.equal(false);
     done();
   });
 });
