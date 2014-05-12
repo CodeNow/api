@@ -1,12 +1,93 @@
-// var _ = require('lodash');
-// var users = require('./lib/userFactory');
-// var images = require('./lib/imageFactory');
-// var helpers = require('./lib/helpers');
-// var spy = require('./lib/spy');
-// var channels = require('./lib/channelsFactory');
-// var extendContext = helpers.extendContext;
-// var extendContextSeries = helpers.extendContextSeries;
-// var uuid = require('node-uuid');
+'use strict';
+
+var async = require('async');
+var createCount = require('callback-count');
+var nock = require('nock');
+var join = require('path').join;
+
+var helpers = require('./lib/helpers');
+var users = require('./lib/userFactory');
+var extendContextSeries = helpers.extendContextSeries;
+var docker = require('./lib/fixtures/docker');
+var docklet = require('./lib/fixtures/docklet');
+
+var validProjectData = {
+  name: 'new project',
+  contexts: [{
+    'name': 'web-server',
+    'dockerfile': 'FROM ubuntu\n'
+  }]
+};
+
+describe('Containers', function () {
+  before(extendContextSeries({
+    admin: users.createAdmin,
+    publisher: users.createPublisher,
+    anonymous: users.createAnonymous
+  }));
+  after(helpers.cleanup);
+  before(function (done) {
+    var count = createCount(done);
+    this.docklet = docklet.start(count.inc().next);
+    this.docker  = docker.start(count.inc().next);
+  });
+  after(function (done) {
+    var count = createCount(done);
+    this.docklet.stop(count.inc().next);
+    this.docker.stop(count.inc().next);
+  });
+  before(function (done) {
+    var self = this;
+    // set up the nocks
+    nock('https://s3.amazonaws.com:443')
+      .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
+        '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+      .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+      .reply(200, "");
+    nock('https://s3.amazonaws.com:443')
+      .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+        '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+      .filteringRequestBody(function(path) { return '*'; })
+      .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
+      .reply(200, "");
+    // for building the project/context
+    nock('https://s3.amazonaws.com:443')
+      .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+        '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+      .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+      .reply(200, "FROM ubuntu");
+
+    // make the project
+    this.publisher.post('/projects', validProjectData)
+      .expect(201)
+      .end(function (err, res) {
+        self.project = res ? res.body : undefined;
+        done(err);
+      });
+  });
+  afterEach(function (done) {
+    if (!this.project) {
+      return done();
+    }
+    var self = this;
+    async.series([
+      function (cb) {
+        self.publisher.del(join('/contexts', self.project.environment.contexts[0].context)).expect(204).end(cb);
+      },
+      function (cb) {
+        self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
+      },
+    ], function (err) {
+      delete self.project;
+      done(err);
+    });
+  });
+
+  it('should be awesome', function (done) {
+    done();
+  });
+});
+
 // var emailer = require('../lib/emailer');
 // var defaultDelistEmailCallback = function () {
 //   var s = 'delistEmailCallback is not defined for testing purposes. ';
@@ -21,75 +102,7 @@
 // var configs = require('../lib/configs');
 // var specData = helpers.specData;
 // var redis = require('redis').createClient(configs.sharedRedis.port, configs.sharedRedis.ipaddress);
-// var createCount = require('callback-count');
 
-// var docker = require('./lib/fixtures/docker');
-// var docklet = require('./lib/fixtures/docklet');
-// var github = require('./lib/fixtures/github');
-
-// describe('Containers', function () {
-//   before(function (done) {
-//     var count = createCount(done);
-//     this.docklet = docklet.start(count.inc().next);
-//     this.docker  = docker.start(count.inc().next);
-//   });
-//   after(function (done) {
-//     var count = createCount(done);
-//     this.docklet.stop(count.inc().next);
-//     this.docker.stop(count.inc().next);
-//   });
-//   before(extendContext({
-//     image: images.createImageFromFixture.bind(images, 'node.js')
-//   }));
-//   after(helpers.cleanup);
-
-// OLD FUNCTIONS BELOW...
-
-// var _ = require('lodash');
-// var users = require('./lib/userFactory');
-// var images = require('./lib/imageFactory');
-// var helpers = require('./lib/helpers');
-// var spy = require('./lib/spy');
-// var channels = require('./lib/channelsFactory');
-// var extendContext = helpers.extendContext;
-// var extendContextSeries = helpers.extendContextSeries;
-// var uuid = require('node-uuid');
-// var emailer = require('../lib/emailer');
-// var defaultDelistEmailCallback = function () {
-//   var s = 'delistEmailCallback is not defined for testing purposes. ';
-//   s += 'Please update your tests to deal with this functionality';
-//   throw new Error(s);
-// };
-// var delistEmailCallback = defaultDelistEmailCallback;
-// emailer.sendDelistEmail = function() { // Spy on this function
-//   delistEmailCallback();
-// };
-// require('./lib/fixtures/harbourmaster');
-// require('./lib/fixtures/dockworker');
-// var configs = require('../lib/configs');
-// var specData = helpers.specData;
-// var pubsub = require('redis').createClient(configs.redis.port, configs.redis.ipaddress);
-// pubsub.psubscribe('events:*');
-// var createCount = require('callback-count');
-
-// var docker = require('./lib/fixtures/docker');
-// var docklet = require('./lib/fixtures/docklet');
-
-// describe('Containers', function () {
-//   before(function (done) {
-//     var count = createCount(done);
-//     this.docklet = docklet.start(count.inc().next);
-//     this.docker  = docker.start(count.inc().next);
-//   });
-//   after(function (done) {
-//     var count = createCount(done);
-//     this.docklet.stop(count.inc().next);
-//     this.docker.stop(count.inc().next);
-//   });
-//   before(extendContext({
-//     image: images.createImageFromFixture.bind(images, 'node.js')
-//   }));
-//   after(helpers.cleanup);
 
 //   describe('GET /users/me/runnables', function () {
 //     beforeEach(extendContextSeries({
@@ -640,62 +653,5 @@
 //         .expect(200)
 //         .end(done);
 //     }
-//   });
-// });
-
-// describe('Github Import', function () {
-//   before(function (done) {
-//     var count = createCount(done);
-//     this.docklet = docklet.start(count.inc().next);
-//     this.docker  = docker.start(count.inc().next);
-//     this.github  = github.start(count.inc().next);
-//   });
-//   after(function (done) {
-//     var count = createCount(done);
-//     this.docklet.stop(count.inc().next);
-//     this.docker.stop(count.inc().next);
-//   });
-//   before(extendContextSeries({
-//     owner: users.createPublisher,
-//     channels: channels.createChannels('node'),
-//   }));
-//   describe('POST /containers/import/github', function () {
-//     this.timeout(10*1000);
-//     it('should give us back an awesome imported image', function (done) {
-//       var self = this;
-//       var configs = require('configs');
-//       var url = require('url');
-//       this.owner.post('/users/me/runnables/import/github?githubUrl='+this.github.url+'&stack=node')
-//         .expect(201)
-//         .expectBody(function (body) {
-//           body.name.should.equal('nabber');
-//           body.saved.should.be.equal(true);
-//           body.owner.should.equal(self.owner._id.toString());
-//           body.tags.length.should.equal(1);
-//           body.tags[0].name.should.equal('node');
-//           body.importSource.should.equal(self.github.url);
-//         })
-//         .end(function (err, res) {
-//           done(err);
-//         });
-//     });
-//     it('should give us back a shiny new image AND tag!', function (done) {
-//       var self = this;
-//       var configs = require('configs');
-//       var url = require('url');
-//       this.owner.post('/users/me/runnables/import/github?githubUrl='+this.github.url+'&stack=rails')
-//         .expect(201)
-//         .expectBody(function (body) {
-//           body.name.should.equal('nabber');
-//           body.saved.should.be.equal(true);
-//           body.owner.should.equal(self.owner._id.toString());
-//           body.tags.length.should.equal(1);
-//           body.tags[0].name.should.equal('rails');
-//           body.importSource.should.equal(self.github.url);
-//         })
-//         .end(function (err, res) {
-//           done(err);
-//         });
-//     });
 //   });
 // });

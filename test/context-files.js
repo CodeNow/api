@@ -70,7 +70,7 @@ describe('Context Files', function () {
     var self = this;
     async.series([
       function (cb) {
-        self.publisher.del(join('/contexts', self.project.environments[0].contexts[0].context)).expect(204).end(cb);
+        self.publisher.del(join('/contexts', self.project.environment.contexts[0].context)).expect(204).end(cb);
       },
       function (cb) {
         self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
@@ -93,7 +93,7 @@ describe('Context Files', function () {
         "<LastModified>2014-04-16T21:32:00.000Z</LastModified><ETag>&quot;1&quot;</ETag><Size>0" +
         "</Size><Owner><ID>2</ID><DisplayName>name</DisplayName></Owner><StorageClass>STANDARD" +
         "</StorageClass></Contents></ListBucketResult>");
-    var id = this.project.environments[0].contexts[0].context;
+    var id = this.project.environment.contexts[0].context;
     this.publisher.get(join('/contexts', id, 'files') + '?prefix=%2F')
       .expect(200)
       .expectBody(function (body) {
@@ -116,7 +116,7 @@ describe('Context Files', function () {
         "<LastModified>2014-04-16T21:32:00.000Z</LastModified><ETag>&quot;1&quot;</ETag><Size>0" +
         "</Size><Owner><ID>2</ID><DisplayName>name</DisplayName></Owner><StorageClass>STANDARD" +
         "</StorageClass></Contents></ListBucketResult>");
-    var id = this.project.environments[0].contexts[0].context;
+    var id = this.project.environment.contexts[0].context;
     this.publisher.get(join('/contexts', id, 'files'))
       .expect(200)
       .expectBody(function (body) {

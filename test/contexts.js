@@ -80,9 +80,9 @@ describe('Contexts', function () {
         .expect(201)
         .expectBody(function (body) {
           body.environments.length.should.equal(1);
-          body.environments[0].contexts.length.should.equal(1);
-          body.environments[0].isDefault.should.equal(true);
-          body.environments[0].owner.should.equal(body.owner);
+          body.environment.contexts.length.should.equal(1);
+          body.environment.isDefault.should.equal(true);
+          body.environment.owner.should.equal(body.owner);
           self.project = body;
         })
         .end(done);
@@ -162,7 +162,7 @@ describe('Contexts', function () {
         .expect(201)
         .expectBody(function (body) {
           body.environments.length.should.equal(1);
-          body.environments[0].contexts[0].context.should.not.equal(undefined);
+          body.environment.contexts[0].context.should.not.equal(undefined);
         })
         .end(function (err, res) {
           if (err) {
@@ -188,7 +188,7 @@ describe('Contexts', function () {
 
     it('should give us details about a context', function (done) {
       var self = this;
-      this.admin.get('/contexts/' + this.project.environments[0].contexts[0].context)
+      this.admin.get('/contexts/' + this.project.environment.contexts[0].context)
         .expect(200)
         .expectBody('name', 'web-server')
         .expectBody(function (body) {
@@ -237,7 +237,7 @@ describe('Contexts', function () {
             .expect(200)
             .expectBody('name', 'new project')
             .expectBody(function (body) {
-              body.environments[0].contexts.length.should.equal(2);
+              body.environment.contexts.length.should.equal(2);
             })
             .end(done);
         });
@@ -290,20 +290,20 @@ describe('Contexts', function () {
 
     it('should not be allowed by not the owner', function (done) {
       var self = this;
-      self.anonymous.del('/contexts/' + self.project.environments[0].contexts[0].context)
+      self.anonymous.del('/contexts/' + self.project.environment.contexts[0].context)
         .expect(403)
         .end(function (err, res) {
           if (err) {
             return done(err);
           }
-          self.admin.get('/contexts/' + self.project.environments[0].contexts[0].context)
+          self.admin.get('/contexts/' + self.project.environment.contexts[0].context)
             .expect(200)
             .end(done);
         });
     });
     it('should delete the context', function (done) {
       var self = this;
-      var id = self.project.environments[0].contexts[0].context;
+      var id = self.project.environment.contexts[0].context;
       delete this.project;
       self.admin.del('/contexts/' + id)
         .expect(204)

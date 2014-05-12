@@ -45,7 +45,7 @@ app.post('/commit', function (req, res, next) {
   });
 });
 
-app.del('/containers/:id', function (req, res, next) {
+app.delete('/containers/:id', function (req, res, next) {
   res.send(204);
 });
 

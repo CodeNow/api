@@ -34,20 +34,30 @@ describe('Projects', function () {
     this.docklet.stop(count.inc().next);
     this.docker.stop(count.inc().next);
   });
-  beforeEach(extendContextSeries({
+  before(extendContextSeries({
     admin: users.createAdmin,
     publisher: users.createPublisher,
     anonymous: users.createAnonymous
   }));
-  afterEach(helpers.cleanup);
+  after(helpers.cleanup);
 
   describe('creating projects', function () {
-    beforeEach(function (done) { delete this.project; done(); });
     afterEach(function (done) {
       if (!this.project) {
         return done();
       }
-      this.admin.del('/projects/' + this.project._id).expect(204).end(done);
+      var self = this;
+      async.series([
+        function (cb) {
+          self.publisher.del(join('/contexts', self.project.environment.contexts[0].context)).expect(204).end(cb);
+        },
+        function (cb) {
+          self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
+        },
+      ], function (err) {
+        delete self.project;
+        done(err);
+      });
     });
 
     it('should error when missing project parameters (name)', function (done) {
@@ -136,8 +146,16 @@ describe('Projects', function () {
       this.publisher.post('/projects', validProjectData)
         .expect(201)
         .expectBody('name', 'new project')
+        .expectBody('owner', self.publisher._id)
+        .expectBody('views', 0)
+        .expectBody('votes', 0)
         .expectBody(function (body) {
-          body.environments[0].contexts.length.should.equal(1);
+          body.environment.contexts.length.should.equal(1);
+          body.environment.isDefault.should.equal(true);
+          body.environment.outputViews.length.should.equal(0);
+          body.environments.length.should.equal(1);
+          body.environments[0]._id.should.equal(body.environment._id);
+          body.contexts.length.should.equal(1);
           self.project = body;
         })
         .end(done);
@@ -167,7 +185,7 @@ describe('Projects', function () {
         .reply(200, "FROM ubuntu");
 
       // make the project
-      this.admin.post('/projects', validProjectData)
+      this.publisher.post('/projects', validProjectData)
         .expect(201)
         .end(function (err, res) {
           self.project = res ? res.body : undefined;
@@ -176,7 +194,14 @@ describe('Projects', function () {
     });
     afterEach(function (done) {
       var self = this;
-      this.admin.del('/projects/' + this.project._id).expect(204).end(function (err) {
+      async.series([
+        function (cb) {
+          self.publisher.del(join('/contexts', self.project.environment.contexts[0].context)).expect(204).end(cb);
+        },
+        function (cb) {
+          self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
+        },
+      ], function (err) {
         delete self.project;
         done(err);
       });
@@ -186,8 +211,9 @@ describe('Projects', function () {
       this.anonymous.get('/projects/' + this.project._id)
         .expect(200)
         .expectBody('name', 'new project')
+        .expectBody('_id', this.project._id)
         .expectBody(function (body) {
-          body.environments[0].contexts.length.should.equal(1);
+          body.environment.contexts.length.should.equal(1);
         })
         .end(done);
     });
@@ -195,8 +221,9 @@ describe('Projects', function () {
       this.admin.get('/projects/' + this.project._id)
         .expect(200)
         .expectBody('name', 'new project')
+        .expectBody('_id', this.project._id)
         .expectBody(function (body) {
-          body.environments[0].contexts.length.should.equal(1);
+          body.environment.contexts.length.should.equal(1);
         })
         .end(done);
     });
@@ -265,7 +292,14 @@ describe('Projects', function () {
     });
     afterEach(function (done) {
       var self = this;
-      this.admin.del('/projects/' + this.project._id).expect(204).end(function (err) {
+      async.series([
+        function (cb) {
+          self.publisher.del(join('/contexts', self.project.environment.contexts[0].context)).expect(204).end(cb);
+        },
+        function (cb) {
+          self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
+        },
+      ], function (err) {
         delete self.project;
         done(err);
       });
@@ -276,7 +310,7 @@ describe('Projects', function () {
         .expect(201)
         .expectBody('name', 'new project')
         .expectBody(function (body) {
-          body.environments[0].contexts.length.should.equal(1);
+          body.environment.contexts.length.should.equal(1);
         })
         .end(done);
     });
@@ -310,7 +344,7 @@ describe('Projects', function () {
         .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
         .reply(200, "FROM ubuntu");
 
-      this.admin.post('/projects', validProjectData)
+      this.publisher.post('/projects', validProjectData)
         .expect(201)
         .end(function (err, res) {
           self.project = res ? res.body : undefined;
@@ -319,7 +353,14 @@ describe('Projects', function () {
     });
     afterEach(function (done) {
       var self = this;
-      this.admin.del('/projects/' + this.project._id).expect(204).end(function (err) {
+      async.series([
+        function (cb) {
+          self.publisher.del(join('/contexts', self.project.environment.contexts[0].context)).expect(204).end(cb);
+        },
+        function (cb) {
+          self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
+        },
+      ], function (err) {
         delete self.project;
         done(err);
       });
@@ -328,11 +369,11 @@ describe('Projects', function () {
     it('should be allowed for an anonymous user', function (done) {
       // TODO: this will not be allowed for private projects in the future
       this.anonymous.post(join('/projects', this.project._id, 'build'))
-        .expect(201).end(done);
+        .expect(200).end(done);
     });
     it('should build an image and return a container', function (done) {
       this.admin.post(join('/projects', this.project._id, 'build'))
-        .expect(201).end(done);
+        .expect(200).end(done);
     });
   });
 
@@ -357,27 +398,31 @@ describe('Projects', function () {
         .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
         .reply(200, "FROM ubuntu");
 
-      users.createAdmin(function (err, user) {
-        user.post('/projects', validProjectData)
-          .expect(201)
-          .end(function (err, res) {
-            self.project = res ? res.body : undefined;
-            done(err);
-          });
-      });
+      this.publisher.post('/projects', validProjectData)
+        .expect(201)
+        .end(function (err, res) {
+          self.project = res ? res.body : undefined;
+          done(err);
+        });
     });
     afterEach(function (done) {
       if (!this.project) {
         return done();
       }
       var self = this;
-      users.createAdmin(function (err, user) {
-        user.del('/projects/' + self.project._id).expect(204).end(function (err) {
-          delete self.project;
-          done(err);
-        });
+      async.series([
+        function (cb) {
+          self.publisher.del(join('/contexts', self.project.environment.contexts[0].context)).expect(204).end(cb);
+        },
+        function (cb) {
+          self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
+        },
+      ], function (err) {
+        delete self.project;
+        done(err);
       });
     });
+
 
     it('should not be allowed by not the owner', function (done) {
       var self = this;
