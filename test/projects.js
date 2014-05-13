@@ -219,7 +219,7 @@ describe('Projects', function () {
 
     describe('private projects', function (done) {
       before(function (done) {
-        this.publisher.patch('/projects/' + this.project._id, { 'public': false }).expect(204).end(done);
+        this.publisher.patch('/projects/' + this.project._id, { 'public': false }).expect(200).end(done);
       });
       before(extendContextSeries({
         otherPublisher: users.createPublisher
@@ -400,7 +400,7 @@ describe('Projects', function () {
         'public': false
       };
       this.publisher.patch('/projects/' + this.project._id, newData)
-        .expect(204)
+        .expect(200)
         .end(function (err) {
           if (err) {
             return done(err);
