@@ -371,9 +371,18 @@ describe('Projects', function () {
       this.anonymous.post(join('/projects', this.project._id, 'build'))
         .expect(200).end(done);
     });
-    it('should build an image and return a container', function (done) {
+    it('should build an image and return the contexts', function (done) {
+      var self = this;
       this.admin.post(join('/projects', this.project._id, 'build'))
-        .expect(200).end(done);
+        .expect(200)
+        .expectBody(function (body) {
+          body._id.should.equal(self.project._id);
+          body.environment.contexts.length.should.equal(1);
+          body.environment.isDefault.should.equal(true);
+          body.contexts.length.should.equal(1);
+          body.contexts[0].versions.length.should.equal(2);
+        })
+        .end(done);
     });
   });
 
