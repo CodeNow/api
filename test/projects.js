@@ -162,6 +162,84 @@ describe('Projects', function () {
     });
   });
 
+  describe('project permissions', function () {
+    before(function (done) {
+      var self = this;
+      // set up the nocks
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+        .reply(200, "");
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .filteringRequestBody(function(path) { return '*'; })
+        .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
+        .reply(200, "");
+      // for building the project/context
+      nock('https://s3.amazonaws.com:443')
+        .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
+          '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
+        .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile?response-content-type=application%2Fjson')
+        .reply(200, "FROM ubuntu");
+
+      // make the project
+      this.publisher.post('/projects', validProjectData)
+        .expect(201)
+        .end(function (err, res) {
+          self.project = res ? res.body : undefined;
+          done(err);
+        });
+    });
+    after(function (done) {
+      var self = this;
+      async.series([
+        function (cb) {
+          self.publisher.del(join('/contexts', self.project.environment.contexts[0].context)).expect(204).end(cb);
+        },
+        function (cb) {
+          self.publisher.del(join('/projects', self.project.id)).expect(204).end(cb);
+        },
+      ], function (err) {
+        delete self.project;
+        done(err);
+      });
+    });
+
+    it('should be visible to anonymous users', function (done) {
+      this.anonymous.get('/projects/' + this.project._id).expect(200).end(done);
+    });
+    it('should be visible to the owner', function (done) {
+      this.publisher.get('/projects/' + this.project._id).expect(200).end(done);
+    });
+    it('should be visible to admin users', function (done) {
+      this.admin.get('/projects/' + this.project._id).expect(200).end(done);
+    });
+
+    describe('private projects', function (done) {
+      before(function (done) {
+        this.publisher.patch('/projects/' + this.project._id, { 'public': false }).expect(204).end(done);
+      });
+      before(extendContextSeries({
+        otherPublisher: users.createPublisher
+      }));
+
+      it('should not be visible to anonymous users', function (done) {
+        this.anonymous.get('/projects/' + this.project._id).expect(403).end(done);
+      });
+      it('should be visible to the owner', function (done) {
+        this.publisher.get('/projects/' + this.project._id).expect(200).end(done);
+      });
+      it('should not be visible to other publishers', function (done) {
+        this.otherPublisher.get('/projects/' + this.project._id).expect(403).end(done);
+      });
+      it('should be visible to admin users', function (done) {
+        this.admin.get('/projects/' + this.project._id).expect(200).end(done);
+      });
+    });
+  });
+
   describe('listing projects', function () {
     beforeEach(function (done) {
       var self = this;
@@ -218,7 +296,7 @@ describe('Projects', function () {
         .end(done);
     });
     it('should give us details about a project', function (done) {
-      this.admin.get('/projects/' + this.project._id)
+      this.publisher.get('/projects/' + this.project._id)
         .expect(200)
         .expectBody('name', 'new project')
         .expectBody('_id', this.project._id)
@@ -306,13 +384,33 @@ describe('Projects', function () {
     });
 
     it('should let us create a new environment', function (done) {
-      this.publisher.post('/projects/' + this.project._id + '/environments', { name: 'new environment' })
+      this.publisher.post(join('/', 'projects/', this.project._id, 'environments'), { name: 'new environment' })
         .expect(201)
         .expectBody('name', 'new project')
         .expectBody(function (body) {
           body.environment.contexts.length.should.equal(1);
         })
         .end(done);
+    });
+    it('should let us update some properties', function (done) {
+      var self = this;
+      var newData = {
+        name: 'brand spanking new name',
+        description: 'new discription about our project',
+        'public': false
+      };
+      this.publisher.patch('/projects/' + this.project._id, newData)
+        .expect(204)
+        .end(function (err) {
+          if (err) {
+            return done(err);
+          }
+          self.publisher.get(join('/', 'projects', self.project._id))
+            .expect(200)
+            .expectBody('name', newData.name)
+            .expectBody('description', newData.description)
+            .end(done);
+        });
     });
   });
 
@@ -373,7 +471,7 @@ describe('Projects', function () {
     });
     it('should build an image and return the contexts', function (done) {
       var self = this;
-      this.admin.post(join('/projects', this.project._id, 'build'))
+      this.publisher.post(join('/projects', this.project._id, 'build'))
         .expect(200)
         .expectBody(function (body) {
           body._id.should.equal(self.project._id);
@@ -441,7 +539,7 @@ describe('Projects', function () {
           if (err) {
             return done(err);
           }
-          self.admin.get('/projects/' + self.project._id)
+          self.publisher.get('/projects/' + self.project._id)
             .expect(200)
             .end(done);
         });
@@ -450,13 +548,13 @@ describe('Projects', function () {
       var self = this;
       var id = self.project._id;
       delete this.project;
-      self.admin.del('/projects/' + id)
+      self.publisher.del('/projects/' + id)
         .expect(204)
         .end(function (err, res) {
           if (err) {
             return done(err);
           }
-          self.admin.get('/projects/' + id)
+          self.publisher.get('/projects/' + id)
             .expect(404)
             .end(done);
         });
