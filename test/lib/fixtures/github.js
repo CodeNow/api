@@ -1,6 +1,4 @@
 var express = require('express');
-var configs = require('../../../lib/configs');
-var helpers = require('../helpers');
 var app = express();
 
 app.get('/local/nabber/archive/master.tar.gz', function (req, res, next) {
@@ -15,10 +13,10 @@ app.get('/local/nabber/archive/master.tar.gz', function (req, res, next) {
   });
   readStream.pipe(res);
 });
-app.all('*', express.logger(), function (req, res, next) {
-  res.send(404);
-  console.log(req.url, req.method);
-});
+// app.all('*', express.logger(), function (req, res, next) {
+//   res.send(404);
+//   console.log(req.url, req.method);
+// });
 
 module.exports.started = false;
 

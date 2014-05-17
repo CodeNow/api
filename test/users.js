@@ -1,238 +1,114 @@
-'use strict';
+var Lab = require('lab');
+var describe = Lab.experiment;
+var it = Lab.test;
+var before = Lab.before;
+var after = Lab.after;
+var beforeEach = Lab.beforeEach;
+var afterEach = Lab.afterEach;
+var expect = Lab.expect;
+var createCount = require('callback-count');
+var pluck = require('101/pluck');
 
-var _ = require('lodash');
-var users = require('./lib/userFactory');
-var helpers = require('./lib/helpers');
-var extendContext = helpers.extendContext;
-var extendContextSeries = helpers.extendContextSeries;
-var publicFields = [
-  '_id',
-  'username',
-  'name',
-  'created',
-  'company',
-  // 'email', // commented this out bc mainly testing newly created users with hidden emails
-  // 'show_email'
-];
+var users = require('./lib/user-factory');
 
 describe('Users', function () {
-  afterEach(helpers.cleanup);
+  var url = '/users';
+  var ctx = {};
 
-  describe('POST /users', function() {
-    beforeEach(extendContext('user', users.createTokenless));
+  before(require('./lib/start-api').bind(ctx));
+  after(require('./lib/stop-api').bind(ctx));
+
+  beforeEach(function (done) {
+    ctx.tokenlessUser = users.createTokenless();
+    ctx.anonUser = users.createAnonymous(done);
+  });
+  afterEach(function (done) {
+    delete ctx.anonUser;
+    done();
+  });
+  describe('POST '+url, function () {
     it('should create an anonymous user', function(done) {
-      this.user.specRequest()
-        .expect(201)
-        .expectBody('access_token')
-        .expectBody('_id')
-        .end(done);
-    });
-  });
-
-  describe('GET /users', function () {
-    beforeEach(extendContext({
-      user: users.createRegistered,
-      user2: users.createRegistered,
-      user3: users.createRegistered,
-      user4: users.createRegistered,
-      user5: users.createRegistered
-    }));
-    it ('should error when no query params', function (done) {
-      this.user.specRequest(this.user._id)
-        .expect(400)
-        .end(done);
-    });
-    it ('should list users by _ids', function (done) {
-      var users = [this.user, this.user2, this.user3, this.user4, this.user5].slice(2); // slice: subset of all users
-      var userIds = _.pluck(users, '_id');
-      var expected = users.map(function (user) {
-        return _.pick(user, publicFields);
+      ctx.tokenlessUser.create(function (err, body, code) {
+        if (err) { return done(err); }
+        expect(code).to.equal(201);
+        expect(body).to.have.property('_id');
+        expect(body).to.have.property('access_token');
+        done();
       });
-      this.user.specRequest({ _id: userIds })
-        .expect(200)
-        .expectArray(3)
-        .expectArray(expected)
-        .expectBody(function (body) {
-          body[0].should.not.have.property('email');
-          body[0].should.not.have.property('votes');
-          body[0].should.have.property('gravitar');
-          body[0].should.not.have.property('imagesCount');
-          body[0].should.not.have.property('taggedImagesCount');
-        })
-        .end(done);
     });
-    it('should get a user by username', function (done) {
-      var username = this.user2.username;
-      this.user.specRequest({ username: username })
-        .expect(200)
-        .expectArray(1)
-        .expectBody(function (body) {
-          body[0].should.have.a.property('username', username);
-          body[0].should.have.property('gravitar');
-          body[0].should.have.property('imagesCount');
-          body[0].should.have.property('taggedImagesCount');
-        })
-        .end(done);
-    });
+
+    // TODO:
+    // describe('should not create an anonymous user if the user exists', function () {
+    //   ctx.anonUser.post(url, function (err) {
+    //     expect(err).to.be.ok;
+    //     expect(err.statusCode).to.equal(400);
+    //     // TODO: verify error
+    //     done();
+    //   });
+    // });
   });
-
-  describe('PUT /users/me', putUser);
-  describe('PUT /users/:userId', putUser);
-  function putUser () {
-    beforeEach(extendContext('user', users.createAnonymous));
-
-    it('should register a user', function (done) {
-      var body = userAuth();
-      var self = this;
-      this.user.specRequest(this.user._id)
-        .send(body)
-        .expect(200)
-        .expectBody('_id')
-        .expectBody('username')
-        .expectBody('gravitar')
-        .end(done);
+  describe('GET '+url, function() {
+    it('should error if no query params are provided', function (done) {
+      ctx.anonUser.fetchUsers(function (err) {
+        expect(err).to.be.ok;
+        expect(err.output.statusCode).to.equal(400);
+        // TODO: verify error message
+        done();
+      });
     });
-    it('should respond error if missing email',    missingFieldError('email'));
-    it('should respond error if missing username', missingFieldError('username'));
-    it('should respond error if missing password', missingFieldError('password'));
-    describe('register twicce', function () {
-      beforeEach(extendContext({
-        register: ['user.register', [{
-          body: userAuth(),
-          expect: 200
-        }]]
-      }));
-      it('should respond error if a registered user tries to register again', alreadyExistsError());
-    });
-    it('should respond error if user with username already exists', alreadyExistsError('email'));
-    it('should respond error if user with email already exists', alreadyExistsError('username'));
-    function userAuth () {
-      return  {
-        username: 'tjmehta',
-        password: 'password',
-        email   : 'tj@runnable.com'
-      };
-    }
-    function missingFieldError (field) {
-      return function (done) {
-        var body = userAuth();
-        delete body[field];
-        this.user.specRequest(this.user._id)
-          .send(body)
-          .expect(400)
-          .expectBody('message', new RegExp(field))
-          .end(done);
-      };
-    }
-    function alreadyExistsError (noconflictField) {
-      return function (done) {
-        var self = this;
-        var body = userAuth();
-        users.createRegistered(body, function (err) {
-          if (err) {
-            return done(err);
-          }
-          if (noconflictField) {
-            body[noconflictField] = 'noconflict@runnable.com'; // prevent collision
-          }
-          self.user.specRequest(self.user._id)
-            .send(body)
-            .expect(409)
-            .expectBody('message', /already exists/)
-            .end(done);
+    describe('list', function() {
+      beforeEach(function (done) {
+        var count = createCount(done);
+        ctx.users = [
+          users.createRegistered(count.inc().next),
+          users.createRegistered(count.inc().next),
+          users.createRegistered(count.inc().next),
+          users.createRegistered(count.inc().next),
+          users.createRegistered(count.inc().next)
+        ];
+      });
+      afterEach(function (done) {
+        delete ctx.users;
+        done();
+      });
+      it('should list users by _id', function (done) {
+        var userIds = ctx.users.map(pluck('attrs')).map(pluck('_id'));
+        var qs = {
+          _id: userIds
+        };
+        ctx.anonUser.fetchUsers({ qs: qs }, function (err, body, code) {
+          if (err) { return done(err); }
+
+          expect(code).to.equal(200);
+          expect(body).to.be.an('array');
+          expect(body).to.have.a.lengthOf(ctx.users.length);
+          expect(body.map(pluck('_id'))).to.include.members(userIds);
+          expectPublicFields(body[0]);
+          done();
         });
-      };
-    }
-  }
-
-  describe('PATCH /users/me', patchUser);
-  describe('PATCH /users/:userId', patchUser);
-  function patchUser () {
-    beforeEach(extendContext('user', users.createRegistered));
-
-    it('should update name', updateSuccess('name', helpers.randomValue()));
-    it('should update company', updateSuccess('company', helpers.randomValue()));
-    it('should update initial_referrer', updateSuccess('initial_referrer', helpers.randomValue()));
-    it('should update show_email to true',  updateSuccess('show_email', true));
-    it('should update show_email to false', updateSuccess('show_email', false));
-    it('should not update permission_level', function (done) {
-      this.user.specRequest(this.user._id)
-        .send({ permission_level: 1 })
-        .expect(400)
-        .end(done);
-    });
-    function updateSuccess (key, value) {
-      return function (done) {
-        var body = {};
-        body[key] = value;
-        this.user.specRequest(this.user._id)
-          .send(body)
-          .expect(200)
-          .expectBody(key, value)
-          .end(done);
-      };
-    }
-  }
-
-  describe('GET /users/me', getUser);
-  describe('GET /users/:userId', function () {
-    describe('self', getUser);
-    describe('public', function () {
-      beforeEach(extendContext({
-        user: users.createRegistered,
-        user2: users.createRegistered
-      }));
-      it('should fetch the current user', function (done) {
-        var expected = _.pick(this.user, publicFields);
-        this.user2.specRequest(this.user._id)
-          .expect(200)
-          .expectBody(expected)
-          .expectBody(function (body) {
-            body.should.not.have.property('email');
-            body.should.not.have.property('votes');
-            body.should.have.property('gravitar');
-          })
-          .end(done);
       });
-      describe('email', function () {
-        beforeEach(extendContextSeries({
-          showEmail: ['user.patchUser', ['me', {
-            body: { show_email: true },
-            expect: 200
-          }]]
-        }));
-        it('should return email if public', function (done) {
-          var expected = _.pick(this.user, publicFields.concat('email'));
-          this.user2.specRequest(this.user._id)
-            .expect(200)
-            .expectBody(expected)
-            .expectBody(function (body) {
-              body.should.not.have.property('votes');
-              body.should.have.property('email');
-              body.should.have.property('gravitar');
-              body.should.have.property('imagesCount');
-              body.should.have.property('taggedImagesCount');
-            })
-            .end(done);
+      it('should get a user by username', function (done) {
+        var count = createCount(ctx.users.length, done);
+        ctx.users.forEach(function (user) {
+          var qs = {
+            username: user.attrs.username
+          };
+          ctx.anonUser.fetchUsers({ qs: qs }, function (err, body, code) {
+            if (err) { return count.next(err); }
+
+            expect(code).to.equal(200);
+            expect(body).to.be.an('array');
+            expect(body).to.have.a.lengthOf(1);
+            expectPublicFields(body[0]);
+            count.next();
+          });
         });
       });
     });
   });
-  function getUser () {
-    beforeEach(extendContext('user', users.createRegistered));
-    it('should fetch the user', function (done) {
-      // stupid lodash is including prototype keys..
-      var omitKeys = ['access_token', 'password'].concat(Object.keys(Object.getPrototypeOf(this.user)));
-      var expected = _.omit(this.user, omitKeys);
-      this.user.specRequest(this.user._id)
-        .expect(200)
-        .expectBody(expected)
-        .end(done);
-    });
-  }
-
 });
 
-describe('Groups', function () {
-  // FIXME: we are going to have to create some additional functionality for messing with groups...
-});
+function expectPublicFields (user) {
+  expect(user).to.not.include.keys(['email', 'password', 'votes', 'imagesCount', 'taggedImagesCount']);
+  expect(user).to.include.keys(['_id', 'username', 'gravitar']);
+}
