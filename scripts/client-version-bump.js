@@ -13,8 +13,8 @@ function clientVersionBump () {
   var runnablePkg = JSON.parse(fs.readFileSync(runnablePackagePath));
 
   pkg.dependencies.runnable = pkg.dependencies.runnable ?
-     pkg.dependencies.runnable.replace(/#[^#]*$/, '#'+runnablePkg.version) :
-     'git+ssh://git@github.com:CodeNow/runnable-api-client#'+runnablePkg.version;
+     pkg.dependencies.runnable.replace(/#[^#]*$/, '#v'+runnablePkg.version) :
+     'git+ssh://git@github.com:CodeNow/runnable-api-client#v'+runnablePkg.version;
 
   console.log('updated to '+pkg.dependencies.runnable);
   fs.writeFileSync(packagePath, JSON.stringify(pkg, null, '  '));
