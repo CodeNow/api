@@ -83,7 +83,7 @@
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs -q server.js",
     "coverage": "bash ./scripts/run_coverage.sh",
     "test-watch": "killall node; nodemon --exec npm test",
-    "test": "NODE_PATH=./lib NODE_ENV=test lab -v -m 500 -e -l test test/*.js",
+    "test": "NODE_PATH=./lib NODE_ENV=test lab -v -l -m 500 -e test test/*.js",
     "client-version": "node ./scripts/client-version-bump.js",
     "old-test-watch": "NODE_PATH=./lib nodemon --delay 1 -w lib -w test -w configs -x npm test",
     "old-test": "NODE_ENV=testing NODE_PATH=./lib mocha",
