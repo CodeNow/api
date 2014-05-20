@@ -127,14 +127,20 @@ describe('Projects', function () {
         .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source\//g,
           '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/')
         .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       // mock the request to create the dockerfile
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/dockerfile\/Dockerfile/g,
           '/runnable.context.resources.test/5358004b171f1c06f8e03197/dockerfile/Dockerfile')
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/dockerfile/Dockerfile', '*')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       // for building the project/context
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
@@ -170,13 +176,19 @@ describe('Projects', function () {
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       // for building the project/context
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
@@ -248,13 +260,19 @@ describe('Projects', function () {
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       // for building the project/context
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
@@ -315,13 +333,19 @@ describe('Projects', function () {
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       // for building the project/context
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
@@ -352,13 +376,19 @@ describe('Projects', function () {
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
 
       // make the project
       this.publisher.post('/projects', validProjectData)
@@ -422,13 +452,19 @@ describe('Projects', function () {
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       // for building the project/context
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
@@ -479,6 +515,7 @@ describe('Projects', function () {
           body.environment.isDefault.should.equal(true);
           body.contexts.length.should.equal(1);
           body.contexts[0].versions.length.should.equal(2);
+          body.contexts[0].versions[0].files.length.should.equal(1);
         })
         .end(done);
     });
@@ -491,13 +528,19 @@ describe('Projects', function () {
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,
           '/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile')
         .filteringRequestBody(function(path) { return '*'; })
         .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/dockerfile/Dockerfile', '*')
-        .reply(200, "");
+        .reply(200, "", {
+          'etag': '"d41d8cd98f00b204e9800998ecf8427e"',
+          'x-amz-version-id': 'cSWa4pBbQ.UeeavSaYTPPcuDD8TsR8gu'
+        });
       // for building the project/context
       nock('https://s3.amazonaws.com:443')
         .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/dockerfile\/Dockerfile/,

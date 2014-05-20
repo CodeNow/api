@@ -1,6 +1,6 @@
 var Lab = require('lab');
-var suite = Lab.experiment;
-var test = Lab.test;
+var describe = Lab.experiment;
+var it = Lab.test;
 var expect = Lab.expect;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
@@ -10,7 +10,7 @@ var join = require('path').join;
 
 var Context = require('models/contexts');
 
-suite('Contexts', function () {
+describe('Contexts', function () {
   beforeEach(function (done) {
     this.context = new Context();
     done();
@@ -20,7 +20,7 @@ suite('Contexts', function () {
     done();
   });
 
-  test('should not allow a resource to be uploaded to the wrong bucket', function (done) {
+  it('should not allow a resource to be uploaded to the wrong bucket', function (done) {
     var s3Url = url.format({
       protocol: 's3:',
       slashes: true,
@@ -36,7 +36,7 @@ suite('Contexts', function () {
     });
   });
 
-  test('should give us resource urls for the bucket', function (done) {
+  it('should give us resource urls for the bucket', function (done) {
     var s3Url = url.format({
       protocol: 's3:',
       slashes: true,
@@ -47,7 +47,7 @@ suite('Contexts', function () {
     done();
   });
 
-  test('should refuse permissions for an incorrect path', function (done) {
+  it('should refuse permissions for an incorrect path', function (done) {
     var s3Url = url.format({
       protocol: 's3:',
       slashes: true,
