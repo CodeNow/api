@@ -11,7 +11,6 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
-var users = require('./fixtures/user-factory');
 
 describe('Environments - /project/:id/environments', function () {
   var ctx = {};
