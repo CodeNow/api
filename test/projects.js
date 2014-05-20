@@ -47,7 +47,6 @@ describe('Projects - /projects', function () {
         it('should error if missing '+missingBodyKey, function (done) {
           var incompleteBody = clone(json);
           delete incompleteBody[missingBodyKey];
-          console.log(incompleteBody);
           ctx.user.createProject({ json: incompleteBody }, function (err) {
             expect(err).to.be.ok;
             if (err) {
