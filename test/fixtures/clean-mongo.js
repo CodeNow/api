@@ -1,7 +1,7 @@
 var createCount = require('callback-count');
 var mongoose = require('mongoose');
 
-module.exports = {
+var cleanMongo = module.exports = {
   onceConnected: function (cb) {
     if (mongoose.connection.readyState === 1) {
       cb();
@@ -26,7 +26,7 @@ module.exports = {
     });
   },
   removeEverything: function (cb) {
-    var self = this;
+    var self = cleanMongo;
     var collectionNames = Object.keys(mongoose.connection.collections);
     var count = createCount(collectionNames.length, cb);
 

@@ -8,25 +8,26 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 var createCount = require('callback-count');
 var pluck = require('101/pluck');
+require('console-trace')({always:true, right:true});
 
-var users = require('./lib/user-factory');
+var api = require('./fixtures/api-control');
+var users = require('./fixtures/user-factory');
 
-describe('Users', function () {
-  var url = '/users';
+describe('Users - /users', function () {
   var ctx = {};
 
-  before(require('./lib/start-api').bind(ctx));
-  after(require('./lib/stop-api').bind(ctx));
+  before(api.start.bind(ctx));
+  after(api.stop.bind(ctx));
+  afterEach(require('./fixtures/clean-mongo').removeEverything);
+  afterEach(require('./fixtures/clean-ctx')(ctx));
 
   beforeEach(function (done) {
     ctx.tokenlessUser = users.createTokenless();
     ctx.anonUser = users.createAnonymous(done);
   });
-  afterEach(function (done) {
-    delete ctx.anonUser;
-    done();
-  });
-  describe('POST '+url, function () {
+
+
+  describe('POST', function () {
     it('should create an anonymous user', function(done) {
       ctx.tokenlessUser.create(function (err, body, code) {
         if (err) { return done(err); }
@@ -47,7 +48,7 @@ describe('Users', function () {
     //   });
     // });
   });
-  describe('GET '+url, function() {
+  describe('GET', function() {
     it('should error if no query params are provided', function (done) {
       ctx.anonUser.fetchUsers(function (err) {
         expect(err).to.be.ok;
@@ -67,10 +68,7 @@ describe('Users', function () {
           users.createRegistered(count.inc().next)
         ];
       });
-      afterEach(function (done) {
-        delete ctx.users;
-        done();
-      });
+
       it('should list users by _id', function (done) {
         var userIds = ctx.users.map(pluck('attrs')).map(pluck('_id'));
         var qs = {
@@ -109,6 +107,7 @@ describe('Users', function () {
 });
 
 function expectPublicFields (user) {
-  expect(user).to.not.include.keys(['email', 'password', 'votes', 'imagesCount', 'taggedImagesCount']);
+  expect(user).to.not.include.keys(
+    ['email', 'password', 'votes', 'imagesCount', 'taggedImagesCount']);
   expect(user).to.include.keys(['_id', 'username', 'gravitar']);
 }

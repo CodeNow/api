@@ -54,8 +54,9 @@
     "morgan": "~1.0.1",
     "body-parser": "~1.0.2",
     "express": "~4.1.2",
-    "runnable-api": "git+ssh://git@github.com:CodeNow/runnable-api-client",
-    "clone": "~0.1.15"
+    "clone": "~0.1.15",
+    "uuid": "~1.4.1",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#0.1.0"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
@@ -82,10 +83,9 @@
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs -q server.js",
     "testwatch": "NODE_PATH=./lib nodemon --delay 1 -w lib -w test -w configs -x npm test",
     "coverage": "bash ./scripts/run_coverage.sh",
-
-    "test-watch": "NODE_PATH=./lib nodemon --exec lab test/*.js",
-    "test": "NODE_PATH=./lib lab test/*.js",
-
+    "test-watch": "killall node; nodemon --exec npm test",
+    "test": "NODE_PATH=./lib NODE_ENV=test lab -v -m 500 -e test test/*.js",
+    "client-version": "node ./scripts/client-version-bump.js",
     "old-test": "NODE_ENV=testing NODE_PATH=./lib mocha",
     "unit": "NODE_PATH=./lib lab -e testing -vG unit/",
     "test-debug": "npm run lint && NODE_ENV=testing NODE_PATH=./lib mocha --debug-brk",

@@ -8,27 +8,26 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
 var uuid = require('uuid');
-var cleanMongo = require('./lib/clean-mongo');
-var createCount = require('callback-count');
 var clone = require('clone');
-var users = require('./lib/user-factory');
+var createCount = require('callback-count');
+var api = require('./fixtures/api-control');
+var users = require('./fixtures/user-factory');
 
-describe('User', function () {
-  var url = '/users/:id';
+describe('User - /users/:id', function () {
   var ctx = {};
 
-  before(require('./lib/start-api').bind(ctx));
-  after(require('./lib/stop-api').bind(ctx));
+  before(api.start.bind(ctx));
+  after(api.stop.bind(ctx));
+  afterEach(require('./fixtures/clean-mongo').removeEverything);
+  afterEach(require('./fixtures/clean-ctx')(ctx));
 
-  describe('GET '+url, function () {
+
+  describe('GET', function () {
     describe('anonymous', function () {
       beforeEach(function (done) {
         ctx.anonUser = users.createAnonymous(done);
       });
-      afterEach(function (done) {
-        delete ctx.anonUser;
-        done();
-      });
+
       it('should get the user', function (done) {
         ctx.anonUser.fetch(function (err, body, code) {
           if (err) { return done(err); }
@@ -44,10 +43,7 @@ describe('User', function () {
       beforeEach(function (done) {
         ctx.user = users.createRegistered(done);
       });
-      afterEach(function (done) {
-        delete ctx.user;
-        done();
-      });
+
       it('should get the user', function (done) {
         ctx.user.fetch(function (err, body, code) {
           if (err) { return done(err); }
@@ -64,11 +60,8 @@ describe('User', function () {
         ctx.anonUser = users.createAnonymous(count.inc().next);
         ctx.user = users.createRegistered(count.inc().next);
       });
-      afterEach(function (done) {
-        delete ctx.anonUser;
-        delete ctx.user;
-        done();
-      });
+      afterEach(require('./fixtures/clean-ctx')(ctx));
+
       it('should get the user with public fields only', function (done) {
         ctx.anonUser.fetch(ctx.user.attrs._id, function (err, body, code) {
           if (err) { return done(err); }
@@ -80,7 +73,7 @@ describe('User', function () {
       });
     });
   });
-  describe('PATCH '+url, function () {
+  describe('PATCH', function () {
     var body = {
       email: uuid()+'@domain.com',
       username: uuid(),
@@ -90,10 +83,6 @@ describe('User', function () {
 
     beforeEach(function (done) {
       ctx.user = users.createAnonymous(done);
-    });
-    afterEach(function (done) {
-      delete ctx.user;
-      cleanMongo.removeDocsInCollection('users', done);
     });
 
     requiredBodyKeys.forEach(function (missingBodyKey) {
@@ -119,7 +108,7 @@ describe('User', function () {
       });
     });
   });
-  // // describe('DEL '+url, function () {
+  // // describe('DEL', function () {
 
   // // });
 });
