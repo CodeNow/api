@@ -7,12 +7,13 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Environments - /project/:id/environments', function () {
+describe('Environments - /projects/:id/environments', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -25,20 +26,27 @@ describe('Environments - /project/:id/environments', function () {
   describe('POST', function () {
     beforeEach(function (done) {
       nockS3();
-      multi.createRegisteredUserAndProject(function (err, owner, project) {
-        ctx.owner = owner;
+      multi.createRegisteredUserAndProject(function (err, user, project) {
+        if (err) { return done(err); }
+        ctx.user = user;
         ctx.project = project;
-        done(err);
+        done();
       });
     });
 
     it('should create an environment for a project', function (done) {
-      ctx.project.createEnvironment(function (err, body, code) {
+      var newName = uuid();
+      ctx.project.createEnvironment({ json: { name: newName }}, function (err, body, code) {
         if (err) { return done(err); }
 
         expect(code).to.equal(201);
-        expect(body.contexts).to.be.an('array');
-        expect(body.contexts).to.have.a.lengthOf(1);
+        expect(body).to.be.an('array');
+        expect(body).to.have.length(1);
+
+        expect(body[0]).to.have.property('_id');
+        expect(body[0]).to.have.property('owner', ctx.user.id());
+        expect(body[0].contexts).to.be.an('array');
+        expect(body[0].contexts).to.have.length(1);
         done();
       });
     });
@@ -53,33 +61,80 @@ describe('Environments - /project/:id/environments', function () {
     // });
   });
 
-  // describe('GET', function () {
-  //   beforeEach(function (done) {
-  //     nockS3();
-  //     multi.createRegisteredUserAndProject(function (err, owner, project) {
-  //       ctx.owner = owner;
-  //       ctx.project = project;
-  //       done(err);
-  //     });
-  //   });
+  describe('GET', function () {
+    beforeEach(function (done) {
+      nockS3();
+      multi.createRegisteredUserAndProject(function (err, user, project) {
+        ctx.user = user;
+        ctx.project = project;
+        done(err);
+      });
+    });
 
-  // });
+    it('should return the list of environments for a project', function (done) {
+      ctx.project.fetchEnvironments(function (err, body, code) {
+        if (err) { return done(err); }
+        expect(code).to.equal(200);
+        expect(body).to.be.an('array');
+        expect(body).to.have.length(1);
+        expect(body[0].contexts).to.be.an('array');
+        expect(body[0].isDefault).to.equal(true);
+        done();
+      });
+    });
+  });
 
+  describe('PATCH', function () {
+    beforeEach(function (done) {
+      nockS3();
+      multi.createRegisteredUserAndProject(function (err, user, project) {
+        ctx.user = user;
+        ctx.project = project;
+        done(err);
+      });
+    });
 
-  // describe('PATCH', function () {
-  //   beforeEach(function (done) {
-  //     nockS3();
-  //     multi.createRegisteredUserAndProject(function (err, owner, project) {
-  //       ctx.owner = owner;
-  //       ctx.project = project;
-  //       done(err);
-  //     });
-  //   });
+    it('should update the environment', function (done) {
+      ctx.project.fetchEnvironments(function (err, body) {
+        if (err) { return done(err); }
+        var environmentId = body[0]._id;
+        var newData = { name: uuid() };
+        ctx.project.updateEnvironment(environmentId, { json: newData }, function (err, body, code) {
+          if (err) { return done(err); }
+          expect(code).to.equal(200);
+          expect(body[0].name).to.equal(newData.name);
+          done();
+        });
+      });
+    });
 
-  // });
+  });
 
+  describe('DELETE', function () {
+    beforeEach(function (done) {
+      nockS3();
+      multi.createRegisteredUserAndProject(function (err, user, project) {
+        ctx.user = user;
+        ctx.project = project;
+        done(err);
+      });
+    });
 
-  // describe('DEL', function () {
-
-  // });
+    it('should delete the environment', function (done) {
+      ctx.project.fetchEnvironments(function (err, body) {
+        if (err) { return done(err); }
+        var environmentId = body[0]._id;
+        ctx.project.destroyEnvironment(environmentId, function (err, body, code) {
+          if (err) { return done(err); }
+          expect(code).to.equal(204);
+          ctx.project.fetchEnvironments(function (err, body, code) {
+            if (err) { return done(err); }
+            expect(code).to.equal(200);
+            expect(body).to.have.length(0);
+            done();
+          });
+        });
+      });
+    });
+  });
 });

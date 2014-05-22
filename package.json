@@ -56,7 +56,7 @@
     "express": "~4.1.2",
     "clone": "~0.1.15",
     "uuid": "~1.4.1",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.1.0",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.2.0",
     "primus": "~2.2.1",
     "engine.io-client": "~1.1.0"
   },

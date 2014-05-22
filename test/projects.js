@@ -18,10 +18,10 @@ var projects = require('./fixtures/project-factory');
 describe('Projects - /projects', function () {
   var ctx = {};
 
-  before(api.start);
-  before(dock.start);
-  after(api.stop);
-  after(dock.stop);
+  before(api.start.bind(ctx));
+  before(dock.start.bind(ctx));
+  after(api.stop.bind(ctx));
+  after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
@@ -44,15 +44,13 @@ describe('Projects - /projects', function () {
       var requiredProjectKeys = Object.keys(json);
 
       requiredProjectKeys.forEach(function (missingBodyKey) {
-        it('should error if missing '+missingBodyKey, function (done) {
+        it('should error if missing ' + missingBodyKey, function (done) {
           var incompleteBody = clone(json);
           delete incompleteBody[missingBodyKey];
           ctx.user.createProject({ json: incompleteBody }, function (err) {
             expect(err).to.be.ok;
-            if (err) {
-              expect(err.message).to.match(new RegExp(missingBodyKey));
-              expect(err.message).to.match(new RegExp('is required'));
-            }
+            expect(err.message).to.match(new RegExp(missingBodyKey));
+            expect(err.message).to.match(new RegExp('is required'));
             done();
           });
         });
@@ -66,16 +64,7 @@ describe('Projects - /projects', function () {
           expect(body).to.have.property('name', json.name);
           expect(body).to.have.property('owner', ctx.user.id());
           expect(body).to.have.property('public', true);
-          // contexts
-          expect(body.contexts).to.be.an('array');
-          expect(body.contexts[0]).to.be.an('object');
-          expect(body.contexts[0]).to.have.a.property('owner', ctx.user.id());
-          expect(body.contexts[0]).to.have.a.property('name', json.contexts[0].name);
-          expect(body.contexts[0].dockerfile).to.match(/^s3:/);
-          // environment
-          expect(body.environment).to.be.an('object');
-          expect(body.environment).to.have.property('_id');
-          expect(body.environment).to.have.property('owner', ctx.user.id());
+          expect(body.environments).to.equal(undefined);
           done();
         });
       });
@@ -95,13 +84,6 @@ describe('Projects - /projects', function () {
   //     delete ctx.user;
   //     done();
   //   });
-
-  // });
-  // describe('PATCH', function () {
-
-  // });
-  // describe('DEL', function () {
-
   // });
 });
 

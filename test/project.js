@@ -14,7 +14,7 @@ var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var users = require('./fixtures/user-factory');
 
-describe('Project - /project/:id', function () {
+describe('Project - /projects/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -24,7 +24,6 @@ describe('Project - /project/:id', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
-
   describe('GET', function () {
     beforeEach(function (done) {
       nockS3();
@@ -32,6 +31,15 @@ describe('Project - /project/:id', function () {
         ctx.owner = owner;
         ctx.project = project;
         done(err);
+      });
+    });
+
+    describe('failures', function () {
+      it('should return 400 with a bad id', function (done) {
+        ctx.owner.fetchProject('fakeId', checkForError(400, done));
+      });
+      it('should return 404 with a non-existant id', function (done) {
+        ctx.owner.fetchProject('ffffffffffffffffffffffff', checkForError(404, done));
       });
     });
 
@@ -87,16 +95,11 @@ describe('Project - /project/:id', function () {
         });
 
         it('should get forbidden', function (done) {
-          ctx.nonOwner.fetchProject(ctx.project.id(), function (err) {
-            expect(err).to.be.ok;
-            expect(err.output.statusCode).to.equal(403);
-            done();
-          });
+          ctx.nonOwner.fetchProject(ctx.project.id(), checkForError(403, done));
         });
       });
     });
   });
-
 
   describe('PATCH', function () {
     beforeEach(function (done) {
@@ -155,15 +158,10 @@ describe('Project - /project/:id', function () {
         ctx.project.destroy(done);
       });
       it('should respond "not found" if the project does not exist', function(done) {
-        ctx.project.update({ json: { public: true } }, function (err) {
-          expect(err).to.be.ok;
-          expect(err.output.statusCode).to.eql(404);
-          done();
-        });
+        ctx.project.update({ json: { public: true } }, checkForError(404, done));
       });
     });
   });
-
 
   describe('DEL', function () {
     beforeEach(function (done) {
@@ -174,6 +172,16 @@ describe('Project - /project/:id', function () {
         done(err);
       });
     });
+
+    describe('failures', function () {
+      it('should return 400 with a bad id', function (done) {
+        ctx.owner.fetchProject('fakeId', checkForError(400, done));
+      });
+      it('should return 404 with a non-existant id', function (done) {
+        ctx.owner.fetchProject('ffffffffffffffffffffffff', checkForError(404, done));
+      });
+    });
+
     describe('owner', function () {
       it('should delete the project', function(done) {
         ctx.project.destroy(function (err, body, code) {
@@ -189,11 +197,7 @@ describe('Project - /project/:id', function () {
         ctx.nonOwner = users.createRegistered(done);
       });
       it('should repond "access denied"', function (done) {
-        ctx.nonOwner.destroyProject(ctx.project.id(), function (err) {
-          expect(err).to.be.ok;
-          expect(err.output.statusCode).to.eql(403);
-          done();
-        });
+        ctx.nonOwner.destroyProject(ctx.project.id(), checkForError(403, done));
       });
     });
     describe('non-existant project', function () {
@@ -201,12 +205,16 @@ describe('Project - /project/:id', function () {
         ctx.project.destroy(done);
       });
       it('should respond "not found" if the project does not exist', function(done) {
-        ctx.project.destroy(function (err) {
-          expect(err).to.be.ok;
-          expect(err.output.statusCode).to.eql(404);
-          done();
-        });
+        ctx.project.destroy(checkForError(404, done));
       });
     });
   });
 });
+
+function checkForError (code, done) {
+  return function (err) {
+    expect(err).to.be.ok;
+    expect(err.output.statusCode).to.equal(code);
+    done();
+  };
+}
