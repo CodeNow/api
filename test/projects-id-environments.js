@@ -104,7 +104,7 @@ describe('Environments - /projects/:id/environments', function () {
         ctx.project.updateEnvironment(environmentId, { json: newData }, function (err, body, code) {
           if (err) { return done(err); }
           expect(code).to.equal(200);
-          expect(body[0].name).to.equal(newData.name);
+          expect(body.name).to.equal(newData.name);
           done();
         });
       });
