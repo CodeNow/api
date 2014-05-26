@@ -49,6 +49,7 @@ describe('Project - /projects/:id', function () {
       });
       describe('owner', function () {
         it('should get the project', function (done) {
+          console.log(ctx.project.attrs);
           ctx.owner.fetchProject(ctx.project.id(), function (err, body, code) {
             if (err) { return done(err); }
 

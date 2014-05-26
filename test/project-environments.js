@@ -40,13 +40,12 @@ describe('Environments - /projects/:id/environments', function () {
         if (err) { return done(err); }
 
         expect(code).to.equal(201);
-        expect(body).to.be.an('array');
-        expect(body).to.have.length(1);
-
-        expect(body[0]).to.have.property('_id');
-        expect(body[0]).to.have.property('owner', ctx.user.id());
-        expect(body[0].contexts).to.be.an('array');
-        expect(body[0].contexts).to.have.length(1);
+        expect(body).to.have.property('_id');
+        expect(body).to.have.property('owner', ctx.user.id());
+        expect(body.contexts).to.be.an('array');
+        expect(body.contexts).to.have.length(1);
+        expect(body.contexts[0].context).to.be.ok;
+        expect(body.contexts[0].version).to.be.ok;
         done();
       });
     });
@@ -74,11 +73,14 @@ describe('Environments - /projects/:id/environments', function () {
     it('should return the list of environments for a project', function (done) {
       ctx.project.fetchEnvironments(function (err, body, code) {
         if (err) { return done(err); }
+
         expect(code).to.equal(200);
         expect(body).to.be.an('array');
-        expect(body).to.have.length(1);
+        expect(body[0]).to.have.property('owner', ctx.user.id());
         expect(body[0].contexts).to.be.an('array');
-        expect(body[0].isDefault).to.equal(true);
+        expect(body[0].contexts).to.have.length(1);
+        expect(body[0].contexts[0].context).to.be.ok;
+        expect(body[0].contexts[0].version).to.be.ok;
         done();
       });
     });

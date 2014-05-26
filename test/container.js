@@ -31,24 +31,24 @@
 
 //         ctx.owner = owner;
 //         ctx.project = project;
-//         done();
+//         ctx.context = project.fetchContext('default', done);
 //       });
 //     });
-//     // it('should create a project', function (done) {
+//     it('should create a project', function (done) {
 
-//     // });
+//     });
 //     describe('validation errors', function() {
 //       it('should require query.from', function (done) {
-//         owner.createContainer({ qs: {} }, function (err) {
+//         ctx.owner.createContainer({ qs: {} }, function (err) {
 //           expect(err).to.be.ok;
 //           expect(err.output.statusCode).to.equal(400);
 //           console.log(err.message);
-//           // expect(err.output.statusCode).to.equal(400);
+//           // expect(err.message).to.equal(400);
 //           done();
 //         });
 //       });
 //       it('should require query.from to be an ObjectId', function (done) {
-//         owner.createContainer({ qs: { from: 'bogus' } }, function (err) {
+//         ctx.owner.createContainer({ qs: { from: 'bogus' } }, function (err) {
 //           expect(err).to.be.ok;
 //           expect(err.output.statusCode).to.equal(400);
 //           console.log(err.message);

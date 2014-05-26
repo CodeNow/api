@@ -7,13 +7,13 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var last = require('101/last');
 var uuid = require('uuid');
 var clone = require('clone');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var users = require('./fixtures/user-factory');
-var projects = require('./fixtures/project-factory');
 
 describe('Projects - /projects', function () {
   var ctx = {};
@@ -36,10 +36,7 @@ describe('Projects - /projects', function () {
     describe('dockerfile', function () {
       var json = {
         name: uuid(),
-        contexts: [{
-          name: uuid(),
-          dockerfile: 'FROM ubuntu\n'
-        }]
+        dockerfile: 'FROM ubuntu\n'
       };
       var requiredProjectKeys = Object.keys(json);
 
@@ -64,7 +61,12 @@ describe('Projects - /projects', function () {
           expect(body).to.have.property('name', json.name);
           expect(body).to.have.property('owner', ctx.user.id());
           expect(body).to.have.property('public', true);
-          expect(body.environments).to.equal(undefined);
+          expect(body.environments).to.be.an('array');
+          expect(body.environments).to.have.a.lengthOf(1);
+          expect(body.environments[0].contexts).to.be.an('array');
+          expect(body.environments[0].contexts).to.have.a.lengthOf(1);
+          expect(body.environments[0].contexts[0].context).to.be.ok;
+          expect(body.environments[0].contexts[0].version).to.be.ok;
           done();
         });
       });

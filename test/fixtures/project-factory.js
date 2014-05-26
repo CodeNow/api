@@ -9,10 +9,7 @@ module.exports = {
     }
     body = body || {
       name: uuid(),
-      contexts: [{
-        name: uuid(),
-        dockerfile: 'FROM ubuntu\n'
-      }]
+      dockerfile: 'FROM ubuntu\n'
     };
     var project = user.createProject({ json: body }, cb);
     return project;

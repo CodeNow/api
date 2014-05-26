@@ -34,7 +34,8 @@
     "scripturl"     : true,   // Tolerate script-targeted URLs.
     "shadow"        : false,  // Allows re-define variables later in code e.g. `var x=1; x=2;`.
     "supernew"      : false,  // Tolerate `new function () { ... };` and `new Object;`.
-    "undef"         : false,   // Require all non-global variables be declared before they are used.
+    "undef"         : false,  // Require all non-global variables be declared before they are used.
+    "white"         : false,  // This option make JSHint check your source code against Douglas Crockford's JavaScript coding style.
 
     // Personal styling preferences.
     "newcap"        : true,   // Require capitalization of all constructor functions e.g. `new F()`.
