@@ -20,5 +20,24 @@ module.exports = {
         cb(err, user, project);
       });
     });
+  },
+  createRegisteredUserProjectAndEnvironments: function (userBody, projectBody, cb) {
+    if (isFunction(userBody)) {
+      cb = userBody;
+      userBody = {};
+    }
+    else if (isFunction(projectBody)) {
+      cb = projectBody;
+      projectBody = null;
+    }
+    this.createRegisteredUserAndProject(userBody, projectBody, function (err, user, project) {
+      if (err) { return cb(err); }
+
+      var environments = project.fetchEnvironments(function (err, body) {
+        if (err) { return cb(err); }
+
+        cb(err, user, project, environments);
+      });
+    });
   }
 };

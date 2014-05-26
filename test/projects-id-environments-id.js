@@ -110,10 +110,11 @@ describe('Environments - /projects/:id/environments/:id', function() {
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
-          it('should not update environment\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
-            ctx.environment.client = ctx.nonOwner.client; // swap auth to nonOwner's
-            ctx.environment.update({ json: json }, expects.errorStatus(403, done));
-          });
+          it('should not update environment\'s '+keys+' to '+vals+' (403 forbidden)',
+            function (done) {
+              ctx.environment.client = ctx.nonOwner.client; // swap auth to nonOwner's
+              ctx.environment.update({ json: json }, expects.errorStatus(403, done));
+            });
         });
       });
       describe('moderator', function () {
@@ -138,9 +139,10 @@ describe('Environments - /projects/:id/environments/:id', function() {
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
-          it('should not update environment\'s '+keys+' to '+vals+' (404 not found)', function (done) {
-            ctx.environment.update({ json: json }, expects.errorStatus(404, done));
-          });
+          it('should not update environment\'s '+keys+' to '+vals+' (404 not found)',
+            function (done) {
+              ctx.environment.update({ json: json }, expects.errorStatus(404, done));
+            });
         });
       });
     });
