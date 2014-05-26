@@ -39,8 +39,23 @@ module.exports = {
     user.register(email, username, password, cb);
     return user;
   },
-  createAdmin: function (email, username, password, cb) {
-    var user = this.createRegistered(email, username, password, function (err, user) {
+  createModerator: function (email, username, password, cb) {
+    if (isFunction(email)) {
+      cb = email;
+      email = null;
+      username = null;
+      password = null;
+    }
+    else if (isFunction(username)) {
+      cb = username;
+      username = null;
+      password = null;
+    }
+    else if (isFunction(password)) {
+      cb = password;
+      password = null;
+    }
+    var user = this.createRegistered(email, username, password, function (err, body) {
       if (err) {
         cb(err);
       }
@@ -48,7 +63,7 @@ module.exports = {
         var $set = {
           permission_level: 5
         };
-        User.updateById({ _id: user._id }, { $set: $set }, callbackData(user, cb));
+        User.updateById(body._id, { $set: $set }, callbackData(body, cb));
       }
     });
     return user;
@@ -56,7 +71,7 @@ module.exports = {
 };
 
 function callbackData (data, cb) {
-  return function (err) {
+  return function (err, user) {
     if (err) {
       cb(err);
     }

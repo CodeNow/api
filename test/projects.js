@@ -7,7 +7,6 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
-var last = require('101/last');
 var uuid = require('uuid');
 var clone = require('clone');
 var api = require('./fixtures/api-control');

@@ -7,6 +7,7 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var expects = require('./fixtures/expects');
 var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -24,198 +25,196 @@ describe('Project - /projects/:id', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
+  beforeEach(function (done) {
+    nockS3();
+    multi.createRegisteredUserAndProject(function (err, user, project) {
+      if (err) { return done(err); }
+
+      ctx.user = user;
+      ctx.project = project;
+      done();
+    });
+  });
   describe('GET', function () {
-    beforeEach(function (done) {
-      nockS3();
-      multi.createRegisteredUserAndProject(function (err, owner, project) {
-        ctx.owner = owner;
-        ctx.project = project;
-        done(err);
-      });
-    });
-
-    describe('failures', function () {
-      it('should return 400 with a bad id', function (done) {
-        ctx.owner.fetchProject('fakeId', checkForError(400, done));
-      });
-      it('should return 404 with a non-existant id', function (done) {
-        ctx.owner.fetchProject('ffffffffffffffffffffffff', checkForError(404, done));
-      });
-    });
-
-    describe('public', function () {
-      beforeEach(function (done) {
-        ctx.project.update({ json: { public: true }}, done);
-      });
-      describe('owner', function () {
-        it('should get the project', function (done) {
-          console.log(ctx.project.attrs);
-          ctx.owner.fetchProject(ctx.project.id(), function (err, body, code) {
-            if (err) { return done(err); }
-
-            expect(code).to.equal(200);
-            expect(body).to.eql(ctx.project.toJSON());
-            done();
-          });
-        });
-      });
-      describe('non-owner', function () {
+    describe('permissions', function() {
+      describe('public', function() {
         beforeEach(function (done) {
-          ctx.nonOwner = users.createAnonymous(done);
+          ctx.project.update({ json: { public: true } }, done);
         });
-        it('should get the project', function (done) {
-          ctx.nonOwner.fetchProject(ctx.project.id(), function (err, body) {
-            if (err) { return done(err); }
-
-            // FIXME: what fields should be returned to public?
-            // expect(body).to.eql(ctx.project.toJSON());
-            expect(body).to.have.property('_id', ctx.project.id());
-            done();
+        describe('owner', function () {
+          it('should get the project', function (done) {
+            ctx.project.fetch(expectSuccess(done));
+          });
+        });
+        describe('non-owner', function () {
+          beforeEach(function (done) {
+            ctx.nonOwner = users.createRegistered(done);
+          });
+          it('should get the project', function (done) {
+            ctx.project.client = ctx.nonOwner.client; // swap auth to nonOwner's
+            ctx.project.fetch(expectSuccess(done));
+          });
+        });
+        describe('moderator', function () {
+          beforeEach(function (done) {
+            ctx.moderator = users.createModerator(done);
+          });
+          it('should get the project', function (done) {
+            ctx.project.client = ctx.moderator.client; // swap auth to moderator's
+            ctx.project.fetch(expectSuccess(done));
           });
         });
       });
-    });
-    describe('private', function () {
-      beforeEach(function (done) {
-        ctx.project.update({ json: { public: false }}, done);
-      });
-      describe('owner', function () {
-        it('should get the project', function (done) {
-          ctx.owner.fetchProject(ctx.project.id(), function (err, body, code) {
-            if (err) { return done(err); }
-
-            expect(code).to.equal(200);
-            expect(body).to.eql(ctx.project.toJSON());
-            done();
-          });
-        });
-      });
-      describe('non-owner', function () {
+      describe('private', function() {
         beforeEach(function (done) {
-          ctx.nonOwner = users.createAnonymous(done);
+          ctx.project.update({ json: { public: false } }, done);
         });
-
-        it('should get forbidden', function (done) {
-          ctx.nonOwner.fetchProject(ctx.project.id(), checkForError(403, done));
+        describe('owner', function () {
+          it('should get the project', function (done) {
+            ctx.project.fetch(expectSuccess(done));
+          });
+        });
+        describe('non-owner', function () {
+          beforeEach(function (done) {
+            ctx.nonOwner = users.createRegistered(done);
+          });
+          it('should not get the project (403 forbidden)', function (done) {
+            ctx.project.client = ctx.nonOwner.client; // swap auth to nonOwner's
+            ctx.project.fetch(expects.errorStatus(403, done));
+          });
+        });
+        describe('moderator', function () {
+          beforeEach(function (done) {
+            ctx.moderator = users.createModerator(done);
+          });
+          it('should get the project', function (done) {
+            ctx.project.client = ctx.moderator.client; // swap auth to moderator's
+            ctx.project.fetch(expectSuccess(done));
+          });
         });
       });
     });
+    ['project'].forEach(function (destroyName) {
+      describe('not founds', function() {
+        beforeEach(function (done) {
+          ctx[destroyName].destroy(done);
+        });
+        it('should not get the project if missing (404 '+destroyName+')', function (done) {
+          ctx.project.fetch(expects.errorStatus(404, done));
+        });
+      });
+    });
+    function expectSuccess (done) {
+      return function (err, body, code) {
+        if (err) { return done(err); }
+
+        expect(code).to.equal(200);
+        // FIXME: expect each field!
+        expect(body).to.eql(ctx.project.toJSON());
+        done();
+      };
+    }
   });
 
   describe('PATCH', function () {
-    beforeEach(function (done) {
-      nockS3();
-      multi.createRegisteredUserAndProject(function (err, owner, project) {
-        ctx.owner = owner;
-        ctx.project = project;
-        done(err);
-      });
-    });
-    describe('owner', function () {
-      var updates = {
-        name: uuid(),
-        description: uuid(),
-        public: [true, false]
-      };
-      Object.keys(updates).forEach(function (key) {
-        var val = updates[key];
-        if (Array.isArray(val)) {
-          val.forEach(function (val) {
-            testUpdate(key, val);
-          });
-        }
-        else {
-          testUpdate(key, val);
-        }
-        function testUpdate (key, val) {
-          it('should update ":key"'.replace(':key', key), function (done) {
-            var json = {};
-            json[key] = val;
-            ctx.project.update({ json: json }, function (err, body, code) {
-              if (err) { return done(err); }
+    var updates = [{
+      name: uuid()
+    }, {
+      description: uuid()
+    }, {
+      public: true,
+    }, {
+      public: false
+    }];
 
-              expect(code).to.equal(200);
-              expect(body).to.have.property(key, val);
-              done();
-            });
+    describe('permissions', function() {
+      describe('owner', function () {
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should update project\'s '+keys+' to '+vals, function (done) {
+            ctx.project.update({ json: json }, expects.updateSuccess(json, done));
           });
-        }
+        });
       });
-    });
-    describe('non-owner', function () {
-      beforeEach(function (done) {
-        ctx.nonOwner = users.createRegistered(done);
+      describe('non-owner', function () {
+        beforeEach(function (done) {
+          ctx.nonOwner = users.createRegistered(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should not update project\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
+            ctx.project.client = ctx.nonOwner.client; // swap auth to nonOwner's
+            ctx.project.update({ json: json }, expects.errorStatus(403, done));
+          });
+        });
       });
-      it('should repond "access denied"', function (done) {
-        ctx.nonOwner.updateProject(ctx.project.id(), function (err) {
-          expect(err).to.be.ok;
-          expect(err.output.statusCode).to.eql(403);
-          done();
+      describe('moderator', function () {
+        beforeEach(function (done) {
+          ctx.moderator = users.createModerator(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should update project\'s '+keys+' to '+vals, function (done) {
+            ctx.project.client = ctx.moderator.client; // swap auth to moderator's
+            ctx.project.update({ json: json }, expects.updateSuccess(json, done));
+          });
         });
       });
     });
-    describe('non-existant project', function () {
-      beforeEach(function (done) {
-        ctx.project.destroy(done);
-      });
-      it('should respond "not found" if the project does not exist', function(done) {
-        ctx.project.update({ json: { public: true } }, checkForError(404, done));
+    ['project'].forEach(function (destroyName) {
+      describe('not founds', function() {
+        beforeEach(function (done) {
+          ctx[destroyName].destroy(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should not update project\'s '+keys+' to '+vals+' (404 not found)', function (done) {
+            ctx.project.update({ json: json }, expects.errorStatus(404, done));
+          });
+        });
       });
     });
   });
 
-  describe('DEL', function () {
-    beforeEach(function (done) {
-      nockS3();
-      multi.createRegisteredUserAndProject(function (err, owner, project) {
-        ctx.owner = owner;
-        ctx.project = project;
-        done(err);
+  describe('DELETE', function () {
+    describe('permissions', function() {
+      describe('owner', function () {
+        it('should delete the project', function (done) {
+          ctx.project.destroy(expects.success(204, done));
+        });
       });
-    });
-
-    describe('failures', function () {
-      it('should return 400 with a bad id', function (done) {
-        ctx.owner.fetchProject('fakeId', checkForError(400, done));
+      describe('non-owner', function () {
+        beforeEach(function (done) {
+          ctx.nonOwner = users.createRegistered(done);
+        });
+        it('should not delete the project (403 forbidden)', function (done) {
+          ctx.project.client = ctx.nonOwner.client; // swap auth to nonOwner's
+          ctx.project.destroy(expects.errorStatus(403, done));
+        });
       });
-      it('should return 404 with a non-existant id', function (done) {
-        ctx.owner.fetchProject('ffffffffffffffffffffffff', checkForError(404, done));
-      });
-    });
-
-    describe('owner', function () {
-      it('should delete the project', function(done) {
-        ctx.project.destroy(function (err, body, code) {
-          if (err) { return done(err); }
-
-          expect(code).to.eql(204);
-          done();
+      describe('moderator', function () {
+        beforeEach(function (done) {
+          ctx.moderator = users.createModerator(done);
+        });
+        it('should delete the project', function (done) {
+          ctx.project.client = ctx.moderator.client; // swap auth to moderator's
+          ctx.project.destroy(expects.success(204, done));
         });
       });
     });
-    describe('non-owner', function () {
-      beforeEach(function (done) {
-        ctx.nonOwner = users.createRegistered(done);
-      });
-      it('should repond "access denied"', function (done) {
-        ctx.nonOwner.destroyProject(ctx.project.id(), checkForError(403, done));
-      });
-    });
-    describe('non-existant project', function () {
-      beforeEach(function (done) {
-        ctx.project.destroy(done);
-      });
-      it('should respond "not found" if the project does not exist', function(done) {
-        ctx.project.destroy(checkForError(404, done));
+    ['project'].forEach(function (destroyName) {
+      describe('not founds', function() {
+        beforeEach(function (done) {
+          ctx[destroyName].destroy(done);
+        });
+        it('should not delete the project if missing (404 '+destroyName+')', function (done) {
+          ctx.project.destroy(expects.errorStatus(404, done));
+        });
       });
     });
   });
 });
-
-function checkForError (code, done) {
-  return function (err) {
-    expect(err).to.be.ok;
-    expect(err.output.statusCode).to.equal(code);
-    done();
-  };
-}
