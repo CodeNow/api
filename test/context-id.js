@@ -7,6 +7,7 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
@@ -41,39 +42,37 @@ describe('Context - /contexts/:id', function () {
   });
   describe('GET', function () {
     describe('permissions', function() {
-      // describe('public', function() {
-      //   beforeEach(function (done) {
-      //     done();
-      //     // ctx.context.update({ json: { public: true } }, done);
-      //   });
-      //   describe('owner', function () {
-      //     it('should get the context', function (done) {
-      //       ctx.context.fetch(expectSuccess(done));
-      //     });
-      //   });
-      //   describe('non-owner', function () {
-      //     beforeEach(function (done) {
-      //       ctx.nonOwner = users.createRegistered(done);
-      //     });
-      //     it('should get the context', function (done) {
-      //       ctx.context.client = ctx.nonOwner.client; // swap auth to nonOwner's
-      //       ctx.context.fetch(expectSuccess(done));
-      //     });
-      //   });
-      //   describe('moderator', function () {
-      //     beforeEach(function (done) {
-      //       ctx.moderator = users.createModerator(done);
-      //     });
-      //     it('should get the context', function (done) {
-      //       ctx.context.client = ctx.moderator.client; // swap auth to moderator's
-      //       ctx.context.fetch(expectSuccess(done));
-      //     });
-      //   });
-      // });
+      describe('public', function() {
+        beforeEach(function (done) {
+          ctx.context.update({ json: { public: true } }, done);
+        });
+        describe('owner', function () {
+          it('should get the context', function (done) {
+            ctx.context.fetch(expectSuccess(done));
+          });
+        });
+        describe('non-owner', function () {
+          beforeEach(function (done) {
+            ctx.nonOwner = users.createRegistered(done);
+          });
+          it('should get the context', function (done) {
+            ctx.context.client = ctx.nonOwner.client; // swap auth to nonOwner's
+            ctx.context.fetch(expectSuccess(done));
+          });
+        });
+        describe('moderator', function () {
+          beforeEach(function (done) {
+            ctx.moderator = users.createModerator(done);
+          });
+          it('should get the context', function (done) {
+            ctx.context.client = ctx.moderator.client; // swap auth to moderator's
+            ctx.context.fetch(expectSuccess(done));
+          });
+        });
+      });
       describe('private', function() {
         beforeEach(function (done) {
-          done();
-          // ctx.context.update({ json: { public: false } }, done);
+          ctx.context.update({ json: { public: false } }, done);
         });
         describe('owner', function () {
           it('should get the context', function (done) {
@@ -122,105 +121,103 @@ describe('Context - /contexts/:id', function () {
     }
   });
 
-  // describe('PATCH', function () {
-  //   var updates = [{
-  //     name: uuid()
-  //   }, {
-  //     description: uuid()
-  //   }, {
-  //     public: true,
-  //   }, {
-  //     public: false
-  //   }];
+  describe('PATCH', function () {
+    var updates = [{
+      name: uuid()
+    }, {
+      public: true,
+    }, {
+      public: false
+    }];
 
-  //   describe('permissions', function() {
-  //     describe('owner', function () {
-  //       updates.forEach(function (json) {
-  //         var keys = Object.keys(json);
-  //         var vals = keys.map(function (key) { return json[key]; });
-  //         it('should update project\'s '+keys+' to '+vals, function (done) {
-  //           ctx.project.update({ json: json }, expects.updateSuccess(json, done));
-  //         });
-  //       });
-  //     });
-  //     describe('non-owner', function () {
-  //       beforeEach(function (done) {
-  //         ctx.nonOwner = users.createRegistered(done);
-  //       });
-  //       updates.forEach(function (json) {
-  //         var keys = Object.keys(json);
-  //         var vals = keys.map(function (key) { return json[key]; });
-  //         it('should not update project\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
-  //           ctx.project.client = ctx.nonOwner.client; // swap auth to nonOwner's
-  //           ctx.project.update({ json: json }, expects.errorStatus(403, done));
-  //         });
-  //       });
-  //     });
-  //     describe('moderator', function () {
-  //       beforeEach(function (done) {
-  //         ctx.moderator = users.createModerator(done);
-  //       });
-  //       updates.forEach(function (json) {
-  //         var keys = Object.keys(json);
-  //         var vals = keys.map(function (key) { return json[key]; });
-  //         it('should update project\'s '+keys+' to '+vals, function (done) {
-  //           ctx.project.client = ctx.moderator.client; // swap auth to moderator's
-  //           ctx.project.update({ json: json }, expects.updateSuccess(json, done));
-  //         });
-  //       });
-  //     });
-  //   });
-  //   ['project'].forEach(function (destroyName) {
-  //     describe('not founds', function() {
-  //       beforeEach(function (done) {
-  //         ctx[destroyName].destroy(done);
-  //       });
-  //       updates.forEach(function (json) {
-  //         var keys = Object.keys(json);
-  //         var vals = keys.map(function (key) { return json[key]; });
-  //         it('should not update project\'s '+keys+' to '+vals+' (404 not found)', function (done) {
-  //           ctx.project.update({ json: json }, expects.errorStatus(404, done));
-  //         });
-  //       });
-  //     });
-  //   });
-  // });
+    describe('permissions', function() {
+      describe('owner', function () {
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should update context\'s '+keys+' to '+vals, function (done) {
+            ctx.context.update({ json: json }, expects.updateSuccess(json, done));
+          });
+        });
+      });
+      describe('non-owner', function () {
+        beforeEach(function (done) {
+          ctx.nonOwner = users.createRegistered(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should not update context\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
+            ctx.context.client = ctx.nonOwner.client; // swap auth to nonOwner's
+            ctx.context.update({ json: json }, expects.errorStatus(403, done));
+          });
+        });
+      });
+      describe('moderator', function () {
+        beforeEach(function (done) {
+          ctx.moderator = users.createModerator(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should update context\'s '+keys+' to '+vals, function (done) {
+            ctx.context.client = ctx.moderator.client; // swap auth to moderator's
+            ctx.context.update({ json: json }, expects.updateSuccess(json, done));
+          });
+        });
+      });
+    });
+    ['context'].forEach(function (destroyName) {
+      describe('not founds', function() {
+        beforeEach(function (done) {
+          ctx[destroyName].destroy(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should not update context\'s '+keys+' to '+vals+' (404 not found)', function (done) {
+            ctx.context.update({ json: json }, expects.errorStatus(404, done));
+          });
+        });
+      });
+    });
+  });
 
-  // describe('DELETE', function () {
-  //   describe('permissions', function() {
-  //     describe('owner', function () {
-  //       it('should delete the project', function (done) {
-  //         ctx.project.destroy(expects.success(204, done));
-  //       });
-  //     });
-  //     describe('non-owner', function () {
-  //       beforeEach(function (done) {
-  //         ctx.nonOwner = users.createRegistered(done);
-  //       });
-  //       it('should not delete the project (403 forbidden)', function (done) {
-  //         ctx.project.client = ctx.nonOwner.client; // swap auth to nonOwner's
-  //         ctx.project.destroy(expects.errorStatus(403, done));
-  //       });
-  //     });
-  //     describe('moderator', function () {
-  //       beforeEach(function (done) {
-  //         ctx.moderator = users.createModerator(done);
-  //       });
-  //       it('should delete the project', function (done) {
-  //         ctx.project.client = ctx.moderator.client; // swap auth to moderator's
-  //         ctx.project.destroy(expects.success(204, done));
-  //       });
-  //     });
-  //   });
-  //   ['project'].forEach(function (destroyName) {
-  //     describe('not founds', function() {
-  //       beforeEach(function (done) {
-  //         ctx[destroyName].destroy(done);
-  //       });
-  //       it('should not delete the project if missing (404 '+destroyName+')', function (done) {
-  //         ctx.project.destroy(expects.errorStatus(404, done));
-  //       });
-  //     });
-  //   });
-  // });
+  describe('DELETE', function () {
+    describe('permissions', function() {
+      describe('owner', function () {
+        it('should delete the context', function (done) {
+          ctx.context.destroy(expects.success(204, done));
+        });
+      });
+      describe('non-owner', function () {
+        beforeEach(function (done) {
+          ctx.nonOwner = users.createRegistered(done);
+        });
+        it('should not delete the context (403 forbidden)', function (done) {
+          ctx.context.client = ctx.nonOwner.client; // swap auth to nonOwner's
+          ctx.context.destroy(expects.errorStatus(403, done));
+        });
+      });
+      describe('moderator', function () {
+        beforeEach(function (done) {
+          ctx.moderator = users.createModerator(done);
+        });
+        it('should delete the context', function (done) {
+          ctx.context.client = ctx.moderator.client; // swap auth to moderator's
+          ctx.context.destroy(expects.success(204, done));
+        });
+      });
+    });
+    ['context'].forEach(function (destroyName) {
+      describe('not founds', function() {
+        beforeEach(function (done) {
+          ctx[destroyName].destroy(done);
+        });
+        it('should not delete the context if missing (404 '+destroyName+')', function (done) {
+          ctx.context.destroy(expects.errorStatus(404, done));
+        });
+      });
+    });
+  });
 });
