@@ -17,7 +17,6 @@ var expects = require('./fixtures/expects');
 describe('Context - /contexts/:id', function () {
   var ctx = {};
 
-
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));

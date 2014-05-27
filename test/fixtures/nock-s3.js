@@ -3,7 +3,7 @@ var nock = require('nock');
 module.exports = function () {
   // mock the request to create the source file directory (no files)
   nock('https://s3.amazonaws.com:443')
-    .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source(\/)?/g,
+    .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source\//g,
       '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/')
     .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/')
     .reply(200, "");
