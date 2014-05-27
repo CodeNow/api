@@ -10,9 +10,7 @@ var expect = Lab.expect;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
-var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
-var expects = require('./fixtures/expects');
 
 describe('Context File List - /contexts/:id/versions/:versionid', function () {
   var ctx = {};
@@ -26,6 +24,7 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
 
   beforeEach(function (done) {
     nockS3();
+    // nock.recorder.rec();
     multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
       if (err) { return done(err); }
 
@@ -47,18 +46,15 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
     });
   });
 
-  // describe('GET', function () {
-  //   it('should give us files from a given context version', function (done) {
-  //     ctx.version.fetchFiles(function (err, files) {
-  //       console.log(err, files);
-  //       if (err) { return done(err); }
-  //       done(1);
-  //     });
-  //   });
-
-  //   it('should filter down when given a prefix', function (done) {
-  //     done(1);
-  //   });
-  // });
+  describe('GET', function () {
+    it('should give us files from a given context version', function (done) {
+      ctx.version.fetchFiles(function (err, files) {
+        if (err) { return done(err); }
+        expect(files).to.have.length(1);
+        expect(files[0].Key).to.match(/[a-f0-9]+\/source\//);
+        done();
+      });
+    });
+  });
 
 });
