@@ -45,10 +45,7 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
             ctx.version.createFile({ json: {
               path: 'file.txt',
               body: 'content'
-            }}, function (err, data) {
-              console.log('createFile', err, data);
-              done(err, data);
-            });
+            }}, done);
           });
         });
       });
