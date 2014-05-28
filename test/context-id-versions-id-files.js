@@ -66,10 +66,9 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
     });
 
     it('should give us the body of the file', function (done) {
-      ctx.version.fetchFiles(function (err, files) {
+      files = ctx.version.fetchFiles(function (err) {
         if (err) { return done(err); }
-        ctx.version.fetchFile(files[0].Key, function (err, file) {
-          console.log(err, file);
+        ctx.version.fetchFile(files[0].id(), function (err, file) {
           if (err) { return done(err); }
           expect(file).to.be.ok;
           done();
