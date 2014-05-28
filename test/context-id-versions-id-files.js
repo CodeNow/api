@@ -40,13 +40,7 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
         ctx.versions = ctx.context.fetchVersions(function (err, versions) {
           if (err) { return done(err); }
 
-          ctx.version = ctx.context.fetchVersion(versions[0]._id, function (err) {
-            if (err) { return done(err); }
-            ctx.version.createFile({ json: {
-              path: 'file.txt',
-              body: 'content'
-            }}, done);
-          });
+          ctx.version = ctx.context.fetchVersion(versions[0]._id, done);
         });
       });
     });
@@ -70,6 +64,21 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
           expect(file).to.be.ok;
           done();
         });
+      });
+    });
+  });
+
+  describe('POST', function () {
+    it('should give us details about a file we just created', function (done) {
+      ctx.version.createFile({ json: {
+        path: 'file.txt',
+        body: 'content'
+      }}, function (err, data) {
+        if (err) { return done(err); }
+        expect(data.ETag).to.be.ok;
+        expect(data.VersionId).to.be.ok;
+        expect(data.Key).to.be.ok;
+        done();
       });
     });
   });
