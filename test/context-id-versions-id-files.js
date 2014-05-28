@@ -40,7 +40,16 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
         ctx.versions = ctx.context.fetchVersions(function (err, versions) {
           if (err) { return done(err); }
 
-          ctx.version = ctx.context.fetchVersion(versions[0]._id, done);
+          ctx.version = ctx.context.fetchVersion(versions[0]._id, function (err) {
+            if (err) { return done(err); }
+            ctx.version.createFile({ json: {
+              path: 'file.txt',
+              body: 'content'
+            }}, function (err, data) {
+              console.log('createFile', err, data);
+              done(err, data);
+            });
+          });
         });
       });
     });
@@ -53,6 +62,18 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
         expect(files).to.have.length(1);
         expect(files[0].Key).to.match(/[a-f0-9]+\/source\//);
         done();
+      });
+    });
+
+    it('should give us the body of the file', function (done) {
+      ctx.version.fetchFiles(function (err, files) {
+        if (err) { return done(err); }
+        ctx.version.fetchFile(files[0].Key, function (err, file) {
+          console.log(err, file);
+          if (err) { return done(err); }
+          expect(file).to.be.ok;
+          done();
+        });
       });
     });
   });
