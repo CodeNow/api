@@ -1,19 +1,28 @@
 var nock = require('nock');
+var uuid = require('uuid');
 
 module.exports = function () {
   // mock the request to create the source file directory (no files)
   nock('https://s3.amazonaws.com:443')
-    .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source(\/)?/g,
+    .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source\//g,
       '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/')
     .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/')
-    .reply(200, "");
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
   // mock the request to create the dockerfile
   nock('https://s3.amazonaws.com:443')
     .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source\/Dockerfile/g,
       '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/Dockerfile')
     .filteringRequestBody(function (path) { return '*'; })
     .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/Dockerfile', '*')
-    .reply(200, "");
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
   // for building the project/context
   nock('https://s3.amazonaws.com:443')
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/Dockerfile/,
@@ -27,13 +36,21 @@ module.exports = function () {
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
       '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
     .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-    .reply(200, "");
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
   nock('https://s3.amazonaws.com:443')
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/Dockerfile/,
       '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/Dockerfile')
     .filteringRequestBody(function(path) { return '*'; })
     .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/Dockerfile', '*')
-    .reply(200, "");
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
   // for building the project/context
   nock('https://s3.amazonaws.com:443')
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/Dockerfile/,
@@ -64,11 +81,19 @@ module.exports = function () {
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\//,
       '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
     .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
-    .reply(200, "");
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
   nock('https://s3.amazonaws.com:443')
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/Dockerfile/,
       '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/Dockerfile')
     .filteringRequestBody(function(path) { return '*'; })
     .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/Dockerfile', '*')
-    .reply(200, "");
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
 };

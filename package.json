@@ -56,7 +56,7 @@
     "express": "~4.1.2",
     "clone": "~0.1.15",
     "uuid": "~1.4.1",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.2.1",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.3.0",
     "primus": "~2.2.1",
     "engine.io-client": "~1.1.0"
   },
@@ -89,7 +89,7 @@
     "client-version": "node ./scripts/client-version-bump.js",
     "old-test-watch": "NODE_PATH=./lib nodemon --delay 1 -w lib -w test -w configs -x npm test",
     "old-test": "NODE_ENV=testing NODE_PATH=./lib mocha",
-    "unit": "NODE_PATH=./lib lab -e testing -vG unit/",
+    "unit": "NODE_PATH=./lib lab -e test -vG unit/",
     "test-debug": "npm run lint && NODE_ENV=testing NODE_PATH=./lib mocha --debug-brk",
     "test-int": "npm run lint && NODE_ENV=testing-integration NODE_PATH=./lib mocha --timeout 20000",
     "clean": "rm -rf ./coverage",
