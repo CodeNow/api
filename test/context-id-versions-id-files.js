@@ -7,6 +7,8 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var last = require('101/last');
+
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
@@ -37,11 +39,8 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
       ctx.context = ctx.user.fetchContext(contextId, function (err) {
         if (err) { return done(err); }
 
-        ctx.versions = ctx.context.fetchVersions(function (err, versions) {
-          if (err) { return done(err); }
-
-          ctx.version = ctx.context.fetchVersion(versions[0]._id, done);
-        });
+        var versionId = last(ctx.context.toJSON().versions);
+        ctx.version = ctx.context.fetchVersion(versionId, done);
       });
     });
   });
@@ -76,6 +75,7 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
         body: 'content'
       }}, function (err, data) {
         if (err) { return done(err); }
+
         expect(data.ETag).to.be.ok;
         expect(data.VersionId).to.be.ok;
         expect(data.Key).to.be.ok;

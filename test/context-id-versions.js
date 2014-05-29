@@ -10,9 +10,7 @@ var expect = Lab.expect;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
-var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
-var expects = require('./fixtures/expects');
 
 describe('Context Versions - /contexts/:id/versions', function () {
   var ctx = {};
@@ -40,10 +38,10 @@ describe('Context Versions - /contexts/:id/versions', function () {
   });
 
   describe('GET', function () {
-    it('should list us the versions', function (done) {
-      ctx.context.fetchVersions(function (err, versions) {
-        if (err) { return done(err); }
-        expect(versions).to.have.length(1);
+    it('should NOT list us the versions', function (done) {
+      ctx.context.fetchVersions(function (err) {
+        expect(err).to.be.ok;
+        expect(err.output.statusCode).to.equal(501);
         done();
       });
     });
