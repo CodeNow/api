@@ -62,6 +62,7 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
         ctx.version.fetchFile(files[0].id(), function (err, file) {
           if (err) { return done(err); }
           expect(file).to.be.ok;
+          // FIXME: this isn't right still... it's hitting the wrong path
           done();
         });
       });
@@ -78,6 +79,7 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
         expect(data.ETag).to.be.ok;
         expect(data.VersionId).to.be.ok;
         expect(data.Key).to.be.ok;
+        expect(data.Key).to.match(/.+file\.txt$/);
         done();
       });
     });

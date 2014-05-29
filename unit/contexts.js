@@ -44,44 +44,36 @@ describe('Contexts', function () {
   });
 
   it('should list the files given the "/" prefix', function (done) {
-    this.context.listFiles('latest', '/', function (err, data) {
-      if (err) { return done(err); }
-      expect(data).to.have.length(3);
-      expect(data[0].Key).to.equal(join(this.context._id.toString(), 'source', 'file1.txt'));
-      expect(data[1].Key).to.equal(join(this.context._id.toString(), 'source', 'file2.txt'));
-      expect(data[2].Prefix).to.equal(join(this.context._id.toString(), 'source', 'somedir', '/'));
-      done();
-    });
+    var data = this.context.listFiles('latest', '/');
+    expect(data).to.have.length(3);
+    expect(data[0].Key).to.equal(join(this.context._id.toString(), 'source', 'file1.txt'));
+    expect(data[1].Key).to.equal(join(this.context._id.toString(), 'source', 'file2.txt'));
+    expect(data[2].Key).to.equal(join(this.context._id.toString(), 'source', 'somedir', '/'));
+    expect(data[2].isDir).to.equal(true);
+    done();
   });
 
   it('should list the files given the "/somedir/" prefix', function (done) {
-    this.context.listFiles('latest', '/somedir/', function (err, data) {
-      if (err) { return done(err); }
-      expect(data).to.have.length(2);
-      expect(data[0].Key).to.equal(join(this.context._id.toString(), 'source', 'somedir', 'file3.txt'));
-      expect(data[1].Prefix).to.equal(join(this.context._id.toString(), 'source', 'somedir', 'anotherdir', '/'));
-      done();
-    });
+    var data = this.context.listFiles('latest', '/somedir/');
+    expect(data).to.have.length(2);
+    expect(data[0].Key).to.equal(join(this.context._id.toString(), 'source', 'somedir', 'file3.txt'));
+    expect(data[1].Key).to.equal(join(this.context._id.toString(), 'source', 'somedir', 'anotherdir', '/'));
+    done();
   });
 
   it('should error when we try to list files with invalid version id', function (done) {
-    this.context.listFiles(uuid(), '/somedir/', function (err, data) {
-      expect(err).to.be.ok;
-      expect(err.output.statusCode).to.equal(400);
-      expect(err.output.payload.message).to.match(/invalid version id/);
-      done();
-    });
+    var data = this.context.listFiles(uuid(), '/somedir/');
+    expect(data).to.have.length(0);
+    done();
   });
 
   it('should respond the list when we pass the latest version id', function (done) {
-    this.context.listFiles(this.context.versions[0]._id, '/', function (err, data) {
-      if (err) { return done(err); }
-      expect(data).to.have.length(3);
-      expect(data[0].Key).to.equal(join(this.context._id.toString(), 'source', 'file1.txt'));
-      expect(data[1].Key).to.equal(join(this.context._id.toString(), 'source', 'file2.txt'));
-      expect(data[2].Prefix).to.equal(join(this.context._id.toString(), 'source', 'somedir', '/'));
-      done();
-    });
+    var data = this.context.listFiles(this.context.versions[0]._id, '/');
+    expect(data).to.have.length(3);
+    expect(data[0].Key).to.equal(join(this.context._id.toString(), 'source', 'file1.txt'));
+    expect(data[1].Key).to.equal(join(this.context._id.toString(), 'source', 'file2.txt'));
+    expect(data[2].Key).to.equal(join(this.context._id.toString(), 'source', 'somedir', '/'));
+    done();
   });
 
   it('should give us the contents of the file using the "latest" keyword', function (done) {
