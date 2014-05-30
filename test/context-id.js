@@ -35,7 +35,7 @@ describe('Context - /contexts/:id', function () {
       ctx.environments = environments;
       ctx.environment = environments.models[0];
 
-      var contextId = ctx.environment.toJSON().contexts[0].context;
+      var contextId = ctx.environment.toJSON().contexts[0];
       ctx.context = ctx.user.fetchContext(contextId, done);
     });
   });

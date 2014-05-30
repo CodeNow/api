@@ -96,4 +96,15 @@ module.exports = function () {
       'x-amz-version-id': uuid(),
       'etag': uuid()
     });
+
+  nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/file\.txt/,
+      '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/file.txt')
+    .filteringRequestBody(function(path) { return '*'; })
+    .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/file.txt', '*')
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
 };

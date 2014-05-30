@@ -10,11 +10,9 @@ var expect = Lab.expect;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
-var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
-var expects = require('./fixtures/expects');
 
-describe('Context Versions - /contexts/:id/versions', function () {
+describe('Versions - /versions', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -26,24 +24,19 @@ describe('Context Versions - /contexts/:id/versions', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
+    multi.createRegisteredUserProjectAndEnvironments(function (err, user) {
       if (err) { return done(err); }
 
       ctx.user = user;
-      ctx.project = project;
-      ctx.environments = environments;
-      ctx.environment = environments.models[0];
-
-      var contextId = ctx.environment.toJSON().contexts[0].context;
-      ctx.context = ctx.user.fetchContext(contextId, done);
+      done();
     });
   });
 
   describe('GET', function () {
-    it('should list us the versions', function (done) {
-      ctx.context.fetchVersions(function (err, versions) {
-        if (err) { return done(err); }
-        expect(versions).to.have.length(1);
+    it('should NOT list us the versions', function (done) {
+      ctx.user.fetchVersions(function (err) {
+        expect(err).to.be.ok;
+        expect(err.output.statusCode).to.equal(501);
         done();
       });
     });
