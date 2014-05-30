@@ -14,7 +14,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Context File List - /contexts/:id/versions/:versionid', function () {
+describe('Version File List - /versions/:id/files', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -35,18 +35,13 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
       ctx.environments = environments;
       ctx.environment = environments.models[0];
 
-      var contextId = ctx.environment.toJSON().contexts[0];
-      ctx.context = ctx.user.fetchContext(contextId, function (err) {
-        if (err) { return done(err); }
-
-        var versionId = last(ctx.context.toJSON().versions);
-        ctx.version = ctx.context.fetchVersion(versionId, done);
-      });
+      var versionId = last(ctx.environment.toJSON().versions);
+      ctx.version = ctx.user.fetchVersion(versionId, done);
     });
   });
 
   describe('GET', function () {
-    it('should give us files from a given context version', function (done) {
+    it('should give us files from a given version', function (done) {
       ctx.version.fetchFiles(function (err, files) {
         if (err) { return done(err); }
         expect(files).to.have.length(1);

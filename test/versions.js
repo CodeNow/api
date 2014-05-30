@@ -12,7 +12,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Context Versions - /contexts/:id/versions', function () {
+describe('Versions - /versions', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -31,15 +31,13 @@ describe('Context Versions - /contexts/:id/versions', function () {
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
-
-      var contextId = ctx.environment.toJSON().contexts[0];
-      ctx.context = ctx.user.fetchContext(contextId, done);
+      done();
     });
   });
 
   describe('GET', function () {
     it('should NOT list us the versions', function (done) {
-      ctx.context.fetchVersions(function (err) {
+      ctx.user.fetchVersions(function (err) {
         expect(err).to.be.ok;
         expect(err.output.statusCode).to.equal(501);
         done();
