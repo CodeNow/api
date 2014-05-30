@@ -58,7 +58,8 @@
     "uuid": "~1.4.1",
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.4.0",
     "primus": "~2.2.1",
-    "engine.io-client": "~1.1.0"
+    "engine.io-client": "~1.1.0",
+    "krain": "git://github.com/CodeNow/krain.git"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
