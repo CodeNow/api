@@ -41,8 +41,8 @@
   "S3": {
     "contextResourceBucket": "runnable.context.resources.test",
     "auth": {
-      "accessKey": "AKIAIG7Y3M347VWVGNUQ",
-      "secretKey": "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"
+      "accessKey": "__AKIAIG7Y3M347VWVGNUQ",
+      "secretKey": "__tAJIBONbT0O27OaxFpIPX/F4NK4cM0Dg7vYoeP3K"
     }
   },
   "container": {
