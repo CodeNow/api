@@ -35,7 +35,7 @@ describe('Context File List - /contexts/:id/versions/:versionid', function () {
       ctx.environments = environments;
       ctx.environment = environments.models[0];
 
-      var contextId = ctx.environment.toJSON().contexts[0].context;
+      var contextId = ctx.environment.toJSON().contexts[0];
       ctx.context = ctx.user.fetchContext(contextId, function (err) {
         if (err) { return done(err); }
 

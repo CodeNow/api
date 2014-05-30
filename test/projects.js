@@ -64,8 +64,10 @@ describe('Projects - /projects', function () {
           expect(body.environments).to.have.a.lengthOf(1);
           expect(body.environments[0].contexts).to.be.an('array');
           expect(body.environments[0].contexts).to.have.a.lengthOf(1);
-          expect(body.environments[0].contexts[0].context).to.be.ok;
-          expect(body.environments[0].contexts[0].version).to.be.ok;
+          expect(body.environments[0].versions).to.be.an('array');
+          expect(body.environments[0].versions).to.have.a.lengthOf(1);
+          expect(body.environments[0].contexts[0]).to.be.ok;
+          expect(body.environments[0].versions[0]).to.be.ok;
           done();
         });
       });
