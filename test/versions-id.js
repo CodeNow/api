@@ -12,7 +12,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Versions - /versions', function () {
+describe('Versions - /versions/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -24,19 +24,23 @@ describe('Versions - /versions', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user) {
+    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
       if (err) { return done(err); }
 
       ctx.user = user;
+      ctx.environment = environments.models[0];
       done();
     });
   });
 
   describe('GET', function () {
-    it('should NOT list us the versions', function (done) {
-      ctx.user.fetchVersions(function (err) {
-        expect(err).to.be.ok;
-        expect(err.output.statusCode).to.equal(501);
+    it('should get us the versions', function (done) {
+      var versionId = ctx.environment.toJSON().versions[0].toString();
+      ctx.user.fetchVersion(versionId, function (err, body) {
+        if (err) { return done(err); }
+
+        expect(body).to.be.ok;
+        expect(body._id.toString()).to.equal(versionId);
         done();
       });
     });
