@@ -6,10 +6,14 @@
  * @module models/context
  */
 
+<<<<<<< HEAD
 var last = require('101/last');
 var findIndex = require('101/find-index');
 var noop = require('101/noop');
+=======
+var noop = require('101/noop');
 var Boom = require('dat-middleware').Boom;
+>>>>>>> feature-new-models
 var extend = require('lodash').extend;
 
 var async = require('async');
