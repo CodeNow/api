@@ -12,7 +12,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Versions - /versions', function () {
+describe('Version - /versions/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -24,22 +24,61 @@ describe('Versions - /versions', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user) {
+    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
       if (err) { return done(err); }
 
       ctx.user = user;
+      ctx.versionId = environments.models[0].toJSON().versions[0];
       done();
     });
   });
 
   describe('GET', function () {
-    it('should NOT list us the versions', function (done) {
-      ctx.user.fetchVersions(function (err) {
-        expect(err).to.be.ok;
-        expect(err.output.statusCode).to.equal(501);
+    it('should get the version', function (done) {
+      ctx.user.fetchVersion(ctx.versionId, function (err, body, code) {
+        if (err) { return done(err); }
+
+        expect(code).to.equal(200);
+        expectVersionFields(body);
         done();
       });
     });
   });
 
+  describe('Version Build - /versions/:id/build', function() {
+    describe('POST', function() {
+      beforeEach(function (done) {
+        ctx.version = ctx.user.fetchVersion(ctx.versionId, done);
+      });
+      it('should build a version', function (done) {
+        ctx.version.build(function (err, body, code) {
+          if (err) { return done(err); }
+
+          expect(code).to.equal(201);
+          expectVersionFields(body);
+          done();
+        });
+      });
+      describe('subsequent builds', function() {
+        beforeEach(function (done) {
+          ctx.version.build(done);
+        });
+        it('should not build', function (done) {
+          ctx.version.build(function (err) {
+            expect(err).to.be.ok;
+            expect(err.output.statusCode).to.equal(409);
+            // FIXME: return version object
+            expect(err.message).to.match(/already built/);
+            // expect(err.output) recieve docker id;
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  function expectVersionFields (versionData) {
+    expect(versionData).to.be.a('object');
+    //FIXME: validate more fields
+  }
 });

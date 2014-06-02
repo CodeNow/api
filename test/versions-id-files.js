@@ -14,7 +14,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Version File List - /versions/:id/files', function () {
+describe('Version Files - /versions/:id/files', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
