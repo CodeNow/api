@@ -9,7 +9,7 @@ var url = require('url');
 var uuid = require('uuid');
 var join = require('path').join;
 
-var Project = require('models/projects');
+var Project = require('models/mongo/projects');
 
 describe('Projects', function () {
   beforeEach(function (done) {

@@ -10,7 +10,7 @@ var uuid = require('uuid');
 var join = require('path').join;
 var nock = require('nock');
 
-var Context = require('models/contexts');
+var Context = require('models/mongo/contexts');
 
 describe('Contexts', function () {
   beforeEach(function (done) {
