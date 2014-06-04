@@ -107,4 +107,12 @@ module.exports = function () {
       'x-amz-version-id': uuid(),
       'etag': uuid()
     });
+
+  // VERSION CONTENT GETS
+  "/runnable.context.resources.test/538cfb63e591378d5a1d314c/source/?versionId=6e1b4c6e-cc6b-4851-97d0-82218c003bf3&response-content-type=application%2Fjson"
+  nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/\?versionId=.+/,
+      '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+    .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
+    .reply(200, "");
 };

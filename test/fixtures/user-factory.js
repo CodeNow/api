@@ -2,7 +2,7 @@ var isFunction = require('101/is-function');
 var Runnable = require('runnable');
 var host = require('./host');
 var uuid = require('uuid');
-var User = require('models/users');
+var User = require('models/mongo/user');
 
 module.exports = {
   createTokenless: function () {
