@@ -61,7 +61,6 @@
     "tar": "gyllstromk/node-tar",
     "underscore.inflections": "~0.2.1",
     "uuid": "~1.4.1",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.4.1",
     "primus": "~2.2.1",
     "engine.io-client": "~1.1.0",
     "xtend": "3.0.0"
