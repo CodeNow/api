@@ -17,7 +17,7 @@
     "camelize": "^0.1.2",
     "clone": "~0.1.15",
     "concat-stream": "~1.4.1",
-    "dat-middleware": "~1.5.10",
+    "dat-middleware": "~1.5.11",
     "debug": "~0.7.2",
     "docker-image-builder": "~0.2.0",
     "docker-mock": "0.0.11",
