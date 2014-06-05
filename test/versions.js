@@ -46,7 +46,7 @@ describe('Versions - /versions', function () {
 
     it('should list multiple versions by id', function (done) {
       var query = { qs: {
-        id: [
+        _id: [
           ctx.environment.attrs.versions[0]
         ]
       }};
