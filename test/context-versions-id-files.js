@@ -16,7 +16,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Version Files - /versions/:id/files', function () {
+describe('Version Files - /contexts/:contextid/versions/:id/files', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -36,8 +36,12 @@ describe('Version Files - /versions/:id/files', function () {
       ctx.environments = environments;
       ctx.environment = environments.models[0];
 
+      var contextId = last(ctx.environment.toJSON().contexts);
       var versionId = last(ctx.environment.toJSON().versions);
-      ctx.version = ctx.user.fetchVersion(versionId, done);
+      ctx.context = ctx.user.fetchContext(contextId, function (err) {
+        if (err) { return done(err); }
+        ctx.version = ctx.context.fetchVersion(versionId, done);
+      });
     });
   });
 
@@ -85,25 +89,24 @@ describe('Version Files - /versions/:id/files', function () {
   describe('PUT', function () {
     it('should let us rename a file', function (done) {
       var f = {
-        Key: join(ctx.version.id(), 'source', 'file.txt'),
+        Key: join(ctx.version.attrs.context.toString(), 'source', 'file.txt'),
         ETag: uuid(),
         VersionId: 'Po.EGeNr9HirlSJVMSxpf1gaWa5KruPa'
       };
-      ctx.version.update({ json: { file: f }}, function (err) {
+      var versionId = ctx.version.id();
+      ctx.version = ctx.context.createVersion({ json: {
+        versionId: versionId,
+        files: [f]
+      }}, function (err) {
         if (err) { return done(err); }
-
-        ctx.file = ctx.version.fetchFile('file.txt', function (err) {
+        ctx.version.updateFile('file.txt', { json: { name: 'newfile.txt' }}, function (err, body) {
           if (err) { return done(err); }
 
-          ctx.file.update('file.txt', { json: { name: 'newfile.txt' }}, function (err, body) {
-            if (err) { return done(err); }
-
-            expect(body).to.be.an('array');
-            expect(body).to.have.length(2);
-            expect(body[0].isDeleteMarker).to.equal(true);
-            expect(body[1].Key).to.match(/newfile\.txt$/);
-            done();
-          });
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(2);
+          expect(body[0].isDeleteMarker).to.equal(true);
+          expect(body[1].Key).to.match(/newfile\.txt$/);
+          done();
         });
       });
     });

@@ -12,7 +12,10 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Versions - /versions', function () {
+var join = require('path').join;
+var uuid = require('uuid');
+
+describe('Versions - /contexts/:contextid/versions', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -31,15 +34,37 @@ describe('Versions - /versions', function () {
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
-      done();
+      ctx.versionId = environments.models[0].toJSON().versions[0];
+      ctx.contextId = environments.models[0].toJSON().contexts[0];
+      ctx.context = ctx.user.fetchContext(ctx.contextId, done);
     });
   });
 
   describe('GET', function () {
     it('should NOT list us the versions', function (done) {
-      ctx.user.fetchVersions(function (err) {
+      ctx.context.fetchVersions(function (err) {
         expect(err).to.be.ok;
         expect(err.output.statusCode).to.equal(501);
+        done();
+      });
+    });
+  });
+
+  describe('POST', function () {
+    it('should create a new version', function (done) {
+      ctx.context.createVersion({ json: {
+        versionId: ctx.versionId,
+        files: [{
+          Key: join(ctx.contextId, 'source', 'file.txt'),
+          ETag: uuid(),
+          VersionId: 'Po.EGeNr9HirlSJVMSxpf1gaWa5KruPa'
+        }]
+      }}, function (err, body) {
+        if (err) { return done(err); }
+
+        expect(body).to.be.ok;
+        expect(body.files).to.be.an('array');
+        expect(body.files).to.have.length(2);
         done();
       });
     });
