@@ -58,9 +58,10 @@
     },
     "cmd": ["/dockworker/bin/node", "/dockworker"]
   },
-  "frontdoor": {
+"frontdoor": {
     "protocol": "http:",
     "hostname": "127.0.0.1",
     "port": 7050
-  }
+  },
+  "krainPort": 1234
 }

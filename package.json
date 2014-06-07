@@ -35,7 +35,6 @@
     "i": "^0.3.2",
     "jscoverage": "0.3.8",
     "keypather": "~1.7.0",
-    "krain": "git://github.com/CodeNow/krain.git",
     "lodash": "~2.4.1",
     "mailchimp": "~1.1.0",
     "map-utils": "~0.2.0",
@@ -77,7 +76,9 @@
     "nock": "~0.28.3",
     "jsdoc": "~3.3.0-alpha5",
     "lab": "~3.1.1",
-    "debug": "~0.7.4"
+    "krain": "git://github.com/CodeNow/krain.git",
+    "debug": "~0.7.4",
+    "rimraf": "^2.1.4"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
