@@ -35,10 +35,7 @@ after(function (done) {
   done();
 });
 
-function createFile (ctx, done) {
-  var fileName = "file1.txt";
-  var fileContent = "this is a test file";
-  var filePath = "/";
+function createFile (ctx, fileName, filePath, fileContent, done) {
   ctx.file = ctx.container.createFile({
     json: {
       name: fileName,
@@ -47,7 +44,9 @@ function createFile (ctx, done) {
       content: fileContent
     }
   }, function (err, body, code) {
-    if (err) { return done(err); }
+    if (err) {
+      return done(err);
+    }
     expect(code).to.equal(201);
     expect(body).to.have.property('name', fileName);
     expect(body).to.have.property('path', filePath);
@@ -63,6 +62,9 @@ function createFile (ctx, done) {
 
 describe('File System - /instances/:id/containers/:id/files/*path*', function () {
   var ctx = {};
+  var fileName = "file1.txt";
+  var fileContent = "this is a test file";
+  var filePath = "/";
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -74,23 +76,31 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   beforeEach(function (done) {
     nockS3();
     multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
-      if (err) { return done(err); }
+      if (err) {
+        return done(err);
+      }
 
       ctx.user = user;
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
       ctx.version = user.fetchVersion(ctx.environment.toJSON().versions[0], function (err) {
-        if (err) { return done(err); }
+        if (err) {
+          return done(err);
+        }
         ctx.version.build(function (err) {
-          if (err) { return done(err); }
+          if (err) {
+            return done(err);
+          }
           ctx.instance = ctx.user.createInstance({
             json: { environment: ctx.environment.id() }
           }, function (err) {
-            if (err) { return done(err); }
+            if (err) {
+              return done(err);
+            }
             var containerAttrs = ctx.instance.toJSON().containers[0];
             ctx.container = ctx.instance.newContainer(containerAttrs);
-            createFile(ctx, done);
+            done();
           });
         });
       });
@@ -99,51 +109,59 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
 
   describe('GET', function () {
     it('should read a file', function (done) {
-      var fileContent = "this is a test file";
-      ctx.file.fetch(function (err, body, code) {
-        if (err) { return done(err); }
+      createFile(ctx, fileName, filePath, fileContent, function(err) {
+        if (err) {
+          return done(err);
+        }
+        ctx.file.fetch(function (err, body, code) {
+          if (err) {
+            return done(err);
+          }
 
-        expect(code).to.equal(200);
-        expect(body).to.exist;
-        expect(body).to.equal(fileContent);
-        done();
+          expect(code).to.equal(200);
+          expect(body).to.exist;
+          expect(body).to.equal(fileContent);
+          done();
+        });
       });
     });
   });
 
   describe('PATCH', function () {
     it('should update content of file', function (done) {
-      var fileName = "file1.txt";
-      var newFileContent = "new content is better";
-      var filePath = "/";
-      ctx.file.update({
-        json: {
-          name: fileName,
-          path: filePath,
-          isDir: false,
-          content: newFileContent
+      createFile(ctx, fileName, filePath, fileContent, function(err) {
+        if (err) {
+          return done(err);
         }
-      }, function (err, body, code) {
-        if (err) { return done(err); }
-        expect(code).to.equal(200);
-        expect(body).to.have.property('name', fileName);
-        expect(body).to.have.property('path', filePath);
-        expect(body).to.have.property('isDir', false);
-        var content = fs.readFileSync(
-          path.join(containerRoot, filePath, fileName), {
-            encoding: 'utf8'
-          });
-        expect(content).to.equal(newFileContent);
-        done();
+        var newFileContent = "new content is better";
+        ctx.file.update({
+          json: {
+            name: fileName,
+            path: filePath,
+            isDir: false,
+            content: newFileContent
+          }
+        }, function (err, body, code) {
+          if (err) {
+            return done(err);
+          }
+          expect(code).to.equal(200);
+          expect(body).to.have.property('name', fileName);
+          expect(body).to.have.property('path', filePath);
+          expect(body).to.have.property('isDir', false);
+          var content = fs.readFileSync(
+            path.join(containerRoot, filePath, fileName), {
+              encoding: 'utf8'
+            });
+          expect(content).to.equal(newFileContent);
+          done();
+        });
       });
     });
   });
 
   describe('POST', function () {
     it('should create a file', function (done) {
-      var fileName = "file1.txt";
-      var fileContent = "this is a test file";
-      var filePath = "/";
       ctx.container.createFile({
         json: {
           name: fileName,
@@ -152,7 +170,9 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           content: fileContent
         }
       }, function (err, body, code) {
-        if (err) { return done(err); }
+        if (err) {
+          return done(err);
+        }
         expect(code).to.equal(201);
         expect(body).to.have.property('name', fileName);
         expect(body).to.have.property('path', filePath);
@@ -169,35 +189,30 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
 
   describe('DELETE', function () {
     it('should delete a file', function (done) {
-      var fileName = "file1.txt";
-      var fileContent = "this is a test file";
-      var filePath = "/";
-      ctx.file.destroy({
-        json: {
-          name: fileName,
-          path: filePath,
-          isDir: false,
-          content: fileContent
+      createFile(ctx, fileName, filePath, fileContent, function(err) {
+        if (err) {
+          return done(err);
         }
-      }, function (err, body, code) {
-        if (err) { return done(err); }
-        expect(code).to.equal(200);
-        try {
-          fs.readFileSync(
-            path.join(containerRoot, filePath, fileName), {
-              encoding: 'utf8'
-            });
-        } catch (err) {
-          if (err.code === 'ENOENT') {
-            return done();
+        ctx.file.destroy(function (err, body, code) {
+          if (err) {
+            return done(err);
           }
-        }
-        return done(new Error('file did not delete'));
-
+          expect(code).to.equal(200);
+          try {
+            fs.readFileSync(
+              path.join(containerRoot, filePath, fileName), {
+                encoding: 'utf8'
+              });
+          } catch (err) {
+            if (err.code === 'ENOENT') {
+              return done();
+            }
+          }
+          return done(new Error('file did not delete'));
+        });
       });
     });
   });
-
 });
 
 
