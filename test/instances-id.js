@@ -14,7 +14,7 @@ var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 
-describe('Context - /instances/:id', function () {
+describe('Instance - /instances/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -33,13 +33,16 @@ describe('Context - /instances/:id', function () {
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
-      ctx.version = user.fetchVersion(ctx.environment.toJSON().versions[0], function (err) {
+      ctx.context = user.fetchContext(ctx.environment.toJSON().contexts[0], function (err) {
         if (err) { return done(err); }
-        ctx.version.build(function (err) {
+        ctx.version = ctx.context.fetchVersion(ctx.environment.toJSON().versions[0], function (err) {
           if (err) { return done(err); }
-          ctx.instance = ctx.user.createInstance({
-            json: { environment: ctx.environment.id() }
-          }, done);
+          ctx.version.build(function (err) {
+            if (err) { return done(err); }
+            ctx.instance = ctx.user.createInstance({
+              json: { environment: ctx.environment.id() }
+            }, done);
+          });
         });
       });
     });

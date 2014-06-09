@@ -34,7 +34,10 @@ describe('Instances - /instances', function () {
         ctx.project = project;
         ctx.environments = environments;
         ctx.environment = environments.models[0];
-        done();
+        ctx.context = user.fetchContext(ctx.environment.toJSON().contexts[0], function (err) {
+          if (err) { return done(err); }
+          ctx.version = ctx.context.fetchVersion(ctx.environment.toJSON().versions[0], done);
+        });
       });
     });
 
@@ -74,8 +77,7 @@ describe('Instances - /instances', function () {
       });
       describe('with build versions', function () {
         beforeEach(function (done) {
-          var versionId = ctx.environment.toJSON().versions[0];
-          ctx.user.buildVersion(versionId, done);
+          ctx.version.build(done);
         });
         it('should create an instance', function(done) {
           var json = ctx.json;

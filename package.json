@@ -74,7 +74,7 @@
     "osx-notifier": "~0.2.1",
     "methods": "~0.1.0",
     "findit": "~1.1.0",
-    "nock": "~0.28.3",
+    "nock": "~0.34.0",
     "jsdoc": "~3.3.0-alpha5",
     "lab": "~3.1.1",
     "krain": "git://github.com/CodeNow/krain.git",

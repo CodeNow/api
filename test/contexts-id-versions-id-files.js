@@ -8,13 +8,15 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
 var last = require('101/last');
+var uuid = require('uuid');
+var join = require('path').join;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Version Files - /versions/:id/files', function () {
+describe('Version Files - /contexts/:contextid/versions/:id/files', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -26,7 +28,6 @@ describe('Version Files - /versions/:id/files', function () {
 
   beforeEach(function (done) {
     nockS3();
-    // nock.recorder.rec();
     multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
       if (err) { return done(err); }
 
@@ -35,8 +36,12 @@ describe('Version Files - /versions/:id/files', function () {
       ctx.environments = environments;
       ctx.environment = environments.models[0];
 
+      var contextId = last(ctx.environment.toJSON().contexts);
       var versionId = last(ctx.environment.toJSON().versions);
-      ctx.version = ctx.user.fetchVersion(versionId, done);
+      ctx.context = ctx.user.fetchContext(contextId, function (err) {
+        if (err) { return done(err); }
+        ctx.version = ctx.context.fetchVersion(versionId, done);
+      });
     });
   });
 
@@ -65,8 +70,9 @@ describe('Version Files - /versions/:id/files', function () {
 
   describe('POST', function () {
     it('should give us details about a file we just created', function (done) {
-      ctx.version.createFile({ json: {
-        path: 'file.txt',
+      ctx.file = ctx.version.createFile({ json: {
+        name: 'file.txt',
+        path: '/',
         body: 'content'
       }}, function (err, data) {
         if (err) { return done(err); }
@@ -76,6 +82,32 @@ describe('Version Files - /versions/:id/files', function () {
         expect(data.Key).to.be.ok;
         expect(data.Key).to.match(/.+file\.txt$/);
         done();
+      });
+    });
+  });
+
+  describe('PUT', function () {
+    it('should let us rename a file', function (done) {
+      var f = {
+        Key: join(ctx.version.attrs.context.toString(), 'source', 'file.txt'),
+        ETag: uuid(),
+        VersionId: 'Po.EGeNr9HirlSJVMSxpf1gaWa5KruPa'
+      };
+      var versionId = ctx.version.id();
+      ctx.version = ctx.context.createVersion({ json: {
+        versionId: versionId,
+        files: [f]
+      }}, function (err) {
+        if (err) { return done(err); }
+        ctx.version.updateFile('file.txt', { json: { name: 'newfile.txt' }}, function (err, body) {
+          if (err) { return done(err); }
+
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(2);
+          expect(body[0].isDeleteMarker).to.equal(true);
+          expect(body[1].Key).to.match(/newfile\.txt$/);
+          done();
+        });
       });
     });
   });
