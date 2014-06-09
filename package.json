@@ -61,7 +61,8 @@
     "tar": "gyllstromk/node-tar",
     "underscore.inflections": "~0.2.1",
     "uuid": "~1.4.1",
-    "xtend": "3.0.0"
+    "xtend": "3.0.0",
+    "cors": "~2.3.1"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
