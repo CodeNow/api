@@ -40,7 +40,7 @@
     "map-utils": "~0.2.0",
     "middleware-flow": "~0.3.1",
     "mkdirp": "~0.3.5",
-    "mongoose": "~3.8.5",
+    "mongoose": "~3.8.12",
     "mongoose-text-search": "0.0.2",
     "morgan": "~1.0.1",
     "multiparty": "~3.2.2",
@@ -60,7 +60,8 @@
     "tar": "gyllstromk/node-tar",
     "underscore.inflections": "~0.2.1",
     "uuid": "~1.4.1",
-    "xtend": "3.0.0"
+    "xtend": "3.0.0",
+    "cors": "~2.3.1"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
