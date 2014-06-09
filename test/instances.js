@@ -7,7 +7,9 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var async = require('async');
 var clone = require('clone');
+var RedisList = require('redis-types').List;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
@@ -81,15 +83,41 @@ describe('Instances - /instances', function () {
         });
         it('should create an instance', function(done) {
           var json = ctx.json;
-          ctx.user.createInstance({ json: json }, function (err, body, code) {
+          var instance = ctx.user.createInstance({ json: json }, function (err, body, code) {
             if (err) { return done(err); }
 
             expect(code).to.equal(201);
             expect(body).to.have.property('_id');
-            done();
+            expectHipacheHostsForContainers(instance.toJSON().containers, done);
           });
+          function expectHipacheHostsForContainers (containers, cb) {
+            var allUrls = [];
+            containers.forEach(function (container) {
+              allUrls = allUrls.concat(container.urls);
+            });
+            async.forEach(allUrls, function (url, cb) {
+              var hipacheEntry = new RedisList('frontend:'+url);
+              hipacheEntry.lrange(0, -1, function (err, backends) {
+                if (err) {
+                  cb(err);
+                }
+                else if (!backends.length || !backends.every(contains(':'))) {
+                  cb(new Error('Backends invalid for '+url));
+                }
+                else {
+                  cb();
+                }
+              });
+            }, cb);
+          }
         });
       });
     });
   });
 });
+
+function contains (char) {
+  return function (str) {
+    return ~str.indexOf(char);
+  };
+}
