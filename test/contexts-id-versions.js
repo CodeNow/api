@@ -55,7 +55,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
           ctx.environment.attrs.versions[0]
         ]
       }};
-      ctx.user.fetchVersions(query, function (err, body) {
+      ctx.context.fetchVersions(query, function (err, body) {
         if (err) { return done(err); }
 
         expect(body).to.be.an('array');
