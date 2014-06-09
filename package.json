@@ -55,7 +55,7 @@
     "request": "~2.21.0",
     "rimraf": "~2.1.4",
     "rollbar": "~0.2.5",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.6.0",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.6.5",
     "simple-api-client": "~0.2.3",
     "strong-agent": "*",
     "tar": "gyllstromk/node-tar",
@@ -75,7 +75,7 @@
     "osx-notifier": "~0.2.1",
     "methods": "~0.1.0",
     "findit": "~1.1.0",
-    "nock": "~0.28.3",
+    "nock": "~0.34.0",
     "jsdoc": "~3.3.0-alpha5",
     "lab": "~3.1.1",
     "debug": "~0.7.4"
