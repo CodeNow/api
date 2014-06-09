@@ -15,6 +15,7 @@ var multi = require('./fixtures/multi-factory');
 var fs = require('fs');
 var path = require('path');
 var configs = require('configs');
+var containerRoot = path.join(__dirname, '../node_modules/krain/test/1');
 
 function createFile (ctx, fileName, filePath, fileContent, done) {
   ctx.file = ctx.container.createFile({
@@ -47,7 +48,6 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   var fileContent = "this is a test file";
   var filePath = "/";
 
-  var containerRoot = path.join(__dirname, '../node_modules/krain/test/1');
   beforeEach(function (done) {
     // create test folder
     ctx.krain = krain.listen(configs.krainPort);
@@ -78,7 +78,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
-      ctx.version = user.fetchVersion(ctx.environment.toJSON().versions[0], function (err) {
+      ctx.version = user.newContext({ _id: ctx.environment.toJSON().contexts[0] }).fetchVersion(ctx.environment.toJSON().versions[0], function (err) {
         if (err) {
           return done(err);
         }

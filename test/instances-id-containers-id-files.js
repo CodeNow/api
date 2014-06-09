@@ -57,7 +57,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
-      ctx.version = user.fetchVersion(ctx.environment.toJSON().versions[0], function (err) {
+      ctx.version = user.newContext({ _id: ctx.environment.toJSON().contexts[0] }).fetchVersion(ctx.environment.toJSON().versions[0], function (err) {
         if (err) { return done(err); }
         ctx.version.build(function (err) {
           if (err) { return done(err); }
