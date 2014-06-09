@@ -109,10 +109,37 @@ module.exports = function () {
     });
 
   // VERSION CONTENT GETS
-  "/runnable.context.resources.test/538cfb63e591378d5a1d314c/source/?versionId=6e1b4c6e-cc6b-4851-97d0-82218c003bf3&response-content-type=application%2Fjson"
   nock('https://s3.amazonaws.com:443')
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/\?versionId=.+/,
       '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
     .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/')
     .reply(200, "");
+
+  nock('https://s3.amazonaws.com:443')
+    .persist()
+    .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source\/file\.txt\?versionId=.+/,
+      '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/file.txt')
+    .get('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/file.txt')
+    .reply(200, "here is some content for the file file.txt");
+
+  nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source\/file\.txt/,
+      '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/file.txt')
+    .delete('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/file.txt')
+    .reply(200, "", {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
+
+  nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/newfile\.txt/,
+      '/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/newfile.txt')
+    .filteringRequestBody(function(path) { return '*'; })
+    .put('/runnable.context.resources.test/5358004c171f1c06f8e0319b/source/newfile.txt', '*')
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
 };

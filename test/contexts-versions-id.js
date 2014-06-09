@@ -12,7 +12,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Version - /versions/:id', function () {
+describe('Version - /contexts/:contextId/versions/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -28,14 +28,16 @@ describe('Version - /versions/:id', function () {
       if (err) { return done(err); }
 
       ctx.user = user;
+      ctx.environment = environments.models[0];
       ctx.versionId = environments.models[0].toJSON().versions[0];
-      done();
+      ctx.contextId = environments.models[0].toJSON().contexts[0];
+      ctx.context = ctx.user.fetchContext(ctx.contextId, done);
     });
   });
 
   describe('GET', function () {
     it('should get the version', function (done) {
-      ctx.user.fetchVersion(ctx.versionId, function (err, body, code) {
+      ctx.context.fetchVersion(ctx.versionId, function (err, body, code) {
         if (err) { return done(err); }
 
         expect(code).to.equal(200);
@@ -48,7 +50,7 @@ describe('Version - /versions/:id', function () {
   describe('Version Build - /versions/:id/build', function() {
     describe('POST', function() {
       beforeEach(function (done) {
-        ctx.version = ctx.user.fetchVersion(ctx.versionId, done);
+        ctx.version = ctx.context.fetchVersion(ctx.versionId, done);
       });
       it('should build a version', function (done) {
         ctx.version.build(function (err, body, code) {
