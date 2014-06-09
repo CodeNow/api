@@ -16,27 +16,6 @@ var fs = require('fs');
 var path = require('path');
 var configs = require('configs');
 
-var containerRoot = path.join(__dirname, '../node_modules/krain/test/1');
-before(function (done) {
-  // create test folder
-  krain.listen(configs.krainPort);
-  fs.mkdirSync(containerRoot);
-  done();
-});
-
-
-afterEach(function (done) {
-  // create test folder
-  rimraf.sync(containerRoot);
-  fs.mkdirSync(containerRoot);
-  done();
-});
-
-after(function (done) {
-  // create test folder
-  rimraf.sync(containerRoot);
-  done();
-});
 describe('File System - /instances/:id/containers/:id/files', function () {
   var ctx = {};
   var fileContent = "this is a test file";
@@ -47,6 +26,20 @@ describe('File System - /instances/:id/containers/:id/files', function () {
   var dir1_dir1 =  dir1+'/dir1_dir1/';
   var dir1_dir1_file1 = dir1_dir1+'/dir1_dir1_file1.txt.';
   var dir2_dir1 =  dir2+'/dir2_dir1/';
+
+  var containerRoot = path.join(__dirname, '../node_modules/krain/test/1');
+  beforeEach(function (done) {
+    // create test folder
+    ctx.krain = krain.listen(configs.krainPort);
+    fs.mkdirSync(containerRoot);
+    done();
+  });
+  afterEach(function (done) {
+    // create test folder
+    rimraf.sync(containerRoot);
+    ctx.krain.close();
+    done();
+  });
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
