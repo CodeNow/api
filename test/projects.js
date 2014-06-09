@@ -13,6 +13,7 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var users = require('./fixtures/user-factory');
+var multi = require('./fixtures/multi-factory');
 
 describe('Projects - /projects', function () {
   var ctx = {};
@@ -24,6 +25,81 @@ describe('Projects - /projects', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
+  describe('GET', function () {
+    beforeEach(function (done) {
+      nockS3();
+      multi.createRegisteredUserAndProject(function (err, user, project) {
+        if (err) { return done(err); }
+
+        ctx.user1 = user;
+        ctx.project1 = project;
+        multi.createRegisteredUserAndProject(function (err, user, project) {
+          if (err) { return done(err); }
+          ctx.user2 = user;
+          ctx.project2 = project;
+          done();
+        });
+      });
+    });
+    it('should return the project when searched by owner and project (by other user)', function (done) {
+      var query = { qs: {
+        owner: ctx.user1.attrs._id,
+        name: ctx.project1.attrs.name
+      }};
+      ctx.user2.fetchProjects(query, function (err, body) {
+        if (err) { done(err); }
+
+        expect(body).to.be.ok;
+        expect(body).to.be.an('array');
+        expect(body).to.have.length(1);
+        expect(body[0]._id.toString()).to.equal(ctx.project1.id().toString());
+        expect(body[0].owner.toString()).to.equal(ctx.user1.id().toString());
+        done();
+      });
+    });
+    it('should return the project when searched by owner and project (by same user)', function (done) {
+      var query = { qs: {
+        owner: ctx.user2.attrs._id,
+        name: ctx.project2.attrs.name
+      }};
+      ctx.user2.fetchProjects(query, function (err, body) {
+        if (err) { done(err); }
+
+        expect(body).to.be.ok;
+        expect(body).to.be.an('array');
+        expect(body).to.have.length(1);
+        expect(body[0]._id.toString()).to.equal(ctx.project2.id().toString());
+        expect(body[0].owner.toString()).to.equal(ctx.user2.id().toString());
+        done();
+      });
+    });
+    it('should all the projects!', function (done) {
+      var query = { qs: {}};
+      ctx.user2.fetchProjects(query, function (err, body) {
+        if (err) { done(err); }
+
+        expect(body).to.be.ok;
+        expect(body).to.be.an('array');
+        expect(body).to.have.length(2);
+        done();
+      });
+    });
+    it('should have primitive pagination', function (done) {
+      var query = { qs: {
+        limit: 1,
+        page: 1
+      }};
+      ctx.user2.fetchProjects(query, function (err, body) {
+        if (err) { done(err); }
+
+        expect(body).to.be.ok;
+        expect(body).to.be.an('array');
+        expect(body).to.have.length(1);
+        expect(body[0]._id.toString()).to.equal(ctx.project2.attrs._id.toString());
+        done();
+      });
+    });
+  });
 
   describe('POST', function () {
     beforeEach(function (done) {
@@ -73,20 +149,5 @@ describe('Projects - /projects', function () {
       });
     });
   });
-
-
-  // describe('GET', function () {
-  //   beforeEach(function (done) {
-  //     var count = createCount(done);
-  //     nockS3();
-  //     ctx.owner = users.createRegistered(count.inc().next);
-  //     ctx.project = projects.createProjectBy(ctx.owner, count.inc().next);
-  //   });
-  //   afterEach(function (done) {
-  //     delete ctx.project;
-  //     delete ctx.user;
-  //     done();
-  //   });
-  // });
 });
 

@@ -48,6 +48,22 @@ describe('Versions - /contexts/:contextid/versions', function () {
         done();
       });
     });
+
+    it('should list multiple versions by id', function (done) {
+      var query = { qs: {
+        _id: [
+          ctx.environment.attrs.versions[0]
+        ]
+      }};
+      ctx.user.fetchVersions(query, function (err, body) {
+        if (err) { return done(err); }
+
+        expect(body).to.be.an('array');
+        expect(body).to.have.length(1);
+        expect(body[0]._id).to.equal(ctx.environment.attrs.versions[0].toString());
+        done();
+      });
+    });
   });
 
   describe('POST', function () {

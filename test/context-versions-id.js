@@ -28,6 +28,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
       if (err) { return done(err); }
 
       ctx.user = user;
+      ctx.environment = environments.models[0];
       ctx.versionId = environments.models[0].toJSON().versions[0];
       ctx.contextId = environments.models[0].toJSON().contexts[0];
       ctx.context = ctx.user.fetchContext(ctx.contextId, done);
