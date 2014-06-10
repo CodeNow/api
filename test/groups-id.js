@@ -11,6 +11,7 @@ var api = require('./fixtures/api-control');
 var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
 
+var async = require('async');
 var uuid = require('uuid');
 
 describe('Group - /groups/:id', function () {
@@ -77,6 +78,7 @@ describe('Group - /groups/:id', function () {
         expect(body).to.be.okay;
         expect(body._id).to.equal(ctx.group.id());
         expect(body.groupMembers.indexOf(ctx.registeredUser.id())).to.not.equal(-1);
+        expect(body.groupMembers).to.have.length(2);
         done();
       });
     });
@@ -86,7 +88,36 @@ describe('Group - /groups/:id', function () {
         expect(body).to.be.okay;
         expect(body._id).to.equal(ctx.group.id());
         expect(body.groupOwners.indexOf(ctx.registeredUser.id())).to.not.equal(-1);
+        expect(body.groupOwners).to.have.length(2);
         done();
+      });
+    });
+    it('should remove a group member', function (done) {
+      ctx.group.addMemberById(ctx.registeredUser.id(), function (err, body) {
+        if (err) { return done(err); }
+        var previousMembers = body.groupMembers.length;
+        ctx.group.removeMemberById(ctx.registeredUser.id(), function (err, body) {
+          if (err) { return done(err); }
+          expect(body).to.be.okay;
+          expect(body._id).to.equal(ctx.group.id());
+          expect(body.groupMembers).to.have.length(previousMembers - 1);
+          expect(body.groupMembers.indexOf(ctx.registeredUser.id())).to.equal(-1);
+          done();
+        });
+      });
+    });
+    it('should remove a group owner', function (done) {
+      ctx.group.addOwnerById(ctx.registeredUser.id(), function (err, body) {
+        if (err) { return done(err); }
+        var previousOwners = body.groupOwners.length;
+        ctx.group.removeOwnerById(ctx.registeredUser.id(), function (err, body) {
+          if (err) { return done(err); }
+          expect(body).to.be.okay;
+          expect(body._id).to.equal(ctx.group.id());
+          expect(body.groupOwners).to.have.length(previousOwners - 1);
+          expect(body.groupOwners.indexOf(ctx.registeredUser.id())).to.equal(-1);
+          done();
+        });
       });
     });
     describe('forbidden', function () {
