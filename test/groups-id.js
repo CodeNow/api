@@ -11,7 +11,6 @@ var api = require('./fixtures/api-control');
 var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
 
-var async = require('async');
 var uuid = require('uuid');
 
 describe('Group - /groups/:id', function () {
