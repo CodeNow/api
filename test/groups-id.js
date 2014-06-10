@@ -29,7 +29,10 @@ describe('Group - /groups/:id', function () {
       if (err) { return done(err); }
       ctx.user = user;
       ctx.group = group;
-      ctx.registeredUser = users.createRegistered(done);
+      ctx.registeredUser = users.createRegistered(function (err) {
+        if (err) { return done(err); }
+        ctx.anonUser = users.createAnonymous(done);
+      });
     });
   });
 
@@ -87,8 +90,15 @@ describe('Group - /groups/:id', function () {
       });
     });
     describe('forbidden', function () {
-      it('should fail for a different', function (done) {
+      it('should fail for a different user', function (done) {
         ctx.registeredUser.updateGroup(ctx.group.id(), { json: { name: uuid() }}, function (err) {
+          expect(err).to.be.okay;
+          expect(err.output.statusCode).to.equal(403);
+          done();
+        });
+      });
+      it('should fail for an anonymous user', function (done) {
+        ctx.anonUser.updateGroup(ctx.group.id(), { json: { name: uuid() }}, function (err) {
           expect(err).to.be.okay;
           expect(err.output.statusCode).to.equal(403);
           done();

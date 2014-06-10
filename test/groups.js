@@ -19,7 +19,10 @@ describe('Groups - /groups', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
   beforeEach(function (done) {
-    ctx.user = users.createRegistered(done);
+    ctx.user = users.createRegistered(function (err) {
+      if (err) { return done(err); }
+      ctx.anonUser = users.createAnonymous(done);
+    });
   });
 
   describe('POST', function () {
@@ -37,6 +40,42 @@ describe('Groups - /groups', function () {
         expect(body.name).to.equal('my first group');
         expect(body.isGroup).to.equal(true);
         done();
+      });
+    });
+
+    describe('failing cases', function () {
+      it('should fail without a name', function (done) {
+        ctx.group = ctx.user.createGroup({ json: {
+          username: 'group1'
+        }}, function (err, body) {
+          expect(err).to.be.okay;
+          expect(err.output.payload.message).to.match(/"name" is required/);
+          expect(body).to.equal(undefined);
+          done();
+        });
+      });
+      it('should fail without a username', function (done) {
+        ctx.group = ctx.user.createGroup({ json: {
+          name: 'my awesome group'
+        }}, function (err, body) {
+          expect(err).to.be.okay;
+          expect(err.output.statusCode).to.equal(400);
+          expect(err.output.payload.message).to.match(/"username" is required/);
+          expect(body).to.equal(undefined);
+          done();
+        });
+      });
+      it('should fail from an anonymous user', function (done) {
+        ctx.group = ctx.anonUser.createGroup({ json: {
+          name: 'my awesome group',
+          username: 'group1'
+        }}, function (err, body) {
+          expect(err).to.be.okay;
+          expect(err.output.statusCode).to.equal(403);
+          expect(err.output.payload.message).to.match(/\!registered/);
+          expect(body).to.equal(undefined);
+          done();
+        });
       });
     });
   });
