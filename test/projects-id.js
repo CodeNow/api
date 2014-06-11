@@ -15,6 +15,59 @@ var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var users = require('./fixtures/user-factory');
 
+describe('Project - /projects/:id - owned by a group', function () {
+  var ctx = {};
+
+  before(api.start.bind(ctx));
+  before(dock.start.bind(ctx));
+  after(api.stop.bind(ctx));
+  after(dock.stop.bind(ctx));
+  afterEach(require('./fixtures/clean-mongo').removeEverything);
+  afterEach(require('./fixtures/clean-ctx')(ctx));
+
+  beforeEach(function (done) {
+    nockS3();
+    multi.createRegisteredUserAndGroup({}, { json: {
+      name: 'my first group',
+      username: 'group1'
+    }}, function (err, user, group) {
+      if (err) { return done(err); }
+
+      ctx.user = user;
+      ctx.group = group;
+      ctx.project = ctx.group.createProject({ json: {
+        name: uuid(),
+        dockerfile: 'FROM ubuntu\n'
+      }}, function (err, body) {
+        if (err) { return done(err); }
+        expect(body).to.be.okay;
+        expect(body.owner).to.equal(ctx.group.id());
+        // make the project private so we actually test group functions
+        ctx.project.update({ json: { public: false }}, function (err) {
+          if (err) { return done(err); }
+          ctx.anonUser = users.createAnonymous(done);
+        });
+      });
+    });
+  });
+
+  it('should return the project when requested by a group member', function (done) {
+    ctx.user.fetchProject(ctx.project.id(), function (err, body) {
+      if (err) { return done(err); }
+      expect(body).to.be.okay;
+      expect(body._id).to.equal(ctx.project.id());
+      done();
+    });
+  });
+  it('should not return the project to someone not in the group', function (done) {
+    ctx.anonUser.fetchProject(ctx.project.id(), function (err) {
+      expect(err).to.be.okay;
+      expect(err.output.statusCode).to.equal(403);
+      done();
+    });
+  });
+});
+
 describe('Project - /projects/:id', function () {
   var ctx = {};
 
