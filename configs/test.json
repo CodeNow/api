@@ -58,10 +58,15 @@
     },
     "cmd": ["/dockworker/bin/node", "/dockworker"]
   },
-"frontdoor": {
+  "frontdoor": {
     "protocol": "http:",
     "hostname": "127.0.0.1",
     "port": 7050
   },
-  "krainPort": 1234
+  "krainPort": 1234,
+  "GitHub": {
+    "clientId": "f8160c773a0574fd21af",
+    "clientSecret": "c317f72b783809f4ff2951d012f28c5e972f8b41",
+    "callbackURL": "http://localhost:3000/api/-/auth/github/callback"
+  }
 }
