@@ -175,6 +175,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
           path: filePath,
         }
       }, function (err) {
+        // FIXME: Anand is going to change this to a 404
         expect(err.data.statusCode).to.equal(500);
         done();
       });
