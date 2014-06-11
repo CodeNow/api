@@ -57,6 +57,13 @@ describe('Group - /groups/:id', function () {
           done();
         });
       });
+      it('should fail trying to get a user', function (done) {
+        ctx.registeredUser.fetchGroup(ctx.registeredUser.id(), function (err) {
+          expect(err).to.be.okay;
+          expect(err.output.statusCode).to.equal(404);
+          done();
+        });
+      });
     });
   });
 
