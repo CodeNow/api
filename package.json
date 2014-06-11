@@ -90,7 +90,7 @@
     "todo": "grep -nR TODO lib test",
     "start": "NODE_PATH=./lib node server.js",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs -q server.js",
-    "coverage": "bash ./scripts/run_coverage.sh",
+    "coverage": "NODE_PATH=./lib NODE_ENV=test lab -vl -m 500 -e test -c -r html test/*.js > coverage.html && if [ $CIRCLE_ARTIFACTS ]; then cp coverage.html $CIRCLE_ARTIFACTS; fi",
     "test-watch": "killall node; nodemon --exec npm test",
     "test": "echo -ne \"\\033]50;ClearScrollback\\a\"; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 500 -e test test/*.js",
     "client-version": "node ./scripts/client-version-bump.js",

@@ -13,8 +13,7 @@
 pids
 logs
 results
-lib-cov
-coverage
+coverage.html
 node_modules
 npm-debug.log
 old-test
