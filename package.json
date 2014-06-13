@@ -19,7 +19,7 @@
     "concat-stream": "~1.4.1",
     "dat-middleware": "~1.5.12",
     "debug": "~0.7.2",
-    "docker-mock": "0.0.11",
+    "docker-mock": "0.0.12",
     "dockerode": "~2.0.0",
     "dogerode": "0.0.3",
     "dogstatsyware": "0.0.1",
