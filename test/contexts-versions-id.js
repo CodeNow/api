@@ -7,6 +7,7 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var nock = require('nock');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
@@ -50,6 +51,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   describe('Version Build - /versions/:id/build', function() {
     describe('POST', function() {
       beforeEach(function (done) {
+        nock.recorder.rec();
         ctx.version = ctx.context.fetchVersion(ctx.versionId, done);
       });
       it('should build a version', function (done) {
