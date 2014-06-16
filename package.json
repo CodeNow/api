@@ -63,7 +63,7 @@
     "underscore.inflections": "~0.2.1",
     "uuid": "~1.4.1",
     "xtend": "3.0.0",
-    "filibuster": "git://github.com/Runnable/Filibuster.git#v0.0.1",
+    "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.0.1",
     "cors": "~2.3.1",
     "ws": "^0.4.31"
   },
