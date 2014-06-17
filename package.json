@@ -55,7 +55,7 @@
     "request": "~2.21.0",
     "rimraf": "~2.1.4",
     "rollbar": "~0.2.5",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.7.1",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.9",
     "simple-api-client": "~0.2.3",
     "strong-agent": "*",
     "tar": "gyllstromk/node-tar",
