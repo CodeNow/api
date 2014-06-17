@@ -43,8 +43,8 @@ describe('Projects - /projects', function () {
     });
     it('should return the project when searched by owner and project (by other user)', function (done) {
       var query = { qs: {
-        owner: ctx.user1.attrs._id,
-        name: ctx.project1.attrs.name
+        owner: ctx.user1.id(),
+        name: ctx.project1.toJSON().name
       }};
       ctx.user2.fetchProjects(query, function (err, body) {
         if (err) { done(err); }
@@ -59,8 +59,8 @@ describe('Projects - /projects', function () {
     });
     it('should return the project when searched by owner and project (by same user)', function (done) {
       var query = { qs: {
-        owner: ctx.user2.attrs._id,
-        name: ctx.project2.attrs.name
+        owner: ctx.user2.id(),
+        name: ctx.project2.toJSON().name
       }};
       ctx.user2.fetchProjects(query, function (err, body) {
         if (err) { done(err); }
@@ -95,7 +95,7 @@ describe('Projects - /projects', function () {
         expect(body).to.be.ok;
         expect(body).to.be.an('array');
         expect(body).to.have.length(1);
-        expect(body[0]._id.toString()).to.equal(ctx.project2.attrs._id.toString());
+        expect(body[0]._id.toString()).to.equal(ctx.project2.id().toString());
         done();
       });
     });
@@ -138,12 +138,6 @@ describe('Projects - /projects', function () {
           expect(body).to.have.property('public', true);
           expect(body.environments).to.be.an('array');
           expect(body.environments).to.have.a.lengthOf(1);
-          expect(body.environments[0].contexts).to.be.an('array');
-          expect(body.environments[0].contexts).to.have.a.lengthOf(1);
-          expect(body.environments[0].versions).to.be.an('array');
-          expect(body.environments[0].versions).to.have.a.lengthOf(1);
-          expect(body.environments[0].contexts[0]).to.be.ok;
-          expect(body.environments[0].versions[0]).to.be.ok;
           done();
         });
       });

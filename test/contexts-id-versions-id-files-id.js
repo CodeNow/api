@@ -15,7 +15,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-describe('Version Files - /contexts/:contextid/versions/:id/files', function () {
+describe('Version File - /contexts/:contextid/versions/:id/files/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -41,37 +41,51 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         ctx.build = builds.models[0];
         ctx.contextId = ctx.build.toJSON().contexts[0];
         ctx.versionId = ctx.build.toJSON().versions[0];
-        ctx.version = ctx.user
-          .newContext(ctx.contextId)
-          .fetchVersion(ctx.versionId, done);
+        ctx.context = ctx.user.newContext(ctx.contextId);
+        ctx.version = ctx.context.fetchVersion(ctx.versionId, done);
       });
     });
   });
-  describe('POST', function () {
-    it('should give us details about a file we just created', function (done) {
-      ctx.file = ctx.version.createFile({ json: {
-        name: 'file.txt',
-        path: '/',
-        body: 'content'
-      }}, function (err, data) {
+
+  describe('GET', function () {
+    it('should give us the body of the file', function (done) {
+      files = ctx.version.fetchFiles(function (err) {
         if (err) { return done(err); }
 
-        expect(data.ETag).to.be.ok;
-        expect(data.VersionId).to.be.ok;
-        expect(data.Key).to.be.ok;
-        expect(data.Key).to.match(/.+file\.txt$/);
-        done();
+        ctx.version.fetchFile(files.models[0].id(), function (err, file) {
+          if (err) { return done(err); }
+          expect(file).to.be.ok;
+          // FIXME: this isn't right still... it's hitting the wrong path
+          done();
+        });
       });
     });
   });
-  describe('GET', function () {
-    it('should give us files from a given version', function (done) {
-      ctx.version.fetchFiles(function (err, files) {
+
+  describe('PUT', function () {
+    it('should let us rename a file', function (done) {
+      var f = {
+        Key: join(ctx.version.attrs.context.toString(), 'source', 'file.txt'),
+        ETag: uuid(),
+        VersionId: 'Po.EGeNr9HirlSJVMSxpf1gaWa5KruPa'
+      };
+      var versionId = ctx.version.id();
+      ctx.version = ctx.context.createVersion({ json: {
+        versionId: versionId,
+        files: [f]
+      }}, function (err) {
         if (err) { return done(err); }
-        expect(files).to.have.length(1);
-        expect(files[0].Key).to.match(/[a-f0-9]+\/source\//);
-        done();
+        ctx.version.updateFile('file.txt', { json: { name: 'newfile.txt' }}, function (err, body) {
+          if (err) { return done(err); }
+
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(2);
+          expect(body[0].isDeleteMarker).to.equal(true);
+          expect(body[1].Key).to.match(/newfile\.txt$/);
+          done();
+        });
       });
     });
   });
+
 });

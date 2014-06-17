@@ -56,15 +56,23 @@ module.exports = function () {
   /* GETS */
 
   nock('https://s3.amazonaws.com:443')
-    .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/Dockerfile\?versionId=.+/,
+    .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/Dockerfile?response-content-type=application%2Fjson/,
       '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/Dockerfile')
     .get('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/Dockerfile')
+    .reply(200, "FROM ubuntu");
+
+  nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/Dockerfile\?versionId=.*/,
+      '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/Dockerfile')
+    .get('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/Dockerfile')
+    .twice()
     .reply(200, "FROM ubuntu");
 
   nock('https://s3.amazonaws.com:443')
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/\?versionId=.+/,
       '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/')
     .get('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/')
+    .twice()
     .reply(200, "");
 
   nock('https://s3.amazonaws.com:443')

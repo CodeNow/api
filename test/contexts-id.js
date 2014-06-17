@@ -34,9 +34,14 @@ describe('Context - /contexts/:id', function () {
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
+      var builds = ctx.environment.fetchBuilds(function (err) {
+        if (err) { return done(err); }
 
-      var contextId = ctx.environment.toJSON().contexts[0];
-      ctx.context = ctx.user.fetchContext(contextId, done);
+        ctx.build = builds.models[0];
+        ctx.contextId = ctx.build.toJSON().contexts[0];
+        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.context = ctx.user.fetchContext(ctx.contextId, done);
+      });
     });
   });
   describe('GET', function () {

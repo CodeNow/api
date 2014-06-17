@@ -34,9 +34,14 @@ describe('Versions - /contexts/:contextid/versions', function () {
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
-      ctx.versionId = environments.models[0].toJSON().versions[0];
-      ctx.contextId = environments.models[0].toJSON().contexts[0];
-      ctx.context = ctx.user.fetchContext(ctx.contextId, done);
+      var builds = ctx.environment.fetchBuilds(function (err) {
+        if (err) { return done(err); }
+
+        ctx.build = builds.models[0];
+        ctx.contextId = ctx.build.toJSON().contexts[0];
+        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.context = ctx.user.fetchContext(ctx.contextId, done);
+      });
     });
   });
 
@@ -50,17 +55,17 @@ describe('Versions - /contexts/:contextid/versions', function () {
     });
 
     it('should list multiple versions by id', function (done) {
-      var query = { qs: {
+      var query = {
         _id: [
-          ctx.environment.attrs.versions[0]
+          ctx.versionId
         ]
-      }};
-      ctx.context.fetchVersions(query, function (err, body) {
+      };
+      ctx.context.fetchVersions({ qs: query }, function (err, body) {
         if (err) { return done(err); }
 
         expect(body).to.be.an('array');
         expect(body).to.have.length(1);
-        expect(body[0]._id).to.equal(ctx.environment.attrs.versions[0].toString());
+        expect(body[0]._id).to.equal(ctx.versionId);
         done();
       });
     });
