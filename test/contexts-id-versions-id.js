@@ -7,10 +7,12 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var path = require('path');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
+var uuid = require('uuid');
 
 describe('Version - /contexts/:contextId/versions/:id', function () {
   var ctx = {};
@@ -52,37 +54,44 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
     });
   });
 
-  // describe('Version Build - /versions/:id/build', function() {
-  //   describe('POST', function() {
-  //     beforeEach(function (done) {
-  //       ctx.version = ctx.context.fetchVersion(ctx.versionId, done);
-  //     });
-  //     it('should build a version', function (done) {
-  //       ctx.version.build(function (err, body, code) {
-  //         if (err) { return done(err); }
+  describe('Version Build - /versions/:id/build', function() {
+    describe('POST', function() {
+      beforeEach(function (done) {
+        ctx.version = ctx.context.createVersion({
+          versionId: ctx.versionId,
+          files: [{
+            Key: path.join(ctx.contextId, 'source', 'file.txt'),
+            ETag: uuid(),
+            VersionId: 'Po.EGeNr9HirlSJVMSxpf1gaWa5KruPa'
+          }]
+        }, done);
+      });
+      it('should build a version', function (done) {
+        ctx.version.build(function (err, body, code) {
+          if (err) { return done(err); }
 
-  //         expect(code).to.equal(201);
-  //         expectVersionFields(body);
-  //         done();
-  //       });
-  //     });
-  //     describe('subsequent builds', function() {
-  //       beforeEach(function (done) {
-  //         ctx.version.build(done);
-  //       });
-  //       it('should not build', function (done) {
-  //         ctx.version.build(function (err) {
-  //           expect(err).to.be.ok;
-  //           expect(err.output.statusCode).to.equal(409);
-  //           // FIXME: return version object
-  //           expect(err.message).to.match(/already built/);
-  //           // expect(err.output) recieve docker id;
-  //           done();
-  //         });
-  //       });
-  //     });
-  //   });
-  // });
+          expect(code).to.equal(201);
+          expectVersionFields(body);
+          done();
+        });
+      });
+      describe('subsequent builds', function() {
+        beforeEach(function (done) {
+          ctx.version.build(done);
+        });
+        it('should not build', function (done) {
+          ctx.version.build(function (err) {
+            expect(err).to.be.ok;
+            expect(err.output.statusCode).to.equal(409);
+            // FIXME: return version object
+            expect(err.message).to.match(/already built/);
+            // expect(err.output) recieve docker id;
+            done();
+          });
+        });
+      });
+    });
+  });
 
   function expectVersionFields (versionData) {
     expect(versionData).to.be.a('object');

@@ -60,5 +60,5 @@
     "maxdepth"      : 2,
     "maxstatements" : 110, // this needs to be brought down
     "maxcomplexity" : 7,
-    "maxlen"        : 100
+    "maxlen"        : 120
 }
