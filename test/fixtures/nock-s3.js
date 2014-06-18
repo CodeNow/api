@@ -93,4 +93,14 @@ module.exports = function () {
       'etag': uuid()
     });
 
+  nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source\/Dockerfile/,
+      '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/Dockerfile')
+    .delete('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/Dockerfile')
+    .reply(200, "", {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
+
 };
