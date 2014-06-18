@@ -7,8 +7,9 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
-var uuid = require('uuid');
 var join = require('path').join;
+var findIndex = require('101/find-index');
+var hasProperties = require('101/has-properties');
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -41,6 +42,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         ctx.build = builds.models[0];
         ctx.contextId = ctx.build.toJSON().contexts[0];
         ctx.versionId = ctx.build.toJSON().versions[0];
+        console.log('creating new context');
         ctx.version = ctx.user
           .newContext(ctx.contextId)
           .fetchVersion(ctx.versionId, done);
@@ -53,14 +55,25 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         name: 'file.txt',
         path: '/',
         body: 'content'
-      }}, function (err, data) {
+      }}, function (err, files, code) {
         if (err) { return done(err); }
-
-        expect(data.ETag).to.be.ok;
-        expect(data.VersionId).to.be.ok;
-        expect(data.Key).to.be.ok;
-        expect(data.Key).to.match(/.+file\.txt$/);
-        done();
+        expect(code).to.equal(201);
+        expect(files).to.be.okay;
+        expect(files).to.be.an('array');
+        expect(files).to.have.length(3);
+        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
+        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') }))).to.not.equal(-1);
+        ctx.version.fetchFiles(function (err, files) {
+          if (err) { return done(err); }
+          expect(files).to.be.okay;
+          expect(files).to.be.an('array');
+          expect(files).to.have.length(3);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') }))).to.not.equal(-1);
+          done();
+        });
       });
     });
   });
@@ -68,8 +81,9 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
     it('should give us files from a given version', function (done) {
       ctx.version.fetchFiles(function (err, files) {
         if (err) { return done(err); }
-        expect(files).to.have.length(1);
-        expect(files[0].Key).to.match(/[a-f0-9]+\/source\//);
+        expect(files).to.have.length(2);
+        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
         done();
       });
     });

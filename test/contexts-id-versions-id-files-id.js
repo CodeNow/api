@@ -7,7 +7,8 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
-var uuid = require('uuid');
+var findIndex = require('101/find-index');
+var hasProperties = require('101/has-properties');
 var join = require('path').join;
 
 var api = require('./fixtures/api-control');
@@ -64,25 +65,40 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
 
   describe('PUT', function () {
     it('should let us rename a file', function (done) {
-      var f = {
-        Key: join(ctx.version.attrs.context.toString(), 'source', 'file.txt'),
-        ETag: uuid(),
-        VersionId: 'Po.EGeNr9HirlSJVMSxpf1gaWa5KruPa'
-      };
-      var versionId = ctx.version.id();
-      ctx.version = ctx.context.createVersion({ json: {
-        versionId: versionId,
-        files: [f]
-      }}, function (err) {
+      ctx.file = ctx.version.createFile({ json: {
+        name: 'file.txt',
+        path: '/',
+        body: 'content'
+      }}, function (err, files, code) {
         if (err) { return done(err); }
-        ctx.version.updateFile('file.txt', { json: { name: 'newfile.txt' }}, function (err, body) {
-          if (err) { return done(err); }
+        expect(code).to.equal(201);
+        expect(files).to.be.okay;
+        expect(files).to.be.an('array');
+        expect(files).to.have.length(3);
+        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
+        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') }))).to.not.equal(-1);
 
-          expect(body).to.be.an('array');
-          expect(body).to.have.length(2);
-          expect(body[0].isDeleteMarker).to.equal(true);
-          expect(body[1].Key).to.match(/newfile\.txt$/);
-          done();
+        ctx.version.updateFile('file.txt', { json: { name: 'newfile.txt' }}, function (err, files) {
+          if (err) { return done(err); }
+          expect(files).to.be.okay;
+          expect(files).to.be.an('array');
+          expect(files).to.have.length(3);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'newfile.txt') }))).to.not.equal(-1);
+
+          // extra check, for sanity
+          ctx.version.fetchFiles(function (err, files) {
+            if (err) { return done(err); }
+            expect(files).to.be.okay;
+            expect(files).to.be.an('array');
+            expect(files).to.have.length(3);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'newfile.txt') }))).to.not.equal(-1);
+            done();
+          });
         });
       });
     });
