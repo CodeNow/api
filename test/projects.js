@@ -41,62 +41,113 @@ describe('Projects - /projects', function () {
         });
       });
     });
-    it('should return the project when searched by owner and project (by other user)', function (done) {
-      var query = { qs: {
-        owner: ctx.user1.attrs._id,
-        name: ctx.project1.attrs.name
-      }};
-      ctx.user2.fetchProjects(query, function (err, body) {
-        if (err) { done(err); }
+    describe('non-owner', function() {
+      it('should return the project when searched by owner and project (by other user)', function (done) {
+        var query = { qs: {
+          owner: ctx.user1.id(),
+          name: ctx.project1.toJSON().name
+        }};
+        ctx.user2.fetchProjects(query, function (err, body) {
+          if (err) { done(err); }
 
-        expect(body).to.be.ok;
-        expect(body).to.be.an('array');
-        expect(body).to.have.length(1);
-        expect(body[0]._id.toString()).to.equal(ctx.project1.id().toString());
-        expect(body[0].owner.toString()).to.equal(ctx.user1.id().toString());
-        done();
+          expect(body).to.be.ok;
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(1);
+          expect(body[0]._id.toString()).to.equal(ctx.project1.id().toString());
+          expect(body[0].owner.toString()).to.equal(ctx.user1.id().toString());
+          done();
+        });
+      });
+      it('should return the project when searched by ownerUsername and project (by other user)', function (done) {
+        var query = { qs: {
+          ownerUsername: ctx.user1.toJSON().username,
+          name: ctx.project1.toJSON().name
+        }};
+        ctx.user2.fetchProjects(query, function (err, body) {
+          if (err) { done(err); }
+
+          expect(body).to.be.ok;
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(1);
+          expect(body[0]._id.toString()).to.equal(ctx.project1.id().toString());
+          expect(body[0].owner.toString()).to.equal(ctx.user1.id().toString());
+          done();
+        });
       });
     });
-    it('should return the project when searched by owner and project (by same user)', function (done) {
-      var query = { qs: {
-        owner: ctx.user2.attrs._id,
-        name: ctx.project2.attrs.name
-      }};
-      ctx.user2.fetchProjects(query, function (err, body) {
-        if (err) { done(err); }
+    describe('owner', function() {
+      it('should return the project when searched by owner and project (by same user)', function (done) {
+        var query = { qs: {
+          owner: ctx.user2.id(),
+          name: ctx.project2.toJSON().name
+        }};
+        ctx.user2.fetchProjects(query, function (err, body) {
+          if (err) { done(err); }
 
-        expect(body).to.be.ok;
-        expect(body).to.be.an('array');
-        expect(body).to.have.length(1);
-        expect(body[0]._id.toString()).to.equal(ctx.project2.id().toString());
-        expect(body[0].owner.toString()).to.equal(ctx.user2.id().toString());
-        done();
+          expect(body).to.be.ok;
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(1);
+          expect(body[0]._id.toString()).to.equal(ctx.project2.id().toString());
+          expect(body[0].owner.toString()).to.equal(ctx.user2.id().toString());
+          done();
+        });
+      });
+      it('should return the project when searched by ownerUsername and project (by same user)', function (done) {
+        var query = { qs: {
+          ownerUsername: ctx.user2.toJSON().username,
+          name: ctx.project2.toJSON().name
+        }};
+        ctx.user2.fetchProjects(query, function (err, body) {
+          if (err) { done(err); }
+
+          expect(body).to.be.ok;
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(1);
+          expect(body[0]._id.toString()).to.equal(ctx.project2.id().toString());
+          expect(body[0].owner.toString()).to.equal(ctx.user2.id().toString());
+          done();
+        });
       });
     });
-    it('should all the projects!', function (done) {
-      var query = { qs: {}};
-      ctx.user2.fetchProjects(query, function (err, body) {
-        if (err) { done(err); }
+    describe('pagination', function() {
+      it('should have primitive pagination', function (done) {
+        var query = { qs: {
+          owner: ctx.user2.id(),
+          limit: 1,
+          page: 0
+        }};
+        ctx.user2.fetchProjects(query, function (err, body) {
+          if (err) { done(err); }
 
-        expect(body).to.be.ok;
-        expect(body).to.be.an('array');
-        expect(body).to.have.length(2);
-        done();
+          expect(body).to.be.ok;
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(1);
+          expect(body[0]._id.toString()).to.equal(ctx.project2.id().toString());
+          done();
+        });
       });
     });
-    it('should have primitive pagination', function (done) {
-      var query = { qs: {
-        limit: 1,
-        page: 1
-      }};
-      ctx.user2.fetchProjects(query, function (err, body) {
-        if (err) { done(err); }
-
-        expect(body).to.be.ok;
-        expect(body).to.be.an('array');
-        expect(body).to.have.length(1);
-        expect(body[0]._id.toString()).to.equal(ctx.project2.attrs._id.toString());
-        done();
+    describe('errors', function() {
+      it('should error if no query!', function (done) {
+        var query = { qs: {} };
+        ctx.user2.fetchProjects(query, function (err, body) {
+          expect(err).to.be.ok;
+          expect(err.output.statusCode).to.equal(400);
+          expect(err.message).to.match(/required/);
+          done();
+        });
+      });
+      it('should error when searched by owner (non objectId)', function (done) {
+        var query = { qs: {
+          owner: 'garbage',
+        }};
+        ctx.user2.fetchProjects(query, function (err, body) {
+          expect(err).to.be.ok;
+          expect(err.output.statusCode).to.equal(400);
+          expect(err.message).to.match(/owner/);
+          expect(err.message).to.match(/ObjectId/);
+          done();
+        });
       });
     });
   });
@@ -138,12 +189,6 @@ describe('Projects - /projects', function () {
           expect(body).to.have.property('public', true);
           expect(body.environments).to.be.an('array');
           expect(body.environments).to.have.a.lengthOf(1);
-          expect(body.environments[0].contexts).to.be.an('array');
-          expect(body.environments[0].contexts).to.have.a.lengthOf(1);
-          expect(body.environments[0].versions).to.be.an('array');
-          expect(body.environments[0].versions).to.have.a.lengthOf(1);
-          expect(body.environments[0].contexts[0]).to.be.ok;
-          expect(body.environments[0].versions[0]).to.be.ok;
           done();
         });
       });

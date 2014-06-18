@@ -70,32 +70,28 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   beforeEach(function (done) {
     nockS3();
     multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
-      if (err) {
-        return done(err);
-      }
+      if (err) { return done(err); }
 
       ctx.user = user;
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
-      ctx.version = user.newContext({ _id: ctx.environment.toJSON().contexts[0] }).fetchVersion(ctx.environment.toJSON().versions[0], function (err) {
-        if (err) {
-          return done(err);
-        }
-        ctx.version.build(function (err) {
-          if (err) {
-            return done(err);
-          }
-          ctx.instance = ctx.user.createInstance({
-            json: { environment: ctx.environment.id() }
-          }, function (err) {
-            if (err) {
-              return done(err);
-            }
-            var containerAttrs = ctx.instance.toJSON().containers[0];
-            ctx.container = ctx.instance.newContainer(containerAttrs);
-            done();
-          });
+      var builds = ctx.environment.fetchBuilds(function (err) {
+        if (err) { return done(err); }
+
+        ctx.build = builds.models[0];
+        ctx.contextId = ctx.build.toJSON().contexts[0];
+        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.context = ctx.user.newContext(ctx.contextId);
+        ctx.version = ctx.context.newVersion(ctx.versionId);
+        ctx.instance = ctx.user.createInstance({
+          build: ctx.build.id()
+        }, function (err) {
+          if (err) { return done(err); }
+
+          var containerAttrs = ctx.instance.toJSON().containers[0];
+          ctx.container = ctx.instance.newContainer(containerAttrs);
+          done();
         });
       });
     });
@@ -104,13 +100,10 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   describe('GET', function () {
     it('should read a file', function (done) {
       createFile(ctx, fileName, filePath, fileContent, function(err) {
-        if (err) {
-          return done(err);
-        }
+        if (err) { return done(err); }
+
         ctx.file.fetch(function (err, body, code) {
-          if (err) {
-            return done(err);
-          }
+          if (err) { return done(err); }
 
           expect(code).to.equal(200);
           expect(body).to.exist;
@@ -124,9 +117,8 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   describe('PATCH', function () {
     it('should update content of file', function (done) {
       createFile(ctx, fileName, filePath, fileContent, function(err) {
-        if (err) {
-          return done(err);
-        }
+        if (err) { return done(err); }
+
         var newFileContent = "new content is better";
         ctx.file.update({
           json: {
@@ -136,9 +128,8 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             content: newFileContent
           }
         }, function (err, body, code) {
-          if (err) {
-            return done(err);
-          }
+          if (err) { return done(err); }
+
           expect(code).to.equal(200);
           expect(body).to.have.property('name', fileName);
           expect(body).to.have.property('path', filePath);
@@ -164,9 +155,8 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           content: fileContent
         }
       }, function (err, body, code) {
-        if (err) {
-          return done(err);
-        }
+        if (err) { return done(err); }
+
         expect(code).to.equal(201);
         expect(body).to.have.property('name', fileName);
         expect(body).to.have.property('path', filePath);
@@ -188,9 +178,8 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           return done(err);
         }
         ctx.file.destroy(function (err, body, code) {
-          if (err) {
-            return done(err);
-          }
+          if (err) { return done(err); }
+
           expect(code).to.equal(200);
           try {
             fs.readFileSync(
