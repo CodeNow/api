@@ -42,7 +42,6 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         ctx.build = builds.models[0];
         ctx.contextId = ctx.build.toJSON().contexts[0];
         ctx.versionId = ctx.build.toJSON().versions[0];
-        console.log('creating new context');
         ctx.version = ctx.user
           .newContext(ctx.contextId)
           .fetchVersion(ctx.versionId, done);

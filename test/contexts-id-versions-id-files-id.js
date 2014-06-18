@@ -104,4 +104,25 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
     });
   });
 
+  describe('DELETE', function () {
+    it('should delete a file', function (done) {
+      var files = ctx.version.fetchFiles(function (err) {
+        if (err) { return done(err); }
+        var dockerfileKey = join(ctx.contextId, 'source', 'Dockerfile');
+        var dockerfileIndex = findIndex(files.toJSON(), hasProperties({ 'Key': dockerfileKey }));
+        ctx.version.destroyFile(files.models[dockerfileIndex].id(), function (err) {
+          if (err) { return done(err); }
+          ctx.version.fetchFiles(function (err, files) {
+            if (err) { return done(err); }
+            expect(files).to.be.okay;
+            expect(files).to.be.an('array');
+            expect(files).to.have.length(1);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+            done();
+          });
+        });
+      });
+    });
+  });
+
 });
