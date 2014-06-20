@@ -58,7 +58,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
 
         expect(code).to.equal(200);
         expect(body).to.be.an('array');
-        var testUser = body[0].createdBy;
+        // var testUser = body[0].createdBy;
         expect(body[0].owner).to.be.a('string');
         expect(body[0].createdBy).to.be.an('object');
         expect(body[0].createdBy._id).to.be.okay;
@@ -70,6 +70,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
 
         var build = ctx.environment.fetchBuild(builds.models[0].id(), function (err) {
           if (err) { return done(err); }
+          expect(build).to.be.okay;
           // FIXME: build.createdBy()
           // var buildCreator = build.createdBy();
           // expect(buildCreator.toJSON()).to.equal(testUser);

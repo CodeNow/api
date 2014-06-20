@@ -88,7 +88,7 @@ describe('Users - /users', function () {
       });
       it('should get a user by username', function (done) {
         var count = createCount(ctx.users.length, done);
-        ctx.users.forEach(function (user, i) {
+        ctx.users.forEach(function (user) {
           var qs = {
             username: user.attrs.username
           };

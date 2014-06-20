@@ -71,7 +71,7 @@ module.exports = {
 };
 
 function callbackData (data, cb) {
-  return function (err, user) {
+  return function (err) {
     if (err) {
       cb(err);
     }

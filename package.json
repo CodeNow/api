@@ -94,7 +94,7 @@
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs -q server.js",
     "coverage": "NODE_PATH=./lib NODE_ENV=test lab -vl -m 500 -e test -c -r html test/*.js > coverage.html && if [ $CIRCLE_ARTIFACTS ]; then cp coverage.html $CIRCLE_ARTIFACTS; fi",
     "test-watch": "killall node; nodemon -w lib -w test -w configs --exec npm test",
-    "test": "echo -ne \"\\033]50;ClearScrollback\\a\"; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 500 -e test test/*.js",
+    "test": "echo -ne \"\\033]50;ClearScrollback\\a\"; npm run lint; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 500 -e test test/*.js",
     "client-version": "node ./scripts/client-version-bump.js",
     "unit": "NODE_PATH=./lib lab -e test -vG unit/",
     "clean": "rm -rf ./coverage",

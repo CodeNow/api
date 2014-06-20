@@ -14,6 +14,7 @@ var morgan = require('morgan');
 var folderPath = __dirname + '/images/node.js/src/';
 
 function createFilter (query) {
+  query = query;
   return function filter (base) {
     if (/^\./.test(base) || base === 'node_modules') {
       return false;
@@ -81,7 +82,7 @@ app.get('/api/files/list', function (req, res) {
   });
 
   if (!req.query.directoriesOnly) {
-    finder.on('file', function (file, stat) {
+    finder.on('file', function (file) {
       var base = path.basename(file);
       if (filter(base)) {
         files.push({
@@ -120,7 +121,7 @@ app.post('/api/files/readall', function (req, res) {
   });
 
   if (!req.query.directoriesOnly) {
-    finder.on('file', function (file, stat) {
+    finder.on('file', function (file) {
       var base = path.basename(file);
       if (filter(base)) {
         files.push({
