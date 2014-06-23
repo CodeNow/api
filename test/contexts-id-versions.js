@@ -14,6 +14,8 @@ var multi = require('./fixtures/multi-factory');
 
 var join = require('path').join;
 var uuid = require('uuid');
+var findIndex = require('101/find-index');
+var hasProperties = require('101/has-properties');
 
 describe('Versions - /contexts/:contextid/versions', function () {
   var ctx = {};
@@ -85,7 +87,12 @@ describe('Versions - /contexts/:contextid/versions', function () {
 
         expect(body).to.be.ok;
         expect(body.files).to.be.an('array');
-        expect(body.files).to.have.length(2);
+        expect(body.files).to.have.length(3);
+        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
+          .to.not.equal(-1);
+        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') })))
+          .to.not.equal(-1);
         done();
       });
     });
