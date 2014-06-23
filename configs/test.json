@@ -34,7 +34,6 @@
     }
   },
   "dockworkerProxy": "http://localhost:3600",
-  "logExpress": false,
   "SES": {
     "sendMail": false
   },

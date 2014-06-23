@@ -33,17 +33,17 @@ describe('Instance - /instances/:id', function () {
       ctx.project = project;
       ctx.environments = environments;
       ctx.environment = environments.models[0];
-      ctx.context = user.fetchContext(ctx.environment.toJSON().contexts[0], function (err) {
+      var builds = ctx.environment.fetchBuilds(function (err) {
         if (err) { return done(err); }
-        ctx.version = ctx.context.fetchVersion(ctx.environment.toJSON().versions[0], function (err) {
-          if (err) { return done(err); }
-          ctx.version.build(function (err) {
-            if (err) { return done(err); }
-            ctx.instance = ctx.user.createInstance({
-              json: { environment: ctx.environment.id() }
-            }, done);
-          });
-        });
+
+        ctx.build = builds.models[0];
+        ctx.contextId = ctx.build.toJSON().contexts[0];
+        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.context = ctx.user.newContext(ctx.contextId);
+        ctx.version = ctx.context.newVersion(ctx.versionId);
+        ctx.instance = ctx.user.createInstance({
+          build: ctx.build.id()
+        }, done);
       });
     });
   });

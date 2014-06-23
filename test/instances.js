@@ -36,19 +36,21 @@ describe('Instances - /instances', function () {
         ctx.project = project;
         ctx.environments = environments;
         ctx.environment = environments.models[0];
-        ctx.context = user.fetchContext(ctx.environment.toJSON().contexts[0], function (err) {
+        var builds = ctx.environment.fetchBuilds(function (err) {
           if (err) { return done(err); }
-          ctx.version = ctx.context.fetchVersion(ctx.environment.toJSON().versions[0], done);
+
+          ctx.build = builds.models[0];
+          done();
         });
       });
     });
 
-    describe('from environment', function () {
-      var requiredProjectKeys = ['environment'];
+    describe('from build', function () {
+      var requiredProjectKeys = ['build'];
 
       beforeEach(function (done) {
         ctx.json = {
-          environment: ctx.environment.id()
+          build: ctx.build.id()
         };
         done();
       });
@@ -66,21 +68,18 @@ describe('Instances - /instances', function () {
           });
         });
       });
-      describe('with unbuilt versions', function () {
-        it('should error if the environment has unbuilt versions', function(done) {
-          var json = ctx.json;
-          ctx.user.createInstance({ json: json }, function (err) {
-            expect(err).to.be.ok;
-            expect(err.output.statusCode).to.equal(400);
-            expect(err.message).to.match(/unbuilt/);
-            done();
-          });
-        });
-      });
+      // describe('with unbuilt versions', function () {
+      //   it('should error if the environment has unbuilt versions', function(done) {
+      //     var json = ctx.json;
+      //     ctx.user.createInstance({ json: json }, function (err) {
+      //       expect(err).to.be.ok;
+      //       expect(err.output.statusCode).to.equal(400);
+      //       expect(err.message).to.match(/unbuilt/);
+      //       done();
+      //     });
+      //   });
+      // });
       describe('with build versions', function () {
-        beforeEach(function (done) {
-          ctx.version.build(done);
-        });
         it('should create an instance', function(done) {
           var json = ctx.json;
           var instance = ctx.user.createInstance({ json: json }, function (err, body, code) {

@@ -18,6 +18,7 @@ module.exports = {
       if (err) { return cb(err); }
 
       var group = user.createGroup(groupBody, function (err) {
+        if (err) { return cb(err); }
         cb(err, user, group);
       });
     });
@@ -36,6 +37,7 @@ module.exports = {
       if (err) { return cb(err); }
 
       var project = projects.createProjectBy(user, null, function (err) {
+        if (err) { return cb(err); }
         cb(err, user, project);
       });
     });
@@ -52,7 +54,7 @@ module.exports = {
     this.createRegisteredUserAndProject(userBody, projectBody, function (err, user, project) {
       if (err) { return cb(err); }
 
-      var environments = project.fetchEnvironments(function (err, body) {
+      var environments = project.fetchEnvironments(function (err) {
         if (err) { return cb(err); }
 
         cb(err, user, project, environments);
