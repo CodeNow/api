@@ -32,7 +32,7 @@ describe('Environments - /projects/:id/environments/:id', function() {
 
       ctx.user = user;
       ctx.project = project;
-      ctx.environments = ctx.project.fetchEnvironments(function (err, body) {
+      ctx.environments = ctx.project.fetchEnvironments(function (err) {
         if (err) { return done(err); }
 
         ctx.environment = ctx.environments.models[0];

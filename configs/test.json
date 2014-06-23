@@ -19,7 +19,7 @@
   "socketTimeout": "2 minutes",
   "dockerRegistry": "registry.runnable.com",
   "runnable_access_timeout": "5 seconds",
-  "logExpress": true,
+  "logExpress": false,
   "logErrors": true,
   "adminToken": "e6f5a32a-4be0-4d84-91cb-782c65ae320f",
   "cleanInterval": "2 minutes",
@@ -34,15 +34,14 @@
     }
   },
   "dockworkerProxy": "http://localhost:3600",
-  "logExpress": false,
   "SES": {
     "sendMail": false
   },
   "S3": {
     "contextResourceBucket": "runnable.context.resources.test",
     "auth": {
-      "accessKey": "__AKIAIG7Y3M347VWVGNUQ",
-      "secretKey": "__tAJIBONbT0O27OaxFpIPX/F4NK4cM0Dg7vYoeP3K"
+      "accessKey": "AKIAIG7Y3M347VWVGNUQ",
+      "secretKey": "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"
     }
   },
   "container": {

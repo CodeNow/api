@@ -53,16 +53,29 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
     });
 
     it('should return the list of environment builds', function (done) {
-      ctx.environment.fetchBuilds(function (err, body, code) {
+      var builds = ctx.environment.fetchBuilds(function (err, body, code) {
         if (err) { return done(err); }
 
         expect(code).to.equal(200);
         expect(body).to.be.an('array');
+        // var testUser = body[0].createdBy;
+        expect(body[0].owner).to.be.a('string');
+        expect(body[0].createdBy).to.be.an('object');
+        expect(body[0].createdBy._id).to.be.okay;
+        expect(body[0].createdBy.username).to.be.okay;
         // FIXME: verify exact fields
         // expect(body[0].builds).to.be.an('array');
         // expect(body[0].builds).to.have.length(1);
         // expect(body[0].builds[0]).to.be.ok;
-        done();
+
+        var build = ctx.environment.fetchBuild(builds.models[0].id(), function (err) {
+          if (err) { return done(err); }
+          expect(build).to.be.okay;
+          // FIXME: build.createdBy()
+          // var buildCreator = build.createdBy();
+          // expect(buildCreator.toJSON()).to.equal(testUser);
+          done();
+        });
       });
     });
   });

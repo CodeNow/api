@@ -60,5 +60,6 @@
     "maxdepth"      : 2,
     "maxstatements" : 110, // this needs to be brought down
     "maxcomplexity" : 7,
-    "maxlen"        : 120
+    "maxlen"        : 120,
+    "expr"          : true // allows .to.be.okay;
 }

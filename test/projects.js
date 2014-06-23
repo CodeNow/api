@@ -112,7 +112,7 @@ describe('Projects - /projects', function () {
     describe('pagination', function() {
       it('should have primitive pagination', function (done) {
         var query = { qs: {
-          owner: ctx.user2.id(),
+          sort: '-created',
           limit: 1,
           page: 0
         }};
@@ -127,10 +127,51 @@ describe('Projects - /projects', function () {
         });
       });
     });
+    describe('sorting', function() {
+      it('should have primitive sorting', function (done) {
+        var query = { qs: {
+          sort: 'created'
+        }};
+        ctx.user2.fetchProjects(query, function (err, body) {
+          if (err) { done(err); }
+
+          expect(body).to.be.ok;
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(2);
+          expect(body[0]._id.toString()).to.equal(ctx.project1.id().toString());
+          done();
+        });
+      });
+      it('should have primitive reverse sorting', function (done) {
+        var query = { qs: {
+          sort: '-created'
+        }};
+        ctx.user2.fetchProjects(query, function (err, body) {
+          if (err) { done(err); }
+
+          expect(body).to.be.ok;
+          expect(body).to.be.an('array');
+          expect(body).to.have.length(2);
+          expect(body[0]._id.toString()).to.equal(ctx.project2.id().toString());
+          done();
+        });
+      });
+      it('should fail with bad sort field', function (done) {
+        var query = { qs: {
+          sort: '-allthethings'
+        }};
+        ctx.user2.fetchProjects(query, function (err) {
+          expect(err).to.be.okay;
+          expect(err.output.statusCode).to.equal(400);
+          expect(err.message).to.match(/field not allowed for sorting/);
+          done();
+        });
+      });
+    });
     describe('errors', function() {
       it('should error if no query!', function (done) {
         var query = { qs: {} };
-        ctx.user2.fetchProjects(query, function (err, body) {
+        ctx.user2.fetchProjects(query, function (err) {
           expect(err).to.be.ok;
           expect(err.output.statusCode).to.equal(400);
           expect(err.message).to.match(/required/);
@@ -141,7 +182,7 @@ describe('Projects - /projects', function () {
         var query = { qs: {
           owner: 'garbage',
         }};
-        ctx.user2.fetchProjects(query, function (err, body) {
+        ctx.user2.fetchProjects(query, function (err) {
           expect(err).to.be.ok;
           expect(err.output.statusCode).to.equal(400);
           expect(err.message).to.match(/owner/);
@@ -190,6 +231,17 @@ describe('Projects - /projects', function () {
           expect(body.environments).to.be.an('array');
           expect(body.environments).to.have.a.lengthOf(1);
           done();
+        });
+      });
+      it('should not create a project with the same name', function(done) {
+        ctx.user.createProject({ json: json }, function (err) {
+          if (err) { return done(err); }
+          ctx.user.createProject({ json: json }, function (err) {
+            expect(err).to.be.okay;
+            expect(err.output.statusCode).to.equal(409);
+            expect(err.message).to.match(/name already exists/);
+            done();
+          });
         });
       });
     });
