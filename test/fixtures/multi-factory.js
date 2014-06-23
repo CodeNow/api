@@ -54,7 +54,7 @@ module.exports = {
     this.createRegisteredUserAndProject(userBody, projectBody, function (err, user, project) {
       if (err) { return cb(err); }
 
-      var environments = project.fetchEnvironments(function (err, body) {
+      var environments = project.fetchEnvironments(function (err) {
         if (err) { return cb(err); }
 
         cb(err, user, project, environments);

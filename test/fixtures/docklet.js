@@ -4,23 +4,23 @@ var express = require('express');
 var app = express();
 var morgan = require('morgan');
 
-app.post('/flatten', function (req, res, next) {
+app.post('/flatten', function (req, res) {
   res.send(201);
 });
 
-app.post('/find', function (req, res, next) {
+app.post('/find', function (req, res) {
   res.json('localhost');
 });
 
-app.put('/imageCache', function (req, res, next) {
+app.put('/imageCache', function (req, res) {
   res.json(201, res.body);
 });
 
-app.get('/ip', function (req, res, next) {
+app.get('/ip', function (req, res) {
   res.json('localhost');
 });
 
-app.all('*', morgan(), function (req, res, next) {
+app.all('*', morgan(), function (req, res) {
   res.send(404);
   console.log(req.url, req.method);
 });
