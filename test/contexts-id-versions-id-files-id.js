@@ -85,8 +85,10 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           expect(files).to.be.an('array');
           expect(files).to.have.length(3);
           expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
-          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
-          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'newfile.txt') }))).to.not.equal(-1);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
+            .to.not.equal(-1);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'newfile.txt') })))
+            .to.not.equal(-1);
 
           // extra check, for sanity
           ctx.version.fetchFiles(function (err, files) {
@@ -95,8 +97,10 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expect(files).to.be.an('array');
             expect(files).to.have.length(3);
             expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
-            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
-            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'newfile.txt') }))).to.not.equal(-1);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
+              .to.not.equal(-1);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'newfile.txt') })))
+              .to.not.equal(-1);
             done();
           });
         });

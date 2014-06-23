@@ -89,8 +89,10 @@ describe('Versions - /contexts/:contextid/versions', function () {
         expect(body.files).to.be.an('array');
         expect(body.files).to.have.length(3);
         expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
-        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
-        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') }))).to.not.equal(-1);
+        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
+          .to.not.equal(-1);
+        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') })))
+          .to.not.equal(-1);
         done();
       });
     });
