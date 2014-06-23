@@ -1,1 +1,3 @@
-container-factory.js
+'use strict';
+
+module.exports = false;

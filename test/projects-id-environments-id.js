@@ -35,7 +35,7 @@ describe('Environments - /projects/:id/environments/:id', function() {
       ctx.environments = ctx.project.fetchEnvironments(function (err) {
         if (err) { return done(err); }
 
-        ctx.environment = ctx.environments[0];
+        ctx.environment = ctx.environments.models[0];
         done();
       });
     });

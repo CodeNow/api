@@ -79,8 +79,10 @@ describe('Contexts', function () {
   it('should give us the contents of the file using the "latest" keyword', function (done) {
     nock('https://s3.amazonaws.com:443:443')
       .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/[\.a-zA-Z0-9\/]+\?versionId=[a-f\-0-9]+/,
-        '/runnable.context.resources.test/5384d61b3929481461c47060/source/5384d61b3929481461c47060/source/file1.txt?versionId=cd0308ae-d827-473a-8ac2-e7fb97a0a56f')
-      .get('/runnable.context.resources.test/5384d61b3929481461c47060/source/5384d61b3929481461c47060/source/file1.txt?versionId=cd0308ae-d827-473a-8ac2-e7fb97a0a56f')
+        '/runnable.context.resources.test/5384d61b3929481461c47060/source/5384d61b3929481461c47060/source/file1.txt' +
+        '?versionId=cd0308ae-d827-473a-8ac2-e7fb97a0a56f')
+      .get('/runnable.context.resources.test/5384d61b3929481461c47060/source/5384d61b3929481461c47060/source/' +
+        'file1.txt?versionId=cd0308ae-d827-473a-8ac2-e7fb97a0a56f')
       .reply(200, 'text');
     this.context.getFile('latest', join(this.context._id.toString(), 'source', 'file1.txt'), function (err, data) {
       if (err) { return done(err); }
@@ -92,19 +94,22 @@ describe('Contexts', function () {
   it('should give us the contents of the file using the latest id', function (done) {
     nock('https://s3.amazonaws.com:443:443')
       .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/[\.a-zA-Z0-9\/]+\?versionId=[a-f\-0-9]+/,
-        '/runnable.context.resources.test/5384d61b3929481461c47060/source/5384d61b3929481461c47060/source/file1.txt?versionId=cd0308ae-d827-473a-8ac2-e7fb97a0a56f')
-      .get('/runnable.context.resources.test/5384d61b3929481461c47060/source/5384d61b3929481461c47060/source/file1.txt?versionId=cd0308ae-d827-473a-8ac2-e7fb97a0a56f')
+        '/runnable.context.resources.test/5384d61b3929481461c47060/source/5384d61b3929481461c47060/source/file1.txt' +
+        '?versionId=cd0308ae-d827-473a-8ac2-e7fb97a0a56f')
+      .get('/runnable.context.resources.test/5384d61b3929481461c47060/source/5384d61b3929481461c47060/source/' +
+        'file1.txt?versionId=cd0308ae-d827-473a-8ac2-e7fb97a0a56f')
       .reply(200, 'text');
-    this.context.getFile(this.context.versions[0]._id, join(this.context._id.toString(), 'source', 'file1.txt'), function (err, data) {
-      if (err) { return done(err); }
-      expect(data.Body.toString()).to.equal('text');
-      done();
-    });
+    this.context.getFile(this.context.versions[0]._id, join(this.context._id.toString(), 'source', 'file1.txt'),
+      function (err, data) {
+        if (err) { return done(err); }
+        expect(data.Body.toString()).to.equal('text');
+        done();
+      });
   });
 
   it('should tell us we have a bad version id trying to get a file', function (done) {
-    this.context.getFile(uuid(), join(this.context._id.toString(), 'source', 'file1.txt'), function (err, data) {
-      expect(err).to.be.ok;
+    this.context.getFile(uuid(), join(this.context._id.toString(), 'source', 'file1.txt'), function (err) {
+      expect(err).to.be.okay;
       expect(err.output.statusCode).to.equal(400);
       expect(err.output.payload.message).to.match(/invalid version id/);
       done();
@@ -115,8 +120,8 @@ describe('Contexts', function () {
     this.context.getFile(
       'latest',
       join(this.context._id.toString(), 'source', 'notafile.txt'),
-      function (err, data) {
-        expect(err).to.be.ok;
+      function (err) {
+        expect(err).to.be.okay;
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.match(/invalid resource key/);
         done();

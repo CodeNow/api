@@ -7,10 +7,12 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var path = require('path');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
+var uuid = require('uuid');
 
 describe('Version - /contexts/:contextId/versions/:id', function () {
   var ctx = {};
@@ -29,9 +31,14 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
 
       ctx.user = user;
       ctx.environment = environments.models[0];
-      ctx.versionId = environments.models[0].toJSON().versions[0];
-      ctx.contextId = environments.models[0].toJSON().contexts[0];
-      ctx.context = ctx.user.fetchContext(ctx.contextId, done);
+      var builds = ctx.environment.fetchBuilds(function (err) {
+        if (err) { return done(err); }
+
+        ctx.build = builds.models[0];
+        ctx.contextId = ctx.build.toJSON().contexts[0];
+        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.context = ctx.user.fetchContext(ctx.contextId, done);
+      });
     });
   });
 
@@ -50,7 +57,14 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   describe('Version Build - /versions/:id/build', function() {
     describe('POST', function() {
       beforeEach(function (done) {
-        ctx.version = ctx.context.fetchVersion(ctx.versionId, done);
+        ctx.version = ctx.context.createVersion({
+          versionId: ctx.versionId,
+          files: [{
+            Key: path.join(ctx.contextId, 'source', 'file.txt'),
+            ETag: uuid(),
+            VersionId: 'Po.EGeNr9HirlSJVMSxpf1gaWa5KruPa'
+          }]
+        }, done);
       });
       it('should build a version', function (done) {
         ctx.version.build(function (err, body, code) {
