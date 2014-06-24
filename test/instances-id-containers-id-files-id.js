@@ -15,8 +15,12 @@ var multi = require('./fixtures/multi-factory');
 var fs = require('fs');
 var path = require('path');
 var configs = require('configs');
-var containerRoot = path.join(__dirname, '../node_modules/krain/test/1');
 
+function containerRoot (ctx) {
+  return path.join(__dirname,
+    '../node_modules/krain/test',
+    ctx.container.attrs.dockerContainer);
+}
 function createFile (ctx, fileName, filePath, fileContent, done) {
   ctx.file = ctx.container.createFile({
     json: {
@@ -34,7 +38,7 @@ function createFile (ctx, fileName, filePath, fileContent, done) {
     expect(body).to.have.property('path', filePath);
     expect(body).to.have.property('isDir', false);
     var content = fs.readFileSync(
-      path.join(containerRoot, filePath, fileName), {
+      path.join(containerRoot(ctx), filePath, fileName), {
         encoding: 'utf8'
       });
     expect(content).to.equal(fileContent);
@@ -48,18 +52,13 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   var fileContent = "this is a test file";
   var filePath = "/";
 
-  beforeEach(function (done) {
-    // create test folder
-    ctx.krain = krain.listen(configs.krainPort);
-    fs.mkdirSync(containerRoot);
-    done();
-  });
   afterEach(function (done) {
     // create test folder
-    rimraf.sync(containerRoot);
+    rimraf.sync(containerRoot(ctx));
     ctx.krain.close();
     done();
   });
+
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));
@@ -91,11 +90,15 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
 
           var containerAttrs = ctx.instance.toJSON().containers[0];
           ctx.container = ctx.instance.newContainer(containerAttrs);
+          // create test folder
+          ctx.krain = krain.listen(configs.krainPort);
+          fs.mkdirSync(containerRoot(ctx));
           done();
         });
       });
     });
   });
+
 
   describe('GET', function () {
     it('should read a file', function (done) {
@@ -135,7 +138,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           expect(body).to.have.property('path', filePath);
           expect(body).to.have.property('isDir', false);
           var content = fs.readFileSync(
-            path.join(containerRoot, filePath, fileName), {
+            path.join(containerRoot(ctx), filePath, fileName), {
               encoding: 'utf8'
             });
           expect(content).to.equal(newFileContent);
@@ -162,7 +165,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
         expect(body).to.have.property('path', filePath);
         expect(body).to.have.property('isDir', false);
         var content = fs.readFileSync(
-          path.join(containerRoot, filePath, fileName), {
+          path.join(containerRoot(ctx), filePath, fileName), {
             encoding: 'utf8'
           });
         expect(content).to.equal(fileContent);
@@ -183,7 +186,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           expect(code).to.equal(200);
           try {
             fs.readFileSync(
-              path.join(containerRoot, filePath, fileName), {
+              path.join(containerRoot(ctx), filePath, fileName), {
                 encoding: 'utf8'
               });
           } catch (err) {
