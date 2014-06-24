@@ -1,5 +1,6 @@
 {
   "tokenExpires": "1 year",
+  "cookieSecret" : "$up3r,$3<r3t",
   "passwordSalt" : "$up3r,$3<r3t",
   "mongo": "mongodb://127.0.0.1:27017/runnable2",
   "redis": {
@@ -68,8 +69,9 @@
     "port": 7050
   },
   "GitHub": {
-    "clientId": "f8160c773a0574fd21af",
-    "clientSecret": "c317f72b783809f4ff2951d012f28c5e972f8b41",
-    "callbackURL": "http://localhost:3000/api/-/auth/github/callback"
+    "clientId": "3192c262fd5b888e2e66",
+    "clientSecret": "d5b1544ca5aa7afd251be5e4279ecbc398967d6e",
+    "callbackURL": "http://localhost:3030/auth/github/callback",
+    "scope": "user:email,repo,repo_deployment,read:repo_hook"
   }
 }
