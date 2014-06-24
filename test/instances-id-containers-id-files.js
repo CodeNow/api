@@ -27,16 +27,15 @@ describe('File System - /instances/:id/containers/:id/files', function () {
   var dir1_dir1_file1 = dir1_dir1+'/dir1_dir1_file1.txt.';
   var dir2_dir1 =  dir2+'/dir2_dir1/';
 
-  var containerRoot = path.join(__dirname, '../node_modules/krain/test/1');
-  beforeEach(function (done) {
-    // create test folder
-    ctx.krain = krain.listen(configs.krainPort);
-    fs.mkdirSync(containerRoot);
-    done();
-  });
+  function containerRoot (ctx) {
+    return path.join(__dirname,
+      '../node_modules/krain/test',
+      ctx.container.attrs.dockerContainer);
+  }
+
   afterEach(function (done) {
     // create test folder
-    rimraf.sync(containerRoot);
+    rimraf.sync(containerRoot(ctx));
     ctx.krain.close();
     done();
   });
@@ -73,14 +72,17 @@ describe('File System - /instances/:id/containers/:id/files', function () {
           var containerAttrs = ctx.instance.toJSON().containers[0];
           ctx.container = ctx.instance.newContainer(containerAttrs);
 
-          fs.mkdirSync(containerRoot+dir1);
-          fs.mkdirSync(containerRoot+dir1_dir1);
-          fs.mkdirSync(containerRoot+dir2);
-          fs.mkdirSync(containerRoot+dir2_dir1);
+          ctx.krain = krain.listen(configs.krainPort);
+          fs.mkdirSync(containerRoot(ctx));
+          fs.mkdirSync(containerRoot(ctx)+dir1);
+          fs.mkdirSync(containerRoot(ctx)+dir1_dir1);
+          fs.mkdirSync(containerRoot(ctx)+dir2);
+          fs.mkdirSync(containerRoot(ctx)+dir2_dir1);
 
-          fs.writeFileSync(containerRoot+file1, fileContent);
-          fs.writeFileSync(containerRoot+dir1_file1, fileContent);
-          fs.writeFileSync(containerRoot+dir1_dir1_file1, fileContent);
+          fs.writeFileSync(containerRoot(ctx)+file1, fileContent);
+          fs.writeFileSync(containerRoot(ctx)+dir1_file1, fileContent);
+          fs.writeFileSync(containerRoot(ctx)+dir1_dir1_file1, fileContent);
+
           done();
         });
       });
