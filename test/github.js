@@ -74,5 +74,16 @@ describe('Github', function () {
         done();
       });
     });
+    it('should return 404 if no context has request set up', function (done) {
+      var options = hooks.push;
+      options.json.repository.name = 'fake-name';
+      request.post(options, function (err, res) {
+        if (err) { return done(err); }
+
+        expect(res.statusCode).to.equal(404);
+        expect(res.body.message).to.match(/not found/);
+        done();
+      });
+    });
   });
 });
