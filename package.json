@@ -15,7 +15,7 @@
     "body-parser": "^1.4.3",
     "callback-count": "~0.1.0",
     "clone": "~0.1.15",
-    "dat-middleware": "~1.5.13",
+    "dat-middleware": "~1.6.0",
     "debug": "~0.7.2",
     "docker-mock": "0.0.12",
     "dockerode": "~2.0.0",
