@@ -4,58 +4,55 @@ var it = Lab.test;
 var before = Lab.before;
 var after = Lab.after;
 var afterEach = Lab.afterEach;
+var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
 var request = require('request');
-var url = require('url');
-var configs = require('../lib/configs');
 
 var api = require('./fixtures/api-control');
+var hooks = require('./fixtures/github-hooks');
+var nockS3 = require('./fixtures/nock-s3');
+var multi = require('./fixtures/multi-factory');
+var dock = require('./fixtures/dock');
 
 describe('Github', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
+  before(dock.start.bind(ctx));
+  after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
+  beforeEach(function (done) {
+    nockS3();
+    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
+      if (err) { return done(err); }
+      ctx.user = user;
+      ctx.project = project;
+      ctx.environments = environments;
+      ctx.environment = environments.models[0];
+      var builds = ctx.environment.fetchBuilds(function (err) {
+        if (err) { return done(err); }
+        ctx.build = builds.models[0];
+        ctx.contextId = ctx.build.toJSON().contexts[0];
+        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.context = ctx.user.fetchContext(ctx.contextId, function (err) {
+          if (err) { return done(err); }
+          ctx.context.update({ json: {
+            source: [{
+              sourceType: 'github',
+              location: 'bkendall/flaming-octo-nemesis'
+            }]
+          }}, done);
+        });
+      });
+    });
+  });
+
   describe('ping', function () {
     it('should return OKAY', function (done) {
-      var options = {
-        url: url.format({
-          protocol: 'http:',
-          slashes: true,
-          host: configs.rootDomain,
-          pathname: 'actions/github'
-        }),
-        headers: {
-          host: configs.rootDomain,
-          accept: '*/*',
-          'user-agent': 'GitHub Hookshot 3e70583',
-          'x-github-event': 'ping',
-          'x-github-delivery': 'e05eb1f2-fbc7-11e3-8e1d-423f213c5718',
-          'content-type': 'application/json'
-        },
-        json: {
-          zen: 'Encourage flow.',
-          hook:
-           { url: 'https://api.github.com/repos/bkendall/flaming-octo-nemesis/hooks/2472869',
-             test_url: 'https://api.github.com/repos/bkendall/flaming-octo-nemesis/hooks/2472869/test',
-             id: 2472869,
-             name: 'web',
-             active: true,
-             events: [ 'push' ],
-             config:
-              { secret: '',
-                url: 'http://upbris.bryankendall.me:3000/push',
-                content_type: 'json',
-                insecure_ssl: '0' },
-             last_response: { code: null, status: 'unused', message: null },
-             updated_at: '2014-06-24T17:49:23Z',
-             created_at: '2014-06-24T17:49:23Z' },
-          hook_id: 2472869
-        }
-      };
+      var options = hooks.ping;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
 
@@ -68,102 +65,7 @@ describe('Github', function () {
 
   describe('push', function () {
     it('should start a build', function (done) {
-      var options = {
-        url: url.format({
-          protocol: 'http:',
-          slashes: true,
-          host: configs.rootDomain,
-          pathname: 'actions/github'
-        }),
-        headers: {
-          host: configs.rootDomain,
-          accept: '*/*',
-          'user-agent': 'GitHub Hookshot 2636b5a',
-          'x-github-event': 'push',
-          'x-github-delivery': '763c374e-fbc8-11e3-9918-1e687924f7ff',
-          'content-type': 'application/json'
-        },
-        json: {
-          ref: 'refs/heads/master',
-          after: '7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
-          before: 'd5455d9c4fa4c43b3dfdc88e446bb1ec4903fd90',
-          created: false,
-          deleted: false,
-          forced: false,
-          compare: 'https://github.com/bkendall/flaming-octo-nemesis/compare/d5455d9c4fa4...7caa8452a30d',
-          commits: [{
-            id: '7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
-            distinct: true,
-            message: 'updating readme',
-            timestamp: '2014-06-24T11:54:07-07:00',
-            url: 'https://github.com/bkendall/flaming-octo-nemesis/commit/7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
-            author: {
-              name: 'Bryan Kendall',
-              email: 'bryan@runnable.com',
-              username: 'bkendall'
-            },
-            committer: {
-              name: 'Bryan Kendall',
-              email: 'bryan@runnable.com',
-              username: 'bkendall'
-            },
-            added: [],
-            removed: [],
-            modified: [
-              'README.md'
-            ]
-          }],
-          'head_commit': {
-            id: '7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
-            distinct: true,
-            message: 'updating readme',
-            timestamp: '2014-06-24T11:54:07-07:00',
-            url: 'https://github.com/bkendall/flaming-octo-nemesis/commit/7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
-            author: {
-              name: 'Bryan Kendall',
-              email: 'bryan@runnable.com',
-              username: 'bkendall'
-            },
-            committer: {
-              name: 'Bryan Kendall',
-              email: 'bryan@runnable.com',
-              username: 'bkendall'
-            },
-            added: [],
-            removed: [],
-            modified: [
-              'README.md'
-            ]
-          },
-          repository: {
-            id: 21174769,
-            name: 'flaming-octo-nemesis',
-            url: 'https://github.com/bkendall/flaming-octo-nemesis',
-            description: '',
-            watchers: 0,
-            stargazers: 0,
-            forks: 0,
-            fork: false,
-            size: 0,
-            owner: {
-              name: 'bkendall',
-              email: 'bryan.a.kendall@gmail.com'
-            },
-            'private': false,
-            open_issues: 0,
-            has_issues: true,
-            has_downloads: true,
-            has_wiki: true,
-            created_at: 1403632014,
-            pushed_at: 1403636051,
-            master_branch: 'master'
-          },
-          pusher: {
-            name: 'bkendall',
-            email: 'bryan.a.kendall@gmail.com'
-          }
-        }
-      };
+      var options = hooks.push;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
 
