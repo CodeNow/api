@@ -59,7 +59,7 @@
     "request": "~2.21.0",
     "rimraf": "~2.1.4",
     "rollbar": "~0.2.5",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.11.0",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.11.1",
     "simple-api-client": "~0.2.3",
     "tar": "gyllstromk/node-tar",
     "underscore.inflections": "~0.2.1",
