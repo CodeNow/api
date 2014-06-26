@@ -21,11 +21,12 @@ describe('Project - /projects/:id - owned by a group', function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github')); // twice
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
     nockS3();
@@ -47,7 +48,7 @@ describe('Project - /projects/:id - owned by a group', function () {
         // make the project private so we actually test group functions
         ctx.project.update({ json: { public: false }}, function (err) {
           if (err) { return done(err); }
-          ctx.anonUser = users.createAnonymous(done);
+          ctx.otherUser = users.createGithub(done);
         });
       });
     });
@@ -62,7 +63,7 @@ describe('Project - /projects/:id - owned by a group', function () {
     });
   });
   it('should not return the project to someone not in the group', function (done) {
-    ctx.anonUser.fetchProject(ctx.project.id(), function (err) {
+    ctx.otherUser.fetchProject(ctx.project.id(), function (err) {
       expect(err).to.be.okay;
       expect(err.output.statusCode).to.equal(403);
       done();
@@ -75,10 +76,13 @@ describe('Project - /projects/:id', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github')); // twice
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
     nockS3();
