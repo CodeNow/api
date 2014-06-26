@@ -8,8 +8,8 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 var createCount = require('callback-count');
 var pluck = require('101/pluck');
-require('console-trace')({always:true, right:true});
-console.log('console-trace added here');
+// require('console-trace')({always:true, right:true});
+// console.log('console-trace added here');
 
 var api = require('./fixtures/api-control');
 var users = require('./fixtures/user-factory');

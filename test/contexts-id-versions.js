@@ -13,7 +13,8 @@ var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
 var join = require('path').join;
-var uuid = require('uuid');
+var findIndex = require('101/find-index');
+var hasProperties = require('101/has-properties');
 
 describe('Versions - /contexts/:contextid/versions', function () {
   var ctx = {};
@@ -77,18 +78,17 @@ describe('Versions - /contexts/:contextid/versions', function () {
   describe('POST', function () {
     it('should create a new version', function (done) {
       ctx.context.createVersion({ json: {
-        versionId: ctx.versionId,
-        files: [{
-          Key: join(ctx.contextId, 'source', 'file.txt'),
-          ETag: uuid(),
-          VersionId: 'Po.EGeNr9HirlSJVMSxpf1gaWa5KruPa'
-        }]
+        versionId: ctx.versionId
       }}, function (err, body) {
         if (err) { return done(err); }
 
         expect(body).to.be.ok;
+        expect(body.id).to.not.equal(ctx.versionId);
         expect(body.files).to.be.an('array');
         expect(body.files).to.have.length(2);
+        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
+          .to.not.equal(-1);
         done();
       });
     });

@@ -74,7 +74,9 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
           if (err) { return done(err); }
 
           expect(code).to.equal(201);
-          expectVersionFields(body);
+          expect(body).to.be.an('object');
+          expect(body.dockerTag).to.be.okay;
+          expect(body.dockerImage).to.be.okay;
           done();
         });
       });
