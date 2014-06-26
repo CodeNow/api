@@ -1,5 +1,6 @@
 {
   "tokenExpires": "5 minutes",
+  "cookieSecret" : "$up3r,$3<r3t",
   "passwordSalt" : "$up3r,$3<r3t",
   "mongo": "mongodb://127.0.0.1:27017/runnable_test123",
   "port": 3031,
@@ -11,6 +12,7 @@
     "ipaddress": "127.0.0.1",
     "port": "6379"
   },
+  "logExpress": true,
   "ipaddress": "127.0.0.1",
   "maxPageLimit": 200,
   "defaultPageLimit": 25,
@@ -57,10 +59,16 @@
     },
     "cmd": ["/dockworker/bin/node", "/dockworker"]
   },
-"frontdoor": {
+  "frontdoor": {
     "protocol": "http:",
     "hostname": "127.0.0.1",
     "port": 7050
   },
-  "krainPort": 1234
+  "krainPort": 1234,
+  "GitHub": {
+    "clientId": "3192c262fd5b888e2e66",
+    "clientSecret": "d5b1544ca5aa7afd251be5e4279ecbc398967d6e",
+    "callbackURL": "http://localhost:3031/auth/github/callback",
+    "scope": "user:email,repo,repo_deployment,read:repo_hook"
+  }
 }

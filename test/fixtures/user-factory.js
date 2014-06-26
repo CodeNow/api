@@ -1,7 +1,5 @@
-var isFunction = require('101/is-function');
 var Runnable = require('runnable');
 var host = require('./host');
-var uuid = require('uuid');
 var User = require('models/mongo/user');
 
 module.exports = {
@@ -11,51 +9,17 @@ module.exports = {
     }
     return new Runnable(host);
   },
-  createAnonymous: function (cb) {
+  // createAnonymous: function (cb) {
+  //   var user = this.createTokenless();
+  //   user.anonymous(cb);
+  //   return user;
+  // },
+  createGithub: function (cb) {
     var user = this.createTokenless();
-    user.anonymous(cb);
-    return user;
+    return user.githubLogin(cb);
   },
-  createRegistered: function (email, username, password, cb) {
-    if (isFunction(email)) {
-      cb = email;
-      email = null;
-      username = null;
-      password = null;
-    }
-    else if (isFunction(username)) {
-      cb = username;
-      username = null;
-      password = null;
-    }
-    else if (isFunction(password)) {
-      cb = password;
-      password = null;
-    }
-    email = email || uuid()+'@domain.com';
-    username = username || uuid();
-    password = password || uuid();
-    var user =  this.createTokenless();
-    user.register(email, username, password, cb);
-    return user;
-  },
-  createModerator: function (email, username, password, cb) {
-    if (isFunction(email)) {
-      cb = email;
-      email = null;
-      username = null;
-      password = null;
-    }
-    else if (isFunction(username)) {
-      cb = username;
-      username = null;
-      password = null;
-    }
-    else if (isFunction(password)) {
-      cb = password;
-      password = null;
-    }
-    var user = this.createRegistered(email, username, password, function (err, body) {
+  createModerator: function (cb) {
+    var user = this.createGithub(function (err, body) {
       if (err) {
         cb(err);
       }

@@ -15,13 +15,16 @@ describe('Groups - /groups', function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github')); //twice
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    ctx.user = users.createRegistered(function (err) {
+    ctx.user = users.createGithub(function (err) {
       if (err) { return done(err); }
-      ctx.anonUser = users.createAnonymous(done);
+      ctx.otherUser = users.createGithub(done);
     });
   });
 
@@ -61,18 +64,6 @@ describe('Groups - /groups', function () {
           expect(err).to.be.okay;
           expect(err.output.statusCode).to.equal(400);
           expect(err.output.payload.message).to.match(/"username" is required/);
-          expect(body).to.equal(undefined);
-          done();
-        });
-      });
-      it('should fail from an anonymous user', function (done) {
-        ctx.group = ctx.anonUser.createGroup({ json: {
-          name: 'my awesome group',
-          username: 'group1'
-        }}, function (err, body) {
-          expect(err).to.be.okay;
-          expect(err.output.statusCode).to.equal(403);
-          expect(err.output.payload.message).to.match(/\!registered/);
           expect(body).to.equal(undefined);
           done();
         });

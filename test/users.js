@@ -8,8 +8,8 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 var createCount = require('callback-count');
 var pluck = require('101/pluck');
-// require('console-trace')({always:true, right:true});
-// console.log('console-trace added here');
+require('console-trace')({always:true, right:true});
+console.log('console-trace added here');
 
 var api = require('./fixtures/api-control');
 var users = require('./fixtures/user-factory');
@@ -19,39 +19,18 @@ describe('Users - /users', function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    ctx.tokenlessUser = users.createTokenless();
-    ctx.anonUser = users.createAnonymous(done);
+    ctx.user = users.createGithub(done);
   });
 
-
-  describe('POST', function () {
-    it('should create an anonymous user', function(done) {
-      ctx.tokenlessUser.create(function (err, body, code) {
-        if (err) { return done(err); }
-        expect(code).to.equal(201);
-        expect(body).to.have.property('_id');
-        expect(body).to.have.property('access_token');
-        done();
-      });
-    });
-
-    // TODO:
-    // describe('should not create an anonymous user if the user exists', function () {
-    //   ctx.anonUser.post(url, function (err) {
-    //     expect(err).to.be.ok;
-    //     expect(err.statusCode).to.equal(400);
-    //     // TODO: verify error
-    //     done();
-    //   });
-    // });
-  });
   describe('GET', function() {
     it('should error if no query params are provided', function (done) {
-      ctx.anonUser.fetchUsers(function (err) {
+      ctx.user.fetchUsers(function (err) {
         expect(err).to.be.ok;
         expect(err.output.statusCode).to.equal(400);
         // TODO: verify error message
@@ -59,14 +38,19 @@ describe('Users - /users', function () {
       });
     });
     describe('list', function() {
+      beforeEach(require('./fixtures/nock-github'));
+      beforeEach(require('./fixtures/nock-github'));
+      beforeEach(require('./fixtures/nock-github'));
+      beforeEach(require('./fixtures/nock-github'));
+      beforeEach(require('./fixtures/nock-github')); // five
       beforeEach(function (done) {
         var count = createCount(done);
         ctx.users = [
-          users.createRegistered(count.inc().next),
-          users.createRegistered(count.inc().next),
-          users.createRegistered(count.inc().next),
-          users.createRegistered(count.inc().next),
-          users.createRegistered(count.inc().next)
+          users.createGithub(count.inc().next),
+          users.createGithub(count.inc().next),
+          users.createGithub(count.inc().next),
+          users.createGithub(count.inc().next),
+          users.createGithub(count.inc().next)
         ];
       });
 
@@ -75,7 +59,7 @@ describe('Users - /users', function () {
         var qs = {
           _id: userIds
         };
-        ctx.anonUser.fetchUsers({ qs: qs }, function (err, body, code) {
+        ctx.user.fetchUsers({ qs: qs }, function (err, body, code) {
           if (err) { return done(err); }
 
           expect(code).to.equal(200);
@@ -92,7 +76,7 @@ describe('Users - /users', function () {
           var qs = {
             username: user.attrs.username
           };
-          ctx.anonUser.fetchUsers({ qs: qs }, function (err, body, code) {
+          ctx.user.fetchUsers({ qs: qs }, function (err, body, code) {
             if (err) { return count.next(err); }
 
             expect(code).to.equal(200);

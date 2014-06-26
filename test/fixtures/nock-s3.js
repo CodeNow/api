@@ -3,8 +3,7 @@
 var nock = require('nock');
 var uuid = require('uuid');
 
-module.exports = function () {
-  nock.cleanAll();
+module.exports = function (cb) {
 
   /* POSTS */
 
@@ -14,7 +13,6 @@ module.exports = function () {
     .post('/containers/284912fa2cf26d40cc262798ecbb483b58f222d42ab1551e818afe35744688f7/attach')
     .twice()
     .reply(200, 'Successfully built 15e17eedec196751ad15cdb1cef61f6022c19bee01b8079');
-
   /* PUTS */
 
   nock('https://s3.amazonaws.com:443')
@@ -105,4 +103,5 @@ module.exports = function () {
       'etag': uuid()
     });
 
+  if (cb) { cb(); }
 };
