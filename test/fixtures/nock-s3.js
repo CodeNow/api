@@ -3,9 +3,7 @@
 var nock = require('nock');
 var uuid = require('uuid');
 
-module.exports = function () {
-  nock.cleanAll();
-
+module.exports = function (cb) {
   /* PUTS */
 
   nock('https://s3.amazonaws.com:443')
@@ -86,4 +84,5 @@ module.exports = function () {
       'etag': uuid()
     });
 
+  if (cb) { cb(); }
 };
