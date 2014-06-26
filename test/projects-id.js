@@ -20,10 +20,13 @@ describe('Project - /projects/:id - owned by a group', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github')); // twice
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
     nockS3();
@@ -45,7 +48,7 @@ describe('Project - /projects/:id - owned by a group', function () {
         // make the project private so we actually test group functions
         ctx.project.update({ json: { public: false }}, function (err) {
           if (err) { return done(err); }
-          ctx.anonUser = users.createAnonymous(done);
+          ctx.otherUser = users.createGithub(done);
         });
       });
     });
@@ -60,7 +63,7 @@ describe('Project - /projects/:id - owned by a group', function () {
     });
   });
   it('should not return the project to someone not in the group', function (done) {
-    ctx.anonUser.fetchProject(ctx.project.id(), function (err) {
+    ctx.otherUser.fetchProject(ctx.project.id(), function (err) {
       expect(err).to.be.okay;
       expect(err.output.statusCode).to.equal(403);
       done();
@@ -73,10 +76,13 @@ describe('Project - /projects/:id', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github')); // twice
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
     nockS3();
@@ -101,7 +107,7 @@ describe('Project - /projects/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
-            ctx.nonOwner = users.createRegistered(done);
+            ctx.nonOwner = users.createGithub(done);
           });
           it('should get the project', function (done) {
             ctx.project.client = ctx.nonOwner.client; // swap auth to nonOwner's
@@ -129,7 +135,7 @@ describe('Project - /projects/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
-            ctx.nonOwner = users.createRegistered(done);
+            ctx.nonOwner = users.createGithub(done);
           });
           it('should not get the project (403 forbidden)', function (done) {
             ctx.project.client = ctx.nonOwner.client; // swap auth to nonOwner's
@@ -192,7 +198,7 @@ describe('Project - /projects/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(function (done) {
-          ctx.nonOwner = users.createRegistered(done);
+          ctx.nonOwner = users.createGithub(done);
         });
         updates.forEach(function (json) {
           var keys = Object.keys(json);
@@ -242,7 +248,7 @@ describe('Project - /projects/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(function (done) {
-          ctx.nonOwner = users.createRegistered(done);
+          ctx.nonOwner = users.createGithub(done);
         });
         it('should not delete the project (403 forbidden)', function (done) {
           ctx.project.client = ctx.nonOwner.client; // swap auth to nonOwner's

@@ -20,10 +20,13 @@ describe('Projects - /projects', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github')); // twice
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   describe('GET', function () {
     beforeEach(function (done) {
@@ -196,7 +199,7 @@ describe('Projects - /projects', function () {
   describe('POST', function () {
     beforeEach(function (done) {
       nockS3();
-      ctx.user = users.createRegistered(done);
+      ctx.user = users.createGithub(done);
     });
     afterEach(require('./fixtures/clean-ctx')(ctx));
 

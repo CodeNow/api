@@ -18,8 +18,11 @@ describe('Group - /groups/:id', function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github')); //twice
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
     multi.createRegisteredUserAndGroup({}, { json: {
@@ -29,10 +32,7 @@ describe('Group - /groups/:id', function () {
       if (err) { return done(err); }
       ctx.user = user;
       ctx.group = group;
-      ctx.registeredUser = users.createRegistered(function (err) {
-        if (err) { return done(err); }
-        ctx.anonUser = users.createAnonymous(done);
-      });
+      ctx.registeredUser = users.createGithub(done);
     });
   });
 
@@ -129,13 +129,6 @@ describe('Group - /groups/:id', function () {
     describe('forbidden', function () {
       it('should fail for a different user', function (done) {
         ctx.registeredUser.updateGroup(ctx.group.id(), { json: { name: uuid() }}, function (err) {
-          expect(err).to.be.okay;
-          expect(err.output.statusCode).to.equal(403);
-          done();
-        });
-      });
-      it('should fail for an anonymous user', function (done) {
-        ctx.anonUser.updateGroup(ctx.group.id(), { json: { name: uuid() }}, function (err) {
           expect(err).to.be.okay;
           expect(err.output.statusCode).to.equal(403);
           done();

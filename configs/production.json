@@ -81,5 +81,10 @@
     "protocol": "http:",
     "hostname": "10.0.1.153",
     "port": 7050
+  },
+  "GitHub": {
+    "clientId": "f9113e7fa3d326bfc855",
+    "clientSecret": "bd2e566fde0e788ebad4270c57a12f32d84db385",
+    "callbackURL": "http://runnable.com/api/-/auth/github/callback"
   }
 }
