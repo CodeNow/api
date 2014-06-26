@@ -11,7 +11,7 @@ var Project = require('models/mongo/project');
 
 describe('Projects', function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('./fixtures/mongo').removeEverything);
+  afterEach(require('../test/fixtures/clean-mongo').removeEverything);
 
   beforeEach(function (done) {
     this.user = new User();
