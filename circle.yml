@@ -9,7 +9,7 @@ dependencies:
 test:
   override:
     - npm test
-    - npm unit
+    - npm run unit
   post:
     - npm run coverage
     - npm run docs
