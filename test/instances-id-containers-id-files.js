@@ -183,7 +183,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
         }
       }, function (err) {
         // FIXME: Anand is going to change this to a 404
-        expect(err.data.statusCode).to.equal(500);
+        expect(err.output.statusCode).to.equal(500);
         done();
       });
     });
