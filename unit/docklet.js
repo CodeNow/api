@@ -50,12 +50,12 @@ describe('Docklet', function () {
           if (err) {
             return next(err);
           }
-          expect(dockerHost).to.equal("10.0.1.21");
+          expect(dockerHost).to.equal("10.0.1.22");
           this.docklet.findDock(function(err, dockerHost) {
             if (err) {
               return next(err);
             }
-            expect(dockerHost).to.equal("10.0.1.21");
+            expect(dockerHost).to.equal("10.0.1.22");
             done();
           });
         });
@@ -76,19 +76,19 @@ describe('Docklet', function () {
           if (err) {
             return next(err);
           }
-          expect(dockerHost).to.equal("10.0.1.21");
+          expect(dockerHost).to.equal("10.0.1.22");
           var tmpDock = new Docklet();
           tmpDock.findDock(function(err, dockerHost) {
             if (err) {
               return next(err);
             }
             tmpDock = new Docklet();
-            expect(dockerHost).to.equal("10.0.1.22");
+            expect(dockerHost).to.equal("10.0.1.21");
             tmpDock.findDock(function(err, dockerHost) {
               if (err) {
                 return next(err);
               }
-              expect(dockerHost).to.equal("10.0.1.21");
+              expect(dockerHost).to.equal("10.0.1.22");
               done();
             });
           });

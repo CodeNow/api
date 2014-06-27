@@ -1,4 +1,6 @@
 {
+  "dockProjectLimit": 100,
+  "deployCommand": "echo DEPLOY",
   "tokenExpires": "1 year",
   "cookieSecret" : "$up3r,$3<r3t",
   "passwordSalt" : "$up3r,$3<r3t",
