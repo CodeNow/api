@@ -26,7 +26,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
     var pass = false;
     beforeEach(function (done) {
       pass = false;
-      primus = new Socket('http://'+configs.ipaddress+':'+configs.port);
+      primus = new Socket('http://'+configs.ipaddress+':'+configs.port+"?type=filibuster");
       done();
     });
     var check = function(errMsg, done) {
