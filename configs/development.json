@@ -73,7 +73,7 @@
   "GitHub": {
     "clientId": "3192c262fd5b888e2e66",
     "clientSecret": "d5b1544ca5aa7afd251be5e4279ecbc398967d6e",
-    "callbackURL": "http://localhost:3030/auth/github/callback",
+    "callbackURL": "http://api.runnable2.net/auth/github/callback",
     "scope": "user:email,repo,repo_deployment,read:repo_hook"
   }
 }
