@@ -1,5 +1,8 @@
 {
   "tokenExpires": "1 year",
+  "dockProjectLimit": 100,
+  "deployCommand": "echo DEPLOY",
+  "cookieSecret" : "$up3r,$3<r3t",
   "passwordSalt" : "$up3r,$3<r3t",
   "mongo": "mongodb://127.0.0.1:27017/runnable2",
   "redis": {
@@ -66,5 +69,11 @@
     "protocol": "http:",
     "hostname": "127.0.0.1",
     "port": 7050
+  },
+  "GitHub": {
+    "clientId": "3192c262fd5b888e2e66",
+    "clientSecret": "d5b1544ca5aa7afd251be5e4279ecbc398967d6e",
+    "callbackURL": "http://api.runnable2.net/auth/github/callback",
+    "scope": "user:email,repo,repo_deployment,read:repo_hook"
   }
 }

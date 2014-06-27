@@ -20,10 +20,13 @@ describe('Instances - /instances', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
 
   describe('POST', function () {

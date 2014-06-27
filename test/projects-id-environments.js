@@ -18,6 +18,8 @@ describe('Environments - /projects/:id/environments', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
