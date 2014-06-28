@@ -34,7 +34,6 @@ describe('redis-stream', function () {
     var s = new require('stream').Writable();
     s.on('data', console.log);
     s._write = function(message) {
-      console.log(message.toString());
       expect(message.toString()).to.equal("this is another message");
       done();
     };
