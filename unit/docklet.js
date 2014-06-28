@@ -21,7 +21,7 @@ describe('Docklet', function () {
   it('should find inserted dock from redis', function (done) {
     redis.lpush("docks:active", "10.0.1.20", function(err) {
       if (err) {
-        return next(err);
+        return done(err);
       }
       this.docklet.findDock(function(err, dockerHost) {
         expect(dockerHost).to.equal("10.0.1.20");
@@ -40,20 +40,20 @@ describe('Docklet', function () {
   it('should return same IP for same dock instance', function (done) {
     redis.lpush("docks:active", "10.0.1.21", function(err) {
       if (err) {
-        return next(err);
+        return done(err);
       }
       redis.lpush("docks:active", "10.0.1.22", function(err) {
         if (err) {
-          return next(err);
+          return done(err);
         }
         this.docklet.findDock(function(err, dockerHost) {
           if (err) {
-            return next(err);
+            return done(err);
           }
           expect(dockerHost).to.equal("10.0.1.22");
           this.docklet.findDock(function(err, dockerHost) {
             if (err) {
-              return next(err);
+              return done(err);
             }
             expect(dockerHost).to.equal("10.0.1.22");
             done();
@@ -66,27 +66,27 @@ describe('Docklet', function () {
   it('should cycle though docks', function (done) {
     redis.lpush("docks:active", "10.0.1.21", function(err) {
       if (err) {
-        return next(err);
+        return done(err);
       }
       redis.lpush("docks:active", "10.0.1.22", function(err) {
         if (err) {
-          return next(err);
+          return done(err);
         }
         this.docklet.findDock(function(err, dockerHost) {
           if (err) {
-            return next(err);
+            return done(err);
           }
           expect(dockerHost).to.equal("10.0.1.22");
           var tmpDock = new Docklet();
           tmpDock.findDock(function(err, dockerHost) {
             if (err) {
-              return next(err);
+              return done(err);
             }
             tmpDock = new Docklet();
             expect(dockerHost).to.equal("10.0.1.21");
             tmpDock.findDock(function(err, dockerHost) {
               if (err) {
-                return next(err);
+                return done(err);
               }
               expect(dockerHost).to.equal("10.0.1.22");
               done();
