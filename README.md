@@ -1,5 +1,30 @@
 [![Status Badge](https://circleci.com/gh/CodeNow/api.png?circle-token=15c68bfd7d9ca99637f0c5a6e05505366f5d9fd3)](https://circleci.com/gh/CodeNow/api) [![Dependency Status](http://david-dm.bryankendall.me/CodeNow/api.svg)](http://david-dm.bryankendall.me/CodeNow/api) [![devDependency Status](http://david-dm.bryankendall.me/CodeNow/api/dev-status.svg)](http://david-dm.bryankendall.me/CodeNow/api#info=devDependencies)
 
+Components
+==========
+
+## Express
+/lib/app.js
+
+## Routes
+/lib/routes.js
+
+Opinions
+========
+### Restful resource urls
+Create - POST   -
+Read   - GET    -
+Update - PATCH  -
+Delete - DELETE -
+
+Routes
+======
+
+
+
+Schemas
+=======
+
 Help and Tips
 =============
 
