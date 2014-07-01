@@ -56,11 +56,9 @@ describe('build-stream', function () {
       var client = new primusClient('http://localhost:'+configs.port+"?type=build-stream&id="+roomId);
       client.on('data', function(data) {
         expect(data.toString()).to.equal(testString);
-        console.log("client data",data);
         clientReadCount.next();
       })
       client.on('open', function(data) {
-        console.log("client open");
         clientOpenCount.next();
       })
     };
