@@ -216,6 +216,7 @@ describe('Projects - /projects', function () {
           delete incompleteBody[missingBodyKey];
           ctx.user.createProject({ json: incompleteBody }, function (err) {
             expect(err).to.be.ok;
+            expect(err.output.statusCode).to.equal(400);
             expect(err.message).to.match(new RegExp(missingBodyKey));
             expect(err.message).to.match(new RegExp('is required'));
             done();

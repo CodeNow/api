@@ -15,7 +15,6 @@ module.exports = {
     }
     var user = users.createGithub(function (err) {
       if (err) { return cb(err); }
-
       var group = user.createGroup(groupBody, function (err) {
         if (err) { return cb(err); }
         cb(err, user, group);

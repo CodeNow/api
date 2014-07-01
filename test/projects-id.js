@@ -54,19 +54,21 @@ describe('Project - /projects/:id - owned by a group', function () {
     });
   });
 
-  it('should return the project when requested by a group member', function (done) {
-    ctx.user.fetchProject(ctx.project.id(), function (err, body) {
-      if (err) { return done(err); }
-      expect(body).to.be.okay;
-      expect(body._id).to.equal(ctx.project.id());
-      done();
+  describe('GET', function() {
+    it('should return the project when requested by a group member', function (done) {
+      ctx.user.fetchProject(ctx.project.id(), function (err, body) {
+        if (err) { return done(err); }
+        expect(body).to.be.okay;
+        expect(body._id).to.equal(ctx.project.id());
+        done();
+      });
     });
-  });
-  it('should not return the project to someone not in the group', function (done) {
-    ctx.otherUser.fetchProject(ctx.project.id(), function (err) {
-      expect(err).to.be.okay;
-      expect(err.output.statusCode).to.equal(403);
-      done();
+    it('should not return the project to someone not in the group', function (done) {
+      ctx.otherUser.fetchProject(ctx.project.id(), function (err) {
+        expect(err).to.be.okay;
+        expect(err.output.statusCode).to.equal(403);
+        done();
+      });
     });
   });
 });
