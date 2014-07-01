@@ -2,42 +2,70 @@ var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
+var beforeEach = Lab.beforeEach;
 
+var createCount = require('callback-count');
 var redis = require('redis');
 var configs = require('configs');
-
-var writer = redis.createClient(configs.redis.port, configs.redis.ipaddress);
-var reader = redis.createClient(configs.redis.port, configs.redis.ipaddress);
+var uuid = require('uuid');
 var redisStream = require('../lib/models/redis/stream.js');
 
 
 describe('redis-stream', function () {
-
+  var roomId;
+  beforeEach(function(done) {
+    roomId = uuid();
+    done();
+  })
+  it('should read stream from redis', function (done) {
+    var testString = "this is another message";
+    var s = new require('stream').Writable();
+    s._write = function(message) {
+      expect(message.toString()).to.equal(testString);
+      done();
+    };
+    redisStream.attachOutputStreamToRedis(roomId, s);
+    var writer = redis.createClient(configs.redis.port, configs.redis.ipaddress);
+    writer.publish(roomId, testString);
+  });
   it('should write stream to redis', function (done) {
-    reader.subscribe("test");
+    var testString = "this is a message";
+    var reader = redis.createClient(configs.redis.port, configs.redis.ipaddress);
+    reader.subscribe(roomId);
     reader.on("message", function (channel, message) {
-      if (channel === "test" && message === "this is a message") {
-        reader.unsubscribe("test");
+      if (channel === "test" && message === testString) {
+        reader.unsubscribe(roomId);
         return done();
       }
-      expect(channel).to.equal("test");
-      expect(message).to.equal("this is a message");
+      expect(channel).to.equal(roomId);
+      expect(message).to.equal(testString);
       return done();
     });
     var s = new require('stream').Readable();
-    s.push("this is a message");
+    s.push(testString);
     s.push(null);
-    redisStream.attachInputStreamToRedis("test", s);
+    redisStream.attachInputStreamToRedis(roomId, s);
   });
+  it('should send data to all clients', function (done) {
+    var testString = "this is yet another message";
+    var numClients = 100;
+    var createCount = require('callback-count');
+    var count = createCount(numClients, done);
 
-  it('should read stream from redis', function (done) {
-    var s = new require('stream').Writable();
-    s.on('data', console.log);
-    s._write = function(message) {
-      expect(message.toString()).to.equal("this is another message");
-      done();
+    function handleMessage(message) {
+      expect(message.toString()).to.equal(testString);
+      count.next();
     };
-    redisStream.attachOutputStreamToRedis("test2", s);
-    writer.publish("test2", "this is another message");
+
+    for (var i = numClients - 1; i >= 0; i--) {
+      var client1 = new require('stream').Writable();
+      client1._write = handleMessage;
+      redisStream.attachOutputStreamToRedis(roomId, client1);
+    };
+
+    var sendStream = new require('stream').Readable();
+    sendStream.push(testString);
+    sendStream.push(null);
+    redisStream.attachInputStreamToRedis(roomId, sendStream);
   });
 });
