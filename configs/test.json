@@ -72,5 +72,8 @@
     "clientSecret": "d5b1544ca5aa7afd251be5e4279ecbc398967d6e",
     "callbackURL": "http://localhost:3031/auth/github/callback",
     "scope": "user:email,repo,repo_deployment,read:repo_hook"
+  },
+  "primus": {
+      "transformer": "websockets"
   }
 }
