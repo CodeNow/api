@@ -8,7 +8,7 @@ var configs = require('configs');
 
 var writer = redis.createClient(configs.redis.port, configs.redis.ipaddress);
 var reader = redis.createClient(configs.redis.port, configs.redis.ipaddress);
-var redisStream = require('../lib/socket/redis-stream.js');
+var redisStream = require('../lib/models/redis/stream.js');
 
 
 describe('redis-stream', function () {
