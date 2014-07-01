@@ -12,7 +12,7 @@ var createCount = require('callback-count');
 describe('Docklet', function () {
   beforeEach(function (done) {
     this.docklet = new Docklet();
-    done();
+    redis.del("docks:active", done);
   });
   afterEach(function (done) {
     delete this.docklet;
