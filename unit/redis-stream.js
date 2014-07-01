@@ -16,7 +16,7 @@ describe('redis-stream', function () {
   beforeEach(function(done) {
     roomId = uuid();
     done();
-  })
+  });
   it('should read stream from redis', function (done) {
     var testString = "this is another message";
     var s = new require('stream').Writable();
@@ -49,19 +49,18 @@ describe('redis-stream', function () {
   it('should send data to all clients', function (done) {
     var testString = "this is yet another message";
     var numClients = 100;
-    var createCount = require('callback-count');
     var count = createCount(numClients, done);
 
     function handleMessage(message) {
       expect(message.toString()).to.equal(testString);
       count.next();
-    };
+    }
 
     for (var i = numClients - 1; i >= 0; i--) {
       var client1 = new require('stream').Writable();
       client1._write = handleMessage;
       redisStream.attachOutputStreamToRedis(roomId, client1);
-    };
+    }
 
     var sendStream = new require('stream').Readable();
     sendStream.push(testString);
