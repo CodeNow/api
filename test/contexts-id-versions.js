@@ -12,10 +12,6 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
-var join = require('path').join;
-var findIndex = require('101/find-index');
-var hasProperties = require('101/has-properties');
-
 describe('Versions - /contexts/:contextid/versions', function () {
   var ctx = {};
 

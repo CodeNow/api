@@ -6,13 +6,10 @@ var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
-
-var path = require('path');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
-var uuid = require('uuid');
 
 describe('Version - /contexts/:contextId/versions/:id', function () {
   var ctx = {};
