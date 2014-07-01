@@ -30,6 +30,7 @@
   "dockerRegistry": "registry.runnable.com",
   "runnable_access_timeout": "5 seconds",
   "logExpress": true,
+  "logErrors": true,
   "logErrorStack": true,
   "throwErrors": false,
   "containerTimeout": "5 minutes",
