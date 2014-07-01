@@ -8,7 +8,7 @@ var configs = require('configs');
 var api = require('./fixtures/api-control');
 var Primus = require('primus');
 var Socket = Primus.createSocket({
-  transformer: 'websockets',
+  transformer: configs.primus.transformer,
   plugin: {
     'substream': require('substream')
   },
