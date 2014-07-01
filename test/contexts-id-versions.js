@@ -53,7 +53,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
     it('should NOT list us the versions', function (done) {
       ctx.context.fetchVersions(function (err) {
         expect(err).to.be.ok;
-        expect(err.output.statusCode).to.equal(501);
+        expect(err.output.statusCode).to.equal(400);
         done();
       });
     });
@@ -83,12 +83,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
         if (err) { return done(err); }
 
         expect(body).to.be.ok;
-        expect(body.id).to.not.equal(ctx.versionId);
-        expect(body.files).to.be.an('array');
-        expect(body.files).to.have.length(2);
-        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
-        expect(findIndex(body.files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
-          .to.not.equal(-1);
+        expect(body._id).to.not.equal(ctx.versionId);
         done();
       });
     });

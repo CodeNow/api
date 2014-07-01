@@ -61,12 +61,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
     describe('POST', function() {
       beforeEach(function (done) {
         ctx.version = ctx.context.createVersion({
-          versionId: ctx.versionId,
-          files: [{
-            Key: path.join(ctx.contextId, 'source', 'file.txt'),
-            ETag: uuid(),
-            VersionId: 'Po.EGeNr9HirlSJVMSxpf1gaWa5KruPa'
-          }]
+          versionId: ctx.versionId
         }, done);
       });
       it('should build a version', function (done) {

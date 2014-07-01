@@ -57,15 +57,11 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         name: 'file.txt',
         path: '/',
         body: 'content'
-      }}, function (err, files, code) {
+      }}, function (err, file, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);
-        expect(files).to.be.okay;
-        expect(files).to.be.an('array');
-        expect(files).to.have.length(3);
-        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
-        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
-        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') }))).to.not.equal(-1);
+        expect(file).to.be.okay;
+        expect(file).to.be.an('object');
         ctx.version.fetchFiles(function (err, files) {
           if (err) { return done(err); }
           expect(files).to.be.okay;

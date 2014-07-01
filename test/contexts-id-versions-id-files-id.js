@@ -66,32 +66,25 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
     });
   });
 
-  describe('PUT', function () {
+  describe('PATCH', function () {
     it('should let us rename a file', function (done) {
       ctx.file = ctx.version.createFile({ json: {
         name: 'file.txt',
         path: '/',
         body: 'content'
-      }}, function (err, files, code) {
+      }}, function (err, file, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);
-        expect(files).to.be.okay;
-        expect(files).to.be.an('array');
-        expect(files).to.have.length(3);
-        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
-        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
-        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') }))).to.not.equal(-1);
+        expect(file).to.be.okay;
+        expect(file).to.be.an('object');
+        expect(hasProperties(file, { Key: join(ctx.contextId, 'source', 'file.txt') })).to.be.okay;
 
-        ctx.version.updateFile('file.txt', { json: { name: 'newfile.txt' }}, function (err, files) {
+        ctx.version.updateFile('file.txt', { json: { Key: 'newfile.txt' }}, function (err, file, code) {
           if (err) { return done(err); }
-          expect(files).to.be.okay;
-          expect(files).to.be.an('array');
-          expect(files).to.have.length(3);
-          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
-          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
-            .to.not.equal(-1);
-          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'newfile.txt') })))
-            .to.not.equal(-1);
+          expect(code).to.equal(200);
+          expect(file).to.be.okay;
+          expect(file).to.be.an('object');
+          expect(hasProperties(file, { Key: join(ctx.contextId, 'source', 'file.txt') })).to.be.okay;
 
           // extra check, for sanity
           ctx.version.fetchFiles(function (err, files) {
