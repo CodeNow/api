@@ -8,6 +8,7 @@ var redis = require('models/redis');
 
 var async = require('async');
 var Docklet = require('../lib/models/apis/docklet.js');
+var createCount = require('callback-count');
 
 describe('Docklet', function () {
   beforeEach(function (done) {
@@ -25,14 +26,11 @@ describe('Docklet', function () {
   });
 
   it('should find inserted dock from redis', function (done) {
-    redis.lpush('docks:active', '10.0.1.20', function(err) {
-      if (err) {
-        return done(err);
-      }
-      this.docklet.findDock(function(err, dockerHost) {
-        expect(dockerHost).to.equal('10.0.1.20');
-        done();
-      });
+    var count = createCount(2, done);
+    redis.lpush("docks:active", "10.0.1.20", count.next);
+    this.docklet.findDock(function(err, dockerHost) {
+      expect(dockerHost).to.equal("10.0.1.20");
+      count.next();
     });
   });
 
@@ -44,53 +42,46 @@ describe('Docklet', function () {
   });
 
   it('should return same IP for same dock instance', function (done) {
-    async.series([
-      redis.lpush.bind(redis, 'docks:active', '10.0.1.21'),
-      redis.lpush.bind(redis, 'docks:active', '10.0.1.22'),
-    ], function (err) {
-      if (err) { return done(err); }
+    var count = createCount(3, done);
+    redis.lpush("docks:active", "10.0.1.21", count.next);
+    redis.lpush("docks:active", "10.0.1.22", count.next);
+    this.docklet.findDock(function(err, dockerHost) {
+      if (err) {
+        return done(err);
+      }
+      expect(dockerHost).to.equal("10.0.1.22");
       this.docklet.findDock(function(err, dockerHost) {
         if (err) {
           return done(err);
         }
-        expect(dockerHost).to.equal('10.0.1.22');
-        this.docklet.findDock(function(err, dockerHost) {
-          if (err) {
-            return done(err);
-          }
-          expect(dockerHost).to.equal('10.0.1.22');
-          done();
-        });
+        expect(dockerHost).to.equal("10.0.1.22");
+        count.next();
       });
     });
   });
 
-  it('should rotate to a new box when it becomes full', function (done) {
-    async.series([
-      redis.lpush.bind(redis, 'docks:active', '10.0.1.21'),
-      redis.lpush.bind(redis, 'docks:active', '10.0.1.22'),
-      redis.set.bind(redis, 'docks:10.0.1.22', '101')
-    ], function (err) {
-      if (err) { return done(err); }
-      this.docklet.findDock(function(err, dockerHost) {
+  it('should cycle though docks', function (done) {
+    var count = createCount(3, done);
+    redis.lpush("docks:active", "10.0.1.21", count.next);
+    redis.lpush("docks:active", "10.0.1.22", count.next);
+    this.docklet.findDock(function(err, dockerHost) {
+      if (err) {
+        return done(err);
+      }
+      expect(dockerHost).to.equal("10.0.1.22");
+      var tmpDock = new Docklet();
+      tmpDock.findDock(function(err, dockerHost) {
         if (err) {
           return done(err);
         }
-        expect(dockerHost).to.equal('10.0.1.22');
-        var tmpDock = new Docklet();
+        tmpDock = new Docklet();
+        expect(dockerHost).to.equal("10.0.1.21");
         tmpDock.findDock(function(err, dockerHost) {
           if (err) {
             return done(err);
           }
-          tmpDock = new Docklet();
-          expect(dockerHost).to.equal('10.0.1.21');
-          tmpDock.findDock(function(err, dockerHost) {
-            if (err) {
-              return done(err);
-            }
-            expect(dockerHost).to.equal('10.0.1.21');
-            done();
-          });
+          expect(dockerHost).to.equal("10.0.1.22");
+          count.next();
         });
       });
     });
