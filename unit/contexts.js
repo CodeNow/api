@@ -3,14 +3,10 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
-var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
-var Faker = require('faker');
-
 var Context = require('models/mongo/context');
-
 
 describe('Context Unit Testing', function () {
   before(require('./fixtures/mongo').connect);
@@ -49,7 +45,8 @@ describe('Context Unit Testing', function () {
     });
   });
   describe('Contexts Name Validation', function () {
-    validation.urlSafeNameValidationChecking(createNewContext, 'name',  schemaValidators.validationMessages.characters);
+    validation.urlSafeNameValidationChecking(createNewContext, 'name',
+      schemaValidators.validationMessages.characters);
     validation.requiredValidationChecking(createNewContext, 'name');
   });
 
@@ -66,7 +63,7 @@ describe('Context Unit Testing', function () {
   });
 
   describe('Contexts Source Validation', function () {
-    validation.alphaNumNameValidationChecking(createNewContext, 'source.0.sourceType')
+    validation.alphaNumNameValidationChecking(createNewContext, 'source.0.sourceType');
 
     validation.urlValidationChecking(createNewContext, 'source.0.location',
       schemaValidators.validationMessages.url);

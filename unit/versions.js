@@ -1,13 +1,12 @@
+'use strict';
+
 var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
-var Faker = require('faker');
 var expect = Lab.expect;
 var before = Lab.before;
-var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
-var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 
 var Version = require('models/mongo/version');
 
@@ -36,11 +35,11 @@ describe('Versions', function () {
   }
 
   it('should be able to save a version!', function (done) {
-    this.instance = createNewVersion();
-    this.instance.save(function (err, instance) {
+    var version = createNewVersion();
+    version.save(function (err, version) {
       if (err) { done(err); }
       else {
-        expect(instance).to.be.okay;
+        expect(version).to.be.okay;
         done();
       }
     });
@@ -60,10 +59,15 @@ describe('Versions', function () {
     validation.stringLengthValidationChecking(createNewVersion, 'message', 500);
   });
 
-  describe('Docker Image Validation', function () {
-    validation.stringLengthValidationChecking(createNewVersion, 'dockerImage', 200);
-  });
-  describe('Docker Tag Validation', function () {
-    validation.stringLengthValidationChecking(createNewVersion, 'dockerTag', 500);
+  describe('Build Validation', function () {
+    describe('Message', function () {
+      validation.stringLengthValidationChecking(createNewVersion, 'build.message', 500);
+    });
+    describe('Docker Image', function () {
+      validation.stringLengthValidationChecking(createNewVersion, 'build.dockerImage', 200);
+    });
+    describe('Docker Tag', function () {
+      validation.stringLengthValidationChecking(createNewVersion, 'build.dockerTag', 500);
+    });
   });
 });

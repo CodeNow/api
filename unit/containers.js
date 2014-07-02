@@ -4,7 +4,6 @@ var it = Lab.test;
 var expect = Lab.expect;
 var Faker = require('faker');
 var before = Lab.before;
-var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
@@ -42,7 +41,8 @@ describe('Containers', function () {
       it('should fail validation for ' + string, function (done) {
         var container = createNewContainer();
         container.name = string;
-        validation.errorCheck(container, done, 'name', schemaValidators.validationMessages.characters);
+        validation.errorCheck(container, done, 'name',
+          schemaValidators.validationMessages.characters);
       });
     });
     validation.ALPHA_NUM_NOSPACE_SAFE.forEach(function (string) {
@@ -71,7 +71,8 @@ describe('Containers', function () {
   });
 
   describe('Docker Host Validation', function () {
-    validation.urlValidationChecking(createNewContainer, 'dockerHost', schemaValidators.validationMessages.dockerHost);
+    validation.urlValidationChecking(createNewContainer, 'dockerHost',
+      schemaValidators.validationMessages.dockerHost);
     validation.requiredValidationChecking(createNewContainer, 'dockerHost');
   });
 

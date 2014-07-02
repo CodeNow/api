@@ -3,7 +3,6 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
-var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');

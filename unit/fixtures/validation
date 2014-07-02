@@ -184,7 +184,7 @@ var fixArrayKeypathDel = function(myObject, property, value) {
       keypath.del(myObject, property);
     }
   }
-}
+};
 
 var errorCheck = function (modelObject, done, property, validationString) {
   modelObject.save(function (err, object) {
