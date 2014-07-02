@@ -13,10 +13,8 @@ module.exports = {
       cb = groupBody;
       groupBody = null;
     }
-    var user = users.createRegistered(
-      userBody.email, userBody.username, userBody.password, function (err) {
+    var user = users.createGithub(function (err) {
       if (err) { return cb(err); }
-
       var group = user.createGroup(groupBody, function (err) {
         if (err) { return cb(err); }
         cb(err, user, group);
@@ -32,8 +30,7 @@ module.exports = {
       cb = projectBody;
       projectBody = null;
     }
-    var user = users.createRegistered(
-      userBody.email, userBody.username, userBody.password, function (err) {
+    var user = users.createGithub(function (err) {
       if (err) { return cb(err); }
 
       var project = projects.createProjectBy(user, null, function (err) {

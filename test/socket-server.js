@@ -8,14 +8,14 @@ var configs = require('configs');
 var api = require('./fixtures/api-control');
 var Primus = require('primus');
 var Socket = Primus.createSocket({
-  transformer: 'websockets',
+  transformer: configs.primus.transformer,
   plugin: {
     'substream': require('substream')
   },
   parser: 'JSON'
 });
 
-describe('Socket Server', function () {
+describe('Socket Server', { timeout: 5000 }, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -26,7 +26,7 @@ describe('Socket Server', function () {
     var pass = false;
     beforeEach(function (done) {
       pass = false;
-      primus = new Socket('http://'+configs.ipaddress+':'+configs.port);
+      primus = new Socket('http://'+configs.ipaddress+':'+configs.port+"?type=filibuster");
       done();
     });
     var check = function(errMsg, done) {
@@ -38,16 +38,17 @@ describe('Socket Server', function () {
       });
     };
     it('connect', function (done) {
+      check('failed to connect', done);
       primus.on('data', function (data) {
         if(data.name === 'terminal'){
           pass = true;
           return primus.end();
         }
       });
-      check('failed to connect', done);
     });
     it('send term command', function (done) {
       var term = primus.substream('terminal');
+      check('echo failed to run', done);
       term.on('data', function (data) {
         if(~data.indexOf('TEST')) {
           pass = true;
@@ -55,10 +56,10 @@ describe('Socket Server', function () {
         }
         term.write('echo TEST\n');
       });
-      check('echo failed to run', done);
     });
     it('send clientEventsStream ping event', function (done) {
       var cs = primus.substream('clientEvents');
+      check('echo failed to ping', done);
       cs.on('data', function (data) {
         if(data.event === 'pong') {
           pass = true;
@@ -68,7 +69,6 @@ describe('Socket Server', function () {
           event: "ping"
         });
       });
-      check('echo failed to ping', done);
     });
   });
 });

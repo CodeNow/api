@@ -3,8 +3,7 @@
 var nock = require('nock');
 var uuid = require('uuid');
 
-module.exports = function () {
-  nock.cleanAll();
+module.exports = function (cb) {
 
   /* POSTS */
 
@@ -105,4 +104,5 @@ module.exports = function () {
       'etag': uuid()
     });
 
+  if (cb) { cb(); }
 };

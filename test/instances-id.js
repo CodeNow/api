@@ -19,10 +19,13 @@ describe('Instance - /instances/:id', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
     nockS3();
@@ -61,7 +64,7 @@ describe('Instance - /instances/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
-            ctx.nonOwner = users.createRegistered(done);
+            ctx.nonOwner = users.createGithub(done);
           });
           it('should get the instance', function (done) {
             ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
@@ -89,7 +92,7 @@ describe('Instance - /instances/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
-            ctx.nonOwner = users.createRegistered(done);
+            ctx.nonOwner = users.createGithub(done);
           });
           it('should not get the instance (403 forbidden)', function (done) {
             ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
@@ -150,7 +153,7 @@ describe('Instance - /instances/:id', function () {
   //     });
   //     describe('non-owner', function () {
   //       beforeEach(function (done) {
-  //         ctx.nonOwner = users.createRegistered(done);
+  //         ctx.nonOwner = users.createGithub(done);
   //       });
   //       updates.forEach(function (json) {
   //         var keys = Object.keys(json);
@@ -200,7 +203,7 @@ describe('Instance - /instances/:id', function () {
   //     });
   //     describe('non-owner', function () {
   //       beforeEach(function (done) {
-  //         ctx.nonOwner = users.createRegistered(done);
+  //         ctx.nonOwner = users.createGithub(done);
   //       });
   //       it('should not delete the instance (403 forbidden)', function (done) {
   //         ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's

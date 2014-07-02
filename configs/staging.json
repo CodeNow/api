@@ -1,4 +1,6 @@
 {
+  "dockProjectLimit": 100,
+  "deployCommand": "echo DEPLOY",
   "tokenExpires": "1 year",
   "passwordSalt" : "$up3r,$3<r3t",
   "mongo": "mongodb://10.0.1.34:27017/runnable2",
@@ -77,5 +79,8 @@
     "protocol": "http:",
     "hostname": "10.0.1.121",
     "port": 7050
+  },
+  "primus": {
+      "transformer": "websockets"
   }
 }

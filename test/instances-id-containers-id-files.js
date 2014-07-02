@@ -42,10 +42,13 @@ describe('File System - /instances/:id/containers/:id/files', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
     nockS3();
@@ -183,7 +186,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
         }
       }, function (err) {
         // FIXME: Anand is going to change this to a 404
-        expect(err.data.statusCode).to.equal(500);
+        expect(err.output.statusCode).to.equal(500);
         done();
       });
     });
