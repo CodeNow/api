@@ -79,5 +79,8 @@
     "protocol": "http:",
     "hostname": "10.0.1.121",
     "port": 7050
+  },
+  "primus": {
+      "transformer": "websockets"
   }
 }

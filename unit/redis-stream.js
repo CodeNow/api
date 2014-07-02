@@ -4,6 +4,7 @@ var it = Lab.test;
 var expect = Lab.expect;
 var beforeEach = Lab.beforeEach;
 
+var createCount = require('callback-count');
 var redis = require('redis');
 var configs = require('configs');
 var uuid = require('uuid');
@@ -48,7 +49,6 @@ describe('redis-stream', function () {
   it('should send data to all clients', function (done) {
     var testString = "this is yet another message";
     var numClients = 100;
-    var createCount = require('callback-count');
     var count = createCount(numClients, done);
 
     function handleMessage(message) {
