@@ -231,7 +231,7 @@ describe('Projects - /projects', function () {
           expect(body).to.have.property('_id');
           expect(body).to.have.property('name', json.name);
           expect(body).to.have.property('owner', ctx.user.id());
-          expect(body).to.have.property('public', true);
+          expect(body).to.have.property('public', false);
           expect(body.environments).to.be.an('array');
           expect(body.environments).to.have.a.lengthOf(1);
           done();
@@ -262,7 +262,7 @@ describe('Projects - /projects', function () {
           expect(body).to.have.property('_id');
           expect(body).to.have.property('name', json.name);
           expect(body).to.have.property('owner', ctx.user.id());
-          expect(body).to.have.property('public', true);
+          expect(body).to.have.property('public', false);
           expect(body.environments).to.be.an('array');
           expect(body.environments).to.have.a.lengthOf(1);
           done();
