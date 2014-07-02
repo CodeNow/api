@@ -5,31 +5,34 @@ var expect = Lab.expect;
 var before = Lab.before;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var validation = require('./fixtures/validation');
+var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 
-var User = require('models/mongo/user');
 var Project = require('models/mongo/project');
 
 describe('Projects', function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/fixtures/clean-mongo').removeEverything);
 
-  beforeEach(function (done) {
-    this.user = new User();
-    this.user.save(done);
-  });
-  afterEach(function (done) {
-    delete this.user;
-    delete this.project;
-    done();
-  });
+  var sampleEnvironment = {
+    name: 'enviroName',
+    owner: validation.VALID_OBJECT_ID
+  };
 
-  it('should be able to save a project!', function (done) {
-    this.project = new Project({
+  function createNewProject() {
+    return new Project({
       name: 'name',
       description: 'description',
       public: false,
-      owner: this.user._id
+      owner: validation.VALID_OBJECT_ID,
+      created: Date.now(),
+      environment: [sampleEnvironment],
+      defaultEnvironment: validation.VALID_OBJECT_ID
     });
+  }
+
+  it('should be able to save a project!', function (done) {
+    this.project = createNewProject();
     this.project.save(function (err, project) {
       if (err) { done(err); }
       else {
@@ -37,5 +40,33 @@ describe('Projects', function () {
         done();
       }
     });
+  });
+  describe('Projects Name Validation', function () {
+    validation.NOT_ALPHA_NUM_SAFE.forEach(function (string) {
+      it('Name should fail validation for ' + string, function (done) {
+        var project = createNewProject();
+        project.name = string;
+        validation.errorCheck(project, done, 'name', schemaValidators.validationMessages.characters);
+      });
+    });
+    validation.ALPHA_NUM_NOSPACE_SAFE.forEach(function (string) {
+      it('Name should succeed validation for ' + string, function (done) {
+        var project = createNewProject();
+        project.name = string;
+        validation.successCheck(project, done, 'name');
+      });
+    });
+    validation.stringLengthValidationChecking(createNewProject, 'name', 100);
+
+    validation.requiredValidationChecking(createNewProject, 'name');
+  });
+
+  describe('Project Owner Validation', function () {
+    validation.objectIdValidationChecking(createNewProject, 'owner');
+  });
+
+  describe('Project Default Environment Validation', function () {
+    validation.objectIdValidationChecking(createNewProject, 'defaultEnvironment');
+    validation.requiredValidationChecking(createNewProject, 'defaultEnvironment');
   });
 });

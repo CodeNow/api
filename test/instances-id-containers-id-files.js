@@ -65,7 +65,8 @@ describe('File System - /instances/:id/containers/:id/files', function () {
         ctx.context = ctx.user.newContext(ctx.contextId);
         ctx.version = ctx.context.newVersion(ctx.contextId);
         ctx.instance = ctx.user.createInstance({
-          build: ctx.build.id()
+          build: ctx.build.id(),
+          name: "test"
         }, function (err) {
           if (err) { return done(err); }
 

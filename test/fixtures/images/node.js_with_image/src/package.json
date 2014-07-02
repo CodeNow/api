@@ -1,7 +1,0 @@
-{
-  "name": "hello",
-  "description": "hello world using core http module",
-  "version": "0.1.0",
-  "dependencies": {
-  }
-}

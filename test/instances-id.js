@@ -42,7 +42,8 @@ describe('Instance - /instances/:id', function () {
         ctx.context = ctx.user.newContext(ctx.contextId);
         ctx.version = ctx.context.newVersion(ctx.versionId);
         ctx.instance = ctx.user.createInstance({
-          build: ctx.build.id()
+          build: ctx.build.id(),
+          name: "test"
         }, done);
       });
     });

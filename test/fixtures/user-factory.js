@@ -2,6 +2,7 @@ var isFunction = require('101/is-function');
 var Runnable = require('runnable');
 var host = require('./host');
 var uuid = require('uuid');
+var Faker = require('faker');
 var User = require('models/mongo/user');
 
 module.exports = {
@@ -32,9 +33,9 @@ module.exports = {
       cb = password;
       password = null;
     }
-    email = email || uuid()+'@domain.com';
-    username = username || uuid();
-    password = password || uuid();
+    email = email || Faker.Internet.email();
+    username = username || Faker.Internet.userName();
+    password = password || Faker.Company.catchPhrase();
     var user =  this.createTokenless();
     user.register(email, username, password, cb);
     return user;

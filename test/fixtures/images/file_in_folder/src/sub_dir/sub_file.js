@@ -1,1 +1,0 @@
-console.log('this file is inside a folder and should be synced');

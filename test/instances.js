@@ -36,6 +36,7 @@ describe('Instances - /instances', function () {
         ctx.project = project;
         ctx.environments = environments;
         ctx.environment = environments.models[0];
+        ctx.name = "testInstance";
         var builds = ctx.environment.fetchBuilds(function (err) {
           if (err) { return done(err); }
 
@@ -50,6 +51,7 @@ describe('Instances - /instances', function () {
 
       beforeEach(function (done) {
         ctx.json = {
+          name: "testInstance",
           build: ctx.build.id()
         };
         done();

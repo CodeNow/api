@@ -9,12 +9,14 @@
   "private": true,
   "dependencies": {
     "101": "~0.5.0",
+    "Filibuster": "git://github.com/Runnable/Filibuster.git",
     "async": "~0.8.0",
     "aws-sdk": "~2.0.0-rc.15",
     "bcrypt": "~0.7.5",
     "body-parser": "~1.0.2",
     "callback-count": "~0.1.0",
     "clone": "~0.1.15",
+    "cors": "~2.3.1",
     "dat-middleware": "~1.5.13",
     "debug": "~0.7.2",
     "docker-mock": "0.0.12",
@@ -25,6 +27,7 @@
     "eson": "~0.4.1",
     "exists": "~1.0.0",
     "express": "~4.3.1",
+    "faker": "^1.0.0",
     "fn-object": "~0.2.2",
     "fstream": "~0.1.24",
     "github-nabber": "0.0.2",
@@ -37,6 +40,7 @@
     "mkdirp": "~0.3.5",
     "mongoose": "~3.8.12",
     "mongoose-text-search": "0.0.2",
+    "mongoose-validator": "^0.2.2",
     "morgan": "~1.0.1",
     "multiparty": "~3.2.2",
     "newrelic": "~1.4.0",
@@ -54,10 +58,8 @@
     "tar": "gyllstromk/node-tar",
     "underscore.inflections": "~0.2.1",
     "uuid": "~1.4.1",
-    "xtend": "3.0.0",
-    "cors": "~2.3.1",
-    "Filibuster": "git://github.com/Runnable/Filibuster.git",
-    "ws": "0.4.31"
+    "ws": "0.4.31",
+    "xtend": "3.0.0"
   },
   "devDependencies": {
     "nodemon": "~0.7.8",
