@@ -21,7 +21,7 @@ describe('User', function () {
       password: "pass",
       name: "test",
       username: "test",
-      lower_username: "test",
+      lowerUsername: "test",
       show_email: false,
       created: Date.now(),
       context: validation.VALID_OBJECT_ID,
@@ -78,7 +78,7 @@ describe('User', function () {
   });
 
   describe('Lower Username Validation', function () {
-    validation.urlSafeNameValidationChecking(createNewUser, 'lower_username');
+    validation.urlSafeNameValidationChecking(createNewUser, 'lowerUsername');
   });
 
   describe('Initial Referrer Validation', function () {

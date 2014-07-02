@@ -19,6 +19,8 @@ describe('Versions', function () {
     return new Version({
       message: "test",
       owner: validation.VALID_OBJECT_ID,
+      createdBy: validation.VALID_OBJECT_ID,
+      config: validation.VALID_OBJECT_ID,
       created: Date.now(),
       context: validation.VALID_OBJECT_ID,
       files:[{
@@ -58,12 +60,10 @@ describe('Versions', function () {
     validation.stringLengthValidationChecking(createNewVersion, 'message', 500);
   });
 
-  describe('Build Validation', function () {
-    describe('Docker Image', function () {
-      validation.stringLengthValidationChecking(createNewVersion, 'build.dockerImage', 200);
-    });
-    describe('Docker Tag', function () {
-      validation.stringLengthValidationChecking(createNewVersion, 'build.dockerTag', 500);
-    });
+  describe('Docker Image Validation', function () {
+    validation.stringLengthValidationChecking(createNewVersion, 'dockerImage', 200);
+  });
+  describe('Docker Tag Validation', function () {
+    validation.stringLengthValidationChecking(createNewVersion, 'dockerTag', 500);
   });
 });
