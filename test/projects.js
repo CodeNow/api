@@ -226,7 +226,6 @@ describe('Projects - /projects', function () {
       it('should create a project', function(done) {
         ctx.user.createProject({ json: json }, function (err, body, code) {
           if (err) { return done(err); }
-          console.log("anand", body, code);
 
           expect(code).to.equal(201);
           expect(body).to.have.property('_id');
@@ -258,7 +257,6 @@ describe('Projects - /projects', function () {
           test: 'fake'
         };
         ctx.user.createProject({json: json }, function (err, body, code) {
-          console.log("anand", body, code);
           if (err) { return done(err); }
           expect(code).to.equal(201);
           expect(body).to.have.property('_id');
