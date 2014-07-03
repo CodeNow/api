@@ -41,7 +41,7 @@ var objectIdValidationChecking = function(createModelFunction, property, isList)
 
 var dockerIdValidationChecking = function(createModelFunction, property, isList) {
   describe('Docker Id Validation', function () {
-    var word = makeStringOfLength(50);
+    var word = makeStringOfLength(200);
     it('should fail validation for an invalid Docker Id (' + word + ')', function (done) {
       var myObject = createModelFunction();
       fixArrayKeypathSet(myObject, property, isList ? [word] : word);
