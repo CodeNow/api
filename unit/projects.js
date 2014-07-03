@@ -31,8 +31,8 @@ describe('Projects', function () {
   }
 
   it('should be able to save a project!', function (done) {
-    this.project = createNewProject();
-    this.project.save(function (err, project) {
+    var project = createNewProject();
+    project.save(function (err, project) {
       if (err) { done(err); }
       else {
         expect(project).to.be.okay;

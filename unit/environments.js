@@ -20,8 +20,8 @@ describe('Environments', function () {
   }
 
   it('should be able to save a build!', function (done) {
-    this.instance = createNewEnvironment();
-    this.instance.save(function (err, instance) {
+    var instance = createNewEnvironment();
+    instance.save(function (err, instance) {
       if (err) { done(err); }
       else {
         expect(instance).to.be.okay;

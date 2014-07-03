@@ -26,8 +26,8 @@ describe('Containers', function () {
   }
 
   it('should be able to save a project!', function (done) {
-    this.container = createNewContainer();
-    this.container.save(function (err, container) {
+    var container = createNewContainer();
+    container.save(function (err, container) {
       if (err) { done(err); }
       else {
         expect(container).to.be.okay;

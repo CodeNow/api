@@ -44,8 +44,8 @@ describe('Instance', function () {
   }
 
   it('should be able to save a instance!', function (done) {
-    this.instance = createNewInstance();
-    this.instance.save(function (err, instance) {
+    var instance = createNewInstance();
+    instance.save(function (err, instance) {
       if (err) { done(err); }
       else {
         expect(instance).to.be.okay;

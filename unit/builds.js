@@ -25,8 +25,8 @@ describe('Instance', function () {
   }
 
   it('should be able to save a build!', function (done) {
-    this.instance = createNewBuild();
-    this.instance.save(function (err, instance) {
+    var instance = createNewBuild();
+    instance.save(function (err, instance) {
       if (err) { done(err); }
       else {
         expect(instance).to.be.okay;
