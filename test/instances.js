@@ -50,7 +50,7 @@ describe('Instances - /instances', function () {
     });
 
     describe('from build', function () {
-      var requiredProjectKeys = ['build'];
+      var requiredProjectKeys = ['build', 'name'];
 
       beforeEach(function (done) {
         ctx.json = {
