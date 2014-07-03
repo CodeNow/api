@@ -20,7 +20,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  afterEach(require('./fixtures/clean-mongo').removeEverything);
+  // afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
@@ -61,7 +61,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
           versionId: ctx.versionId
         }, done);
       });
-      it('should build a version', function (done) {
+      it('should build a version',  { timeout: 3000 }, function (done) {
         ctx.version.build(function (err, body, code) {
           if (err) { return done(err); }
 

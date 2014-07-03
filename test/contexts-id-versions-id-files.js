@@ -66,8 +66,8 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           if (err) { return done(err); }
           expect(files).to.be.okay;
           expect(files).to.be.an('array');
-          expect(files).to.have.length(3);
-          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+          expect(files).to.have.length(2);
+          // expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
           expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
             .to.not.equal(-1);
           expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') }))).to.not.equal(-1);
@@ -80,8 +80,8 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
     it('should give us files from a given version', function (done) {
       ctx.version.fetchFiles(function (err, files) {
         if (err) { return done(err); }
-        expect(files).to.have.length(2);
-        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+        expect(files).to.have.length(1);
+        // expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
         expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
         done();
       });
