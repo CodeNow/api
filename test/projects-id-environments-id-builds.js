@@ -62,13 +62,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         expect(body).to.be.an('array');
         // var testUser = body[0].createdBy;
         expect(body[0].owner).to.be.a('string');
-        expect(body[0].createdBy).to.be.an('object');
-        expect(body[0].createdBy._id).to.be.okay;
-        expect(body[0].createdBy.username).to.be.okay;
-        // FIXME: verify exact fields
-        // expect(body[0].builds).to.be.an('array');
-        // expect(body[0].builds).to.have.length(1);
-        // expect(body[0].builds[0]).to.be.ok;
+        expect(body[0].createdBy).to.be.an('string');
 
         var build = ctx.environment.fetchBuild(builds.models[0].id(), function (err) {
           if (err) { return done(err); }
