@@ -64,7 +64,6 @@ describe('Context Unit Testing', function () {
 
   describe('Contexts Source Validation', function () {
     validation.alphaNumNameValidationChecking(createNewContext, 'source.0.sourceType');
-
     validation.urlValidationChecking(createNewContext, 'source.0.location',
       schemaValidators.validationMessages.url);
   });
