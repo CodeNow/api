@@ -25,7 +25,7 @@ module.exports = {
       }
       else {
         var $set = {
-          permission_level: 5
+          permissionLevel: 5
         };
         User.updateById(body._id, { $set: $set }, callbackData(body, cb));
       }

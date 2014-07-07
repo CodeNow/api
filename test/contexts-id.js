@@ -132,7 +132,7 @@ describe('Context - /contexts/:id', function () {
     var updates = [{
       name: uuid()
     }, {
-      public: true,
+      public: true
     }, {
       public: false
     }];

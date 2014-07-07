@@ -183,7 +183,7 @@ describe('Projects - /projects', function () {
       });
       it('should error when searched by owner (non objectId)', function (done) {
         var query = { qs: {
-          owner: 'garbage',
+          owner: 'garbage'
         }};
         ctx.user2.fetchProjects(query, function (err) {
           expect(err).to.be.ok;
