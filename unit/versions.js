@@ -55,10 +55,6 @@ describe('Versions', function () {
     validation.requiredValidationChecking(createNewVersion, 'context');
   });
 
-  describe('Message Validation', function () {
-    validation.stringLengthValidationChecking(createNewVersion, 'message', 500);
-  });
-
   describe('Build Validation', function () {
     describe('Message', function () {
       validation.stringLengthValidationChecking(createNewVersion, 'build.message', 500);
