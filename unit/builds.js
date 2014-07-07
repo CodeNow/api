@@ -8,7 +8,7 @@ var validation = require('./fixtures/validation');
 
 var Build = require('models/mongo/build');
 
-describe('Instance', function () {
+describe('Build', function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/fixtures/clean-mongo').removeEverything);
 
@@ -18,7 +18,7 @@ describe('Instance', function () {
       project: validation.VALID_OBJECT_ID,
       environment: validation.VALID_OBJECT_ID,
       contexts: [validation.VALID_OBJECT_ID],
-      versions: [validation.VALID_OBJECT_ID],
+      contextVersions: [validation.VALID_OBJECT_ID],
       created: Date.now(),
       createdBy: validation.VALID_OBJECT_ID
     });
@@ -61,8 +61,8 @@ describe('Instance', function () {
   });
 
   describe('Version Ids Validation', function () {
-    validation.objectIdValidationChecking(createNewBuild, 'versions', true);
-    validation.requiredValidationChecking(createNewBuild, 'versions');
+    validation.objectIdValidationChecking(createNewBuild, 'contextVersions', true);
+    validation.requiredValidationChecking(createNewBuild, 'contextVersions');
   });
 
 });

@@ -37,7 +37,7 @@ describe('Github', function () {
         if (err) { return done(err); }
         ctx.build = builds.models[0];
         ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.versionId = ctx.build.toJSON().contextVersions[0];
         ctx.context = ctx.user.fetchContext(ctx.contextId, function (err) {
           if (err) { return done(err); }
           ctx.context.update({ json: {

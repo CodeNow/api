@@ -39,7 +39,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
 
         ctx.build = builds.models[0];
         ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.versionId = ctx.build.toJSON().contextVersions[0];
         ctx.context = ctx.user.fetchContext(ctx.contextId, done);
       });
     });

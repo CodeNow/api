@@ -41,7 +41,7 @@ describe('Instance - /instances/:id', function () {
 
         ctx.build = builds.models[0];
         ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.versionId = ctx.build.toJSON().contextVersions[0];
         ctx.context = ctx.user.newContext(ctx.contextId);
         ctx.version = ctx.context.newVersion(ctx.versionId);
         ctx.instance = ctx.user.createInstance({
