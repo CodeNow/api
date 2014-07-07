@@ -134,7 +134,7 @@ var alphaNumNameValidationChecking = function(createModelFunction, property) {
 
     stringLengthValidationChecking(createModelFunction, property, 100);
   });
-}
+};
 
 var requiredValidationChecking = function(createModelFunction, property) {
   describe(property + ' Required Validation', function () {
@@ -149,45 +149,38 @@ var requiredValidationChecking = function(createModelFunction, property) {
 var fixArrayKeypathSet = function(myObject, property, value) {
   if (property.indexOf('.') < 0) {
     myObject[property] = value;
-  } else {
-    if (property.match(/\.\d+\./)) {
-      var paths = property.split('.');
-      var finalPath = myObject;
-      for (var i = 0; i < paths.length - 1; i ++ ) {
-        if (! isNaN(paths[i])) {
-          paths[i] = parseInt(paths[i])
-        }
-        finalPath = finalPath[paths[i]];
-      }
-      finalPath[paths[paths.length - 1]] = value;
-    } else {
-      keypath.set(myObject, property, value);
+  } else if (property.match(/\.\d+\./)) {
+    var paths = property.split('.');
+    var finalPath = myObject;
+    for (var i = 0; i < paths.length - 1; i ++ ) {
+      paths[i] = isNaN(paths[i]) ? paths[i] : parseInt(paths[i]);
+      finalPath = finalPath[paths[i]];
     }
+    finalPath[paths[paths.length - 1]] = value;
+  } else {
+    property = property.replace(/\.(\d+)\./g, '[$1]');
+    keypath.set(myObject, property, value);
   }
 };
 
 var fixArrayKeypathDel = function(myObject, property, value) {
   if (property.indexOf('.') < 0) {
     myObject[property] = value;
-  } else {
-    if (property.match(/\.\d+\./)) {
-      var paths = property.split('.');
-      var finalPath = myObject;
-      for (var i = 0; i < paths.length - 1; i ++ ) {
-        if (! isNaN(paths[i])) {
-          paths[i] = parseInt(paths[i])
-        }
-        finalPath = finalPath[paths[i]];
-      }
-      finalPath[paths[paths.length - 1]] = value;
-    } else {
-      keypath.del(myObject, property);
+  } else if (property.match(/\.\d+\./)) {
+    var paths = property.split('.');
+    var finalPath = myObject;
+    for (var i = 0; i < paths.length - 1; i ++ ) {
+      paths[i] = isNaN(paths[i]) ? paths[i] : parseInt(paths[i]);
+      finalPath = finalPath[paths[i]];
     }
+    finalPath[paths[paths.length - 1]] = value;
+  } else {
+    keypath.del(myObject, property);
   }
 };
 
 var errorCheck = function (modelObject, done, property, validationString) {
-  modelObject.save(function (err, object) {
+  modelObject.save(function (err) {
     expect(err).to.be.ok;
     expect(err.name).to.be.ok;
     expect(err.name).to.equal(VALIDATOR_ERROR);
@@ -197,7 +190,7 @@ var errorCheck = function (modelObject, done, property, validationString) {
       expect(errorValue.value).to.be.ok;
       expect(errorValue.value).to.equal(keypath.get(modelObject,property));
       Lab.assert("The error received isn't the correct error",
-          errorValue.message.indexOf(validationString) != -1);
+          errorValue.message.indexOf(validationString) !== -1);
     } else {
       done(new Error("The " + (typeof modelObject) + " failed to catch a " + property +
         " validation"));
@@ -207,7 +200,7 @@ var errorCheck = function (modelObject, done, property, validationString) {
 };
 
 var requiredCheck = function (modelObject, done, property) {
-  modelObject.save(function (err, object) {
+  modelObject.save(function (err) {
     expect(err).to.be.ok;
     expect(err.name).to.be.ok;
     expect(err.name).to.equal(VALIDATOR_ERROR);
@@ -215,7 +208,7 @@ var requiredCheck = function (modelObject, done, property) {
     if (err.errors.hasOwnProperty(property)) {
       var errorValue = err.errors[property];
       Lab.assert("The error received isn't the correct error",
-          errorValue.message.indexOf("required") != -1);
+          errorValue.message.indexOf("required") !== -1);
     } else {
       done(new Error("The " + (typeof modelObject) + " failed to catch a " + property +
         " validation"));
