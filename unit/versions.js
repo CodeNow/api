@@ -8,7 +8,7 @@ var before = Lab.before;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 
-var Version = require('models/mongo/version');
+var Version = require('models/mongo/context-version');
 
 describe('Versions', function () {
   before(require('./fixtures/mongo').connect);
