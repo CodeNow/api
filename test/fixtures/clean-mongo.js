@@ -40,5 +40,5 @@ var cleanMongo = module.exports = {
     if (mongoose.connection.db) {
       mongoose.connection.db.dropDatabase(cb);
     }
-  },
+  }
 };

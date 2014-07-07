@@ -44,7 +44,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
 
         ctx.build = builds.models[0];
         ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().versions[0];
+        ctx.versionId = ctx.build.toJSON().contextVersions[0];
         ctx.context = ctx.user.newContext(ctx.contextId);
         ctx.version = ctx.context.fetchVersion(ctx.versionId, done);
       });
