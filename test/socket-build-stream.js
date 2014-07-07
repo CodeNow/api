@@ -3,9 +3,7 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
-var beforeEach = Lab.beforeEach;
 var after = Lab.after;
-var afterEach = Lab.afterEach;
 
 var createCount = require('callback-count');
 var configs = require('configs');
@@ -27,8 +25,6 @@ describe('Build Stream', function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  beforeEach(require('./fixtures/nock-runnable'));
-  afterEach(require('./fixtures/clean-nock'));
 
   // TODO: test multi client once API start is fixed
   it('should send data to clients', function (done) {

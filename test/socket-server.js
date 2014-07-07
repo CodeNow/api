@@ -1,11 +1,9 @@
 var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
-var beforeEach = Lab.beforeEach;
 var before = Lab.before;
 var beforeEach = Lab.beforeEach;
 var after = Lab.after;
-var afterEach = Lab.afterEach;
 var configs = require('configs');
 var api = require('./fixtures/api-control');
 var Primus = require('primus');
@@ -22,8 +20,6 @@ describe('Socket Server', { timeout: 5000 }, function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  beforeEach(require('./fixtures/nock-runnable'));
-  afterEach(require('./fixtures/clean-nock'));
 
   describe('Terminal test', function () {
     var primus;

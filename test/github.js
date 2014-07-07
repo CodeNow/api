@@ -22,7 +22,6 @@ describe('Github', function () {
   before(dock.start.bind(ctx));
   after(dock.stop.bind(ctx));
   beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-runnable'));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
