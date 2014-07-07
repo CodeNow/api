@@ -22,6 +22,7 @@ describe('Project - /projects/:id - owned by a group', function () {
   before(dock.start.bind(ctx));
   beforeEach(require('./fixtures/nock-github'));
   beforeEach(require('./fixtures/nock-github')); // twice
+  beforeEach(require('./fixtures/nock-runnable'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -80,6 +81,7 @@ describe('Project - /projects/:id', function () {
   before(dock.start.bind(ctx));
   beforeEach(require('./fixtures/nock-github'));
   beforeEach(require('./fixtures/nock-github')); // twice
+  beforeEach(require('./fixtures/nock-runnable'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);

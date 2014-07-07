@@ -18,6 +18,7 @@ describe('User - /users/:id', function () {
   after(api.stop.bind(ctx));
   beforeEach(require('./fixtures/nock-github'));
   beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-runnable'));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));

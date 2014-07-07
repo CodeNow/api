@@ -23,6 +23,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
   before(dock.start.bind(ctx));
   beforeEach(require('./fixtures/nock-github'));
   beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-runnable'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);

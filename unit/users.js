@@ -63,7 +63,8 @@ describe('User', function () {
       validation.fixArrayKeypathSet(user, "email", validEmail);
       validation.successCheck(user, done, "email");
     });
-    validation.requiredValidationChecking(createNewUser, 'email');
+    // FIXME: GROUPS DON'T REQUIRE AN EMAIL
+    // validation.requiredValidationChecking(createNewUser, 'email');
   });
 
   describe('Name Validation', function () {
