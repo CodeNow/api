@@ -25,12 +25,12 @@ describe('redis-stream', function () {
       done();
     };
     redisStream.attachOutputStreamToRedis(roomId, s);
-    var writer = redis.createClient(configs.redis.port, configs.redis.ipaddress);
+    var writer = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_IPADDRESS);
     writer.publish(roomId, testString);
   });
   it('should write stream to redis', function (done) {
     var testString = "this is a message";
-    var reader = redis.createClient(configs.redis.port, configs.redis.ipaddress);
+    var reader = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_IPADDRESS);
     reader.subscribe(roomId);
     reader.on("message", function (channel, message) {
       if (channel === "test" && message === testString) {

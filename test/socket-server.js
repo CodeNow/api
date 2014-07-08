@@ -8,7 +8,7 @@ var configs = require('configs');
 var api = require('./fixtures/api-control');
 var Primus = require('primus');
 var Socket = Primus.createSocket({
-  transformer: configs.primus.transformer,
+  transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
     'substream': require('substream')
   },
@@ -26,7 +26,8 @@ describe('Socket Server', { timeout: 5000 }, function () {
     var pass = false;
     beforeEach(function (done) {
       pass = false;
-      primus = new Socket('http://'+configs.ipaddress+':'+configs.port+"?type=filibuster");
+      primus = new Socket('http://'+(process.env.IPADDRESS || "127.0.0.1")
+        +':'+process.env.PORT+"?type=filibuster");
       done();
     });
     var check = function(errMsg, done) {

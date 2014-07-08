@@ -9,7 +9,6 @@
 // if (configs.newrelic) {
 //   require('newrelic');
 // }
-
 var api_server = require('index');
 
 var worker = new api_server();

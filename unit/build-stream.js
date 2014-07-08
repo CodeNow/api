@@ -14,7 +14,7 @@ var Primus = require('primus');
 var http = require('http');
 var httpServer;
 var primusClient = Primus.createSocket({
-  transformer: configs.primus.transformer,
+  transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
     'substream': require('substream')
   },
@@ -29,11 +29,11 @@ describe('build-stream', function () {
     primusServer = new Primus(
       httpServer,
       {
-        transformer: configs.socketType,
+        transformer: process.env.PRIMUS_TRANSFORMER,
         parser: 'JSON'
       });
     buildStream.attachBuildStreamHandelerToPrimus(primusServer);
-    httpServer.listen(configs.port);
+    httpServer.listen(process.env.PORT);
     done();
   });
 
@@ -50,7 +50,8 @@ describe('build-stream', function () {
     var clientReadCount = createCount(numClients, done);
 
     for (var i = numClients - 1; i >= 0; i--) {
-      var client = new primusClient('http://localhost:'+configs.port+"?type=build-stream&id="+roomId);
+      var client = new primusClient('http://localhost:'+
+        process.env.PORT+"?type=build-stream&id="+roomId);
       client.on('data', handleData);
       client.on('open',clientOpenCount.next);
     }
