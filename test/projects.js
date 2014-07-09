@@ -256,7 +256,7 @@ describe('Projects - /projects', function () {
           name: uuid(),
           test: 'fake'
         };
-        ctx.user.createProject({json: json }, function (err, body, code) {
+        var project = ctx.user.createProject({json: json }, function (err, body, code) {
           if (err) { return done(err); }
           expect(code).to.equal(201);
           expect(body).to.have.property('_id');
@@ -265,7 +265,16 @@ describe('Projects - /projects', function () {
           expect(body).to.have.property('public', false);
           expect(body.environments).to.be.an('array');
           expect(body.environments).to.have.a.lengthOf(1);
-          done();
+          var environments = project.fetchEnvironments(function (err) {
+            if (err) { return done(err); }
+            expect(environments.models).to.have.a.lengthOf(1);
+            var env = environments.models[0];
+            var builds = env.fetchBuilds(function (err) {
+              if (err) { return done(err); }
+              expect(builds.models).to.have.a.lengthOf(1);
+              done();
+            });
+          });
         });
       });
     });

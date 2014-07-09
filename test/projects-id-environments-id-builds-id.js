@@ -59,4 +59,62 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
       });
     });
   });
+
+});
+
+describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
+  var ctx = {};
+
+  before(api.start.bind(ctx));
+  before(dock.start.bind(ctx));
+  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/nock-github'));
+  after(api.stop.bind(ctx));
+  after(dock.stop.bind(ctx));
+  afterEach(require('./fixtures/clean-mongo').removeEverything);
+  afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-nock'));
+
+  describe('POST', function () {
+    beforeEach(function (done) {
+      nockS3();
+      multi.createRegisteredUserAndUnbuiltProject(function (err, user, project) {
+        if (err) { return done(err); }
+        ctx.user = user;
+        ctx.project = project;
+
+        var environments = ctx.project.fetchEnvironments(function (err) {
+          if (err) { return done(err); }
+
+          ctx.environment = environments.models[0];
+          ctx.builds = ctx.environment.fetchBuilds(function (err) {
+            if (err) { return done(err); }
+
+            ctx.build = ctx.builds.models[0];
+            done();
+          });
+        });
+      });
+    });
+
+    it('should return and environment build', { timeout: 5000 }, function (done) {
+      ctx.build.build(ctx.buildId, function (err, body, code) {
+        if (err) { return done(err); }
+
+        expect(code).to.equal(201);
+        expect(body).to.be.ok;
+        // FIXME: replace redis with primus
+        var redis = require('models/redis').createClient();
+        redis.on('subscribe', function () {});
+        redis.on('message', function () {
+          done();
+        });
+        redis.subscribe(ctx.build.id()+':build_completed');
+        // FIXME: check exact build fields
+        // expect(body[0].builds).to.be.an('array');
+        // expect(body[0].builds).to.have.length(1);
+        // expect(body[0].builds[0]).to.be.ok;
+      });
+    });
+  });
 });
