@@ -8,7 +8,7 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
 var uuid = require('uuid');
-var clone = require('clone');
+var clone = require('101/clone');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
@@ -51,7 +51,7 @@ describe('Projects - /projects', function () {
           name: ctx.project1.toJSON().name
         }};
         ctx.user2.fetchProjects(query, function (err, body) {
-          if (err) { done(err); }
+          if (err) { return done(err); }
 
           expect(body).to.be.ok;
           expect(body).to.be.an('array');
@@ -67,7 +67,7 @@ describe('Projects - /projects', function () {
           name: ctx.project1.toJSON().name
         }};
         ctx.user2.fetchProjects(query, function (err, body) {
-          if (err) { done(err); }
+          if (err) { return done(err); }
 
           expect(body).to.be.ok;
           expect(body).to.be.an('array');
@@ -85,7 +85,7 @@ describe('Projects - /projects', function () {
           name: ctx.project2.toJSON().name
         }};
         ctx.user2.fetchProjects(query, function (err, body) {
-          if (err) { done(err); }
+          if (err) { return done(err); }
 
           expect(body).to.be.ok;
           expect(body).to.be.an('array');
@@ -101,7 +101,7 @@ describe('Projects - /projects', function () {
           name: ctx.project2.toJSON().name
         }};
         ctx.user2.fetchProjects(query, function (err, body) {
-          if (err) { done(err); }
+          if (err) { return done(err); }
 
           expect(body).to.be.ok;
           expect(body).to.be.an('array');
@@ -120,7 +120,7 @@ describe('Projects - /projects', function () {
           page: 0
         }};
         ctx.user2.fetchProjects(query, function (err, body) {
-          if (err) { done(err); }
+          if (err) { return done(err); }
 
           expect(body).to.be.ok;
           expect(body).to.be.an('array');
@@ -136,7 +136,7 @@ describe('Projects - /projects', function () {
           sort: 'created'
         }};
         ctx.user2.fetchProjects(query, function (err, body) {
-          if (err) { done(err); }
+          if (err) { return done(err); }
 
           expect(body).to.be.ok;
           expect(body).to.be.an('array');
@@ -150,7 +150,7 @@ describe('Projects - /projects', function () {
           sort: '-created'
         }};
         ctx.user2.fetchProjects(query, function (err, body) {
-          if (err) { done(err); }
+          if (err) { return done(err); }
 
           expect(body).to.be.ok;
           expect(body).to.be.an('array');

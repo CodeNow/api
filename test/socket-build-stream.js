@@ -20,7 +20,7 @@ var primusClient = Primus.createSocket({
   parser: 'JSON'
 });
 
-describe('build-stream', function () {
+describe('Build Stream', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));

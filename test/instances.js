@@ -8,7 +8,7 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
 var async = require('async');
-var clone = require('clone');
+var clone = require('101/clone');
 var RedisList = require('redis-types').List;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
