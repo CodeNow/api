@@ -35,11 +35,6 @@ describe('Build', function () {
     });
   });
 
-  describe('Owner Id Validation', function () {
-    validation.objectIdValidationChecking(createNewBuild, 'owner');
-    validation.requiredValidationChecking(createNewBuild, 'owner');
-  });
-
   describe('CreatedBy Validation', function () {
     validation.objectIdValidationChecking(createNewBuild, 'createdBy');
     validation.requiredValidationChecking(createNewBuild, 'createdBy');

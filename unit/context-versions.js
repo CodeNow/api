@@ -45,11 +45,6 @@ describe('Versions', function () {
     });
   });
 
-  describe('Owner Id Validation', function () {
-    validation.objectIdValidationChecking(createNewVersion, 'owner');
-    validation.requiredValidationChecking(createNewVersion, 'owner');
-  });
-
   describe('Context Id Validation', function () {
     validation.objectIdValidationChecking(createNewVersion, 'context');
     validation.requiredValidationChecking(createNewVersion, 'context');

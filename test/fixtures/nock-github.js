@@ -3,12 +3,10 @@ var uuid = require('uuid');
 var multiline = require('multiline');
 
 module.exports = function (cb) {
-
   nock('http://runnable.com:80')
     .persist()
     .get('/')
     .reply(200);
-
   // login page - auto accept
   nock('https://github.com:443')
     .filteringPath(/\/login\?.+/, '/login')
