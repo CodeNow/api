@@ -10,6 +10,7 @@ var expect = Lab.expect;
 var join = require('path').join;
 var findIndex = require('101/find-index');
 var hasProperties = require('101/has-properties');
+var async = require('async');
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -66,8 +67,8 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           if (err) { return done(err); }
           expect(files).to.be.okay;
           expect(files).to.be.an('array');
-          expect(files).to.have.length(2);
-          // expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+          expect(files).to.have.length(3);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
           expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
             .to.not.equal(-1);
           expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'file.txt') }))).to.not.equal(-1);
@@ -75,13 +76,74 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         });
       });
     });
+    it('should let us create a directory', function (done) {
+      ctx.file = ctx.version.createFile({ json: {
+        name: 'dir/',
+        path: '/',
+        isDir: true
+      }}, function (err, file, code) {
+        if (err) { return done(err); }
+        expect(code).to.equal(201);
+        expect(file).to.be.okay;
+        expect(file).to.be.an('object');
+        ctx.version.fetchFiles(function (err, files) {
+          if (err) { return done(err); }
+          expect(files).to.be.okay;
+          expect(files).to.be.an('array');
+          expect(files).to.have.length(3);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
+            .to.not.equal(-1);
+          expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'dir/') }))).to.not.equal(-1);
+          done();
+        });
+      });
+    });
+    it('should let us create nested directories, but does not list them at root', function (done) {
+      async.series([
+        ctx.version.createFile.bind(ctx.version, { json: {
+          name: 'dir/',
+          path: '/'
+        }}),
+        ctx.version.createFile.bind(ctx.version, { json: {
+          name: 'dir2/',
+          path: '/dir/'
+        }}),
+        function (cb) {
+          ctx.version.fetchFiles(function (err, files) {
+            if (err) { return cb(err); }
+            expect(files).to.be.okay;
+            expect(files).to.be.an('array');
+            expect(files).to.have.length(3);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
+              .to.not.equal(-1);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'dir/') }))).to.not.equal(-1);
+            cb();
+          });
+        },
+        function (cb) {
+          ctx.version.fetchFiles({ qs: { prefix: '/dir/' } }, function (err, files) {
+            if (err) { return cb(err); }
+            expect(files).to.be.okay;
+            expect(files).to.be.an('array');
+            expect(files).to.have.length(2);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'dir', '/') })))
+              .to.not.equal(-1);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'dir', 'dir2/') })))
+              .to.not.equal(-1);
+            cb();
+          });
+        }
+      ], done);
+    });
   });
   describe('GET', function () {
     it('should give us files from a given version', function (done) {
       ctx.version.fetchFiles(function (err, files) {
         if (err) { return done(err); }
-        expect(files).to.have.length(1);
-        // expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+        expect(files).to.have.length(2);
+        expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
         expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
         done();
       });
