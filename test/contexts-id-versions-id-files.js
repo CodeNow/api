@@ -128,7 +128,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
             expect(files).to.be.okay;
             expect(files).to.be.an('array');
             expect(files).to.have.length(2);
-            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'dir', '/') })))
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'dir/') })))
               .to.not.equal(-1);
             expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'dir', 'dir2/') })))
               .to.not.equal(-1);
@@ -147,6 +147,31 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') }))).to.not.equal(-1);
         done();
       });
+    });
+    it('should let us filter files by multiple prefixes', function (done) {
+      async.series([
+        ctx.version.createFile.bind(ctx.version, { json: {
+          name: 'dir/',
+          path: '/'
+        }}),
+        ctx.version.createFile.bind(ctx.version, { json: {
+          name: 'dir2/',
+          path: '/'
+        }}),
+        function (cb) {
+          ctx.version.fetchFiles({ qs: { prefix: ['/dir/', '/dir2/'] }}, function (err, files) {
+            if (err) { return cb(err); }
+            expect(files).to.be.okay;
+            expect(files).to.be.an('array');
+            expect(files).to.have.length(2);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'dir/') })))
+              .to.not.equal(-1);
+            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'dir2/') })))
+              .to.not.equal(-1);
+            cb();
+          });
+        }
+      ], done);
     });
   });
 });
