@@ -49,7 +49,7 @@
     "request": "^2.37.0",
     "rimraf": "^2.2.8",
     "rollbar": "^0.3.8",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.11.1",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.11.7",
     "simple-api-client": "^0.5.4",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
