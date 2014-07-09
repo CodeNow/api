@@ -79,7 +79,8 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
     it('should let us create a directory', function (done) {
       ctx.file = ctx.version.createFile({ json: {
         name: 'dir/',
-        path: '/'
+        path: '/',
+        isDir: true
       }}, function (err, file, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);
