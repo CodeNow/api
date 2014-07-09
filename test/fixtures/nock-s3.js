@@ -61,6 +61,28 @@ module.exports = function (cb) {
       'etag': uuid()
     });
 
+  nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/dir\//,
+      '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/dir/')
+    .filteringRequestBody(function () { return '*'; })
+    .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/dir/', '*')
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
+
+  nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/dir\/dir2\//,
+      '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/dir/dir2/')
+    .filteringRequestBody(function () { return '*'; })
+    .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/dir/dir2/', '*')
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
+
   /* GETS */
   nock('https://s3.amazonaws.com:443')
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/Dockerfile\?versionId=.*/,

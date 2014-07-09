@@ -71,7 +71,6 @@ describe('Github', function () {
         if (err) { return done(err); }
 
         expect(body).to.be.okay;
-        console.log(body);
         expect(res.statusCode).to.equal(201);
         done();
       });
