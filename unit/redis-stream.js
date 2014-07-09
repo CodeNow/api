@@ -6,7 +6,6 @@ var beforeEach = Lab.beforeEach;
 
 var createCount = require('callback-count');
 var redis = require('redis');
-var configs = require('configs');
 var uuid = require('uuid');
 var redisStream = require('../lib/models/redis/stream.js');
 

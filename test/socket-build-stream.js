@@ -6,7 +6,6 @@ var before = Lab.before;
 var after = Lab.after;
 
 var createCount = require('callback-count');
-var configs = require('configs');
 var uuid = require('uuid');
 var buildStream = require('../lib/socket/build-stream.js');
 var api = require('./fixtures/api-control');

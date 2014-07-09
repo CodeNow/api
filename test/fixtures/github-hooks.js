@@ -1,5 +1,4 @@
 var url = require('url');
-var configs = require('../../lib/configs');
 
 module.exports = {
   ping: {

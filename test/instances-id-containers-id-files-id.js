@@ -14,7 +14,6 @@ var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var fs = require('fs');
 var path = require('path');
-var configs = require('configs');
 
 function containerRoot (ctx) {
   return path.join(__dirname,

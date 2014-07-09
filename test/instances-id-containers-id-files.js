@@ -14,7 +14,6 @@ var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var fs = require('fs');
 var path = require('path');
-var configs = require('configs');
 
 describe('File System - /instances/:id/containers/:id/files', function () {
   var ctx = {};
