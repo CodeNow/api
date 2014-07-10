@@ -113,19 +113,20 @@ Instances (running builds)
 
 
 
-Pages:
+Pages
+ - see client/config/routes.js of runnable-angular repository
 
-Build List Page - /anandkumar/filibuster/master
+Build List Page - /project/anandkumar/filibuster/master
  - has a listing of builds for an environment
 
-Build Page - /anandkumar/filibuster/master/build/:id
+Build Page - /project/anandkumar/filibuster/master/build/:id
  - most complex page
  - you can edit build files and create new builds
  - you can rebuild - create a new build from a build
  - shows logs if in progress, shows all logs if complete
  - [launch instance button]
 
-Instance Page - /instances/:id (just like our current container pages except supports multiple containers (full instance))
+Instance Page - /project/anandkumar/filibuster/master/build/:id (just like our current container pages except supports multiple containers (full instance))
  - create an instance from a build (create containers for all build images (versions))
 
 
@@ -134,7 +135,6 @@ TODO:
 
 builds done in primitive form
 bryan is working builds via docker (then queueing and build logs)
-authentication (github and works with primus)
 tj is hooking up files - maybe anand can wrap this up
 mongoose validation plugins
 dotenv for containerization
