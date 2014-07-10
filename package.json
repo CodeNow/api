@@ -15,7 +15,6 @@
     "bcrypt": "~0.7.5",
     "body-parser": "^1.4.3",
     "callback-count": "~0.1.0",
-    "clone": "~0.1.15",
     "connect-redis": "^2.0.0",
     "cors": "^2.4.1",
     "dat-middleware": "^1.7.0",

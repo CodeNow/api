@@ -1,4 +1,4 @@
-var configs = require('../lib/configs');
+var configs = require('../lib/loadenv');
 var request = require('request');
 var async = require('async');
 

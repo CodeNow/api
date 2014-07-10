@@ -1,5 +1,5 @@
-var configs = require('configs');
-
+var loadenv = require('loadenv');
+loadenv();
 /**
  * New Relic agent configuration.
  *
@@ -10,11 +10,11 @@ exports.config = {
   /**
    * Array of application names.
    */
-  app_name : [configs.newrelic.name],
+  app_name : [process.env.NEWRELIC_NAME],
   /**
    * Your New Relic license key.
    */
-  license_key : configs.newrelic.key,
+  license_key : process.env.NEWRELIC_KEY,
   logging : {
     /**
      * Level at which to log. 'trace' is most useful to New Relic when diagnosing

@@ -1,16 +1,15 @@
 var url = require('url');
-var configs = require('../../lib/configs');
 
 module.exports = {
   ping: {
     url: url.format({
       protocol: 'http:',
       slashes: true,
-      host: configs.rootDomain,
+      host: process.env.ROOT_DOMAIN,
       pathname: 'actions/github'
     }),
     headers: {
-      host: configs.rootDomain,
+      host: process.env.ROOT_DOMAIN,
       accept: '*/*',
       'user-agent': 'GitHub Hookshot 3e70583',
       'x-github-event': 'ping',
@@ -41,11 +40,11 @@ module.exports = {
     url: url.format({
       protocol: 'http:',
       slashes: true,
-      host: configs.rootDomain,
+      host: process.env.ROOT_DOMAIN,
       pathname: 'actions/github'
     }),
     headers: {
-      host: configs.rootDomain,
+      host: process.env.ROOT_DOMAIN,
       accept: '*/*',
       'user-agent': 'GitHub Hookshot 2636b5a',
       'x-github-event': 'push',
