@@ -24,7 +24,7 @@ describe('User', function () {
       username: "test",
       lowerUsername: "test",
       show_email: false,
-      created: Date.now() - 60000,
+      created: Date.now(),
       context: validation.VALID_OBJECT_ID,
       files:[{
         Key: "test",
