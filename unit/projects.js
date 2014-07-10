@@ -24,7 +24,7 @@ describe('Projects', function () {
       description: 'description',
       public: false,
       owner: validation.VALID_OBJECT_ID,
-      created: Date.now(),
+      created: Date.now() - 60000,
       environment: [sampleEnvironment],
       defaultEnvironment: validation.VALID_OBJECT_ID
     });

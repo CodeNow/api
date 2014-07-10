@@ -241,6 +241,9 @@ var requiredCheck = function (modelObject, done, property) {
 
 var successCheck = function (modelObject, done, property) {
   modelObject.save(function (err, savedModel) {
+    if (err) {
+      console.log("\n\n\n************************\n" + err+ "\n************************\n\n\n");
+    }
     expect(err).to.not.be.ok;
     expect(savedModel).to.be.ok;
     expect(keypath.get(savedModel, property)).to.be.ok;

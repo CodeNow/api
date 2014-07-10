@@ -23,7 +23,7 @@ describe('Context Unit Testing', function () {
         sourceType: "test",
         location: "www.google.com"
       }],
-      created: Date.now()
+      created: Date.now() - 60000
     });
   }
 

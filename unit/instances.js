@@ -20,7 +20,7 @@ describe('Instance', function () {
       name: 'name',
       context: validation.VALID_OBJECT_ID,
       version: validation.VALID_OBJECT_ID,
-      created: Date.now(),
+      created: Date.now() - 60000,
       dockerHost: Faker.Image.imageUrl(),
       dockerContainer: validation.VALID_OBJECT_ID
     });
@@ -34,7 +34,7 @@ describe('Instance', function () {
       createdBy: validation.VALID_OBJECT_ID,
       project: validation.VALID_OBJECT_ID,
       environment: validation.VALID_OBJECT_ID,
-      created: Date.now(),
+      created: Date.now() - 60000,
       containers: [createNewContainer()],
       outputViews: [{
         name: "testOutputView",

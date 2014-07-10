@@ -20,7 +20,7 @@ describe('Versions', function () {
       owner: validation.VALID_OBJECT_ID,
       createdBy: validation.VALID_OBJECT_ID,
       config: validation.VALID_OBJECT_ID,
-      created: Date.now(),
+      created: Date.now() - 60000,
       context: validation.VALID_OBJECT_ID,
       files:[{
         Key: "test",

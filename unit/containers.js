@@ -19,7 +19,7 @@ describe('Containers', function () {
       name: 'name',
       context: validation.VALID_OBJECT_ID,
       version: validation.VALID_OBJECT_ID,
-      created: Date.now(),
+      created: Date.now() - 60000,
       dockerHost: Faker.Image.imageUrl(),
       dockerContainer: validation.VALID_OBJECT_ID
     });

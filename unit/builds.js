@@ -19,7 +19,7 @@ describe('Build', function () {
       environment: validation.VALID_OBJECT_ID,
       contexts: [validation.VALID_OBJECT_ID],
       contextVersions: [validation.VALID_OBJECT_ID],
-      created: Date.now(),
+      created: Date.now() - 60000,
       createdBy: validation.VALID_OBJECT_ID
     });
   }
