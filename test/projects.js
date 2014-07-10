@@ -208,7 +208,7 @@ describe('Projects - /projects', function () {
         name: uuid(),
         dockerfile: 'FROM ubuntu\n'
       };
-      var requiredProjectKeys = Object.keys(json);
+      var requiredProjectKeys = ['name'];
 
       requiredProjectKeys.forEach(function (missingBodyKey) {
         it('should error if missing ' + missingBodyKey, function (done) {
