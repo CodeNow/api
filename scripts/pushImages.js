@@ -2,7 +2,7 @@ var async, configs, encodeId, images, mongoose, plus, slash, users;
 async = require('async');
 images = require('../lib/models/images');
 users = require('../lib/models/users');
-configs = require('../lib/configs');
+configs = require('../lib/loadenv');
 mongoose = require('mongoose');
 var request = require('request');
 mongoose.connect(configs.mongo);

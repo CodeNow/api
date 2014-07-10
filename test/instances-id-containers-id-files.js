@@ -14,7 +14,6 @@ var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var fs = require('fs');
 var path = require('path');
-var configs = require('configs');
 
 describe('File System - /instances/:id/containers/:id/files', function () {
   var ctx = {};
@@ -76,7 +75,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
           var containerAttrs = ctx.instance.toJSON().containers[0];
           ctx.container = ctx.instance.newContainer(containerAttrs);
 
-          ctx.krain = krain.listen(configs.krainPort);
+          ctx.krain = krain.listen(process.env.KRAIN_PORT);
           fs.mkdirSync(containerRoot(ctx));
           fs.mkdirSync(containerRoot(ctx)+dir1);
           fs.mkdirSync(containerRoot(ctx)+dir1_dir1);

@@ -6,14 +6,13 @@ var before = Lab.before;
 var after = Lab.after;
 
 var createCount = require('callback-count');
-var configs = require('configs');
 var uuid = require('uuid');
 var buildStream = require('../lib/socket/build-stream.js');
 var api = require('./fixtures/api-control');
 
 var Primus = require('primus');
 var primusClient = Primus.createSocket({
-  transformer: configs.primus.transformer,
+  transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
     'substream': require('substream')
   },
@@ -34,7 +33,7 @@ describe('Build Stream', function () {
     var clientOpenCount = createCount(numClients, sendData);
     var clientReadCount = createCount(numClients, done);
 
-    var client = new primusClient('http://'+configs.ipaddress+':'+configs.port+"?type=build-stream&id="+roomId);
+    var client = new primusClient('http://'+process.env.IPADDRESS+':'+process.env.PORT+"?type=build-stream&id="+roomId);
     client.on('open', function() {
       clientOpenCount.next();
       client.on('end', function () {
