@@ -1,5 +1,7 @@
 // FIXME: restore modules
-// var configs = require('configs');
+// var loadenv = require('loadenv');
+// loadenv();
+
 
 // if (configs.nodetime) {
 //   var nodetime = require('nodetime');
