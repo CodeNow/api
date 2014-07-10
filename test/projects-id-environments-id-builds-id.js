@@ -124,7 +124,9 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
         client.on('end', function () {
           done();
         });
-
+        client.on('err', function (err) {
+          done(new Error(err));
+        });
         client.on('data', function(data) {
           expect(data.toString()).to.contain('Successfully built');
         });
