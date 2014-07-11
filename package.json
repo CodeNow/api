@@ -9,7 +9,7 @@
   "private": true,
   "dependencies": {
     "101": "^0.6.0",
-    "Filibuster": "git://github.com/Runnable/Filibuster.git",
+    "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.0.4",
     "async": "^0.9.0",
     "aws-sdk": "~2.0.0-rc.15",
     "bcrypt": "~0.7.5",
