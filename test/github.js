@@ -40,12 +40,9 @@ describe('Github', function () {
         ctx.versionId = ctx.build.toJSON().contextVersions[0];
         ctx.context = ctx.user.fetchContext(ctx.contextId, function (err) {
           if (err) { return done(err); }
-          ctx.context.update({ json: {
-            source: [{
-              sourceType: 'github',
-              location: 'bkendall/flaming-octo-nemesis'
-            }]
-          }}, done);
+          ctx.version.addGithubRepo({
+            repo: 'tjmehta/101'
+          }, done);
         });
       });
     });
