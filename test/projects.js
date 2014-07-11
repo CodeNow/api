@@ -224,16 +224,17 @@ describe('Projects - /projects', function () {
         });
       });
       it('should create a project', function(done) {
-        ctx.user.createProject({ json: json }, function (err, body, code) {
+        ctx.user.createProject({ json: json }, function (err, project, code) {
           if (err) { return done(err); }
 
           expect(code).to.equal(201);
-          expect(body).to.have.property('_id');
-          expect(body).to.have.property('name', json.name);
-          expect(body).to.have.property('owner', ctx.user.id());
-          expect(body).to.have.property('public', false);
-          expect(body.environments).to.be.an('array');
-          expect(body.environments).to.have.a.lengthOf(1);
+          expect(project).to.have.property('_id');
+          expect(project).to.have.property('name', json.name);
+          expect(project).to.have.property('owner');
+          expect(project.owner).to.have.property('github', ctx.user.toJSON().accounts.github.id);
+          expect(project).to.have.property('public', false);
+          expect(project.environments).to.be.an('array');
+          expect(project.environments).to.have.a.lengthOf(1);
           done();
         });
       });
@@ -261,7 +262,8 @@ describe('Projects - /projects', function () {
           expect(code).to.equal(201);
           expect(body).to.have.property('_id');
           expect(body).to.have.property('name', json.name);
-          expect(body).to.have.property('owner', ctx.user.id());
+          expect(project).to.have.property('owner');
+          expect(project.owner).to.have.property('github', ctx.user.toJSON().accounts.github.id);
           expect(body).to.have.property('public', false);
           expect(body.environments).to.be.an('array');
           expect(body.environments).to.have.a.lengthOf(1);

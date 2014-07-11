@@ -4,6 +4,8 @@ var multiline = require('multiline');
 
 module.exports = function (cb) {
 
+  var githubId = Math.floor(Math.random() * 10000);
+
   nock('http://runnable.com:80')
     .persist()
     .get('/')
@@ -84,15 +86,14 @@ module.exports = function (cb) {
     });
 
   // user info
-  var randomGithubId = uuid();
   var randomUsername = uuid();
   nock('https://api.github.com:443')
     .filteringPath(/\/user\?.+/, '/user')
     .get('/user')
     .reply(200, {
       "login": randomUsername,
-      "id": randomGithubId,
-      "avatar_url": "https://avatars.githubusercontent.com/u/"+randomGithubId+"?",
+      "id": githubId,
+      "avatar_url": "https://avatars.githubusercontent.com/u/"+githubId+"?",
       "gravatar_id": 'wrong',
       "url": "https://api.github.com/users/"+randomUsername,
       "html_url": "https://github.com/"+randomUsername,
