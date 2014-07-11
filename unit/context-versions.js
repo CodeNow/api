@@ -17,8 +17,8 @@ describe('Versions', function () {
   function createNewVersion() {
     return new Version({
       message: "test",
-      owner: validation.VALID_OBJECT_ID,
-      createdBy: validation.VALID_OBJECT_ID,
+      owner: { github: validation.VALID_GITHUB_ID },
+      createdBy: { github: validation.VALID_GITHUB_ID },
       config: validation.VALID_OBJECT_ID,
       created: Date.now(),
       context: validation.VALID_OBJECT_ID,
@@ -46,6 +46,11 @@ describe('Versions', function () {
         done();
       }
     });
+  });
+
+  describe('Github Owner Id Validation', function () {
+    validation.githubUserRefValidationChecking(createNewVersion, 'owner.github');
+    validation.requiredValidationChecking(createNewVersion, 'owner');
   });
 
   describe('Context Id Validation', function () {

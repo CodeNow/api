@@ -7,16 +7,40 @@ var schemaValidators = require('../../lib/models/mongo/schemas/schema-validators
 var keypath = require('keypather')();
 
 var OBJECT_ID = '507c7f79bcf86cd7994f6c0e';
+var GITHUB_ID = 1;
 var VALIDATOR_ERROR = 'ValidationError';
 var NOT_URL_SAFE = [Faker.Internet.email(), Faker.Lorem.sentence(), '4t523456&^()*&^)*&^)*(&^)*&^'];
 var URL_SAFE = [String(Faker.Internet.userName()).replace(/[^\w\d]/g ,'_'),
     Faker.Name.firstName(), OBJECT_ID];
-var ALPHA_NUM_SAFE = [Faker.Name.firstName(), OBJECT_ID, Faker.Name.firstName() + " " + Faker.Name.lastName(),
-  Faker.Lorem.sentence()];
+var NAME_SAFE = [Faker.Name.firstName(), OBJECT_ID, Faker.Name.firstName() + ' ' +
+  Faker.Name.lastName(), Faker.Lorem.sentence()];
+var ALPHA_NUM_SAFE = [Faker.Name.firstName(), OBJECT_ID, 'Container 123', 'A name of a container'];
 var ALPHA_NUM_NOSPACE_SAFE = [Faker.Name.firstName(), OBJECT_ID];
 var NOT_ALPHA_NUM_SAFE = [Faker.Internet.email(), Faker.Image.imageUrl() , Faker.Internet.ip()];
-var URLS = [Faker.Image.imageUrl(), "http://www.google.com", "http://mybucket.s3.amazonaws.com/homepage.html"];
+var URLS = [Faker.Image.imageUrl(), 'http://www.google.com',
+  'http://mybucket.s3.amazonaws.com/homepage.html'];
 
+
+var githubUserRefValidationChecking = function(createModelFunction, property, isList) {
+  describe('Github User Ref Validation', function () {
+    var word = makeStringOfLength(50);
+    it('should fail validation for an invalid Github User Id (' + word + ')', function (done) {
+      var myObject = createModelFunction();
+      fixArrayKeypathSet(myObject, property, word);
+      myObject.save(function (err) {
+        expect(err).to.be.ok;
+        expect(err.name).to.be.ok;
+        expect(err.name).to.equal('ValidationError');
+        done();
+      });
+    });
+    it(property + ' should succeed validation for a valid Github User Id', function (done) {
+      var myObject = createModelFunction();
+      fixArrayKeypathSet(myObject, property, isList ? [GITHUB_ID] : GITHUB_ID);
+      successCheck(myObject, done, property);
+    });
+  });
+};
 
 var objectIdValidationChecking = function(createModelFunction, property, isList) {
   describe('ObjectId Validation', function () {
@@ -27,7 +51,7 @@ var objectIdValidationChecking = function(createModelFunction, property, isList)
       myObject.save(function (err) {
         expect(err).to.be.ok;
         expect(err.name).to.be.ok;
-        expect(err.name).to.equal("CastError");
+        expect(err.name).to.equal('CastError');
         done();
       });
     });
@@ -70,7 +94,7 @@ var stringLengthValidationChecking = function(createModelFunction, property, max
     });
     it('should fail length validation for a string of length ' + (maxLength + 1), function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, word + "a");
+      fixArrayKeypathSet(myObject, property, word + 'a');
       errorCheck(myObject, done, property,
         schemaValidators.validationMessages.stringLength(maxLength));
     });
@@ -136,6 +160,27 @@ var alphaNumNameValidationChecking = function(createModelFunction, property) {
   });
 };
 
+var nameValidationChecking = function(createModelFunction, property) {
+  describe('Alphanumic (with space) Validation', function () {
+    NOT_ALPHA_NUM_SAFE.forEach(function (string) {
+      it('should fail validation for ' + string, function (done) {
+        var model = createModelFunction();
+        fixArrayKeypathSet(model, property, string);
+        errorCheck(model, done, property, schemaValidators.validationMessages.characters);
+      });
+    });
+    NAME_SAFE.forEach(function (string) {
+      it('should succeed validation for ' + string, function (done) {
+        var model = createModelFunction();
+        fixArrayKeypathSet(model, property, string);
+        successCheck(model, done, property);
+      });
+    });
+
+    stringLengthValidationChecking(createModelFunction, property, 100);
+  });
+};
+
 var requiredValidationChecking = function(createModelFunction, property) {
   describe(property + ' Required Validation', function () {
     it(property + ' should fail validation because it is required', function (done) {
@@ -189,11 +234,11 @@ var errorCheck = function (modelObject, done, property, validationString) {
       var errorValue = err.errors[property];
       expect(errorValue.value).to.be.ok;
       expect(errorValue.value).to.equal(keypath.get(modelObject,property));
-      Lab.assert("The error received isn't the correct error",
+      Lab.assert('The error received isn\'t the correct error',
           errorValue.message.indexOf(validationString) !== -1);
     } else {
-      done(new Error("The " + (typeof modelObject) + " failed to catch a " + property +
-        " validation"));
+      done(new Error('The ' + (typeof modelObject) + ' failed to catch a ' + property +
+        ' validation'));
     }
     done();
   });
@@ -207,11 +252,11 @@ var requiredCheck = function (modelObject, done, property) {
     expect(err.errors).to.be.ok;
     if (err.errors.hasOwnProperty(property)) {
       var errorValue = err.errors[property];
-      Lab.assert("The error received isn't the correct error",
-          errorValue.message.indexOf("required") !== -1);
+      Lab.assert('The error received isn\'t the correct error',
+          errorValue.message.indexOf('required') !== -1);
     } else {
-      done(new Error("The " + (typeof modelObject) + " failed to catch a " + property +
-        " validation"));
+      done(new Error('The ' + (typeof modelObject) + ' failed to catch a ' + property +
+        ' validation'));
     }
     done();
   });
@@ -219,6 +264,9 @@ var requiredCheck = function (modelObject, done, property) {
 
 var successCheck = function (modelObject, done, property) {
   modelObject.save(function (err, savedModel) {
+    if (err) {
+      return done(err);
+    }
     expect(err).to.not.be.ok;
     expect(savedModel).to.be.ok;
     expect(keypath.get(savedModel, property)).to.be.ok;
@@ -230,7 +278,7 @@ var successCheck = function (modelObject, done, property) {
 var makeStringOfLength = function(length) {
   var returnValue = '';
   for(var x = 0; x < length; x++) {
-    returnValue += "a";
+    returnValue += 'a';
   }
   return returnValue;
 };
@@ -238,6 +286,7 @@ var makeStringOfLength = function(length) {
 module.exports.makeStringOfLength = makeStringOfLength;
 module.exports.successCheck = successCheck;
 module.exports.errorCheck = errorCheck;
+module.exports.githubUserRefValidationChecking = githubUserRefValidationChecking;
 module.exports.objectIdValidationChecking = objectIdValidationChecking;
 module.exports.stringLengthValidationChecking = stringLengthValidationChecking;
 module.exports.requiredValidationChecking = requiredValidationChecking;
@@ -245,9 +294,11 @@ module.exports.urlValidationChecking = urlValidationChecking;
 module.exports.urlSafeNameValidationChecking = urlSafeNameValidationChecking;
 module.exports.dockerIdValidationChecking = dockerIdValidationChecking;
 module.exports.alphaNumNameValidationChecking = alphaNumNameValidationChecking;
+module.exports.nameValidationChecking = nameValidationChecking;
 module.exports.fixArrayKeypathSet = fixArrayKeypathSet;
 module.exports.fixArrayKeypathDel = fixArrayKeypathDel;
 module.exports.VALID_OBJECT_ID = OBJECT_ID;
+module.exports.VALID_GITHUB_ID = GITHUB_ID;
 module.exports.NOT_URL_SAFE = NOT_URL_SAFE;
 module.exports.ALPHA_NUM_NOSPACE_SAFE = ALPHA_NUM_NOSPACE_SAFE;
 module.exports.URL_SAFE = URL_SAFE;

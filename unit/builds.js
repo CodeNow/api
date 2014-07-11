@@ -14,13 +14,13 @@ describe('Build', function () {
 
   function createNewBuild() {
     return new Build({
-      owner: validation.VALID_OBJECT_ID,
+      owner: { github: validation.VALID_GITHUB_ID },
       project: validation.VALID_OBJECT_ID,
       environment: validation.VALID_OBJECT_ID,
       contexts: [validation.VALID_OBJECT_ID],
       contextVersions: [validation.VALID_OBJECT_ID],
       created: Date.now(),
-      createdBy: validation.VALID_OBJECT_ID
+      createdBy: { github: validation.VALID_GITHUB_ID }
     });
   }
 
@@ -35,8 +35,13 @@ describe('Build', function () {
     });
   });
 
+  describe('Owner Validation', function () {
+    validation.githubUserRefValidationChecking(createNewBuild, 'owner.github');
+    validation.requiredValidationChecking(createNewBuild, 'owner');
+  });
+
   describe('CreatedBy Validation', function () {
-    validation.objectIdValidationChecking(createNewBuild, 'createdBy');
+    validation.githubUserRefValidationChecking(createNewBuild, 'createdBy.github');
     validation.requiredValidationChecking(createNewBuild, 'createdBy');
   });
 

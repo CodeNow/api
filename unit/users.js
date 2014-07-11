@@ -68,11 +68,11 @@ describe('User', function () {
   });
 
   describe('Name Validation', function () {
-    validation.alphaNumNameValidationChecking(createNewUser, 'name');
+    validation.nameValidationChecking(createNewUser, 'name');
   });
 
   describe('Company Validation', function () {
-    validation.alphaNumNameValidationChecking(createNewUser, 'company');
+    validation.nameValidationChecking(createNewUser, 'company');
   });
 
   describe('Username Validation', function () {
@@ -83,11 +83,4 @@ describe('User', function () {
     validation.urlSafeNameValidationChecking(createNewUser, 'lowerUsername');
   });
 
-  describe('Initial Referrer Validation', function () {
-    validation.objectIdValidationChecking(createNewUser, 'groupOwners', true);
-  });
-
-  describe('Group Owners Validation', function () {
-    validation.objectIdValidationChecking(createNewUser, 'groupMembers', true);
-  });
 });
