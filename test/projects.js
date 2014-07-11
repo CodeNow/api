@@ -272,7 +272,7 @@ describe('Projects - /projects', function () {
           name: uuid(),
           test: 'fake'
         };
-        ctx.user.createProject({json: json }, function (err, project, code) {
+        var projectModel = ctx.user.createProject({json: json }, function (err, project, code) {
           if (err) { return done(err); }
           expect(code).to.equal(201);
           expect(project).to.have.property('_id');
@@ -282,7 +282,7 @@ describe('Projects - /projects', function () {
           expect(project).to.have.property('public', false);
           expect(project.environments).to.be.an('array');
           expect(project.environments).to.have.a.lengthOf(1);
-          var environments = project.fetchEnvironments(function (err) {
+          var environments = projectModel.fetchEnvironments(function (err) {
             if (err) { return done(err); }
             expect(environments.models).to.have.a.lengthOf(1);
             var env = environments.models[0];

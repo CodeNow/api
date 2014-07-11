@@ -6,7 +6,6 @@ var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
-var configs = require('configs');
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -15,7 +14,7 @@ var multi = require('./fixtures/multi-factory');
 
 var Primus = require('primus');
 var primusClient = Primus.createSocket({
-  transformer: configs.primus.transformer,
+  transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
     'substream': require('substream')
   },
@@ -116,9 +115,9 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
         var client = new primusClient(
           'http://' +
-          configs.ipaddress +
+          process.env.IPADDRESS +
           ':' +
-          configs.port +
+          process.env.PORT +
           "?type=build-stream&id=" + body.contextVersions[0]);
 
         client.on('end', function () {
