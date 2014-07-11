@@ -53,13 +53,29 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
 
   describe('GET', function () {
     it('should give us the body of the file', function (done) {
-      files = ctx.version.fetchFiles(function (err) {
+      files = ctx.version.fetchFiles({ qs: { path: '/' }}, function (err) {
         if (err) { return done(err); }
 
         ctx.version.fetchFile(files.models[0].id(), function (err, file) {
           if (err) { return done(err); }
           expect(file).to.be.ok;
           // FIXME: this isn't right still... it's hitting the wrong path
+          done();
+        });
+      });
+    });
+    it('should give us the body of the file', function (done) {
+      files = ctx.version.fetchFiles({ qs: { path: '/' }}, function (err) {
+        if (err) { return done(err); }
+        var fileIndex = findIndex(files.toJSON(), hasProperties({ name: 'Dockerfile' }));
+        var file = files.models[fileIndex];
+
+        ctx.version.fetchFile(file.id(), function (err, file) {
+          if (err) { return done(err); }
+          expect(file).to.be.ok;
+          expect(file.name).to.equal('Dockerfile');
+          expect(file.path).to.equal('/');
+          expect(file.body).to.equal('FROM ubuntu');
           done();
         });
       });
@@ -79,24 +95,21 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         expect(file).to.be.an('object');
         expect(hasProperties(file, { Key: join(ctx.contextId, 'source', 'file.txt') })).to.be.okay;
 
-        ctx.version.updateFile('file.txt', { json: { Key: 'newfile.txt' }}, function (err, file, code) {
+        ctx.version.updateFile('file.txt', { json: { name: 'newfile.txt' }}, function (err, file, code) {
           if (err) { return done(err); }
           expect(code).to.equal(200);
           expect(file).to.be.okay;
           expect(file).to.be.an('object');
-          expect(hasProperties(file, { Key: join(ctx.contextId, 'source', 'file.txt') })).to.be.okay;
+          expect(hasProperties(file, { Key: join(ctx.contextId, 'source', 'newfile.txt') })).to.be.okay;
 
           // extra check, for sanity
-          ctx.version.fetchFiles(function (err, files) {
+          ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
             if (err) { return done(err); }
             expect(files).to.be.okay;
             expect(files).to.be.an('array');
-            expect(files).to.have.length(3);
-            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
-            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'Dockerfile') })))
-              .to.not.equal(-1);
-            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', 'newfile.txt') })))
-              .to.not.equal(-1);
+            expect(files).to.have.length(2);
+            expect(findIndex(files, hasProperties({ name: 'Dockerfile', path: '/', isDir: false }))).to.not.equal(-1);
+            expect(findIndex(files, hasProperties({ name: 'newfile.txt', path: '/', isDir: false }))).to.not.equal(-1);
             done();
           });
         });
@@ -106,18 +119,17 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
 
   describe('DELETE', function () {
     it('should delete a file', function (done) {
-      var files = ctx.version.fetchFiles(function (err) {
+      var files = ctx.version.fetchFiles({ qs: { path: '/' }}, function (err) {
         if (err) { return done(err); }
         var dockerfileKey = join(ctx.contextId, 'source', 'Dockerfile');
         var dockerfileIndex = findIndex(files.toJSON(), hasProperties({ 'Key': dockerfileKey }));
         ctx.version.destroyFile(files.models[dockerfileIndex].id(), function (err) {
           if (err) { return done(err); }
-          ctx.version.fetchFiles(function (err, files) {
+          ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
             if (err) { return done(err); }
             expect(files).to.be.okay;
             expect(files).to.be.an('array');
-            expect(files).to.have.length(1);
-            expect(findIndex(files, hasProperties({ Key: join(ctx.contextId, 'source', '/') }))).to.not.equal(-1);
+            expect(files).to.have.length(0);
             done();
           });
         });
