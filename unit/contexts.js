@@ -18,7 +18,7 @@ describe('Context Unit Testing', function () {
       description: 'description',
       public: false,
       version: [validation.VALID_OBJECT_ID],
-      owner: validation.VALID_OBJECT_ID,
+      owner: { github: validation.VALID_GITHUB_ID },
       source:[{
         sourceType: "test",
         location: "www.google.com"
@@ -28,12 +28,7 @@ describe('Context Unit Testing', function () {
   }
 
   it('should be able to save a context!', function (done) {
-    var context = new Context({
-      name: 'name',
-      description: 'description',
-      public: false,
-      owner: validation.VALID_OBJECT_ID
-    });
+    var context = createNewContext();
     context.save(function (err, context) {
       if (err) {
         done(err);
@@ -50,8 +45,8 @@ describe('Context Unit Testing', function () {
     validation.requiredValidationChecking(createNewContext, 'name');
   });
 
-  describe('Contexts Owner Validation', function () {
-    validation.objectIdValidationChecking(createNewContext, 'owner');
+  describe('Context Github Owner User Id Validation', function () {
+    validation.githubUserRefValidationChecking(createNewContext, 'owner.github');
   });
 
   describe('Contexts Description Validation', function () {
