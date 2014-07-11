@@ -74,6 +74,6 @@
     "scope": "user:email,repo,repo_deployment,read:repo_hook"
   },
   "primus": {
-      "transformer": "websockets"
+      "transformer": "engine.io"
   }
 }
