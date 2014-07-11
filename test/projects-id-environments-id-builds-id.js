@@ -6,11 +6,21 @@ var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
+var configs = require('configs');
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
+
+var Primus = require('primus');
+var primusClient = Primus.createSocket({
+  transformer: configs.primus.transformer,
+  plugin: {
+    'substream': require('substream')
+  },
+  parser: 'JSON'
+});
 
 describe('Build - /projects/:id/environments/:id/builds/:id', function () {
   var ctx = {};
@@ -103,17 +113,23 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
         expect(code).to.equal(201);
         expect(body).to.be.ok;
-        // FIXME: replace redis with primus
-        var redis = require('models/redis').createClient();
-        redis.on('subscribe', function () {});
-        redis.on('message', function () {
+
+        var client = new primusClient(
+          'http://' +
+          configs.ipaddress +
+          ':' +
+          configs.port +
+          "?type=build-stream&id=" + body.contextVersions[0]);
+
+        client.on('end', function () {
           done();
         });
-        redis.subscribe(ctx.build.id()+':build_completed');
-        // FIXME: check exact build fields
-        // expect(body[0].builds).to.be.an('array');
-        // expect(body[0].builds).to.have.length(1);
-        // expect(body[0].builds[0]).to.be.ok;
+        client.on('err', function (err) {
+          done(err);
+        });
+        client.on('data', function(data) {
+          expect(data.toString()).to.contain('Successfully built');
+        });
       });
     });
   });
