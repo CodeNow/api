@@ -61,8 +61,8 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         expect(code).to.equal(200);
         expect(body).to.be.an('array');
         // var testUser = body[0].createdBy;
-        expect(body[0].owner).to.be.a('string');
-        expect(body[0].createdBy).to.be.an('string');
+        expect(body[0].owner.github).to.equal(ctx.user.toJSON().accounts.github.id);
+        expect(body[0].createdBy.github).to.equal(ctx.user.toJSON().accounts.github.id);
 
         var build = ctx.environment.fetchBuild(builds.models[0].id(), function (err) {
           if (err) { return done(err); }
