@@ -83,11 +83,4 @@ describe('User', function () {
     validation.urlSafeNameValidationChecking(createNewUser, 'lowerUsername');
   });
 
-  describe('Initial Referrer Validation', function () {
-    validation.objectIdValidationChecking(createNewUser, 'groupOwners', true);
-  });
-
-  describe('Group Owners Validation', function () {
-    validation.objectIdValidationChecking(createNewUser, 'groupMembers', true);
-  });
 });

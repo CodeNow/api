@@ -1,6 +1,7 @@
 var isFunction = require('101/is-function');
 var isString = require('101/is-string');
 var expect = require('lab').expect;
+var debug = require('debug')('runnable-api:testing:fixtures:expects');
 
 var expects = module.exports = {};
 
@@ -26,6 +27,7 @@ expects.errorStatus = function (code, messageMatch, done) {
     messageMatch = null;
   }
   return function (err) {
+    debug('errorStatus', err);
     expect(err).to.be.ok;
     expect(err.output.statusCode).to.equal(code);
     if (messageMatch instanceof RegExp) {

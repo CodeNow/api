@@ -14,7 +14,7 @@ describe('Environments', function () {
 
   function createNewEnvironment() {
     return new Environment({
-      owner: validation.VALID_OBJECT_ID,
+      owner: { github: validation.VALID_GITHUB_ID },
       name : "test"
     });
   }
@@ -30,8 +30,8 @@ describe('Environments', function () {
     });
   });
 
-  describe('Owner Id Validation', function () {
-    validation.objectIdValidationChecking(createNewEnvironment, 'owner');
+  describe('Github Owner Id Validation', function () {
+    validation.githubUserRefValidationChecking(createNewEnvironment, 'owner.github');
     validation.requiredValidationChecking(createNewEnvironment, 'owner');
   });
 
