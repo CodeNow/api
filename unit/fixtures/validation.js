@@ -11,11 +11,13 @@ var VALIDATOR_ERROR = 'ValidationError';
 var NOT_URL_SAFE = [Faker.Internet.email(), Faker.Lorem.sentence(), '4t523456&^()*&^)*&^)*(&^)*&^'];
 var URL_SAFE = [String(Faker.Internet.userName()).replace(/[^\w\d]/g ,'_'),
     Faker.Name.firstName(), OBJECT_ID];
-var ALPHA_NUM_SAFE = [Faker.Name.firstName(), OBJECT_ID, Faker.Name.firstName() + " " + Faker.Name.lastName(),
-  Faker.Lorem.sentence()];
+var NAME_SAFE = [Faker.Name.firstName(), OBJECT_ID, Faker.Name.firstName() + " " +
+  Faker.Name.lastName(), Faker.Lorem.sentence()];
+var ALPHA_NUM_SAFE = [Faker.Name.firstName(), OBJECT_ID, "Container 123", "A name of a container"];
 var ALPHA_NUM_NOSPACE_SAFE = [Faker.Name.firstName(), OBJECT_ID];
 var NOT_ALPHA_NUM_SAFE = [Faker.Internet.email(), Faker.Image.imageUrl() , Faker.Internet.ip()];
-var URLS = [Faker.Image.imageUrl(), "http://www.google.com", "http://mybucket.s3.amazonaws.com/homepage.html"];
+var URLS = [Faker.Image.imageUrl(), 'http://www.google.com',
+  'http://mybucket.s3.amazonaws.com/homepage.html'];
 
 
 var objectIdValidationChecking = function(createModelFunction, property, isList) {
@@ -136,6 +138,27 @@ var alphaNumNameValidationChecking = function(createModelFunction, property) {
   });
 };
 
+var nameValidationChecking = function(createModelFunction, property) {
+  describe('Alphanumic (with space) Validation', function () {
+    NOT_ALPHA_NUM_SAFE.forEach(function (string) {
+      it('should fail validation for ' + string, function (done) {
+        var model = createModelFunction();
+        fixArrayKeypathSet(model, property, string);
+        errorCheck(model, done, property, schemaValidators.validationMessages.characters);
+      });
+    });
+    NAME_SAFE.forEach(function (string) {
+      it('should succeed validation for ' + string, function (done) {
+        var model = createModelFunction();
+        fixArrayKeypathSet(model, property, string);
+        successCheck(model, done, property);
+      });
+    });
+
+    stringLengthValidationChecking(createModelFunction, property, 100);
+  });
+};
+
 var requiredValidationChecking = function(createModelFunction, property) {
   describe(property + ' Required Validation', function () {
     it(property + ' should fail validation because it is required', function (done) {
@@ -219,6 +242,9 @@ var requiredCheck = function (modelObject, done, property) {
 
 var successCheck = function (modelObject, done, property) {
   modelObject.save(function (err, savedModel) {
+    if (err) {
+      return done(err);
+    }
     expect(err).to.not.be.ok;
     expect(savedModel).to.be.ok;
     expect(keypath.get(savedModel, property)).to.be.ok;
@@ -245,6 +271,7 @@ module.exports.urlValidationChecking = urlValidationChecking;
 module.exports.urlSafeNameValidationChecking = urlSafeNameValidationChecking;
 module.exports.dockerIdValidationChecking = dockerIdValidationChecking;
 module.exports.alphaNumNameValidationChecking = alphaNumNameValidationChecking;
+module.exports.nameValidationChecking = nameValidationChecking;
 module.exports.fixArrayKeypathSet = fixArrayKeypathSet;
 module.exports.fixArrayKeypathDel = fixArrayKeypathDel;
 module.exports.VALID_OBJECT_ID = OBJECT_ID;
