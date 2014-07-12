@@ -3,6 +3,7 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var before = Lab.before;
 var beforeEach = Lab.beforeEach;
+var afterEach = Lab.afterEach;
 var after = Lab.after;
 var api = require('./fixtures/api-control');
 var Primus = require('primus');
@@ -13,6 +14,9 @@ var Socket = Primus.createSocket({
   },
   parser: 'JSON'
 });
+var testServerPort = 3333;
+var filibuster = require('Filibuster');
+var http = require('http');
 
 describe('Socket Server', { timeout: 5000 }, function () {
   var ctx = {};
@@ -20,13 +24,24 @@ describe('Socket Server', { timeout: 5000 }, function () {
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
 
+  beforeEach(function(done) {
+    ctx.server = http.createServer();
+    filibuster({
+        httpServer: ctx.server
+      });
+    ctx.server.listen(testServerPort, done);
+  });
+  afterEach(function(done) {
+    ctx.server.close(done);
+  });
+
   describe('Terminal test', function () {
     var primus;
     var pass = false;
     beforeEach(function (done) {
       pass = false;
-      primus = new Socket('http://'+(process.env.IPADDRESS || "127.0.0.1") +
-        ':'+process.env.PORT+"?type=filibuster");
+      primus = new Socket('http://'+"127.0.0.1" +
+        ':'+testServerPort+"?type=filibuster");
       done();
     });
     var check = function(errMsg, done) {
