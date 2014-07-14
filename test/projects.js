@@ -61,24 +61,22 @@ describe('Projects - /projects', function () {
           done();
         });
       });
-      // FIXME: github query needed
-      // it('should return the project when searched by ownerUsername and project (by other user)', function (done) {
-      //   var query = { qs: {
-      //     owner: { github: ctx.user1.toJSON().accounts.github.id },
-      //     ownerUsername: ctx.user1.toJSON().username,
-      //     name: ctx.project1.toJSON().name
-      //   }};
-      //   ctx.user2.fetchProjects(query, function (err, projects) {
-      //     if (err) { return done(err); }
+      it('should return the project when searched by ownerUsername and project (by other user)', function (done) {
+        var query = { qs: {
+          ownerUsername: ctx.user1.toJSON().username,
+          name: ctx.project1.toJSON().name
+        }};
+        ctx.user2.fetchProjects(query, function (err, projects) {
+          if (err) { return done(err); }
 
-      //     expect(projects).to.be.ok;
-      //     expect(projects).to.be.an('array');
-      //     expect(projects).to.have.length(1);
-      //     expect(projects[0]._id.toString()).to.equal(ctx.project1.id().toString());
-      //     expect(projects[0].owner.github).to.equal(ctx.user1.toJSON().accounts.github.id);
-      //     done();
-      //   });
-      // });
+          expect(projects).to.be.ok;
+          expect(projects).to.be.an('array');
+          expect(projects).to.have.length(1);
+          expect(projects[0]._id.toString()).to.equal(ctx.project1.id().toString());
+          expect(projects[0].owner.github).to.equal(ctx.user1.toJSON().accounts.github.id);
+          done();
+        });
+      });
     });
     describe('owner', function() {
       it('should return the project when searched by owner and project (by same user)', function (done) {
@@ -97,23 +95,22 @@ describe('Projects - /projects', function () {
           done();
         });
       });
-      // FIXME: github query needed
-      // it('should return the project when searched by ownerUsername and project (by same user)', function (done) {
-      //   var query = { qs: {
-      //     ownerUsername: ctx.user2.toJSON().username,
-      //     name: ctx.project2.toJSON().name
-      //   }};
-      //   ctx.user2.fetchProjects(query, function (err, projects) {
-      //     if (err) { return done(err); }
+      it('should return the project when searched by ownerUsername and project (by same user)', function (done) {
+        var query = { qs: {
+          ownerUsername: ctx.user2.toJSON().username,
+          name: ctx.project2.toJSON().name
+        }};
+        ctx.user2.fetchProjects(query, function (err, projects) {
+          if (err) { return done(err); }
 
-      //     expect(projects).to.be.ok;
-      //     expect(projects).to.be.an('array');
-      //     expect(projects).to.have.length(1);
-      //     expect(projects[0]._id.toString()).to.equal(ctx.project2.id().toString());
-      //     expect(projects[0].owner.github).to.equal(ctx.user2.toJSON().accounts.github.id);
-      //     done();
-      //   });
-      // });
+          expect(projects).to.be.ok;
+          expect(projects).to.be.an('array');
+          expect(projects).to.have.length(1);
+          expect(projects[0]._id.toString()).to.equal(ctx.project2.id().toString());
+          expect(projects[0].owner.github).to.equal(ctx.user2.toJSON().accounts.github.id);
+          done();
+        });
+      });
     });
     describe('pagination', function() {
       it('should have primitive pagination', function (done) {
