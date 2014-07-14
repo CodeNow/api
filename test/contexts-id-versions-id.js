@@ -107,6 +107,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
           if (err) { return done(err); }
 
           expect(code).to.equal(201);
+          console.log('body!', body);
           expect(body).to.be.an('object');
           expect(body.repo).to.be.okay;
           done();
