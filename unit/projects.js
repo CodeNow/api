@@ -23,7 +23,7 @@ describe('Projects', function () {
       name: 'name',
       description: 'description',
       public: false,
-      owner: validation.VALID_OBJECT_ID,
+      owner: { github: validation.VALID_GITHUB_ID },
       created: Date.now(),
       environment: [sampleEnvironment],
       defaultEnvironment: validation.VALID_OBJECT_ID
@@ -60,8 +60,8 @@ describe('Projects', function () {
     validation.requiredValidationChecking(createNewProject, 'name');
   });
 
-  describe('Project Owner Validation', function () {
-    validation.objectIdValidationChecking(createNewProject, 'owner');
+  describe('Project Github User Id Owner Validation', function () {
+    validation.githubUserRefValidationChecking(createNewProject, 'owner.github');
   });
 
   describe('Project Default Environment Validation', function () {

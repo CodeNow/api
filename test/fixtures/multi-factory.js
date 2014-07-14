@@ -39,6 +39,25 @@ module.exports = {
       });
     });
   },
+  createRegisteredUserAndUnbuiltProject: function (userBody, projectBody, cb) {
+    if (isFunction(userBody)) {
+      cb = userBody;
+      userBody = {};
+    }
+    else if (isFunction(projectBody)) {
+      cb = projectBody;
+      projectBody = null;
+    }
+    var user = users.createGithub(function (err) {
+      if (err) { return cb(err); }
+
+      var project = projects.createUnbuiltProjectBy(user, null, function (err) {
+        if (err) { return cb(err); }
+
+        cb(err, user, project);
+      });
+    });
+  },
   createRegisteredUserProjectAndEnvironments: function (userBody, projectBody, cb) {
     if (isFunction(userBody)) {
       cb = userBody;

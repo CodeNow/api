@@ -90,6 +90,61 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
     });
   });
 
+  describe('Version A Github Repo - /versions/:id/appCodeVersions', function() {
+    describe('POST', function() {
+      beforeEach(function (done) {
+        ctx.version = ctx.context.createVersion({
+          versionId: ctx.versionId
+        }, done);
+      });
+      var json = {
+        repo: 'tjmehta/101',
+        branch: 'master',
+        commit: 'fffff'
+      };
+      it('should add github repo (repo only, default to master)',  { timeout: 3000 }, function (done) {
+        ctx.version.addGithubRepo(json, function (err, body, code) {
+          if (err) { return done(err); }
+
+          expect(code).to.equal(201);
+          console.log('body!', body);
+          expect(body).to.be.an('object');
+          expect(body.repo).to.be.okay;
+          done();
+        });
+      });
+      // it('should add github repo (repo only, default to master)',  { timeout: 3000 }, function (done) {
+      //   ctx.version.addGithubRepo({ repo: 'tjmehta/101' }, function (err, body, code) {
+      //     if (err) { return done(err); }
+
+      //     expect(code).to.equal(201);
+      //     expect(body).to.be.an('object');
+      //     expect(body.dockerTag).to.be.okay;
+      //     expect(body.dockerImage).to.be.okay;
+      //     done();
+      //   });
+      // });
+      // describe('subsequent builds', function() {
+      //   beforeEach(function (done) {
+      //     ctx.version.build(done);
+      //   });
+      //   it('should not build', function (done) {
+      //     ctx.version.build(function (err) {
+      //       expect(err).to.be.ok;
+      //       expect(err.output.statusCode).to.equal(409);
+      //       // FIXME: return version object
+      //       expect(err.message).to.match(/already built/);
+      //       // expect(err.output) recieve docker id;
+      //       done();
+      //     });
+      //   });
+      // });
+    });
+    // describe('DELETE', function() {
+
+    // });
+  });
+
   function expectVersionFields (versionData) {
     expect(versionData).to.be.a('object');
     //FIXME: validate more fields

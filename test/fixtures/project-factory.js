@@ -13,5 +13,16 @@ module.exports = {
     };
     var project = user.createProject({ json: body }, cb);
     return project;
+  },
+  createUnbuiltProjectBy: function (user, body, cb) {
+    if (isFunction(body)) {
+      cb = body;
+      body = null;
+    }
+    body = body || {
+      name: uuid()
+    };
+    var project = user.createProject({ json: body }, cb);
+    return project;
   }
 };

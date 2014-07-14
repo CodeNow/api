@@ -30,8 +30,8 @@ describe('Instance', function () {
     return new Instance({
       name: 'name',
       public: false,
-      owner: validation.VALID_OBJECT_ID,
-      createdBy: validation.VALID_OBJECT_ID,
+      owner: { github: validation.VALID_GITHUB_ID },
+      createdBy: { github: validation.VALID_GITHUB_ID },
       project: validation.VALID_OBJECT_ID,
       environment: validation.VALID_OBJECT_ID,
       created: Date.now(),
@@ -72,13 +72,13 @@ describe('Instance', function () {
     validation.requiredValidationChecking(createNewInstance, 'name');
   });
 
-  describe('Owner Id Validation', function () {
-    validation.objectIdValidationChecking(createNewInstance, 'owner');
+  describe('Github Owner Id Validation', function () {
+    validation.githubUserRefValidationChecking(createNewInstance, 'owner.github');
     validation.requiredValidationChecking(createNewInstance, 'owner');
   });
 
-  describe('CreatedBy Validation', function () {
-    validation.objectIdValidationChecking(createNewInstance, 'createdBy');
+  describe('Github CreatedBy Validation', function () {
+    validation.githubUserRefValidationChecking(createNewInstance, 'createdBy.github');
     validation.requiredValidationChecking(createNewInstance, 'createdBy');
   });
 
