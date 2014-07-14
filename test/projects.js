@@ -37,7 +37,7 @@ describe('Projects - /projects', function () {
         ctx.user1 = user;
         ctx.project1 = project;
         multi.createRegisteredUserAndProject(function (err, user, project) {
-          if (err) { return done(err); }
+          if (err) { throw err; }
           ctx.user2 = user;
           ctx.project2 = project;
           done();

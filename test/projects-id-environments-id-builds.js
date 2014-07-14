@@ -28,40 +28,38 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
    * This tests the rebuild functionality of a build.  We first create a user and environment, then
    * we create a build.  Once finished, we should call the rebuild on the build
    */
-  describe('POST:  Testing Build\'s rebuild functionality', function () {
+  describe('POST', function () {
      beforeEach(function (done) {
        nockS3();
        multi.createRegisteredUserAndProject(function (err, user, project) {
          if (err) { return done(err); }
          ctx.user = user;
          ctx.project = project;
+
          var environments = ctx.project.fetchEnvironments(function (err) {
            if (err) { return done(err); }
 
            ctx.environment = environments.models[0];
-           done();
+           ctx.builds = ctx.environment.fetchBuilds(function (err) {
+             if (err) { return done(err); }
+
+             ctx.build = ctx.builds.models[0];
+             done();
+           });
          });
        });
-     });
+    });
     it('should create a new build from an existing one', function (done) {
-      var builds = ctx.environment.fetchBuilds(function (err, body, code) {
-        if (err) { return done(err); }
-
-        expect(code).to.equal(200);
-        expect(body).to.be.an('array');
-        // var testUser = body[0].createdBy;
-        expect(body[0].owner).to.be.a('string');
-        expect(body[0].createdBy).to.be.an('string');
-
-        var build = ctx.environment.fetchBuild(builds.models[0].id(), function (err) {
-          if (err) { return done(err); }
-          expect(build).to.be.okay;
-          // FIXME: build.createdBy()
-          // var buildCreator = build.createdBy();
-          // expect(buildCreator.toJSON()).to.equal(testUser);
-          done();
+      var inputBody = {
+        projectId: ctx.build.attrs.project,
+        envId: ctx.build.attrs.environment,
+        parentBuild: ctx.build.attrs.id
+      };
+//      var query = { rebuildId:  };
+      ctx.environment.createBuild({json : inputBody},
+        function(err) {
+          done(err);
         });
-      });
     });
   });
 
