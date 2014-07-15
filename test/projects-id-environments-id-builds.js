@@ -12,6 +12,8 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
+var contextVersions = mongoMiddleware.contextVersions;
+
 describe('Builds - /projects/:id/environments/:id/builds', function () {
   var ctx = {};
 
