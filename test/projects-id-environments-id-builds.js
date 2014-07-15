@@ -24,18 +24,44 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
-  // describe('POST', function () {
-  //   beforeEach(function (done) {
-  //     nockS3();
-  //     multi.createRegisteredUserAndProject(function (err, user, project) {
-  //       if (err) { return done(err); }
-  //       ctx.user = user;
-  //       ctx.project = project;
-  //       done();
-  //     });
-  //   });
-  //   // FIXME: create a build from a build (rebuild)
-  // });
+  /**
+   * This tests the rebuild functionality of a build.  We first create a user and environment, then
+   * we create a build.  Once finished, we should call the rebuild on the build
+   */
+  describe('POST', function () {
+     beforeEach(function (done) {
+       nockS3();
+       multi.createRegisteredUserAndProject(function (err, user, project) {
+         if (err) { return done(err); }
+         ctx.user = user;
+         ctx.project = project;
+
+         var environments = ctx.project.fetchEnvironments(function (err) {
+           if (err) { return done(err); }
+
+           ctx.environment = environments.models[0];
+           ctx.builds = ctx.environment.fetchBuilds(function (err) {
+             if (err) { return done(err); }
+
+             ctx.build = ctx.builds.models[0];
+             done();
+           });
+         });
+       });
+    });
+    it('should create a new build from an existing one', function (done) {
+      var inputBody = {
+        projectId: ctx.build.attrs.project,
+        envId: ctx.build.attrs.environment,
+        parentBuild: ctx.build.attrs.id
+      };
+//      var query = { rebuildId:  };
+      ctx.environment.createBuild({json : inputBody},
+        function(err) {
+          done(err);
+        });
+    });
+  });
 
   describe('GET', function () {
     beforeEach(function (done) {
