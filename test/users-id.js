@@ -60,11 +60,11 @@ describe('User - /users/:id', function () {
 
 function expectPrivateFields (user) {
   expect(user).to.include.keys(
-    ['_id', 'email', 'username', 'gravitar']); // TODO: ? 'imagesCount', 'taggedImagesCount'
+    ['_id', 'email', 'gravitar']); // TODO: ? 'imagesCount', 'taggedImagesCount'
   expect(user).to.not.include.keys(['password']);
 }
 function expectPublicFields (user) {
   expect(user).to.not.include.keys(
     ['email', 'password', 'votes']); // TODO: ? 'imagesCount', 'taggedImagesCount'
-  expect(user).to.include.keys(['_id', 'username', 'gravitar']);
+  expect(user).to.include.keys(['_id', 'gravitar']);
 }

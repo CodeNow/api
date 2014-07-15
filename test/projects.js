@@ -63,7 +63,7 @@ describe('Projects - /projects', function () {
       });
       it('should return the project when searched by ownerUsername and project (by other user)', function (done) {
         var query = { qs: {
-          ownerUsername: ctx.user1.toJSON().username,
+          ownerUsername: ctx.user1.toJSON().accounts.github.username,
           name: ctx.project1.toJSON().name
         }};
         ctx.user2.fetchProjects(query, function (err, projects) {
@@ -97,7 +97,7 @@ describe('Projects - /projects', function () {
       });
       it('should return the project when searched by ownerUsername and project (by same user)', function (done) {
         var query = { qs: {
-          ownerUsername: ctx.user2.toJSON().username,
+          ownerUsername: ctx.user2.toJSON().accounts.github.username,
           name: ctx.project2.toJSON().name
         }};
         ctx.user2.fetchProjects(query, function (err, projects) {
