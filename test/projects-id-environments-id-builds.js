@@ -127,7 +127,26 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         };
         ctx.environment.createBuild({json: inputBody},
           function (err, body, code) {
-            expect(err).to.be.not.ok;
+            expect(err).to.be.ok;
+            done();
+          });
+      });
+      it('should fail to create a new build if the input is garbage', function (done) {
+        var inputBody = {
+        };
+        ctx.environment.createBuild({json: inputBody},
+          function (err, body, code) {
+            expect(err).to.be.ok;
+            done();
+          });
+      });
+      it('should fail to create a new build if the input is garbage', function (done) {
+        var inputBody = {
+          parentBuild: ctx.build.attrs.id
+        };
+        ctx.environment.createBuild({json: inputBody},
+          function (err, body, code) {
+            expect(err).to.be.ok;
             done();
           });
       });
