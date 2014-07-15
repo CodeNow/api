@@ -6,7 +6,7 @@ var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
-
+var Build = require('models/mongo/build');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
@@ -90,17 +90,22 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
       });
       it('should fail when the source build hasn\'t finished building', function (done) {
         delete ctx.build.attrs.completed;
-        ctx.build.update(ctx.build.attrs, function(err) {
+        Build.findOneAndUpdate({
+          _id: ctx.build.attrs.id
+        }, {
+          $unset: {
+            'completed' : true
+          }
+        },function(err) {
           var inputBody = {
             projectId: ctx.build.attrs.project,
             envId: ctx.build.attrs.environment,
             parentBuild: ctx.build.attrs.id
           };
-          ctx.environment.createBuild({json: inputBody},
-            function (err) {
-              expect(err).to.be.ok;
-              done();
-            });
+          ctx.environment.createBuild({json: inputBody}, function (err) {
+            expect(err).to.be.ok;
+            done();
+          });
         });
       });
     });
