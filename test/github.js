@@ -41,7 +41,7 @@ describe('Github', function () {
   describe('push', function () {
     beforeEach(function (done) {
       nockS3();
-      multi.createRegisteredUserAndUnbuiltProject(function (err, user, project, environments) {
+      multi.createRegisteredUserAndUnbuiltProject(function (err, user, project) {
         if (err) { return done(err); }
         ctx.user = user;
         ctx.project = project;

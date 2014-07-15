@@ -38,18 +38,15 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
           }
           ctx.user = user;
           ctx.project = project;
-
           var environments = ctx.project.fetchEnvironments(function (err) {
             if (err) {
               return done(err);
             }
-
             ctx.environment = environments.models[0];
             ctx.builds = ctx.environment.fetchBuilds(function (err) {
               if (err) {
                 return done(err);
               }
-
               ctx.build = ctx.builds.models[0];
               done();
             });
@@ -65,7 +62,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         ctx.environment.createBuild({json: inputBody},
           function (err, body, code) {
             if (err) {
-              return done(err)
+              return done(err);
             }
             expect(code).to.equal(201);
             // Test to make sure everything (except ids) in this new build (in the body) is the same
@@ -101,18 +98,15 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
           }
           ctx.user = user;
           ctx.project = project;
-
           var environments = ctx.project.fetchEnvironments(function (err) {
             if (err) {
               return done(err);
             }
-
             ctx.environment = environments.models[0];
             ctx.builds = ctx.environment.fetchBuilds(function (err) {
               if (err) {
                 return done(err);
               }
-
               ctx.build = ctx.builds.models[0];
               done();
             });
@@ -126,7 +120,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
           parentBuild: ctx.build.attrs.id
         };
         ctx.environment.createBuild({json: inputBody},
-          function (err, body, code) {
+          function (err) {
             expect(err).to.be.ok;
             done();
           });
@@ -135,21 +129,22 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         var inputBody = {
         };
         ctx.environment.createBuild({json: inputBody},
-          function (err, body, code) {
+          function (err) {
             expect(err).to.be.ok;
             done();
           });
       });
-      it('should fail to create a new build if the input is garbage', function (done) {
-        var inputBody = {
-          parentBuild: ctx.build.attrs.id
-        };
-        ctx.environment.createBuild({json: inputBody},
-          function (err, body, code) {
-            expect(err).to.be.ok;
-            done();
-          });
-      });
+      it('should fail to create a new build if the input is garbage, even with a build id',
+        function (done) {
+          var inputBody = {
+            parentBuild: ctx.build.attrs.id
+          };
+          ctx.environment.createBuild({json: inputBody},
+            function (err) {
+              expect(err).to.be.ok;
+              done();
+            });
+        });
     });
   });
 
