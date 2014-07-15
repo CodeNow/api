@@ -55,7 +55,8 @@
     "simple-api-client": "^0.5.4",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
-    "xtend": "3.0.0"
+    "xtend": "3.0.0",
+    "substream": "0.0.2"
   },
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.0.4",
@@ -69,8 +70,7 @@
     "lab": "^3.2.1",
     "multiline": "^0.3.4",
     "nock": "^0.41.0",
-    "nodemon": "^1.2.1",
-    "substream": "0.0.2"
+    "nodemon": "^1.2.1"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
