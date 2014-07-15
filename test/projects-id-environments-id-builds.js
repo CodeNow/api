@@ -29,7 +29,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
    * we create a build.  Once finished, we should call the rebuild on the build
    */
   describe('POST', function () {
-    describe('Success', function () {
+    describe('Built Projects', function () {
       beforeEach(function (done) {
         nockS3();
         multi.createRegisteredUserAndProject(function (err, user, project) {
@@ -87,6 +87,21 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
             expect(body.completed).to.be.not.ok;
             done();
           });
+      });
+      it('should fail when the source build hasn\'t finished building', function (done) {
+        delete ctx.build.attrs.completed;
+        ctx.build.update(ctx.build.attrs, function(err) {
+          var inputBody = {
+            projectId: ctx.build.attrs.project,
+            envId: ctx.build.attrs.environment,
+            parentBuild: ctx.build.attrs.id
+          };
+          ctx.environment.createBuild({json: inputBody},
+            function (err) {
+              expect(err).to.be.ok;
+              done();
+            });
+        });
       });
     });
     describe('Failures', function () {
