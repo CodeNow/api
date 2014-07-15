@@ -48,7 +48,7 @@ describe('Github', function () {
 
         ctx.environments = project.fetchEnvironments(function (err) {
           if (err) { return done(err); }
-          ctx.environment = environments.models[0];
+          ctx.environment = ctx.environments.models[0];
 
           var builds = ctx.environment.fetchBuilds(function (err) {
             if (err) { return done(err); }
@@ -59,7 +59,7 @@ describe('Github', function () {
               .newContext(ctx.contextId)
               .newVersion(ctx.versionId);
 
-            version.addGithubRepo({
+            ctx.version.addGithubRepo({
               repo: [
                 hooks.push.json.repository.owner.name,
                 hooks.push.json.repository.name
