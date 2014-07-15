@@ -25,29 +25,6 @@ describe('Github', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
-  beforeEach(function (done) {
-    nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
-      if (err) { return done(err); }
-      ctx.user = user;
-      ctx.project = project;
-      ctx.environments = environments;
-      ctx.environment = environments.models[0];
-      var builds = ctx.environment.fetchBuilds(function (err) {
-        if (err) { return done(err); }
-        ctx.build = builds.models[0];
-        ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().contextVersions[0];
-        ctx.context = ctx.user.fetchContext(ctx.contextId, function (err) {
-          if (err) { return done(err); }
-          ctx.version.addGithubRepo({
-            repo: 'tjmehta/101'
-          }, done);
-        });
-      });
-    });
-  });
-
   describe('ping', function () {
     it('should return OKAY', function (done) {
       var options = hooks.ping;
@@ -62,12 +39,42 @@ describe('Github', function () {
   });
 
   describe('push', function () {
+    beforeEach(function (done) {
+      nockS3();
+      multi.createRegisteredUserAndUnbuiltProject(function (err, user, project, environments) {
+        if (err) { return done(err); }
+        ctx.user = user;
+        ctx.project = project;
+
+        ctx.environments = project.fetchEnvironments(function (err) {
+          if (err) { return done(err); }
+          ctx.environment = ctx.environments.models[0];
+
+          var builds = ctx.environment.fetchBuilds(function (err) {
+            if (err) { return done(err); }
+            ctx.build = builds.models[0];
+            ctx.contextId = ctx.build.toJSON().contexts[0];
+            ctx.versionId = ctx.build.toJSON().contextVersions[0];
+            ctx.version = ctx.user
+              .newContext(ctx.contextId)
+              .newVersion(ctx.versionId);
+
+            ctx.version.addGithubRepo({
+              repo: [
+                hooks.push.json.repository.owner.name,
+                hooks.push.json.repository.name
+              ].join('/')
+            }, done);
+          });
+        });
+      });
+    });
     it('should start a build', function (done) {
       var options = hooks.push;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
-
         expect(body).to.be.okay;
+        console.log('body!!!', body);
         expect(res.statusCode).to.equal(201);
         expect(body).to.equal('Created');
         done();

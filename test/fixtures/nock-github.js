@@ -235,7 +235,7 @@ access_token=9999999999999999999999999999999999999999&scope=read%3Arepo_hook%2Cr
 
   // HOOKS
   nock('https://api.github.com:443')
-    .filteringPath(/\/repos\/\w+\/\w+\/hooks\?.+/, '/repos/owner/repo/hooks?options')
+    .filteringPath(/\/repos\/[^\/]+\/[^\/]+\/hooks\?.+/, '/repos/owner/repo/hooks?options')
     .get('/repos/owner/repo/hooks?options')
     .twice()
     .reply(200, [{
@@ -256,7 +256,7 @@ access_token=9999999999999999999999999999999999999999&scope=read%3Arepo_hook%2Cr
     }]);
 
   nock('https://api.github.com:443')
-    .filteringPath(/\/repos\/\w+\/\w+\/hooks\?.+/, '/repos/owner/repo/hooks?access_token')
+    .filteringPath(/\/repos\/[^\/]+\/[^\/]+\/hooks\?.+/, '/repos/owner/repo/hooks?access_token')
     .filteringRequestBody(function () {
       return '*';
     })
