@@ -91,7 +91,7 @@ describe('Users - /users', function () {
         var count = createCount(ctx.users.length, done);
         ctx.users.forEach(function (user) {
           var qs = {
-            'username': user.attrs.accounts.github.username
+            'username': user.toJSON().accounts.github.username
           };
           ctx.user.fetchUsers({ qs: qs }, function (err, users, code) {
             if (err) { return count.next(err); }

@@ -16,7 +16,7 @@ module.exports = {
   // },
   createGithub: function (cb) {
     var user = this.createTokenless();
-    return user.githubLogin(cb);
+    return user.githubLogin('mysupersecrettoken', cb);
   },
   createModerator: function (cb) {
     var user = this.createGithub(function (err, body) {
