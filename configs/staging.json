@@ -81,6 +81,6 @@
     "port": 7050
   },
   "primus": {
-      "transformer": "websockets"
+      "transformer": "engine.io"
   }
 }

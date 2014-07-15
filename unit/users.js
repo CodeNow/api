@@ -21,8 +21,11 @@ describe('User', function () {
       email: Faker.Internet.email(),
       password: "pass",
       name: "test",
-      username: "test",
-      lowerUsername: "test",
+      accounts: {
+        github: {
+          username: 'test'
+        }
+      },
       show_email: false,
       created: Date.now(),
       context: validation.VALID_OBJECT_ID,
@@ -75,19 +78,4 @@ describe('User', function () {
     validation.nameValidationChecking(createNewUser, 'company');
   });
 
-  describe('Username Validation', function () {
-    validation.urlSafeNameValidationChecking(createNewUser, 'username');
-  });
-
-  describe('Lower Username Validation', function () {
-    validation.urlSafeNameValidationChecking(createNewUser, 'lowerUsername');
-  });
-
-  describe('Initial Referrer Validation', function () {
-    validation.objectIdValidationChecking(createNewUser, 'groupOwners', true);
-  });
-
-  describe('Group Owners Validation', function () {
-    validation.objectIdValidationChecking(createNewUser, 'groupMembers', true);
-  });
 });

@@ -90,6 +90,6 @@
     "callbackURL": "http://runnable.com/api/-/auth/github/callback"
   },
   "primus": {
-      "transformer": "websockets"
+      "transformer": "engine.io"
   }
 }

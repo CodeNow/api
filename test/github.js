@@ -72,6 +72,7 @@ describe('Github', function () {
 
         expect(body).to.be.okay;
         expect(res.statusCode).to.equal(201);
+        expect(body).to.equal('Created');
         done();
       });
     });
