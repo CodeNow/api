@@ -92,6 +92,17 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
 
   function expectVersionFields (versionData) {
     expect(versionData).to.be.a('object');
-    //FIXME: validate more fields
+    expect(versionData.appCodeVersions).to.be.ok;
+    expect(versionData.build).to.be.ok;
+    expect(versionData.build).to.be.a('object');
+    expect(versionData.context).to.be.ok;
+    expect(versionData.created).to.be.ok;
+    expect(versionData.createdBy).to.be.ok;
+    expect(versionData.createdBy).to.be.a('object');
+    expect(versionData.dockerHost).to.be.ok;
+    expect(versionData.environment).to.be.ok;
+    expect(versionData.infraCodeVersion).to.be.ok;
+    expect(versionData.owner).to.be.ok;
+    expect(versionData.owner).to.be.a('object');
   }
 });

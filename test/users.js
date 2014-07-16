@@ -33,7 +33,7 @@ describe('Users - /users', function () {
       ctx.user.fetchUsers(function (err) {
         expect(err).to.be.ok;
         expect(err.output.statusCode).to.equal(400);
-        // TODO: verify error message
+        expect(err.message).to.match(/query parameters ((\".*\")){1,} is required/);
         done();
       });
     });

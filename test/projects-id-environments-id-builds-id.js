@@ -51,10 +51,15 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
 
         expect(code).to.equal(200);
         expect(body).to.be.ok;
-        // FIXME: check exact build fields
-        // expect(body[0].builds).to.be.an('array');
-        // expect(body[0].builds).to.have.length(1);
-        // expect(body[0].builds[0]).to.be.ok;
+        expect(body.contextVersions).to.be.ok;
+        expect(body.contextVersions).to.have.length(1);
+        expect(body.contexts).to.be.ok;
+        expect(body.contexts).to.have.length(1);
+        expect(body.created).to.be.ok;
+        expect(body.createdBy).to.be.ok;
+        expect(body.environment).to.be.ok;
+        expect(body.owner).to.be.ok;
+        expect(body.project).to.be.ok;
         done();
       });
     });
