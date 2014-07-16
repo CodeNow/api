@@ -11,15 +11,7 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
-
-var Primus = require('primus');
-var primusClient = Primus.createSocket({
-  transformer: process.env.PRIMUS_TRANSFORMER,
-  plugin: {
-    'substream': require('substream')
-  },
-  parser: 'JSON'
-});
+var tailBuildStream = require('./fixtures/tail-build-stream');
 
 describe('Build - /projects/:id/environments/:id/builds/:id', function () {
   var ctx = {};
@@ -107,27 +99,24 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
     });
 
     it('should return and environment build', { timeout: 5000 }, function (done) {
-      ctx.build.build(ctx.buildId, function (err, body, code) {
+      ctx.build.build(ctx.buildId, {message:'hello!'}, function (err, body, code) {
         if (err) { return done(err); }
 
         expect(code).to.equal(201);
         expect(body).to.be.ok;
 
-        var client = new primusClient(
-          'http://' +
-          process.env.IPADDRESS +
-          ':' +
-          process.env.PORT +
-          "?type=build-stream&id=" + body.contextVersions[0]);
+        tailBuildStream(body.contextVersions[0], function (err, log) {
+          if (err) { return done(err); }
 
-        client.on('end', function () {
-          done();
-        });
-        client.on('err', function (err) {
-          done(err);
-        });
-        client.on('data', function(data) {
-          expect(data.toString()).to.contain('Successfully built');
+          expect(log).to.contain('Successfully built');
+
+          ctx.build.fetch(function (err, body) {
+            if (err) { return done(err); }
+
+            expect(body).to.have.property('completed');
+            done();
+          });
+
         });
       });
     });
