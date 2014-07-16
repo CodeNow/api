@@ -7,16 +7,15 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
-var createCount = require('callback-count');
 var api = require('./fixtures/api-control');
 var users = require('./fixtures/user-factory');
+var createCount = require('callback-count');
 
-describe('User - /users/:id', function () {
+describe('User - /users/:id/github/orgs', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
   beforeEach(require('./fixtures/nock-github'));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
@@ -28,43 +27,32 @@ describe('User - /users/:id', function () {
         ctx.user = users.createGithub(done);
       });
 
-      it('should get the user', function (done) {
-        ctx.user.fetch(function (err, body, code) {
+      it('should get the user\'s orgs', function (done) {
+        ctx.user.fetchGithubOrgs(function (err, orgs, code) {
           if (err) { return done(err); }
 
           expect(code).to.equal(200);
-          expectPrivateFields(body);
+          expect(orgs).to.be.an('array');
           done();
         });
       });
     });
     describe('other registered', function() {
+      beforeEach(require('./fixtures/nock-github'));
       beforeEach(function (done) {
         var count = createCount(done);
         ctx.other = users.createGithub(count.inc().next);
         ctx.user  = users.createGithub(count.inc().next);
       });
 
-      it('should get the user', function (done) {
-        ctx.user.fetchUser(ctx.other.id(), function (err, body, code) {
-          if (err) { return done(err); }
-
-          expect(code).to.equal(200);
-          expectPublicFields(body);
+      it('should fail to get the orgs', function (done) {
+        ctx.user.fetchGithubOrgs(ctx.other.id(), function (err, body) {
+          expect(err).to.be.okay;
+          expect(err.output.statusCode).to.equal(403);
+          expect(body).to.not.be.okay;
           done();
         });
       });
     });
   });
 });
-
-function expectPrivateFields (user) {
-  expect(user).to.include.keys(
-    ['_id', 'email', 'gravitar']); // TODO: ? 'imagesCount', 'taggedImagesCount'
-  expect(user).to.not.include.keys(['password']);
-}
-function expectPublicFields (user) {
-  expect(user).to.not.include.keys(
-    ['email', 'password', 'votes']); // TODO: ? 'imagesCount', 'taggedImagesCount'
-  expect(user).to.include.keys(['_id', 'gravitar']);
-}

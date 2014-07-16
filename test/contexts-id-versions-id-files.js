@@ -112,6 +112,26 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         });
       });
     });
+    it('should let us create a directory, with a slash, without the isDir', function (done) {
+      ctx.file = ctx.version.createFile({ json: {
+        name: 'dir/',
+        path: '/'
+      }}, function (err, file, code) {
+        if (err) { return done(err); }
+        expect(code).to.equal(201);
+        expect(file).to.be.okay;
+        expect(file).to.be.an('object');
+        ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
+          if (err) { return done(err); }
+          expect(files).to.be.okay;
+          expect(files).to.be.an('array');
+          expect(files).to.have.length(2);
+          expect(findIndex(files, hasProperties({ name: 'Dockerfile', path: '/', isDir: false }))).to.not.equal(-1);
+          expect(findIndex(files, hasProperties({ name: 'dir', path: '/', isDir: true }))).to.not.equal(-1);
+          done();
+        });
+      });
+    });
     it('should let us create a directory, including the tailing slash', function (done) {
       ctx.file = ctx.version.createFile({ json: {
         name: 'dir/',
