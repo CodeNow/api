@@ -257,7 +257,7 @@ describe('Projects - /projects', function () {
            ctx.user.createProject({ json: json }, function (err) {
              expect(err).to.be.okay;
              expect(err.output.statusCode).to.equal(409);
-             expect(err.message).to.match(/name already exists/);
+             expect(err.message).to.match(/already exists/);
              done();
            });
          });
