@@ -57,29 +57,29 @@ describe('Github', function () {
         done();
       });
     });
-    describe('more builds', function() {
-      var ctx1 = {};
-      var ctx2 = {};
-      var ctx3 = {};
+    // describe('more builds', function() {
+    //   var ctx1 = {};
+    //   var ctx2 = {};
+    //   var ctx3 = {};
 
-      beforeEach(
-        createBuildUsingRepo(ctx1, 'tjmehta', '101'));
-      beforeEach(
-        createBuildUsingRepo(ctx2,
-          hooks.push.json.repository.owner.name, hooks.push.json.repository.name));
-      beforeEach(
-        createBuildUsingRepo(ctx3,
-          hooks.push.json.repository.owner.name, hooks.push.json.repository.name));
-      beforeEach(function (done) {
-        // create a new version of a build using the repo
-      });
-      beforeEach(function (done) {
-        // create a new version of a build using the repo, and remove the repo
-      });
-      it('should only start builds for the latest that have context versions with that repo', function (done) {
+    //   beforeEach(
+    //     createBuildUsingRepo(ctx1, 'tjmehta', '101'));
+    //   beforeEach(
+    //     createBuildUsingRepo(ctx2,
+    //       hooks.push.json.repository.owner.name, hooks.push.json.repository.name));
+    //   beforeEach(
+    //     createBuildUsingRepo(ctx3,
+    //       hooks.push.json.repository.owner.name, hooks.push.json.repository.name));
+    //   beforeEach(function (done) {
+    //     // create a new version of a build using the repo
+    //   });
+    //   beforeEach(function (done) {
+    //     // create a new version of a build using the repo, and remove the repo
+    //   });
+    //   it('should only start builds for the latest that have context versions with that repo', function (done) {
 
-      });
-    });
+    //   });
+    // });
     // it('should return 404 if no context has request set up', function (done) {
     //   var options = hooks.push;
     //   options.json.repository.name = 'fake-name';
@@ -139,5 +139,5 @@ function createBuildUsingRepo (ctx, repoOwner, repoName) {
         });
       });
     });
-  }
+  };
 }
