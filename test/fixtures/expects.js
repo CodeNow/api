@@ -19,24 +19,13 @@ expects.success = function (statusCode, expectedKeypaths, done) {
     if (err) { return done(err); }
     expect(statusCode).to.equal(code);
     expect(body).to.be.ok;
-    if (expectedKeypaths) {
-      var expected = {};
-      var extracted = {};
-      Object.keys(expectedKeypaths).forEach(function (keypath) {
-        var expectedVal = expectedKeypaths[keypath];
-        if (expectedVal instanceof RegExp) {
-          expect(keypather.get(body, keypath)).to.match(expectedVal,
-            'Expected body.'+keypath+'to match '+expectedVal);
-        }
-        else if (typeof expectedVal === 'function') {
-          expect(keypather.get(body, keypath)).to.satisfy(expectedVal, 'Value for '+keypath);
-        }
-        else {
-          keypather.set(extracted, keypath, keypather.get(body, keypath));
-          keypather.set(expected, keypath, expectedVal);
-        }
+    if (Array.isArray(expectedKeypaths)) {
+      expectedKeypaths.forEach(function (expectedItem, i) {
+        expectKeypaths(body[i], expectedItem);
       });
-      expect(extracted).to.eql(expected);
+    }
+    else {
+      expectKeypaths(body, expectedKeypaths);
     }
     done();
   };
@@ -72,3 +61,26 @@ expects.updateSuccess = function (json, done) {
     done();
   };
 };
+
+
+function expectKeypaths (body, expectedKeypaths) {
+  if (expectedKeypaths) {
+    var expected = {};
+    var extracted = {};
+    Object.keys(expectedKeypaths).forEach(function (keypath) {
+      var expectedVal = expectedKeypaths[keypath];
+      if (expectedVal instanceof RegExp) {
+        expect(keypather.get(body, keypath)).to.match(expectedVal,
+          'Expected body.'+keypath+'to match '+expectedVal);
+      }
+      else if (typeof expectedVal === 'function') {
+        expect(keypather.get(body, keypath)).to.satisfy(expectedVal, 'Value for '+keypath);
+      }
+      else {
+        keypather.set(extracted, keypath, keypather.get(body, keypath));
+        keypather.set(expected, keypath, expectedVal);
+      }
+    });
+    expect(extracted).to.eql(expected);
+  }
+}

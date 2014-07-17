@@ -1,12 +1,14 @@
 'use strict';
 
 var isFunction = require('101/is-function');
-var async = require('async');
 var users = require('./user-factory');
 var projects = require('./project-factory');
 var User = require('runnable');
+var MongoUser = require('models/mongo/user');
 var host = require('./host');
 var uuid = require('uuid');
+var tailBuildStream = require('./tail-build-stream');
+var noop = function () {};
 
 module.exports = {
   createUser: function (cb) {
@@ -16,6 +18,17 @@ module.exports = {
       cb(err, user);
     });
     return user;
+  },
+  createModerator: function (cb) {
+    this.createUser(function (err, user) {
+      if (err) { return cb(err); }
+      var $set = {
+        permissionLevel: 5
+      };
+      MongoUser.updateById(user.id(), { $set: $set }, function (err) {
+        cb(err, user);
+      });
+    });
   },
   createProject: function (cb) {
     var user = this.createUser(function (err) {
@@ -36,34 +49,90 @@ module.exports = {
   createBuild: function (cb) {
     this.createEnv(function (err, env, project, user) {
       if (err) { return cb(err); }
-      var build = env.createBuild(function (err) {
+      var build = env.createBuild({ environment: env.id() }, function (err) {
         cb(err, build, env, project, user);
       });
     });
   },
-  //
-  createContext: function (user, cb) {
-    if (typeof user === 'function') {
-      user = null;
-    }
-    async.waterfall([
-      function getUser (cb) {
-        if (user) {
-          cb(null, user);
-        }
-        else {
-          user = this.createUser(function (err) {
-            cb(err, user);
-          });
-        }
-      },
-      function createContext (user, cb) {
-        var context = user.createContext({ name: uuid() }, function (err) {
-          cb(err, context, user);
-        });
-      }
-    ], cb);
+  createContext: function (cb) {
+    this.createBuild(function (err, build, env, project, user) {
+      if (err) { return cb(err); }
+      var contextId = build.json().contexts[0];
+      var context = user.fetchContext(contextId, function (err) {
+        cb(err, context, build, env, project, user);
+      });
+    });
   },
+  createSourceContext: function (cb) {
+    this.createModerator(function (err, moderator) {
+      if (err) { return (err); }
+      var body = {
+        name: uuid(),
+        isSource: true
+      };
+      var context = moderator.createContext(body, function (err) {
+        if (err) { return cb(err); }
+        cb(err, context, moderator);
+      });
+    });
+  },
+  createSourceContextVersion: function (cb) {
+    this.createSourceContext(function (err, context, moderator) {
+      if (err) { return (err); }
+      var version = context.createVersion(function (err) {
+        cb(err, version, context, moderator);
+      });
+    });
+  },
+  createContextVersion: function (cb) {
+    var self = this;
+    this.createSourceContextVersion(function (err, srcContextVersion, srcContext, moderator) {
+      if (err) { return cb(err); }
+      self.createContext(function (err, context, build, env, project, user) {
+        if (err) { return cb(err); }
+        var opts = {};
+        opts.qs = {
+          fromSource: srcContextVersion.json().infraCodeVersion,
+          toBuild: build.id()
+        };
+        opts.json = {
+          project: project.id(),
+          environment: env.id()
+        };
+        var contextVersion = context.createVersion(opts, function (err) {
+          cb(err, contextVersion, context, build, env, project, user,
+            [srcContextVersion, srcContext, moderator]);
+        });
+      });
+    });
+  },
+  createBuiltBuild: function (cb) {
+    this.createContextVersion(function (err, contextVersion, context, build, env, project, user, srcArray) {
+      if (err) { return cb(err); }
+      build.fetch(function (err) {
+        if (err) { return cb(err); }
+        tailBuildStream(build.json().contextVersions[0], function (err) { // FIXME: maybe
+          if (err) { return cb(err); }
+          build.fetch(function (err) { // get completed build
+            if (err) { return cb(err); }
+            cb(err, build, env, project, user,
+              [contextVersion, context, build, env, project, user],
+              srcArray);
+          });
+        });
+        build.build({ message: uuid() }, function (err) {
+          if (err) {
+            cb = noop;
+            cb(err);
+          }
+        });
+      });
+    });
+  },
+
+
+  //
+  // OLD:
   createRegisteredUserAndGroup: function (userBody, groupBody, cb) {
     if (isFunction(userBody)) {
       cb = userBody;
