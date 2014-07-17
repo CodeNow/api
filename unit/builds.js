@@ -3,6 +3,7 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
+var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 
@@ -25,11 +26,11 @@ describe('Build', function () {
   }
 
   it('should be able to save a build!', function (done) {
-    var instance = createNewBuild();
-    instance.save(function (err, instance) {
+    var build = createNewBuild();
+    build.save(function (err, build) {
       if (err) { done(err); }
       else {
-        expect(instance).to.be.okay;
+        expect(build).to.be.okay;
         done();
       }
     });
@@ -65,4 +66,42 @@ describe('Build', function () {
     validation.requiredValidationChecking(createNewBuild, 'contextVersions');
   });
 
+  describe('Testing SetInProgress', function () {
+    var ctx = {};
+    beforeEach(function(done) {
+      ctx.build = createNewBuild();
+      ctx.build.save(function(err, build) {
+        ctx.build.setInProgress(function(err, newbuild) {
+          if (err) {
+            done(err);
+          } else {
+            ctx.build = newbuild;
+            done();
+          }
+        });
+      });
+    });
+    afterEach(function(done) {
+      delete ctx.build;
+      done();
+    });
+    it('should be able to set the build in progress', function (done) {
+      expect(ctx.build).to.be.okay;
+      done();
+    });
+    it('should create another build, and the buildNumber should be higher ', function (done) {
+      ctx.build2 = createNewBuild();
+      ctx.build2.save(function(err, build) {
+        build.setInProgress(function(err, newbuild) {
+          if (err) {
+            done(err);
+          } else {
+            expect(newbuild).to.be.okay;
+            expect(ctx.build.buildNumber).to.be.below(newbuild.buildNumber);
+            done();
+          }
+        });
+      });
+    });
+  });
 });
