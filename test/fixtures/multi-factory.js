@@ -7,12 +7,10 @@ var projects = require('./project-factory');
 var User = require('runnable');
 var host = require('./host');
 var uuid = require('uuid');
-var nockGithub = require('./nock-github');
 
 module.exports = {
   createUser: function (cb) {
-    nockGithub();
-    nockGithub();
+    require('./mocks/github/action-auth')();
     var user = new User(host);
     user.githubLogin('mysupersecrettoken', function (err) {
       cb(err, user);
