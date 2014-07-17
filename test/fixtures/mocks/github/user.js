@@ -10,7 +10,6 @@ function nextUserId () {
 }
 
 module.exports = function (userId, username) {
-  console.log('WHAT!!');
   if (isObject(userId)) {
     // assume user model
     var userModel = userId;

@@ -13,6 +13,7 @@ var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
 var uuid = require('uuid');
+var createCount = require('callback-count');
 
 var async = require('async');
 var join = require('path').join;
@@ -32,24 +33,33 @@ describe('Versions - /contexts/:contextid/versions', function () {
 
   beforeEach(function (done) {
     nockS3();
+    var count = createCount(2, done);
+    // FIXME: actually make me a moderator
+    ctx.moderator = multi.createUser(function (err) {
+      if (err) { return done(err); }
+      var sourceBody = { name: uuid(), isSource: true };
+      ctx.sourceContext = ctx.moderator.createContext(sourceBody, function (err) {
+        if (err) { return done(err); }
+        ctx.sourceVersion = ctx.sourceContext.createVersion(count.next);
+      });
+    });
     multi.createEnv(function (err, env, project, user) {
       if (err) { return done(err); }
       ctx.user = user;
       ctx.project = project;
       ctx.env = env;
-      multi.createContext(user, function (err, context) {
-        ctx.context = context;
-        done(err);
-      });
+      ctx.build = ctx.env.createBuild({ environment: ctx.env.id() },
+        function (err) {
+          if (err) { return done(err); }
+          ctx.context = ctx.user.fetchContext(ctx.build.attrs.contexts[0], count.next);
+        });
     });
   });
 
   describe('POST', function () {
     it('should create a new version', function (done) {
       var body = {
-        project: ctx.project.id(),
-        environment: ctx.env.id(),
-        context: ctx.context.id()
+        environment: ctx.env.id()
       };
       var expected = {
         environment: ctx.env.id(),
@@ -59,38 +69,9 @@ describe('Versions - /contexts/:contextid/versions', function () {
       ctx.context.createVersion(body, expects.success(201, expected, done));
     });
     it('should create a new version from a source infrastructure code version', function (done) {
-      var context = new Context({
-        owner: { github: ctx.user.toJSON().accounts.github.id },
-        name: ctx.project.toJSON().name,
-        lowerName: ctx.project.toJSON().lowerName,
-        isSource: true
-      });
-      var icv = new InfraCodeVersion({
-        context: context._id,
-        files: [{
-          Key: join(context._id.toString(), 'source', '/'),
-          ETag: uuid(),
-          VersionId: uuid(),
-          isDir: true
-        }, {
-          Key: join(context._id.toString(), 'source', 'Dockerfile'),
-          ETag: uuid(),
-          VersionId: uuid()
-        }]
-      });
-
-      var Build = require('models/mongo/build');
-      var build = new Build({
-        createdBy: { github: ctx.user.toJSON().accounts.github.id },
-        project: ctx.project.id(),
-        environment: ctx.env.id(),
-        contexts: [context._id],
-        contextVersions: []
-      });
-
       var query = {
-        fromSource: icv._id.toString(),
-        toBuild: build._id.toString()
+        fromSource: ctx.sourceVersion.attrs.infraCodeVersion,
+        toBuild: ctx.build.id()
       };
       var body = {
         project: ctx.project.id(),
@@ -102,20 +83,10 @@ describe('Versions - /contexts/:contextid/versions', function () {
         environment: ctx.env.id(),
         infraCodeVersion: exists
       };
-      
-      async.series([
-        context.save.bind(context),
-        icv.save.bind(icv),
-        build.save.bind(build)
-      ], function (err) {
-        if (err) { return done(err); }
-        ctx.context.createVersion(
-          {
-            qs: query,
-            json: body
-          },
-          expects.success(201, expected, done));
-      });
+      ctx.context.createVersion({
+        qs: query,
+        json: body
+      }, expects.success(201, expected, done));
     });
   });
 
