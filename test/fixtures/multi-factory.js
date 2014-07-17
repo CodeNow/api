@@ -14,7 +14,7 @@ module.exports = {
     nockGithub();
     nockGithub();
     var user = new User(host);
-    user.githubLogin(function (err) {
+    user.githubLogin('mysupersecrettoken', function (err) {
       cb(err, user);
     });
     return user;
