@@ -52,7 +52,7 @@
     "request": "^2.37.0",
     "rimraf": "^2.2.8",
     "rollbar": "^0.3.8",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#cleanup-removing-user-username",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.12.0",
     "simple-api-client": "^0.5.4",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
