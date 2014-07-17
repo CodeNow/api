@@ -91,6 +91,26 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         });
       });
     });
+    it('should not let us create a conflicting file', function (done) {
+      var json = {
+        json: {
+          name: 'file.txt',
+          path: '/',
+          body: 'content'
+      }};
+      ctx.file = ctx.version.createFile(json, function (err, file, code) {
+        if (err) { return done(err); }
+        ctx.file2 = ctx.version.createFile(json, function (err, file, code) {
+          if (! err) {
+            return done(new Error('A version file was able to be created with all of the ' +
+              'same key as of another file!'));
+          } else {
+            expect(err.message).to.be.okay;
+            done();
+          }
+        });
+      });
+    });
     it('should let us create a directory', function (done) {
       ctx.file = ctx.version.createFile({ json: {
         name: 'dir',

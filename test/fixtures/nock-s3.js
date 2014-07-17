@@ -55,6 +55,7 @@ module.exports = function (cb) {
       '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/file.txt')
     .filteringRequestBody(function () { return '*'; })
     .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/file.txt', '*')
+    .twice()
     .reply(200, '', {
       'x-amz-id-2': uuid(),
       'x-amz-version-id': uuid(),
