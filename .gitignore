@@ -22,3 +22,4 @@ old-test
 docs
 
 !test/lib/fixtures/master.tar.gz
+dump.rdb
