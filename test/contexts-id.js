@@ -121,7 +121,10 @@ describe('Context - /contexts/:id', function () {
         if (err) { return done(err); }
 
         expect(code).to.equal(200);
-        // FIXME: expect each field!
+        expect(body.created).to.be.ok;
+        expect(body.name).to.be.ok;
+        expect(body.owner).to.be.ok;
+        expect(body.versions).to.be.ok;
         expect(body).to.eql(ctx.context.toJSON());
         done();
       };
