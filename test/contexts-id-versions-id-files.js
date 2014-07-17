@@ -98,9 +98,9 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           path: '/',
           body: 'content'
       }};
-      ctx.file = ctx.version.createFile(json, function (err, file, code) {
+      ctx.file = ctx.version.createFile(json, function (err) {
         if (err) { return done(err); }
-        ctx.file2 = ctx.version.createFile(json, function (err, file, code) {
+        ctx.file2 = ctx.version.createFile(json, function (err) {
           if (! err) {
             return done(new Error('A version file was able to be created with all of the ' +
               'same key as of another file!'));
