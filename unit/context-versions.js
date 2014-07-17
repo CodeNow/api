@@ -31,7 +31,10 @@ describe('Versions', function () {
       build: {
         dockerImage: "testing",
         dockerTag: "adsgasdfgasdf"
-      }
+      },
+      appCodeVersions: [{
+        repo: 'bkendall/flaming-octo-nemisis'
+      }]
     });
   }
 

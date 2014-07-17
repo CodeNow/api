@@ -14,6 +14,8 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
+var expects = require('./fixtures/expects');
+var exists = require('101/exists');
 
 describe('Projects - /projects', function () {
   var ctx = {};
@@ -211,76 +213,41 @@ describe('Projects - /projects', function () {
   describe('POST', function () {
     beforeEach(function (done) {
       nockS3();
-      ctx.user = users.createGithub(done);
+      ctx.user = multi.createUser(done);
     });
     afterEach(require('./fixtures/clean-ctx')(ctx));
 
-    describe('dockerfile', function () {
-      var json = {
-        name: uuid(),
-        dockerfile: 'FROM ubuntu\n'
-      };
-      var requiredProjectKeys = Object.keys(json);
-
-      requiredProjectKeys.forEach(function (missingBodyKey) {
-        it('should error if missing ' + missingBodyKey, function (done) {
-          var incompleteBody = clone(json);
-          delete incompleteBody[missingBodyKey];
-          ctx.user.createProject({ json: incompleteBody }, function (err) {
-            expect(err).to.be.ok;
-            expect(err.output.statusCode).to.equal(400);
-            expect(err.message).to.match(new RegExp(missingBodyKey));
-            expect(err.message).to.match(new RegExp('is required'));
-            done();
-          });
-        });
-      });
-      it('should create a project', function(done) {
-        ctx.user.createProject({ json: json }, function (err, project, code) {
-          if (err) { return done(err); }
-
-          expect(code).to.equal(201);
-          expect(project).to.have.property('_id');
-          expect(project).to.have.property('name', json.name);
-          expect(project).to.have.property('owner');
-          expect(project.owner).to.have.property('github', ctx.user.toJSON().accounts.github.id);
-          expect(project).to.have.property('public', false);
-          expect(project.environments).to.be.an('array');
-          expect(project.environments).to.have.a.lengthOf(1);
-          done();
-        });
-      });
-//      FIXME: same name and user
-      it('should not create a project with the same name', function(done) {
-         ctx.user.createProject({ json: json }, function (err) {
-           if (err) { return done(err); }
-           ctx.user.createProject({ json: json }, function (err) {
-             expect(err).to.be.okay;
-             expect(err.output.statusCode).to.equal(409);
-             expect(err.message).to.match(/already exists/);
-             done();
-           });
-         });
+    describe('required fields', function() {
+      it('should create a project with a name', function (done) {
+        var userGithubId = ctx.user.attrs.accounts.github.id;
+        var expected = {
+          'name': 'name',
+          'created': exists,
+          'owner.github': userGithubId,
+          'environments.length': 1,
+          'environments[0].name': 'master',
+          'environments[0].owner.github': userGithubId,
+        };
+        ctx.user.createProject({ name: 'name' }, expects.success(201, expected, done));
       });
     });
-    describe('unbuilt', function () {
-      it('should create a unbuilt project', function(done) {
-        var json = {
-          name: uuid(),
-          test: 'fake'
+    describe('optional fields', function() {
+      it('should update description if provided', function (done) {
+        var userGithubId = ctx.user.attrs.accounts.github.id;
+        var expected = {
+          'name': 'name',
+          'description': 'description',
+          'created': exists,
+          'owner.github': userGithubId,
+          'environments.length': 1,
+          'environments[0].name': 'master',
+          'environments[0].owner.github': userGithubId,
         };
-        ctx.user.createProject({json: json }, function (err, project, code) {
-          if (err) { return done(err); }
-          expect(code).to.equal(201);
-          expect(project).to.have.property('_id');
-          expect(project).to.have.property('name', json.name);
-          expect(project).to.have.property('owner');
-          expect(project.owner).to.have.property('github', ctx.user.toJSON().accounts.github.id);
-          expect(project).to.have.property('public', false);
-          expect(project.environments).to.be.an('array');
-          expect(project.environments).to.have.a.lengthOf(1);
-          done();
-        });
+        var body = {
+          name: 'name',
+          description: 'description'
+        };
+        ctx.user.createProject(body, expects.success(201, expected, done));
       });
     });
   });

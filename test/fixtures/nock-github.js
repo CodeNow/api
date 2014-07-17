@@ -10,7 +10,6 @@ module.exports = function (cb) {
     .persist()
     .get('/')
     .reply(200);
-
   // login page - auto accept
   nock('https://github.com:443')
     .filteringPath(/\/login\?.+/, '/login')
@@ -24,9 +23,9 @@ module.exports = function (cb) {
     .get('/login/oauth/authorize')
     .reply(200, '<html>login form...</html>');
 
-  // access token
+  // access token DONOT INDENT!
   var tokenResponse = multiline(function () {/*
-  access_token=9999999999999999999999999999999999999999&scope=read%3Arepo_hook%2Crepo%2Cuser%3Aemail&token_type=bearer
+access_token=9999999999999999999999999999999999999999&scope=read%3Arepo_hook%2Crepo%2Cuser%3Aemail&token_type=bearer
   */
   });
   nock('https://github.com:443')
@@ -91,37 +90,92 @@ module.exports = function (cb) {
     .filteringPath(/\/user\?.+/, '/user')
     .get('/user')
     .reply(200, {
-      "login": randomUsername,
-      "id": githubId,
-      "avatar_url": "https://avatars.githubusercontent.com/u/"+githubId+"?",
-      "gravatar_id": 'wrong',
-      "url": "https://api.github.com/users/"+randomUsername,
-      "html_url": "https://github.com/"+randomUsername,
-      "followers_url": "https://api.github.com/users/"+randomUsername+"/followers",
-      "following_url": "https://api.github.com/users/"+randomUsername+"/following{/other_user}",
-      "gists_url": "https://api.github.com/users/"+randomUsername+"/gists{/gist_id}",
-      "starred_url": "https://api.github.com/users/"+randomUsername+"/starred{/owner}{/repo}",
-      "subscriptions_url": "https://api.github.com/users/"+randomUsername+"/subscriptions",
-      "organizations_url": "https://api.github.com/users/"+randomUsername+"/orgs",
-      "repos_url": "https://api.github.com/users/"+randomUsername+"/repos",
-      "events_url": "https://api.github.com/users/"+randomUsername+"/events{/privacy}",
-      "received_events_url": "https://api.github.com/users/"+randomUsername+"/received_events",
-      "type": "User",
-      "site_admin": false,
-      "name": randomUsername,
-      "company": "",
-      "blog": "http://twitter.com/tjmehta",
-      "location": "San Francisco",
-      "email": "",
-      "hireable": true,
-      "bio": "",
-      "public_repos": 77,
-      "public_gists": 8,
-      "followers": 17,
-      "following": 90,
-      "created_at": "2011-02-27T01:20:41Z",
-      "updated_at": "2014-06-24T23:28:16Z"
+      'login': randomUsername,
+      'id': githubId,
+      'avatar_url': 'https://avatars.githubusercontent.com/u/'+githubId+'?',
+      'gravatar_id': 'wrong',
+      'url': 'https://api.github.com/users/'+randomUsername,
+      'html_url': 'https://github.com/'+randomUsername,
+      'followers_url': 'https://api.github.com/users/'+randomUsername+'/followers',
+      'following_url': 'https://api.github.com/users/'+randomUsername+'/following{/other_user}',
+      'gists_url': 'https://api.github.com/users/'+randomUsername+'/gists{/gist_id}',
+      'starred_url': 'https://api.github.com/users/'+randomUsername+'/starred{/owner}{/repo}',
+      'subscriptions_url': 'https://api.github.com/users/'+randomUsername+'/subscriptions',
+      'organizations_url': 'https://api.github.com/users/'+randomUsername+'/orgs',
+      'repos_url': 'https://api.github.com/users/'+randomUsername+'/repos',
+      'events_url': 'https://api.github.com/users/'+randomUsername+'/events{/privacy}',
+      'received_events_url': 'https://api.github.com/users/'+randomUsername+'/received_events',
+      'type': 'User',
+      'site_admin': false,
+      'name': randomUsername,
+      'company': '',
+      'blog': 'http://twitter.com/tjmehta',
+      'location': 'San Francisco',
+      'email': '',
+      'hireable': true,
+      'bio': '',
+      'public_repos': 77,
+      'public_gists': 8,
+      'followers': 17,
+      'following': 90,
+      'created_at': '2011-02-27T01:20:41Z',
+      'updated_at': '2014-06-24T23:28:16Z'
     }, {
+      server: 'GitHub.com',
+      date: 'Tue, 24 Jun 2014 23:32:26 GMT',
+      'content-type': 'application/json; charset=utf-8',
+      status: '200 OK',
+      'x-ratelimit-limit': '5000',
+      'x-ratelimit-remaining': '4969',
+      'x-ratelimit-reset': '1403655035',
+      'cache-control': 'private, max-age=60, s-maxage=60',
+      'last-modified': 'Tue, 24 Jun 2014 23:28:16 GMT',
+      etag: '"de56a33c6300e03acf0017cad86fd1e7"',
+      'x-oauth-scopes': 'read:repo_hook, repo, user:email',
+      'x-accepted-oauth-scopes': '',
+      vary: 'Accept, Authorization, Cookie, X-GitHub-OTP',
+      'x-github-media-type': 'github.v3; format=json',
+      'x-xss-protection': '1; mode=block',
+      'x-frame-options': 'deny',
+      'content-security-policy': 'default-src \'none\'',
+      'content-length': '1158',
+      'access-control-allow-credentials': 'true',
+      'access-control-expose-headers': multiline(function () {/*
+        'ETag,
+        Link,
+        X-GitHub-OTP,
+        X-RateLimit-Limit,
+        X-RateLimit-Remaining,
+        X-RateLimit-Reset,
+        X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes,
+        X-Poll-Interval'
+      */
+      }),
+      'access-control-allow-origin': '*',
+      'x-github-request-id': '62D29D8A:01FC:1054E2A8:53AA0A89',
+      'strict-transport-security': 'max-age=31536000',
+      'x-content-type-options': 'nosniff',
+      'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
+    });
+
+  var randomOrgname = uuid();
+  var githubOrgId = Math.floor(Math.random() * 10000);
+  nock('https://api.github.com:443')
+    .filteringPath(/\/user\/orgs\?.+/, '/user/orgs')
+    .get('/user/orgs')
+    .reply(200, [
+      {
+        'login': randomOrgname,
+        'id': githubOrgId,
+        'url': 'https://api.github.com/orgs/' + randomOrgname,
+        'repos_url': 'https://api.github.com/orgs/' + randomOrgname + '/repos',
+        'events_url': 'https://api.github.com/orgs/' + randomOrgname + '/events',
+        'members_url': 'https://api.github.com/orgs/' + randomOrgname + '/members{/member}',
+        'public_members_url': 'https://api.github.com/orgs/' + randomOrgname + '/public_members{/member}',
+        'avatar_url': 'https://avatars.githubusercontent.com/u/' + githubOrgId + '?'
+      }
+    ], {
       server: 'GitHub.com',
       date: 'Tue, 24 Jun 2014 23:32:26 GMT',
       'content-type': 'application/json; charset=utf-8',
@@ -165,36 +219,36 @@ module.exports = function (cb) {
     .filteringPath(/\/users\/.+\?.+/, '/user/' + randomUsername)
     .get('/user/' + randomUsername)
     .reply(200, {
-      "login": randomUsername,
-      "id": githubId,
-      "avatar_url": "https://avatars.githubusercontent.com/u/"+githubId+"?",
-      "gravatar_id": 'wrong',
-      "url": "https://api.github.com/users/"+randomUsername,
-      "html_url": "https://github.com/"+randomUsername,
-      "followers_url": "https://api.github.com/users/"+randomUsername+"/followers",
-      "following_url": "https://api.github.com/users/"+randomUsername+"/following{/other_user}",
-      "gists_url": "https://api.github.com/users/"+randomUsername+"/gists{/gist_id}",
-      "starred_url": "https://api.github.com/users/"+randomUsername+"/starred{/owner}{/repo}",
-      "subscriptions_url": "https://api.github.com/users/"+randomUsername+"/subscriptions",
-      "organizations_url": "https://api.github.com/users/"+randomUsername+"/orgs",
-      "repos_url": "https://api.github.com/users/"+randomUsername+"/repos",
-      "events_url": "https://api.github.com/users/"+randomUsername+"/events{/privacy}",
-      "received_events_url": "https://api.github.com/users/"+randomUsername+"/received_events",
-      "type": "User",
-      "site_admin": false,
-      "name": randomUsername,
-      "company": "",
-      "blog": "http://twitter.com/tjmehta",
-      "location": "San Francisco",
-      "email": "",
-      "hireable": true,
-      "bio": "",
-      "public_repos": 77,
-      "public_gists": 8,
-      "followers": 17,
-      "following": 90,
-      "created_at": "2011-02-27T01:20:41Z",
-      "updated_at": "2014-06-24T23:28:16Z"
+      'login': randomUsername,
+      'id': githubId,
+      'avatar_url': 'https://avatars.githubusercontent.com/u/'+githubId+'?',
+      'gravatar_id': 'wrong',
+      'url': 'https://api.github.com/users/'+randomUsername,
+      'html_url': 'https://github.com/'+randomUsername,
+      'followers_url': 'https://api.github.com/users/'+randomUsername+'/followers',
+      'following_url': 'https://api.github.com/users/'+randomUsername+'/following{/other_user}',
+      'gists_url': 'https://api.github.com/users/'+randomUsername+'/gists{/gist_id}',
+      'starred_url': 'https://api.github.com/users/'+randomUsername+'/starred{/owner}{/repo}',
+      'subscriptions_url': 'https://api.github.com/users/'+randomUsername+'/subscriptions',
+      'organizations_url': 'https://api.github.com/users/'+randomUsername+'/orgs',
+      'repos_url': 'https://api.github.com/users/'+randomUsername+'/repos',
+      'events_url': 'https://api.github.com/users/'+randomUsername+'/events{/privacy}',
+      'received_events_url': 'https://api.github.com/users/'+randomUsername+'/received_events',
+      'type': 'User',
+      'site_admin': false,
+      'name': randomUsername,
+      'company': '',
+      'blog': 'http://twitter.com/tjmehta',
+      'location': 'San Francisco',
+      'email': '',
+      'hireable': true,
+      'bio': '',
+      'public_repos': 77,
+      'public_gists': 8,
+      'followers': 17,
+      'following': 90,
+      'created_at': '2011-02-27T01:20:41Z',
+      'updated_at': '2014-06-24T23:28:16Z'
     }, {
       server: 'GitHub.com',
       date: 'Tue, 24 Jun 2014 23:32:26 GMT',
@@ -234,18 +288,63 @@ module.exports = function (cb) {
       'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
     });
 
+  // HOOKS
+  nock('https://api.github.com:443')
+    .filteringPath(/\/repos\/[^\/]+\/[^\/]+\/hooks\?.+/, '/repos/owner/repo/hooks?options')
+    .get('/repos/owner/repo/hooks?options')
+    .twice()
+    .reply(200, [{
+      'url': 'https://api.github.com/repos/octocat/Hello-World/hooks/1',
+      'updated_at': '2011-09-06T20:39:23Z',
+      'created_at': '2011-09-06T17:26:27Z',
+      'name': 'web',
+      'events': [
+        'push',
+        'pull_request'
+      ],
+      'active': true,
+      'config': {
+        'url': 'http://example.com',
+        'content_type': 'json'
+      },
+      'id': 1
+    }]);
+
+  nock('https://api.github.com:443')
+    .filteringPath(/\/repos\/[^\/]+\/[^\/]+\/hooks\?.+/, '/repos/owner/repo/hooks?access_token')
+    .filteringRequestBody(function () {
+      return '*';
+    })
+    .post('/repos/owner/repo/hooks?access_token', '*')
+    .reply(201, {
+      'url': 'https://api.github.com/repos/octocat/Hello-World/hooks/1',
+      'updated_at': '2011-09-06T20:39:23Z',
+      'created_at': '2011-09-06T17:26:27Z',
+      'name': 'web',
+      'events': [
+        'push',
+        'pull_request'
+      ],
+      'active': true,
+      'config': {
+        'url': 'http://example.com',
+        'content_type': 'json'
+      },
+      'id': 1
+    });
+
   // user emails
   nock('https://api.github.com:443')
     .filteringPath(/\/user\/emails\?.+/, '/user/emails')
     .get('/user/emails')
     .reply(200, [{
-      "email": uuid()+'@random.net',
-      "primary": false,
-      "verified": true
+      'email': uuid()+'@random.net',
+      'primary': false,
+      'verified': true
     }, {
-      "email": uuid()+'@random.net',
-      "primary": true,
-      "verified": true
+      'email': uuid()+'@random.net',
+      'primary': true,
+      'verified': true
     }], {
       server: 'GitHub.com',
       date: 'Tue, 24 Jun 2014 23:32:27 GMT',
