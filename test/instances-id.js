@@ -125,7 +125,16 @@ describe('Instance - /instances/:id', function () {
         if (err) { return done(err); }
 
         expect(code).to.equal(200);
-        // FIXME: expect each field!
+        expect(body).to.be.ok;
+        expect(body.channels).to.be.ok;
+        expect(body.containers).to.be.ok;
+        expect(body.created).to.be.ok;
+        expect(body.createdBy).to.be.ok;
+        expect(body.environment).to.be.ok;
+        expect(body.name).to.be.ok;
+        expect(body.outputViews).to.be.ok;
+        expect(body.owner).to.be.ok;
+        expect(body.project).to.be.ok;
         expect(body).to.eql(ctx.instance.toJSON());
         done();
       };

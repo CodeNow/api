@@ -21,6 +21,7 @@ describe('Versions', function () {
       createdBy: { github: validation.VALID_GITHUB_ID },
       config: validation.VALID_OBJECT_ID,
       created: Date.now(),
+      environment: validation.VALID_OBJECT_ID,
       context: validation.VALID_OBJECT_ID,
       files:[{
         Key: "test",
@@ -56,6 +57,11 @@ describe('Versions', function () {
   describe('Context Id Validation', function () {
     validation.objectIdValidationChecking(createNewVersion, 'context');
     validation.requiredValidationChecking(createNewVersion, 'context');
+  });
+
+  describe('Environment Id Validation', function () {
+    validation.objectIdValidationChecking(createNewVersion, 'environment');
+    validation.requiredValidationChecking(createNewVersion, 'environment');
   });
 
   describe('Build Validation', function () {
