@@ -37,8 +37,8 @@ describe('Versions - /contexts/:contextid/versions', function () {
     // FIXME: actually make me a moderator
     ctx.moderator = multi.createUser(function (err) {
       if (err) { return done(err); }
-      var sourceBody = { name: uuid(), isSource: true };
-      ctx.sourceContext = ctx.moderator.createContext(sourceBody, function (err) {
+      var body = { name: uuid(), isSource: true };
+      ctx.sourceContext = ctx.moderator.createContext(body, function (err) {
         if (err) { return done(err); }
         ctx.sourceVersion = ctx.sourceContext.createVersion(count.next);
       });
@@ -48,11 +48,11 @@ describe('Versions - /contexts/:contextid/versions', function () {
       ctx.user = user;
       ctx.project = project;
       ctx.env = env;
-      ctx.build = ctx.env.createBuild({ environment: ctx.env.id() },
-        function (err) {
-          if (err) { return done(err); }
-          ctx.context = ctx.user.fetchContext(ctx.build.attrs.contexts[0], count.next);
-        });
+      var body = { environment: ctx.env.id() };
+      ctx.build = ctx.env.createBuild(body, function (err) {
+        if (err) { return done(err); }
+        ctx.context = ctx.user.fetchContext(ctx.build.attrs.contexts[0], count.next);
+      });
     });
   });
 
@@ -70,6 +70,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
     });
     it('should create a new version from a source infrastructure code version', function (done) {
       var query = {
+        // FIXME: fromSource should really be the sourceVersionId
         fromSource: ctx.sourceVersion.attrs.infraCodeVersion,
         toBuild: ctx.build.id()
       };

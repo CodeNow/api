@@ -7,15 +7,13 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
-var uuid = require('uuid');
-var clone = require('101/clone');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
-var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
+var createCount = require('callback-count');
 
 describe('Projects - /projects', function () {
   var ctx = {};
@@ -33,17 +31,16 @@ describe('Projects - /projects', function () {
   describe('GET', function () {
     beforeEach(function (done) {
       nockS3();
-      multi.createRegisteredUserAndProject(function (err, user, project) {
-        if (err) { return done(err); }
-
+      var count = createCount(2, done);
+      multi.createProject(function (err, project, user) {
         ctx.user1 = user;
         ctx.project1 = project;
-        multi.createRegisteredUserAndProject(function (err, user, project) {
-          if (err) { return done(err); }
-          ctx.user2 = user;
-          ctx.project2 = project;
-          done();
-        });
+        count.next(err);
+      });
+      multi.createProject(function (err, project, user) {
+        ctx.user2 = user;
+        ctx.project2 = project;
+        count.next(err);
       });
     });
     describe('non-owner', function() {

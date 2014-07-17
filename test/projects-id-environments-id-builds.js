@@ -6,12 +6,20 @@ var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
-var Build = require('models/mongo/build');
+var async = require('async');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
+var not = require('101/not');
+var Build = require('models/mongo/build');
+var exists = require('101/exists');
+var equals = function (compare) {
+  return function (val) {
+    return val === compare;
+  };
+};
 
 describe('Builds - /projects/:id/environments/:id/builds', function () {
   var ctx = {};
@@ -73,181 +81,179 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
       });
     });
 
-    // describe('Built Projects', function () {
-    //   beforeEach(function (done) {
-    //     nockS3();
-    //     multi.createRegisteredUserAndProject(function (err, user, project) {
-    //       if (err) {
-    //         return done(err);
-    //       }
-    //       ctx.user = user;
-    //       ctx.project = project;
-    //       var environments = ctx.project.fetchEnvironments(function (err) {
-    //         if (err) {
-    //           return done(err);
-    //         }
-    //         ctx.environment = environments.models[0];
-    //         ctx.builds = ctx.environment.fetchBuilds(function (err) {
-    //           if (err) {
-    //             return done(err);
-    //           }
-    //           ctx.build = ctx.builds.models[0];
-    //           done();
-    //         });
-    //       });
-    //     });
-    //   });
-    //   it('should create a new build from an existing one', function (done) {
-    //     var inputBody = {
-    //       projectId: ctx.build.attrs.project,
-    //       envId: ctx.build.attrs.environment,
-    //       parentBuild: ctx.build.attrs.id
-    //     };
-    //     ctx.environment.createBuild({json: inputBody},
-    //       function (err, body, code) {
-    //         if (err) {
-    //           return done(err);
-    //         }
-    //         expect(code).to.equal(201);
-    //         // Test to make sure everything (except ids) in this new build (in the body) is the same
-    //         // as the original build we rebuilt from
-    //         expect(body.environment).to.equal(ctx.build.toJSON().environment);
-    //         expect(body.contexts[0]).to.equal(ctx.build.toJSON().contexts[0]);
-    //         expect(body.project).to.equal(ctx.build.toJSON().project);
-
-    //         // Now check to make sure that the Context Versions in this new build are identical,
-    //         // except for the ids, created dates, and any build info
-    //         expect(body.contextVersions[0].dockerHost).to.equal(
-    //           ctx.build.toJSON().contextVersions[0].dockerHost);
-    //         expect(body.contextVersions[0].context).to.equal(
-    //           ctx.build.toJSON().contextVersions[0].context);
-    //         expect(body.contextVersions[0].infraCodeVersion).to.equal(
-    //           ctx.build.toJSON().contextVersions[0].infraCodeVersion);
-
-    //         // Since this route shouldn't actually start the rebuild process, all of these should
-    //         // be missing from the new build
-    //         expect(body.contextVersions[0].build).to.be.not.ok;
-    //         expect(body.started).to.be.not.ok;
-    //         expect(body.completed).to.be.not.ok;
-    //         done();
-    //       });
-    //   });
-    //   it('should fail when the source build hasn\'t finished building', function (done) {
-    //     delete ctx.build.attrs.completed;
-    //     Build.findOneAndUpdate({
-    //       _id: ctx.build.attrs.id
-    //     }, {
-    //       $unset: {
-    //         'completed' : true
-    //       }
-    //     },function(err) {
-    //       if (err) { return done(err); }
-    //       var inputBody = {
-    //         projectId: ctx.build.attrs.project,
-    //         envId: ctx.build.attrs.environment,
-    //         parentBuild: ctx.build.attrs.id
-    //       };
-    //       ctx.environment.createBuild({json: inputBody}, function (err) {
-    //         expect(err).to.be.ok;
-    //         done();
-    //       });
-    //     });
-    //   });
-    // });
-    // describe('Failures', function () {
-    //   beforeEach(function (done) {
-    //     nockS3();
-    //     multi.createRegisteredUserAndUnbuiltProject(function (err, user, project) {
-    //       if (err) {
-    //         return done(err);
-    //       }
-    //       ctx.user = user;
-    //       ctx.project = project;
-    //       var environments = ctx.project.fetchEnvironments(function (err) {
-    //         if (err) {
-    //           return done(err);
-    //         }
-    //         ctx.environment = environments.models[0];
-    //         ctx.builds = ctx.environment.fetchBuilds(function (err) {
-    //           if (err) {
-    //             return done(err);
-    //           }
-    //           ctx.build = ctx.builds.models[0];
-    //           done();
-    //         });
-    //       });
-    //     });
-    //   });
-    //   it('should fail to create a new build from an unbuilt one', function (done) {
-    //     var inputBody = {
-    //       projectId: ctx.build.attrs.project,
-    //       envId: ctx.build.attrs.environment,
-    //       parentBuild: ctx.build.attrs.id
-    //     };
-    //     ctx.environment.createBuild({json: inputBody},
-    //       function (err) {
-    //         expect(err).to.be.ok;
-    //         done();
-    //       });
-    //   });
-    //   it('should fail to create a new build if the input is garbage', function (done) {
-    //     var inputBody = {
-    //     };
-    //     ctx.environment.createBuild({json: inputBody},
-    //       function (err) {
-    //         expect(err).to.be.ok;
-    //         done();
-    //       });
-    //   });
-    //   it('should fail to create a new build if the input is garbage, even with a build id',
-    //     function (done) {
-    //       var inputBody = {
-    //         parentBuild: ctx.build.attrs.id
-    //       };
-    //       ctx.environment.createBuild({json: inputBody},
-    //         function (err) {
-    //           expect(err).to.be.ok;
-    //           done();
-    //         });
-    //     });
-    // });
+    describe('Built Projects', function () {
+      beforeEach(function (done) {
+        nockS3();
+        multi.createBuild(function (err, build, env, project, user) {
+          ctx.build = build;
+          ctx.env = env;
+          ctx.project = project;
+          ctx.user = user;
+          done(err);
+        });
+      });
+      describe('parentBuild is unbuilt', function() {
+        it('should create a new build from an existing one', function (done) {
+          var body = {
+            environment: ctx.env.id(),
+            parentBuild: ctx.build.id()
+          };
+          ctx.env.createBuild(body, expects.error(400, /cannot be copied.*built/, done));
+        });
+      });
+      describe('parentBuild is built', function() {
+        beforeEach(function (done) {
+          multi.createBuiltBuild(function (err, build, env, project, user) {
+            ctx.build = build;
+            ctx.env = env;
+            ctx.project = project;
+            ctx.user = user;
+            done(err);
+          });
+        });
+        it('should create a new build from an existing one', function (done) {
+          var body = {
+            environment: ctx.env.id(),
+            parentBuild: ctx.build.id()
+          };
+          var expected = {
+            environment: ctx.env.id(),
+            contexts: ctx.build.json().contexts,
+            contextVersions: function (val) {
+              expect(val).to.not.eql(ctx.build.json().contextVersions);
+              return true;
+            },
+            started: not(exists),
+            completed: not(exists)
+          };
+          var newBuild = ctx.env.createBuild(body,
+            expects.success(201, expected, function (err) {
+              if (err) { return cb(err); }
+              var i = 0;
+              async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
+                var contextId = ctx.build.json().contexts[i];
+                var oldVersionId = ctx.build.json().contextVersions[i];
+                ctx.user
+                  .newContext(contextId)
+                  .newVersion(oldVersionId)
+                  .fetch(function (err, body) {
+                    if (err) { return cb(err); }
+                    var expected = { // ensure infraCodeVersions were copied
+                      infraCodeVersion: not(equals(body.infraCodeVersion))
+                    };
+                    ctx.user
+                      .newContext(contextId)
+                      .newVersion(versionId)
+                      .fetch(expects.success(200, expected, cb));
+                  });
+                i++;
+              }, done);
+            }));
+        });
+      });
+      it('should fail when the source build hasn\'t finished building', function (done) {
+        delete ctx.build.attrs.completed;
+        Build.findOneAndUpdate({
+          _id: ctx.build.id()
+        }, {
+          $unset: {
+            'completed' : true
+          }
+        },function(err) {
+          if (err) { return done(err); }
+          var inputBody = {
+            projectId: ctx.project.id(),
+            envId: ctx.env.id(),
+            parentBuild: ctx.build.id()
+          };
+          ctx.env.createBuild({json: inputBody}, function (err) {
+            expect(err).to.be.ok;
+            done();
+          });
+        });
+      });
+    });
+    describe('Failures', function () {
+      beforeEach(function (done) {
+        nockS3();
+        multi.createBuild(function (err, build, env, project, user) {
+          ctx.build = build;
+          ctx.env = env;
+          ctx.project = project;
+          ctx.user = user;
+          done(err);
+        });
+      });
+      it('should fail to create a new build from an unbuilt one', function (done) {
+        var inputBody = {
+          projectId: ctx.project.id(),
+          envId: ctx.env.id(),
+          parentBuild: ctx.build.id()
+        };
+        ctx.env.createBuild({json: inputBody},
+          function (err) {
+            expect(err).to.be.ok;
+            done();
+          });
+      });
+      it('should fail to create a new build if the input is garbage', function (done) {
+        var inputBody = {
+        };
+        ctx.env.createBuild({json: inputBody},
+          function (err) {
+            expect(err).to.be.ok;
+            done();
+          });
+      });
+      it('should fail to create a new build if the input is garbage, even with a build id',
+        function (done) {
+          var inputBody = {
+            parentBuild: ctx.build.id()
+          };
+          ctx.env.createBuild({json: inputBody},
+            function (err) {
+              expect(err).to.be.ok;
+              done();
+            });
+        });
+    });
   });
 
-  // describe('GET', function () {
-  //   beforeEach(function (done) {
-  //     nockS3();
-  //     multi.createRegisteredUserAndProject(function (err, user, project) {
-  //       if (err) { return done(err); }
+  describe('GET', function () {
+    beforeEach(function (done) {
+      nockS3();
+      multi.createBuild(function (err, build, env, project, user) {
+        ctx.build = build;
+        ctx.env = env;
+        ctx.project = project;
+        ctx.user = user;
+        done(err);
+      });
+    });
 
-  //       ctx.user = user;
-  //       ctx.project = project;
-  //       var environments = ctx.project.fetchEnvironments(function (err) {
-  //         if (err) { return done(err); }
-
-  //         ctx.environment = environments.models[0];
-  //         done();
-  //       });
-  //     });
-  //   });
-
-  //   it('should return the list of environment builds', function (done) {
-  //     var builds = ctx.environment.fetchBuilds(function (err, body, code) {
-  //       if (err) { return done(err); }
-
-  //       expect(code).to.equal(200);
-  //       expect(body).to.be.an('array');
-  //       // var testUser = body[0].createdBy;
-  //       expect(body[0].createdBy.github).to.equal(ctx.user.toJSON().accounts.github.id);
-
-  //       var build = ctx.environment.fetchBuild(builds.models[0].id(), function (err) {
-  //         if (err) { return done(err); }
-  //         expect(build).to.be.okay;
-  //         // FIXME: build.createdBy()
-  //         // var buildCreator = build.createdBy();
-  //         // expect(buildCreator.toJSON()).to.equal(testUser);
-  //         done();
-  //       });
-  //     });
-  //   });
-  // });
+    it('should return the list of environment builds', function (done) {
+      var expected = [
+        ctx.build.json()
+      ];
+      ctx.env.fetchBuilds(expects.success(200, expected, done));
+    });
+    describe('filter by in progress and completed', function () {
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, env, project, user) {
+          ctx.builtBuild = build;
+          ctx.env = env;
+          ctx.project = project;
+          ctx.user = user;
+          ctx.unbuiltBuild = env.createBuild({ parentBuild: ctx.builtBuild.id() }, done);
+        });
+      });
+      it('should return the list of built environment builds', function (done) {
+        var expected = [
+          ctx.builtBuild.json()
+        ];
+        var query = { started: true };
+        ctx.env.fetchBuilds(query, expects.success(200, expected, done));
+      });
+    });
+  });
 });
