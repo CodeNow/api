@@ -15,11 +15,6 @@ var exists = require('101/exists');
 var uuid = require('uuid');
 var createCount = require('callback-count');
 
-var async = require('async');
-var join = require('path').join;
-var Context = require('models/mongo/context');
-var InfraCodeVersion = require('models/mongo/infra-code-version');
-
 describe('Versions - /contexts/:contextid/versions', function () {
   var ctx = {};
 
