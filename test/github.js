@@ -7,6 +7,7 @@ var afterEach = Lab.afterEach;
 var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
 var request = require('request');
+var noop = require('101/noop');
 
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
@@ -63,15 +64,19 @@ describe('Github', function () {
     it('should start a build', function (done) {
       var options = hooks.push;
       request.post(options, function (err, res, body) {
-        if (err) { return done(err); }
-
-        expect(res.statusCode).to.equal(201);
-        console.log(body);
-        expect(body).to.be.okay;
-        expect(body).to.be.an('array');
-        expect(body).to.have.a.lengthOf(1);
-        expect(body[0]).to.have.property('started');
-        done();
+        if (err) {
+          done = noop;
+          done(err);
+        }
+        else {
+          expect(res.statusCode).to.equal(201);
+          expect(body).to.be.okay;
+          expect(body).to.be.an('array');
+          expect(body).to.have.a.lengthOf(1);
+          expect(body[0]).to.have.property('started');
+          expect(body[0]).to.have.property('contextVersions');
+          tailBuildStream(body[0].contextVersions[0], done);
+        }
       });
     });
     // describe('unbuilt build with github repo', function() {

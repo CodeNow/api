@@ -132,14 +132,7 @@ module.exports = {
     build.fetch(function (err) {
       if (err) { return cb(err); }
       tailBuildStream(build.json().contextVersions[0], function (err) { // FIXME: maybe
-        if (err) {
-          console.log(err);
-          console.log(err);
-          console.log(err);
-          console.log(err);
-          console.log(err);
-          console.log(err);
-          return cb(err); }
+        if (err) { return cb(err); }
         build.fetch(cb); // get completed build
       });
       build.build({ message: uuid() }, function (err) {
