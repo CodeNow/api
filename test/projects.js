@@ -5,11 +5,9 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
@@ -20,8 +18,6 @@ describe('Projects - /projects', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github')); // twice
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -30,7 +26,6 @@ describe('Projects - /projects', function () {
 
   describe('GET', function () {
     beforeEach(function (done) {
-      nockS3();
       var count = createCount(2, done);
       multi.createProject(function (err, project, user) {
         ctx.user1 = user;
@@ -49,32 +44,27 @@ describe('Projects - /projects', function () {
           owner: { github: ctx.user1.toJSON().accounts.github.id },
           name: ctx.project1.toJSON().name
         }};
-        ctx.user2.fetchProjects(query, function (err, projects) {
-          if (err) { return done(err); }
-
-          expect(projects).to.be.ok;
-          expect(projects).to.be.an('array');
-          expect(projects).to.have.length(1);
-          expect(projects[0]._id.toString()).to.equal(ctx.project1.id().toString());
-          expect(projects[0].owner.github).to.equal(ctx.user1.toJSON().accounts.github.id);
-          done();
-        });
+        // this is the mega specific test to make sure we have all the fields
+        var expected = [{
+          name: query.qs.name,
+          lowerName: query.qs.name.toLowerCase(),
+          description: '',
+          'public': false,
+          owner: query.qs.owner,
+          created: exists,
+          'environments[0].owner': query.qs.owner,
+          'environments[0].name': 'master',
+          defaultEnvironment: ctx.project1.toJSON().environments[0]._id
+        }];
+        ctx.user2.fetchProjects(query, expects.success(200, expected, done));
       });
       it('should return the project when searched by ownerUsername and project (by other user)', function (done) {
         var query = { qs: {
           ownerUsername: ctx.user1.toJSON().accounts.github.username,
           name: ctx.project1.toJSON().name
         }};
-        ctx.user2.fetchProjects(query, function (err, projects) {
-          if (err) { return done(err); }
-
-          expect(projects).to.be.ok;
-          expect(projects).to.be.an('array');
-          expect(projects).to.have.length(1);
-          expect(projects[0]._id.toString()).to.equal(ctx.project1.id().toString());
-          expect(projects[0].owner.github).to.equal(ctx.user1.toJSON().accounts.github.id);
-          done();
-        });
+        var expected = [ ctx.project1.toJSON() ];
+        ctx.user2.fetchProjects(query, expects.success(200, expected, done));
       });
     });
     describe('owner', function() {
@@ -83,32 +73,16 @@ describe('Projects - /projects', function () {
           owner: { github: ctx.user2.toJSON().accounts.github.id },
           name: ctx.project2.toJSON().name
         }};
-        ctx.user2.fetchProjects(query, function (err, projects) {
-          if (err) { return done(err); }
-
-          expect(projects).to.be.ok;
-          expect(projects).to.be.an('array');
-          expect(projects).to.have.length(1);
-          expect(projects[0]._id.toString()).to.equal(ctx.project2.id().toString());
-          expect(projects[0].owner.github).to.equal(ctx.user2.toJSON().accounts.github.id);
-          done();
-        });
+        var expected = [ ctx.project2.toJSON() ];
+        ctx.user2.fetchProjects(query, expects.success(200, expected, done));
       });
       it('should return the project when searched by ownerUsername and project (by same user)', function (done) {
         var query = { qs: {
           ownerUsername: ctx.user2.toJSON().accounts.github.username,
           name: ctx.project2.toJSON().name
         }};
-        ctx.user2.fetchProjects(query, function (err, projects) {
-          if (err) { return done(err); }
-
-          expect(projects).to.be.ok;
-          expect(projects).to.be.an('array');
-          expect(projects).to.have.length(1);
-          expect(projects[0]._id.toString()).to.equal(ctx.project2.id().toString());
-          expect(projects[0].owner.github).to.equal(ctx.user2.toJSON().accounts.github.id);
-          done();
-        });
+        var expected = [ ctx.project2.toJSON() ];
+        ctx.user2.fetchProjects(query, expects.success(200, expected, done));
       });
     });
     describe('pagination', function() {
@@ -118,15 +92,8 @@ describe('Projects - /projects', function () {
           limit: 1,
           page: 0
         }};
-        ctx.user2.fetchProjects(query, function (err, projects) {
-          if (err) { return done(err); }
-
-          expect(projects).to.be.ok;
-          expect(projects).to.be.an('array');
-          expect(projects).to.have.length(1);
-          expect(projects[0]._id.toString()).to.equal(ctx.project2.id().toString());
-          done();
-        });
+        var expected = [ ctx.project2.toJSON() ];
+        ctx.user2.fetchProjects(query, expects.success(200, expected, done));
       });
     });
     describe('sorting', function() {
@@ -134,85 +101,47 @@ describe('Projects - /projects', function () {
         var query = { qs: {
           sort: 'created'
         }};
-        ctx.user2.fetchProjects(query, function (err, projects) {
-          if (err) { return done(err); }
-
-          expect(projects).to.be.ok;
-          expect(projects).to.be.an('array');
-          expect(projects).to.have.length(2);
-          expect(projects[0]._id.toString()).to.equal(ctx.project1.id().toString());
-          done();
-        });
+        var expected = [ ctx.project1.toJSON(), ctx.project2.toJSON() ];
+        ctx.user2.fetchProjects(query, expects.success(200, expected, done));
       });
       it('should have primitive reverse sorting', function (done) {
         var query = { qs: {
           sort: '-created'
         }};
-        ctx.user2.fetchProjects(query, function (err, projects) {
-          if (err) { return done(err); }
-
-          expect(projects).to.be.ok;
-          expect(projects).to.be.an('array');
-          expect(projects).to.have.length(2);
-          expect(projects[0]._id.toString()).to.equal(ctx.project2.id().toString());
-          done();
-        });
+        var expected = [ ctx.project2.toJSON(), ctx.project1.toJSON() ];
+        ctx.user2.fetchProjects(query, expects.success(200, expected, done));
       });
       it('should fail with bad sort field', function (done) {
         var query = { qs: {
           sort: '-allthethings'
         }};
-        ctx.user2.fetchProjects(query, function (err) {
-          expect(err).to.be.okay;
-          expect(err.output.statusCode).to.equal(400);
-          expect(err.message).to.match(/field not allowed for sorting/);
-          done();
-        });
+        ctx.user2.fetchProjects(query, expects.error(400, /field not allowed for sorting/, done));
       });
     });
     describe('errors', function() {
       it('should error if no query!', function (done) {
         var query = { qs: {} };
-        ctx.user2.fetchProjects(query, function (err) {
-          expect(err).to.be.ok;
-          expect(err.output.statusCode).to.equal(400);
-          expect(err.message).to.match(/required/);
-          done();
-        });
+        ctx.user2.fetchProjects(query, expects.error(400, /required/, done));
       });
       it('should error when searched by owner (non object)', function (done) {
         var query = { qs: {
           owner: 'garbage'
         }};
-        ctx.user2.fetchProjects(query, function (err) {
-          expect(err).to.be.ok;
-          expect(err.output.statusCode).to.equal(400);
-          expect(err.message).to.match(/owner/);
-          expect(err.message).to.match(/an object/);
-          done();
-        });
+        ctx.user2.fetchProjects(query, expects.error(400, /owner.+an object/, done));
       });
       it('should error when searched by owner (non gitid)', function (done) {
         var query = { qs: {
           owner: { github: 'asdf' }
         }};
-        ctx.user2.fetchProjects(query, function (err) {
-          expect(err).to.be.ok;
-          expect(err.output.statusCode).to.equal(400);
-          expect(err.message).to.match(/owner/);
-          expect(err.message).to.match(/a number/);
-          done();
-        });
+        ctx.user2.fetchProjects(query, expects.error(400, /owner.+a number/, done));
       });
     });
   });
 
   describe('POST', function () {
     beforeEach(function (done) {
-      nockS3();
       ctx.user = multi.createUser(done);
     });
-    afterEach(require('./fixtures/clean-ctx')(ctx));
 
     describe('required fields', function() {
       it('should create a project with a name', function (done) {

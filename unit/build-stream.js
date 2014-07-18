@@ -72,7 +72,7 @@ describe('build-stream', function () {
     var roomId = uuid();
     var testString = "this is yet another message";
 
-    var client = new primusClient('http://localhost:'+configs.port+"?type=build-stream&id="+roomId);
+    var client = new primusClient('http://localhost:'+process.env.PORT+"?type=build-stream&id="+roomId);
     client.on('data', handleData);
     client.on('open', function() {
       sendData(testString, roomId);
@@ -80,7 +80,7 @@ describe('build-stream', function () {
 
     function handleData(data) {
       expect(data.toString()).to.equal(testString);
-      var client2 = new primusClient('http://localhost:'+configs.port+"?type=build-stream&id="+roomId);
+      var client2 = new primusClient('http://localhost:'+process.env.PORT+"?type=build-stream&id="+roomId);
       client2.on('data', function(data) {
         expect(data.toString()).to.equal(testString);
         done();
