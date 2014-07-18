@@ -79,8 +79,18 @@ module.exports = {
   createSourceContextVersion: function (cb) {
     this.createSourceContext(function (err, context, moderator) {
       if (err) { return (err); }
+      require('../fixtures/nock-s3')();
       var version = context.createVersion(function (err) {
-        cb(err, version, context, moderator);
+        if (err) { return (err); }
+        require('async').series([
+          version.createFile.bind(version, { json: {
+            name: 'Dockerfile',
+            path: '/',
+            body: 'FROM dockerfile/nodejs\n'
+          }})
+        ], function (err) {
+          cb(err, version, context, moderator);
+        });
       });
     });
   },

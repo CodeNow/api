@@ -13,7 +13,6 @@ var async = require('async');
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
 describe('Version Files - /contexts/:contextid/versions/:id/files', function () {
@@ -21,8 +20,6 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -30,30 +27,19 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
-      if (err) { return done(err); }
-
-      ctx.user = user;
+    multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+      ctx.contextVersion = contextVersion;
+      ctx.context = context;
+      ctx.build = build;
+      ctx.env = env;
       ctx.project = project;
-      ctx.environments = environments;
-      ctx.environment = environments.models[0];
-
-      var builds = ctx.environment.fetchBuilds(function (err) {
-        if (err) { return done(err); }
-
-        ctx.build = builds.models[0];
-        ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().contextVersions[0];
-        ctx.version = ctx.user
-          .newContext(ctx.contextId)
-          .fetchVersion(ctx.versionId, done);
-      });
+      ctx.user = user;
+      done(err);
     });
   });
   describe('GET', function () {
     it('should give us files from a given version', function (done) {
-      ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
+      ctx.contextVersion.fetchFiles({ path: '/' }, function (err, files) {
         if (err) { return done(err); }
         expect(files).to.have.length(1);
         expect(findIndex(files, hasProperties({ name: 'Dockerfile', path: '/', isDir: false }))).to.not.equal(-1);
@@ -61,7 +47,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       });
     });
     it('should give us the root directory with an empty path', function (done) {
-      ctx.version.fetchFiles({ qs: { path: '' }}, function (err, files) {
+      ctx.contextVersion.fetchFiles({ path: '' }, function (err, files) {
         if (err) { return done(err); }
         expect(files).to.have.length(1);
         expect(findIndex(files, hasProperties({ name: '', path: '', isDir: true }))).to.not.equal(-1);
@@ -71,16 +57,16 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
   });
   describe('POST', function () {
     it('should give us details about a file we just created', function (done) {
-      ctx.file = ctx.version.createFile({ json: {
-        name: 'file.txt',
-        path: '/',
-        body: 'content'
-      }}, function (err, file, code) {
+      ctx.file = ctx.contextVersion.createFile({ json: {
+          name: 'file.txt',
+          path: '/',
+          body: 'content'
+        }}, function (err, file, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);
         expect(file).to.be.okay;
         expect(file).to.be.an('object');
-        ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
+        ctx.contextVersion.fetchFiles({ path: '/' }, function (err, files) {
           if (err) { return done(err); }
           expect(files).to.be.okay;
           expect(files).to.be.an('array');
@@ -98,9 +84,9 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           path: '/',
           body: 'content'
       }};
-      ctx.file = ctx.version.createFile(json, function (err) {
+      ctx.file = ctx.contextVersion.createFile(json, function (err) {
         if (err) { return done(err); }
-        ctx.file2 = ctx.version.createFile(json, function (err) {
+        ctx.file2 = ctx.contextVersion.createFile(json, function (err) {
           if (! err) {
             return done(new Error('A version file was able to be created with all of the ' +
               'same key as of another file!'));
@@ -112,7 +98,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       });
     });
     it('should let us create a directory', function (done) {
-      ctx.file = ctx.version.createFile({ json: {
+      ctx.file = ctx.contextVersion.createFile({ json: {
         name: 'dir',
         path: '/',
         isDir: true
@@ -121,7 +107,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         expect(code).to.equal(201);
         expect(file).to.be.okay;
         expect(file).to.be.an('object');
-        ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
+        ctx.contextVersion.fetchFiles({ qs: { path: '/' }}, function (err, files) {
           if (err) { return done(err); }
           expect(files).to.be.okay;
           expect(files).to.be.an('array');
@@ -133,7 +119,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       });
     });
     it('should let us create a directory, with a slash, without the isDir', function (done) {
-      ctx.file = ctx.version.createFile({ json: {
+      ctx.file = ctx.contextVersion.createFile({ json: {
         name: 'dir/',
         path: '/'
       }}, function (err, file, code) {
@@ -141,7 +127,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         expect(code).to.equal(201);
         expect(file).to.be.okay;
         expect(file).to.be.an('object');
-        ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
+        ctx.contextVersion.fetchFiles({ qs: { path: '/' }}, function (err, files) {
           if (err) { return done(err); }
           expect(files).to.be.okay;
           expect(files).to.be.an('array');
@@ -153,7 +139,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       });
     });
     it('should let us create a directory, including the tailing slash', function (done) {
-      ctx.file = ctx.version.createFile({ json: {
+      ctx.file = ctx.contextVersion.createFile({ json: {
         name: 'dir/',
         path: '/',
         isDir: true
@@ -162,7 +148,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         expect(code).to.equal(201);
         expect(file).to.be.okay;
         expect(file).to.be.an('object');
-        ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
+        ctx.contextVersion.fetchFiles({ qs: { path: '/' }}, function (err, files) {
           if (err) { return done(err); }
           expect(files).to.be.okay;
           expect(files).to.be.an('array');
@@ -175,18 +161,18 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
     });
     it('should let us create nested directories, but does not list them at root', function (done) {
       async.series([
-        ctx.version.createFile.bind(ctx.version, { json: {
+        ctx.contextVersion.createFile.bind(ctx.contextVersion, { json: {
           name: 'dir',
           path: '/',
           isDir: true
         }}),
-        ctx.version.createFile.bind(ctx.version, { json: {
+        ctx.contextVersion.createFile.bind(ctx.contextVersion, { json: {
           name: 'dir2',
           path: '/dir/',
           isDir: true
         }}),
         function (cb) {
-          ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
+          ctx.contextVersion.fetchFiles({ qs: { path: '/' }}, function (err, files) {
             if (err) { return cb(err); }
             expect(files).to.be.okay;
             expect(files).to.be.an('array');
@@ -197,7 +183,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           });
         },
         function (cb) {
-          ctx.version.fetchFiles({ qs: { path: '/dir/' } }, function (err, files) {
+          ctx.contextVersion.fetchFiles({ qs: { path: '/dir/' } }, function (err, files) {
             if (err) { return cb(err); }
             expect(files).to.be.okay;
             expect(files).to.be.an('array');
