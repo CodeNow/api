@@ -5,7 +5,6 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
 var expects = require('./fixtures/expects');
 var async = require('async');
