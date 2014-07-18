@@ -23,7 +23,11 @@ describe('User', function () {
       name: "test",
       accounts: {
         github: {
-          username: 'test'
+          username: 'test',
+          accessToken: 'test',
+          refreshToken: 'test',
+          id: 'test',
+          emails: [Faker.Internet.email(), Faker.Internet.email()]
         }
       },
       show_email: false,
@@ -76,5 +80,18 @@ describe('User', function () {
   describe('Company Validation', function () {
     validation.nameValidationChecking(createNewUser, 'company');
   });
+//
+//  describe('Accounts Validation', function() {
+//    describe('Github Username Validation', function () {
+//      validation.urlSafeNameValidationChecking(createNewUser, 'accounts.github.username',
+//        schemaValidators.validationMessages.characters);
+//      validation.requiredValidationChecking(createNewUser, 'accounts.github.username');
+//    });
+//    describe('Github Username Validation', function () {
+//      validation.urlSafeNameValidationChecking(createNewUser, 'accounts.github.username',
+//        schemaValidators.validationMessages.characters);
+//      validation.requiredValidationChecking(createNewUser, 'accounts.github.username');
+//    });
+//  });
 
 });

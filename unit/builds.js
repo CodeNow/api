@@ -15,12 +15,25 @@ describe('Build', function () {
 
   function createNewBuild() {
     return new Build({
+      project: validation.VALID_OBJECT_ID,
       environment: validation.VALID_OBJECT_ID,
       contexts: [validation.VALID_OBJECT_ID],
       contextVersions: [validation.VALID_OBJECT_ID],
       created: Date.now(),
       createdBy: { github: validation.VALID_GITHUB_ID }
     });
+  }
+
+  function createNewUser() {
+    return {
+      password: "pass",
+      name: "test",
+      accounts: {
+        github: {
+          id: 'test'
+        }
+      }
+    };
   }
 
   it('should be able to save a build!', function (done) {
@@ -44,6 +57,11 @@ describe('Build', function () {
     validation.requiredValidationChecking(createNewBuild, 'environment');
   });
 
+  describe('Project Id Validation', function () {
+    validation.objectIdValidationChecking(createNewBuild, 'project');
+    validation.requiredValidationChecking(createNewBuild, 'project');
+  });
+
   describe('Context Ids Validation', function () {
     validation.objectIdValidationChecking(createNewBuild, 'contexts', true);
     validation.requiredValidationChecking(createNewBuild, 'contexts');
@@ -51,7 +69,6 @@ describe('Build', function () {
 
   describe('Version Ids Validation', function () {
     validation.objectIdValidationChecking(createNewBuild, 'contextVersions', true);
-    validation.requiredValidationChecking(createNewBuild, 'contextVersions');
   });
 
   describe('Testing SetInProgress', function () {
@@ -59,7 +76,7 @@ describe('Build', function () {
     beforeEach(function(done) {
       ctx.build = createNewBuild();
       ctx.build.save(function(err, build) {
-        ctx.build.setInProgress(function(err, newbuild) {
+        build.setInProgress(createNewUser(), function(err, newbuild) {
           if (err) {
             done(err);
           } else {
@@ -80,7 +97,7 @@ describe('Build', function () {
     it('should create another build, and the buildNumber should be higher ', function (done) {
       ctx.build2 = createNewBuild();
       ctx.build2.save(function(err, build) {
-        build.setInProgress(function(err, newbuild) {
+        build.setInProgress(createNewUser(), function(err, newbuild) {
           if (err) {
             done(err);
           } else {
