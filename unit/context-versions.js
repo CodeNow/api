@@ -5,6 +5,7 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
+var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 
@@ -33,7 +34,10 @@ describe('Versions', function () {
         dockerTag: "adsgasdfgasdf"
       },
       appCodeVersions: [{
-        repo: 'bkendall/flaming-octo-nemisis'
+        repo: 'bkendall/flaming-octo-nemisis',
+        lowerRepo: 'bkendall/flaming-octo-nemisis',
+        branch: 'master',
+        lockCommit: false
       }]
     });
   }
@@ -49,9 +53,18 @@ describe('Versions', function () {
     });
   });
 
+  describe('InfaCodeVersion Id Validation', function () {
+    validation.objectIdValidationChecking(createNewVersion, 'infraCodeVersion');
+  });
+
+  describe('Docker Host Validation', function () {
+    validation.urlValidationChecking(createNewVersion, 'dockerHost',
+      schemaValidators.validationMessages.dockerHost);
+  });
+
   describe('Github Owner Id Validation', function () {
-    validation.githubUserRefValidationChecking(createNewVersion, 'owner.github');
-    validation.requiredValidationChecking(createNewVersion, 'owner');
+    validation.githubUserRefValidationChecking(createNewVersion, 'createdBy.github');
+    validation.requiredValidationChecking(createNewVersion, 'createdBy');
   });
 
   describe('Context Id Validation', function () {
@@ -73,6 +86,22 @@ describe('Versions', function () {
     });
     describe('Docker Tag', function () {
       validation.stringLengthValidationChecking(createNewVersion, 'build.dockerTag', 500);
+    });
+  });
+
+  describe('AppCode Validation', function () {
+    describe('Repo', function () {
+      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.repo');
+    });
+    describe('Lower Repo', function () {
+      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.lowerRepo');
+    });
+    describe('Branch', function () {
+      validation.stringLengthValidationChecking(createNewVersion, 'appCodeVersions.0.branch', 200);
+      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.branch');
+    });
+    describe('Lock Commit', function () {
+      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.lockCommit');
     });
   });
 });

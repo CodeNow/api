@@ -161,7 +161,7 @@ var alphaNumNameValidationChecking = function(createModelFunction, property) {
 };
 
 var nameValidationChecking = function(createModelFunction, property) {
-  describe('Alphanumic (with space) Validation', function () {
+  describe('Name Validation', function () {
     NOT_ALPHA_NUM_SAFE.forEach(function (string) {
       it('should fail validation for ' + string, function (done) {
         var model = createModelFunction();

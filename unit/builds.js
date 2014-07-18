@@ -15,8 +15,6 @@ describe('Build', function () {
 
   function createNewBuild() {
     return new Build({
-      owner: { github: validation.VALID_GITHUB_ID },
-      project: validation.VALID_OBJECT_ID,
       environment: validation.VALID_OBJECT_ID,
       contexts: [validation.VALID_OBJECT_ID],
       contextVersions: [validation.VALID_OBJECT_ID],
@@ -36,19 +34,9 @@ describe('Build', function () {
     });
   });
 
-  describe('Owner Validation', function () {
-    validation.githubUserRefValidationChecking(createNewBuild, 'owner.github');
-    validation.requiredValidationChecking(createNewBuild, 'owner');
-  });
-
   describe('CreatedBy Validation', function () {
     validation.githubUserRefValidationChecking(createNewBuild, 'createdBy.github');
     validation.requiredValidationChecking(createNewBuild, 'createdBy');
-  });
-
-  describe('Project Id Validation', function () {
-    validation.objectIdValidationChecking(createNewBuild, 'project');
-    validation.requiredValidationChecking(createNewBuild, 'project');
   });
 
   describe('Environment Id Validation', function () {

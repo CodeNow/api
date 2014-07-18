@@ -53,14 +53,4 @@ describe('Context Unit Testing', function () {
     validation.stringLengthValidationChecking(createNewContext, 'description', 500);
   });
 
-  describe('Contexts Version Validation', function () {
-    validation.objectIdValidationChecking(createNewContext, 'versions', true);
-  });
-
-  describe('Contexts Source Validation', function () {
-    validation.alphaNumNameValidationChecking(createNewContext, 'source.0.sourceType');
-    validation.urlValidationChecking(createNewContext, 'source.0.location',
-      schemaValidators.validationMessages.url);
-  });
-
 });
