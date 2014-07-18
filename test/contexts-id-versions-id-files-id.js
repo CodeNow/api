@@ -61,16 +61,35 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
   });
 
   describe('PATCH', function () {
-    it('should let us rename a file', function (done) {
+    it('should let us update a file\'s content', function (done) {
       var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
       var opts = {
         json: {
-          body: 'newfile.txt'
+          body: 'new content'
         }
       };
       var expected = dockerfile.json();
       expected.ETag = exists;
       expected.VersionId = exists;
+      expected.body = opts.json.body;
+      dockerfile.update(opts, expects.success(200, expected, function (err) {
+        done(err);
+        // below fails bc the mock is stupid, and returns the same info.
+        // dockerfile.fetch(expects.success(200, expected, done));
+      }));
+    });
+    it('should let us rename a file', function (done) {
+      var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
+      var opts = {
+        json: {
+          name: 'file.txt'
+        }
+      };
+      var expected = dockerfile.json();
+      expected.ETag = exists;
+      expected.VersionId = exists;
+      expected.name = opts.json.name;
+      expected.Key = new RegExp(opts.json.name+'$');
       dockerfile.update(opts, expects.success(200, expected, function (err) {
         if (err) { return done(err); }
         dockerfile.fetch(expects.success(200, expected, done));
@@ -78,24 +97,15 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
     });
   });
 
-  // describe('DELETE', function () {
-  //   it('should delete a file', function (done) {
-  //     var files = ctx.contextVersion.fetchFiles({ path: '/' }, function (err) {
-  //       if (err) { return done(err); }
-  //       var dockerfileKey = join(ctx.contextId, 'source', 'Dockerfile');
-  //       var dockerfileIndex = findIndex(files.toJSON(), hasProperties({ 'Key': dockerfileKey }));
-  //       ctx.contextVersion.destroyFile(files.models[dockerfileIndex].id(), function (err) {
-  //         if (err) { return done(err); }
-  //         ctx.contextVersion.fetchFiles({ path: '/' }, function (err, files) {
-  //           if (err) { return done(err); }
-  //           expect(files).to.be.okay;
-  //           expect(files).to.be.an('array');
-  //           expect(files).to.have.length(0);
-  //           done();
-  //         });
-  //       });
-  //     });
-  //   });
-  // });
+  describe('DELETE', function () {
+    it('should delete a file', function (done) {
+      var file = ctx.files.models[0];
+      var fileId = file.id();
+      file.destroy(expects.success(204, function (err) {
+        if (err) { return done(err); }
+        ctx.contextVersion.fetchFile(fileId, expects.error(404, /not found/, done));
+      }));
+    });
+  });
 
 });
