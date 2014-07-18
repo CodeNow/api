@@ -117,6 +117,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
             parentBuild: ctx.build.id()
           };
           var expected = {
+            project: ctx.project.id(),
             environment: ctx.env.id(),
             contexts: ctx.build.json().contexts,
             contextVersions: function (val) {
@@ -241,9 +242,9 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
       beforeEach(function (done) {
         multi.createBuiltBuild(function (err, build, env, project, user) {
           ctx.builtBuild = build;
-          ctx.env = env;
-          ctx.project = project;
-          ctx.user = user;
+          ctx.env2 = env;
+          ctx.project2 = project;
+          ctx.user2 = user;
           ctx.unbuiltBuild = env.createBuild({ parentBuild: ctx.builtBuild.id() }, done);
         });
       });
@@ -252,7 +253,20 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
           ctx.builtBuild.json()
         ];
         var query = { started: true };
-        ctx.env.fetchBuilds(query, expects.success(200, expected, done));
+        ctx.env2.fetchBuilds(query, expects.success(200, expected, done));
+      });
+      describe('permissions', function () {
+        beforeEach(function (done) {
+          require('./fixtures/mocks/github/user-orgs')(ctx.user);
+          done();
+        });
+        it('should not return private projects to other users', function (done) {
+          var query = { started: true };
+          ctx.user
+            .newProject(ctx.project2.id())
+            .newEnvironment(ctx.env2.id())
+            .fetchBuilds(query, expects.error(403, /Access denied/, done));
+        });
       });
     });
   });

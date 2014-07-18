@@ -3,7 +3,6 @@
 var isFunction = require('101/is-function');
 var users = require('./user-factory');
 var projects = require('./project-factory');
-var User = require('runnable');
 var MongoUser = require('models/mongo/user');
 var host = require('./host');
 var uuid = require('uuid');
@@ -13,6 +12,7 @@ var noop = function () {};
 module.exports = {
   createUser: function (cb) {
     require('./mocks/github/action-auth')();
+    var User = require('runnable');
     var user = new User(host);
     user.githubLogin('mysupersecrettoken', function (err) {
       cb(err, user);
@@ -79,8 +79,18 @@ module.exports = {
   createSourceContextVersion: function (cb) {
     this.createSourceContext(function (err, context, moderator) {
       if (err) { return (err); }
+      require('../fixtures/nock-s3')();
       var version = context.createVersion(function (err) {
-        cb(err, version, context, moderator);
+        if (err) { return (err); }
+        require('async').series([
+          version.createFile.bind(version, { json: {
+            name: 'Dockerfile',
+            path: '/',
+            body: 'FROM dockerfile/nodejs\n'
+          }})
+        ], function (err) {
+          cb(err, version, context, moderator);
+        });
       });
     });
   },
@@ -107,30 +117,39 @@ module.exports = {
     });
   },
   createBuiltBuild: function (cb) {
+    var self = this;
     this.createContextVersion(function (err, contextVersion, context, build, env, project, user, srcArray) {
       if (err) { return cb(err); }
-      build.fetch(function (err) {
-        if (err) { return cb(err); }
-        tailBuildStream(build.json().contextVersions[0], function (err) { // FIXME: maybe
-          if (err) { return cb(err); }
-          build.fetch(function (err) { // get completed build
-            if (err) { return cb(err); }
-            cb(err, build, env, project, user,
-              [contextVersion, context, build, env, project, user],
-              srcArray);
-          });
-        });
-        build.build({ message: uuid() }, function (err) {
-          if (err) {
-            cb = noop;
-            cb(err);
-          }
-        });
+      self.buildTheBuild(build, function (err) {
+        cb(err, build, env, project, user,
+            [contextVersion, context, build, env, project, user],
+            srcArray);
       });
     });
   },
 
-
+  buildTheBuild: function (build, cb) {
+    build.fetch(function (err) {
+      if (err) { return cb(err); }
+      tailBuildStream(build.json().contextVersions[0], function (err) { // FIXME: maybe
+        if (err) {
+          console.log(err);
+          console.log(err);
+          console.log(err);
+          console.log(err);
+          console.log(err);
+          console.log(err);
+          return cb(err); }
+        build.fetch(cb); // get completed build
+      });
+      build.build({ message: uuid() }, function (err) {
+        if (err) {
+          cb = noop;
+          // cb(err);
+        }
+      });
+    });
+  },
   //
   // OLD:
   createRegisteredUserAndGroup: function (userBody, groupBody, cb) {

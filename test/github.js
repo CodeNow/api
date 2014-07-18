@@ -41,15 +41,32 @@ describe('Github', function () {
 
   describe('push', function () {
     var ctx = {};
-    beforeEach(
-      createBuildUsingRepo(ctx,
-        hooks.push.json.repository.owner.name, hooks.push.json.repository.name));
+    beforeEach(function (done) {
+      require('./fixtures/mocks/docker/container-id-attach')();
+      ctx.repo = hooks.push.json.repository.owner.name+
+        '/'+hooks.push.json.repository.name;
+
+      multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+        ctx.contextVersion = contextVersion;
+        ctx.context = context;
+        ctx.build = build;
+        ctx.env = env;
+        ctx.project = project;
+        ctx.user = user;
+        ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(ctx.repo,
+          function (err) {
+            if (err) { return done(err); }
+            multi.buildTheBuild(build, done);
+          });
+      });
+    });
     it('should start a build', function (done) {
       var options = hooks.push;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
 
         expect(res.statusCode).to.equal(201);
+        console.log(body);
         expect(body).to.be.okay;
         expect(body).to.be.an('array');
         expect(body).to.have.a.lengthOf(1);
@@ -57,6 +74,24 @@ describe('Github', function () {
         done();
       });
     });
+    // describe('unbuilt build with github repo', function() {
+    //   beforeEach(function (done) {
+    //     ctx.repo = hooks.push.json.repository.owner.name+
+    //       '/'+hooks.push.json.repository.name;
+
+    //     multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+    //       ctx.contextVersion = contextVersion;
+    //       ctx.context = context;
+    //       ctx.build = build;
+    //       ctx.env = env;
+    //       ctx.project = project;
+    //       ctx.user = user;
+    //       ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(ctx.repo, done);
+    //     });
+    //   });
+    // });
+    //
+    //
     // describe('more builds', function() {
     //   var ctx1 = {};
     //   var ctx2 = {};
@@ -93,51 +128,3 @@ describe('Github', function () {
     // });
   });
 });
-
-function createBuildUsingRepo (ctx, repoOwner, repoName) {
-  return function (done) {
-    nockS3();
-    multi.createRegisteredUserAndUnbuiltProject(function (err, user, project) {
-      if (err) { return done(err); }
-      ctx.user = user;
-      ctx.project = project;
-
-      ctx.environments = project.fetchEnvironments(function (err) {
-        if (err) { return done(err); }
-        ctx.environment = ctx.environments.models[0];
-
-        var builds = ctx.environment.fetchBuilds(function (err) {
-          if (err) { return done(err); }
-          ctx.build = builds.models[0];
-          ctx.contextId = ctx.build.toJSON().contexts[0];
-          ctx.versionId = ctx.build.toJSON().contextVersions[0];
-          ctx.version = ctx.user
-            .newContext(ctx.contextId)
-            .newVersion(ctx.versionId);
-
-          ctx.version.addGithubRepo({
-            repo: [
-              repoOwner,
-              repoName
-            ].join('/')
-          }, function (err) {
-            if (err) { return done(err); }
-            ctx.build.build({ message: 'manual build' }, function (err, body, code) {
-              if (err) { return done(err); }
-
-              expect(code).to.equal(201);
-              expect(body).to.be.ok;
-              tailBuildStream(ctx.version.id(), function (err, log) {
-                if (err) { return done(err); }
-
-                expect(log).to.contain('Successfully built');
-
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-  };
-}

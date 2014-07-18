@@ -18,14 +18,16 @@ expects.success = function (statusCode, expectedKeypaths, done) {
   return function (err, body, code) {
     if (err) { return done(err); }
     expect(statusCode).to.equal(code);
-    expect(body).to.be.ok;
-    if (Array.isArray(expectedKeypaths)) {
-      expectedKeypaths.forEach(function (expectedItem, i) {
-        expectKeypaths(body[i], expectedItem);
-      });
-    }
-    else {
-      expectKeypaths(body, expectedKeypaths);
+    if (expectedKeypaths) {
+      expect(body).to.be.ok;
+      if (Array.isArray(expectedKeypaths)) {
+        expectedKeypaths.forEach(function (expectedItem, i) {
+          expectKeypaths(body[i], expectedItem);
+        });
+      }
+      else {
+        expectKeypaths(body, expectedKeypaths);
+      }
     }
     done();
   };
