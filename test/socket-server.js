@@ -6,6 +6,12 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var after = Lab.after;
 var api = require('./fixtures/api-control');
+var dockerServer = require('./fixtures/docker.js');
+var Docker = require('dockerode');
+var docker = new Docker({
+  host: 'http://localhost',
+  port: 4242
+});
 var Primus = require('primus');
 var Socket = Primus.createSocket({
   transformer: process.env.PRIMUS_TRANSFORMER,
@@ -24,6 +30,17 @@ describe('Socket Server', { timeout: 5000 }, function () {
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
 
+  before(dockerServer.start.bind(ctx, 4242));
+
+  var container;
+  before(function (done) {
+    docker.createContainer({}, function (err, c) {
+      if (err) { return done(err); }
+      container = c;
+      container.start(done);
+    });
+  });
+
   beforeEach(function(done) {
     ctx.server = http.createServer();
     filibuster({
@@ -31,6 +48,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
       });
     ctx.server.listen(testServerPort, done);
   });
+
   afterEach(function(done) {
     ctx.server.close(done);
   });
@@ -40,8 +58,8 @@ describe('Socket Server', { timeout: 5000 }, function () {
     var pass = false;
     beforeEach(function (done) {
       pass = false;
-      primus = new Socket('http://'+"127.0.0.1" +
-        ':'+testServerPort+"?type=filibuster");
+      primus = new Socket('http://localhost' +
+        ':'+testServerPort+'?type=filibuster&args={"containerId": "'+container.id+'"}');
       done();
     });
     var check = function(errMsg, done) {
@@ -81,7 +99,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
           return primus.end();
         }
         cs.write({
-          event: "ping"
+          event: 'ping'
         });
       });
     });
