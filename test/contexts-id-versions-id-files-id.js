@@ -5,13 +5,9 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
-var findIndex = require('101/find-index');
 var find = require('101/find');
-var hasProperties = require('101/has-properties');
 var hasKeypaths = require('101/has-keypaths');
-var join = require('path').join;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');

@@ -5,13 +5,10 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
 var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
-var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
@@ -28,7 +25,6 @@ describe('Context - /contexts', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    console.log('hey');
     ctx.user = multi.createUser(done);
   });
 

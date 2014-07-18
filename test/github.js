@@ -11,7 +11,6 @@ var noop = require('101/noop');
 
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
 var tailBuildStream = require('./fixtures/tail-build-stream');

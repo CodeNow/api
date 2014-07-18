@@ -5,11 +5,8 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
-var Build = require('models/mongo/build');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
 describe('InfraCodeVersions - /contexts/:id/versions/:id/infracodeversions', function () {
@@ -26,10 +23,10 @@ describe('InfraCodeVersions - /contexts/:id/versions/:id/infracodeversions', fun
   describe('POST', function () {
     describe('external', function() {
       beforeEach(function () {
-        multi.createContext
+        multi.createContext();
       });
       it('should create an infracodeversion', function(done) {
-
+        done();
       });
     });
   });
