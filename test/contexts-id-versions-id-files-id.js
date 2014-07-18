@@ -8,13 +8,17 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
 var findIndex = require('101/find-index');
+var find = require('101/find');
 var hasProperties = require('101/has-properties');
+var hasKeypaths = require('101/has-keypaths');
 var join = require('path').join;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
+var expects = require('./fixtures/expects');
+var exists = require('101/exists');
 
 describe('Version File - /contexts/:contextid/versions/:id/files/:id', function () {
   var ctx = {};
@@ -31,110 +35,67 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
-      if (err) { return done(err); }
-
-      ctx.user = user;
+    multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+      ctx.build = build;
+      ctx.env = env;
       ctx.project = project;
-      ctx.environments = environments;
-      ctx.environment = environments.models[0];
-
-      var builds = ctx.environment.fetchBuilds(function (err) {
-        if (err) { return done(err); }
-
-        ctx.build = builds.models[0];
-        ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().contextVersions[0];
-        ctx.context = ctx.user.newContext(ctx.contextId);
-        ctx.version = ctx.context.fetchVersion(ctx.versionId, done);
-      });
+      ctx.user = user;
+      ctx.contextVersion = contextVersion;
+      ctx.context = context;
+      ctx.files = ctx.contextVersion.fetchFiles({ path: '/' }, done);
     });
   });
 
   describe('GET', function () {
     it('should give us the body of the file', function (done) {
-      files = ctx.version.fetchFiles({ qs: { path: '/' }}, function (err) {
-        if (err) { return done(err); }
-
-        ctx.version.fetchFile(files.models[0].id(), function (err, file) {
-          if (err) { return done(err); }
-          expect(file).to.be.ok;
-          // FIXME: this isn't right still... it's hitting the wrong path
-          done();
-        });
-      });
+      var file = ctx.files.models[0];
+      var expected = file.json();
+      file.fetch(expects.success(200, expected, done));
     });
     it('should give us the body of the file', function (done) {
-      files = ctx.version.fetchFiles({ qs: { path: '/' }}, function (err) {
-        if (err) { return done(err); }
-        var fileIndex = findIndex(files.toJSON(), hasProperties({ name: 'Dockerfile' }));
-        var file = files.models[fileIndex];
-
-        ctx.version.fetchFile(file.id(), function (err, file) {
-          if (err) { return done(err); }
-          expect(file).to.be.ok;
-          expect(file.name).to.equal('Dockerfile');
-          expect(file.path).to.equal('/');
-          expect(file.body).to.equal('FROM ubuntu');
-          done();
-        });
-      });
+      var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
+      var expected = dockerfile.json();
+      expected.body = 'FROM ubuntu';
+      dockerfile.fetch(expects.success(200, expected, done));
     });
   });
 
   describe('PATCH', function () {
     it('should let us rename a file', function (done) {
-      ctx.file = ctx.version.createFile({ json: {
-        name: 'file.txt',
-        path: '/',
-        body: 'content'
-      }}, function (err, file, code) {
+      var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
+      var opts = {
+        json: {
+          body: 'newfile.txt'
+        }
+      };
+      var expected = dockerfile.json();
+      expected.ETag = exists;
+      expected.VersionId = exists;
+      dockerfile.update(opts, expects.success(200, expected, function (err) {
         if (err) { return done(err); }
-        expect(code).to.equal(201);
-        expect(file).to.be.okay;
-        expect(file).to.be.an('object');
-        expect(hasProperties(file, { Key: join(ctx.contextId, 'source', 'file.txt') })).to.be.okay;
-
-        ctx.version.updateFile('file.txt', { json: { name: 'newfile.txt' }}, function (err, file, code) {
-          if (err) { return done(err); }
-          expect(code).to.equal(200);
-          expect(file).to.be.okay;
-          expect(file).to.be.an('object');
-          expect(hasProperties(file, { Key: join(ctx.contextId, 'source', 'newfile.txt') })).to.be.okay;
-
-          // extra check, for sanity
-          ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
-            if (err) { return done(err); }
-            expect(files).to.be.okay;
-            expect(files).to.be.an('array');
-            expect(files).to.have.length(2);
-            expect(findIndex(files, hasProperties({ name: 'Dockerfile', path: '/', isDir: false }))).to.not.equal(-1);
-            expect(findIndex(files, hasProperties({ name: 'newfile.txt', path: '/', isDir: false }))).to.not.equal(-1);
-            done();
-          });
-        });
-      });
+        dockerfile.fetch(expects.success(200, expected, done));
+      }));
     });
   });
 
-  describe('DELETE', function () {
-    it('should delete a file', function (done) {
-      var files = ctx.version.fetchFiles({ qs: { path: '/' }}, function (err) {
-        if (err) { return done(err); }
-        var dockerfileKey = join(ctx.contextId, 'source', 'Dockerfile');
-        var dockerfileIndex = findIndex(files.toJSON(), hasProperties({ 'Key': dockerfileKey }));
-        ctx.version.destroyFile(files.models[dockerfileIndex].id(), function (err) {
-          if (err) { return done(err); }
-          ctx.version.fetchFiles({ qs: { path: '/' }}, function (err, files) {
-            if (err) { return done(err); }
-            expect(files).to.be.okay;
-            expect(files).to.be.an('array');
-            expect(files).to.have.length(0);
-            done();
-          });
-        });
-      });
-    });
-  });
+  // describe('DELETE', function () {
+  //   it('should delete a file', function (done) {
+  //     var files = ctx.contextVersion.fetchFiles({ path: '/' }, function (err) {
+  //       if (err) { return done(err); }
+  //       var dockerfileKey = join(ctx.contextId, 'source', 'Dockerfile');
+  //       var dockerfileIndex = findIndex(files.toJSON(), hasProperties({ 'Key': dockerfileKey }));
+  //       ctx.contextVersion.destroyFile(files.models[dockerfileIndex].id(), function (err) {
+  //         if (err) { return done(err); }
+  //         ctx.contextVersion.fetchFiles({ path: '/' }, function (err, files) {
+  //           if (err) { return done(err); }
+  //           expect(files).to.be.okay;
+  //           expect(files).to.be.an('array');
+  //           expect(files).to.have.length(0);
+  //           done();
+  //         });
+  //       });
+  //     });
+  //   });
+  // });
 
 });
