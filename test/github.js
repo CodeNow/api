@@ -14,6 +14,11 @@ var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
 var tailBuildStream = require('./fixtures/tail-build-stream');
+var callbackCount = require('callback-count');
+var not = require('101/not');
+var exists = require('101/exists');
+var expects = require('./fixtures/expects');
+var equals = require('101/equals');
 
 describe('Github', function () {
   var ctx = {};
@@ -60,7 +65,7 @@ describe('Github', function () {
           });
       });
     });
-    it('should start a build', function (done) {
+    it('should start a build', {timeout:200}, function (done) {
       var options = hooks.push;
       request.post(options, function (err, res, body) {
         if (err) {
@@ -74,10 +79,45 @@ describe('Github', function () {
           expect(body).to.have.a.lengthOf(1);
           expect(body[0]).to.have.property('started');
           expect(body[0]).to.have.property('contextVersions');
-          tailBuildStream(body[0].contextVersions[0], done);
+          tailBuildStream(body[0].contextVersions[0], function (err) {
+            if (err) { return done(err); }
+            var count = callbackCount(2, done);
+            var buildExpected = {
+              started: exists,
+              completed: exists,
+            };
+            ctx.env.newBuild(body[0]).fetch(
+              expects.success(200, buildExpected, count.next));
+
+            var versionExpected = {
+              'build.started': exists,
+              'build.completed': exists,
+              'build.triggeredBy.github': exists,
+              'build.triggeredAction.manual': not(exists),
+              'build.triggeredAction.rebuild': not(exists),
+              'build.triggeredAction.appCodeVersion.repo': 'bkendall/flaming-octo-nemesis',
+              'build.triggeredAction.appCodeVersion.commit': hooks.push.json.head_commit.id,
+              'build.dockerImage': exists,
+              'build.dockerTag': exists,
+              'infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
+              'appCodeVersions[0].lowerRepo': 'bkendall/flaming-octo-nemesis',
+              'appCodeVersions[0].lowerBranch': 'master',
+              'appCodeVersions[0].commit': hooks.push.json.head_commit.id,
+              'appCodeVersions[0].lockCommit': false
+            };
+            ctx.context.newVersion(body[0].contextVersions[0]).fetch(function (err, body, code) {
+              // parse method creates models for this attrs. so we json them before testing.
+              body.appCodeVersions =
+                body.appCodeVersions.map(function (model) {
+                  return model.json();
+                });
+              expects.success(200, versionExpected, count.next)(err, body, code);
+            });
+          });
         }
       });
     });
+    // FIXME: MOAR TESTS
     // describe('unbuilt build with github repo', function() {
     //   beforeEach(function (done) {
     //     ctx.repo = hooks.push.json.repository.owner.name+
