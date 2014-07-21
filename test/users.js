@@ -51,7 +51,6 @@ describe('Users - /users', function () {
       // it('should return an empty list with an invalid username', function (done) {
       //   ctx.user.fetchUsers({ githubUsername: 'idonotexist' }, function (err, users) {
       //     if (err) { return done(err); }
-      //     console.log(users);
       //     expect(users).to.be.okay;
       //     expect(users).to.be.an('array');
       //     expect(users).to.have.a.lengthOf(0);

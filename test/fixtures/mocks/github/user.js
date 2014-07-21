@@ -59,7 +59,7 @@ module.exports = function (userId, username) {
       'updated_at': '2014-06-24T23:28:16Z'
     }, {
       server: 'GitHub.com',
-      date: 'Tue, 24 Jun 2014 23:32:26 GMT',
+      date: new Date().toString(),
       'content-type': 'application/json; charset=utf-8',
       status: '200 OK',
       'x-ratelimit-limit': '5000',

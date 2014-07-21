@@ -80,7 +80,6 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         it('should not build', function (done) {
           ctx.version.build(function (err) {
             expect(err).to.be.ok;
-            console.log(err);
             expect(err.output.statusCode).to.equal(409);
             expect(err.message).to.match(/already/);
             done();
@@ -107,7 +106,6 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
           if (err) { return done(err); }
 
           expect(code).to.equal(201);
-          console.log('body!', body);
           expect(body).to.be.an('object');
           expect(body.repo).to.be.okay;
           done();

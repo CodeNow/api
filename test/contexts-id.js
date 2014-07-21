@@ -30,21 +30,12 @@ describe('Context - /contexts/:id', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
-      if (err) { return done(err); }
-
-      ctx.user = user;
+    multi.createContext(function (err, context, env, project, user) {
+      ctx.context = context;
+      ctx.env = env;
       ctx.project = project;
-      ctx.environments = environments;
-      ctx.environment = environments.models[0];
-      var builds = ctx.environment.fetchBuilds(function (err) {
-        if (err) { return done(err); }
-
-        ctx.build = builds.models[0];
-        ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().contextVersions[0];
-        ctx.context = ctx.user.fetchContext(ctx.contextId, done);
-      });
+      ctx.user = user;
+      done(err);
     });
   });
   describe('GET', function () {
@@ -55,7 +46,7 @@ describe('Context - /contexts/:id', function () {
         });
         describe('owner', function () {
           it('should get the context', function (done) {
-            ctx.context.fetch(expectSuccess(done));
+            ctx.context.fetch(expects.success(200, ctx.context.json(), done));
           });
         });
         describe('non-owner', function () {
@@ -64,7 +55,7 @@ describe('Context - /contexts/:id', function () {
           });
           it('should get the context', function (done) {
             ctx.context.client = ctx.nonOwner.client; // swap auth to nonOwner's
-            ctx.context.fetch(expectSuccess(done));
+            ctx.context.fetch(expects.success(200, ctx.context.json(), done));
           });
         });
         describe('moderator', function () {
@@ -73,7 +64,7 @@ describe('Context - /contexts/:id', function () {
           });
           it('should get the context', function (done) {
             ctx.context.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.context.fetch(expectSuccess(done));
+            ctx.context.fetch(expects.success(200, ctx.context.json(), done));
           });
         });
       });
@@ -83,7 +74,7 @@ describe('Context - /contexts/:id', function () {
         });
         describe('owner', function () {
           it('should get the context', function (done) {
-            ctx.context.fetch(expectSuccess(done));
+            ctx.context.fetch(expects.success(200, ctx.context.json(), done));
           });
         });
         describe('non-owner', function () {
@@ -101,7 +92,7 @@ describe('Context - /contexts/:id', function () {
           });
           it('should get the context', function (done) {
             ctx.context.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.context.fetch(expectSuccess(done));
+            ctx.context.fetch(expects.success(200, ctx.context.json(), done));
           });
         });
       });
@@ -116,19 +107,6 @@ describe('Context - /contexts/:id', function () {
         });
       });
     });
-    function expectSuccess (done) {
-      return function (err, body, code) {
-        if (err) { return done(err); }
-
-        expect(code).to.equal(200);
-        expect(body.created).to.be.ok;
-        expect(body.name).to.be.ok;
-        expect(body.owner).to.be.ok;
-        expect(body.versions).to.be.ok;
-        expect(body).to.eql(ctx.context.toJSON());
-        done();
-      };
-    }
   });
 
   describe('PATCH', function () {
