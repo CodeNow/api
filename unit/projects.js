@@ -48,7 +48,7 @@ describe('Projects', function () {
         validation.errorCheck(project, done, 'name', schemaValidators.validationMessages.characters);
       });
     });
-    validation.ALPHA_NUM_NOSPACE_SAFE.forEach(function (string) {
+    validation.ALPHA_NUM_SAFE.forEach(function (string) {
       it('Name should succeed validation for ' + string, function (done) {
         var project = createNewProject();
         project.name = string;
