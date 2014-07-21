@@ -8,7 +8,7 @@ var expect = Lab.expect;
 var before = Lab.before;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
-var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
+//var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 
 var User = require('models/mongo/user');
 
@@ -56,30 +56,18 @@ describe('User', function () {
     });
   });
 
-//  describe('Email Validation', function () {
-//    validation.ALPHA_NUM_SAFE.forEach(function (string) {
-//      it('should fail validation for ' + string, function (done) {
-//        var user = createNewUser();
-//        validation.fixArrayKeypathSet(user, "email", string);
-//        validation.errorCheck(user, done, "email", schemaValidators.validationMessages.email);
-//      });
-//    });
-//    var validEmail = Faker.Internet.email();
-//    it('should pass validation for a valid email (' + validEmail + ')', function (done) {
-//      var user = createNewUser();
-//      validation.fixArrayKeypathSet(user, "email", validEmail);
-//      validation.successCheck(user, done, "email");
-//    });
-//    validation.requiredValidationChecking(createNewUser, 'email');
-//  });
-//
-//  describe('Name Validation', function () {
-//    validation.nameValidationChecking(createNewUser, 'name');
-//  });
-//
-//  describe('Company Validation', function () {
-//    validation.nameValidationChecking(createNewUser, 'company');
-//  });
+  describe('Email Validation', function () {
+    validation.emailValidationChecking(createNewUser, 'email');
+    validation.requiredValidationChecking(createNewUser, 'email');
+  });
+
+  describe('Name Validation', function () {
+    validation.nameValidationChecking(createNewUser, 'name');
+  });
+
+  describe('Company Validation', function () {
+    validation.nameValidationChecking(createNewUser, 'company');
+  });
 
 //  describe('Accounts Validation', function() {
 //    describe('Github Username Validation', function () {

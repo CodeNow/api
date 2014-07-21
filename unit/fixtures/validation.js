@@ -65,18 +65,18 @@ var tokenValidationChecking = function(createModelFunction, property, isList) {
 
 var emailValidationChecking = function(createModelFunction, property, isList) {
   describe('Email Validation', function () {
-    validation.ALPHA_NUM_SAFE.forEach(function (string) {
+    ALPHA_NUM_SAFE.forEach(function (string) {
       it('should fail validation for ' + string, function (done) {
         var myObject = createModelFunction();
         fixArrayKeypathSet(myObject, property, isList ? [string] : string);
-        errorCheck(user, done, property, schemaValidators.validationMessages.email);
+        errorCheck(myObject, done, property, schemaValidators.validationMessages.email);
       });
     });
     var validEmail = Faker.Internet.email();
     it('should pass validation for a valid email (' + validEmail + ')', function (done) {
       var myObject = createModelFunction();
       fixArrayKeypathSet(myObject, property, isList ? [validEmail] : validEmail);
-      validation.successCheck(user, done, property);
+      successCheck(myObject, done, property);
     });
   });
 };
@@ -265,6 +265,7 @@ var fixArrayKeypathDel = function(myObject, property, value) {
 
 var errorCheck = function (modelObject, done, property, validationString) {
   modelObject.save(function (err, model) {
+    expect(model).to.not.be.ok;
     expect(err).to.be.ok;
     expect(err.name).to.be.ok;
     expect(err.name).to.equal(VALIDATOR_ERROR);
@@ -331,6 +332,7 @@ module.exports.stringLengthValidationChecking = stringLengthValidationChecking;
 module.exports.requiredValidationChecking = requiredValidationChecking;
 module.exports.urlValidationChecking = urlValidationChecking;
 module.exports.urlSafeNameValidationChecking = urlSafeNameValidationChecking;
+module.exports.emailValidationChecking = emailValidationChecking;
 module.exports.dockerIdValidationChecking = dockerIdValidationChecking;
 module.exports.alphaNumNameValidationChecking = alphaNumNameValidationChecking;
 module.exports.tokenValidationChecking = tokenValidationChecking;
