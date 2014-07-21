@@ -14,12 +14,32 @@ var URL_SAFE = [String(Faker.Internet.userName()).replace(/[^\w\d]/g ,'_'),
     Faker.Name.firstName(), OBJECT_ID];
 var NAME_SAFE = [Faker.Name.firstName(), OBJECT_ID, Faker.Name.firstName() + ' ' +
   Faker.Name.lastName(), Faker.Lorem.sentence()];
-var ALPHA_NUM_SAFE = [Faker.Name.firstName(), OBJECT_ID, 'Container 123', 'A name of a container'];
-var ALPHA_NUM_NOSPACE_SAFE = [Faker.Name.firstName(), OBJECT_ID];
-var NOT_ALPHA_NUM_SAFE = [Faker.Internet.email(), Faker.Image.imageUrl() , Faker.Internet.ip()];
+var ALPHA_NUM_SAFE = [
+  Faker.Name.firstName(),
+  OBJECT_ID,
+  'Container-123',
+  'this-is-my-contianer'
+];
+var ALPHA_NUM_W_SPACE_SAFE = [
+  Faker.Name.firstName(),
+  OBJECT_ID,
+  'Container-123',
+  'this-is-my-contianer',
+  'Container 123'
+];
+var NOT_ALPHA_NUM_SAFE = [
+  'spaced name',
+  Faker.Internet.email(),
+  Faker.Image.imageUrl(),
+  Faker.Internet.ip()
+];
+var NOT_ALPHA_NUM_W_SPACE_SAFE = [
+  Faker.Internet.email(),
+  Faker.Image.imageUrl(),
+  Faker.Internet.ip()
+];
 var URLS = [Faker.Image.imageUrl(), 'http://www.google.com',
   'http://mybucket.s3.amazonaws.com/homepage.html'];
-
 
 var githubUserRefValidationChecking = function(createModelFunction, property, isList) {
   describe('Github User Ref Validation', function () {
@@ -179,7 +199,7 @@ var urlSafeNameValidationChecking = function(createModelFunction, property, vali
 };
 
 var alphaNumNameValidationChecking = function(createModelFunction, property) {
-  describe('Alphanumic (with space) Validation', function () {
+  describe('Alphanumic Validation', function () {
     NOT_ALPHA_NUM_SAFE.forEach(function (string) {
       it('should fail validation for ' + string, function (done) {
         var model = createModelFunction();
@@ -201,7 +221,7 @@ var alphaNumNameValidationChecking = function(createModelFunction, property) {
 
 var nameValidationChecking = function(createModelFunction, property) {
   describe('Name Validation', function () {
-    NOT_ALPHA_NUM_SAFE.forEach(function (string) {
+    NOT_ALPHA_NUM_W_SPACE_SAFE.forEach(function (string) {
       it('should fail validation for ' + string, function (done) {
         var model = createModelFunction();
         fixArrayKeypathSet(model, property, string);
@@ -209,6 +229,13 @@ var nameValidationChecking = function(createModelFunction, property) {
       });
     });
     NAME_SAFE.forEach(function (string) {
+      it('should succeed validation for ' + string, function (done) {
+        var model = createModelFunction();
+        fixArrayKeypathSet(model, property, string);
+        successCheck(model, done, property);
+      });
+    });
+    ALPHA_NUM_W_SPACE_SAFE.forEach(function (string) {
       it('should succeed validation for ' + string, function (done) {
         var model = createModelFunction();
         fixArrayKeypathSet(model, property, string);
@@ -342,7 +369,8 @@ module.exports.fixArrayKeypathDel = fixArrayKeypathDel;
 module.exports.VALID_OBJECT_ID = OBJECT_ID;
 module.exports.VALID_GITHUB_ID = GITHUB_ID;
 module.exports.NOT_URL_SAFE = NOT_URL_SAFE;
-module.exports.ALPHA_NUM_NOSPACE_SAFE = ALPHA_NUM_NOSPACE_SAFE;
+module.exports.NOT_ALPHA_NUM_W_SPACE_SAFE = NOT_ALPHA_NUM_W_SPACE_SAFE;
+module.exports.ALPHA_NUM_W_SPACE_SAFE = ALPHA_NUM_W_SPACE_SAFE;
 module.exports.URL_SAFE = URL_SAFE;
 module.exports.ALPHA_NUM_SAFE = ALPHA_NUM_SAFE;
 module.exports.NOT_ALPHA_NUM_SAFE = NOT_ALPHA_NUM_SAFE;
