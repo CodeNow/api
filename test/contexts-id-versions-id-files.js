@@ -90,19 +90,6 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         })
       );
     });
-    it('should not let us create a conflicting file', function (done) {
-      var createExpected = createFile(ctx.context.id(), '/', 'file.txt');
-      var json = {
-        json: {
-          name: 'file.txt',
-          path: '/',
-          body: 'content'
-      }};
-      ctx.file = ctx.contextVersion.createFile(json, expects.success(201, createExpected, function (err) {
-        if (err) { return done(err); }
-        ctx.file2 = ctx.contextVersion.createFile(json, expects.error(409, /File already exists/, done));
-      }));
-    });
     it('should let us create a directory', function (done) {
       var createExpected = createFile(ctx.context.id(), '/', 'dir', true);
       var expected = [
@@ -173,6 +160,51 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           ctx.contextVersion.fetchFiles({ qs: { path: '/dir/' }}, expects.success(200, expected, cb));
         }
       ], done);
+    });
+    describe('errors', function () {
+      it('should not let us create a conflicting file', function (done) {
+        var createExpected = createFile(ctx.context.id(), '/', 'file.txt');
+        var json = {
+          json: {
+            name: 'file.txt',
+            path: '/',
+            body: 'content'
+          }
+        };
+        ctx.file = ctx.contextVersion.createFile(json, expects.success(201, createExpected, function (err) {
+          if (err) { return done(err); }
+          ctx.file2 = ctx.contextVersion.createFile(json, expects.error(409, /File already exists/, done));
+        }));
+      });
+      describe('built project', function () {
+        beforeEach(function (done) {
+          var json = {
+            json: {
+              name: 'file.txt',
+              path: '/',
+              body: 'content'
+            }
+          };
+          ctx.file = ctx.contextVersion.createFile(json, function (err) {
+            if (err) { return done(err); }
+            multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
+              if (err) { return done(err); }
+              ctx.contextVersion = modelArr[0];
+              done();
+            });
+          });
+        });
+        it('should not allow file creates for built projects', function (done) {
+          var json = {
+            json: {
+              name: 'file2.txt',
+              path: '/',
+              body: 'content'
+            }
+          };
+          ctx.file = ctx.contextVersion.createFile(json, expects.error(400, /built/, done));
+        });
+      });
     });
   });
 });

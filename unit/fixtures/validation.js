@@ -42,6 +42,45 @@ var githubUserRefValidationChecking = function(createModelFunction, property, is
   });
 };
 
+var tokenValidationChecking = function(createModelFunction, property, isList) {
+  describe('ObjectId Validation', function () {
+    var word = makeStringOfLength(101);
+    it('should fail validation for an invalid Token (' + word + ')', function (done) {
+      var myObject = createModelFunction();
+      fixArrayKeypathSet(myObject, property, isList ? [word] : word);
+      myObject.save(function (err) {
+        expect(err).to.be.ok;
+        expect(err.name).to.be.ok;
+        expect(err.name).to.equal('CastError');
+        done();
+      });
+    });
+    it(property + ' should succeed validation for a valid Token', function (done) {
+      var myObject = createModelFunction();
+      fixArrayKeypathSet(myObject, property, isList ? [OBJECT_ID] : OBJECT_ID);
+      successCheck(myObject, done, property);
+    });
+  });
+};
+
+var emailValidationChecking = function(createModelFunction, property, isList) {
+  describe('Email Validation', function () {
+    ALPHA_NUM_SAFE.forEach(function (string) {
+      it('should fail validation for ' + string, function (done) {
+        var myObject = createModelFunction();
+        fixArrayKeypathSet(myObject, property, isList ? [string] : string);
+        errorCheck(myObject, done, property, schemaValidators.validationMessages.email);
+      });
+    });
+    var validEmail = Faker.Internet.email();
+    it('should pass validation for a valid email (' + validEmail + ')', function (done) {
+      var myObject = createModelFunction();
+      fixArrayKeypathSet(myObject, property, isList ? [validEmail] : validEmail);
+      successCheck(myObject, done, property);
+    });
+  });
+};
+
 var objectIdValidationChecking = function(createModelFunction, property, isList) {
   describe('ObjectId Validation', function () {
     var word = makeStringOfLength(50);
@@ -124,16 +163,16 @@ var urlSafeNameValidationChecking = function(createModelFunction, property, vali
   describe('Url-Safe Validation', function () {
     NOT_URL_SAFE.forEach(function (string) {
       it('should fail validation for ' + string, function (done) {
-        var container = createModelFunction();
-        fixArrayKeypathSet(container, property, string);
-        errorCheck(container, done, property, validationMessage);
+        var model = createModelFunction();
+        fixArrayKeypathSet(model, property, string);
+        errorCheck(model, done, property, validationMessage);
       });
     });
     URL_SAFE.forEach(function (string) {
       it('should succeed validation for ' + string, function (done) {
-        var container = createModelFunction();
-        fixArrayKeypathSet(container, property, string);
-        successCheck(container, done, property);
+        var model = createModelFunction();
+        fixArrayKeypathSet(model, property, string);
+        successCheck(model, done, property);
       });
     });
   });
@@ -225,7 +264,8 @@ var fixArrayKeypathDel = function(myObject, property, value) {
 };
 
 var errorCheck = function (modelObject, done, property, validationString) {
-  modelObject.save(function (err) {
+  modelObject.save(function (err, model) {
+    expect(model).to.not.be.ok;
     expect(err).to.be.ok;
     expect(err.name).to.be.ok;
     expect(err.name).to.equal(VALIDATOR_ERROR);
@@ -292,8 +332,10 @@ module.exports.stringLengthValidationChecking = stringLengthValidationChecking;
 module.exports.requiredValidationChecking = requiredValidationChecking;
 module.exports.urlValidationChecking = urlValidationChecking;
 module.exports.urlSafeNameValidationChecking = urlSafeNameValidationChecking;
+module.exports.emailValidationChecking = emailValidationChecking;
 module.exports.dockerIdValidationChecking = dockerIdValidationChecking;
 module.exports.alphaNumNameValidationChecking = alphaNumNameValidationChecking;
+module.exports.tokenValidationChecking = tokenValidationChecking;
 module.exports.nameValidationChecking = nameValidationChecking;
 module.exports.fixArrayKeypathSet = fixArrayKeypathSet;
 module.exports.fixArrayKeypathDel = fixArrayKeypathDel;

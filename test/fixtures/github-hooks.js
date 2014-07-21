@@ -26,8 +26,8 @@ module.exports = {
          active: true,
          events: [ 'push' ],
          config:
-          { secret: process.env.GIT_HUB_HOOK_SECRET,
-            url   : process.env.GIT_HUB_HOOK_URL,
+          { secret: process.env.GITHUB_HOOK_SECRET,
+            url   : process.env.GITHUB_HOOK_URL,
             content_type: 'json',
             insecure_ssl: '0' },
          last_response: { code: null, status: 'unused', message: null },

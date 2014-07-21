@@ -33,12 +33,12 @@ describe('Instances - /instances', function () {
   describe('POST', function () {
     beforeEach(function (done) {
       nockS3();
-      multi.createBuiltBuild(function (err, build, env, project, user, modelsArr) {
+      multi.createBuiltBuild(function (err, build, env, project, user) {
         ctx.build = build;
         ctx.env = env;
         ctx.project = project;
         ctx.user = user;
-        modelsArr[0].fetch(done);
+        done(err);
       });
     });
 
