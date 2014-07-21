@@ -85,17 +85,17 @@ describe('Projects - /projects', function () {
         ctx.user2.fetchProjects(query, expects.success(200, expected, done));
       });
     });
-    describe('pagination', function() {
-      it('should have primitive pagination', function (done) {
-        var query = { qs: {
-          sort: '-created',
-          limit: 1,
-          page: 0
-        }};
-        var expected = [ ctx.project2.toJSON() ];
-        ctx.user2.fetchProjects(query, expects.success(200, expected, done));
-      });
-    });
+    // describe('pagination', function() {
+    //   it('should have primitive pagination', function (done) {
+    //     var query = { qs: {
+    //       sort: '-created',
+    //       limit: 1,
+    //       page: 0
+    //     }};
+    //     var expected = [ ctx.project2.toJSON() ];
+    //     ctx.user2.fetchProjects(query, expects.success(200, expected, done));
+    //   });
+    // });
     describe('sorting', function() {
       it('should have primitive sorting', function (done) {
         var query = { qs: {

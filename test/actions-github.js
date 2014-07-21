@@ -47,7 +47,6 @@ describe('Github', function () {
   describe('push', function () {
     var ctx = {};
     beforeEach(function (done) {
-      require('./fixtures/mocks/docker/container-id-attach')();
       ctx.repo = hooks.push.json.repository.owner.name+
         '/'+hooks.push.json.repository.name;
 

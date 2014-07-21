@@ -12,6 +12,7 @@ module.exports = function (userId, username, email, cb) {
 
   require('./user')(userId, username);
   require('./user-emails')(email);
+  require('./user-emails')(email);
 
   if (cb) {
     cb(null, userId, username);

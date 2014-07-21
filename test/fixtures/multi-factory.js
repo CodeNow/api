@@ -20,7 +20,7 @@ module.exports = {
     return user;
   },
   createModerator: function (cb) {
-    this.createUser(function (err, user) {
+    return this.createUser(function (err, user) {
       if (err) { return cb(err); }
       var $set = {
         permissionLevel: 5
@@ -128,8 +128,28 @@ module.exports = {
       });
     });
   },
+  createInstance: function (cb) {
+    this.createBuiltBuild(function (err, build, env, project, user, modelsArr, srcArr) {
+      if (err) { return cb(err); }
+      var body = {
+        name: uuid(),
+        build: build.id()
+      };
+      var instance = user.createInstance(body, function (err) {
+        cb(err, instance, build, env, project, user, modelsArr, srcArr);
+      });
+    });
+  },
+  createContainer: function (cb) {
+    this.createInstance(function (err, instance, build, env, project, user, modelsArray, srcArr) {
+      if (err) { return cb(err); }
+      var container = instance.newContainer(instance.json().containers[0]);
+      cb(err, container, instance, build, env, project, user, modelsArray, srcArr);
+    });
+  },
 
   buildTheBuild: function (build, cb) {
+    require('./mocks/docker/container-id-attach')();
     build.fetch(function (err) {
       if (err) { return cb(err); }
       tailBuildStream(build.json().contextVersions[0], function (err) { // FIXME: maybe
@@ -139,7 +159,7 @@ module.exports = {
       build.build({ message: uuid() }, function (err) {
         if (err) {
           cb = noop;
-          // cb(err);
+          cb(err);
         }
       });
     });

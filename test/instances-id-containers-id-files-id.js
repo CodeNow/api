@@ -70,35 +70,13 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
+    multi.createContainer(function (err, container) {
       if (err) { return done(err); }
-
-      ctx.user = user;
-      ctx.project = project;
-      ctx.environments = environments;
-      ctx.environment = environments.models[0];
-      var builds = ctx.environment.fetchBuilds(function (err) {
-        if (err) { return done(err); }
-
-        ctx.build = builds.models[0];
-        ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().contextVersions[0];
-        ctx.context = ctx.user.newContext(ctx.contextId);
-        ctx.version = ctx.context.newVersion(ctx.versionId);
-        ctx.instance = ctx.user.createInstance({
-          build: ctx.build.id(),
-          name: "test"
-        }, function (err) {
-          if (err) { return done(err); }
-
-          var containerAttrs = ctx.instance.toJSON().containers[0];
-          ctx.container = ctx.instance.newContainer(containerAttrs);
-          // create test folder
-          ctx.krain = krain.listen(process.env.KRAIN_PORT);
-          fs.mkdirSync(containerRoot(ctx));
-          done();
-        });
-      });
+      ctx.container = container;
+      // create test folder
+      ctx.krain = krain.listen(process.env.KRAIN_PORT);
+      fs.mkdirSync(containerRoot(ctx));
+      done();
     });
   });
 

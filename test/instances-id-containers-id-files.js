@@ -51,44 +51,20 @@ describe('File System - /instances/:id/containers/:id/files', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
+    multi.createContainer(function (err, container) {
       if (err) { return done(err); }
+      ctx.container = container;
+      ctx.krain = krain.listen(process.env.KRAIN_PORT);
+      fs.mkdirSync(containerRoot(ctx));
+      fs.mkdirSync(containerRoot(ctx)+dir1);
+      fs.mkdirSync(containerRoot(ctx)+dir1_dir1);
+      fs.mkdirSync(containerRoot(ctx)+dir2);
+      fs.mkdirSync(containerRoot(ctx)+dir2_dir1);
 
-      ctx.user = user;
-      ctx.project = project;
-      ctx.environments = environments;
-      ctx.environment = environments.models[0];
-      var builds = ctx.environment.fetchBuilds(function (err) {
-        if (err) { return done(err); }
-
-        ctx.build = builds.models[0];
-        ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().contextVersions[0];
-        ctx.context = ctx.user.newContext(ctx.contextId);
-        ctx.version = ctx.context.newVersion(ctx.contextId);
-        ctx.instance = ctx.user.createInstance({
-          build: ctx.build.id(),
-          name: "test"
-        }, function (err) {
-          if (err) { return done(err); }
-
-          var containerAttrs = ctx.instance.toJSON().containers[0];
-          ctx.container = ctx.instance.newContainer(containerAttrs);
-
-          ctx.krain = krain.listen(process.env.KRAIN_PORT);
-          fs.mkdirSync(containerRoot(ctx));
-          fs.mkdirSync(containerRoot(ctx)+dir1);
-          fs.mkdirSync(containerRoot(ctx)+dir1_dir1);
-          fs.mkdirSync(containerRoot(ctx)+dir2);
-          fs.mkdirSync(containerRoot(ctx)+dir2_dir1);
-
-          fs.writeFileSync(containerRoot(ctx)+file1, fileContent);
-          fs.writeFileSync(containerRoot(ctx)+dir1_file1, fileContent);
-          fs.writeFileSync(containerRoot(ctx)+dir1_dir1_file1, fileContent);
-
-          done();
-        });
-      });
+      fs.writeFileSync(containerRoot(ctx)+file1, fileContent);
+      fs.writeFileSync(containerRoot(ctx)+dir1_file1, fileContent);
+      fs.writeFileSync(containerRoot(ctx)+dir1_dir1_file1, fileContent);
+      done();
     });
   });
   describe('GET', function () {
