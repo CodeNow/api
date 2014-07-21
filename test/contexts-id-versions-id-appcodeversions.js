@@ -22,7 +22,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
   afterEach(require('./fixtures/clean-nock'));
 
   describe('POST', function () {
-    describe('external', function() {
+    describe('unbuilt', function () {
       beforeEach(function (done) {
         multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
           ctx.contextVersion = contextVersion;
@@ -51,7 +51,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
         var body = {};
         ctx.contextVersion.addGithubRepo(body, expects.error(400, /repo/, done));
       });
-      it('should add a github repo with optional key branch', function(done) {
+      it('should add a github repo with optional key branch', function (done) {
         var body = {
           repo: ctx.fullRepoName,
           lowerRepo: ctx.fullRepoName.toLowerCase(),
@@ -60,7 +60,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
         };
         ctx.contextVersion.addGithubRepo(body, expects.success(201, body, done));
       });
-      it('should add a github repo with optional key commit', function(done) {
+      it('should add a github repo with optional key commit', function (done) {
         var body = {
           repo: ctx.fullRepoName,
           lowerRepo: ctx.fullRepoName.toLowerCase(),
@@ -79,30 +79,69 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
         ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, done));
       });
     });
-  });
-  describe('DELETE', function () {
-    beforeEach(function (done) {
-      multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
-        ctx.contextVersion = contextVersion;
-        ctx.context = context;
-        ctx.env = env;
-        ctx.project = project;
-        ctx.user = user;
-        ctx.repoName = 'Dat-middleware';
-        ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
-        require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
-        require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
-        var body = {
-          repo: ctx.fullRepoName
-        };
-        ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
+    describe('built version', function () {
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
+          ctx.builtVersion = modelArr[0];
+          done(err);
+        });
+      });
+      it('should not add the repo', function (done) {
+        ctx.builtVersion.addGithubRepo('tjmehta/101',
+          expects.error(400, /Cannot/, done));
       });
     });
-    it('should delete a github repo', function (done) {
-      ctx.appCodeVersion.destroy(expects.success(204, done));
+  });
+  describe('DELETE', function () {
+    describe('unbuilt', function() {
+      beforeEach(function (done) {
+        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+          ctx.contextVersion = contextVersion;
+          ctx.context = context;
+          ctx.env = env;
+          ctx.project = project;
+          ctx.user = user;
+          ctx.repoName = 'Dat-middleware';
+          ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
+          require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
+          require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
+          var body = {
+            repo: ctx.fullRepoName
+          };
+          ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
+        });
+      });
+      it('should delete a github repo', function (done) {
+        ctx.appCodeVersion.destroy(expects.success(204, done));
+      });
+      it('should 404 for non-existant', function (done) {
+        ctx.appCodeVersion.destroy("0000111122223333444455556666", expects.error(404, /AppCodeVersion/, done));
+      });
     });
-    it('should 404 for non-existant', function (done) {
-      ctx.appCodeVersion.destroy("0000111122223333444455556666", expects.error(404, /AppCodeVersion/, done));
+    describe('built version', function () {
+      beforeEach(function (done) {
+        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+          if (err) { return done(err); }
+          ctx.user = user;
+          ctx.repoName = 'Dat-middleware';
+          ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
+          var body = {
+            repo: ctx.fullRepoName
+          };
+          require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
+          require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
+          ctx.appCodeVersion = contextVersion.addGithubRepo(body, function (err) {
+            if (err) { return done(err); }
+            multi.buildTheBuild(build, function (err) {
+              if (err) { return done(err); }
+              done();
+            });
+          });
+        });
+      });
+      it('should not delete the repo', function (done) {
+        ctx.appCodeVersion.destroy(expects.error(400, /Cannot/, done));
+      });
     });
   });
 });

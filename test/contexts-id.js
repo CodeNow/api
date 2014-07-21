@@ -5,13 +5,11 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
 var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
-var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 
@@ -51,20 +49,18 @@ describe('Context - /contexts/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
-            ctx.nonOwner = users.createGithub(done);
+            ctx.nonOwner = multi.createUser(done);
           });
           it('should get the context', function (done) {
-            ctx.context.client = ctx.nonOwner.client; // swap auth to nonOwner's
-            ctx.context.fetch(expects.success(200, ctx.context.json(), done));
+            ctx.nonOwner.fetchContext(ctx.context.id(), expects.success(200, ctx.context.json(), done));
           });
         });
         describe('moderator', function () {
           beforeEach(function (done) {
-            ctx.moderator = users.createModerator(done);
+            ctx.moderator = multi.createModerator(done);
           });
           it('should get the context', function (done) {
-            ctx.context.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.context.fetch(expects.success(200, ctx.context.json(), done));
+            ctx.moderator.fetchContext(ctx.context.id(), expects.success(200, ctx.context.json(), done));
           });
         });
       });
@@ -79,20 +75,18 @@ describe('Context - /contexts/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
-            ctx.nonOwner = users.createGithub(done);
+            ctx.nonOwner = multi.createUser(done);
           });
           it('should not get the context (403 forbidden)', function (done) {
-            ctx.context.client = ctx.nonOwner.client; // swap auth to nonOwner's
-            ctx.context.fetch(expects.errorStatus(403, done));
+            ctx.nonOwner.fetchContext(ctx.context.id(), expects.errorStatus(403, done));
           });
         });
         describe('moderator', function () {
           beforeEach(function (done) {
-            ctx.moderator = users.createModerator(done);
+            ctx.moderator = multi.createModerator(done);
           });
           it('should get the context', function (done) {
-            ctx.context.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.context.fetch(expects.success(200, ctx.context.json(), done));
+            ctx.moderator.fetchContext(ctx.context.id(), expects.success(200, ctx.context.json(), done));
           });
         });
       });
@@ -130,27 +124,25 @@ describe('Context - /contexts/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(function (done) {
-          ctx.nonOwner = users.createGithub(done);
+          ctx.nonOwner = multi.createUser(done);
         });
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should not update context\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
-            ctx.context.client = ctx.nonOwner.client; // swap auth to nonOwner's
-            ctx.context.update({ json: json }, expects.errorStatus(403, done));
+            ctx.nonOwner.updateContext(ctx.context.id(), { json: json }, expects.errorStatus(403, done));
           });
         });
       });
       describe('moderator', function () {
         beforeEach(function (done) {
-          ctx.moderator = users.createModerator(done);
+          ctx.moderator = multi.createModerator(done);
         });
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should update context\'s '+keys+' to '+vals, function (done) {
-            ctx.context.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.context.update({ json: json }, expects.updateSuccess(json, done));
+            ctx.moderator.updateContext(ctx.context.id(), { json: json }, expects.updateSuccess(json, done));
           });
         });
       });
@@ -180,20 +172,18 @@ describe('Context - /contexts/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(function (done) {
-          ctx.nonOwner = users.createGithub(done);
+          ctx.nonOwner = multi.createUser(done);
         });
         it('should not delete the context (403 forbidden)', function (done) {
-          ctx.context.client = ctx.nonOwner.client; // swap auth to nonOwner's
-          ctx.context.destroy(expects.errorStatus(403, done));
+          ctx.nonOwner.destroyContext(ctx.context.id(), expects.errorStatus(403, done));
         });
       });
       describe('moderator', function () {
         beforeEach(function (done) {
-          ctx.moderator = users.createModerator(done);
+          ctx.moderator = multi.createModerator(done);
         });
         it('should delete the context', function (done) {
-          ctx.context.client = ctx.moderator.client; // swap auth to moderator's
-          ctx.context.destroy(expects.success(204, done));
+          ctx.moderator.destroyContext(ctx.context.id(), expects.success(204, done));
         });
       });
     });

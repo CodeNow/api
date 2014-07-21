@@ -33,12 +33,15 @@ describe('Instances - /instances', function () {
   describe('POST', function () {
     beforeEach(function (done) {
       nockS3();
-      multi.createBuiltBuild(function (err, build, env, project, user) {
+      multi.createBuiltBuild(function (err, build, env, project, user, modelsArr) {
         ctx.build = build;
         ctx.env = env;
         ctx.project = project;
         ctx.user = user;
-        done(err);
+        modelsArr[0].fetch(function () {
+          console.log(modelsArr[0].json());
+          done(err);
+        });
       });
     });
 
@@ -63,6 +66,7 @@ describe('Instances - /instances', function () {
             expects.error(400, errorMsg, done));
         });
       });
+      // FIXME: finish this test
       // describe('with unbuilt versions', function () {
       //   it('should error if the environment has unbuilt versions', function(done) {
       //     var json = ctx.json;
