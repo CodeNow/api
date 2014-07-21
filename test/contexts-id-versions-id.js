@@ -5,7 +5,7 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
@@ -26,72 +26,20 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
-      if (err) { return done(err); }
-
+    multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
       ctx.user = user;
-      ctx.environment = environments.models[0];
-      var builds = ctx.environment.fetchBuilds(function (err) {
-        if (err) { return done(err); }
-
-        ctx.build = builds.models[0];
-        ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().contextVersions[0];
-        ctx.context = ctx.user.fetchContext(ctx.contextId, done);
-      });
+      ctx.environment = env;
+      ctx.contextVersion = modelArr[0];
+      ctx.context = modelArr[1];
+      done(err);
     });
   });
 
   describe('GET', function () {
     it('should get the version', function (done) {
-      ctx.context.fetchVersion(ctx.versionId, function (err, body, code) {
-        if (err) { return done(err); }
-
-        expect(code).to.equal(200);
-        expectVersionFields(body);
-        done();
-      });
+      var expected = ctx.contextVersion.json();
+      ctx.contextVersion.fetch(ctx.contextVersion.id(),
+        expects.success(200, expected, done));
     });
   });
-
-  describe('Version Build - /versions/:id/build', function() {
-    describe('POST', function() {
-      beforeEach(function (done) {
-        ctx.version = ctx.context.createVersion({
-          versionId: ctx.versionId
-        }, done);
-      });
-      it('should build a version',  { timeout: 3000 }, function (done) {
-        ctx.version.build(function (err, body, code) {
-          if (err) { return done(err); }
-
-          expect(code).to.equal(201);
-          expect(body).to.be.an('object');
-          expect(body.dockerTag).to.be.okay;
-          expect(body.dockerImage).to.be.okay;
-          done();
-        });
-      });
-      describe('subsequent builds', function() {
-        beforeEach(function (done) {
-          ctx.version.build(done);
-        });
-        it('should not build', function (done) {
-          ctx.version.build(function (err) {
-            expect(err).to.be.ok;
-            expect(err.output.statusCode).to.equal(409);
-            // FIXME: return version object
-            expect(err.message).to.match(/already built/);
-            // expect(err.output) recieve docker id;
-            done();
-          });
-        });
-      });
-    });
-  });
-
-  function expectVersionFields (versionData) {
-    expect(versionData).to.be.a('object');
-    //FIXME: validate more fields
-  }
 });

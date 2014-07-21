@@ -9,7 +9,7 @@ var expect = Lab.expect;
 
 var createCount = require('callback-count');
 var api = require('./fixtures/api-control');
-var users = require('./fixtures/user-factory');
+var multi = require('./fixtures/multi-factory');
 
 describe('User - /users/:id', function () {
   var ctx = {};
@@ -25,7 +25,7 @@ describe('User - /users/:id', function () {
   describe('GET', function () {
     describe('registered', function () {
       beforeEach(function (done) {
-        ctx.user = users.createGithub(done);
+        ctx.user = multi.createUser(done);
       });
 
       it('should get the user', function (done) {
@@ -41,8 +41,8 @@ describe('User - /users/:id', function () {
     describe('other registered', function() {
       beforeEach(function (done) {
         var count = createCount(done);
-        ctx.other = users.createGithub(count.inc().next);
-        ctx.user  = users.createGithub(count.inc().next);
+        ctx.other = multi.createUser(count.inc().next);
+        ctx.user  = multi.createUser(count.inc().next);
       });
 
       it('should get the user', function (done) {

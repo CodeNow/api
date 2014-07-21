@@ -5,15 +5,6 @@ var uuid = require('uuid');
 
 module.exports = function (cb) {
 
-  /* POSTS */
-
-  nock('http://localhost:4243', { allowUnmocked: true })
-    .filteringPath(/\/containers\/[0-9a-f]+\/attach\?.+/,
-      '/containers/284912fa2cf26d40cc262798ecbb483b58f222d42ab1551e818afe35744688f7/attach')
-    .post('/containers/284912fa2cf26d40cc262798ecbb483b58f222d42ab1551e818afe35744688f7/attach')
-    .twice()
-    .reply(200, 'Successfully built 15e17eedec196751ad15cdb1cef61f6022c19bee01b8079');
-
   /* PUTS */
 
   nock('https://s3.amazonaws.com:443')
@@ -55,6 +46,7 @@ module.exports = function (cb) {
       '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/file.txt')
     .filteringRequestBody(function () { return '*'; })
     .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/file.txt', '*')
+    .twice()
     .reply(200, '', {
       'x-amz-id-2': uuid(),
       'x-amz-version-id': uuid(),

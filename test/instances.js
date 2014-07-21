@@ -5,8 +5,8 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
+var expects = require('./fixtures/expects');
 var async = require('async');
 var clone = require('101/clone');
 var RedisList = require('redis-types').List;
@@ -14,6 +14,7 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
+var exists = require('101/exists');
 
 describe('Instances - /instances', function () {
   var ctx = {};
@@ -32,20 +33,12 @@ describe('Instances - /instances', function () {
   describe('POST', function () {
     beforeEach(function (done) {
       nockS3();
-      multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
-        if (err) { return done(err); }
-
-        ctx.user = user;
+      multi.createBuiltBuild(function (err, build, env, project, user) {
+        ctx.build = build;
+        ctx.env = env;
         ctx.project = project;
-        ctx.environments = environments;
-        ctx.environment = environments.models[0];
-        ctx.name = "testInstance";
-        var builds = ctx.environment.fetchBuilds(function (err) {
-          if (err) { return done(err); }
-
-          ctx.build = builds.models[0];
-          done();
-        });
+        ctx.user = user;
+        done(err);
       });
     });
 
@@ -65,14 +58,12 @@ describe('Instances - /instances', function () {
           var json = ctx.json;
           var incompleteBody = clone(json);
           delete incompleteBody[missingBodyKey];
-          ctx.user.createInstance({ json: incompleteBody }, function (err) {
-            expect(err).to.be.ok;
-            expect(err.message).to.match(new RegExp(missingBodyKey));
-            expect(err.message).to.match(new RegExp('is required'));
-            done();
-          });
+          var errorMsg = new RegExp(missingBodyKey+'.*'+'is required');
+          ctx.user.createInstance(incompleteBody,
+            expects.error(400, errorMsg, done));
         });
       });
+      // FIXME: finish this test
       // describe('with unbuilt versions', function () {
       //   it('should error if the environment has unbuilt versions', function(done) {
       //     var json = ctx.json;
@@ -84,41 +75,43 @@ describe('Instances - /instances', function () {
       //     });
       //   });
       // });
-      describe('with build versions', function () {
+      describe('with built versions', function () {
         it('should create an instance', function(done) {
           var json = ctx.json;
-          var instance = ctx.user.createInstance({ json: json }, function (err, body, code) {
-            if (err) { return done(err); }
-
-            expect(code).to.equal(201);
-            expect(body).to.have.property('_id');
-            expectHipacheHostsForContainers(instance.toJSON().containers, done);
-          });
-          function expectHipacheHostsForContainers (containers, cb) {
-            var allUrls = [];
-            containers.forEach(function (container) {
-              allUrls = allUrls.concat(container.urls);
-            });
-            async.forEach(allUrls, function (url, cb) {
-              var hipacheEntry = new RedisList('frontend:'+url);
-              hipacheEntry.lrange(0, -1, function (err, backends) {
-                if (err) {
-                  cb(err);
-                }
-                else if (!backends.length || !backends.every(contains(':'))) {
-                  cb(new Error('Backends invalid for '+url));
-                }
-                else {
-                  cb();
-                }
-              });
-            }, cb);
-          }
+          var expected = {
+            _id: exists
+          };
+          var instance = ctx.user.createInstance(json,
+            expects.success(201, expected, function (err) {
+              if (err) { return done(err); }
+              expectHipacheHostsForContainers(instance.toJSON().containers, done);
+            }));
         });
       });
     });
   });
 });
+
+function expectHipacheHostsForContainers (containers, cb) {
+  var allUrls = [];
+  containers.forEach(function (container) {
+    allUrls = allUrls.concat(container.urls);
+  });
+  async.forEach(allUrls, function (url, cb) {
+    var hipacheEntry = new RedisList('frontend:'+url);
+    hipacheEntry.lrange(0, -1, function (err, backends) {
+      if (err) {
+        cb(err);
+      }
+      else if (!backends.length || !backends.every(contains(':'))) {
+        cb(new Error('Backends invalid for '+url));
+      }
+      else {
+        cb();
+      }
+    });
+  }, cb);
+}
 
 function contains (char) {
   return function (str) {

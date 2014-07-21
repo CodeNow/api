@@ -5,89 +5,84 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
 var uuid = require('uuid');
 var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
-var users = require('./fixtures/user-factory');
+var expects = require('./fixtures/expects');
+var createCount = require('callback-count');
 
 describe('Environments - /projects/:id/environments/:id', function() {
   var ctx = {};
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
   beforeEach(function (done) {
-    nockS3();
-    multi.createRegisteredUserAndProject(function (err, user, project) {
-      if (err) { return done(err); }
-
+    var count = createCount(3, done);
+    ctx.nonOwner = multi.createUser(count.next);
+    multi.createModerator(function (err, mod) {
+      ctx.moderator = mod;
+      count.next(err);
+    });
+    multi.createEnv(function (err, env, project, user) {
       ctx.user = user;
       ctx.project = project;
-      ctx.environments = ctx.project.fetchEnvironments(function (err) {
-        if (err) { return done(err); }
-
-        ctx.environment = ctx.environments.models[0];
-        done();
-      });
+      ctx.env = env;
+      ctx.expected = {
+        name: env.attrs.name,
+        owner: { github: user.attrs.accounts.github.id }
+      };
+      count.next(err);
     });
   });
+
   describe('GET', function () {
     describe('permissions', function() {
       describe('owner', function () {
         it('should get the environment', function (done) {
-          ctx.environment.fetch(expectSuccess(done));
+          ctx.env.fetch(expects.success(200, ctx.expected, done));
         });
       });
       describe('non-owner', function () {
         beforeEach(function (done) {
-          ctx.nonOwner = users.createGithub(done);
+          require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+          ctx.project = ctx.nonOwner.newProject(ctx.project.id());
+          ctx.env = ctx.project.newEnvironment(ctx.env.id());
+          done();
         });
         it('should not get the environment (403 forbidden)', function (done) {
-          ctx.environment.client = ctx.nonOwner.client; // swap auth to nonOwner's
-          ctx.environment.fetch(expects.errorStatus(403, done));
+          ctx.env.fetch(expects.errorStatus(403, done));
         });
       });
       describe('moderator', function () {
         beforeEach(function (done) {
-          ctx.moderator = users.createModerator(done);
+          require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+          ctx.project = ctx.moderator.newProject(ctx.project.id());
+          ctx.env = ctx.project.newEnvironment(ctx.env.id());
+          done();
         });
         it('should get the environment', function (done) {
-          ctx.environment.client = ctx.moderator.client; // swap auth to moderator's
-          ctx.environment.fetch(expectSuccess(done));
+          ctx.env.fetch(expects.success(200, ctx.expected, done));
         });
       });
     });
-    ['project', 'environment'].forEach(function (destroyName) {
+    ['project'].forEach(function (destroyName) {
       describe('not founds', function() {
         beforeEach(function (done) {
           ctx[destroyName].destroy(done);
         });
         it('should not get the environment if missing (404 '+destroyName+')', function (done) {
-          ctx.environment.fetch(expects.errorStatus(404, done));
+          ctx.env.fetch(expects.errorStatus(404, done));
         });
       });
     });
-    function expectSuccess (done) {
-      return function (err, body, code) {
-        if (err) { return done(err); }
-
-        expect(code).to.equal(200);
-        // FIXME: expect each field!
-        expect(body).to.eql(ctx.environment.toJSON());
-        done();
-      };
-    }
   });
 
   describe('PATCH', function () {
@@ -101,39 +96,44 @@ describe('Environments - /projects/:id/environments/:id', function() {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should update environment\'s '+keys+' to '+vals, function (done) {
-            ctx.environment.update({ json: json }, expects.updateSuccess(json, done));
+            ctx.env.update({ json: json }, expects.updateSuccess(json, done));
           });
         });
       });
       describe('non-owner', function () {
         beforeEach(function (done) {
-          ctx.nonOwner = users.createGithub(done);
+          require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+          ctx.project = ctx.nonOwner.newProject(ctx.project.id());
+          ctx.env = ctx.project.newEnvironment(ctx.env.id());
+          done();
         });
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should not update environment\'s '+keys+' to '+vals+' (403 forbidden)',
             function (done) {
-              ctx.environment.client = ctx.nonOwner.client; // swap auth to nonOwner's
-              ctx.environment.update({ json: json }, expects.errorStatus(403, done));
+              ctx.env.update({ json: json }, expects.errorStatus(403, done));
             });
         });
       });
       describe('moderator', function () {
         beforeEach(function (done) {
-          ctx.moderator = users.createModerator(done);
+          require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+          ctx.project = ctx.moderator.newProject(ctx.project.id());
+          ctx.env = ctx.project.newEnvironment(ctx.env.id());
+          done();
         });
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should update environment\'s '+keys+' to '+vals, function (done) {
-            ctx.environment.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.environment.update({ json: json }, expects.updateSuccess(json, done));
+            ctx.env.client = ctx.moderator.client; // swap auth to moderator's
+            ctx.env.update({ json: json }, expects.updateSuccess(json, done));
           });
         });
       });
     });
-    ['project', 'environment'].forEach(function (destroyName) {
+    ['project'].forEach(function (destroyName) {
       describe('not founds', function() {
         beforeEach(function (done) {
           ctx[destroyName].destroy(done);
@@ -143,7 +143,7 @@ describe('Environments - /projects/:id/environments/:id', function() {
           var vals = keys.map(function (key) { return json[key]; });
           it('should not update environment\'s '+keys+' to '+vals+' (404 not found)',
             function (done) {
-              ctx.environment.update({ json: json }, expects.errorStatus(404, done));
+              ctx.env.update({ json: json }, expects.errorStatus(404, done));
             });
         });
       });
@@ -151,39 +151,59 @@ describe('Environments - /projects/:id/environments/:id', function() {
   });
 
   describe('DELETE', function () {
-    // FIXME: what happens when you delete the defaultEnv??
+    beforeEach(function (done) {
+      ctx.notDefaultEnv = ctx.project.createEnvironment({ name: uuid() }, done);
+    });
     describe('permissions', function() {
       describe('owner', function () {
-        it('should delete the environment', function (done) {
-          ctx.environment.destroy(expects.success(204, done));
+        it('should not delete the (default) environment (409)', function (done) {
+          ctx.env.destroy(expects.errorStatus(409, done));
+        });
+        it('should not delete the other environment', function (done) {
+          ctx.notDefaultEnv.destroy(expects.success(204, done));
         });
       });
       describe('non-owner', function () {
         beforeEach(function (done) {
-          ctx.nonOwner = users.createGithub(done);
+          require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+          ctx.project = ctx.nonOwner.newProject(ctx.project.id());
+          ctx.env = ctx.project.newEnvironment(ctx.env.id());
+          ctx.notDefaultEnv = ctx.project.newEnvironment(ctx.notDefaultEnv.id());
+          done();
         });
         it('should not delete the environment (403 forbidden)', function (done) {
-          ctx.environment.client = ctx.nonOwner.client; // swap auth to nonOwner's
-          ctx.environment.destroy(expects.errorStatus(403, done));
+          ctx.env.destroy(expects.errorStatus(403, done));
+        });
+        it('should not delete the other environment (403)', function (done) {
+          ctx.notDefaultEnv.destroy(expects.errorStatus(403, done));
         });
       });
       describe('moderator', function () {
         beforeEach(function (done) {
-          ctx.moderator = users.createModerator(done);
+          require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+          ctx.project = ctx.moderator.newProject(ctx.project.id());
+          ctx.env = ctx.project.newEnvironment(ctx.env.id());
+          ctx.notDefaultEnv = ctx.project.newEnvironment(ctx.notDefaultEnv.id());
+          done();
         });
-        it('should delete the environment', function (done) {
-          ctx.environment.client = ctx.moderator.client; // swap auth to moderator's
-          ctx.environment.destroy(expects.success(204, done));
+        it('should not delete the (default) environment', function (done) {
+          ctx.env.destroy(expects.errorStatus(409, done));
+        });
+        it('should delete the other environment', function (done) {
+          ctx.notDefaultEnv.destroy(expects.success(204, done));
         });
       });
     });
-    ['project', 'environment'].forEach(function (destroyName) {
+    ['project'].forEach(function (destroyName) {
       describe('not founds', function() {
         beforeEach(function (done) {
           ctx[destroyName].destroy(done);
         });
-        it('should not delete the environment if missing (404 '+destroyName+')', function (done) {
-          ctx.environment.destroy(expects.errorStatus(404, done));
+        it('should not delete the (default) environment if missing (404 '+destroyName+')', function (done) {
+          ctx.env.destroy(expects.errorStatus(404, done));
+        });
+        it('should not delete the other environment if missing (404 '+destroyName+')', function (done) {
+          ctx.notDefaultEnv.destroy(expects.errorStatus(404, done));
         });
       });
     });

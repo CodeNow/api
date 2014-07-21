@@ -1,4 +1,3 @@
-// FIXME: restore modules
 // var loadenv = require('loadenv');
 // loadenv();
 

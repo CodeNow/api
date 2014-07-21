@@ -5,20 +5,21 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
+var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
+var exists = require('101/exists');
+var uuid = require('uuid');
+var createCount = require('callback-count');
 
 describe('Versions - /contexts/:contextid/versions', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -27,61 +28,61 @@ describe('Versions - /contexts/:contextid/versions', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
+    var count = createCount(2, done);
+    // FIXME: actually make me a moderator
+    ctx.moderator = multi.createUser(function (err) {
       if (err) { return done(err); }
-
+      var body = { name: uuid(), isSource: true };
+      ctx.sourceContext = ctx.moderator.createContext(body, function (err) {
+        if (err) { return done(err); }
+        ctx.sourceVersion = ctx.sourceContext.createVersion(count.next);
+      });
+    });
+    multi.createEnv(function (err, env, project, user) {
+      if (err) { return done(err); }
       ctx.user = user;
       ctx.project = project;
-      ctx.environments = environments;
-      ctx.environment = environments.models[0];
-      var builds = ctx.environment.fetchBuilds(function (err) {
+      ctx.env = env;
+      var body = { environment: ctx.env.id() };
+      ctx.build = ctx.env.createBuild(body, function (err) {
         if (err) { return done(err); }
-
-        ctx.build = builds.models[0];
-        ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().contextVersions[0];
-        ctx.context = ctx.user.fetchContext(ctx.contextId, done);
-      });
-    });
-  });
-
-  describe('GET', function () {
-    it('should NOT list us the versions', function (done) {
-      ctx.context.fetchVersions(function (err) {
-        expect(err).to.be.ok;
-        expect(err.output.statusCode).to.equal(400);
-        done();
-      });
-    });
-
-    it('should list multiple versions by id', function (done) {
-      var query = {
-        _id: [
-          ctx.versionId
-        ]
-      };
-      ctx.context.fetchVersions({ qs: query }, function (err, body) {
-        if (err) { return done(err); }
-
-        expect(body).to.be.an('array');
-        expect(body).to.have.length(1);
-        expect(body[0]._id).to.equal(ctx.versionId);
-        done();
+        ctx.context = ctx.user.fetchContext(ctx.build.attrs.contexts[0], count.next);
       });
     });
   });
 
   describe('POST', function () {
     it('should create a new version', function (done) {
-      ctx.context.createVersion({ json: {
-        versionId: ctx.versionId
-      }}, function (err, body) {
-        if (err) { return done(err); }
-
-        expect(body).to.be.ok;
-        expect(body._id).to.not.equal(ctx.versionId);
-        done();
-      });
+      var body = {
+        environment: ctx.env.id()
+      };
+      var expected = {
+        environment: ctx.env.id(),
+        context: ctx.context.id(),
+        infraCodeVersion: exists
+      };
+      ctx.context.createVersion(body, expects.success(201, expected, done));
+    });
+    it('should create a new version from a source infrastructure code version', function (done) {
+      var query = {
+        // FIXME: fromSource should really be the sourceVersionId
+        fromSource: ctx.sourceVersion.attrs.infraCodeVersion,
+        toBuild: ctx.build.id()
+      };
+      var body = {
+        project: ctx.project.id(),
+        environment: ctx.env.id()
+      };
+      var expected = {
+        createdBy: { github: ctx.user.toJSON().accounts.github.id },
+        context: ctx.context.id(),
+        environment: ctx.env.id(),
+        infraCodeVersion: exists
+      };
+      ctx.context.createVersion({
+        qs: query,
+        json: body
+      }, expects.success(201, expected, done));
     });
   });
 

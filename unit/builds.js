@@ -3,6 +3,7 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
+var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 
@@ -14,7 +15,6 @@ describe('Build', function () {
 
   function createNewBuild() {
     return new Build({
-      owner: { github: validation.VALID_GITHUB_ID },
       project: validation.VALID_OBJECT_ID,
       environment: validation.VALID_OBJECT_ID,
       contexts: [validation.VALID_OBJECT_ID],
@@ -24,20 +24,27 @@ describe('Build', function () {
     });
   }
 
+  function createNewUser() {
+    return {
+      password: "pass",
+      name: "test",
+      accounts: {
+        github: {
+          id: 'test'
+        }
+      }
+    };
+  }
+
   it('should be able to save a build!', function (done) {
-    var instance = createNewBuild();
-    instance.save(function (err, instance) {
+    var build = createNewBuild();
+    build.save(function (err, build) {
       if (err) { done(err); }
       else {
-        expect(instance).to.be.okay;
+        expect(build).to.be.okay;
         done();
       }
     });
-  });
-
-  describe('Owner Validation', function () {
-    validation.githubUserRefValidationChecking(createNewBuild, 'owner.github');
-    validation.requiredValidationChecking(createNewBuild, 'owner');
   });
 
   describe('CreatedBy Validation', function () {
@@ -45,14 +52,14 @@ describe('Build', function () {
     validation.requiredValidationChecking(createNewBuild, 'createdBy');
   });
 
-  describe('Project Id Validation', function () {
-    validation.objectIdValidationChecking(createNewBuild, 'project');
-    validation.requiredValidationChecking(createNewBuild, 'project');
-  });
-
   describe('Environment Id Validation', function () {
     validation.objectIdValidationChecking(createNewBuild, 'environment');
     validation.requiredValidationChecking(createNewBuild, 'environment');
+  });
+
+  describe('Project Id Validation', function () {
+    validation.objectIdValidationChecking(createNewBuild, 'project');
+    validation.requiredValidationChecking(createNewBuild, 'project');
   });
 
   describe('Context Ids Validation', function () {
@@ -62,7 +69,44 @@ describe('Build', function () {
 
   describe('Version Ids Validation', function () {
     validation.objectIdValidationChecking(createNewBuild, 'contextVersions', true);
-    validation.requiredValidationChecking(createNewBuild, 'contextVersions');
   });
 
+  describe('Testing SetInProgress', function () {
+    var ctx = {};
+    beforeEach(function(done) {
+      ctx.build = createNewBuild();
+      ctx.build.save(function(err, build) {
+        build.setInProgress(createNewUser(), function(err, newbuild) {
+          if (err) {
+            done(err);
+          } else {
+            ctx.build = newbuild;
+            done();
+          }
+        });
+      });
+    });
+    afterEach(function(done) {
+      delete ctx.build;
+      done();
+    });
+    it('should be able to set the build in progress', function (done) {
+      expect(ctx.build).to.be.okay;
+      done();
+    });
+    it('should create another build, and the buildNumber should be higher ', function (done) {
+      ctx.build2 = createNewBuild();
+      ctx.build2.save(function(err, build) {
+        build.setInProgress(createNewUser(), function(err, newbuild) {
+          if (err) {
+            done(err);
+          } else {
+            expect(newbuild).to.be.okay;
+            expect(ctx.build.buildNumber).to.be.below(newbuild.buildNumber);
+            done();
+          }
+        });
+      });
+    });
+  });
 });

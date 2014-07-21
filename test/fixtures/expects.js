@@ -1,22 +1,34 @@
 var isFunction = require('101/is-function');
 var isString = require('101/is-string');
 var expect = require('lab').expect;
+var keypather = require('keypather')();
 var debug = require('debug')('runnable-api:testing:fixtures:expects');
 
-var expects = module.exports = {};
+var expects = module.exports = function (keypath) {
+  return function (val) {
+    keypath.get(expect(val), keypath);
+  };
+};
 
-expects.success = function (statusCode, json, done) {
-  if (isFunction(json)) {
-    done = json;
-    json = null;
+expects.success = function (statusCode, expectedKeypaths, done) {
+  if (isFunction(expectedKeypaths)) {
+    done = expectedKeypaths;
+    expectedKeypaths = null;
   }
   return function (err, body, code) {
     if (err) { return done(err); }
     expect(statusCode).to.equal(code);
-    json = json || {};
-    Object.keys(json).forEach(function (key) {
-      expect(body).to.have.property(key, json[key]);
-    });
+    if (expectedKeypaths) {
+      expect(body).to.be.ok;
+      if (Array.isArray(expectedKeypaths)) {
+        expectedKeypaths.forEach(function (expectedItem, i) {
+          expectKeypaths(body[i], expectedItem);
+        });
+      }
+      else {
+        expectKeypaths(body, expectedKeypaths);
+      }
+    }
     done();
   };
 };
@@ -39,6 +51,7 @@ expects.errorStatus = function (code, messageMatch, done) {
     done();
   };
 };
+expects.error = expects.errorStatus;
 
 expects.updateSuccess = function (json, done) {
   return function (err, body, code) {
@@ -50,3 +63,26 @@ expects.updateSuccess = function (json, done) {
     done();
   };
 };
+
+
+function expectKeypaths (body, expectedKeypaths) {
+  if (expectedKeypaths) {
+    var expected = {};
+    var extracted = {};
+    Object.keys(expectedKeypaths).forEach(function (keypath) {
+      var expectedVal = expectedKeypaths[keypath];
+      if (expectedVal instanceof RegExp) {
+        expect(keypather.get(body, keypath)).to.match(expectedVal,
+          'Expected body.'+keypath+'to match '+expectedVal);
+      }
+      else if (typeof expectedVal === 'function') {
+        expect(keypather.get(body, keypath)).to.satisfy(expectedVal, 'Value for '+keypath);
+      }
+      else {
+        keypather.set(extracted, keypath, keypather.get(body, keypath));
+        keypather.set(expected, keypath, expectedVal);
+      }
+    });
+    expect(extracted).to.eql(expected);
+  }
+}

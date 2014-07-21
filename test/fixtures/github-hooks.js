@@ -26,8 +26,8 @@ module.exports = {
          active: true,
          events: [ 'push' ],
          config:
-          { secret: '',
-            url: 'http://upbris.bryankendall.me:3000/push',
+          { secret: process.env.GITHUB_HOOK_SECRET,
+            url   : process.env.GITHUB_HOOK_URL,
             content_type: 'json',
             insecure_ssl: '0' },
          last_response: { code: null, status: 'unused', message: null },

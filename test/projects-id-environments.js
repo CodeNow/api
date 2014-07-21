@@ -5,81 +5,100 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
 var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
+var expects = require('./fixtures/expects');
+var createCount = require('callback-count');
 
 describe('Environments - /projects/:id/environments', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
+  beforeEach(function (done) {
+    var count = createCount(2, done);
+    ctx.otherUser = multi.createUser(count.next);
+    multi.createProject(function (err, project, user) {
+      ctx.user = user;
+      ctx.project = project;
+      count.next();
+    });
+  });
+
   describe('POST', function () {
-    beforeEach(function (done) {
-      nockS3();
-      multi.createRegisteredUserAndProject(function (err, user, project) {
-        if (err) { return done(err); }
-        ctx.user = user;
-        ctx.project = project;
+
+    describe('for non-owner', function () {
+      beforeEach(function (done) {
+        require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+        ctx.project = ctx.otherUser.newProject(ctx.project.id());
         done();
       });
-    });
-
-    it('should create an environment for a project', function (done) {
-      var newName = uuid();
-      ctx.project.createEnvironment({ json: { name: newName }}, function (err, body, code) {
-        if (err) { return done(err); }
-
-        expect(code).to.equal(201);
-        expect(body).to.have.property('_id');
-        // expect(body.builds).to.be.an('array');
-        // expect(body.builds).to.have.length(1);
-        // expect(body.builds[0]).to.be.ok;
-        done();
+      it('should return 403', function (done) {
+        ctx.project.createEnvironment({ name: uuid() }, expects.error(403, /Project is private/, done));
       });
     });
-    // describe('non-existant project', function() {
-    //   beforeEach(function (done) {
-    //     ctx.projectId =
-    //     ctx.project.destroy(done);
-    //   });
-    //   it('should respond "not found"', function (done) {
-
-    //   });
-    // });
+    describe('for owner', function () {
+      it('should create an environment for a project', function (done) {
+        var newName = uuid();
+        var expected = {
+          name: newName,
+          owner: { github: ctx.user.attrs.accounts.github.id }
+        };
+        ctx.project.createEnvironment({ name: newName }, expects.success(201, expected, done));
+      });
+    });
+    describe('non-existant project', function() {
+      beforeEach(function (done) {
+        ctx.project.destroy(done);
+      });
+      it('should respond "not found"', function (done) {
+        ctx.project.createEnvironment({ name: uuid() }, expects.error(404, /Project not found/, done));
+      });
+    });
   });
 
   describe('GET', function () {
     beforeEach(function (done) {
-      nockS3();
-      multi.createRegisteredUserAndProject(function (err, user, project) {
+      multi.createProject(function (err, project, user) {
         ctx.user = user;
         ctx.project = project;
         done(err);
       });
     });
 
-    it('should return the list of environments for a project', function (done) {
-      ctx.project.fetchEnvironments(function (err, body, code) {
-        if (err) { return done(err); }
-
-        expect(code).to.equal(200);
-        expect(body).to.be.an('array');
-        // expect(body[0].builds).to.be.an('array');
-        // expect(body[0].builds).to.have.length(1);
-        // expect(body[0].builds[0]).to.be.ok;
+    describe('for owner', function () {
+      it('should return the list of environments for a project', function (done) {
+        var expected = [{
+          name: 'master',
+          owner: { github: ctx.user.attrs.accounts.github.id }
+        }];
+        ctx.project.fetchEnvironments(expects.success(200, expected, done));
+      });
+    });
+    describe('for non-owner', function () {
+      beforeEach(function (done) {
+        require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+        ctx.project = ctx.otherUser.newProject(ctx.project.id());
         done();
+      });
+      it('should return the list of environments for a project', function (done) {
+        ctx.project.fetchEnvironments(expects.error(403, /Project is private/, done));
+      });
+    });
+    describe('non-existant project', function() {
+      beforeEach(function (done) {
+        ctx.project.destroy(done);
+      });
+      it('should respond "not found"', function (done) {
+        ctx.project.fetchEnvironments({ name: uuid() }, expects.error(404, /Project not found/, done));
       });
     });
   });

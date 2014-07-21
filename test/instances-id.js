@@ -10,7 +10,6 @@ var expect = Lab.expect;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
-var users = require('./fixtures/user-factory');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 
@@ -29,26 +28,10 @@ describe('Instance - /instances/:id', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createRegisteredUserProjectAndEnvironments(function (err, user, project, environments) {
+    multi.createInstance(function (err, instance) {
       if (err) { return done(err); }
-
-      ctx.user = user;
-      ctx.project = project;
-      ctx.environments = environments;
-      ctx.environment = environments.models[0];
-      var builds = ctx.environment.fetchBuilds(function (err) {
-        if (err) { return done(err); }
-
-        ctx.build = builds.models[0];
-        ctx.contextId = ctx.build.toJSON().contexts[0];
-        ctx.versionId = ctx.build.toJSON().contextVersions[0];
-        ctx.context = ctx.user.newContext(ctx.contextId);
-        ctx.version = ctx.context.newVersion(ctx.versionId);
-        ctx.instance = ctx.user.createInstance({
-          build: ctx.build.id(),
-          name: "test"
-        }, done);
-      });
+      ctx.instance = instance;
+      done();
     });
   });
   describe('GET', function () {
@@ -64,7 +47,7 @@ describe('Instance - /instances/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
-            ctx.nonOwner = users.createGithub(done);
+            ctx.nonOwner = multi.createUser(done);
           });
           it('should get the instance', function (done) {
             ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
@@ -73,7 +56,7 @@ describe('Instance - /instances/:id', function () {
         });
         describe('moderator', function () {
           beforeEach(function (done) {
-            ctx.moderator = users.createModerator(done);
+            ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
             ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
@@ -92,7 +75,7 @@ describe('Instance - /instances/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
-            ctx.nonOwner = users.createGithub(done);
+            ctx.nonOwner = multi.createUser(done);
           });
           it('should not get the instance (403 forbidden)', function (done) {
             ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
@@ -101,7 +84,7 @@ describe('Instance - /instances/:id', function () {
         });
         describe('moderator', function () {
           beforeEach(function (done) {
-            ctx.moderator = users.createModerator(done);
+            ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
             ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
@@ -125,7 +108,16 @@ describe('Instance - /instances/:id', function () {
         if (err) { return done(err); }
 
         expect(code).to.equal(200);
-        // FIXME: expect each field!
+        expect(body).to.be.ok;
+        expect(body.channels).to.be.ok;
+        expect(body.containers).to.be.ok;
+        expect(body.created).to.be.ok;
+        expect(body.createdBy).to.be.ok;
+        expect(body.environment).to.be.ok;
+        expect(body.name).to.be.ok;
+        expect(body.outputViews).to.be.ok;
+        expect(body.owner).to.be.ok;
+        expect(body.project).to.be.ok;
         expect(body).to.eql(ctx.instance.toJSON());
         done();
       };
@@ -153,7 +145,7 @@ describe('Instance - /instances/:id', function () {
   //     });
   //     describe('non-owner', function () {
   //       beforeEach(function (done) {
-  //         ctx.nonOwner = users.createGithub(done);
+  //         ctx.nonOwner = multi.createUser(done);
   //       });
   //       updates.forEach(function (json) {
   //         var keys = Object.keys(json);
@@ -166,7 +158,7 @@ describe('Instance - /instances/:id', function () {
   //     });
   //     describe('moderator', function () {
   //       beforeEach(function (done) {
-  //         ctx.moderator = users.createModerator(done);
+  //         ctx.moderator = multi.createModerator(done);
   //       });
   //       updates.forEach(function (json) {
   //         var keys = Object.keys(json);
@@ -203,7 +195,7 @@ describe('Instance - /instances/:id', function () {
   //     });
   //     describe('non-owner', function () {
   //       beforeEach(function (done) {
-  //         ctx.nonOwner = users.createGithub(done);
+  //         ctx.nonOwner = multi.createUser(done);
   //       });
   //       it('should not delete the instance (403 forbidden)', function (done) {
   //         ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
@@ -212,7 +204,7 @@ describe('Instance - /instances/:id', function () {
   //     });
   //     describe('moderator', function () {
   //       beforeEach(function (done) {
-  //         ctx.moderator = users.createModerator(done);
+  //         ctx.moderator = multi.createModerator(done);
   //       });
   //       it('should delete the instance', function (done) {
   //         ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
