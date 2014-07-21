@@ -143,6 +143,11 @@ describe('Projects - /projects', function () {
       ctx.user = multi.createUser(done);
     });
 
+    describe('invalid values', function () {
+      it('should fail with a name that has spaces', function (done) {
+        ctx.user.createProject({ name: 'no good' }, expects.error(400, /Name contains invalid characters/, done));
+      });
+    });
     describe('required fields', function() {
       it('should create a project with a name', function (done) {
         var userGithubId = ctx.user.attrs.accounts.github.id;

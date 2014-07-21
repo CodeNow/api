@@ -45,7 +45,7 @@ describe('Containers', function () {
           schemaValidators.validationMessages.characters);
       });
     });
-    validation.ALPHA_NUM_NOSPACE_SAFE.forEach(function (string) {
+    validation.ALPHA_NUM_SAFE.forEach(function (string) {
       it('should succeed validation for ' + string, function (done) {
         var container = createNewContainer();
         container.name = string;
