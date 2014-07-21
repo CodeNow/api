@@ -38,10 +38,7 @@ describe('Instances - /instances', function () {
         ctx.env = env;
         ctx.project = project;
         ctx.user = user;
-        modelsArr[0].fetch(function () {
-          console.log(modelsArr[0].json());
-          done(err);
-        });
+        modelsArr[0].fetch(done);
       });
     });
 

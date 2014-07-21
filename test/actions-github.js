@@ -83,8 +83,10 @@ describe('Github', function () {
             var count = callbackCount(2, done);
             var buildExpected = {
               started: exists,
-              completed: exists,
+              completed: exists
             };
+            require('./fixtures/mocks/github/repos-username-repo-commits')
+              ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
             ctx.env.newBuild(body[0]).fetch(
               expects.success(200, buildExpected, count.next));
 
@@ -96,6 +98,7 @@ describe('Github', function () {
               'build.triggeredAction.rebuild': not(exists),
               'build.triggeredAction.appCodeVersion.repo': 'bkendall/flaming-octo-nemesis',
               'build.triggeredAction.appCodeVersion.commit': hooks.push.json.head_commit.id,
+              'build.triggeredAction.appCodeVersion.username': 'bkendall',
               'build.dockerImage': exists,
               'build.dockerTag': exists,
               'infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
@@ -104,6 +107,8 @@ describe('Github', function () {
               'appCodeVersions[0].commit': hooks.push.json.head_commit.id,
               'appCodeVersions[0].lockCommit': false
             };
+            require('./fixtures/mocks/github/repos-username-repo-commits')
+              ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
             ctx.context.newVersion(body[0].contextVersions[0]).fetch(function (err, body, code) {
               // parse method creates models for this attrs. so we json them before testing.
               body.appCodeVersions =
