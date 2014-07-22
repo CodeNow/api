@@ -69,6 +69,10 @@ describe('User', function () {
     validation.nameValidationChecking(createNewUser, 'company');
   });
 
+  describe('Gravatar Validation', function () {
+    validation.urlValidationChecking(createNewUser, 'gravatar');
+  });
+
 //  describe('Accounts Validation', function() {
 //    describe('Github Username Validation', function () {
 //      validation.urlSafeNameValidationChecking(createNewUser, 'accounts.github.username',
