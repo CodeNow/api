@@ -46,11 +46,16 @@ function createFirstSourceContext () {
     },
     function newCV (context, icv, cb) {
       console.log('newCV');
+      var d = new Date();
       var cv = new ContextVersion({
         createdBy: createdBy,
         context: context._id,
         environment: context._id,
-        infraCodeVersion: icv._id
+        infraCodeVersion: icv._id,
+        build: {
+          started: d,
+          completed: d
+        }
       });
       cv.save(cb);
     },
