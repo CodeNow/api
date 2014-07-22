@@ -148,6 +148,23 @@ describe('Projects - /projects', function () {
         ctx.user.createProject({ name: 'no good' }, expects.error(400, /Name contains invalid characters/, done));
       });
     });
+    describe('creating projects', function() {
+      it('should create a project for another user', function (done) {
+        var userGithubId = 123456;
+        var expected = {
+          'name': 'name',
+          'created': exists,
+          'owner.github': userGithubId,
+          'environments.length': 1,
+          'environments[0].name': 'master',
+          'environments[0].owner.github': userGithubId,
+        };
+        ctx.user.createProject({
+          name: 'name',
+          owner: { github: userGithubId }
+        }, expects.success(201, expected, done));
+      });
+    });
     describe('required fields', function() {
       it('should create a project with a name', function (done) {
         var userGithubId = ctx.user.attrs.accounts.github.id;
