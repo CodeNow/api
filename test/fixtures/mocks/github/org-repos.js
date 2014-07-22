@@ -24,8 +24,8 @@ module.exports = function (orgId, orgName, repos) {
     };
   });
     nock('https://api.github.com:443')
-      .filteringPath(/\/org\/[^\/]+\/repos\?.+/, '/org/' + orgName + '/repos')
-      .get('/org/' + orgName + '/repos')
+      .filteringPath(/\/orgs\/[^\/]+\/repos\?.+/, '/orgs/' + orgName + '/repos')
+      .get('/orgs/' + orgName + '/repos')
       .reply(200, repos, {
         server: 'GitHub.com',
         date: 'Tue, 24 Jun 2014 23:32:26 GMT',

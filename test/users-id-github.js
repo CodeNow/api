@@ -47,7 +47,13 @@ describe('User Orgs - /github/orgs', function () {
         if (err) { return done(err); }
         else {
           var expected = [{
-            name: 'yoosa'
+            name: 'yoosa',
+            id: 0,
+            owner: {
+              login: 'Runnable',
+              id: 101
+            },
+            full_name: 'Runnable/yoosa'
           }];
           ctx.orgs.models[0].fetchRepos(expects.success(200, expected, done));
         }
