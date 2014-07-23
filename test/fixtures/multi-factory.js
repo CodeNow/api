@@ -55,11 +55,10 @@ module.exports = {
     });
   },
   createContext: function (cb) {
-    this.createBuild(function (err, build, env, project, user) {
-      if (err) { return cb(err); }
-      var contextId = build.json().contexts[0];
-      var context = user.fetchContext(contextId, function (err) {
-        cb(err, context, build, env, project, user);
+    this.createUser(function (err, user) {
+      if (err) { return (err); }
+      var context = user.createContext({ name: uuid() }, function (err) {
+        cb(err, context, user);
       });
     });
   },
@@ -98,20 +97,27 @@ module.exports = {
     var self = this;
     this.createSourceContextVersion(function (err, srcContextVersion, srcContext, moderator) {
       if (err) { return cb(err); }
-      self.createContext(function (err, context, build, env, project, user) {
+      self.createContext(function (err, context, user) {
         if (err) { return cb(err); }
-        var opts = {};
-        opts.qs = {
-          fromSource: srcContextVersion.json().infraCodeVersion,
-          toBuild: build.id()
-        };
-        opts.json = {
-          project: project.id(),
-          environment: env.id()
-        };
-        var contextVersion = context.createVersion(opts, function (err) {
-          cb(err, contextVersion, context, build, env, project, user,
-            [srcContextVersion, srcContext, moderator]);
+        var project = user.createProject({ name: uuid() }, function (err) {
+          if (err) { return cb(err); }
+          var env = project.defaultEnvironment;
+          var build = env.createBuild({ message: uuid() }, function (err) {
+            if (err) { return cb(err); }
+            var opts = {};
+            opts.qs = {
+              fromSource: srcContextVersion.json().infraCodeVersion,
+              toBuild: build.id()
+            };
+            opts.json = {
+              project: project.id(),
+              environment: env.id()
+            };
+            var contextVersion = context.createVersion(opts, function (err) {
+              cb(err, contextVersion, context, build, env, project, user,
+                [srcContextVersion, srcContext, moderator]);
+            });
+          });
         });
       });
     });
