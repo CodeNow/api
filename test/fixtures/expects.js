@@ -38,7 +38,7 @@ expects.errorStatus = function (code, messageMatch, done) {
     done = messageMatch;
     messageMatch = null;
   }
-  return function (err) {
+  return function (err, body) {
     debug('errorStatus', err);
     expect(err).to.be.ok;
     expect(err.output.statusCode).to.equal(code);

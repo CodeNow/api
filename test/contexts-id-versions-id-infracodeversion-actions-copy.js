@@ -37,11 +37,10 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
       ctx.sourceContextVersion = contextVersion;
       count.next(err);
     });
-    multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
+    multi.createContextVersion(function (err, contextVersion, context, project, user, modelArr) {
       ctx.user = user;
-      ctx.environment = env;
-      ctx.contextVersion = modelArr[0];
-      ctx.context = modelArr[1];
+      ctx.contextVersion = contextVersion;
+      ctx.context = context;
       count.next(err);
     });
   });
@@ -85,45 +84,39 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
             }));
         });
       });
-      // describe('nonowner', function () {
-      //   beforeEach(function (done) {
-      //     ctx.nonowner = multi.createUser(function (err) {
-      //       require('./fixtures/mocks/github/user-orgs')(ctx.nonowner); // non owner org
-      //       done(err);
-      //     });
-      //   });
-      //   it('should get access denied', function (done) {
-      //     ctx.nonowner
-      //       .newContext(ctx.contextVersion.attrs.context)
-      //       .newVersion(ctx.contextVersion.id())
-      //       .fetch(ctx.contextVersion.id(),
-      //         expects.error(403, /denied/, done));
-      //   });
-      // });
+      describe('nonowner', function () {
+        beforeEach(function (done) {
+          ctx.nonowner = multi.createUser(function (err) {
+            require('./fixtures/mocks/github/user-orgs')(ctx.nonowner); // non owner org
+            done(err);
+          });
+        });
+        it('should get access denied', function (done) {
+          ctx.nonowner
+            .newContext(ctx.contextVersion.attrs.context)
+            .newVersion(ctx.contextVersion.id())
+            .fetch(ctx.contextVersion.id(),
+              expects.error(403, /denied/, done));
+        });
+      });
     });
-    // describe('built build (contextVersion)', function() {
-    //   describe('owner', function () {
-    //     it('should get the version', function (done) {
-    //       var expected = ctx.contextVersion.json();
-    //       ctx.contextVersion.fetch(ctx.contextVersion.id(),
-    //         expects.success(200, expected, done));
-    //     });
-    //   });
-    //   // describe('nonowner', function () {
-    //   //   beforeEach(function (done) {
-    //   //     ctx.nonowner = multi.createUser(function (err) {
-    //   //       require('./fixtures/mocks/github/user-orgs')(ctx.nonowner); // non owner org
-    //   //       done(err);
-    //   //     });
-    //   //   });
-    //   //   it('should get access denied', function (done) {
-    //   //     ctx.nonowner
-    //   //       .newContext(ctx.contextVersion.attrs.context)
-    //   //       .newVersion(ctx.contextVersion.id())
-    //   //       .fetch(ctx.contextVersion.id(),
-    //   //         expects.error(403, /denied/, done));
-    //   //   });
-    //   // });
-    // });
+    describe('built build (contextVersion)', function() {
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
+          ctx.user = user;
+          ctx.environment = env;
+          ctx.contextVersion = modelArr[0];
+          ctx.context = modelArr[1];
+          done(err);
+        });
+      });
+      describe('owner', function () {
+        it('should not copy the version files', function (done) {
+          var sourceInfraCodeVersionId = ctx.sourceContextVersion.attrs.infraCodeVersion;
+          ctx.contextVersion.copyFilesFromSource(sourceInfraCodeVersionId,
+            expects.error(400, /built/, done));
+        });
+      });
+    });
   });
 });
