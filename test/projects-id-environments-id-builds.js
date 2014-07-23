@@ -15,6 +15,7 @@ var expects = require('./fixtures/expects');
 var not = require('101/not');
 var Build = require('models/mongo/build');
 var exists = require('101/exists');
+var tailBuildStream = require('./fixtures/tail-build-stream');
 var equals = function (compare) {
   return function (val) {
     return val === compare;
@@ -80,7 +81,6 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         });
       });
     });
-
     describe('Built Projects', function () {
       beforeEach(function (done) {
         nockS3();
@@ -129,7 +129,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
           };
           var newBuild = ctx.env.createBuild(body,
             expects.success(201, expected, function (err) {
-              if (err) { return cb(err); }
+              if (err) { return done(err); }
               var i = 0;
               async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
                 var contextId = ctx.build.json().contexts[i];
@@ -150,6 +150,56 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
                 i++;
               }, done);
             }));
+        });
+        it('should rebuild an existing build', function (done) {
+          var body = {
+            project: ctx.project.id(),
+            environment: ctx.env.id(),
+            id: ctx.build.id()
+          };
+          var expected = {
+            project: ctx.project.id(),
+            environment: ctx.env.id(),
+            contexts: ctx.build.json().contexts,
+            // The context versions should not be equal, since they were copied, too
+            contextVersions: function (val) {
+              expect(val).to.not.eql(ctx.build.json().contextVersions);
+              return true;
+            },
+            started: exists,
+            completed: not(exists)
+          };
+          var newBuild = ctx.build.rebuild(body,
+            expects.success(201, expected, function (err) {
+              if (err) { return done(err); }
+              var i = 0;
+              async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
+                var contextId = ctx.build.json().contexts[i];
+                var oldVersionId = ctx.build.json().contextVersions[i];
+                ctx.user
+                  .newContext(contextId)
+                  .newVersion(oldVersionId)
+                  .fetch(function (err, body) {
+                    if (err) { return cb(err); }
+                    var expected = { // ensure infraCodeVersions were copied
+                      infraCodeVersion: equals(body.infraCodeVersion)
+                    };
+                    ctx.user
+                      .newContext(contextId)
+                      .newVersion(versionId)
+                      .fetch(expects.success(200, expected, cb));
+                  });
+                i++;
+              }, function () {});
+              tailBuildStream(newBuild.json().contextVersions[0], function (err) {
+                if (err) { return cb(err); }
+                var expected = {
+                  completed: exists
+                };
+                newBuild.fetch(expects.success(200, expected, done)); // get completed build
+              });
+            }));
+
         });
       });
       it('should fail when the source build hasn\'t finished building', function (done) {
@@ -197,6 +247,18 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
             done();
           });
       });
+      it('should fail to rebuild from an unbuilt build', function (done) {
+        var inputBody = {
+          projectId: ctx.project.id(),
+          envId: ctx.env.id(),
+          id: ctx.build.id()
+        };
+        ctx.build.rebuild({json: inputBody},
+          function (err) {
+            expect(err).to.be.ok;
+            done();
+          });
+      });
       it('should fail to create a new build if the input is garbage', function (done) {
         var inputBody = {
         };
@@ -219,7 +281,6 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         });
     });
   });
-
   describe('GET', function () {
     beforeEach(function (done) {
       nockS3();
