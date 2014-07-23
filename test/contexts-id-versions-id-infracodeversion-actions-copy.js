@@ -37,7 +37,7 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
       ctx.sourceContextVersion = contextVersion;
       count.next(err);
     });
-    multi.createContextVersion(function (err, contextVersion, context, project, user, modelArr) {
+    multi.createContextVersion(function (err, contextVersion, context, project, user) {
       ctx.user = user;
       ctx.contextVersion = contextVersion;
       ctx.context = context;
