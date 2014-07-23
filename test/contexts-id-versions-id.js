@@ -34,10 +34,27 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   });
 
   describe('GET', function () {
-    it('should get the version', function (done) {
-      var expected = ctx.contextVersion.json();
-      ctx.contextVersion.fetch(ctx.contextVersion.id(),
-        expects.success(200, expected, done));
+    describe('owner', function () {
+      it('should get the version', function (done) {
+        var expected = ctx.contextVersion.json();
+        ctx.contextVersion.fetch(ctx.contextVersion.id(),
+          expects.success(200, expected, done));
+      });
+    });
+    describe('nonowner', function () {
+      beforeEach(function (done) {
+        ctx.nonowner = multi.createUser(function (err) {
+          require('./fixtures/mocks/github/user-orgs')(ctx.nonowner); // non owner org
+          done(err);
+        });
+      });
+      it('should get access denied', function (done) {
+        ctx.nonowner
+          .newContext(ctx.contextVersion.attrs.context)
+          .newVersion(ctx.contextVersion.id())
+          .fetch(ctx.contextVersion.id(),
+            expects.error(403, /denied/, done));
+      });
     });
   });
 });
