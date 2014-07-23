@@ -64,7 +64,6 @@ describe('Build', function () {
 
   describe('Context Ids Validation', function () {
     validation.objectIdValidationChecking(createNewBuild, 'contexts', true);
-    validation.requiredValidationChecking(createNewBuild, 'contexts');
   });
 
   describe('Version Ids Validation', function () {
