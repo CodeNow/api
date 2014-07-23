@@ -151,7 +151,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
               }, done);
             }));
         });
-        it('should rebuild an existing build', function (done) {
+        it('should rebuild an existing build', {timeout:5000}, function (done) {
           var body = {
             project: ctx.project.id(),
             environment: ctx.env.id(),
