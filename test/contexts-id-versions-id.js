@@ -17,14 +17,28 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
+  function createMod(done) {
+    ctx.moderator = multi.createModerator(function (err) {
+      require('./fixtures/mocks/github/user-orgs')(ctx.moderator); // non owner org
+      done(err);
+    });
+  }
+  function createNonOwner(done) {
+    ctx.nonOwner = multi.createUser(function (err) {
+      require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
+      done(err);
+    });
+  }
+  function createContext(user) {
+    return user
+      .newContext(ctx.context.id())
+  }
   beforeEach(function (done) {
     nockS3();
     multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
@@ -32,13 +46,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
       ctx.environment = env;
       ctx.contextVersion = modelArr[0];
       ctx.context = modelArr[1];
-      ctx.nonOwner = multi.createUser(function() {
-        ctx.otherContext = ctx.nonOwner.newContext(ctx.context.id());
-        ctx.moderator = multi.createModerator(function(err) {
-          ctx.modContext = ctx.moderator.newContext(ctx.context.id());
-          done(err);
-        });
-      });
+      done();
     });
   });
 
@@ -51,14 +59,18 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         });
       });
       describe('non-owner', function () {
+        beforeEach(createNonOwner);
         it('should not get the version (403 forbidden)', function (done) {
-          ctx.otherContext.fetchVersion(ctx.contextVersion.id(), expects.errorStatus(403, done));
+          createContext(ctx.nonOwner).fetchVersion(ctx.contextVersion.id(),
+            expects.errorStatus(403, done));
         });
       });
       describe('moderator', function () {
+        beforeEach(createMod);
         it('should get the version', function (done) {
           var expected = ctx.contextVersion.json();
-          ctx.modContext.fetchVersion(ctx.contextVersion.id(), expects.success(200, expected, done));
+          createContext(ctx.moderator).fetchVersion(ctx.contextVersion.id(),
+            expects.success(200, expected, done));
         });
       });
     });
@@ -84,6 +96,11 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         });
       });
       describe('non-owner', function () {
+        beforeEach(createNonOwner);
+        beforeEach(function (done) {
+          ctx.otherContext = createContext(ctx.nonOwner);
+          done();
+        });
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
@@ -94,6 +111,11 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         });
       });
       describe('moderator', function () {
+        beforeEach(createMod);
+        beforeEach(function (done) {
+          ctx.modContext = createContext(ctx.moderator);
+          done();
+        });
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
@@ -114,13 +136,17 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         });
       });
       describe('non-owner', function () {
+        beforeEach(createNonOwner);
         it('should not delete the context (403 forbidden)', function (done) {
-          ctx.otherContext.destroyVersion(ctx.contextVersion.id(), expects.errorStatus(405, done));
+          createContext(ctx.nonOwner).destroyVersion(ctx.contextVersion.id(),
+            expects.errorStatus(405, done));
         });
       });
       describe('moderator', function () {
+        beforeEach(createMod);
         it('should delete the context', function (done) {
-          ctx.modContext.destroyVersion(ctx.contextVersion.id(), expects.errorStatus(405, done));
+          createContext(ctx.moderator).destroyVersion(ctx.contextVersion.id(),
+            expects.errorStatus(405, done));
         });
       });
     });

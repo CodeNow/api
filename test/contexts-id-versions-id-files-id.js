@@ -21,8 +21,6 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -31,45 +29,53 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
 
   beforeEach(function (done) {
     nockS3();
-    multi.createSourceContextVersion(function (err, sourceVersion, sourceContext) {
-      ctx.sourceContextVersion = sourceVersion;
-      ctx.sourceFiles = ctx.sourceContextVersion.fetchFiles({ path: '/' }, function(err) {
+    multi.createContextVersion(function (err, contextVersion, context, build, env, project, user, array){
+      ctx.contextVersion = contextVersion;
+      ctx.context = context;
+      ctx.sourceContextVersion = array[0];
+      ctx.sourceContextVersionId = array[0].id();
+      ctx.sourceContextId = array[1].id();
+      ctx.files = ctx.contextVersion.fetchFiles({ path: '/' }, function(err) {
         if (err) { done(err); }
-        ctx.sourceFile = ctx.sourceFiles.models[0];
-        ctx.sourceFileId = ctx.sourceFile.id();
-        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user){
-          ctx.build = build;
-          ctx.env = env;
-          ctx.project = project;
-          ctx.user = user;
-          ctx.contextVersion = contextVersion;
-          ctx.context = context;
-          ctx.files = ctx.contextVersion.fetchFiles({ path: '/' }, function(err) {
-            if (err) { done(err); }
-            ctx.file = ctx.files.models[0];
-            ctx.fileId = ctx.file.id();
-            ctx.dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
-            ctx.nonOwner = multi.createUser(function(err) {
-              if (err) { done(err); }
-              ctx.otherContext = ctx.nonOwner.newContext(ctx.context.id());
-              ctx.userSourceContext = ctx.nonOwner.newContext(sourceContext.id());
-              ctx.otherContextVersion = ctx.otherContext.newVersion(ctx.contextVersion.id());
-              ctx.userSourceContextVersion =
-                ctx.userSourceContext.newVersion(ctx.sourceContextVersion.id());
-              ctx.moderator = multi.createModerator(function(err) {
-                ctx.modContext = ctx.moderator.newContext(ctx.context.id());
-                ctx.modContextVersion = ctx.modContext.newVersion(ctx.contextVersion.id());
-                ctx.modSourceContext = ctx.moderator.newContext(sourceContext.id());
-                ctx.modSourceContextVersion =
-                  ctx.modSourceContext.newVersion(ctx.sourceContextVersion.id());
-                done(err);
-              });
-            });
-          });
-        });
+        ctx.file = ctx.files.models[0];
+        ctx.fileId = ctx.file.id();
+        ctx.dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
+        done();
       });
     });
   });
+
+  function createContextVersion(user, isSource) {
+    if (isSource) {
+      return user
+        .newContext(ctx.sourceContextId)
+        .newVersion(ctx.sourceContextVersionId);
+    } else {
+      return user
+        .newContext(ctx.context.id())
+        .newVersion(ctx.contextVersion.id());
+    }
+  }
+  function getSourceFile(done) {
+    var sourceFiles = ctx.sourceContextVersion.fetchFiles({ path: '/' }, function(err) {
+      if (err) { done(err); }
+      ctx.sourceFile = sourceFiles.models[0];
+      ctx.sourceFileId = ctx.sourceFile.id();
+      done();
+    });
+  }
+  function creatModUser(done) {
+    ctx.moderator = multi.createModerator(function (err) {
+      require('./fixtures/mocks/github/user-orgs')(ctx.moderator); // non owner org
+      done(err);
+    });
+  }
+  function createOtherUser(done) {
+    ctx.nonOwner = multi.createUser(function (err) {
+      require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
+      done(err);
+    });
+  }
 //  var sources = {
 //    'owner' : 'contextVersion',
 //    'non-owner' : 'otherContextVersion',
@@ -110,28 +116,37 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           });
         });
         describe('non-owner', function () {
+          beforeEach(createOtherUser);
           it('should not get the body of the file (403 forbidden)', function (done) {
-            ctx.otherContextVersion.fetchFile(ctx.fileId, expects.errorStatus(403, done));
+            createContextVersion(ctx.nonOwner).fetchFile(ctx.fileId,
+              expects.errorStatus(403, done));
           });
         });
         describe('moderator', function () {
+          beforeEach(creatModUser);
           it('should give us the body of the file', function (done) {
             var expected = ctx.file.json();
-            ctx.modContextVersion.fetchFile(ctx.fileId, expects.success(200, expected, done));
+            createContextVersion(ctx.moderator).fetchFile(ctx.fileId,
+              expects.success(200, expected, done));
           });
         });
       });
       describe('source file', function () {
+        beforeEach(getSourceFile);
         describe('user', function () {
+          beforeEach(createOtherUser);
           it('should get the body of the file', function (done) {
             var expected = ctx.sourceFile.json();
-            ctx.userSourceContextVersion.fetchFile(ctx.sourceFileId, expects.success(200, expected, done));
+            createContextVersion(ctx.nonOwner, true).fetchFile(ctx.sourceFileId,
+              expects.success(200, expected, done));
           });
         });
         describe('moderator', function () {
+          beforeEach(creatModUser);
           it('should give us the body of the file', function (done) {
             var expected = ctx.sourceFile.json();
-            ctx.modSourceContextVersion.fetchFile(ctx.sourceFileId, expects.success(200, expected, done));
+            createContextVersion(ctx.moderator, true).fetchFile(ctx.sourceFileId,
+              expects.success(200, expected, done));
           });
         });
       });
@@ -180,13 +195,18 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           });
         });
         describe('non-owner', function () {
+          beforeEach(createOtherUser);
+          beforeEach(function (done) {
+            ctx.nonOwnerContextVersion = createContextVersion(ctx.nonOwner);
+            done();
+          });
           it('should not let us update a file\'s content (403 forbidden)', function (done) {
             var opts = {
               json: {
                 body: 'non-owner new content'
               }
             };
-            ctx.otherContextVersion.updateFile(ctx.fileId, opts, expects.errorStatus(403, done));
+            ctx.nonOwnerContextVersion.updateFile(ctx.fileId, opts, expects.errorStatus(403, done));
           });
           it('should not let us rename a file', function (done) {
             var opts = {
@@ -194,10 +214,15 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
                 name: 'nonOwnerFile.txt'
               }
             };
-            ctx.otherContextVersion.updateFile(ctx.fileId, opts, expects.errorStatus(403, done));
+            ctx.nonOwnerContextVersion.updateFile(ctx.fileId, opts, expects.errorStatus(403, done));
           });
         });
         describe('moderator', function () {
+          beforeEach(creatModUser);
+          beforeEach(function (done) {
+            ctx.modContextVersion = createContextVersion(ctx.moderator);
+            done();
+          });
           it('should let us update a file\'s content', function (done) {
             var opts = {
               json: {
@@ -208,7 +233,8 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.ETag = exists;
             expected.VersionId = exists;
             expected.body = opts.json.body;
-            ctx.modContextVersion.updateFile(ctx.fileId, opts, expects.success(200, expected, done));
+            ctx.modContextVersion.updateFile(ctx.fileId, opts,
+              expects.success(200, expected, done));
           });
           it('should let us rename a file', function (done) {
             var opts = {
@@ -231,14 +257,21 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         });
       });
       describe('source file', function () {
+        beforeEach(getSourceFile);
         describe('user', function () {
+          beforeEach(createOtherUser);
+          beforeEach(function (done) {
+            ctx.nonOwnerContextVersion = createContextVersion(ctx.nonOwner, true);
+            done();
+          });
           it('should not let us update a file\'s content (403 forbidden)', function (done) {
             var opts = {
               json: {
                 body: 'non-owner new content'
               }
             };
-            ctx.userSourceContextVersion.updateFile(ctx.sourceFileId, opts, expects.errorStatus(403, done));
+            ctx.nonOwnerContextVersion.updateFile(ctx.sourceFileId, opts,
+              expects.errorStatus(403, done));
           });
           it('should not let us rename a file', function (done) {
             var opts = {
@@ -246,10 +279,16 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
                 name: 'nonOwnerFile.txt'
               }
             };
-            ctx.userSourceContextVersion.updateFile(ctx.sourceFileId, opts, expects.errorStatus(403, done));
+            ctx.nonOwnerContextVersion.updateFile(ctx.sourceFileId, opts,
+              expects.errorStatus(403, done));
           });
         });
         describe('moderator', function () {
+          beforeEach(creatModUser);
+          beforeEach(function (done) {
+            ctx.modContextVersion = createContextVersion(ctx.moderator, true);
+            done();
+          });
           it('should let us update a file\'s content', function (done) {
             var opts = {
               json: {
@@ -260,7 +299,8 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.ETag = exists;
             expected.VersionId = exists;
             expected.body = opts.json.body;
-            ctx.modSourceContextVersion.updateFile(ctx.sourceFileId, opts, expects.success(200, expected, done));
+            ctx.modContextVersion.updateFile(ctx.sourceFileId, opts,
+              expects.success(200, expected, done));
           });
           it('should let us rename a file', function (done) {
             var opts = {
@@ -273,11 +313,11 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.VersionId = exists;
             expected.name = opts.json.name;
             expected.Key = new RegExp(opts.json.name + '$');
-            var newFile = ctx.modSourceContextVersion.updateFile(ctx.sourceFileId, opts, function (err) {
+            var newFile = ctx.modContextVersion.updateFile(ctx.sourceFileId, opts, function (err) {
               if (err) {
                 return done(err);
               }
-              ctx.modSourceContextVersion.fetchFile(newFile.id(), expects.success(200, expected, done));
+              ctx.modContextVersion.fetchFile(newFile.id(), expects.success(200, expected, done));
             });
           });
         });
@@ -298,11 +338,17 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           });
         });
         describe('non-owner', function () {
+          beforeEach(createOtherUser);
           it('should not delete a file', function (done) {
-            ctx.otherContextVersion.destroyFile(ctx.fileId, expects.error(403, done));
+            createContextVersion(ctx.nonOwner).destroyFile(ctx.fileId, expects.error(403, done));
           });
         });
         describe('moderator', function () {
+          beforeEach(creatModUser);
+          beforeEach(function (done) {
+            ctx.modContextVersion = createContextVersion(ctx.moderator);
+            done();
+          });
           it('should delete a file', function (done) {
             ctx.modContextVersion.destroyFile(ctx.fileId, expects.success(204, function (err) {
               if (err) {
@@ -314,18 +360,28 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         });
       });
       describe('source file', function() {
+        beforeEach(getSourceFile);
         describe('user', function () {
+          beforeEach(createOtherUser);
           it('should not delete a file', function (done) {
-            ctx.userSourceContextVersion.destroyFile(ctx.sourceFileId, expects.error(403, done));
+            createContextVersion(ctx.nonOwner, true).destroyFile(ctx.sourceFileId,
+              expects.error(403, done));
           });
         });
         describe('moderator', function () {
+          beforeEach(creatModUser);
+          beforeEach(function (done) {
+            ctx.modContextVersion = createContextVersion(ctx.moderator, true);
+            done();
+          });
           it('should delete a file', function (done) {
-            ctx.modSourceContextVersion.destroyFile(ctx.sourceFileId, expects.success(204, function (err) {
+            ctx.modContextVersion.destroyFile(ctx.sourceFileId,
+              expects.success(204, function (err) {
               if (err) {
                 return done(err);
               }
-              ctx.modSourceContextVersion.fetchFile(ctx.sourceFileId, expects.error(404, /not found/, done));
+              ctx.modContextVersion.fetchFile(ctx.sourceFileId,
+                expects.error(404, /not found/, done));
             }));
           });
         });
