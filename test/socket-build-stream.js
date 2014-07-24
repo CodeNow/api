@@ -48,8 +48,9 @@ describe('Build Stream', function () {
 
     for (var i = numClients - 1; i >= 0; i--) {
       client = new primusClient('http://'+process.env.IPADDRESS+':'+process.env.PORT);
+      client.substream(roomId).on('data', handleData(client));
       client.on('open', requestBuildStream(client));
-      client.on('data', getSubstream(client));
+      client.on('data', checkResponse);
     }
     function requestBuildStream(client) {
       return function() {
@@ -57,16 +58,18 @@ describe('Build Stream', function () {
           id: 1,
           event: 'build-stream',
           data: {
-            id: roomId
+            id: roomId,
+            streamId: roomId
           }
         });
       };
     }
-    function getSubstream(client) {
-      return function(message) {
-        client.substream(message.data.substreamId).on('data', handleData(client));
-        clientOpenCount.next();
-      };
+    function checkResponse(message) {
+      if (message.error){
+        console.error("ERROR", message);
+        return done(message);
+      }
+      clientOpenCount.next();
     }
     function handleData(client) {
       return function(data) {

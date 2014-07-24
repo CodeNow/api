@@ -55,8 +55,9 @@ describe('build-stream', function () {
 
     for (var i = numClients - 1; i >= 0; i--) {
       client = new primusClient('http://localhost:'+process.env.PORT);
+      client.substream(roomId).on('data', handleData(client));
       client.on('open', requestBuildStream(client));
-      client.on('data', getSubstream(client));
+      client.on('data', checkResponse);
     }
     function requestBuildStream(client) {
       return function() {
@@ -64,16 +65,18 @@ describe('build-stream', function () {
           id: 1,
           event: 'build-stream',
           data: {
-            id: roomId
+            id: roomId,
+            streamId: roomId
           }
         });
       };
     }
-    function getSubstream(client) {
-      return function(message) {
-        client.substream(message.data.substreamId).on('data', handleData(client));
-        clientOpenCount.next();
-      };
+    function checkResponse(message) {
+      if (message.error){
+        console.error("ERROR", message);
+        return done(message);
+      }
+      clientOpenCount.next();
     }
     function handleData(client) {
       return function(data) {
@@ -89,18 +92,24 @@ describe('build-stream', function () {
     var testString = "this is yet another message";
 
     var client = new primusClient('http://localhost:'+process.env.PORT);
+    client.substream(roomId).on('data', handleData);
     client.on('open', function() {
       client.write({
         id: 1,
         event: 'build-stream',
         data: {
-          id: roomId
+          id: roomId,
+          streamId: roomId
         }
       });
     });
 
     client.on('data', function(message) {
-      client.substream(message.data.substreamId).on('data', handleData);
+      if (message.error) {
+        console.error("TEST ERROR", message);
+        client.end();
+        return done(message);
+      }
       sendData(testString, roomId);
     });
 
@@ -108,17 +117,17 @@ describe('build-stream', function () {
       expect(data.toString()).to.equal(testString);
       client.end();
       var client2 = new primusClient('http://localhost:'+process.env.PORT);
+      client2.substream(roomId).on('data', handleData2);
       client2.on('open', function() {
         client2.write({
           id: 1,
           event: 'build-stream',
           data: {
-            id: roomId
+            id: roomId,
+            streamId: roomId
           }
         });
       });
-
-      client2.substream(roomId).on('data', handleData2);
 
       function handleData2 (data) {
         expect(data.toString()).to.equal(testString);
