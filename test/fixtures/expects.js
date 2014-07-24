@@ -20,12 +20,13 @@ expects.success = function (statusCode, expectedKeypaths, done) {
     expect(statusCode).to.equal(code);
     if (expectedKeypaths) {
       expect(body).to.be.ok;
-      if (Array.isArray(expectedKeypaths)) {
+      if (Array.isArray(expectedKeypaths) && expectedKeypaths.length) {
         expectedKeypaths.forEach(function (expectedItem, i) {
           expectKeypaths(body[i], expectedItem);
         });
-      }
-      else {
+      } else if (Array.isArray(expectedKeypaths)) {
+        expect(body).to.have.length(expectedKeypaths.length);
+      } else {
         expectKeypaths(body, expectedKeypaths);
       }
     }

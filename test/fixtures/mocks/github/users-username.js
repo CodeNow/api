@@ -1,7 +1,7 @@
 var nock = require('nock');
 var multiline = require('multiline');
 
-module.exports = function (userId, username, isActuallyOrg) {
+module.exports = function (userId, username, isActuallyAnOrg) {
 
   nock('https://api.github.com:443')
     .filteringPath(/\/users\/[^\/]+\?.+/, '/users/' + username)
@@ -22,7 +22,7 @@ module.exports = function (userId, username, isActuallyOrg) {
       'repos_url': 'https://api.github.com/users/'+username+'/repos',
       'events_url': 'https://api.github.com/users/'+username+'/events{/privacy}',
       'received_events_url': 'https://api.github.com/users/'+username+'/received_events',
-      'type': isActuallyOrg ? 'Organization' : 'User',
+      'type': isActuallyAnOrg ? 'Organization' : 'User',
       'site_admin': false,
       'name': username,
       'company': '',
