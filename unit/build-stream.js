@@ -1,3 +1,4 @@
+require('loadenv')();
 var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
@@ -8,6 +9,8 @@ var fs = require('fs');
 var createCount = require('callback-count');
 var uuid = require('uuid');
 var buildStream = require('../lib/socket/build-stream.js');
+var socketServer = require('../lib/socket/socket-server.js');
+
 var testFile = './test.txt';
 var Primus = require('primus');
 var http = require('http');
@@ -30,21 +33,14 @@ describe('build-stream', function () {
 
   before(function (done) {
     httpServer = http.createServer();
-    primusServer = new Primus(
-      httpServer,
-      {
-        transformer: process.env.PRIMUS_TRANSFORMER,
-        parser: 'JSON'
-      });
-    buildStream.attachBuildStreamHandelerToPrimus(primusServer);
-    httpServer.listen(process.env.PORT);
-    done();
+    primusServer = socketServer.createSocketServer(httpServer);
+    socketServer.addHandler('build-stream', buildStream.buildStreamHandeler);
+    httpServer.listen(process.env.PORT, done);
   });
 
   after(function (done) {
-    httpServer.close();
     fs.unlinkSync(testFile);
-    done();
+    httpServer.close(done);
   });
 
   it('should send data to all clients', function (done) {
@@ -55,16 +51,36 @@ describe('build-stream', function () {
       sendData(testString, roomId);
     });
     var clientReadCount = createCount(numClients, done);
+    var client;
 
     for (var i = numClients - 1; i >= 0; i--) {
-      var client = new primusClient('http://localhost:'+
-        process.env.PORT+"?type=build-stream&id="+roomId);
-      client.on('data', handleData);
-      client.on('open', clientOpenCount.next);
+      client = new primusClient('http://localhost:'+process.env.PORT);
+      client.on('open', requestBuildStream(client));
+      client.on('data', getSubstream(client));
     }
-    function handleData(data) {
-      expect(data.toString()).to.equal(testString);
-      clientReadCount.next();
+    function requestBuildStream(client) {
+      return function() {
+        client.write({
+          id: 1,
+          event: 'build-stream',
+          data: {
+            id: roomId
+          }
+        });
+      };
+    }
+    function getSubstream(client) {
+      return function(message) {
+        client.substream(message.data.substreamId).on('data', handleData(client));
+        clientOpenCount.next();
+      };
+    }
+    function handleData(client) {
+      return function(data) {
+        expect(data.toString()).to.equal(testString);
+        clientReadCount.next();
+        client.end();
+      };
     }
   });
 
@@ -72,19 +88,43 @@ describe('build-stream', function () {
     var roomId = uuid();
     var testString = "this is yet another message";
 
-    var client = new primusClient('http://localhost:'+process.env.PORT+"?type=build-stream&id="+roomId);
-    client.on('data', handleData);
+    var client = new primusClient('http://localhost:'+process.env.PORT);
     client.on('open', function() {
+      client.write({
+        id: 1,
+        event: 'build-stream',
+        data: {
+          id: roomId
+        }
+      });
+    });
+
+    client.on('data', function(message) {
+      client.substream(message.data.substreamId).on('data', handleData);
       sendData(testString, roomId);
     });
 
     function handleData(data) {
       expect(data.toString()).to.equal(testString);
-      var client2 = new primusClient('http://localhost:'+process.env.PORT+"?type=build-stream&id="+roomId);
-      client2.on('data', function(data) {
-        expect(data.toString()).to.equal(testString);
-        done();
+      client.end();
+      var client2 = new primusClient('http://localhost:'+process.env.PORT);
+      client2.on('open', function() {
+        client2.write({
+          id: 1,
+          event: 'build-stream',
+          data: {
+            id: roomId
+          }
+        });
       });
+
+      client2.substream(roomId).on('data', handleData2);
+
+      function handleData2 (data) {
+        expect(data.toString()).to.equal(testString);
+        client2.end();
+        done();
+      }
     }
   });
 
