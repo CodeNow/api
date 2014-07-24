@@ -54,6 +54,18 @@ module.exports = function (cb) {
     });
 
   nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/moderatorFile\.txt/,
+    '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/moderatorFile.txt')
+    .filteringRequestBody(function () { return '*'; })
+    .put('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/moderatorFile.txt', '*')
+
+    .reply(200, '', {
+      'x-amz-id-2': uuid(),
+      'x-amz-version-id': uuid(),
+      'etag': uuid()
+    });
+
+  nock('https://s3.amazonaws.com:443')
     .filteringPath(/\/runnable.context.resources.test\/[0-9a-f]+\/source\/dir\//,
       '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/dir/')
     .filteringRequestBody(function () { return '*'; })
@@ -106,6 +118,12 @@ module.exports = function (cb) {
       '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/file.txt')
     .get('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/file.txt')
     .reply(200, 'here is some content for the file file.txt');
+
+  nock('https://s3.amazonaws.com:443')
+    .filteringPath(/\/runnable\.context\.resources\.test\/[0-9a-f]+\/source\/moderatorFile\.txt\?versionId=.+/,
+    '/runnable.context.resources.test/5358004b171f1c06f8e03197/source/moderatorFile.txt')
+    .get('/runnable.context.resources.test/5358004b171f1c06f8e03197/source/moderatorFile.txt')
+    .reply(200, 'here is some content for the file moderatorFile.txt');
 
   /* DELETES */
 
