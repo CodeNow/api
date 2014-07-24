@@ -32,7 +32,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
       ctx.environment = env;
       ctx.contextVersion = modelArr[0];
       ctx.context = modelArr[1];
-      ctx.nonOwner = multi.createUser(function(err) {
+      ctx.nonOwner = multi.createUser(function() {
         ctx.otherContext = ctx.nonOwner.newContext(ctx.context.id());
         ctx.moderator = multi.createModerator(function(err) {
           ctx.modContext = ctx.moderator.newContext(ctx.context.id());
