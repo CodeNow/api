@@ -1,3 +1,5 @@
+// NA for now, no listing of users
+
 // var Lab = require('lab');
 // var describe = Lab.experiment;
 // var it = Lab.test;

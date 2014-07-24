@@ -122,9 +122,12 @@ module.exports = {
       if (err) { return cb(err); }
       require('./mocks/docker/container-id-attach')();
       self.buildTheBuild(build, function (err) {
-        cb(err, build, env, project, user,
-            [contextVersion, context, build, env, project, user],
-            srcArray);
+        if (err) { return cb(err); }
+        contextVersion.fetch(function (err) {
+          cb(err, build, env, project, user,
+              [contextVersion, context, build, env, project, user],
+              srcArray);
+        });
       });
     });
   },

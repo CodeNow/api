@@ -2,10 +2,10 @@ var nock = require('nock');
 var uuid = require('uuid');
 var multiline = require('multiline');
 
-var orgId = 0;
+var _orgId = 1000; // these should not intersect with github user-ids
 function nextOrgId () {
-  orgId++;
-  return orgId;
+  _orgId++;
+  return _orgId;
 }
 
 module.exports = function (orgId, orgName) {
