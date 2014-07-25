@@ -16,8 +16,38 @@ var tailBuildStream = require('./fixtures/tail-build-stream');
 var createCount = require('callback-count');
 var exists = require('101/exists');
 
+var ctx = {};
+function createBuild(user) {
+  return user
+    .newProject(ctx.projectId)
+    .newEnvironment(ctx.envId)
+    .newBuild(ctx.build.id());
+}
+function createModUser(done) {
+  ctx.moderator = multi.createModerator(function (err) {
+    require('./fixtures/mocks/github/user-orgs')(ctx.moderator); // non owner org
+    done(err);
+  });
+}
+function createNonOwner(done) {
+  ctx.nonOwner = multi.createUser(function (err) {
+    require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
+    done(err);
+  });
+}
+
+
 describe('Build - /projects/:id/environments/:id/builds/:id', function () {
-  var ctx = {};
+  ctx = {};
+  beforeEach(function (done) {
+    nockS3();
+    multi.createBuild(function (err, build, env, project) {
+      ctx.build = build;
+      ctx.envId = env.id();
+      ctx.projectId = project.id();
+      done(err);
+    });
+  });
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -28,23 +58,32 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   describe('GET', function () {
-    beforeEach(function (done) {
-      nockS3();
-      multi.createBuild(function (err, build) {
-        ctx.build = build;
-        done(err);
+    describe('permissions', function () {
+      describe('owner', function () {
+        it('should return an environment build', function (done) {
+          ctx.build.fetch(expects.success(200, ctx.build.json(), done));
+        });
+      });
+      describe('non-owner', function () {
+        beforeEach(createNonOwner);
+        it('should not return an environment build', function (done) {
+          createBuild(ctx.nonOwner).fetch(expects.errorStatus(403, done));
+        });
+      });
+      describe('moderator', function () {
+        beforeEach(createModUser);
+        it('should return an environment build', function (done) {
+          createBuild(ctx.moderator).fetch(expects.success(200, ctx.build.json(), done));
+        });
       });
     });
-
-    it('should return an environment build', function (done) {
-      ctx.build.fetch(expects.success(200, ctx.build.json(), done));
-    });
   });
-
 });
 
+
+
 describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
-  var ctx = {};
+  ctx = {};
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));

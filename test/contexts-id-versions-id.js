@@ -23,7 +23,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
-  function createMod(done) {
+  function createModUser(done) {
     ctx.moderator = multi.createModerator(function (err) {
       require('./fixtures/mocks/github/user-orgs')(ctx.moderator); // non owner org
       done(err);
@@ -37,7 +37,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   }
   function createContext(user) {
     return user
-      .newContext(ctx.context.id())
+      .newContext(ctx.context.id());
   }
   beforeEach(function (done) {
     nockS3();
@@ -66,7 +66,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         });
       });
       describe('moderator', function () {
-        beforeEach(createMod);
+        beforeEach(createModUser);
         it('should get the version', function (done) {
           var expected = ctx.contextVersion.json();
           createContext(ctx.moderator).fetchVersion(ctx.contextVersion.id(),
@@ -111,7 +111,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         });
       });
       describe('moderator', function () {
-        beforeEach(createMod);
+        beforeEach(createModUser);
         beforeEach(function (done) {
           ctx.modContext = createContext(ctx.moderator);
           done();
@@ -143,7 +143,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         });
       });
       describe('moderator', function () {
-        beforeEach(createMod);
+        beforeEach(createModUser);
         it('should delete the context', function (done) {
           createContext(ctx.moderator).destroyVersion(ctx.contextVersion.id(),
             expects.errorStatus(405, done));
