@@ -34,7 +34,7 @@ describe('build-stream', function () {
   before(function (done) {
     httpServer = http.createServer();
     primusServer = socketServer.createSocketServer(httpServer);
-    socketServer.addHandler('build-stream', buildStream.buildStreamHandeler);
+    socketServer.addHandler('build-stream', buildStream.buildStreamHandler);
     httpServer.listen(process.env.PORT, done);
   });
 
