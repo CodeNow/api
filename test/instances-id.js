@@ -11,6 +11,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
+var uuid = require('uuid');
 
 describe('Instance - /instances/:id', function () {
   var ctx = {};
@@ -95,115 +96,119 @@ describe('Instance - /instances/:id', function () {
         });
       });
     });
-    // ['instance'].forEach(function (destroyName) {
-    //   describe('not founds', function() {
-    //     beforeEach(function (done) {
-    //       ctx[destroyName].destroy(done);
-    //     });
-    //     it('should not get the instance if missing (404 '+destroyName+')', function (done) {
-    //       ctx.instance.fetch(expects.errorStatus(404, done));
-    //     });
-    //   });
-    // });
+    ['instance'].forEach(function (destroyName) {
+      describe('not founds', function() {
+        beforeEach(function (done) {
+          ctx[destroyName].destroy(done);
+        });
+        it('should not get the instance if missing (404 '+destroyName+')', function (done) {
+          ctx.instance.fetch(expects.errorStatus(404, done));
+        });
+      });
+    });
   });
 
-  // describe('PATCH', function () {
-  //   var updates = [{
-  //     name: uuid()
-  //   }, {
-  //     public: true,
-  //   }, {
-  //     public: false
-  //   }];
+  describe('PATCH', function () {
+    var updates = [{
+      name: uuid()
+    }, {
+      public: true,
+    }, {
+      public: false
+    }];
 
-  //   describe('permissions', function() {
-  //     describe('owner', function () {
-  //       updates.forEach(function (json) {
-  //         var keys = Object.keys(json);
-  //         var vals = keys.map(function (key) { return json[key]; });
-  //         it('should update instance\'s '+keys+' to '+vals, function (done) {
-  //           ctx.instance.update({ json: json }, expects.updateSuccess(json, done));
-  //         });
-  //       });
-  //     });
-  //     describe('non-owner', function () {
-  //       beforeEach(function (done) {
-  //         ctx.nonOwner = multi.createUser(done);
-  //       });
-  //       updates.forEach(function (json) {
-  //         var keys = Object.keys(json);
-  //         var vals = keys.map(function (key) { return json[key]; });
-  //         it('should not update instance\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
-  //           ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
-  //           ctx.instance.update({ json: json }, expects.errorStatus(403, done));
-  //         });
-  //       });
-  //     });
-  //     describe('moderator', function () {
-  //       beforeEach(function (done) {
-  //         ctx.moderator = multi.createModerator(done);
-  //       });
-  //       updates.forEach(function (json) {
-  //         var keys = Object.keys(json);
-  //         var vals = keys.map(function (key) { return json[key]; });
-  //         it('should update instance\'s '+keys+' to '+vals, function (done) {
-  //           ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
-  //           ctx.instance.update({ json: json }, expects.updateSuccess(json, done));
-  //         });
-  //       });
-  //     });
-  //   });
-  //   ['instance'].forEach(function (destroyName) {
-  //     describe('not founds', function() {
-  //       beforeEach(function (done) {
-  //         ctx[destroyName].destroy(done);
-  //       });
-  //       updates.forEach(function (json) {
-  //         var keys = Object.keys(json);
-  //         var vals = keys.map(function (key) { return json[key]; });
-  //         it('should not update instance\'s '+keys+' to '+vals+' (404 not found)', function (done) {
-  //           ctx.instance.update({ json: json }, expects.errorStatus(404, done));
-  //         });
-  //       });
-  //     });
-  //   });
-  // });
+    describe('permissions', function() {
+      describe('owner', function () {
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should update instance\'s '+keys+' to '+vals, function (done) {
+            ctx.instance.update({ json: json }, expects.updateSuccess(json, done));
+          });
+        });
+      });
+      describe('non-owner', function () {
+        beforeEach(function (done) {
+          // TODO: remove when I merge in the github permissions stuff
+          require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+          ctx.nonOwner = multi.createUser(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should not update instance\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
+            ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
+            ctx.instance.update({ json: json }, expects.errorStatus(403, done));
+          });
+        });
+      });
+      describe('moderator', function () {
+        beforeEach(function (done) {
+          ctx.moderator = multi.createModerator(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should update instance\'s '+keys+' to '+vals, function (done) {
+            ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
+            ctx.instance.update({ json: json }, expects.updateSuccess(json, done));
+          });
+        });
+      });
+    });
+    ['instance'].forEach(function (destroyName) {
+      describe('not founds', function() {
+        beforeEach(function (done) {
+          ctx[destroyName].destroy(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should not update instance\'s '+keys+' to '+vals+' (404 not found)', function (done) {
+            ctx.instance.update({ json: json }, expects.errorStatus(404, done));
+          });
+        });
+      });
+    });
+  });
 
-  // describe('DELETE', function () {
-  //   describe('permissions', function() {
-  //     describe('owner', function () {
-  //       it('should delete the instance', function (done) {
-  //         ctx.instance.destroy(expects.success(204, done));
-  //       });
-  //     });
-  //     describe('non-owner', function () {
-  //       beforeEach(function (done) {
-  //         ctx.nonOwner = multi.createUser(done);
-  //       });
-  //       it('should not delete the instance (403 forbidden)', function (done) {
-  //         ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
-  //         ctx.instance.destroy(expects.errorStatus(403, done));
-  //       });
-  //     });
-  //     describe('moderator', function () {
-  //       beforeEach(function (done) {
-  //         ctx.moderator = multi.createModerator(done);
-  //       });
-  //       it('should delete the instance', function (done) {
-  //         ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
-  //         ctx.instance.destroy(expects.success(204, done));
-  //       });
-  //     });
-  //   });
-  //   ['instance'].forEach(function (destroyName) {
-  //     describe('not founds', function() {
-  //       beforeEach(function (done) {
-  //         ctx[destroyName].destroy(done);
-  //       });
-  //       it('should not delete the instance if missing (404 '+destroyName+')', function (done) {
-  //         ctx.instance.destroy(expects.errorStatus(404, done));
-  //       });
-  //     });
-  //   });
-  // });
+  describe('DELETE', function () {
+    describe('permissions', function() {
+      describe('owner', function () {
+        it('should delete the instance', function (done) {
+          ctx.instance.destroy(expects.success(204, done));
+        });
+      });
+      describe('non-owner', function () {
+        beforeEach(function (done) {
+          // TODO: remove when I merge in the github permissions stuff
+          require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+          ctx.nonOwner = multi.createUser(done);
+        });
+        it('should not delete the instance (403 forbidden)', function (done) {
+          ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
+          ctx.instance.destroy(expects.errorStatus(403, done));
+        });
+      });
+      describe('moderator', function () {
+        beforeEach(function (done) {
+          ctx.moderator = multi.createModerator(done);
+        });
+        it('should delete the instance', function (done) {
+          ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
+          ctx.instance.destroy(expects.success(204, done));
+        });
+      });
+    });
+    ['instance'].forEach(function (destroyName) {
+      describe('not founds', function() {
+        beforeEach(function (done) {
+          ctx[destroyName].destroy(done);
+        });
+        it('should not delete the instance if missing (404 '+destroyName+')', function (done) {
+          ctx.instance.destroy(expects.errorStatus(404, done));
+        });
+      });
+    });
+  });
 });
