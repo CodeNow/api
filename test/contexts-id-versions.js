@@ -79,7 +79,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
             if (err) { return done(err); }
             var buildExpected = {
               contexts: [ctx.context.id()],
-              contextVersions: [contextVersion.id()],
+              'contextVersions[0]._id': contextVersion.id()
             };
             ctx.build.fetch(expects.success(200, buildExpected, done));
           }));
@@ -109,7 +109,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
           if (err) { return done(err); }
           var buildExpected = {
             contexts: [ctx.context.id()],
-            contextVersions: [contextVersion.id()],
+            'contextVersions[0]._id': contextVersion.id(),
           };
           ctx.build.fetch(expects.success(200, buildExpected, done));
         }));

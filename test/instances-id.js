@@ -28,9 +28,10 @@ describe('Instance - /instances/:id', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createInstance(function (err, instance) {
+    multi.createInstance(function (err, instance, build, env, project, user) {
       if (err) { return done(err); }
       ctx.instance = instance;
+      ctx.user = user;
       done();
     });
   });
@@ -50,8 +51,7 @@ describe('Instance - /instances/:id', function () {
             ctx.nonOwner = multi.createUser(done);
           });
           it('should get the instance', function (done) {
-            ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
-            ctx.instance.fetch(expectSuccess(done));
+            ctx.nonOwner.fetchInstance(ctx.instance.id(), expectSuccess(done));
           });
         });
         describe('moderator', function () {
@@ -59,8 +59,7 @@ describe('Instance - /instances/:id', function () {
             ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
-            ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.instance.fetch(expectSuccess(done));
+            ctx.moderator.fetchInstance(ctx.instance.id(), expectSuccess(done));
           });
         });
       });
@@ -75,11 +74,12 @@ describe('Instance - /instances/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
+            require('nock').cleanAll();
+            require('./fixtures/mocks/github/user-orgs')(ctx.user);
             ctx.nonOwner = multi.createUser(done);
           });
           it('should not get the instance (403 forbidden)', function (done) {
-            ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
-            ctx.instance.fetch(expects.errorStatus(403, done));
+            ctx.nonOwner.fetchInstance(ctx.instance.id(), expects.errorStatus(403, done));
           });
         });
         describe('moderator', function () {
@@ -87,8 +87,7 @@ describe('Instance - /instances/:id', function () {
             ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
-            ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.instance.fetch(expectSuccess(done));
+            ctx.moderator.fetchInstance(ctx.instance.id(),expectSuccess(done));
           });
         });
       });

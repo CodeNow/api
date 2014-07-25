@@ -132,7 +132,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
           ctx.appCodeVersion = contextVersion.addGithubRepo(body, function (err) {
             if (err) { return done(err); }
-            multi.buildTheBuild(build, function (err) {
+            multi.buildTheBuild(user, build, function (err) {
               if (err) { return done(err); }
               done();
             });

@@ -12,8 +12,8 @@ function nextUserId () {
 module.exports = function (userId, username) {
   if (isObject(userId)) {
     // assume user model
-    var userModel = userId;
-    var github = userModel.attrs.accounts.github;
+    var user = userId.toJSON ? userId.toJSON() : userId;
+    var github = user.accounts.github;
     userId = github.id;
     username = github.login;
   }
@@ -21,7 +21,6 @@ module.exports = function (userId, username) {
     userId = userId || nextUserId();
     username = username || uuid();
   }
-
 
   nock('https://api.github.com:443')
     .filteringPath(/\/user\?.+/, '/user')
