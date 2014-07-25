@@ -103,6 +103,7 @@ describe('Instances - /instances', function () {
             public: false,
             project: ctx.project.id(),
             environment: ctx.env.id(),
+            build: ctx.build.id(),
             containers: exists
           };
           var instance = ctx.user.createInstance(json,
