@@ -37,6 +37,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
     describe('owner', function () {
       it('should get the version', function (done) {
         var expected = ctx.contextVersion.json();
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.contextVersion.fetch(ctx.contextVersion.id(),
           expects.success(200, expected, done));
       });

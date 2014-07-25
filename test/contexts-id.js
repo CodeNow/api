@@ -28,10 +28,8 @@ describe('Context - /contexts/:id', function () {
 
   beforeEach(function (done) {
     nockS3();
-    multi.createContext(function (err, context, env, project, user) {
+    multi.createContext(function (err, context, user) {
       ctx.context = context;
-      ctx.env = env;
-      ctx.project = project;
       ctx.user = user;
       done(err);
     });

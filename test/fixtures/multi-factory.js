@@ -127,8 +127,9 @@ module.exports = {
     this.createContextVersion(function (err, contextVersion, context, build, env, project, user, srcArray) {
       if (err) { return cb(err); }
       require('./mocks/docker/container-id-attach')();
-      self.buildTheBuild(build, function (err) {
+      self.buildTheBuild(user, build, function (err) {
         if (err) { return cb(err); }
+        require('./mocks/github/user')(user);
         contextVersion.fetch(function (err) {
           cb(err, build, env, project, user,
               [contextVersion, context, build, env, project, user],
@@ -157,13 +158,16 @@ module.exports = {
     });
   },
 
-  buildTheBuild: function (build, cb) {
+  buildTheBuild: function (user, build, cb) {
     require('./mocks/docker/container-id-attach')();
     build.fetch(function (err) {
       if (err) { return cb(err); }
-      tailBuildStream(build.json().contextVersions[0], function (err) { // FIXME: maybe
+      tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
         if (err) { return cb(err); }
-        build.fetch(cb); // get completed build
+        require('./mocks/github/user')(user);
+        build.fetch(function (err) {
+          cb(err);
+        }); // get completed build
       });
       build.build({ message: uuid() }, function (err) {
         if (err) {

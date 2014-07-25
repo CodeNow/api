@@ -60,7 +60,7 @@ describe('Github', function () {
         ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(ctx.repo,
           function (err) {
             if (err) { return done(err); }
-            multi.buildTheBuild(build, done);
+            multi.buildTheBuild(user, build, done);
           });
       });
     });
@@ -94,11 +94,11 @@ describe('Github', function () {
               'build.started': exists,
               'build.completed': exists,
               'build.triggeredBy.github': exists,
+              'build.triggeredBy.username': 'bkendall',
               'build.triggeredAction.manual': not(exists),
               'build.triggeredAction.rebuild': not(exists),
               'build.triggeredAction.appCodeVersion.repo': 'bkendall/flaming-octo-nemesis',
               'build.triggeredAction.appCodeVersion.commit': hooks.push.json.head_commit.id,
-              'build.triggeredAction.appCodeVersion.username': 'bkendall',
               'build.dockerImage': exists,
               'build.dockerTag': exists,
               'infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
@@ -111,10 +111,6 @@ describe('Github', function () {
               ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
             ctx.context.newVersion(body[0].contextVersions[0]).fetch(function (err, body, code) {
               // parse method creates models for this attrs. so we json them before testing.
-              body.appCodeVersions =
-                body.appCodeVersions.map(function (model) {
-                  return model.json();
-                });
               expects.success(200, versionExpected, count.next)(err, body, code);
             });
           });
