@@ -16,7 +16,7 @@ module.exports = function (userId, username, token) {
     var github = user.accounts.github;
     userId = github.id;
     username = github.login;
-    token = user.accounts.github.authToken;
+    token = user.accounts.github.accessToken;
   }
   else {
     userId = userId || nextUserId();
@@ -25,7 +25,6 @@ module.exports = function (userId, username, token) {
   }
 
   var urlRegExp = new RegExp('\/user[?]access_token='+token);
-  console.log(urlRegExp);
   nock('https://api.github.com:443')
     .filteringPath(function (path) {
       console.log(path);
