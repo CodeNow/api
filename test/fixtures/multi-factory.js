@@ -16,7 +16,13 @@ module.exports = {
     var User = require('runnable');
     var user = new User(host);
     user.githubLogin(token, function (err) {
-      cb(err, user);
+      if (err) {
+        return cb(err);
+      }
+      else {
+        user.attrs.accounts.github.accessToken = token;
+        cb(null, user);
+      }
     });
     return user;
   },

@@ -58,7 +58,7 @@ describe('Projects - /projects', function () {
       });
       it('should be listed when the user searches for the orgs repos', function (done) {
         require('./fixtures/mocks/github/users-username')(101, 'Runnable', 'Organization');
-        require('./fixtures/mocks/github/user')(ctx.user.json().accounts.github.id, 'ctxuser');
+        require('./fixtures/mocks/github/user')(ctx.user);
         require('./fixtures/mocks/github/orgs-orgname-members-username')('Runnable', 'ctxuser', 204);
         var expected = [ctx.project.json()];
         ctx.user.fetchProjects({
@@ -67,14 +67,14 @@ describe('Projects - /projects', function () {
       });
       it('should not be shown to non-members (github 302)', function (done) {
         require('./fixtures/mocks/github/users-username')(101, 'Runnable', 'Organization');
-        require('./fixtures/mocks/github/user')(ctx.user.json().accounts.github.id, 'ctxuser');
+        require('./fixtures/mocks/github/user')(ctx.otherUser);
         require('./fixtures/mocks/github/orgs-orgname-members-username')('Runnable', 'ctxuser', 302, 101);
         ctx.otherUser.fetchProjects({ githubUsername: 'Runnable' },
           expects.success(200, [], done));
       });
       it('should not be shown to non-members (github 404)', function (done) {
         require('./fixtures/mocks/github/users-username')(101, 'Runnable', 'Organization');
-        require('./fixtures/mocks/github/user')(ctx.user.json().accounts.github.id, 'ctxuser');
+        require('./fixtures/mocks/github/user')(ctx.otherUser);
         require('./fixtures/mocks/github/orgs-orgname-members-username')('Runnable', 'ctxuser', 404);
         ctx.otherUser.fetchProjects({ githubUsername: 'Runnable' },
           expects.success(200, [], done));
