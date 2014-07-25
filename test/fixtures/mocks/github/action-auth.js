@@ -5,10 +5,11 @@ module.exports = function (token, userId, username, email, cb) {
   var args = Array.prototype.slice.call(arguments);
   var index = findIndex(args, isFunction);
   args = args.slice(index+1);
-  userId   = args[0];
-  username = args[1];
-  email    = args[2];
-  cb       = args[3];
+  token    = args[0];
+  userId   = args[1];
+  username = args[2];
+  email    = args[3];
+  cb       = args[4];
 
   require('./user')(userId, username, token);
   require('./user-emails')(email);
