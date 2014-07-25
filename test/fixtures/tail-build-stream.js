@@ -10,7 +10,6 @@ var primusClient = Primus.createSocket({
 module.exports = tailBuildStream;
 
 function tailBuildStream (contextVersionId, cb) {
-  console.log('start', contextVersionId);
   var client = new primusClient(
     'http://' +
     process.env.IPADDRESS +
