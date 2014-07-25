@@ -12,17 +12,15 @@ var clone = require('101/clone');
 var RedisList = require('redis-types').List;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
+var uuid = require('uuid');
 
 describe('Instances - /instances', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -31,23 +29,49 @@ describe('Instances - /instances', function () {
 
 
   describe('POST', function () {
-    beforeEach(function (done) {
-      nockS3();
-      multi.createBuiltBuild(function (err, build, env, project, user) {
-        ctx.build = build;
-        ctx.env = env;
-        ctx.project = project;
-        ctx.user = user;
-        done(err);
+    describe('with unbuilt versions', function () {
+      beforeEach(function (done) {
+        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+          ctx.contextVersion = contextVersion;
+          ctx.context = context;
+          ctx.build = build;
+          ctx.env = env;
+          ctx.project = project;
+          ctx.user = user;
+          done(err);
+        });
       });
+      it('should error if the environment has unbuilt versions', function(done) {
+        var json = { build: ctx.build.id(), name: uuid() };
+        ctx.user.createInstance({ json: json }, expects.error(400, /does not have build\.completed/, done));
+      });
+      // TODO: patch doesn't work :(
+      // it('should error if the environment has failed versions', function(done) {
+      //   ctx.contextVersion.update({ json: {
+      //     erroredContextVersions: [ ctx.build.json().contextVersions[0] ]
+      //   }}, function (err) {
+      //     if (err) { return done(err); }
+      //     var json = { build: ctx.build.id(), name: uuid() };
+      //     ctx.user.createInstance({ json: json }, expects.error(400, /does not have build\.completed/, done));
+      //   });
+      // });
     });
 
     describe('from build', function () {
-      var requiredProjectKeys = ['build', 'name'];
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, env, project, user) {
+          ctx.build = build;
+          ctx.env = env;
+          ctx.project = project;
+          ctx.user = user;
+          done(err);
+        });
+      });
 
+      var requiredProjectKeys = ['build', 'name'];
       beforeEach(function (done) {
         ctx.json = {
-          name: "testInstance",
+          name: 'testInstance',
           build: ctx.build.id()
         };
         done();
@@ -55,7 +79,10 @@ describe('Instances - /instances', function () {
 
       requiredProjectKeys.forEach(function (missingBodyKey) {
         it('should error if missing ' + missingBodyKey, function (done) {
-          var json = ctx.json;
+          var json = {
+            name: uuid(),
+            build: ctx.build.id()
+          };
           var incompleteBody = clone(json);
           delete incompleteBody[missingBodyKey];
           var errorMsg = new RegExp(missingBodyKey+'.*'+'is required');
@@ -63,23 +90,20 @@ describe('Instances - /instances', function () {
             expects.error(400, errorMsg, done));
         });
       });
-      // FIXME: finish this test
-      // describe('with unbuilt versions', function () {
-      //   it('should error if the environment has unbuilt versions', function(done) {
-      //     var json = ctx.json;
-      //     ctx.user.createInstance({ json: json }, function (err) {
-      //       expect(err).to.be.ok;
-      //       expect(err.output.statusCode).to.equal(400);
-      //       expect(err.message).to.match(/unbuilt/);
-      //       done();
-      //     });
-      //   });
-      // });
       describe('with built versions', function () {
         it('should create an instance', function(done) {
-          var json = ctx.json;
+          var json = {
+            name: uuid(),
+            build: ctx.build.id()
+          };
           var expected = {
-            _id: exists
+            _id: exists,
+            name: json.name,
+            owner: { github: ctx.user.json().accounts.github.id },
+            public: false,
+            project: ctx.project.id(),
+            environment: ctx.env.id(),
+            containers: exists
           };
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {

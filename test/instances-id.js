@@ -5,7 +5,6 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -18,8 +17,6 @@ describe('Instance - /instances/:id', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -39,11 +36,14 @@ describe('Instance - /instances/:id', function () {
     describe('permissions', function() {
       describe('public', function() {
         beforeEach(function (done) {
-          ctx.instance.update({ json: { public: true } }, done);
+          ctx.instance.update({ json: { public: true } }, function (err, instance) {
+            ctx.expected = instance;
+            done(err);
+          });
         });
         describe('owner', function () {
           it('should get the instance', function (done) {
-            ctx.instance.fetch(expectSuccess(done));
+            ctx.instance.fetch(expects.success(200, ctx.expected, done));
           });
         });
         describe('non-owner', function () {
@@ -51,7 +51,7 @@ describe('Instance - /instances/:id', function () {
             ctx.nonOwner = multi.createUser(done);
           });
           it('should get the instance', function (done) {
-            ctx.nonOwner.fetchInstance(ctx.instance.id(), expectSuccess(done));
+            ctx.nonOwner.fetchInstance(ctx.instance.id(), expects.success(200, ctx.expected, done));
           });
         });
         describe('moderator', function () {
@@ -59,17 +59,20 @@ describe('Instance - /instances/:id', function () {
             ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
-            ctx.moderator.fetchInstance(ctx.instance.id(), expectSuccess(done));
+            ctx.moderator.fetchInstance(ctx.instance.id(), expects.success(200, ctx.expected, done));
           });
         });
       });
       describe('private', function() {
         beforeEach(function (done) {
-          ctx.instance.update({ json: { public: false } }, done);
+          ctx.instance.update({ json: { public: false } }, function (err, instance) {
+            ctx.expected = instance;
+            done(err);
+          });
         });
         describe('owner', function () {
           it('should get the instance', function (done) {
-            ctx.instance.fetch(expectSuccess(done));
+            ctx.instance.fetch(expects.success(200, ctx.expected, done));
           });
         });
         describe('non-owner', function () {
@@ -79,7 +82,7 @@ describe('Instance - /instances/:id', function () {
             ctx.nonOwner = multi.createUser(done);
           });
           it('should not get the instance (403 forbidden)', function (done) {
-            ctx.nonOwner.fetchInstance(ctx.instance.id(), expects.errorStatus(403, done));
+            ctx.nonOwner.fetchInstance(ctx.instance.id(), expects.error(403, /Access denied/, done));
           });
         });
         describe('moderator', function () {
@@ -87,7 +90,7 @@ describe('Instance - /instances/:id', function () {
             ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
-            ctx.moderator.fetchInstance(ctx.instance.id(),expectSuccess(done));
+            ctx.moderator.fetchInstance(ctx.instance.id(), expects.success(200, ctx.expected, done));
           });
         });
       });
@@ -102,25 +105,6 @@ describe('Instance - /instances/:id', function () {
     //     });
     //   });
     // });
-    function expectSuccess (done) {
-      return function (err, body, code) {
-        if (err) { return done(err); }
-
-        expect(code).to.equal(200);
-        expect(body).to.be.ok;
-        expect(body.channels).to.be.ok;
-        expect(body.containers).to.be.ok;
-        expect(body.created).to.be.ok;
-        expect(body.createdBy).to.be.ok;
-        expect(body.environment).to.be.ok;
-        expect(body.name).to.be.ok;
-        expect(body.outputViews).to.be.ok;
-        expect(body.owner).to.be.ok;
-        expect(body.project).to.be.ok;
-        expect(body).to.eql(ctx.instance.toJSON());
-        done();
-      };
-    }
   });
 
   // describe('PATCH', function () {
