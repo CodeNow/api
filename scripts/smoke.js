@@ -19,7 +19,7 @@ async.series([
     cb();
   },
   function (cb) { ctx.build = ctx.env.createBuild({}, cb); },
-  function (cb) { ctx.context = ctx.user.fetchContext(ctx.build.json().contexts[0], cb); },
+  function (cb) { ctx.context = ctx.user.createContext({ name: projectName }, cb); },
   function (cb) { ctx.contextVersion = ctx.context.createVersion({
     qs: {
       fromSource: ctx.sourceVersions.models[0].json().infraCodeVersion,
@@ -56,7 +56,7 @@ async.series([
   }
 ], function (err) {
   if (err) {
-    console.error('err', err);
+    console.error('err', err, err.stack);
     process.exit(1);
   } else {
     console.log('done!');

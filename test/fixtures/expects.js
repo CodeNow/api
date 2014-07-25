@@ -3,6 +3,7 @@ var isString = require('101/is-string');
 var expect = require('lab').expect;
 var keypather = require('keypather')();
 var debug = require('debug')('runnable-api:testing:fixtures:expects');
+var exists = require('101/exists');
 
 var expects = module.exports = function (keypath) {
   return function (val) {
@@ -41,7 +42,7 @@ expects.errorStatus = function (code, messageMatch, done) {
   }
   return function (err) {
     debug('errorStatus', err);
-    expect(err).to.be.ok;
+    expect(err).to.satisfy(exists, 'Expected error response');
     expect(err.output.statusCode).to.equal(code);
     if (messageMatch instanceof RegExp) {
       expect(err.message).to.match(messageMatch);

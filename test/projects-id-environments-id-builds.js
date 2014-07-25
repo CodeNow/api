@@ -16,11 +16,8 @@ var not = require('101/not');
 var Build = require('models/mongo/build');
 var exists = require('101/exists');
 var tailBuildStream = require('./fixtures/tail-build-stream');
-var equals = function (compare) {
-  return function (val) {
-    return val === compare;
-  };
-};
+var equals = require('101/equals');
+
 
 describe('Builds - /projects/:id/environments/:id/builds', function () {
   var ctx = {};
@@ -134,6 +131,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
               async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
                 var contextId = ctx.build.json().contexts[i];
                 var oldVersionId = ctx.build.json().contextVersions[i];
+                require('./fixtures/mocks/github/user')(ctx.user);
                 ctx.user
                   .newContext(contextId)
                   .newVersion(oldVersionId)
@@ -142,6 +140,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
                     var expected = { // ensure infraCodeVersions were copied
                       infraCodeVersion: not(equals(body.infraCodeVersion))
                     };
+                    require('./fixtures/mocks/github/user')(ctx.user);
                     ctx.user
                       .newContext(contextId)
                       .newVersion(versionId)
@@ -176,6 +175,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
               async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
                 var contextId = ctx.build.json().contexts[i];
                 var oldVersionId = ctx.build.json().contextVersions[i];
+                require('./fixtures/mocks/github/user')(ctx.user);
                 ctx.user
                   .newContext(contextId)
                   .newVersion(oldVersionId)
@@ -184,6 +184,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
                     var expected = { // ensure infraCodeVersions were copied
                       infraCodeVersion: equals(body.infraCodeVersion)
                     };
+                    require('./fixtures/mocks/github/user')(ctx.user);
                     ctx.user
                       .newContext(contextId)
                       .newVersion(versionId)
@@ -196,6 +197,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
                 var expected = {
                   completed: exists
                 };
+                require('./fixtures/mocks/github/user')(ctx.user);
                 newBuild.fetch(expects.success(200, expected, done)); // get completed build
               });
             }));
@@ -314,6 +316,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
           ctx.builtBuild.json()
         ];
         var query = { started: true };
+        require('./fixtures/mocks/github/user')(ctx.user2);
         ctx.env2.fetchBuilds(query, expects.success(200, expected, done));
       });
       describe('permissions', function () {
@@ -323,6 +326,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         });
         it('should not return private projects to other users', function (done) {
           var query = { started: true };
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.user
             .newProject(ctx.project2.id())
             .newEnvironment(ctx.env2.id())

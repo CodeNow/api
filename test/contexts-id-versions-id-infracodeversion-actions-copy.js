@@ -92,6 +92,7 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
           });
         });
         it('should get access denied', function (done) {
+          require('./fixtures/mocks/github/user')(ctx.nonowner);
           ctx.nonowner
             .newContext(ctx.contextVersion.attrs.context)
             .newVersion(ctx.contextVersion.id())

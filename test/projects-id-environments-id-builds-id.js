@@ -107,14 +107,18 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
     it('should return an environment build', { timeout: 5000 }, function (done) {
       require('./fixtures/mocks/docker/container-id-attach')();
-      ctx.build.build(ctx.buildId, {message:'hello!'}, function (err, body, code) {
-        if (err) { return done(err); }
+      ctx.build.build(ctx.buildId, {message: 'hello!'}, function (err, body, code) {
+        if (err) {
+          return done(err);
+        }
 
         expect(code).to.equal(201);
         expect(body).to.be.ok;
 
         tailBuildStream(body.contextVersions[0], function (err, log) {
-          if (err) { return done(err); }
+          if (err) {
+            return done(err);
+          }
 
           expect(log).to.contain('Successfully built');
 
@@ -136,5 +140,29 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
         });
       });
     });
+    describe('built', function() {
+      beforeEach(function (done) {
+        nockS3();
+        multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
+          ctx.build = build;
+          ctx.contextVersion = modelArr[0];
+          ctx.user = user;
+          require('./fixtures/mocks/github/user')(ctx.user);
+          done(err);
+        });
+      });
+      it('should return a build with contextVersions (w/ usernames) populated',
+        function (done) {
+          var expected = ctx.build.json();
+          expected.contextVersions = [
+            ctx.contextVersion.json()
+          ];
+          expected.contextVersions[0].build.triggeredBy.username =
+            ctx.user.json().accounts.github.username;
+          ctx.build.fetch(expects.success(200, expected, done));
+        });
+    });
   });
 });
+
+

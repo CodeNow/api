@@ -29,14 +29,11 @@ describe('Versions - /contexts/:contextid/versions', function () {
   beforeEach(function (done) {
     nockS3();
     var count = createCount(2, done);
-    // FIXME: actually make me a moderator
-    ctx.moderator = multi.createUser(function (err) {
-      if (err) { return done(err); }
-      var body = { name: uuid(), isSource: true };
-      ctx.sourceContext = ctx.moderator.createContext(body, function (err) {
-        if (err) { return done(err); }
-        ctx.sourceVersion = ctx.sourceContext.createVersion(count.next);
-      });
+    multi.createSourceContextVersion(function (err, contextVersion, context, moderator) {
+      ctx.sourceContextVersion = contextVersion;
+      ctx.sourceContext = context;
+      ctx.moderator = moderator;
+      count.next(err);
     });
     multi.createEnv(function (err, env, project, user) {
       if (err) { return done(err); }
@@ -46,7 +43,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
       var body = { environment: ctx.env.id() };
       ctx.build = ctx.env.createBuild(body, function (err) {
         if (err) { return done(err); }
-        ctx.context = ctx.user.fetchContext(ctx.build.attrs.contexts[0], count.next);
+        ctx.context = ctx.user.createContext({ name: uuid() }, count.next);
       });
     });
   });
@@ -58,15 +55,40 @@ describe('Versions - /contexts/:contextid/versions', function () {
       };
       var expected = {
         environment: ctx.env.id(),
-        context: ctx.context.id(),
         infraCodeVersion: exists
       };
       ctx.context.createVersion(body, expects.success(201, expected, done));
     });
+    describe('toBuild query', function() {
+      it('should create a new version', function (done) {
+        var body = {
+          environment: ctx.env.id()
+        };
+        var expected = {
+          environment: ctx.env.id(),
+          infraCodeVersion: exists
+        };
+        var opts = {
+          json: body,
+          qs: {
+            toBuild: ctx.build.id()
+          }
+        };
+        var contextVersion =
+          ctx.context.createVersion(opts, expects.success(201, expected, function (err) {
+            if (err) { return done(err); }
+            var buildExpected = {
+              contexts: [ctx.context.id()],
+              'contextVersions[0]._id': contextVersion.id()
+            };
+            ctx.build.fetch(expects.success(200, buildExpected, done));
+          }));
+      });
+    });
     it('should create a new version from a source infrastructure code version', function (done) {
       var query = {
-        // FIXME: fromSource should really be the sourceVersionId
-        fromSource: ctx.sourceVersion.attrs.infraCodeVersion,
+        // FIXME: fromSource should really be the sourceContextVersionId
+        fromSource: ctx.sourceContextVersion.attrs.infraCodeVersion,
         toBuild: ctx.build.id()
       };
       var body = {
@@ -75,14 +97,22 @@ describe('Versions - /contexts/:contextid/versions', function () {
       };
       var expected = {
         createdBy: { github: ctx.user.toJSON().accounts.github.id },
-        context: ctx.context.id(),
         environment: ctx.env.id(),
         infraCodeVersion: exists
       };
-      ctx.context.createVersion({
+      var opts = {
         qs: query,
         json: body
-      }, expects.success(201, expected, done));
+      };
+      var contextVersion =
+        ctx.context.createVersion(opts, expects.success(201, expected, function (err) {
+          if (err) { return done(err); }
+          var buildExpected = {
+            contexts: [ctx.context.id()],
+            'contextVersions[0]._id': contextVersion.id(),
+          };
+          ctx.build.fetch(expects.success(200, buildExpected, done));
+        }));
     });
   });
 
