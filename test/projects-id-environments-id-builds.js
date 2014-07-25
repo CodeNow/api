@@ -319,6 +319,18 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         require('./fixtures/mocks/github/user')(ctx.user2);
         ctx.env2.fetchBuilds(query, expects.success(200, expected, done));
       });
+      it('should query builds by environment and buildNumber', function (done) {
+        var builtBuildData = ctx.builtBuild.json();
+        var expected = [
+          builtBuildData
+        ];
+        var query = {
+          environment: builtBuildData.environment,
+          buildNumber: builtBuildData.buildNumber
+        };
+        require('./fixtures/mocks/github/user')(ctx.user2);
+        ctx.env2.fetchBuilds(query, expects.success(200, expected, done));
+      });
       describe('permissions', function () {
         beforeEach(function (done) {
           require('./fixtures/mocks/github/user-orgs')(ctx.user);
