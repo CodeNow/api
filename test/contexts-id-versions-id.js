@@ -55,12 +55,14 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
       describe('owner', function () {
         it('should get the version', function (done) {
           var expected = ctx.contextVersion.json();
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.contextVersion.fetch(ctx.contextVersion.id(), expects.success(200, expected, done));
         });
       });
       describe('non-owner', function () {
         beforeEach(createNonOwner);
         it('should not get the version (403 forbidden)', function (done) {
+          require('./fixtures/mocks/github/user')(ctx.nonOwner);
           createContext(ctx.nonOwner).fetchVersion(ctx.contextVersion.id(),
             expects.errorStatus(403, done));
         });
@@ -68,7 +70,12 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
       describe('moderator', function () {
         beforeEach(createModUser);
         it('should get the version', function (done) {
+          require('./fixtures/mocks/github/user')(ctx.moderator);
           var expected = ctx.contextVersion.json();
+          require('nock').cleanAll();
+          // Calling the nock for the original user since the fetch call has to look up the username
+          // by id.
+          require('./fixtures/mocks/github/user')(ctx.user);
           createContext(ctx.moderator).fetchVersion(ctx.contextVersion.id(),
             expects.success(200, expected, done));
         });

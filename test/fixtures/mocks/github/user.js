@@ -9,21 +9,29 @@ function nextUserId () {
   return userId;
 }
 
-module.exports = function (userId, username) {
+module.exports = function (userId, username, token) {
   if (isObject(userId)) {
     // assume user model
     var user = userId.toJSON ? userId.toJSON() : userId;
     var github = user.accounts.github;
     userId = github.id;
     username = github.login;
+    token = user.accounts.github.authToken;
   }
   else {
     userId = userId || nextUserId();
     username = username || uuid();
+    token = token || uuid();
   }
 
+  var urlRegExp = new RegExp('\/user[?]access_token='+token);
+  console.log(urlRegExp);
   nock('https://api.github.com:443')
-    .filteringPath(/\/user\?.+/, '/user')
+    .filteringPath(function (path) {
+      console.log(path);
+      return path;
+    })
+    .filteringPath(urlRegExp, '/user')
     .get('/user')
     .reply(200, {
       'login': username,

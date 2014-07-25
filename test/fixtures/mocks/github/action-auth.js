@@ -1,7 +1,7 @@
 var isFunction = require('101/is-function');
 var findIndex = require('101/find-index');
 
-module.exports = function (userId, username, email, cb) {
+module.exports = function (token, userId, username, email, cb) {
   var args = Array.prototype.slice.call(arguments);
   var index = findIndex(args, isFunction);
   args = args.slice(index+1);
@@ -10,7 +10,7 @@ module.exports = function (userId, username, email, cb) {
   email    = args[2];
   cb       = args[3];
 
-  require('./user')(userId, username);
+  require('./user')(userId, username, token);
   require('./user-emails')(email);
   require('./user-emails')(email);
 

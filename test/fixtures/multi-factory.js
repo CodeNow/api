@@ -11,10 +11,11 @@ var noop = function () {};
 
 module.exports = {
   createUser: function (cb) {
-    require('./mocks/github/action-auth')();
+    var token = uuid();
+    require('./mocks/github/action-auth')(token);
     var User = require('runnable');
     var user = new User(host);
-    user.githubLogin('mysupersecrettoken', function (err) {
+    user.githubLogin(token, function (err) {
       cb(err, user);
     });
     return user;
