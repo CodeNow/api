@@ -168,7 +168,8 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
               return true;
             },
             started: exists,
-            completed: not(exists)
+            completed: not(exists),
+            failed: equals(false)
           };
           var newBuild = ctx.build.rebuild(body,
             expects.success(201, expected, function (err) {
@@ -197,7 +198,9 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
               tailBuildStream(newBuild.json().contextVersions[0], function (err) {
                 if (err) { return cb(err); }
                 var expected = {
-                  completed: exists
+                  completed: exists,
+                  duration: exists,
+                  failed: equals(false)
                 };
                 require('./fixtures/mocks/github/user')(ctx.user);
                 newBuild.fetch(expects.success(200, expected, done)); // get completed build
@@ -359,7 +362,6 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
               builtBuildData2,
               builtBuildData
             ];
-            console.log(builtBuildData.buildNumber, builtBuildData2.buildNumber);
             var query = {
               started: true,
               environment: builtBuildData.environment,
