@@ -34,6 +34,7 @@ describe('Instance', function () {
       createdBy: { github: validation.VALID_GITHUB_ID },
       project: validation.VALID_OBJECT_ID,
       environment: validation.VALID_OBJECT_ID,
+      build: validation.VALID_OBJECT_ID,
       created: Date.now(),
       containers: [createNewContainer()],
       outputViews: [{
