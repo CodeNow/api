@@ -26,15 +26,12 @@ module.exports = function (userId, username, token) {
 
   var urlRegExp = new RegExp('\/user[?]access_token='+token);
   nock('https://api.github.com:443')
-    .filteringPath(function (path) {
-      console.log(path);
-      return path;
-    })
     .filteringPath(urlRegExp, '/user')
     .get('/user')
     .reply(200, {
       'login': username,
       'id': userId,
+      'access_token': token,
       'avatar_url': 'https://avatars.githubusercontent.com/u/'+userId+'?',
       'gravatar_id': 'wrong',
       'url': 'https://api.github.com/users/'+username,

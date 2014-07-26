@@ -68,6 +68,8 @@ describe('Projects - /projects', function () {
       it('should not be shown to non-members (github 302)', function (done) {
         require('./fixtures/mocks/github/users-username')(101, 'Runnable', 'Organization');
         require('./fixtures/mocks/github/user')(ctx.otherUser);
+//        require('./fixtures/mocks/github/users-username')
+//        (ctx.otherUser.json().accounts.github.id, ctx.otherUser.json().accounts.github.username);
         require('./fixtures/mocks/github/orgs-orgname-members-username')('Runnable', 'ctxuser', 302, 101);
         ctx.otherUser.fetchProjects({ githubUsername: 'Runnable' },
           expects.success(200, [], done));
@@ -195,7 +197,7 @@ describe('Projects - /projects', function () {
           'owner.github': userGithubId,
           'environments.length': 1,
           'environments[0].name': 'master',
-          'environments[0].owner.github': userGithubId,
+          'environments[0].owner.github': userGithubId
         };
         ctx.user.createProject({
           name: 'name',
@@ -212,7 +214,7 @@ describe('Projects - /projects', function () {
           'owner.github': userGithubId,
           'environments.length': 1,
           'environments[0].name': 'master',
-          'environments[0].owner.github': userGithubId,
+          'environments[0].owner.github': userGithubId
         };
         ctx.user.createProject({ name: 'name' }, expects.success(201, expected, done));
       });
@@ -227,7 +229,7 @@ describe('Projects - /projects', function () {
           'owner.github': userGithubId,
           'environments.length': 1,
           'environments[0].name': 'master',
-          'environments[0].owner.github': userGithubId,
+          'environments[0].owner.github': userGithubId
         };
         var body = {
           name: 'name',

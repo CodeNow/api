@@ -48,7 +48,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           ctx.project = project;
           ctx.user = user;
           ctx.repoName = 'Dat-middleware';
-          ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
+          ctx.fullRepoName = ctx.user.attrs.accounts.github.login+'/'+ctx.repoName;
           require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
           require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
           done(err);

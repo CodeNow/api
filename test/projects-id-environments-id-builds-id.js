@@ -98,9 +98,10 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
   describe('POST', function () {
     beforeEach(function (done) {
       nockS3();
-      multi.createContextVersion(function (err, contextVersion, version, build) {
+      multi.createContextVersion(function (err, contextVersion, version, build, env, project, user) {
         ctx.contextVersion = contextVersion;
         ctx.build = build;
+        ctx.user = user;
         done(err);
       });
     });
@@ -126,6 +127,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
           var buildExpected = {
             completed: exists
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.build.fetch(expects.success(200, buildExpected, count.next));
           var versionExpected = {
             'dockerHost': exists,
@@ -134,8 +136,9 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
             'build.completed': exists,
             'build.dockerImage': exists,
             'build.dockerTag': exists,
-            'build.triggeredAction.manual': true,
+            'build.triggeredAction.manual': true
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
         });
       });
