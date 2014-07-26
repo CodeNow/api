@@ -99,6 +99,7 @@ describe('Github', function () {
               'build.triggeredAction.rebuild': not(exists),
               'build.triggeredAction.appCodeVersion.repo': 'bkendall/flaming-octo-nemesis',
               'build.triggeredAction.appCodeVersion.commit': hooks.push.json.head_commit.id,
+              'build.triggeredAction.appCodeVersion.commitLog': hooks.push.json.commits,
               'build.dockerImage': exists,
               'build.dockerTag': exists,
               'infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
