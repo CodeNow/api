@@ -43,7 +43,7 @@ describe('Instances - /instances', function () {
       });
       it('should error if the environment has unbuilt versions', function(done) {
         var json = { build: ctx.build.id(), name: uuid() };
-        ctx.user.createInstance({ json: json }, expects.error(400, /does not have build\.completed/, done));
+        ctx.user.createInstance({ json: json }, expects.error(400, /unbuilt/, done));
       });
       // TODO: patch doesn't work :(
       // it('should error if the environment has failed versions', function(done) {

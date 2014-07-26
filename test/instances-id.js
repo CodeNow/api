@@ -179,7 +179,6 @@ describe('Instance - /instances/:id', function () {
       delete expected.containers;
       delete expected.__v;
       expected['containers[0]'] = notEquals(ctx.instance.json().containers[0]);
-      console.log(expected);
       ctx.instance.restart(expects.success(200, expected, done));
     });
   });
