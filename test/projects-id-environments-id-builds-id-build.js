@@ -15,6 +15,7 @@ var expects = require('./fixtures/expects');
 var tailBuildStream = require('./fixtures/tail-build-stream');
 var createCount = require('callback-count');
 var exists = require('101/exists');
+var equals = require('101/equals');
 
 describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
   var ctx = {};
@@ -54,7 +55,9 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
           var count = createCount(2, done);
           var buildExpected = {
-            completed: exists
+            completed: exists,
+            duration: exists,
+            failed: equals(false)
           };
           ctx.build.fetch(expects.success(200, buildExpected, count.next));
           var versionExpected = {

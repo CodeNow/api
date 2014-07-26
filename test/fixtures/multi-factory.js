@@ -124,6 +124,7 @@ module.exports = {
   },
   createBuiltBuild: function (cb) {
     var self = this;
+    require('nock').cleanAll(),
     this.createContextVersion(function (err, contextVersion, context, build, env, project, user, srcArray) {
       if (err) { return cb(err); }
       require('./mocks/docker/container-id-attach')();
@@ -159,6 +160,7 @@ module.exports = {
   },
 
   buildTheBuild: function (user, build, cb) {
+    require('nock').cleanAll(),
     require('./mocks/docker/container-id-attach')();
     build.fetch(function (err) {
       if (err) { return cb(err); }
