@@ -17,6 +17,8 @@ var Build = require('models/mongo/build');
 var exists = require('101/exists');
 var tailBuildStream = require('./fixtures/tail-build-stream');
 var equals = require('101/equals');
+var uuid = require('uuid');
+require('console-trace')({ always:true, right:true });
 
 
 describe('Builds - /projects/:id/environments/:id/builds', function () {
@@ -303,11 +305,14 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
     });
     describe('filter by in progress and completed', function () {
       beforeEach(function (done) {
-        multi.createBuiltBuild(function (err, build, env, project, user) {
+        multi.createBuiltBuild(function (err, build, env, project, user, modelArr, srcArr) {
+          if (err) { return done(err); }
           ctx.builtBuild = build;
           ctx.env2 = env;
           ctx.project2 = project;
           ctx.user2 = user;
+          ctx.context2 = modelArr[1];
+          ctx.srcContextVersion = srcArr[0];
           ctx.unbuiltBuild = env.createBuild({ parentBuild: ctx.builtBuild.id() }, done);
         });
       });
@@ -330,6 +335,42 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         };
         require('./fixtures/mocks/github/user')(ctx.user2);
         ctx.env2.fetchBuilds(query, expects.success(200, expected, done));
+      });
+      describe('sort', function() {
+        describe('by buildNumber', function() {
+          beforeEach(function (done) {
+            var user = ctx.user2;
+            var body = {
+              message: uuid(),
+              parentBuild: ctx.builtBuild.id()
+            };
+            var build = ctx.env2.createBuild(body, function (err) {
+              if (err) { return done(err); }
+              multi.buildTheBuild(user, build, function (err) {
+                ctx.builtBuild2 = build;
+                done(err);
+              });
+            });
+          });
+          it('should query builds by environment (sort by buildNumber)', function (done) {
+            var builtBuildData = ctx.builtBuild.json();
+            var builtBuildData2 = ctx.builtBuild2.json();
+            var expected = [
+              builtBuildData2,
+              builtBuildData
+            ];
+            console.log(builtBuildData.buildNumber, builtBuildData2.buildNumber);
+            var query = {
+              started: true,
+              environment: builtBuildData.environment,
+              sort: '-buildNumber'
+            };
+            require('nock').cleanAll(),
+            require('./fixtures/mocks/github/user')(ctx.user2);
+            require('./fixtures/mocks/github/user')(ctx.user2);
+            ctx.env2.fetchBuilds(query, expects.success(200, expected, done));
+          });
+        });
       });
       describe('permissions', function () {
         beforeEach(function (done) {

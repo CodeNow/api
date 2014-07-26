@@ -53,6 +53,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
       it('should return a build with contextVersions (w/ usernames) populated',
         function (done) {
           var expected = ctx.build.json();
+          expected.duration = exists;
           expected.contextVersions = [
             ctx.contextVersion.json()
           ];
