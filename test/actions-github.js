@@ -64,7 +64,7 @@ describe('Github', function () {
           });
       });
     });
-    it('should start a build', {timeout:350}, function (done) {
+    it('should start a build', {timeout:3000}, function (done) {
       var options = hooks.push;
       request.post(options, function (err, res, body) {
         if (err) {

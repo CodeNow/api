@@ -11,6 +11,7 @@ var dock = require('./fixtures/dock');
 var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
+var exists = require('101/exists');
 
 describe('Build - /projects/:id/environments/:id/builds/:id', function () {
   var ctx = {};
@@ -53,6 +54,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
       it('should return a build with contextVersions (w/ usernames) populated',
         function (done) {
           var expected = ctx.build.json();
+          expected.duration = exists;
           expected.contextVersions = [
             ctx.contextVersion.json()
           ];

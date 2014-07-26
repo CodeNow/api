@@ -14,23 +14,33 @@ function tailBuildStream (contextVersionId, cb) {
     'http://' +
     process.env.IPADDRESS +
     ':' +
-    process.env.PORT +
-    "?type=build-stream&id=" + contextVersionId);
+    process.env.PORT);
+  // create substream for build logs
+  var buildStream = client.substream(contextVersionId);
+
+  // start build stream
+  client.write({
+    id: 1,
+    event: 'build-stream',
+    data: {
+      id: contextVersionId,
+      streamId: contextVersionId
+    }
+  });
 
   var log = '';
-  client.on('err', function (err) {
-    cb(err);
-  });
-  client.on('end', function () {
-    // FIXME: get rid of timeout issue
-    setTimeout(function () {
-      // build is marked completed a few ms after the version build completes
-      cb(null, log);
-    }, 30);
-  });
-  client.on('data', function(data) {
+  buildStream.on('data', function(data) {
     log += data;
   });
+
+  client.on('data', function(msg) {
+    if(msg.event === 'BUILD_STREAM_ENDED' &&
+      msg.data.substreamId === contextVersionId) {
+      client.end();
+      return cb(null, msg.data.log);
+    }
+  });
+
   if (!cb) {
     return client;
   }
