@@ -172,6 +172,18 @@ describe('Instance - /instances/:id', function () {
     });
   });
 
+  describe('RESTART', function () {
+    it('should create all new containers', function (done) {
+      function notEquals (val) { return function (v) { return v !== val; };}
+      var expected = ctx.instance.json();
+      delete expected.containers;
+      delete expected.__v;
+      expected['containers[0]'] = notEquals(ctx.instance.json().containers[0]);
+      console.log(expected);
+      ctx.instance.restart(expects.success(200, expected, done));
+    });
+  });
+
   describe('DELETE', function () {
     describe('permissions', function() {
       describe('owner', function () {
