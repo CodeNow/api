@@ -8,7 +8,6 @@ var afterEach = Lab.afterEach;
 var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 
 describe('Version - /contexts/:contextId/versions/:id', function () {
@@ -23,7 +22,6 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    nockS3();
     multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
       ctx.user = user;
       ctx.environment = env;

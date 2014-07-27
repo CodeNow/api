@@ -8,7 +8,6 @@ var afterEach = Lab.afterEach;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
@@ -27,7 +26,6 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
   describe('GET', function () {
     describe('unbuilt', function() {
       beforeEach(function (done) {
-        nockS3();
         multi.createBuild(function (err, build) {
           ctx.build = build;
           done(err);
@@ -42,7 +40,6 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
     // });
     describe('built', function() {
       beforeEach(function (done) {
-        nockS3();
         multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
           ctx.build = build;
           ctx.contextVersion = modelArr[0];

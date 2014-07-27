@@ -78,9 +78,10 @@ module.exports = {
   createSourceContextVersion: function (cb) {
     this.createSourceContext(function (err, context, moderator) {
       if (err) { return (err); }
-      require('../fixtures/nock-s3')();
+      require('./mocks/s3/put-object')(context.id(), '/');
       var version = context.createVersion(function (err) {
         if (err) { return (err); }
+        require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
         require('async').series([
           version.createFile.bind(version, { json: {
             name: 'Dockerfile',
@@ -106,16 +107,24 @@ module.exports = {
             if (err) { return cb(err); }
             var opts = {};
             opts.qs = {
-              fromSource: srcContextVersion.json().infraCodeVersion,
+              // fromSource: srcContextVersion.json().infraCodeVersion,
               toBuild: build.id()
             };
             opts.json = {
               project: project.id(),
               environment: env.id()
             };
+            require('./mocks/s3/put-object')(context.id(), '/');
             var contextVersion = context.createVersion(opts, function (err) {
-              cb(err, contextVersion, context, build, env, project, user,
-                [srcContextVersion, srcContext, moderator]);
+              if (err) { return cb(err); }
+              require('./mocks/s3/get-object')(srcContext.id(), '/');
+              require('./mocks/s3/get-object')(srcContext.id(), '/Dockerfile');
+              require('./mocks/s3/put-object')(context.id(), '/');
+              require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
+              contextVersion.copyFilesFromSource(srcContextVersion.json().infraCodeVersion, function (err) {
+                cb(err, contextVersion, context, build, env, project, user,
+                  [srcContextVersion, srcContext, moderator]);
+              });
             });
           });
         });

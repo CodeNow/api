@@ -10,7 +10,6 @@ var krain = require('krain');
 var rimraf = require('rimraf');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var fs = require('fs');
 var path = require('path');
@@ -41,8 +40,6 @@ describe('File System - /instances/:id/containers/:id/files', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -50,7 +47,6 @@ describe('File System - /instances/:id/containers/:id/files', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    nockS3();
     multi.createContainer(function (err, container) {
       if (err) { return done(err); }
       ctx.container = container;

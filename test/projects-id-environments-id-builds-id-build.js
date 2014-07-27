@@ -9,7 +9,6 @@ var expect = Lab.expect;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var tailBuildStream = require('./fixtures/tail-build-stream');
@@ -32,7 +31,6 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
   describe('POST', function () {
     beforeEach(function (done) {
-      nockS3();
       multi.createContextVersion(function (err, contextVersion, version, build) {
         ctx.contextVersion = contextVersion;
         ctx.build = build;

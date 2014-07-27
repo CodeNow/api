@@ -9,7 +9,6 @@ var afterEach = Lab.afterEach;
 var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
 var uuid = require('uuid');
@@ -27,7 +26,6 @@ describe('Versions - /contexts/:contextid/versions', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    nockS3();
     var count = createCount(2, done);
     multi.createSourceContextVersion(function (err, contextVersion, context, moderator) {
       ctx.sourceContextVersion = contextVersion;
@@ -57,6 +55,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
         environment: ctx.env.id(),
         infraCodeVersion: exists
       };
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
       ctx.context.createVersion(body, expects.success(201, expected, done));
     });
     describe('toBuild query', function() {
@@ -74,6 +73,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
             toBuild: ctx.build.id()
           }
         };
+        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
         var contextVersion =
           ctx.context.createVersion(opts, expects.success(201, expected, function (err) {
             if (err) { return done(err); }
@@ -85,35 +85,5 @@ describe('Versions - /contexts/:contextid/versions', function () {
           }));
       });
     });
-    it('should create a new version from a source infrastructure code version', function (done) {
-      var query = {
-        // FIXME: fromSource should really be the sourceContextVersionId
-        fromSource: ctx.sourceContextVersion.attrs.infraCodeVersion,
-        toBuild: ctx.build.id()
-      };
-      var body = {
-        project: ctx.project.id(),
-        environment: ctx.env.id()
-      };
-      var expected = {
-        createdBy: { github: ctx.user.toJSON().accounts.github.id },
-        environment: ctx.env.id(),
-        infraCodeVersion: exists
-      };
-      var opts = {
-        qs: query,
-        json: body
-      };
-      var contextVersion =
-        ctx.context.createVersion(opts, expects.success(201, expected, function (err) {
-          if (err) { return done(err); }
-          var buildExpected = {
-            contexts: [ctx.context.id()],
-            'contextVersions[0]._id': contextVersion.id(),
-          };
-          ctx.build.fetch(expects.success(200, buildExpected, done));
-        }));
-    });
   });
-
 });

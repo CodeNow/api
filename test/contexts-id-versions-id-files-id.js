@@ -11,7 +11,6 @@ var hasKeypaths = require('101/has-keypaths');
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
@@ -30,7 +29,6 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    nockS3();
     multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
       ctx.build = build;
       ctx.env = env;
@@ -46,12 +44,14 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
     it('should give us the body of the file', function (done) {
       var file = ctx.files.models[0];
       var expected = file.json();
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
       file.fetch(expects.success(200, expected, done));
     });
     it('should give us the body of the file', function (done) {
       var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
       var expected = dockerfile.json();
       expected.body = 'FROM ubuntu';
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile', 'FROM ubuntu');
       dockerfile.fetch(expects.success(200, expected, done));
     });
   });
@@ -68,11 +68,8 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
       expected.ETag = exists;
       expected.VersionId = exists;
       expected.body = opts.json.body;
-      dockerfile.update(opts, expects.success(200, expected, function (err) {
-        done(err);
-        // below fails bc the mock is stupid, and returns the same info.
-        // dockerfile.fetch(expects.success(200, expected, done));
-      }));
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/Dockerfile');
+      dockerfile.update(opts, expects.success(200, expected, done));
     });
     it('should let us rename a file', function (done) {
       var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
@@ -86,8 +83,12 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
       expected.VersionId = exists;
       expected.name = opts.json.name;
       expected.Key = new RegExp(opts.json.name+'$');
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
+      require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), '/Dockerfile');
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/file.txt');
       dockerfile.update(opts, expects.success(200, expected, function (err) {
         if (err) { return done(err); }
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/file.txt');
         dockerfile.fetch(expects.success(200, expected, done));
       }));
     });

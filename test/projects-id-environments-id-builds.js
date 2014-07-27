@@ -9,7 +9,6 @@ var expect = Lab.expect;
 var async = require('async');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var not = require('101/not');
@@ -18,8 +17,6 @@ var exists = require('101/exists');
 var tailBuildStream = require('./fixtures/tail-build-stream');
 var equals = require('101/equals');
 var uuid = require('uuid');
-require('console-trace')({ always:true, right:true });
-
 
 describe('Builds - /projects/:id/environments/:id/builds', function () {
   var ctx = {};
@@ -82,7 +79,6 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
     });
     describe('Built Projects', function () {
       beforeEach(function (done) {
-        nockS3();
         multi.createBuild(function (err, build, env, project, user) {
           ctx.build = build;
           ctx.env = env;
@@ -233,7 +229,6 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
     });
     describe('Failures', function () {
       beforeEach(function (done) {
-        nockS3();
         multi.createBuild(function (err, build, env, project, user) {
           ctx.build = build;
           ctx.env = env;
@@ -290,7 +285,6 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
   });
   describe('GET', function () {
     beforeEach(function (done) {
-      nockS3();
       multi.createBuild(function (err, build, env, project, user) {
         ctx.build = build;
         ctx.env = env;

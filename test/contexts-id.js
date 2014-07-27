@@ -9,7 +9,6 @@ var afterEach = Lab.afterEach;
 var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 
@@ -27,7 +26,6 @@ describe('Context - /contexts/:id', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    nockS3();
     multi.createContext(function (err, context, user) {
       ctx.context = context;
       ctx.user = user;
