@@ -95,6 +95,7 @@ describe('Github', function () {
               'build.completed': exists,
               'build.triggeredBy.github': exists,
               'build.triggeredBy.username': 'bkendall',
+              'build.triggeredBy.gravatar': exists,
               'build.triggeredAction.manual': not(exists),
               'build.triggeredAction.rebuild': not(exists),
               'build.triggeredAction.appCodeVersion.repo': 'bkendall/flaming-octo-nemesis',
