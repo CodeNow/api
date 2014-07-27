@@ -14,7 +14,6 @@ var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
 var tailBuildStream = require('./fixtures/tail-build-stream');
-var callbackCount = require('callback-count');
 var not = require('101/not');
 var exists = require('101/exists');
 var expects = require('./fixtures/expects');
