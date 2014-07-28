@@ -22,7 +22,6 @@ async.series([
   function (cb) { ctx.context = ctx.user.createContext({ name: projectName }, cb); },
   function (cb) { ctx.contextVersion = ctx.context.createVersion({
     qs: {
-      fromSource: ctx.sourceVersions.models[0].json().infraCodeVersion,
       toBuild: ctx.build.id()
     },
     json: {
@@ -30,6 +29,10 @@ async.series([
     } }, cb);
   },
   function (cb) { ctx.contextVersion.addGithubRepo('bkendall/qwirkle', cb); },
+  function (cb) {
+    var icv = ctx.sourceVersions.models[0].json().infraCodeVersion;
+    ctx.contextVersion.copyFilesFromSource(icv, cb);
+  },
   function (cb) {
     ctx.files = ctx.contextVersion.fetchFiles({path: '/', name: 'Dockerfile'}, cb);
   },
@@ -50,7 +53,7 @@ async.series([
       cb);
   },
   function (cb) {
-    ctx.user.createInstance({json: {
+    ctx.instance = ctx.user.createInstance({json: {
       build: ctx.build.id(),
       name: uuid()
     }}, cb);

@@ -110,7 +110,7 @@ describe('Instances - /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
-              expectHipacheHostsForContainers(instance.toJSON().containers, done);
+              expectHipacheHostsForContainers(instance.toJSON(), done);
             }));
         });
       });
@@ -183,10 +183,17 @@ describe('Instances - /instances', function () {
   });
 });
 
-function expectHipacheHostsForContainers (containers, cb) {
+function expectHipacheHostsForContainers (instance, cb) {
+  var containers = instance.containers;
+  var instanceName = instance.name;
   var allUrls = [];
   containers.forEach(function (container) {
-    allUrls = allUrls.concat(container.urls);
+    if (container.ports) {
+      Object.keys(container.ports).forEach(function (port) {
+        var portNumber = port.split('/')[0];
+        allUrls.push([instanceName, '-', portNumber, '.', process.env.DOMAIN].join(''));
+      });
+    }
   });
   async.forEach(allUrls, function (url, cb) {
     var hipacheEntry = new RedisList('frontend:'+url);
@@ -194,7 +201,7 @@ function expectHipacheHostsForContainers (containers, cb) {
       if (err) {
         cb(err);
       }
-      else if (!backends.length || !backends.every(contains(':'))) {
+      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
         cb(new Error('Backends invalid for '+url));
       }
       else {
@@ -202,10 +209,4 @@ function expectHipacheHostsForContainers (containers, cb) {
       }
     });
   }, cb);
-}
-
-function contains (char) {
-  return function (str) {
-    return ~str.indexOf(char);
-  };
 }
