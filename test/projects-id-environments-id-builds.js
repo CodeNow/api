@@ -94,7 +94,6 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
       describe('parentBuild is unbuilt', function() {
         it('should create a new build from an existing one', function (done) {
           var body = {
-            environment: ctx.env.id(),
             parentBuild: ctx.build.id()
           };
           ctx.env.createBuild(body, expects.error(400, /cannot be copied.*built/, done));
@@ -111,10 +110,6 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
           });
         });
         it('should create a new build from an existing one', function (done) {
-          var body = {
-            environment: ctx.env.id(),
-            parentBuild: ctx.build.id()
-          };
           var expected = {
             project: ctx.project.id(),
             environment: ctx.env.id(),
@@ -126,7 +121,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
             started: not(exists),
             completed: not(exists)
           };
-          var newBuild = ctx.env.createBuild(body,
+          var newBuild = ctx.build.fork(
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
               var i = 0;
@@ -154,8 +149,6 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         });
         it('should rebuild an existing build', {timeout:5000}, function (done) {
           var body = {
-            project: ctx.project.id(),
-            environment: ctx.env.id(),
             id: ctx.build.id()
           };
           var expected = {
