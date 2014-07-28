@@ -41,7 +41,6 @@ function createModBuild(done) {
 describe('Build - /projects/:id/environments/:id/builds/:id', function () {
   ctx = {};
   beforeEach(function (done) {
-    nockS3();
     multi.createBuild(function (err, build, env, project) {
       ctx.build = build;
       ctx.envId = env.id();
@@ -98,7 +97,6 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
   describe('POST', function () {
     beforeEach(function (done) {
-      nockS3();
       multi.createContextVersion(function (err, contextVersion, version, build, env, project, user) {
         ctx.contextVersion = contextVersion;
         ctx.build = build;

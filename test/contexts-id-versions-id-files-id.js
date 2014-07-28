@@ -27,7 +27,6 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    nockS3();
     multi.createContextVersion(function (err, contextVersion, context, build, env, project, user, array){
       ctx.build = build;
       ctx.env = env;
@@ -150,11 +149,13 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         describe('owner', function () {
           it('should give us the body of the file', function (done) {
             var expected = ctx.file.json();
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
             ctx.file.fetch(expects.success(200, expected, done));
           });
           it('should give us the body of the file', function (done) {
             var expected = ctx.dockerfile.json();
             expected.body = 'FROM ubuntu';
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile', 'FROM ubuntu');
             ctx.dockerfile.fetch(expects.success(200, expected, done));
           });
         });
@@ -162,6 +163,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           beforeEach(createNonOwner);
           beforeEach(createNonOwnerContextVersion);
           it('should not get the body of the file (403 forbidden)', function (done) {
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
             ctx.nonOwnerContextVersion.fetchFile(ctx.fileId,
               expects.errorStatus(403, done));
           });
@@ -171,6 +173,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           beforeEach(createModContextVersion);
           it('should give us the body of the file', function (done) {
             var expected = ctx.file.json();
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
             ctx.modContextVersion.fetchFile(ctx.fileId,
               expects.success(200, expected, done));
           });
@@ -183,6 +186,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           beforeEach(createSourceContextVersionPath);
           it('should get the body of the file', function (done) {
             var expected = ctx.sourceFile.json();
+            require('./fixtures/mocks/s3/get-object')(ctx.sourceContextId, '/Dockerfile');
             ctx.sourceContextVersion.fetchFile(ctx.sourceFileId,
               expects.success(200, expected, done));
           });
@@ -192,6 +196,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           beforeEach(createModSourceContextVersionPath);
           it('should give us the body of the file', function (done) {
             var expected = ctx.sourceFile.json();
+            require('./fixtures/mocks/s3/get-object')(ctx.sourceContextId, '/Dockerfile');
             ctx.modSourceContextVersion.fetchFile(ctx.sourceFileId,
               expects.success(200, expected, done));
           });
@@ -215,11 +220,8 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.ETag = exists;
             expected.VersionId = exists;
             expected.body = opts.json.body;
-            dockerfile.update(opts, expects.success(200, expected, function (err) {
-              done(err);
-              // below fails bc the mock is stupid, and returns the same info.
-              // dockerfile.fetch(expects.success(200, expected, done));
-            }));
+            require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/Dockerfile');
+            dockerfile.update(opts, expects.success(200, expected, done));
           });
           it('should let us rename a file', function (done) {
             var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
@@ -233,11 +235,13 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.VersionId = exists;
             expected.name = opts.json.name;
             expected.Key = new RegExp(opts.json.name + '$');
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
+            require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), '/Dockerfile');
+            require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/file.txt');
             dockerfile.update(opts, expects.success(200, expected, function (err) {
-              if (err) {
-                return done(err);
-              }
-              dockerfile.fetch(expects.success(200, expected, done));
+             if (err) { return done(err); }
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/file.txt');
+             dockerfile.fetch(expects.success(200, expected, done));
             }));
           });
         });
@@ -274,6 +278,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.ETag = exists;
             expected.VersionId = exists;
             expected.body = opts.json.body;
+            require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/Dockerfile');
             ctx.modContextVersion.updateFile(ctx.fileId, opts,
               expects.success(200, expected, done));
           });
@@ -287,11 +292,15 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.ETag = exists;
             expected.VersionId = exists;
             expected.name = opts.json.name;
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
+            require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), '/Dockerfile');
+            require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/moderatorFile.txt');
             expected.Key = new RegExp(opts.json.name + '$');
             var newFile = ctx.modContextVersion.updateFile(ctx.fileId, opts, function (err) {
               if (err) {
                 return done(err);
               }
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/moderatorFile.txt');
               ctx.modContextVersion.fetchFile(newFile.id(), expects.success(200, expected, done));
             });
           });
@@ -334,6 +343,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.ETag = exists;
             expected.VersionId = exists;
             expected.body = opts.json.body;
+            require('./fixtures/mocks/s3/put-object')(ctx.sourceContextId, '/Dockerfile');
             ctx.modSourceContextVersion
               .updateFile(ctx.sourceFileId, opts, expects.success(200, expected, done));
           });
@@ -348,11 +358,15 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.VersionId = exists;
             expected.name = opts.json.name;
             expected.Key = new RegExp(opts.json.name + '$');
+            require('./fixtures/mocks/s3/get-object')(ctx.sourceContextId, '/Dockerfile');
+            require('./fixtures/mocks/s3/delete-object')(ctx.sourceContextId, '/Dockerfile');
+            require('./fixtures/mocks/s3/put-object')(ctx.sourceContextId, '/moderatorFile.txt');
             var newFile = ctx.modSourceContextVersion
               .updateFile(ctx.sourceFileId, opts, function (err) {
                 if (err) {
                   return done(err);
                 }
+                require('./fixtures/mocks/s3/get-object')(ctx.sourceContextId, '/moderatorFile.txt');
                 ctx.modSourceContextVersion
                   .fetchFile(newFile.id(), expects.success(200, expected, done));
               });
