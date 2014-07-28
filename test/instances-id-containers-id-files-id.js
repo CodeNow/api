@@ -16,14 +16,6 @@ var fs = require('fs');
 var expects = require('./fixtures/expects');
 var path = require('path');
 
-
-function createContainer(ctx, user) {
-  return user
-    .newInstance(ctx.instanceId)
-    .newContainer(ctx.container.id());
-}
-
-
 function containerRoot (ctx) {
   if (ctx.container.attrs.dockerContainer) {
     ctx.containerRoot = path.join(__dirname,
@@ -62,26 +54,22 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   var fileContent = "this is a test file";
   var filePath = "/";
   function createModUser(done) {
-    ctx.moderator = multi.createModerator(function (err) {
-      require('./fixtures/mocks/github/user-orgs')(ctx.moderator); // non owner org
-      done(err);
-    });
+    ctx.moderator = multi.createModerator(done);
+
   }
   function createNonOwner(done) {
-    ctx.nonOwner = multi.createUser(function (err) {
-      require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
-      done(err);
-    });
+    ctx.nonOwner = multi.createUser(done);
+    require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
   }
   function createNonOwnerContainer(done) {
     ctx.backupContainer = ctx.container;
-    ctx.container = createContainer(ctx, ctx.nonOwner);
+    ctx.container = multi.createContainerPath(ctx.nonOwner, ctx.instanceId, ctx.container.id());
     done();
   }
   function createModContainer(done) {
     ctx.backupContainer = ctx.container;
     var dockerContainer = ctx.container.attrs.dockerContainer;
-    ctx.container = createContainer(ctx, ctx.moderator);
+    ctx.container = multi.createContainerPath(ctx.moderator, ctx.instanceId, ctx.container.id());
     ctx.container.attrs.dockerContainer = dockerContainer;
     done();
   }

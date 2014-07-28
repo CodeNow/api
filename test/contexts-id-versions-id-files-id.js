@@ -45,17 +45,10 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
     });
   });
 
-  function createContextVersion(user, isSource) {
-    if (isSource) {
-      return user
-        .newContext(ctx.sourceContextId)
-        .newVersion(ctx.sourceContextVersionId);
-    } else {
-      return user
-        .newContext(ctx.context.id())
-        .newVersion(ctx.contextVersion.id());
-    }
-  }
+  /**
+   * Helper BeforeEach function to fetch a source file for use in the tests below.
+   * @param done
+   */
   function getSourceFile(done) {
     var sourceFiles = ctx.sourceContextVersion.fetchFiles({ path: '/' }, function(err) {
       if (err) { done(err); }
@@ -64,17 +57,64 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
       done();
     });
   }
+
+  /**
+   * Helper BeforeEach function to create another user, to use as someone who doesn't own the
+   * 'owners' context.
+   * @param done done function pointer
+   */
   function createModUser(done) {
-    ctx.moderator = multi.createModerator(function (err) {
-      require('./fixtures/mocks/github/user-orgs')(ctx.moderator); // non owner org
-      done(err);
-    });
+    ctx.moderator = multi.createModerator(done);
   }
+  /**
+   * Helper BeforeEach function to create a moderator
+   * @param done done function pointer
+   */
   function createNonOwner(done) {
-    ctx.nonOwner = multi.createUser(function (err) {
-      require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
-      done(err);
-    });
+    ctx.nonOwner = multi.createUser(done);
+    require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
+  }
+  /**
+   * Helper BeforeEach function to create a Context Version path for a user who is not the owner
+   * of it.
+   * @param done done function pointer
+   */
+  function createNonOwnerContextVersion(done) {
+    ctx.nonOwnerContextVersion = multi.createContextVersionPath(ctx.nonOwner, ctx.context.id(),
+      ctx.contextVersion.id());
+    done();
+  }
+  /**
+   * Helper BeforeEach function to create a Context Version path for a moderator to use for
+   * fetching with the API Client
+   * @param done done function pointer
+   */
+  function createModContextVersion(done) {
+    ctx.modContextVersion = multi.createContextVersionPath(ctx.moderator, ctx.context.id(),
+      ctx.contextVersion.id());
+    done();
+  }
+  /**
+   * Helper BeforeEach function to create a Context Version path for a moderator to the source
+   * Context Version.  This is needed when checking write privileges for moderators on Source
+   * files.
+   * @param done done function pointer
+   */
+  function createModSourceContextVersionPath(done) {
+    ctx.modSourceContextVersion = multi.createContextVersionPath(ctx.moderator, ctx.sourceContextId,
+      ctx.sourceContextVersionId);
+    done();
+  }
+  /**
+   * Helper BeforeEach function to create a Context Version path for a moderator to the source
+   * Context Version.  This is needed when checking write privileges for moderators on Source
+   * files.
+   * @param done done function pointer
+   */
+  function createSourceContextVersionPath(done) {
+    ctx.sourceContextVersion = multi.createContextVersionPath(ctx.nonOwner, ctx.sourceContextId,
+      ctx.sourceContextVersionId);
+    done();
   }
 //  var sources = {
 //    'owner' : 'contextVersion',
@@ -117,16 +157,18 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         });
         describe('non-owner', function () {
           beforeEach(createNonOwner);
+          beforeEach(createNonOwnerContextVersion);
           it('should not get the body of the file (403 forbidden)', function (done) {
-            createContextVersion(ctx.nonOwner).fetchFile(ctx.fileId,
+            ctx.nonOwnerContextVersion.fetchFile(ctx.fileId,
               expects.errorStatus(403, done));
           });
         });
         describe('moderator', function () {
           beforeEach(createModUser);
+          beforeEach(createModContextVersion);
           it('should give us the body of the file', function (done) {
             var expected = ctx.file.json();
-            createContextVersion(ctx.moderator).fetchFile(ctx.fileId,
+            ctx.modContextVersion.fetchFile(ctx.fileId,
               expects.success(200, expected, done));
           });
         });
@@ -135,17 +177,19 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         beforeEach(getSourceFile);
         describe('user', function () {
           beforeEach(createNonOwner);
+          beforeEach(createSourceContextVersionPath);
           it('should get the body of the file', function (done) {
             var expected = ctx.sourceFile.json();
-            createContextVersion(ctx.nonOwner, true).fetchFile(ctx.sourceFileId,
+            ctx.sourceContextVersion.fetchFile(ctx.sourceFileId,
               expects.success(200, expected, done));
           });
         });
         describe('moderator', function () {
           beforeEach(createModUser);
+          beforeEach(createModSourceContextVersionPath);
           it('should give us the body of the file', function (done) {
             var expected = ctx.sourceFile.json();
-            createContextVersion(ctx.moderator, true).fetchFile(ctx.sourceFileId,
+            ctx.modSourceContextVersion.fetchFile(ctx.sourceFileId,
               expects.success(200, expected, done));
           });
         });
@@ -196,10 +240,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         });
         describe('non-owner', function () {
           beforeEach(createNonOwner);
-          beforeEach(function (done) {
-            ctx.nonOwnerContextVersion = createContextVersion(ctx.nonOwner);
-            done();
-          });
+          beforeEach(createNonOwnerContextVersion);
           it('should not let us update a file\'s content (403 forbidden)', function (done) {
             var opts = {
               json: {
@@ -219,10 +260,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         });
         describe('moderator', function () {
           beforeEach(createModUser);
-          beforeEach(function (done) {
-            ctx.modContextVersion = createContextVersion(ctx.moderator);
-            done();
-          });
+          beforeEach(createModContextVersion);
           it('should let us update a file\'s content', function (done) {
             var opts = {
               json: {
@@ -260,17 +298,14 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         beforeEach(getSourceFile);
         describe('user', function () {
           beforeEach(createNonOwner);
-          beforeEach(function (done) {
-            ctx.nonOwnerContextVersion = createContextVersion(ctx.nonOwner, true);
-            done();
-          });
+          beforeEach(createSourceContextVersionPath);
           it('should not let us update a file\'s content (403 forbidden)', function (done) {
             var opts = {
               json: {
                 body: 'non-owner new content'
               }
             };
-            ctx.nonOwnerContextVersion.updateFile(ctx.sourceFileId, opts,
+            ctx.sourceContextVersion.updateFile(ctx.sourceFileId, opts,
               expects.errorStatus(403, done));
           });
           it('should not let us rename a file', function (done) {
@@ -279,16 +314,13 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
                 name: 'nonOwnerFile.txt'
               }
             };
-            ctx.nonOwnerContextVersion.updateFile(ctx.sourceFileId, opts,
+            ctx.sourceContextVersion.updateFile(ctx.sourceFileId, opts,
               expects.errorStatus(403, done));
           });
         });
         describe('moderator', function () {
           beforeEach(createModUser);
-          beforeEach(function (done) {
-            ctx.modContextVersion = createContextVersion(ctx.moderator, true);
-            done();
-          });
+          beforeEach(createModSourceContextVersionPath);
           it('should let us update a file\'s content', function (done) {
             var opts = {
               json: {
@@ -299,8 +331,8 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.ETag = exists;
             expected.VersionId = exists;
             expected.body = opts.json.body;
-            ctx.modContextVersion.updateFile(ctx.sourceFileId, opts,
-              expects.success(200, expected, done));
+            ctx.modSourceContextVersion
+              .updateFile(ctx.sourceFileId, opts, expects.success(200, expected, done));
           });
           it('should let us rename a file', function (done) {
             var opts = {
@@ -313,12 +345,14 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.VersionId = exists;
             expected.name = opts.json.name;
             expected.Key = new RegExp(opts.json.name + '$');
-            var newFile = ctx.modContextVersion.updateFile(ctx.sourceFileId, opts, function (err) {
-              if (err) {
-                return done(err);
-              }
-              ctx.modContextVersion.fetchFile(newFile.id(), expects.success(200, expected, done));
-            });
+            var newFile = ctx.modSourceContextVersion
+              .updateFile(ctx.sourceFileId, opts, function (err) {
+                if (err) {
+                  return done(err);
+                }
+                ctx.modSourceContextVersion
+                  .fetchFile(newFile.id(), expects.success(200, expected, done));
+              });
           });
         });
       });
@@ -339,16 +373,14 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         });
         describe('non-owner', function () {
           beforeEach(createNonOwner);
+          beforeEach(createNonOwnerContextVersion);
           it('should not delete a file', function (done) {
-            createContextVersion(ctx.nonOwner).destroyFile(ctx.fileId, expects.error(403, done));
+            ctx.nonOwnerContextVersion.destroyFile(ctx.fileId, expects.error(403, done));
           });
         });
         describe('moderator', function () {
           beforeEach(createModUser);
-          beforeEach(function (done) {
-            ctx.modContextVersion = createContextVersion(ctx.moderator);
-            done();
-          });
+          beforeEach(createModContextVersion);
           it('should delete a file', function (done) {
             ctx.modContextVersion.destroyFile(ctx.fileId, expects.success(204, function (err) {
               if (err) {
@@ -363,25 +395,23 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         beforeEach(getSourceFile);
         describe('user', function () {
           beforeEach(createNonOwner);
+          beforeEach(createSourceContextVersionPath);
           it('should not delete a file', function (done) {
-            createContextVersion(ctx.nonOwner, true).destroyFile(ctx.sourceFileId,
+            ctx.sourceContextVersion.destroyFile(ctx.sourceFileId,
               expects.error(403, done));
           });
         });
         describe('moderator', function () {
           beforeEach(createModUser);
-          beforeEach(function (done) {
-            ctx.modContextVersion = createContextVersion(ctx.moderator, true);
-            done();
-          });
+          beforeEach(createModSourceContextVersionPath);
           it('should delete a file', function (done) {
-            ctx.modContextVersion.destroyFile(ctx.sourceFileId,
-              expects.success(204, function (err) {
+            ctx.modSourceContextVersion
+              .destroyFile(ctx.sourceFileId, expects.success(204, function (err) {
               if (err) {
                 return done(err);
               }
-              ctx.modContextVersion.fetchFile(ctx.sourceFileId,
-                expects.error(404, /not found/, done));
+              ctx.modSourceContextVersion
+                .fetchFile(ctx.sourceFileId, expects.error(404, /not found/, done));
             }));
           });
         });

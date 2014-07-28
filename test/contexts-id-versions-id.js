@@ -23,22 +23,31 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
+  /**
+   * Helper BeforeEach function to create a moderator user.
+   * @param done done function pointer
+   */
   function createModUser(done) {
-    ctx.moderator = multi.createModerator(function (err) {
-      require('./fixtures/mocks/github/user-orgs')(ctx.moderator); // non owner org
-      done(err);
-    });
+    ctx.moderator = multi.createModerator(done);
   }
+  /**
+   * Helper BeforeEach function to create another user, to use as someone who doesn't own the
+   * 'owners' context.
+   * @param done done function pointer
+   */
   function createNonOwner(done) {
-    ctx.nonOwner = multi.createUser(function (err) {
-      require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
-      done(err);
-    });
+    ctx.nonOwner = multi.createUser(done);
   }
-  function createContext(user) {
-    return user
-      .newContext(ctx.context.id());
+
+  function createNonOwnerContext(done) {
+    ctx.nonOwnerContext = multi.createContextPath(ctx.nonOwner, ctx.context.id());
+    done();
   }
+  function createModContextVersion(done) {
+    ctx.modContext = multi.createContextPath(ctx.moderator, ctx.context.id());
+    done();
+  }
+
   beforeEach(function (done) {
     nockS3();
     multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
@@ -61,23 +70,22 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(createNonOwner);
+        beforeEach(createNonOwnerContext);
         it('should not get the version (403 forbidden)', function (done) {
-          require('./fixtures/mocks/github/user')(ctx.nonOwner);
-          createContext(ctx.nonOwner).fetchVersion(ctx.contextVersion.id(),
-            expects.errorStatus(403, done));
+          require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
+          ctx.nonOwnerContext.fetchVersion(ctx.contextVersion.id(), expects.errorStatus(403, done));
         });
       });
       describe('moderator', function () {
         beforeEach(createModUser);
+        beforeEach(createModContextVersion);
         it('should get the version', function (done) {
           require('./fixtures/mocks/github/user')(ctx.moderator);
           var expected = ctx.contextVersion.json();
-          require('nock').cleanAll();
           // Calling the nock for the original user since the fetch call has to look up the username
           // by id.
           require('./fixtures/mocks/github/user')(ctx.user);
-          createContext(ctx.moderator).fetchVersion(ctx.contextVersion.id(),
-            expects.success(200, expected, done));
+          ctx.modContext.fetchVersion(ctx.contextVersion.id(), expects.success(200, expected, done));
         });
       });
     });
@@ -104,30 +112,24 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(createNonOwner);
-        beforeEach(function (done) {
-          ctx.otherContext = createContext(ctx.nonOwner);
-          done();
-        });
+        beforeEach(createNonOwnerContext);
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should not update context\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
-            ctx.otherContext.updateVersion(ctx.contextVersion.id(), { json: json },
+            ctx.nonOwnerContext.updateVersion(ctx.contextVersion.id(), {json: json},
               expects.errorStatus(405, done));
           });
         });
       });
       describe('moderator', function () {
         beforeEach(createModUser);
-        beforeEach(function (done) {
-          ctx.modContext = createContext(ctx.moderator);
-          done();
-        });
+        beforeEach(createModContextVersion);
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should update context\'s '+keys+' to '+vals, function (done) {
-            ctx.modContext.updateVersion(ctx.contextVersion.id(), { json: json },
+            ctx.modContext.updateVersion(ctx.contextVersion.id(), {json: json},
               expects.errorStatus(405, done));
           });
         });
@@ -144,16 +146,17 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(createNonOwner);
+        beforeEach(createNonOwnerContext);
         it('should not delete the context (403 forbidden)', function (done) {
-          createContext(ctx.nonOwner).destroyVersion(ctx.contextVersion.id(),
+          ctx.nonOwnerContext.destroyVersion(ctx.contextVersion.id(),
             expects.errorStatus(405, done));
         });
       });
       describe('moderator', function () {
         beforeEach(createModUser);
+        beforeEach(createModContextVersion);
         it('should delete the context', function (done) {
-          createContext(ctx.moderator).destroyVersion(ctx.contextVersion.id(),
-            expects.errorStatus(405, done));
+          ctx.modContext.destroyVersion(ctx.contextVersion.id(), expects.errorStatus(405, done));
         });
       });
     });

@@ -17,15 +17,9 @@ var createCount = require('callback-count');
 var exists = require('101/exists');
 
 var ctx = {};
-function createBuild(user) {
-  return user
-    .newProject(ctx.projectId)
-    .newEnvironment(ctx.envId)
-    .newBuild(ctx.build.id());
-}
+
 function createModUser(done) {
   ctx.moderator = multi.createModerator(function (err) {
-    require('./fixtures/mocks/github/user-orgs')(ctx.moderator); // non owner org
     done(err);
   });
 }
@@ -35,7 +29,14 @@ function createNonOwner(done) {
     done(err);
   });
 }
-
+function createNonOwnerBuild(done) {
+  ctx.nonOwnerBuild = multi.createBuildPath(ctx.nonOwner, ctx.projectId, ctx.envId, ctx.build.id());
+  done();
+}
+function createModBuild(done) {
+  ctx.modBuild = multi.createBuildPath(ctx.moderator, ctx.projectId, ctx.envId, ctx.build.id());
+  done();
+}
 
 describe('Build - /projects/:id/environments/:id/builds/:id', function () {
   ctx = {};
@@ -66,14 +67,16 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(createNonOwner);
+        beforeEach(createNonOwnerBuild);
         it('should not return an environment build', function (done) {
-          createBuild(ctx.nonOwner).fetch(expects.errorStatus(403, done));
+          ctx.nonOwnerBuild.fetch(expects.errorStatus(403, done));
         });
       });
       describe('moderator', function () {
         beforeEach(createModUser);
+        beforeEach(createModBuild);
         it('should return an environment build', function (done) {
-          createBuild(ctx.moderator).fetch(expects.success(200, ctx.build.json(), done));
+          ctx.modBuild.fetch(expects.success(200, ctx.build.json(), done));
         });
       });
     });
