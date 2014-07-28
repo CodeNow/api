@@ -65,6 +65,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
             'build.completed': exists,
             'build.dockerImage': exists,
             'build.dockerTag': exists,
+            'build.log': exists,
             'build.triggeredAction.manual': true,
           };
           ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
