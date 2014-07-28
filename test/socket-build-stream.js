@@ -24,7 +24,7 @@ var primusClient = Primus.createSocket({
 
 function sendData (testString, roomId) {
   fs.writeFileSync(testFile, testString);
-  buildStream.sendBuildStream(roomId, fs.createReadStream(testFile));
+  buildStream.sendStream(roomId, fs.createReadStream(testFile));
 }
 
 describe('Build Stream', function () {

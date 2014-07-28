@@ -110,7 +110,10 @@ describe('Instances - /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
-              expectHipacheHostsForContainers(instance.toJSON().containers, done);
+              expectHipacheHostsForContainers(instance.toJSON().containers, function (err) {
+                if (err) { return done(err); }
+                expectRunStreamForContainers(instance.toJSON().containers, done);
+              });
             }));
         });
       });
@@ -201,6 +204,23 @@ function expectHipacheHostsForContainers (containers, cb) {
         cb();
       }
     });
+  }, cb);
+}
+
+/**
+ * This function verifies that the created containers did add their run stream to the redis client
+ * @param containers Array of containers that the Instance created
+ * @param cb done callback
+ */
+function expectRunStreamForContainers (containers, cb) {
+  async.forEach(containers, function (container, cb) {
+    var containerId = container.Id||container.id; // who knows, stupid docker.
+    var stream = new RedisList(containerId);
+    if (!stream) {
+      cb(new Error('Stream is missing from Redis for container with Id: '+ containerId));
+    } else {
+      cb();
+    }
   }, cb);
 }
 

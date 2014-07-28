@@ -25,7 +25,7 @@ var primusClient = Primus.createSocket({
 
 function sendData (testString, roomId) {
   fs.writeFileSync(testFile, testString);
-  buildStream.sendBuildStream(roomId, fs.createReadStream(testFile));
+  buildStream.sendStream(roomId, fs.createReadStream(testFile));
 }
 
 describe('build-stream', function () {
@@ -34,7 +34,7 @@ describe('build-stream', function () {
   before(function (done) {
     httpServer = http.createServer();
     primusServer = socketServer.createSocketServer(httpServer);
-    socketServer.addHandler('build-stream', buildStream.buildStreamHandler);
+    socketServer.addHandler('build-stream', buildStream.streamHandler);
     httpServer.listen(process.env.PORT, done);
   });
 
