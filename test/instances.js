@@ -15,6 +15,7 @@ var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
 var uuid = require('uuid');
+var createCount = require('callback-count');
 
 describe('Instances - /instances', function () {
   var ctx = {};
@@ -112,6 +113,71 @@ describe('Instances - /instances', function () {
               expectHipacheHostsForContainers(instance.toJSON().containers, done);
             }));
         });
+      });
+    });
+  });
+
+  describe('GET', function() {
+    beforeEach(function (done) {
+      multi.createInstance(function (err, instance, build, env, project, user) {
+        if (err) { return done(err); }
+        ctx.instance = instance;
+        ctx.user = user;
+        multi.createInstance(function (err, instance, build, env, project, user) {
+          if (err) { return done(err); }
+          ctx.instance2 = instance;
+          ctx.user2 = user;
+          done();
+        });
+      });
+    });
+    it('should list versions by owner.github', function (done) {
+      var count = createCount(2, done);
+
+      var query = {
+        owner: {
+          github: ctx.user.attrs.accounts.github.id
+        }
+      };
+      var expected = [
+        ctx.instance.json()
+      ];
+      // FIXME: chai is messing up with eql check:
+      delete expected[0].containers;
+      ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
+
+      var query2 = {
+        owner: {
+          github: ctx.user2.attrs.accounts.github.id
+        }
+      };
+      var expected2 = [ctx.instance2.json()];
+      // FIXME: chai is messing up with eql check:
+      delete expected2[0].containers;
+      ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
+    });
+    describe('errors', function () {
+      it('should not list projects for owner.github the user does not have permission for', function (done) {
+        var query = {
+          owner: {
+            github: ctx.user2.attrs.accounts.github.id
+          }
+        };
+        require('./fixtures/mocks/github/user-orgs')();
+        ctx.user.fetchInstances(query, expects.error(403, /denied/, function (err) {
+          if (err) { return done(err); }
+          var query2 = {
+            owner: {
+              github: ctx.user.attrs.accounts.github.id
+            }
+          };
+          require('./fixtures/mocks/github/user-orgs')();
+          ctx.user2.fetchInstances(query2, expects.error(403, /denied/, done));
+        }));
+      });
+      it('should require owner.github', function (done) {
+        var query = {};
+        ctx.user.fetchInstances(query, expects.error(400, /owner[.]github/, done));
       });
     });
   });
