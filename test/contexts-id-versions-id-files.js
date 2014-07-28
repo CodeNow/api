@@ -14,6 +14,7 @@ var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
+var createCount = require('callback-count');
 
 function createFile (contextId, path, name, isDir) {
   var key = (isDir) ? join(contextId, 'source', path, name, '/') : join(contextId, 'source', path, name);
@@ -41,13 +42,14 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
 
 
   beforeEach(function (done) {
-    multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+    multi.createContextVersion(function (err, contextVersion, context, build, env, project, user, others) {
       ctx.contextVersion = contextVersion;
       ctx.context = context;
       ctx.build = build;
       ctx.env = env;
       ctx.project = project;
       ctx.user = user;
+      ctx.srcContext = others[1];
       done(err);
     });
   });
@@ -65,9 +67,43 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       ctx.contextVersion.fetchFiles({ path: '' }, expects.success(200, expected, done));
     });
   });
+  describe('POST - discard changes', function () {
+    beforeEach(function (done) {
+      ctx.files = ctx.contextVersion.fetchFiles({ path: '' }, function (err) {
+        if (err) { return done(err); }
+        var count = createCount(2, done);
+        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'Dockerfile');
+        ctx.contextVersion.createFile({json: {
+          name: 'file.txt',
+          path: '/',
+          body: 'asdf'
+        }}, count.next);
+        ctx.dockerfile = ctx.contextVersion.fetchFile('/Dockerfile', count.next);
+      });
+    });
+    it('should get rid of all the changes we had', function (done) {
+      require('./fixtures/mocks/s3/get-object')(ctx.srcContext.id(), '/');
+      require('./fixtures/mocks/s3/get-object')(ctx.srcContext.id(), 'Dockerfile');
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'Dockerfile');
+      ctx.contextVersion.discardFileChanges(expects.success(204, function (err) {
+        if (err) { return done(err); }
+        var expected = [{
+          name: 'Dockerfile',
+          path: '/',
+          Key: exists,
+          ETag: exists,
+          VersionId: exists
+        }];
+        ctx.contextVersion.fetchFiles({ path: '/' }, expects.success(200, expected, done));
+      }));
+    });
+  });
   describe('POST', function () {
     it('should give us details about a file we just created', function (done) {
       var createExpected = createFile(ctx.context.id(), '/', 'file.txt');
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
       ctx.file = ctx.contextVersion.createFile({ json: {
           name: 'file.txt',
           path: '/',
@@ -80,6 +116,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         createFile(ctx.context.id(), '/', 'Dockerfile'),
         createFile(ctx.context.id(), '/', 'file.txt')
       ];
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
       ctx.file = ctx.contextVersion.createFile({ json: {
           name: 'file.txt',
           path: '/',
@@ -96,6 +133,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         createFile(ctx.context.id(), '/', 'Dockerfile'),
         createFile(ctx.context.id(), '/', 'dir', true)
       ];
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/');
       ctx.file = ctx.contextVersion.createFile({ json: {
         name: 'dir',
         path: '/',
@@ -111,6 +149,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         createFile(ctx.context.id(), '/', 'Dockerfile'),
         createFile(ctx.context.id(), '/', 'dir', true)
       ];
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/');
       ctx.file = ctx.contextVersion.createFile({ json: {
         name: 'dir/',
         path: '/'
@@ -125,6 +164,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         createFile(ctx.context.id(), '/', 'Dockerfile'),
         createFile(ctx.context.id(), '/', 'dir', true)
       ];
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/');
       ctx.file = ctx.contextVersion.createFile({ json: {
         name: 'dir/',
         path: '/',
@@ -135,6 +175,8 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       }));
     });
     it('should let us create nested directories, but does not list them at root', function (done) {
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/');
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/dir2/');
       async.series([
         ctx.contextVersion.createFile.bind(ctx.contextVersion, { json: {
           name: 'dir',
@@ -171,6 +213,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
             body: 'content'
           }
         };
+        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
         ctx.file = ctx.contextVersion.createFile(json, expects.success(201, createExpected, function (err) {
           if (err) { return done(err); }
           ctx.file2 = ctx.contextVersion.createFile(json, expects.error(409, /File already exists/, done));

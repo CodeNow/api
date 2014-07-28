@@ -11,7 +11,6 @@ var hasKeypaths = require('101/has-keypaths');
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
@@ -30,6 +29,10 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
   beforeEach(function (done) {
     nockS3();
     multi.createContextVersion(function (err, contextVersion, context, build, env, project, user, array){
+      ctx.build = build;
+      ctx.env = env;
+      ctx.project = project;
+      ctx.user = user;
       ctx.contextVersion = contextVersion;
       ctx.context = context;
       ctx.sourceContextVersion = array[0];

@@ -9,14 +9,11 @@ var afterEach = Lab.afterEach;
 var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var createCount = require('callback-count');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
 var hasProps = require('101/has-properties');
 var find = require('101/find');
-require('console-trace')({always:true, right:true});
-console.log('console-trace added here');
 
 describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/copy', function () {
   var ctx = {};
@@ -30,11 +27,10 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    nockS3();
     var count = createCount(2, done);
-
-    multi.createSourceContextVersion(function (err, contextVersion) {
+    multi.createSourceContextVersion(function (err, contextVersion, context) {
       ctx.sourceContextVersion = contextVersion;
+      ctx.sourceContext = context;
       count.next(err);
     });
     multi.createContextVersion(function (err, contextVersion, context, project, user) {
@@ -50,6 +46,10 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
       describe('owner', function () {
         it('should copy the files of the source version', { timeout: 5000 }, function (done) {
           var sourceInfraCodeVersionId = ctx.sourceContextVersion.attrs.infraCodeVersion;
+          require('./fixtures/mocks/s3/get-object')(ctx.sourceContext.id(), '/');
+          require('./fixtures/mocks/s3/get-object')(ctx.sourceContext.id(), '/Dockerfile');
+          require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
+          require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/Dockerfile');
           ctx.contextVersion.copyFilesFromSource(sourceInfraCodeVersionId,
             expects.success(200, function (err) {
               if (err) { return done(err); }
@@ -79,6 +79,7 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
                     }))
                   ).to.be.ok;
                 });
+                expect(destICV.parentInfraCodeVersion.toString()).to.equal(sourceICV._id.toString());
                 done();
               }
             }));

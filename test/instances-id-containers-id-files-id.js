@@ -10,7 +10,6 @@ var krain = require('krain');
 var rimraf = require('rimraf');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var fs = require('fs');
 var expects = require('./fixtures/expects');
@@ -40,14 +39,15 @@ function createFile (ctx, fileName, filePath, fileContent, done) {
     expect(body).to.have.property('name', fileName);
     expect(body).to.have.property('path', filePath);
     expect(body).to.have.property('isDir', false);
-    var fd = path.join(containerRoot(ctx), filePath, fileName);
-    var content = fs.readFileSync(fd, {
+    var content = fs.readFileSync(
+      path.join(containerRoot(ctx), filePath, fileName), {
         encoding: 'utf8'
       });
     expect(content).to.equal(fileContent);
     done();
   });
 }
+
 describe('File System - /instances/:id/containers/:id/files/*path*', function () {
   var ctx = {};
   var fileName = "file1.txt";
@@ -94,10 +94,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
 
   afterEach(function (done) {
     // create test folder
-//    var containerRootStore = containerRoot(ctx);
-//    if (containerRootStore) {
-      rimraf.sync(ctx.containerRoot);
-//    }
+    rimraf.sync(containerRoot(ctx));
     ctx.krain.close();
     done();
   });
@@ -111,7 +108,6 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    nockS3();
     multi.createContainer(function (err, container, instance) {
       if (err) { return done(err); }
       ctx.container = container;

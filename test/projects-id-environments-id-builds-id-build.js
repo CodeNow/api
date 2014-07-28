@@ -9,12 +9,12 @@ var expect = Lab.expect;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var nockS3 = require('./fixtures/nock-s3');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var tailBuildStream = require('./fixtures/tail-build-stream');
 var createCount = require('callback-count');
 var exists = require('101/exists');
+var equals = require('101/equals');
 
 describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
   var ctx = {};
@@ -31,8 +31,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
   describe('POST', function () {
     beforeEach(function (done) {
-      nockS3();
-      multi.createContextVersion(function (err, contextVersion, version, build, env, project, user) {
+      multi.createContextVersion(function (err, contextVersion, version, build) {
         ctx.contextVersion = contextVersion;
         ctx.build = build;
         ctx.user = user;
@@ -55,9 +54,10 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
           var count = createCount(2, done);
           var buildExpected = {
-            completed: exists
+            completed: exists,
+            duration: exists,
+            failed: equals(false)
           };
-          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.build.fetch(expects.success(200, buildExpected, count.next));
           var versionExpected = {
             'dockerHost': exists,
@@ -68,7 +68,6 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
             'build.dockerTag': exists,
             'build.triggeredAction.manual': true
           };
-          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
         });
       });

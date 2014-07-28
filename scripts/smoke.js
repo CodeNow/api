@@ -4,7 +4,7 @@ var async = require('async');
 var Runnable = require('runnable');
 var user = new Runnable('localhost:3030');
 var uuid = require('uuid');
-var createCount = require('callback-count');
+// var createCount = require('callback-count');
 
 var projectName = uuid();
 var ctx = {};
@@ -36,7 +36,7 @@ async.series([
   function (cb) {
     ctx.dockerfile = ctx.files.models[0];
     ctx.dockerfile.update({ json: {
-      body: 'FROM dockerfile/nodejs\nADD ./qwirkle /data\nCMD ls -l /data/qwirkle'
+      body: 'FROM dockerfile/nodejs\nADD ./qwirkle /data\nEXPOSE 8080\nCMD sleep 60'
     }}, cb);
   },
   function (cb) { ctx.build.build({ message: uuid() }, cb); },
@@ -50,9 +50,10 @@ async.series([
       cb);
   },
   function (cb) {
-    var count = createCount(2, cb);
-    ctx.build.fetch(count.next);
-    ctx.contextVersion.fetch(count.next);
+    ctx.user.createInstance({json: {
+      build: ctx.build.id(),
+      name: uuid()
+    }}, cb);
   }
 ], function (err) {
   if (err) {
@@ -60,8 +61,6 @@ async.series([
     process.exit(1);
   } else {
     console.log('done!');
-    console.log(ctx.build.json());
-    console.log(ctx.contextVersion.json());
     process.exit(0);
   }
 });
