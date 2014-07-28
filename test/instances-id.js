@@ -67,6 +67,7 @@ describe('Instance - /instances/:id', function () {
             ctx.expected.containers = exists;
             ctx.expected['containers[0]'] = exists;
             ctx.expected['containers[0].inspect'] = exists;
+            ctx.expected['owner.username'] = ctx.user.json().accounts.github.username;
             done(err);
           });
         });
@@ -106,6 +107,7 @@ describe('Instance - /instances/:id', function () {
             ctx.expected.containers = exists;
             ctx.expected['containers[0]'] = exists;
             ctx.expected['containers[0].inspect'] = exists;
+            ctx.expected['owner.username'] = ctx.user.json().accounts.github.username;
             done(err);
           });
         });
