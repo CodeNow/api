@@ -198,7 +198,6 @@ function expectHipacheHostsForContainers (instance, cb) {
   async.forEach(allUrls, function (url, cb) {
     var hipacheEntry = new RedisList('frontend:'+url);
     hipacheEntry.lrange(0, -1, function (err, backends) {
-      console.log(backends[1]);
       if (err) {
         cb(err);
       }

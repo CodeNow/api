@@ -11,6 +11,8 @@ var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var uuid = require('uuid');
+var async = require('async');
+var RedisList = require('redis-types').List;
 
 describe('Instance - /instances/:id', function () {
   var ctx = {};
@@ -154,6 +156,17 @@ describe('Instance - /instances/:id', function () {
         });
       });
     });
+    describe('hipache changes', function () {
+      beforeEach(function (done) {
+        var newName = ctx.newName = uuid();
+        ctx.instance.update({ json: { name: newName }}, done);
+      });
+      it('should update hipache entries when the name is updated', function (done) {
+        ctx.instance.fetch(function (err, instance) {
+          expectHipacheHostsForContainers(instance, done);
+        });
+      });
+    });
     ['instance'].forEach(function (destroyName) {
       describe('not founds', function() {
         beforeEach(function (done) {
@@ -221,3 +234,32 @@ describe('Instance - /instances/:id', function () {
     });
   });
 });
+
+
+function expectHipacheHostsForContainers (instance, cb) {
+  var containers = instance.containers;
+  var instanceName = instance.name;
+  var allUrls = [];
+  containers.forEach(function (container) {
+    if (container.ports) {
+      Object.keys(container.ports).forEach(function (port) {
+        var portNumber = port.split('/')[0];
+        allUrls.push([instanceName, '-', portNumber, '.', process.env.DOMAIN].join(''));
+      });
+    }
+  });
+  async.forEach(allUrls, function (url, cb) {
+    var hipacheEntry = new RedisList('frontend:'+url);
+    hipacheEntry.lrange(0, -1, function (err, backends) {
+      if (err) {
+        cb(err);
+      }
+      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
+        cb(new Error('Backends invalid for '+url));
+      }
+      else {
+        cb();
+      }
+    });
+  }, cb);
+}
