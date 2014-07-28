@@ -13,9 +13,9 @@ function startDock (done) {
   var count = createCount(done);
   ctx.docker = docker.start(count.inc().next);
   ctx.docklet = docklet.start(count.inc().next);
-  redis.del("docks:localhost", count.inc().next);
+  redis.del("docks:http://localhost:4243", count.inc().next);
   redis.del("docks:full", count.inc().next);
-  redis.lpush("docks:active", "localhost", count.inc().next);
+  redis.lpush("docks:active", "http://localhost:4243", count.inc().next);
 }
 function stopDock (done) {
   var count = createCount(done);

@@ -11,6 +11,9 @@ var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var uuid = require('uuid');
+var async = require('async');
+var RedisList = require('redis-types').List;
+var exists = require('101/exists');
 
 describe('Instance - /instances/:id', function () {
   var ctx = {};
@@ -27,16 +30,43 @@ describe('Instance - /instances/:id', function () {
     multi.createInstance(function (err, instance, build, env, project, user) {
       if (err) { return done(err); }
       ctx.instance = instance;
+      ctx.build = build;
+      ctx.env = env;
+      ctx.project = project;
       ctx.user = user;
       done();
     });
   });
   describe('GET', function () {
+    it('should populate the project, environment, and build', function (done) {
+      var expected = {
+        'project._id': ctx.project.id(),
+        'environment._id': ctx.env.id(),
+        'build._id': ctx.build.id(),
+      };
+      ctx.instance.fetch(expects.success(200, expected, done));
+    });
+    it('should inspect the containers', function (done) {
+      var expected = {
+        'containers[0].inspect.State.Running': true
+      };
+      ctx.instance.fetch(expects.success(200, expected, done));
+    });
     describe('permissions', function() {
       describe('public', function() {
         beforeEach(function (done) {
           ctx.instance.update({ json: { public: true } }, function (err, instance) {
             ctx.expected = instance;
+            delete ctx.expected.project;
+            delete ctx.expected.build;
+            delete ctx.expected.environment;
+            delete ctx.expected.containers;
+            ctx.expected['project._id'] = ctx.project.id();
+            ctx.expected['environment._id'] = ctx.env.id();
+            ctx.expected['build._id'] = ctx.build.id();
+            ctx.expected.containers = exists;
+            ctx.expected['containers[0]'] = exists;
+            ctx.expected['containers[0].inspect'] = exists;
             done(err);
           });
         });
@@ -66,6 +96,16 @@ describe('Instance - /instances/:id', function () {
         beforeEach(function (done) {
           ctx.instance.update({ json: { public: false } }, function (err, instance) {
             ctx.expected = instance;
+            delete ctx.expected.project;
+            delete ctx.expected.build;
+            delete ctx.expected.environment;
+            delete ctx.expected.containers;
+            ctx.expected['project._id'] = ctx.project.id();
+            ctx.expected['environment._id'] = ctx.env.id();
+            ctx.expected['build._id'] = ctx.build.id();
+            ctx.expected.containers = exists;
+            ctx.expected['containers[0]'] = exists;
+            ctx.expected['containers[0].inspect'] = exists;
             done(err);
           });
         });
@@ -154,6 +194,17 @@ describe('Instance - /instances/:id', function () {
         });
       });
     });
+    describe('hipache changes', function () {
+      beforeEach(function (done) {
+        var newName = ctx.newName = uuid();
+        ctx.instance.update({ json: { name: newName }}, done);
+      });
+      it('should update hipache entries when the name is updated', function (done) {
+        ctx.instance.fetch(function (err, instance) {
+          expectHipacheHostsForContainers(instance, done);
+        });
+      });
+    });
     ['instance'].forEach(function (destroyName) {
       describe('not founds', function() {
         beforeEach(function (done) {
@@ -221,3 +272,31 @@ describe('Instance - /instances/:id', function () {
     });
   });
 });
+
+
+function expectHipacheHostsForContainers (instance, cb) {
+  var containers = instance.containers;
+  var allUrls = [];
+  containers.forEach(function (container) {
+    if (container.ports) {
+      Object.keys(container.ports).forEach(function (port) {
+        var portNumber = port.split('/')[0];
+        allUrls.push([instance._id, '-', portNumber, '.', process.env.DOMAIN].join(''));
+      });
+    }
+  });
+  async.forEach(allUrls, function (url, cb) {
+    var hipacheEntry = new RedisList('frontend:'+url);
+    hipacheEntry.lrange(0, -1, function (err, backends) {
+      if (err) {
+        cb(err);
+      }
+      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
+        cb(new Error('Backends invalid for '+url));
+      }
+      else {
+        cb();
+      }
+    });
+  }, cb);
+}

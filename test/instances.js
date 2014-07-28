@@ -110,7 +110,7 @@ describe('Instances - /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
-              expectHipacheHostsForContainers(instance.toJSON().containers, function (err) {
+              expectHipacheHostsForContainers(instance.toJSON(), function (err) {
                 if (err) { return done(err); }
                 expectRunStreamForContainers(instance.toJSON().containers, done);
               });
@@ -125,10 +125,16 @@ describe('Instances - /instances', function () {
       multi.createInstance(function (err, instance, build, env, project, user) {
         if (err) { return done(err); }
         ctx.instance = instance;
+        ctx.project = project;
+        ctx.build = build;
+        ctx.env = env;
         ctx.user = user;
         multi.createInstance(function (err, instance, build, env, project, user) {
           if (err) { return done(err); }
           ctx.instance2 = instance;
+          ctx.project2 = project;
+          ctx.build2 = build;
+          ctx.env2 = env;
           ctx.user2 = user;
           done();
         });
@@ -145,6 +151,15 @@ describe('Instances - /instances', function () {
       var expected = [
         ctx.instance.json()
       ];
+      delete expected[0].project;
+      delete expected[0].build;
+      delete expected[0].environment;
+      delete expected[0].containers;
+      expected[0]['project._id'] = ctx.project.id();
+      expected[0]['environment._id'] = ctx.env.id();
+      expected[0]['build._id'] = ctx.build.id();
+      expected[0].containers = exists;
+      expected[0]['containers[0]'] = exists;
       // FIXME: chai is messing up with eql check:
       delete expected[0].containers;
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
@@ -155,6 +170,15 @@ describe('Instances - /instances', function () {
         }
       };
       var expected2 = [ctx.instance2.json()];
+      delete expected2[0].project;
+      delete expected2[0].build;
+      delete expected2[0].environment;
+      delete expected2[0].containers;
+      expected2[0]['project._id'] = ctx.project2.id();
+      expected2[0]['environment._id'] = ctx.env2.id();
+      expected2[0]['build._id'] = ctx.build2.id();
+      expected2[0].containers = exists;
+      expected2[0]['containers[0]'] = exists;
       // FIXME: chai is messing up with eql check:
       delete expected2[0].containers;
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
@@ -186,10 +210,16 @@ describe('Instances - /instances', function () {
   });
 });
 
-function expectHipacheHostsForContainers (containers, cb) {
+function expectHipacheHostsForContainers (instance, cb) {
+  var containers = instance.containers;
   var allUrls = [];
   containers.forEach(function (container) {
-    allUrls = allUrls.concat(container.urls);
+    if (container.ports) {
+      Object.keys(container.ports).forEach(function (port) {
+        var portNumber = port.split('/')[0];
+        allUrls.push([instance._id, '-', portNumber, '.', process.env.DOMAIN].join(''));
+      });
+    }
   });
   async.forEach(allUrls, function (url, cb) {
     var hipacheEntry = new RedisList('frontend:'+url);
@@ -197,7 +227,7 @@ function expectHipacheHostsForContainers (containers, cb) {
       if (err) {
         cb(err);
       }
-      else if (!backends.length || !backends.every(contains(':'))) {
+      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
         cb(new Error('Backends invalid for '+url));
       }
       else {
@@ -222,10 +252,4 @@ function expectRunStreamForContainers (containers, cb) {
       cb();
     }
   }, cb);
-}
-
-function contains (char) {
-  return function (str) {
-    return ~str.indexOf(char);
-  };
 }
