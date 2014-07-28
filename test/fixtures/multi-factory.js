@@ -8,11 +8,18 @@ var noop = function () {};
 
 module.exports = {
   createUser: function (cb) {
-    require('./mocks/github/action-auth')();
+    var token = uuid();
+    require('./mocks/github/action-auth')(token);
     var User = require('runnable');
     var user = new User(host);
-    user.githubLogin('mysupersecrettoken', function (err) {
-      cb(err, user);
+    user.githubLogin(token, function (err) {
+      if (err) {
+        return cb(err);
+      }
+      else {
+        user.attrs.accounts.github.accessToken = token;
+        cb(null, user);
+      }
     });
     return user;
   },
@@ -166,7 +173,7 @@ module.exports = {
   },
 
   buildTheBuild: function (user, build, cb) {
-    require('nock').cleanAll(),
+    require('nock').cleanAll();
     require('./mocks/docker/container-id-attach')();
     build.fetch(function (err) {
       if (err) { return cb(err); }
