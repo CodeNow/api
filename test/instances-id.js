@@ -276,13 +276,12 @@ describe('Instance - /instances/:id', function () {
 
 function expectHipacheHostsForContainers (instance, cb) {
   var containers = instance.containers;
-  var instanceName = instance.name;
   var allUrls = [];
   containers.forEach(function (container) {
     if (container.ports) {
       Object.keys(container.ports).forEach(function (port) {
         var portNumber = port.split('/')[0];
-        allUrls.push([instanceName, '-', portNumber, '.', process.env.DOMAIN].join(''));
+        allUrls.push([container._id, '-', portNumber, '.', process.env.DOMAIN].join(''));
       });
     }
   });
