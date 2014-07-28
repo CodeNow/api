@@ -31,9 +31,10 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
   describe('POST', function () {
     beforeEach(function (done) {
-      multi.createContextVersion(function (err, contextVersion, version, build) {
+      multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
         ctx.contextVersion = contextVersion;
         ctx.build = build;
+        ctx.user = user;
         done(err);
       });
     });
@@ -68,6 +69,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
             'build.log': exists,
             'build.triggeredAction.manual': true,
           };
+          require('./fixtures/mocks/github/user')(ctx.user); // non owner org
           ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
         });
       });
