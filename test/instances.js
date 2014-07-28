@@ -122,10 +122,16 @@ describe('Instances - /instances', function () {
       multi.createInstance(function (err, instance, build, env, project, user) {
         if (err) { return done(err); }
         ctx.instance = instance;
+        ctx.project = project;
+        ctx.build = build;
+        ctx.env = env;
         ctx.user = user;
         multi.createInstance(function (err, instance, build, env, project, user) {
           if (err) { return done(err); }
           ctx.instance2 = instance;
+          ctx.project2 = project;
+          ctx.build2 = build;
+          ctx.env2 = env;
           ctx.user2 = user;
           done();
         });
@@ -142,6 +148,15 @@ describe('Instances - /instances', function () {
       var expected = [
         ctx.instance.json()
       ];
+      delete expected[0].project;
+      delete expected[0].build;
+      delete expected[0].environment;
+      delete expected[0].containers;
+      expected[0]['project._id'] = ctx.project.id();
+      expected[0]['environment._id'] = ctx.env.id();
+      expected[0]['build._id'] = ctx.build.id();
+      expected[0].containers = exists;
+      expected[0]['containers[0]'] = exists;
       // FIXME: chai is messing up with eql check:
       delete expected[0].containers;
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
@@ -152,6 +167,15 @@ describe('Instances - /instances', function () {
         }
       };
       var expected2 = [ctx.instance2.json()];
+      delete expected2[0].project;
+      delete expected2[0].build;
+      delete expected2[0].environment;
+      delete expected2[0].containers;
+      expected2[0]['project._id'] = ctx.project2.id();
+      expected2[0]['environment._id'] = ctx.env2.id();
+      expected2[0]['build._id'] = ctx.build2.id();
+      expected2[0].containers = exists;
+      expected2[0]['containers[0]'] = exists;
       // FIXME: chai is messing up with eql check:
       delete expected2[0].containers;
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
