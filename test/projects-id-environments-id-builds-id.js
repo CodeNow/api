@@ -57,6 +57,8 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
           ];
           expected.contextVersions[0].build.triggeredBy.username =
             ctx.user.json().accounts.github.username;
+          expected.contextVersions[0].build.triggeredBy.gravatar =
+            ctx.user.json().accounts.github.avatar_url;
           ctx.build.fetch(expects.success(200, expected, done));
         });
     });

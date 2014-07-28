@@ -135,4 +135,5 @@ module.exports = function (username, repoName, commit, committerName) {
       'x-content-type-options': 'nosniff',
       'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
     });
+  return getBody;
 };
