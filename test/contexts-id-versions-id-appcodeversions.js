@@ -21,6 +21,23 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
+  function createModUser(done) {
+    ctx.moderator = multi.createModerator(function (err) {
+      require('./fixtures/mocks/github/user-orgs')(ctx.moderator); // non owner org
+      done(err);
+    });
+  }
+  function createNonOwner(done) {
+    ctx.nonOwner = multi.createUser(function (err) {
+      require('./fixtures/mocks/github/user-orgs')(ctx.nonOwner); // non owner org
+      done(err);
+    });
+  }
+  function createContextVersion(user) {
+    return user
+      .newContext(ctx.context.id()).newVersion(ctx.contextVersion.id());
+  }
+
   describe('POST', function () {
     describe('unbuilt', function () {
       beforeEach(function (done) {
@@ -31,21 +48,48 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           ctx.project = project;
           ctx.user = user;
           ctx.repoName = 'Dat-middleware';
-          ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
+          ctx.fullRepoName = ctx.user.attrs.accounts.github.login+'/'+ctx.repoName;
           require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
           require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
           done(err);
         });
       });
-      it('should add a github repo', function (done) {
-        var body = {
-          repo: ctx.fullRepoName
-        };
-        var expected = {
-          repo: ctx.fullRepoName,
-          branch: 'master'
-        };
-        ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, done));
+      describe('should add a github repo', function () {
+        describe('owner', function () {
+          it('should allow', function (done) {
+            var body = {
+              repo: ctx.fullRepoName
+            };
+            var expected = {
+              repo: ctx.fullRepoName,
+              branch: 'master'
+            };
+            ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, done));
+          });
+        });
+        describe('non-owner', function () {
+          beforeEach(createNonOwner);
+          it('should fail (403)', function (done) {
+            var body = {
+              repo: ctx.fullRepoName
+            };
+            createContextVersion(ctx.nonOwner).addGithubRepo(body, expects.errorStatus(403, done));
+          });
+        });
+        describe('moderator', function () {
+          beforeEach(createModUser);
+          it('should allow', function (done) {
+            var body = {
+              repo: ctx.fullRepoName
+            };
+            var expected = {
+              repo: ctx.fullRepoName,
+              branch: 'master'
+            };
+            createContextVersion(ctx.moderator).addGithubRepo(body,
+              expects.success(201, expected, done));
+          });
+        });
       });
       it('should require repo', function (done) {
         var body = {};
@@ -56,7 +100,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           repo: ctx.fullRepoName,
           lowerRepo: ctx.fullRepoName.toLowerCase(),
           branch: 'Custom',
-          lowerBranch: 'custom',
+          lowerBranch: 'custom'
         };
         ctx.contextVersion.addGithubRepo(body, expects.success(201, body, done));
       });
@@ -111,8 +155,26 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
         });
       });
-      it('should delete a github repo', function (done) {
-        ctx.appCodeVersion.destroy(expects.success(204, done));
+      describe('should delete a github repo', function () {
+        describe('owner', function () {
+          it('should allow', function (done) {
+            ctx.appCodeVersion.destroy(expects.success(204, done));
+          });
+        });
+        describe('non-owner', function () {
+          beforeEach(createNonOwner);
+          it('should fail (403)', function (done) {
+            createContextVersion(ctx.nonOwner).destroyAppCodeVersion(ctx.appCodeVersion.id(),
+              expects.errorStatus(403, done));
+          });
+        });
+        describe('moderator', function () {
+          beforeEach(createModUser);
+          it('should allow', function (done) {
+            createContextVersion(ctx.moderator).destroyAppCodeVersion(ctx.appCodeVersion.id(),
+              expects.success(204, done));
+          });
+        });
       });
       it('should 404 for non-existant', function (done) {
         ctx.appCodeVersion.destroy("0000111122223333444455556666", expects.error(404, /AppCodeVersion/, done));

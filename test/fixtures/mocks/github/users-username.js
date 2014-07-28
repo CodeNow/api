@@ -1,37 +1,14 @@
 var nock = require('nock');
-var uuid = require('uuid');
 var multiline = require('multiline');
-var isObject = require('101/is-object');
 
-var userId = 0;
-function nextUserId () {
-  userId++;
-  return userId;
-}
+module.exports = function (userId, username, isActuallyAnOrg) {
 
-module.exports = function (userId, username, token) {
-  if (isObject(userId)) {
-    // assume user model
-    var user = userId.toJSON ? userId.toJSON() : userId;
-    var github = user.accounts.github;
-    userId = github.id;
-    username = github.login;
-    token = user.accounts.github.accessToken;
-  }
-  else {
-    userId = userId || nextUserId();
-    username = username || uuid();
-    token = token || uuid();
-  }
-
-  var urlRegExp = new RegExp('\/user[?]access_token='+token);
   nock('https://api.github.com:443')
-    .filteringPath(urlRegExp, '/user')
-    .get('/user')
+    .filteringPath(/\/users\/[^\/]+\?.+/, '/users/' + username)
+    .get('/users/' + username)
     .reply(200, {
       'login': username,
       'id': userId,
-      'access_token': token,
       'avatar_url': 'https://avatars.githubusercontent.com/u/'+userId+'?',
       'gravatar_id': 'wrong',
       'url': 'https://api.github.com/users/'+username,
@@ -45,7 +22,7 @@ module.exports = function (userId, username, token) {
       'repos_url': 'https://api.github.com/users/'+username+'/repos',
       'events_url': 'https://api.github.com/users/'+username+'/events{/privacy}',
       'received_events_url': 'https://api.github.com/users/'+username+'/received_events',
-      'type': 'User',
+      'type': isActuallyAnOrg ? 'Organization' : 'User',
       'site_admin': false,
       'name': username,
       'company': '',
