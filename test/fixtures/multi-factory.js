@@ -1,8 +1,5 @@
 'use strict';
 
-var isFunction = require('101/is-function');
-var users = require('./user-factory');
-var projects = require('./project-factory');
 var MongoUser = require('models/mongo/user');
 var host = require('./host');
 var uuid = require('uuid');
