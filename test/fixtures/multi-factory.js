@@ -140,7 +140,6 @@ module.exports = {
     require('nock').cleanAll(),
     this.createContextVersion(function (err, contextVersion, context, build, env, project, user, srcArray) {
       if (err) { return cb(err); }
-      require('./mocks/docker/container-id-attach')();
       self.buildTheBuild(user, build, function (err) {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
@@ -173,8 +172,6 @@ module.exports = {
   },
 
   buildTheBuild: function (user, build, cb) {
-    require('nock').cleanAll();
-    require('./mocks/docker/container-id-attach')();
     build.fetch(function (err) {
       if (err) { return cb(err); }
       tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
@@ -184,6 +181,7 @@ module.exports = {
           cb(err);
         }); // get completed build
       });
+      require('./mocks/docker/container-id-attach')();
       build.build({ message: uuid() }, function (err) {
         if (err) {
           cb = noop;
