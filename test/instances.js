@@ -160,6 +160,7 @@ describe('Instances - /instances', function () {
       expected[0]['build._id'] = ctx.build.id();
       expected[0].containers = exists;
       expected[0]['containers[0]'] = exists;
+      expected[0]['owner.username'] = ctx.user.json().accounts.github.username;
       // FIXME: chai is messing up with eql check:
       delete expected[0].containers;
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
@@ -179,6 +180,7 @@ describe('Instances - /instances', function () {
       expected2[0]['build._id'] = ctx.build2.id();
       expected2[0].containers = exists;
       expected2[0]['containers[0]'] = exists;
+      expected2[0]['owner.username'] = ctx.user2.json().accounts.github.username;
       // FIXME: chai is messing up with eql check:
       delete expected2[0].containers;
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
