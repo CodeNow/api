@@ -28,13 +28,13 @@ function sendData (testString, roomId) {
   buildStream.sendStream(roomId, fs.createReadStream(testFile));
 }
 
-describe('build-stream', function () {
+describe('request-stream', function () {
   var primusServer;
 
   before(function (done) {
     httpServer = http.createServer();
     primusServer = socketServer.createSocketServer(httpServer);
-    socketServer.addHandler('build-stream', buildStream.streamHandler);
+    socketServer.addHandler('request-stream', buildStream.streamHandler);
     httpServer.listen(process.env.PORT, done);
   });
 
@@ -63,7 +63,7 @@ describe('build-stream', function () {
       return function() {
         client.write({
           id: 1,
-          event: 'build-stream',
+          event: 'request-stream',
           data: {
             id: roomId,
             streamId: roomId
@@ -96,7 +96,7 @@ describe('build-stream', function () {
     client.on('open', function() {
       client.write({
         id: 1,
-        event: 'build-stream',
+        event: 'request-stream',
         data: {
           id: roomId,
           streamId: roomId
@@ -121,7 +121,7 @@ describe('build-stream', function () {
       client2.on('open', function() {
         client2.write({
           id: 1,
-          event: 'build-stream',
+          event: 'request-stream',
           data: {
             id: roomId,
             streamId: roomId

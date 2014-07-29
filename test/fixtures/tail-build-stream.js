@@ -21,7 +21,7 @@ function tailBuildStream (contextVersionId, cb) {
   // start build stream
   client.write({
     id: 1,
-    event: 'build-stream',
+    event: 'request-stream',
     data: {
       id: contextVersionId,
       streamId: contextVersionId
