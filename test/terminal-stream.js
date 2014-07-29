@@ -16,7 +16,7 @@ var Socket = Primus.createSocket({
   },
   parser: 'JSON'
 });
-var testServerPort = 3111;
+var testServerPort = '3111';
 var filibuster = require('Filibuster');
 var http = require('http');
 
@@ -54,8 +54,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
         id: 1,
         event: 'terminal-stream',
         data: {
-          dockPort: testServerPort,
-          dockHost: 'localhost',
+          dockHost: 'http://localhost:'+testServerPort,
           type: 'filibuster',
           containerId: containerId,
           terminalStreamId: 'terminalStream',
@@ -108,7 +107,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
   });
   describe('param validator', function() {
     var primus;
-    var requiredParams = ['dockHost', 'dockPort', 'type', 'containerId',
+    var requiredParams = ['dockHost', 'type', 'containerId',
       'terminalStreamId', 'eventStreamId'];
     beforeEach(function (done) {
       pass = false;
@@ -122,8 +121,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
     it('should error if not all params sent', function (done) {
       var doneCount = createCount(done);
       var allParams = {
-        dockPort: 1111,
-        dockHost: 'localhost',
+        dockHost: 'http://localhost:'+testServerPort,
         type: 'filibuster',
         containerId: 'containerId',
         terminalStreamId: 'terminalStream',
