@@ -156,7 +156,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
           path: filePath,
         }
       }, function (err) {
-        expect(err.output.statusCode).to.equal(502);
+        expect(err.output.statusCode).to.equal(404);
         done();
       });
     });
