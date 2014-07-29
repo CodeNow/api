@@ -44,7 +44,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
     var pass = false;
     beforeEach(function (done) {
       pass = false;
-      primus = new Socket('http://'+process.env.IPADDRESS+':'+process.env.PORT);
+      primus = new Socket('http://localhost:'+process.env.PORT);
 
       terminalStream = primus.substream('terminalStream');
       eventStream = primus.substream('eventStream');
@@ -110,7 +110,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
       'terminalStreamId', 'eventStreamId'];
     beforeEach(function (done) {
       pass = false;
-      primus = new Socket('http://'+process.env.IPADDRESS+':'+process.env.PORT);
+      primus = new Socket('http://localhost:'+process.env.PORT);
       done();
     });
     afterEach(function (done) {
