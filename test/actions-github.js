@@ -7,7 +7,6 @@ var afterEach = Lab.afterEach;
 var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
 var request = require('request');
-var noop = require('101/noop');
 
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
@@ -67,7 +66,6 @@ describe('Github', function () {
       var options = hooks.push;
       request.post(options, function (err, res, body) {
         if (err) {
-          done = noop;
           done(err);
         }
         else {
@@ -81,8 +79,8 @@ describe('Github', function () {
             if (err) { return done(err); }
             require('./fixtures/mocks/github/repos-username-repo-commits')
               ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
-            require('./fixtures/mocks/github/repos-username-repo-commits')
-              ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+            // require('./fixtures/mocks/github/repos-username-repo-commits')
+            //   ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
             var commit = require('./fixtures/mocks/github/repos-username-repo-commits')
               ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
 
@@ -116,6 +114,45 @@ describe('Github', function () {
               expects.success(200, buildExpected, done));
           });
         }
+      });
+    });
+    it('should start two builds back to back', {timeout:3000}, function (done) {
+      var options = hooks.push;
+      require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+      require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+      require('./fixtures/mocks/github/repos-username-repo-commits')
+        ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+      require('./fixtures/mocks/github/repos-username-repo-commits')
+        ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+      require('./fixtures/mocks/github/repos-username-repo-commits')
+        ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+      require('./fixtures/mocks/github/repos-username-repo-commits')
+        ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+      request.post(options, function (err, res, body) {
+        if (err) { return done(err); }
+        expect(res.statusCode).to.equal(201);
+        expect(body).to.be.okay;
+        expect(body).to.be.an('array');
+        expect(body).to.have.a.lengthOf(1);
+        tailBuildStream(body[0].contextVersions[0], function (err) {
+          if (err) { return done(err); }
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, body) {
+            if (err) { return done(err); }
+            expect(res.statusCode).to.equal(201);
+            expect(body).to.be.okay;
+            expect(body).to.be.an('array');
+            expect(body).to.have.a.lengthOf(1);
+            var buildExpected = {
+              started: exists,
+              completed: exists
+            };
+            tailBuildStream(body[0].contextVersions[0], function (err) {
+              if (err) { return done(err); }
+              ctx.env.newBuild(body[0]).fetch(expects.success(200, buildExpected, done));
+            });
+          });
+        });
       });
     });
     // FIXME: MOAR TESTS
