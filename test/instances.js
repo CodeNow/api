@@ -69,7 +69,7 @@ describe('Instances - /instances', function () {
         });
       });
 
-      var requiredProjectKeys = ['build', 'name'];
+      var requiredProjectKeys = ['build'];
       beforeEach(function (done) {
         ctx.json = {
           build: ctx.build.id()
