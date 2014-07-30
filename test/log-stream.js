@@ -7,7 +7,6 @@ var before = Lab.before;
 var after = Lab.after;
 
 var dock = require('./fixtures/dock');
-var createCount = require('callback-count');
 var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 
