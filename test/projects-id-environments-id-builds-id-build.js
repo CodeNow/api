@@ -104,9 +104,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
               duration: exists,
               failed: equals(false)
             };
-            // ctx.build doesn't automatically change over to be 'owned' by otherEnv,
-            // that is why this 'conversion' is needed
-            ctx.otherEnv.newBuild(ctx.build.id()).fetch(expects.success(200, buildExpected, count.next));
+            ctx.build.fetch(expects.success(200, buildExpected, count.next));
             var versionExpected = {
               'dockerHost': exists,
               'build.message': exists,
