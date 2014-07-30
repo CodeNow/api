@@ -11,9 +11,7 @@ module.exports = tailBuildStream;
 
 function tailBuildStream (contextVersionId, cb) {
   var client = new primusClient(
-    'http://' +
-    process.env.IPADDRESS +
-    ':' +
+    'http://localhost:' +
     process.env.PORT);
   // create substream for build logs
   var buildStream = client.substream(contextVersionId);
