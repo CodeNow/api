@@ -35,6 +35,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
         ctx.contextVersion = contextVersion;
         ctx.build = build;
         ctx.user = user;
+        ctx.project = project;
         done(err);
       });
     });
@@ -71,6 +72,53 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
           };
           require('./fixtures/mocks/github/user')(ctx.user); // non owner org
           ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
+        });
+      });
+    });
+    describe('change environment', function () {
+      beforeEach(function (done) {
+        ctx.otherEnv =
+          ctx.project.createEnvironment({name:'other name'}, done);
+      });
+      it('should accept a new environment', { timeout: 5000 }, function (done) {
+        require('./fixtures/mocks/docker/container-id-attach')();
+        var body = {
+          message:'hello!',
+          environment: ctx.otherEnv.id()
+        };
+        ctx.build.build(ctx.buildId, body, function (err, body, code) {
+          if (err) { return done(err); }
+
+          expect(code).to.equal(201);
+          expect(body).to.be.ok;
+          expect(body.environment).to.equal(ctx.otherEnv.id());
+
+          tailBuildStream(body.contextVersions[0], function (err, log) {
+            if (err) { return done(err); }
+
+            expect(log).to.contain('Successfully built');
+
+            var count = createCount(2, done);
+            var buildExpected = {
+              completed: exists,
+              duration: exists,
+              failed: equals(false)
+            };
+            ctx.build.fetch(expects.success(200, buildExpected, count.next));
+            var versionExpected = {
+              'dockerHost': exists,
+              'build.message': exists,
+              'build.started': exists,
+              'build.completed': exists,
+              'build.dockerImage': exists,
+              'build.dockerTag': exists,
+              'build.log': exists,
+              'build.triggeredAction.manual': true,
+              'environment': ctx.otherEnv.id()
+            };
+            require('./fixtures/mocks/github/user')(ctx.user); // non owner org
+            ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
+          });
         });
       });
     });
