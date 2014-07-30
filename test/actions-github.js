@@ -65,6 +65,7 @@ describe('Github', function () {
     });
     it('should start a build', {timeout:3000}, function (done) {
       var options = hooks.push;
+      require('./fixtures/mocks/docker/container-id-attach')();
       request.post(options, function (err, res, body) {
         if (err) {
           done = noop;
