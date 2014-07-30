@@ -79,8 +79,6 @@ describe('Github', function () {
             if (err) { return done(err); }
             require('./fixtures/mocks/github/repos-username-repo-commits')
               ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
-            // require('./fixtures/mocks/github/repos-username-repo-commits')
-            //   ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
             var commit = require('./fixtures/mocks/github/repos-username-repo-commits')
               ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
 
