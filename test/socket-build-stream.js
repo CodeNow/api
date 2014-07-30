@@ -47,7 +47,7 @@ describe('Build Stream', function () {
     var client;
 
     for (var i = numClients - 1; i >= 0; i--) {
-      client = new primusClient('http://'+process.env.IPADDRESS+':'+process.env.PORT);
+      client = new primusClient('http://localhost:'+process.env.PORT);
       client.substream(roomId).on('data', handleData(client));
       client.on('open', requestBuildStream(client));
       client.on('data', checkResponse);

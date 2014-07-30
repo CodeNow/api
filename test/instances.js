@@ -72,7 +72,6 @@ describe('Instances - /instances', function () {
       var requiredProjectKeys = ['build', 'name'];
       beforeEach(function (done) {
         ctx.json = {
-          name: 'testInstance',
           build: ctx.build.id()
         };
         done();
@@ -99,7 +98,7 @@ describe('Instances - /instances', function () {
           };
           var expected = {
             _id: exists,
-            name: json.name,
+            name: exists,
             owner: { github: ctx.user.json().accounts.github.id },
             public: false,
             project: ctx.project.id(),
