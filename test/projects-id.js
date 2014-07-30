@@ -201,7 +201,6 @@ describe('Project - /projects/:id', function () {
       });
       it('should delete all the things', function (done) {
         var count = createCount(6, done);
-        console.log(ctx.instance.json());
         ctx.project.destroy(expects.success(204, function (err) {
           if (err) { return done(err); }
           ctx.instance.fetch(expects.error(404, count.next));
