@@ -186,6 +186,32 @@ describe('Project - /projects/:id', function () {
   });
 
   describe('DELETE', function () {
+    describe('delete ALL the stuff for a project', function () {
+      beforeEach(function (done) {
+        multi.createInstance(function (err, instance, build, env, project, user, modelsArr) {
+          ctx.instance = instance;
+          ctx.contextVersion = modelsArr[0];
+          ctx.context = modelsArr[1];
+          ctx.build = build;
+          ctx.env = env;
+          ctx.project = project;
+          ctx.user = user;
+          done(err);
+        });
+      });
+      it('should delete all the things', function (done) {
+        var count = createCount(6, done);
+        ctx.project.destroy(expects.success(204, function (err) {
+          if (err) { return done(err); }
+          ctx.instance.fetch(expects.error(404, count.next));
+          ctx.contextVersion.fetch(expects.error(404, count.next));
+          ctx.context.fetch(expects.error(404, count.next));
+          ctx.build.fetch(expects.error(404, count.next));
+          ctx.env.fetch(expects.error(404, count.next));
+          ctx.project.fetch(expects.error(404, count.next));
+        }));
+      });
+    });
     describe('permissions', function() {
       describe('owner', function () {
         it('should delete the project', function (done) {
