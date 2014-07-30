@@ -16,7 +16,6 @@ var Socket = Primus.createSocket({
   },
   parser: 'JSON'
 });
-var testServerPort = 3111;
 var filibuster = require('Filibuster');
 var http = require('http');
 
@@ -31,7 +30,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
     filibuster({
         httpServer: ctx.server
       });
-    ctx.server.listen(testServerPort, done);
+    ctx.server.listen(process.env.FILIBUSTER_PORT, done);
   });
 
   afterEach(function(done) {
@@ -45,7 +44,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
     var pass = false;
     beforeEach(function (done) {
       pass = false;
-      primus = new Socket('http://'+process.env.IPADDRESS+':'+process.env.PORT);
+      primus = new Socket('http://localhost:'+process.env.PORT);
 
       terminalStream = primus.substream('terminalStream');
       eventStream = primus.substream('eventStream');
@@ -54,8 +53,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
         id: 1,
         event: 'terminal-stream',
         data: {
-          dockPort: testServerPort,
-          dockHost: 'localhost',
+          dockHost: 'http://localhost:'+process.env.FILIBUSTER_PORT,
           type: 'filibuster',
           containerId: containerId,
           terminalStreamId: 'terminalStream',
@@ -108,11 +106,11 @@ describe('Socket Server', { timeout: 5000 }, function () {
   });
   describe('param validator', function() {
     var primus;
-    var requiredParams = ['dockHost', 'dockPort', 'type', 'containerId',
+    var requiredParams = ['dockHost', 'type', 'containerId',
       'terminalStreamId', 'eventStreamId'];
     beforeEach(function (done) {
       pass = false;
-      primus = new Socket('http://'+process.env.IPADDRESS+':'+process.env.PORT);
+      primus = new Socket('http://localhost:'+process.env.PORT);
       done();
     });
     afterEach(function (done) {
@@ -122,8 +120,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
     it('should error if not all params sent', function (done) {
       var doneCount = createCount(done);
       var allParams = {
-        dockPort: 1111,
-        dockHost: 'localhost',
+        dockHost: 'http://localhost:'+process.env.FILIBUSTER_PORT,
         type: 'filibuster',
         containerId: 'containerId',
         terminalStreamId: 'terminalStream',

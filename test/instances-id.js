@@ -223,14 +223,28 @@ describe('Instance - /instances/:id', function () {
     });
   });
 
-  describe('RESTART', function () {
-    it('should create all new containers', function (done) {
-      function notEquals (val) { return function (v) { return v !== val; };}
+  describe('START', function () {
+    beforeEach(function (done) {
+      ctx.instance.stop(done);
+    });
+    it('should start all containers', function (done) {
       var expected = ctx.instance.json();
+      // FIXME: add some better checks here like State.StartedAt
       delete expected.containers;
       delete expected.__v;
-      expected['containers[0]'] = notEquals(ctx.instance.json().containers[0]);
-      ctx.instance.restart(expects.success(200, expected, done));
+      expected['containers[0].startedBy.github'] = exists;
+      ctx.instance.start(expects.success(200, expected, done));
+    });
+  });
+
+  describe('STOP', function () {
+    it('should stop all containers', function (done) {
+      var expected = ctx.instance.json();
+      // FIXME: add some better checks here like State.FinishedAt
+      delete expected.containers;
+      delete expected.__v;
+      expected['containers[0].stoppedBy.github'] = exists;
+      ctx.instance.stop(expects.success(200, expected, done));
     });
   });
 

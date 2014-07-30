@@ -48,7 +48,7 @@
     "quotmark"      : "single", // use single quotes
 
     // Metrics
-    "maxparams"     : 4,
+    "maxparams"     : 5,
     "maxdepth"      : 2,
     "maxstatements" : 50,
     "maxcomplexity" : 5,
