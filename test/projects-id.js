@@ -188,9 +188,10 @@ describe('Project - /projects/:id', function () {
   describe('DELETE', function () {
     describe('delete ALL the stuff for a project', function () {
       beforeEach(function (done) {
-        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
-          ctx.contextVersion = contextVersion;
-          ctx.context = context;
+        multi.createInstance(function (err, instance, build, env, project, user, modelsArr) {
+          ctx.instance = instance;
+          ctx.contextVersion = modelsArr[0];
+          ctx.context = modelsArr[1];
           ctx.build = build;
           ctx.env = env;
           ctx.project = project;
@@ -199,7 +200,17 @@ describe('Project - /projects/:id', function () {
         });
       });
       it('should delete all the things', function (done) {
-        ctx.project.destroy(expects.success(204, done));
+        var count = createCount(6, done);
+        console.log(ctx.instance.json());
+        ctx.project.destroy(expects.success(204, function (err) {
+          if (err) { return done(err); }
+          ctx.instance.fetch(expects.error(404, count.next));
+          ctx.contextVersion.fetch(expects.error(404, count.next));
+          ctx.context.fetch(expects.error(404, count.next));
+          ctx.build.fetch(expects.error(404, count.next));
+          ctx.env.fetch(expects.error(404, count.next));
+          ctx.project.fetch(expects.error(404, count.next));
+        }));
       });
     });
     describe('permissions', function() {
