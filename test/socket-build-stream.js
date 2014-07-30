@@ -24,7 +24,7 @@ var primusClient = Primus.createSocket({
 
 function sendData (testString, roomId) {
   fs.writeFileSync(testFile, testString);
-  buildStream.sendBuildStream(roomId, fs.createReadStream(testFile));
+  buildStream.sendStream(roomId, fs.createReadStream(testFile));
 }
 
 describe('Build Stream', function () {
@@ -56,7 +56,7 @@ describe('Build Stream', function () {
       return function() {
         client.write({
           id: 1,
-          event: 'build-stream',
+          event: 'request-stream',
           data: {
             id: roomId,
             streamId: roomId
