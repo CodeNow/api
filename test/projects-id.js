@@ -186,6 +186,22 @@ describe('Project - /projects/:id', function () {
   });
 
   describe('DELETE', function () {
+    describe('delete ALL the stuff for a project', function () {
+      beforeEach(function (done) {
+        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+          ctx.contextVersion = contextVersion;
+          ctx.context = context;
+          ctx.build = build;
+          ctx.env = env;
+          ctx.project = project;
+          ctx.user = user;
+          done(err);
+        });
+      });
+      it('should delete all the things', function (done) {
+        ctx.project.destroy(expects.success(204, done));
+      });
+    });
     describe('permissions', function() {
       describe('owner', function () {
         it('should delete the project', function (done) {
