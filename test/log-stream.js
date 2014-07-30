@@ -50,9 +50,8 @@ describe('Log Stream', function () {
       };
     }
     function checkResponse(message) {
-      console.log(message);
       if (message.error){
-        console.error(message.error);
+        console.error(message);
         console.error(new Error(message.error).stack);
         done(new Error(message));
       }
