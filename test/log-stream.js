@@ -51,8 +51,9 @@ describe('Log Stream', function () {
     }
     function checkResponse(message) {
       if (message.error){
-        console.error("ERROR", message);
-        return done(message);
+        console.error(message);
+        console.error(new Error(message.error).stack);
+        done(new Error(message));
       }
     }
     function handleData(client) {

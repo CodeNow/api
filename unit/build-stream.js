@@ -66,6 +66,7 @@ describe('build-stream', function () {
           event: 'build-stream',
           data: {
             id: roomId,
+            build: {},
             streamId: roomId
           }
         });
@@ -99,6 +100,7 @@ describe('build-stream', function () {
         event: 'build-stream',
         data: {
           id: roomId,
+          build: {},
           streamId: roomId
         }
       });
@@ -124,6 +126,7 @@ describe('build-stream', function () {
           event: 'build-stream',
           data: {
             id: roomId,
+            build: {},
             streamId: roomId
           }
         });

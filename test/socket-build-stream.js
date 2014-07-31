@@ -59,6 +59,7 @@ describe('Build Stream', function () {
           event: 'build-stream',
           data: {
             id: roomId,
+            build: {},
             streamId: roomId
           }
         });
