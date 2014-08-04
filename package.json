@@ -69,7 +69,7 @@
     "faker": "^1.0.0",
     "jsdoc": "^3.2.2",
     "jshint": "^2.5.2",
-    "krain": "git://github.com/CodeNow/krain.git#v0.0.4",
+    "krain": "git://github.com/CodeNow/krain.git#v0.0.6",
     "lab": "^3.2.1",
     "multiline": "^0.3.4",
     "nock": "^0.41.0",
