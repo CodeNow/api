@@ -239,9 +239,9 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), '/Dockerfile');
             require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/file.txt');
             dockerfile.update(opts, expects.success(200, expected, function (err) {
-             if (err) { return done(err); }
+              if (err) { return done(err); }
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/file.txt');
-             dockerfile.fetch(expects.success(200, expected, done));
+              dockerfile.fetch(expects.success(200, expected, done));
             }));
           });
         });
