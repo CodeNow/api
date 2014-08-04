@@ -39,7 +39,7 @@ function createFile (ctx, fileName, filePath, fileContent, done) {
     expect(body).to.have.property('name', fileName);
     expect(body).to.have.property('path', filePath);
     expect(body).to.have.property('isDir', false);
-    expect(body).to.have.property('content', fileContent);
+    expect(body).to.have.property('body', fileContent);
     var content = fs.readFileSync(
       path.join(containerRoot(ctx), filePath, fileName), {
         encoding: 'utf8'
@@ -133,7 +133,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           expect(body).to.have.property('name', fileName);
           expect(body).to.have.property('path', filePath);
           expect(body).to.have.property('isDir', false);
-          expect(body).to.have.property('content', fileContent);
+          expect(body).to.have.property('body', fileContent);
           done();
         });
       });
@@ -166,7 +166,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             expect(body).to.have.property('name', fileName);
             expect(body).to.have.property('path', filePath);
             expect(body).to.have.property('isDir', false);
-            expect(body).to.have.property('content', newFileContent);
+            expect(body).to.have.property('body', newFileContent);
             var fd = path.join(containerRoot(ctx), filePath, fileName);
             var content = fs.readFileSync(fd, {
                 encoding: 'utf8'
@@ -222,7 +222,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             expect(body).to.have.property('name', fileName);
             expect(body).to.have.property('path', filePath);
             expect(body).to.have.property('isDir', false);
-            expect(body).to.have.property('content', newFileContent);
+            expect(body).to.have.property('body', newFileContent);
             var fd = path.join(ctx.containerRoot, filePath, fileName);
             var content = fs.readFileSync(fd, {
               encoding: 'utf8'
@@ -255,7 +255,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           expect(body).to.have.property('name', fileName);
           expect(body).to.have.property('path', filePath);
           expect(body).to.have.property('isDir', false);
-          expect(body).to.have.property('content', fileContent);
+          expect(body).to.have.property('body', fileContent);
           var content = fs.readFileSync(
             path.join(ctx.containerRoot, filePath, fileName), {
               encoding: 'utf8'
@@ -301,7 +301,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           expect(body).to.have.property('name', fileName);
           expect(body).to.have.property('path', filePath);
           expect(body).to.have.property('isDir', false);
-          expect(body).to.have.property('content', fileContent);
+          expect(body).to.have.property('body', fileContent);
 
           var content = fs.readFileSync(
             path.join(ctx.containerRoot, filePath, fileName), {
