@@ -22,6 +22,14 @@ var async = require('async');
 var find = require('101/find');
 var hasProps = require('101/has-properties');
 
+before(function (done) {
+  nock('http://runnable.com:80')
+    .persist()
+    .get('/')
+    .reply(200);
+  done();
+});
+
 describe('Github', function () {
   var ctx = {};
 
@@ -31,13 +39,6 @@ describe('Github', function () {
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
-  before(function (done) {
-    nock('http://runnable.com:80')
-      .persist()
-      .get('/')
-      .reply(200);
-    done();
-  });
 
   describe('ping', function () {
     it('should return OKAY', function (done) {
