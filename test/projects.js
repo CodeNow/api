@@ -13,6 +13,8 @@ var expects = require('./fixtures/expects');
 var exists = require('101/exists');
 var createCount = require('callback-count');
 var uuid = require('uuid');
+var url = require('url');
+var clone = require('101/clone');
 
 describe('Projects - /projects', function () {
   var ctx = {};
@@ -131,14 +133,73 @@ describe('Projects - /projects', function () {
         });
       });
       describe('pagination', function() {
-        it('should have primitive pagination', function (done) {
-          var query = { qs: {
-            sort: '-created',
-            limit: 1,
-            page: 0
-          }};
-          var expected = [ ctx.project2.toJSON() ];
-          ctx.user2.fetchProjects(query, expects.success(200, expected, done));
+        beforeEach(function (done) {
+          var count = createCount(3, done);
+          multi.createProject(count.next);
+          multi.createProject(count.next);
+          multi.createProject(count.next);
+        });
+        describe('testing page incrementing', function () {
+          it('should have primitive pagination (beginning)', function (done) {
+            var query = { qs: {
+              sort: '-created',
+              limit: 1,
+              page: 1
+            }};
+            var link = [
+              generateRelLink(clone(query.qs), 2, 'next'),
+              generateRelLink(clone(query.qs), 5, 'last')].join(', ');
+            var expectedHeaders = {
+              link: link
+            };
+            ctx.user2.fetchProjects(query, expects.success(200, null, expectedHeaders, done));
+          });
+          it('should have primitive pagination (middle)', function (done) {
+            var query = { qs: {
+              sort: '-created',
+              limit: 1,
+              page: 3
+            }};
+            var link = [
+              generateRelLink(clone(query.qs), 1, 'first'),
+              generateRelLink(clone(query.qs), 2, 'prev'),
+              generateRelLink(clone(query.qs), 4, 'next'),
+              generateRelLink(clone(query.qs), 5, 'last')].join(', ');
+            var expectedHeaders = {
+              link: link
+            };
+            ctx.user2.fetchProjects(query, expects.success(200, null, expectedHeaders, done));
+          });
+          it('should have primitive pagination (end)', function (done) {
+            var query = { qs: {
+              sort: '-created',
+              limit: 1,
+              page: 5
+            }};
+            var link = [
+              generateRelLink(clone(query.qs), 1, 'first'),
+              generateRelLink(clone(query.qs), 4, 'prev')].join(', ');
+            var expectedHeaders = {
+              link: link
+            };
+            ctx.user2.fetchProjects(query, expects.success(200, null, expectedHeaders, done));
+          });
+        });
+        describe('with a sort', function () {
+          it('should not screw up sorting', function (done) {
+            var query = { qs: {
+              sort: '-created',
+              limit: 3,
+              page: 2
+            }};
+            var link = 'http://localhost:3031/projects?sort=-created&limit=3&page=1; rel="first", ' +
+              'http://localhost:3031/projects?sort=-created&limit=3&page=1; rel="prev"';
+            var expectedHeaders = {
+              link: link
+            };
+            var expected = [ctx.project2.json(), ctx.project1.json()];
+            ctx.user2.fetchProjects(query, expects.success(200, expected, expectedHeaders, done));
+          });
         });
       });
       describe('sorting', function() {
@@ -241,3 +302,14 @@ describe('Projects - /projects', function () {
   });
 });
 
+
+function generateRelLink (query, page, ref) {
+  query.page = page;
+  return url.format({
+    protocol: 'http:',
+    slashes: true,
+    host: process.env.ROOT_DOMAIN,
+    pathname: '/projects',
+    query: query
+  }) + '; rel="' + ref + '"';
+}
