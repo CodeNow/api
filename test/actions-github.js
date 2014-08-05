@@ -187,7 +187,6 @@ describe('Github', function () {
             function (err) {
               if (err) { return done(err); }
               multi.buildTheBuild(user, build, function (err, build) {
-                console.log(err, build);
                 done(err);
               });
             });
