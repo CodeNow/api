@@ -326,7 +326,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
               return done(err);
             }
 
-            expect(code).to.equal(200);
+            expect(code).to.equal(204);
             try {
               fs.readFileSync(
                 path.join(ctx.containerRoot, filePath, fileName), {
@@ -356,14 +356,14 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
       beforeEach(createFileForModAndNonUser);
       beforeEach(createModUser);
       beforeEach(createModContainer);
-//      afterEach(afterEachNonUserOrMod);
+
       it('should delete a file', function (done) {
         ctx.file = ctx.container.newFile(ctx.fileId);
         ctx.file.destroy(ctx.fileId, function (err, body, code) {
           if (err) {
             return done(err);
           }
-          expect(code).to.equal(200);
+          expect(code).to.equal(204);
           afterEachNonUserOrMod(function(err) {
             if (err) {
               return done(err);
