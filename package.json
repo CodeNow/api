@@ -54,7 +54,7 @@
     "rimraf": "^2.2.8",
     "rollbar": "^0.3.8",
     "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.1",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.18.2",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.21.5",
     "simple-api-client": "^0.5.4",
     "substream": "0.1.1",
     "uuid": "~1.4.1",
@@ -78,7 +78,7 @@
   "engine": "node >= 0.10.5",
   "scripts": {
     "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 100 -e test test/*.js",
-    "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models --exec 'npm run' bdd",
+    "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/extend* --exec 'npm run' bdd",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",
     "docs": "jsdoc -r -d docs lib/ && if [ $CIRCLE_ARTIFACTS ]; then cp -r docs $CIRCLE_ARTIFACTS; fi",
