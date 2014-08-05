@@ -192,8 +192,9 @@ describe('Projects - /projects', function () {
               limit: 3,
               page: 2
             }};
-            var link = 'http://localhost:3031/projects?sort=-created&limit=3&page=1; rel="first", ' +
-              'http://localhost:3031/projects?sort=-created&limit=3&page=1; rel="prev"';
+            var link = [
+              generateRelLink(clone(query.qs), 1, 'first'),
+              generateRelLink(clone(query.qs), 1, 'prev')].join(', ');
             var expectedHeaders = {
               link: link
             };
