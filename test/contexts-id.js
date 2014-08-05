@@ -71,6 +71,7 @@ describe('Context - /contexts/:id', function () {
         });
         describe('non-owner', function () {
           beforeEach(function (done) {
+            require('./fixtures/mocks/github/user-orgs')(999, 'other');
             ctx.nonOwner = multi.createUser(done);
           });
           it('should not get the context (403 forbidden)', function (done) {
@@ -120,6 +121,7 @@ describe('Context - /contexts/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(function (done) {
+          require('./fixtures/mocks/github/user-orgs')(999, 'other');
           ctx.nonOwner = multi.createUser(done);
         });
         updates.forEach(function (json) {
@@ -168,6 +170,7 @@ describe('Context - /contexts/:id', function () {
       });
       describe('non-owner', function () {
         beforeEach(function (done) {
+          require('./fixtures/mocks/github/user-orgs')(999, 'other');
           ctx.nonOwner = multi.createUser(done);
         });
         it('should not delete the context (403 forbidden)', function (done) {

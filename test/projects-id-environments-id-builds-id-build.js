@@ -42,6 +42,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
     it('should return an environment build', { timeout: 5000 }, function (done) {
       require('./fixtures/mocks/docker/container-id-attach')();
+      require('./fixtures/mocks/github/user')(ctx.user);
       ctx.build.build(ctx.buildId, {message:'hello!'}, function (err, body, code) {
         if (err) { return done(err); }
 
@@ -81,6 +82,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
           ctx.project.createEnvironment({name:'other name'}, done);
       });
       it('should accept a new environment', { timeout: 5000 }, function (done) {
+        require('./fixtures/mocks/github/user')(ctx.user);
         require('./fixtures/mocks/docker/container-id-attach')();
         var body = {
           message:'hello!',

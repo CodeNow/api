@@ -17,6 +17,18 @@ var not = require('101/not');
 var exists = require('101/exists');
 var expects = require('./fixtures/expects');
 var equals = require('101/equals');
+var nock = require('nock');
+var async = require('async');
+var find = require('101/find');
+var hasProps = require('101/has-properties');
+
+before(function (done) {
+  nock('http://runnable.com:80')
+    .persist()
+    .get('/')
+    .reply(200);
+  done();
+});
 
 describe('Github', function () {
   var ctx = {};
@@ -25,7 +37,6 @@ describe('Github', function () {
   after(api.stop.bind(ctx));
   before(dock.start.bind(ctx));
   after(dock.stop.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
@@ -55,6 +66,10 @@ describe('Github', function () {
         ctx.env = env;
         ctx.project = project;
         ctx.user = user;
+        require('./fixtures/mocks/github/repos-hooks-get')
+          (hooks.push.json.repository.owner.name, hooks.push.json.repository.name);
+        require('./fixtures/mocks/github/repos-hooks-post')
+          (hooks.push.json.repository.owner.name, hooks.push.json.repository.name);
         ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(ctx.repo,
           function (err) {
             if (err) { return done(err); }
@@ -64,6 +79,8 @@ describe('Github', function () {
     });
     it('should start a build', {timeout:3000}, function (done) {
       var options = hooks.push;
+      require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+      require('./fixtures/mocks/docker/container-id-attach')();
       request.post(options, function (err, res, body) {
         if (err) {
           done(err);
@@ -117,15 +134,9 @@ describe('Github', function () {
     it('should start two builds back to back', {timeout:3000}, function (done) {
       var options = hooks.push;
       require('./fixtures/mocks/github/users-username')(101, 'bkendall');
-      require('./fixtures/mocks/github/users-username')(101, 'bkendall');
       require('./fixtures/mocks/github/repos-username-repo-commits')
         ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
-      require('./fixtures/mocks/github/repos-username-repo-commits')
-        ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
-      require('./fixtures/mocks/github/repos-username-repo-commits')
-        ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
-      require('./fixtures/mocks/github/repos-username-repo-commits')
-        ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+      require('./fixtures/mocks/docker/container-id-attach')();
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
         expect(res.statusCode).to.equal(201);
@@ -134,6 +145,9 @@ describe('Github', function () {
         expect(body).to.have.a.lengthOf(1);
         tailBuildStream(body[0].contextVersions[0], function (err) {
           if (err) { return done(err); }
+          require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+          require('./fixtures/mocks/github/repos-username-repo-commits')
+            ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
           require('./fixtures/mocks/docker/container-id-attach')();
           request.post(options, function (err, res, body) {
             if (err) { return done(err); }
@@ -150,6 +164,69 @@ describe('Github', function () {
               ctx.env.newBuild(body[0]).fetch(expects.success(200, buildExpected, done));
             });
           });
+        });
+      });
+    });
+    describe('when a repo is linked multiple ways', function () {
+      beforeEach(function (done) {
+        ctx.repo = hooks.push.json.repository.owner.name+
+          '/'+hooks.push.json.repository.name;
+
+        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+          ctx.contextVersion2 = contextVersion;
+          ctx.context2 = context;
+          ctx.build2 = build;
+          ctx.env2 = env;
+          ctx.project2 = project;
+          ctx.user2 = user;
+          require('./fixtures/mocks/github/repos-hooks-get')
+            (hooks.push.json.repository.owner.name, hooks.push.json.repository.name);
+          require('./fixtures/mocks/github/repos-hooks-post')
+            (hooks.push.json.repository.owner.name, hooks.push.json.repository.name);
+          ctx.appCodeVersion2 = ctx.contextVersion2.addGithubRepo(ctx.repo,
+            function (err) {
+              if (err) { return done(err); }
+              multi.buildTheBuild(user, build, function (err, build) {
+                console.log(err, build);
+                done(err);
+              });
+            });
+        });
+      });
+      it('should build new builds for two projects that are linked to the same repo', {timeout:10000}, function (done) {
+        var options = hooks.push;
+        require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+        require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/github/user')(ctx.user2);
+        require('./fixtures/mocks/docker/container-id-attach')();
+        require('./fixtures/mocks/docker/container-id-attach')();
+        request.post(options, function (err, res, body) {
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(201);
+          expect(body).to.be.okay;
+          expect(body).to.be.an('array');
+          expect(body).to.have.a.lengthOf(2);
+          var buildExpected = {
+            started: exists,
+            completed: exists
+          };
+
+          async.parallel([
+            function (cb) {
+              var build1 = find(body, hasProps({environment: ctx.env.id()}));
+              tailBuildStream(build1.contextVersions[0], function (err) {
+                if (err) { return done(err); }
+                ctx.build.fetch(expects.success(200, buildExpected, cb));
+              });
+            },
+            function (cb) {
+              var build2 = find(body, hasProps({environment: ctx.env2.id()}));
+              tailBuildStream(build2.contextVersions[0], function (err) {
+                if (err) { return done(err); }
+                ctx.build2.fetch(expects.success(200, buildExpected, cb));
+              });
+            }
+          ], done);
         });
       });
     });
