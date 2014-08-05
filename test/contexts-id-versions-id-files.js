@@ -15,6 +15,8 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var createCount = require('callback-count');
+require('console-trace')({always:true, right:true});
+console.log('console-trace added here');
 
 function createFile (contextId, path, name, isDir) {
   var key = (isDir) ? join(contextId, 'source', path, name, '/') : join(contextId, 'source', path, name);
@@ -49,7 +51,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       ctx.env = env;
       ctx.project = project;
       ctx.user = user;
-      ctx.srcContext = others[1];
+      ctx.srcContext = others && others[1];
       done(err);
     });
   });
@@ -58,22 +60,19 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       var expected = [
         createFile(ctx.context.id(), '/', 'Dockerfile')
       ];
-      ctx.contextVersion.fetchFsList({ path: '/' }, expects.success(200, expected, done));
-    });
-    it('should give us the root directory with an empty path', function (done) {
-      var expected = [
-        createFile(ctx.context.id(), '', '', true)
-      ];
-      ctx.contextVersion.fetchFsList({ path: '' }, expects.success(200, expected, done));
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+      ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done));
     });
   });
   describe('POST - discard changes', function () {
     beforeEach(function (done) {
-      ctx.files = ctx.contextVersion.fetchFsList({ path: '' }, function (err) {
+      console.log('LISTING FILES IS FAILING?');
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+      ctx.files = ctx.contextVersion.rootDir.contents.fetch(function (err) {
         if (err) { return done(err); }
         var count = createCount(2, done);
-        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'Dockerfile');
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
         ctx.contextVersion.rootDir.contents.create({json: {
           name: 'file.txt',
           path: '/',
@@ -96,7 +95,8 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           ETag: exists,
           VersionId: exists
         }];
-        ctx.contextVersion.fetchFsList({ path: '/' }, expects.success(200, expected, done));
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+        ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done));
       }));
     });
   });
@@ -104,6 +104,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
     it('should give us details about a file we just created', function (done) {
       var createExpected = createFile(ctx.context.id(), '/', 'file.txt');
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
           name: 'file.txt',
           path: '/',
@@ -117,13 +118,15 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         createFile(ctx.context.id(), '/', 'file.txt')
       ];
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
           name: 'file.txt',
           path: '/',
           body: 'content'
         }}, expects.success(201, createExpected, function (err) {
           if (err) { return done(err); }
-          ctx.contextVersion.fetchFsList({ path: '/' }, expects.success(200, expected, done));
+          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+          ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done));
         })
       );
     });
@@ -134,13 +137,15 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         createFile(ctx.context.id(), '/', 'dir', true)
       ];
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/');
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
         name: 'dir',
         path: '/',
         isDir: true
       }}, expects.success(201, createExpected, function (err) {
         if (err) { return done(err); }
-        ctx.contextVersion.fetchFsList({ qs: { path: '/' }}, expects.success(200, expected, done));
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+        ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done));
       }));
     });
     it('should let us create a directory, with a slash, without the isDir', function (done) {
@@ -150,12 +155,14 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         createFile(ctx.context.id(), '/', 'dir', true)
       ];
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/');
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
         name: 'dir/',
         path: '/'
       }}, expects.success(201, createExpected, function (err) {
         if (err) { return done(err); }
-        ctx.contextVersion.fetchFsList({ qs: { path: '/' }}, expects.success(200, expected, done));
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+        ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done));
       }));
     });
     it('should let us create a directory, including the tailing slash', function (done) {
@@ -165,44 +172,44 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         createFile(ctx.context.id(), '/', 'dir', true)
       ];
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/');
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
         name: 'dir/',
         path: '/',
         isDir: true
       }}, expects.success(201, createExpected, function (err) {
         if (err) { return done(err); }
-        ctx.contextVersion.fetchFsList({ qs: { path: '/' }}, expects.success(200, expected, done));
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+        ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done));
       }));
     });
-    it('should let us create nested directories, but does not list them at root', function (done) {
+    it('should let us create nested directories, but does not list them at root', { timeout: 1000 }, function (done) {
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/');
-      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/dir2/');
-      var contents = ctx.contextVersion.rootDir.contents;
-      async.series([
-        contents.create.bind(contents, { json: {
-          name: 'dir',
-          path: '/',
-          isDir: true
-        }}),
-        contents.create.bind(contents, { json: {
-          name: 'dir2',
-          path: '/dir/',
-          isDir: true
-        }}),
-        function (cb) {
-          var expected = [
-            createFile(ctx.context.id(), '/', 'Dockerfile'),
-            createFile(ctx.context.id(), '/', 'dir', true)
-          ];
-          ctx.contextVersion.fetchFsList({ qs: { path: '/' }}, expects.success(200, expected, cb));
-        },
-        function (cb) {
-          var expected = [
-            createFile(ctx.context.id(), '/dir/', 'dir2', true)
-          ];
-          ctx.contextVersion.fetchFsList({ qs: { path: '/dir/' }}, expects.success(200, expected, cb));
-        }
-      ], done);
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+      var dataDir = createFile(ctx.context.id(), '/', 'dir', true);
+      var dir = ctx.contextVersion.rootDir.contents.create(dataDir,
+        expects.success(201, dataDir, function (err) {
+          if (err) { return done(err); }
+
+          var dataDir2 = createFile(ctx.context.id(), '/dir', 'dir2', true);
+          require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/dir2/');
+          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/dir/');
+          console.log(dir.constructor.name);
+          var dir2 = dir.contents.create(dataDir2,
+            expects.success(201, dataDir2, function (err) {
+              if (err) { return done(err); }
+
+              var listExpected = [ { name: 'Dockerfile' }, dir.json() ];
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+              ctx.contextVersion.rootDir.contents.fetch(
+                expects.success(200, listExpected, function (err) {
+                  if (err) { return done(err); }
+
+                  require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+                  dir.contents.fetch(expects.success(200, [dir2.json()], done));
+                }));
+            }));
+        }));
     });
     describe('errors', function () {
       it('should not let us create a conflicting file', function (done) {
@@ -215,10 +222,14 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           }
         };
         require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
-        ctx.file = ctx.contextVersion.rootDir.contents.create(json, expects.success(201, createExpected, function (err) {
-          if (err) { return done(err); }
-          ctx.file2 = ctx.contextVersion.rootDir.contents.create(json, expects.error(409, /File already exists/, done));
-        }));
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+        ctx.file = ctx.contextVersion.rootDir.contents.create(json,
+          expects.success(201, createExpected, function (err) {
+            if (err) { return done(err); }
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+            ctx.contextVersion.rootDir.contents.create(
+              json, expects.error(409, /File already exists/, done));
+          }));
       });
       describe('built project', function () {
         beforeEach(function (done) {
@@ -229,6 +240,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
               body: 'content'
             }
           };
+          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
           ctx.file = ctx.contextVersion.rootDir.contents.create(json, function (err) {
             if (err) { return done(err); }
             multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
@@ -246,6 +258,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
               body: 'content'
             }
           };
+          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
           ctx.file = ctx.contextVersion.rootDir.contents.create(json, expects.error(400, /built/, done));
         });
       });

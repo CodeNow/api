@@ -85,8 +85,10 @@ module.exports = {
       require('./mocks/s3/put-object')(context.id(), '/');
       var version = context.createVersion(function (err) {
         if (err) { return (err); }
+        require('./mocks/s3/get-object')(context.id(), '/');
         require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
         require('async').series([
+          // FIXME: this is broken. fix this, and you should be alright (below)
           version.createFile.bind(version, { json: {
             name: 'Dockerfile',
             path: '/',

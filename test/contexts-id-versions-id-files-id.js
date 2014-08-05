@@ -37,7 +37,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
       ctx.sourceContextVersion = array[0];
       ctx.sourceContextVersionId = array[0].id();
       ctx.sourceContextId = array[1].id();
-      ctx.files = ctx.contextVersion.fetchFsList({ path: '/' }, function(err) {
+      ctx.files = ctx.contextVersion.rootDir.contents.fetch({ path: '/' }, function(err) {
         if (err) { done(err); }
         ctx.file = ctx.files.models[0];
         ctx.fileId = ctx.file.id();
@@ -52,7 +52,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
    * @param done
    */
   function getSourceFile(done) {
-    var sourceFiles = ctx.sourceContextVersion.fetchFsList({ path: '/' }, function(err) {
+    var sourceFiles = ctx.sourceContextVersion.rootDir.contents.fetch({ path: '/' }, function(err) {
       if (err) { done(err); }
       ctx.sourceFile = sourceFiles.models[0];
       ctx.sourceFileId = ctx.sourceFile.id();

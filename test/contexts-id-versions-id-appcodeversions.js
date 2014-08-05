@@ -9,8 +9,6 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var expects = require('./fixtures/expects');
 var multi = require('./fixtures/multi-factory');
-require('console-trace')({always:true, right:true});
-console.log('console-trace added here');
 
 describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', function () {
   var ctx = {};
