@@ -79,7 +79,6 @@ describe('build-stream', function () {
   var clientsReceivedCounts;
   var clientsPerServer;
 
-  var queues;
   var resultStrings = {};
 
   /************** helper functions  ********************/
@@ -94,7 +93,7 @@ describe('build-stream', function () {
     clientsPerServer[streamId] = 0;
     buildWriteCounter[streamId] = 0;
     resultStrings[streamId] = {};
-    return mockStreams[streamId]
+    return mockStreams[streamId];
   }
 
   function createBuildResponse2(streamId, halfwayCb, endCb) {
@@ -102,7 +101,6 @@ describe('build-stream', function () {
     clientsReceivedCounts[streamId] = [];
     var queue = new Queue(writeOnBuildStream, 1);
     var data = testData[streamId];
-    queues[streamId] = queue;
     var halfway = Math.floor(data.length/2);
     // Add the startCb to the queue first.
     queue.pause();
@@ -112,37 +110,36 @@ describe('build-stream', function () {
         halfway: (i === halfway),
         final: (i === data.length),
         data: data[i]
-      }, function(halfway, final) {
-        if (halfway && halfwayCb) {
-          halfwayCb(streamId);
-        } else if (final) {
-          if (endCb) {
-            endCb();
-          }
-          return
-        }
-        var clientCount = clientsPerServer[streamId];
-        queue.pause();
-        if (clientCount > 0) {
-          var first = true;
-          var recover = function() {
-            if (first) {
-              if (clientsReceivedCounts[streamId]) {
-                clientsReceivedCounts[streamId].pop();
-              }
-              queue.resume();
-            }
-            first = false;
-          };
-          clientsReceivedCounts[streamId].push(createCount(clientCount, recover));
-        } else {
-          timers.setTimeout(function() {
-            queue.resume();
-          }, 50)
-        }
-      });
+      }, doAll(queue, streamId, halfwayCb, endCb));
     }
     queue.resume();
+  }
+
+  function doAll(queue, streamId, halfwayCb, endCb) {
+    return function(halfway, final) {
+      if (halfway && halfwayCb) {
+        halfwayCb(streamId);
+      } else if (final) {
+        if (endCb) {
+          endCb();
+        }
+        return;
+      }
+      var clientCount = clientsPerServer[streamId];
+      queue.pause();
+      if (clientCount > 0) {
+        clientsReceivedCounts[streamId].push(createCount(clientCount, function() {
+          if (clientsReceivedCounts[streamId]) {
+            clientsReceivedCounts[streamId].pop();
+          }
+          queue.resume();
+        }));
+      } else {
+        timers.setTimeout(function() {
+          queue.resume();
+        }, 50);
+      }
+    };
   }
 
   function writeOnBuildStream(task, cb) {
@@ -215,14 +212,13 @@ describe('build-stream', function () {
           return done(message);
         }
       }
-    }
+    };
   }
   function handleData(clientId, streamId, expectedData, clientDoneCount) {
     return function(data) {
-      if (!responseCounter[clientId] === null) {
+      if (responseCounter[clientId] !== null) {
         return;
       }
-//      console.log(data);
 
       expect(data).to.be.ok;
       resultStrings[streamId][clientId] += data;
@@ -251,7 +247,7 @@ describe('build-stream', function () {
   /********************** Tests **********************/
 
   before(function (done) {
-    if (process.env.NODE_ENV != 'production') {
+    if (process.env.NODE_ENV !== 'production') {
       redisClient.flushall();
     }
 
@@ -270,7 +266,6 @@ describe('build-stream', function () {
     buildWriteCounter = {};
     clientsReceivedCounts = {};
     clientsPerServer = {};
-    queues = {};
     done();
   });
 
@@ -287,7 +282,7 @@ describe('build-stream', function () {
     if (clientServer) {
       clientServer.close();
     }
-    if (process.env.NODE_ENV != 'production') {
+    if (process.env.NODE_ENV !== 'production') {
       checkRedisLeaks(done);
     }
   });
@@ -304,7 +299,7 @@ describe('build-stream', function () {
           done();
         }
       });
-    }, process.env.REDIS_KEY_EXPIRES + 3000)
+    }, process.env.REDIS_KEY_EXPIRES + 3000);
   }
 
   it('should setup 1 mockStream to send data to 1 client', function (done) {
@@ -363,7 +358,7 @@ describe('build-stream', function () {
     buildStream.sendBuildStream(streamId, stream);
     createBuildResponse2(streamId, function(streamId) {
       createClient(clientId, streamId, clientDoneCount, done);
-    })
+    });
   });
 
   it('should allow 1 client to connect after the build to get everything (via logs)',
@@ -376,14 +371,12 @@ describe('build-stream', function () {
     createBuildResponse2(streamId, null, function() {
       var client = createClient(clientId, streamId);
       client.on('data', function (message) {
-        if (message.event === 'BUILD_STREAM_CREATED') {
-          // ignore
-        } else if (message.event === 'BUILD_STREAM_ENDED') {
+        if (message.event === 'BUILD_STREAM_ENDED') {
           var log = testData[streamId].join('');
           expect(message.data.log).to.equal(log);
           client.end();
           done();
-        } else {
+        } else if (message.event !== 'BUILD_STREAM_CREATED') {
           client.end();
           done(new Error('The client never received anything back'));
         }
@@ -461,6 +454,6 @@ describe('build-stream', function () {
           done();
         }
       }, 50);
-    }
+    };
   }
 });
