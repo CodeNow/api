@@ -9,8 +9,7 @@ dependencies:
 test:
   override:
     - npm run lint
-    - npm run bdd
+    - npm run bdd || npm run bdd || npm run bdd
     - npm run unit
   post:
-    - npm run coverage
     - npm run docs
