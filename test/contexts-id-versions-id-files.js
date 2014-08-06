@@ -63,7 +63,6 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
   });
   describe('POST - discard changes', function () {
     beforeEach(function (done) {
-      console.log('LISTING FILES IS FAILING?');
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       ctx.files = ctx.contextVersion.rootDir.contents.fetch(function (err) {
         if (err) { return done(err); }
