@@ -46,6 +46,10 @@ var primusClient = Primus.createSocket({
  *
  * 2 clients connecting offset times (1 beginning, 1 n-way through)
  *
+ * 2 clients with one disconnecting in the middle
+ *
+ * 1 client disconnecting in the middle
+ *
  * Verify redis has been cleaned up
  * Verify the end message comes back from the socket with the log
  *
@@ -76,17 +80,20 @@ describe('build-stream', function () {
   var clientsPerServer;
 
   var queues;
-
+  var resultStrings = {};
 
   /************** helper functions  ********************/
 
 
   function createBuildStream(streamId, num) {
+    var number = num || 20;
     mockStreams[streamId] = new MockStream();
     // This makes an array of words with | before each word after the first.
-    testData[streamId] = faker.Lorem.sentence(num).replace(/ /g, ' |').split(' ');
+    testData[streamId] = faker.Lorem.sentence(number).replace(/ /g, ' |').split(' ')
+      .splice(0, number);
     clientsPerServer[streamId] = 0;
     buildWriteCounter[streamId] = 0;
+    resultStrings[streamId] = {};
     return mockStreams[streamId]
   }
 
@@ -108,16 +115,26 @@ describe('build-stream', function () {
       }, function(halfway, final) {
         if (halfway && halfwayCb) {
           halfwayCb(streamId);
-        } else if (final && endCb) {
-          return endCb();
+        } else if (final) {
+          if (endCb) {
+            endCb();
+          }
+          return
         }
         var clientCount = clientsPerServer[streamId];
         queue.pause();
         if (clientCount > 0) {
-          clientsReceivedCounts[streamId].push(createCount(clientCount, function() {
-            clientsReceivedCounts[streamId].pop();
-            queue.resume();
-          }))
+          var first = true;
+          var recover = function() {
+            if (first) {
+              if (clientsReceivedCounts[streamId]) {
+                clientsReceivedCounts[streamId].pop();
+              }
+              queue.resume();
+            }
+            first = false;
+          };
+          clientsReceivedCounts[streamId].push(createCount(clientCount, recover));
         } else {
           timers.setTimeout(function() {
             queue.resume();
@@ -130,15 +147,21 @@ describe('build-stream', function () {
 
   function writeOnBuildStream(task, cb) {
     var streamId = task.streamId;
-    if (task.final) {
-      mockStreams[streamId].end('Build Successful');
-      buildStream.endBuildStream(streamId, function(err) {
-        if (err) { console.log(err); }
-      });
-    } else {
-      buildWriteCounter[streamId]++;
-      mockStreams[streamId].write(task.data);
+    if (mockStreams[streamId]) {
+      if (task.final) {
+
+        mockStreams[streamId].end('Build Successful');
+        buildStream.endBuildStream(streamId, function (err) {
+          if (err) {
+            console.log(err);
+          }
+        });
+      } else {
+        buildWriteCounter[streamId]++;
+        mockStreams[streamId].write(task.data);
+      }
     }
+
     cb(task.halfway, task.final);
   }
 
@@ -146,12 +169,28 @@ describe('build-stream', function () {
     var client = new primusClient('http://localhost:'+process.env.PORT);
     clientsPerServer[streamId]++;
     responseCounter[clientId] = 0;
+    resultStrings[streamId][clientId] = '';
     client.substream(streamId).on('data',
       handleData(clientId, streamId, testData[streamId], clientDoneCount));
     client.on('open', requestBuildStream(client, streamId));
     client.on('data', checkResponse(done));
     clients[clientId] = client;
     return client;
+  }
+
+  function deleteClient(clientDoneCount, clientId, streamId) {
+    clientsPerServer[streamId]--;
+    if (clientsReceivedCounts[streamId].length > 0) {
+      clientsReceivedCounts[streamId][0].next();
+    }
+
+    clients[clientId].end();
+    if (clientDoneCount) {
+      clientDoneCount.next();
+    }
+    delete responseCounter[clientId];
+    delete resultStrings[streamId][clientId];
+    delete clients[clientId];
   }
 
 
@@ -178,27 +217,29 @@ describe('build-stream', function () {
       }
     }
   }
-  function handleData(clientId, streamId, logData, clientDoneCount) {
+  function handleData(clientId, streamId, expectedData, clientDoneCount) {
     return function(data) {
-      var resCount = responseCounter[clientId];
-      var buildWriteCountCache = buildWriteCounter[streamId];
-      // If data starts with |, then it can't be listening from the beginning
-      if (data.charAt(0) !== '|' &&  data.split('|').length > 1 ) {
-        // If this client's counter is more than 1 off of the stream's counter, we are getting a log,
-        // so let's catch it up.
-        var log = logData.slice(0, buildWriteCountCache).join('');
-        expect(data.toString()).to.equal(log);
-        responseCounter[clientId] = buildWriteCountCache;
-        clientsReceivedCounts[streamId][0].next();
-      } else {
-        if (data.toString() !== logData[resCount]) {
-        }
-        expect(data.toString()).to.equal(logData[responseCounter[clientId]++]);
-        if (clientsReceivedCounts[streamId].length === 0) {
-        }
+      if (!responseCounter[clientId] === null) {
+        return;
+      }
+//      console.log(data);
+
+      expect(data).to.be.ok;
+      resultStrings[streamId][clientId] += data;
+      var dataArray = data.split('|');
+      if (dataArray[0] === '') { dataArray.pop();}
+      responseCounter[clientId] += dataArray.length;
+      if (clientsReceivedCounts[streamId].length > 0) {
         clientsReceivedCounts[streamId][0].next();
       }
-      if (responseCounter[clientId] === logData.length) {
+      if (responseCounter[clientId] === expectedData.length) {
+        // Check if the result string matches the
+
+        if (resultStrings[streamId][clientId] !== expectedData.join('')) {
+          console.log('Uh oh');
+        }
+        expect(resultStrings[streamId][clientId]).to.equal(expectedData.join(''));
+
         clients[clientId].end();
         if (clientDoneCount) {
           clientDoneCount.next();
@@ -210,19 +251,15 @@ describe('build-stream', function () {
   /********************** Tests **********************/
 
   before(function (done) {
-    redisClient.flushall();
+    if (process.env.NODE_ENV != 'production') {
+      redisClient.flushall();
+    }
 
     clientServer = http.createServer();
     primusServer = socketServer.createSocketServer(clientServer);
     socketServer.addHandler('build-stream', buildStream.buildStreamHandler);
     clientServer.listen(process.env.PORT,done);
   });
-
-  function clearAllInObject(object) {
-    for(var i in object) {
-      delete object[i];
-    }
-  }
 
   beforeEach(function(done) {
     testData = {};
@@ -238,22 +275,21 @@ describe('build-stream', function () {
   });
 
   afterEach(function(done) {
-//    console.log('After Each CALLED!!!')
-    clearAllInObject(testData);
-    clearAllInObject(clients);
-    clearAllInObject(mockStreams);
-    clearAllInObject(responseCounter);
-    clearAllInObject(buildIntervals);
-    clearAllInObject(clientsReceivedCounts);
-    clearAllInObject(clientsPerServer);
-    clearAllInObject(queues);
+    for (var id in clients) {
+      if (clients.hasOwnProperty(id)) {
+        clients[id].end();
+      }
+    }
     done();
   });
 
   after(function (done) {
-    clientServer.close(function () {
+    if (clientServer) {
+      clientServer.close();
+    }
+    if (process.env.NODE_ENV != 'production') {
       checkRedisLeaks(done);
-    });
+    }
   });
 
   function checkRedisLeaks(done) {
@@ -271,7 +307,7 @@ describe('build-stream', function () {
     }, process.env.REDIS_KEY_EXPIRES + 3000)
   }
 
-  it('should setup 1 mockStream to send data to 1 client', {timeout: 5000000}, function (done) {
+  it('should setup 1 mockStream to send data to 1 client', function (done) {
     // Create BuildStreams
     var clientDoneCount = createCount(1, done);
     var clientId = uuid();
@@ -282,30 +318,32 @@ describe('build-stream', function () {
     createBuildResponse2(streamId);
   });
 
-  it('should setup n mockStreams to send data to 1 client each', {timeout: 500000}, function (done) {
-    var numClients = 1000;
+  it('should setup n mockStreams to send data to 1 client each', {timeout: 1000}, function (done) {
+    var numClients = 100;
     // Create BuildStreams
     var clientDoneCount = createCount(numClients, done);
     for (var i = 0; i < numClients; i++) {
       var clientId = uuid();
       var streamId = uuid();
-      var stream = createBuildStream(streamId, i);
+      var stream = createBuildStream(streamId, 10);
       buildStream.sendBuildStream(streamId, stream);
       createClient(clientId, streamId, clientDoneCount, done);
       createBuildResponse2(streamId);
     }
-    for (var i = 0; i < numClients; i++) {
-
-    }
   });
 
-  it('should setup 1 mockStream to send data to n clients', {timeout: 5000}, function (done) {
+  /**
+   * For the above and below tests....
+   * When the number of clients/buildStreams goes over 9000, there seems to be a lot of instability
+   * issues.  We may need to investigate this further
+   */
+  it('should setup 1 mockStream to send data to n clients', {timeout: 1000}, function (done) {
     // If this one fails
-    var numClients = 20;
+    var numClients = 100;
     // Create BuildStreams
     var streamId = uuid();
     buildWriteCounter[streamId] = 0;
-    var stream = createBuildStream(streamId);
+    var stream = createBuildStream(streamId, 30);
     buildStream.sendBuildStream(streamId, stream);
     var clientDoneCount = createCount(numClients, done);
     for (var i = 0; i < numClients; i++) {
@@ -316,54 +354,113 @@ describe('build-stream', function () {
   });
 
   it('should allow 1 client connecting in the middle of the build to get everything',
-    {timeout: 100000}, function (done) {
-      // Create BuildStreams
-      var clientDoneCount = createCount(1, done);
-      var clientId = uuid();
-      var streamId = uuid();
-      var stream = createBuildStream(streamId, 10);
-      buildStream.sendBuildStream(streamId, stream);
-      createBuildResponse2(streamId, function(streamId) {
-        createClient(clientId, streamId, clientDoneCount, done);
-      })
-    });
+   {timeout: 1000}, function (done) {
+    // Create BuildStreams
+    var clientDoneCount = createCount(1, done);
+    var clientId = uuid();
+    var streamId = uuid();
+    var stream = createBuildStream(streamId, 10);
+    buildStream.sendBuildStream(streamId, stream);
+    createBuildResponse2(streamId, function(streamId) {
+      createClient(clientId, streamId, clientDoneCount, done);
+    })
+  });
 
   it('should allow 1 client to connect after the build to get everything (via logs)',
-    {timeout: 100000}, function (done) {
-      // Create BuildStreams
-      var clientId = uuid();
-      var streamId = uuid();
-      var stream = createBuildStream(streamId, 5);
-      buildStream.sendBuildStream(streamId, stream);
-      createBuildResponse2(streamId, null, function() {
-        var client = createClient(clientId, streamId);
-        client.on('data', function (message) {
-          if (message.event === 'BUILD_STREAM_CREATED') {
-            // ignore
-          } else if (message.event === 'BUILD_STREAM_ENDED') {
-            var log = testData[streamId].join('');
-            expect(message.data.log).to.equal(log);
-            client.end();
-            done();
-          } else {
-            client.end();
-            done(new Error('The client never received anything back'));
-          }
-        });
+    {timeout: 1000}, function (done) {
+    // Create BuildStreams
+    var clientId = uuid();
+    var streamId = uuid();
+    var stream = createBuildStream(streamId, 5);
+    buildStream.sendBuildStream(streamId, stream);
+    createBuildResponse2(streamId, null, function() {
+      var client = createClient(clientId, streamId);
+      client.on('data', function (message) {
+        if (message.event === 'BUILD_STREAM_CREATED') {
+          // ignore
+        } else if (message.event === 'BUILD_STREAM_ENDED') {
+          var log = testData[streamId].join('');
+          expect(message.data.log).to.equal(log);
+          client.end();
+          done();
+        } else {
+          client.end();
+          done(new Error('The client never received anything back'));
+        }
       });
     });
+  });
 
   it('should have 2 clients connect at different times and still receive all of the data',
-    {timeout: 2000}, function (done) {
+   function (done) {
+    // Create BuildStreams
+    var clientDoneCount = createCount(2, done);
+    var streamId = uuid();
+    buildWriteCounter[streamId] = 0;
+    var stream = createBuildStream(streamId, 10);
+    buildStream.sendBuildStream(streamId, stream);
+    createClient(uuid(), streamId, clientDoneCount, done);
+    createBuildResponse2(streamId, function(streamId) {
+      createClient(uuid(), streamId, clientDoneCount, done);
+    });
+  });
+
+  it('should have 1 clients who disconnects halfway',
+    {timeout: 50000}, function (done) {
       // Create BuildStreams
-      var clientDoneCount = createCount(2, done);
       var streamId = uuid();
+      var clientId = uuid();
       buildWriteCounter[streamId] = 0;
       var stream = createBuildStream(streamId, 10);
       buildStream.sendBuildStream(streamId, stream);
-      createClient(uuid(), streamId, clientDoneCount, done);
-      createBuildResponse2(streamId, function(streamId) {
-        createClient(uuid(), streamId, clientDoneCount, done);
-      });
+      createClient(clientId, streamId, null, done);
+      createBuildResponse2(streamId, onHalfwayDisconnect(clientId, streamId, null, done));
+  });
+
+  it('should have n clients connect to 1 mockStream each, but all disconnect halfway',
+   {timeout: 500000}, function (done) {
+    var numClients = 100;
+    // Create BuildStreams
+    var clientDoneCount = createCount(numClients, done);
+    for (var i = 0; i < numClients; i++) {
+      var clientId = uuid();
+      var streamId = uuid();
+      var stream = createBuildStream(streamId, 100);
+      buildStream.sendBuildStream(streamId, stream);
+      createClient(clientId, streamId, null, done);
+      createBuildResponse2(streamId, onHalfwayDisconnect(clientId, streamId, clientDoneCount, null));
+    }
+  });
+
+  it('should setup n clients to connect to 1 stream, but disconnect halfway', {timeout: 500000},
+   function (done) {
+    // If this one fails
+    var numClients = 100;
+    // Create BuildStreams
+    var streamId = uuid();
+    buildWriteCounter[streamId] = 0;
+    var stream = createBuildStream(streamId, 20);
+    buildStream.sendBuildStream(streamId, stream);
+    var clientDoneCount = createCount(numClients, done);
+    for (var i = 0; i < numClients; i++) {
+      var clientId = uuid();
+      createClient(clientId, streamId, clientDoneCount, done);
+    }
+    createBuildResponse2(streamId, function() {
+      for (var clientId in clients) {
+        onHalfwayDisconnect(clientId, streamId, clientDoneCount, null)();
+      }
     });
+  });
+
+  function onHalfwayDisconnect(clientId, streamId, clientDoneCount, done) {
+    return function() {
+      timers.setTimeout(function() {
+        deleteClient(clientDoneCount, clientId, streamId);
+        if (!clientDoneCount) {
+          done();
+        }
+      }, 50);
+    }
+  }
 });
