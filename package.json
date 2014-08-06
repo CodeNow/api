@@ -54,7 +54,7 @@
     "rimraf": "^2.2.8",
     "rollbar": "^0.3.8",
     "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.1",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.22.2",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.22.3",
     "simple-api-client": "^0.5.4",
     "substream": "0.1.1",
     "uuid": "~1.4.1",
