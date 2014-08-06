@@ -110,12 +110,12 @@ describe('build-stream', function () {
         halfway: (i === halfway),
         final: (i === data.length),
         data: data[i]
-      }, doAll(queue, streamId, halfwayCb, endCb));
+      }, onQueueCallback(queue, streamId, halfwayCb, endCb));
     }
     queue.resume();
   }
 
-  function doAll(queue, streamId, halfwayCb, endCb) {
+  function onQueueCallback(queue, streamId, halfwayCb, endCb) {
     return function(halfway, final) {
       if (halfway && halfwayCb) {
         halfwayCb(streamId);
@@ -216,7 +216,7 @@ describe('build-stream', function () {
   }
   function handleData(clientId, streamId, expectedData, clientDoneCount) {
     return function(data) {
-      if (responseCounter[clientId] !== null) {
+      if (responseCounter[clientId] === null) {
         return;
       }
 
