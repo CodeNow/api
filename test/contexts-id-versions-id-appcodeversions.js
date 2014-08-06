@@ -64,6 +64,10 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
               repo: ctx.fullRepoName,
               branch: 'master'
             };
+            var username = ctx.user.attrs.accounts.github.login;
+            require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
+            require('./fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName);
+            require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
             ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, done));
           });
         });
@@ -86,6 +90,10 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
               repo: ctx.fullRepoName,
               branch: 'master'
             };
+            var username = ctx.user.attrs.accounts.github.login;
+            require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
+            require('./fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName);
+            require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
             createContextVersion(ctx.moderator).addGithubRepo(body,
               expects.success(201, expected, done));
           });
@@ -102,6 +110,10 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           branch: 'Custom',
           lowerBranch: 'custom'
         };
+        var username = ctx.user.attrs.accounts.github.login;
+        require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
+        require('./fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName);
+        require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
         ctx.contextVersion.addGithubRepo(body, expects.success(201, body, done));
       });
       it('should add a github repo with optional key commit', function (done) {
@@ -120,6 +132,10 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           commit: '123',
           lockCommit: true
         };
+        var username = ctx.user.attrs.accounts.github.login;
+        require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
+        require('./fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName);
+        require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
         ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, done));
       });
     });
@@ -152,6 +168,8 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           var body = {
             repo: ctx.fullRepoName
           };
+          var username = ctx.user.attrs.accounts.github.login;
+          require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
           ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
         });
       });
@@ -192,6 +210,8 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           };
           require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
           require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
+          var username = ctx.user.attrs.accounts.github.login;
+          require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
           ctx.appCodeVersion = contextVersion.addGithubRepo(body, function (err) {
             if (err) { return done(err); }
             multi.buildTheBuild(user, build, function (err) {

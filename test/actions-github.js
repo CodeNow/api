@@ -66,10 +66,16 @@ describe('Github', function () {
         ctx.env = env;
         ctx.project = project;
         ctx.user = user;
-        require('./fixtures/mocks/github/repos-hooks-get')
-          (hooks.push.json.repository.owner.name, hooks.push.json.repository.name);
-        require('./fixtures/mocks/github/repos-hooks-post')
-          (hooks.push.json.repository.owner.name, hooks.push.json.repository.name);
+        user.attrs.accounts.github.login = hooks.push.json.repository.owner.name;
+        var username = hooks.push.json.repository.owner.name;
+        var reponame = hooks.push.json.repository.name;
+        require('./fixtures/mocks/github/repos-username-repo')(ctx.user, reponame);
+        require('./fixtures/mocks/github/repos-hooks-get')(username, reponame);
+        require('./fixtures/mocks/github/repos-hooks-post')(username, reponame);
+        require('./fixtures/mocks/github/repos-keys-get')(username, reponame);
+        require('./fixtures/mocks/github/repos-keys-post')(username, reponame);
+        require('./fixtures/mocks/s3/put-object')('/runnable.deploykeys.test/'+username+'/'+reponame+'.key.pub');
+        require('./fixtures/mocks/s3/put-object')('/runnable.deploykeys.test/'+username+'/'+reponame+'.key');
         ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(ctx.repo,
           function (err) {
             if (err) { return done(err); }
@@ -179,10 +185,12 @@ describe('Github', function () {
           ctx.env2 = env;
           ctx.project2 = project;
           ctx.user2 = user;
-          require('./fixtures/mocks/github/repos-hooks-get')
-            (hooks.push.json.repository.owner.name, hooks.push.json.repository.name);
-          require('./fixtures/mocks/github/repos-hooks-post')
-            (hooks.push.json.repository.owner.name, hooks.push.json.repository.name);
+          var username = hooks.push.json.repository.owner.name;
+          var reponame = hooks.push.json.repository.name;
+          require('./fixtures/mocks/github/repos-username-repo')(ctx.user, reponame);
+          require('./fixtures/mocks/github/repos-hooks-get')(username, reponame);
+          require('./fixtures/mocks/github/repos-hooks-post')(username, reponame);
+          require('./fixtures/mocks/github/repos-keys-get')(username, reponame, true);
           ctx.appCodeVersion2 = ctx.contextVersion2.addGithubRepo(ctx.repo,
             function (err) {
               if (err) { return done(err); }
