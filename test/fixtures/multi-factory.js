@@ -85,6 +85,7 @@ module.exports = {
       require('./mocks/s3/put-object')(context.id(), '/');
       var version = context.createVersion(function (err) {
         if (err) { return (err); }
+        require('./mocks/s3/get-object')(context.id(), '/');
         require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
         require('async').series([
           version.createFile.bind(version, { json: {
@@ -194,8 +195,8 @@ module.exports = {
   },
 
   createContextPath: function (user, contextId) {
-      return user
-        .newContext(contextId);
+    return user
+      .newContext(contextId);
   },
 
   createContextVersionPath: function (user, contextId, contextVersionId) {
@@ -205,9 +206,9 @@ module.exports = {
   },
 
   createContainerPath: function (user, instanceId, containerId) {
-  return user
-    .newInstance(instanceId)
-    .newContainer(containerId);
+    return user
+      .newInstance(instanceId)
+      .newContainer(containerId);
   },
 
   createBuildPath: function (user, projectId, envId, buildId) {
