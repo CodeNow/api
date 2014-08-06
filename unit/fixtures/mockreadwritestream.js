@@ -17,6 +17,13 @@ MockReadWriteStream.prototype.write = function (msg, cb) {
   }
 };
 
+MockReadWriteStream.prototype.publish = function (msg, cb) {
+  this.emit('message', msg);
+  if (cb) {
+    cb();
+  }
+};
+
 MockReadWriteStream.prototype.end = function (msg, cb) {
   this.emit('end', msg);
   if (cb) {

@@ -8,6 +8,7 @@ var createCount = require('callback-count');
 var redis = require('redis');
 var uuid = require('uuid');
 var redisStream = require('../lib/models/redis/stream.js');
+var MockStream = require('./fixtures/mockreadwritestream.js');
 
 
 describe('redis-stream', function () {
@@ -19,17 +20,19 @@ describe('redis-stream', function () {
   it('should read stream from redis', function (done) {
     var testString = 'this is another message';
     var s = new require('stream').Writable();
+    var writer = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_IPADDRESS);
     s._write = function(message) {
       expect(message.toString()).to.equal(testString);
+      writer.end();
       done();
     };
-    redisStream.attachOutputStreamToRedis(roomId, s);
-    var writer = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_IPADDRESS);
+    redisStream.attachOutputStreamToRedis(uuid(), roomId,  s);
     writer.publish(roomId, testString);
   });
-  it('should write stream to redis', function (done) {
+  it('should write stream to redis', {timeout: 500000}, function (done) {
     var testString = 'this is a message';
     var reader = redis.createClient(process.env.REDIS_PORT, process.env.REDIS_IPADDRESS);
+//    redisStream.attachOutputStreamToRedis(uuid(), roomId,  reader);
     reader.subscribe(roomId);
     reader.on('message', function (channel, message) {
       if (channel === 'test' && message === testString) {
@@ -40,10 +43,9 @@ describe('redis-stream', function () {
       expect(message).to.equal(testString);
       return done();
     });
-    var s = new require('stream').Readable();
-    s.push(testString);
-    s.push(null);
+    var s = new MockStream();
     redisStream.attachInputStreamToRedis(roomId, s);
+    s.write(testString);
   });
   it('should send data to all clients', function (done) {
     var testString = 'this is yet another message';
@@ -58,7 +60,7 @@ describe('redis-stream', function () {
     for (var i = numClients - 1; i >= 0; i--) {
       var client1 = new require('stream').Writable();
       client1._write = handleMessage;
-      redisStream.attachOutputStreamToRedis(roomId, client1);
+      redisStream.attachOutputStreamToRedis(uuid(), roomId, client1);
     }
 
     var sendStream = new require('stream').Readable();
