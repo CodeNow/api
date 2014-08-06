@@ -196,8 +196,8 @@ module.exports = {
   },
 
   createContextPath: function (user, contextId) {
-      return user
-        .newContext(contextId);
+    return user
+      .newContext(contextId);
   },
 
   createContextVersionPath: function (user, contextId, contextVersionId) {
@@ -207,9 +207,9 @@ module.exports = {
   },
 
   createContainerPath: function (user, instanceId, containerId) {
-  return user
-    .newInstance(instanceId)
-    .newContainer(containerId);
+    return user
+      .newInstance(instanceId)
+      .newContainer(containerId);
   },
 
   createBuildPath: function (user, projectId, envId, buildId) {

@@ -8,15 +8,12 @@ var afterEach = Lab.afterEach;
 
 var exists = require('101/exists');
 var join = require('path').join;
-var async = require('async');
 
 var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var createCount = require('callback-count');
-require('console-trace')({always:true, right:true});
-console.log('console-trace added here');
 
 function createFile (contextId, path, name, isDir) {
   var key = (isDir) ? join(contextId, 'source', path, name, '/') : join(contextId, 'source', path, name);
@@ -205,7 +202,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
                 expects.success(200, listExpected, function (err) {
                   if (err) { return done(err); }
 
-                  require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+                  require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/dir/');
                   dir.contents.fetch(expects.success(200, [dir2.json()], done));
                 }));
             }));

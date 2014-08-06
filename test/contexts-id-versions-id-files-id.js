@@ -37,12 +37,15 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
       ctx.sourceContextVersion = array[0];
       ctx.sourceContextVersionId = array[0].id();
       ctx.sourceContextId = array[1].id();
-      ctx.files = ctx.contextVersion.rootDir.contents.fetch({ path: '/' }, function(err) {
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+      ctx.files = ctx.contextVersion.rootDir.contents;
+      ctx.files.fetch({ path: '/' }, function (err) {
         if (err) { done(err); }
         ctx.file = ctx.files.models[0];
         ctx.fileId = ctx.file.id();
         ctx.dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
-        done();
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+        ctx.files.createDir({ name:'dir' }, done);
       });
     });
   });
@@ -52,7 +55,9 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
    * @param done
    */
   function getSourceFile(done) {
-    var sourceFiles = ctx.sourceContextVersion.rootDir.contents.fetch({ path: '/' }, function(err) {
+    var sourceFiles = ctx.sourceContextVersion.rootDir.contents;
+    require('./fixtures/mocks/s3/get-object')(ctx.sourceContextId, '/');
+    sourceFiles.fetch({ path: '/' }, function (err) {
       if (err) { done(err); }
       ctx.sourceFile = sourceFiles.models[0];
       ctx.sourceFileId = ctx.sourceFile.id();
@@ -187,6 +192,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           it('should get the body of the file', function (done) {
             var expected = ctx.sourceFile.json();
             require('./fixtures/mocks/s3/get-object')(ctx.sourceContextId, '/Dockerfile');
+            require('./fixtures/mocks/s3/get-object')(ctx.sourceContextId, '/');
             ctx.sourceContextVersion.fetchFile(ctx.sourceFileId,
               expects.success(200, expected, done));
           });
@@ -242,6 +248,25 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
               if (err) { return done(err); }
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/file.txt');
               dockerfile.fetch(expects.success(200, expected, done));
+            }));
+          });
+          it('should let us rename a dir', function (done) {
+            var dir = find(ctx.files.models, hasKeypaths({ 'id()': '/dir' }));
+            var body = {
+              name: 'dir2'
+            };
+            var expected = dir.json();
+            expected.ETag = exists;
+            expected.VersionId = exists;
+            expected.name = body.name;
+            expected.Key = new RegExp(body.name + '$');
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), dir.attrs.name);
+            require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), dir.attrs.name);
+            require('./fixtures/mocks/s3/put-object')(ctx.context.id(), body.name);
+            dir.update(body, expects.success(200, expected, function (err) {
+              if (err) { return done(err); }
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), body.name);
+              dir.fetch(expects.success(200, expected, done));
             }));
           });
         });
