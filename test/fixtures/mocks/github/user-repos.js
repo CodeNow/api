@@ -17,8 +17,8 @@ module.exports = function (userId, username, repos) {
     };
   });
     nock('https://api.github.com:443')
-      .filteringPath(/\/users\/[^\/]+\/repos\?.+/, '/users/' + username + '/repos')
-      .get('/users/' + username + '/repos')
+      .filteringPath(/\/user\/repos\?.+/, '/user/repos')
+      .get('/user/repos')
       .reply(200, repos, {
         server: 'GitHub.com',
         date: 'Tue, 24 Jun 2014 23:32:26 GMT',

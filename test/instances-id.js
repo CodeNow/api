@@ -235,6 +235,17 @@ describe('Instance - /instances/:id', function () {
       expected['containers[0].startedBy.github'] = exists;
       ctx.instance.start(expects.success(200, expected, done));
     });
+    describe('and after started', function () {
+      beforeEach(function (done) {
+        ctx.instance.start(expects.success(200, done));
+      });
+      it('should have correct hipache hosts', function (done) {
+        ctx.instance.fetch(function (err, instance) {
+          if (err) { return done(err); }
+          expectHipacheHostsForContainers(instance, done);
+        });
+      });
+    });
   });
 
   describe('STOP', function () {

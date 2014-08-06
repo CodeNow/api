@@ -160,6 +160,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
             completed: not(exists),
             failed: equals(false)
           };
+          require('./fixtures/mocks/docker/container-id-attach')();
           var newBuild = ctx.build.rebuild(body,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }

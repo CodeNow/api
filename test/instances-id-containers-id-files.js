@@ -65,12 +65,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
   });
   describe('GET', function () {
     it('should get list of files at root', function (done) {
-      var filePath = '/';
-      ctx.container.fetchFiles({
-        qs: {
-          path: filePath,
-        }
-      }, function (err, body, code) {
+      ctx.container.rootDir.contents.fetch(function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(200);
         expect(body).to.be.an('array');
@@ -85,7 +80,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
     });
     it('should get list of files in full dir1', function (done) {
       var filePath = dir1;
-      ctx.container.fetchFiles({
+      ctx.container.fetchFsList({
         qs: {
           path: filePath,
         }
@@ -103,7 +98,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
     });
     it('should get list of files in dir1/dir1', function (done) {
       var filePath = dir1_dir1;
-      ctx.container.fetchFiles({
+      ctx.container.fetchFsList({
         qs: {
           path: filePath,
         }
@@ -120,7 +115,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
     });
     it('should get list of files in dir2', function (done) {
       var filePath = dir2;
-      ctx.container.fetchFiles({
+      ctx.container.fetchFsList({
         qs: {
           path: filePath,
         }
@@ -137,7 +132,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
     });
     it('should get list of files in empty dir2/dir1', function (done) {
       var filePath = dir2_dir1;
-      ctx.container.fetchFiles({
+      ctx.container.fetchFsList({
         qs: {
           path: filePath,
         }
@@ -151,7 +146,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
     });
     it('should not return anything for invalid dir', function (done) {
       var filePath = '/fake';
-      ctx.container.fetchFiles({
+      ctx.container.fetchFsList({
         qs: {
           path: filePath,
         }
@@ -162,7 +157,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
     });
     it('should not return anything outside container', function (done) {
       var filePath = '/../../../../../';
-      ctx.container.fetchFiles({
+      ctx.container.fetchFsList({
         qs: {
           path: filePath,
         }
