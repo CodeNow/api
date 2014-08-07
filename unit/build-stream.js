@@ -313,7 +313,7 @@ describe('build-stream', function () {
     createBuildResponse2(streamId);
   });
 
-  it('should setup n mockStreams to send data to 1 client each', {timeout: 1000}, function (done) {
+  it('should setup n mockStreams to send data to 1 client each', {timeout: 2000}, function (done) {
     var numClients = 100;
     // Create BuildStreams
     var clientDoneCount = createCount(numClients, done);
@@ -332,7 +332,7 @@ describe('build-stream', function () {
    * When the number of clients/buildStreams goes over 9000, there seems to be a lot of instability
    * issues.  We may need to investigate this further
    */
-  it('should setup 1 mockStream to send data to n clients', {timeout: 1000}, function (done) {
+  it('should setup 1 mockStream to send data to n clients', {timeout: 2000}, function (done) {
     // If this one fails
     var numClients = 100;
     // Create BuildStreams
