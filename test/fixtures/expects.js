@@ -11,12 +11,16 @@ var expects = module.exports = function (keypath) {
   };
 };
 
-expects.success = function (statusCode, expectedKeypaths, done) {
+expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done) {
   if (isFunction(expectedKeypaths)) {
     done = expectedKeypaths;
+    expectedHeaders = null;
     expectedKeypaths = null;
+  } else if (isFunction(expectedHeaders)) {
+    done = expectedHeaders;
+    expectedHeaders = null;
   }
-  return function (err, body, code) {
+  return function (err, body, code, res) {
     if (err) { return done(err); }
     expect(statusCode).to.equal(code);
     if (expectedKeypaths) {
@@ -30,6 +34,10 @@ expects.success = function (statusCode, expectedKeypaths, done) {
       } else {
         expectKeypaths(body, expectedKeypaths);
       }
+    }
+    if (expectedHeaders) {
+      expect(res.headers).to.be.okay;
+      expectKeypaths(res.headers, expectedHeaders);
     }
     done();
   };
