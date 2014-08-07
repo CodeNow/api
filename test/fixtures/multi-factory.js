@@ -178,18 +178,18 @@ module.exports = {
     require('./mocks/docker/container-id-attach')();
     build.fetch(function (err) {
       if (err) { return cb(err); }
-      tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
-        if (err) { return cb(err); }
-        require('./mocks/github/user')(user);
-        build.fetch(function (err) {
-          cb(err);
-        }); // get completed build
-      });
       build.build({ message: uuid() }, function (err) {
         if (err) {
           cb = noop;
           cb(err);
         }
+        tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
+          if (err) { return cb(err); }
+          require('./mocks/github/user')(user);
+          build.fetch(function (err) {
+            cb(err);
+          }); // get completed build
+        });
       });
     });
   },
