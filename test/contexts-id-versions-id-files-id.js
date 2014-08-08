@@ -268,7 +268,8 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             require('./fixtures/mocks/s3/get-object')(ctx.context.id(), dir.id());
             require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), dir.id());
             require('./fixtures/mocks/s3/put-object')(ctx.context.id(), body.name);
-            dir.update(body, expects.success(200, expected, done)); // FIXME: add a fetch after that ensures the dir is retrieved
+            dir.update(body, expects.success(200, expected, done));
+            // FIXME: add a fetch after that ensures the dir is retrieved
           });
           describe('dir with contents', function() {
             beforeEach(function (done) {
