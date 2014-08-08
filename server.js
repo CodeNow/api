@@ -14,3 +14,6 @@ var api_server = require('index');
 
 var worker = new api_server();
 worker.start(function noop () {});
+
+var keyGenerator = require('key-generator');
+keyGenerator.go();

@@ -5,6 +5,9 @@ var Runnable = require('runnable');
 var user = new Runnable('localhost:3030');
 var uuid = require('uuid');
 // var createCount = require('callback-count');
+var find = require('101/find');
+var hasProperties = require('101/has-properties');
+var hasKeypaths = require('101/has-keypaths');
 
 var projectName = uuid();
 var ctx = {};
@@ -28,18 +31,23 @@ async.series([
       environment: ctx.env.id(),
     } }, cb);
   },
-  function (cb) { ctx.contextVersion.addGithubRepo('bkendall/qwirkle', cb); },
+  function (cb) { ctx.contextVersion.addGithubRepo('bkendall/hairy-bear', cb); },
   function (cb) {
     var icv = ctx.sourceVersions.models[0].json().infraCodeVersion;
     ctx.contextVersion.copyFilesFromSource(icv, cb);
   },
   function (cb) {
-    ctx.files = ctx.contextVersion.fetchFiles({path: '/', name: 'Dockerfile'}, cb);
+    ctx.files =  ctx.contextVersion.rootDir.contents;
+    ctx.files.fetch({path: '/'}, function (err) {
+      if (err) { return cb(err); }
+      ctx.dockerfile = find(ctx.files.models, hasKeypaths({'id()': '/Dockerfile'}));
+      cb();
+    });
   },
   function (cb) {
-    ctx.dockerfile = ctx.files.models[0];
     ctx.dockerfile.update({ json: {
-      body: 'FROM dockerfile/nodejs\nADD ./qwirkle /data\nEXPOSE 8080\nCMD sleep 60'
+      body: 'FROM dockerfile/nodejs\nADD ./hairy-bear /hb\n' +
+        'WORKDIR /hb\nEXPOSE 80\nCMD ["node", "server.js"]'
     }}, cb);
   },
   function (cb) { ctx.build.build({ message: uuid() }, cb); },

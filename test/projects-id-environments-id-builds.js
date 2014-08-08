@@ -88,11 +88,11 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         });
       });
       describe('parentBuild is unbuilt', function() {
-        it('should create a new build from an existing one', function (done) {
+        it('should NOT create a new build from an it', function (done) {
           var body = {
             parentBuild: ctx.build.id()
           };
-          ctx.env.createBuild(body, expects.error(400, /cannot be copied.*built/, done));
+          ctx.env.createBuild(body, expects.error(400, /cannot be copied.*started/, done));
         });
       });
       describe('parentBuild is built', function() {
