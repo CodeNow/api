@@ -14,6 +14,7 @@ var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
+var createCount = require('callback-count');
 
 describe('Version File - /contexts/:contextid/versions/:id/files/:id', function () {
   var ctx = {};
@@ -47,7 +48,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
         ctx.dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
         require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/dir/');
-        ctx.files.createDir('dir', done);
+        ctx.dir = ctx.files.createDir('dir', done);
       });
     });
   });
@@ -416,6 +417,53 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
               }
               ctx.contextVersion.fetchFile(ctx.fileId, expects.error(404, /not found/, done));
             }));
+          });
+          it('should delete a dir', function (done) {
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
+            var dirId = ctx.dir.id();
+            ctx.dir.destroy(expects.success(204, function (err) {
+              if (err) {
+                return done(err);
+              }
+              ctx.contextVersion.fetchFile(dirId, expects.error(404, /not found/, done));
+            }));
+          });
+          describe('dir with contents', function() {
+            beforeEach(function (done) {
+              var count = createCount(done);
+              // sibling dir
+              require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/siblingDir/');
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/siblingDir/');
+              ctx.siblingDir =
+                ctx.contextVersion.rootDir.contents.createDir('siblingDir', count.inc().next);
+              // nested files
+              require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/dir/nestedFile.txt');
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/dir/nestedFile.txt');
+              count.inc();
+              ctx.dir.contents.createFile('nestedFile.txt', function (err) {
+                if (err) {
+                  return count.next(err);
+                }
+                require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/dir/nestedFile2.txt');
+                require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/dir/nestedFile2.txt');
+                ctx.dir.contents.createFile('nestedFile2.txt', count.next);
+              });
+            });
+            it('should delete a dir and it\'s contents', function (done) {
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
+              ctx.dir.destroy(expects.success(204, function (err) {
+                if (err) {
+                  return done(err);
+                }
+                var expected = {
+                  '[0]': ctx.dockerfile.json(),
+                  '[1]': ctx.siblingDir.json(),
+                  'length': 2
+                };
+                ctx.contextVersion.rootDir.contents.fetch(
+                  expects.success(200, expected, done));
+              }));
+            });
           });
         });
         describe('non-owner', function () {
