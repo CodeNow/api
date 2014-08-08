@@ -21,6 +21,7 @@ var nock = require('nock');
 var async = require('async');
 var find = require('101/find');
 var hasProps = require('101/has-properties');
+var Keypair = require('models/mongo/keypair');
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -39,6 +40,14 @@ describe('Github', function () {
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+
+  beforeEach(function (done) {
+    var kp = new Keypair({
+      publicKey: 'asdf',
+      privateKey: 'fdsa'
+    });
+    kp.save(done);
+  });
 
   describe('ping', function () {
     it('should return OKAY', function (done) {
@@ -174,6 +183,13 @@ describe('Github', function () {
       });
     });
     describe('when a repo is linked multiple ways', function () {
+      beforeEach(function (done) {
+        var kp = new Keypair({
+          publicKey: 'asdf',
+          privateKey: 'fdsa'
+        });
+        kp.save(done);
+      });
       beforeEach(function (done) {
         ctx.repo = hooks.push.json.repository.owner.name+
           '/'+hooks.push.json.repository.name;
