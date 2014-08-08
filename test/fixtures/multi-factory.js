@@ -60,7 +60,7 @@ module.exports = {
   },
   createContext: function (cb) {
     this.createUser(function (err, user) {
-      if (err) { return (err); }
+      if (err) { return cb(err); }
       var context = user.createContext({ name: uuid() }, function (err) {
         cb(err, context, user);
       });
@@ -68,7 +68,7 @@ module.exports = {
   },
   createSourceContext: function (cb) {
     this.createModerator(function (err, moderator) {
-      if (err) { return (err); }
+      if (err) { return cb(err); }
       var body = {
         name: uuid(),
         isSource: true
@@ -81,19 +81,17 @@ module.exports = {
   },
   createSourceContextVersion: function (cb) {
     this.createSourceContext(function (err, context, moderator) {
-      if (err) { return (err); }
+      if (err) { return cb(err); }
       require('./mocks/s3/put-object')(context.id(), '/');
       var version = context.createVersion(function (err) {
-        if (err) { return (err); }
+        if (err) { return cb(err); }
         require('./mocks/s3/get-object')(context.id(), '/');
+        require('./mocks/s3/get-object')(context.id(), '/Dockerfile');
         require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
-        require('async').series([
-          version.createFile.bind(version, { json: {
-            name: 'Dockerfile',
-            path: '/',
-            body: 'FROM dockerfile/nodejs\n'
-          }})
-        ], function (err) {
+        version.rootDir.contents.create({
+          name: 'Dockerfile',
+          body: 'FROM dockerfile/nodejs\n'
+        }, function (err) {
           cb(err, version, context, moderator);
         });
       });
@@ -119,6 +117,7 @@ module.exports = {
               project: project.id(),
               environment: env.id()
             };
+
             require('./mocks/s3/put-object')(context.id(), '/');
             var contextVersion = context.createVersion(opts, function (err) {
               if (err) { return cb(err); }
