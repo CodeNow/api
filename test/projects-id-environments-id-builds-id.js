@@ -44,6 +44,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
     multi.createBuild(function (err, build, env, project) {
       ctx.build = build;
       ctx.envId = env.id();
+      ctx.env = env;
       ctx.projectId = project.id();
       done(err);
     });
@@ -78,6 +79,10 @@ describe('Build - /projects/:id/environments/:id/builds/:id', function () {
           ctx.modBuild.fetch(expects.success(200, ctx.build.json(), done));
         });
       });
+    });
+    it('should fail with 404 if not found', function (done) {
+      // just use some other ID to create the 404 situation
+      ctx.env.newBuild(ctx.envId).fetch(expects.error(404, /not found/, done));
     });
   });
 });
