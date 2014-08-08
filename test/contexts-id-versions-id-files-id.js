@@ -28,6 +28,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
 
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, env, project, user, array){
+      if (err) { return done(err); }
       ctx.build = build;
       ctx.env = env;
       ctx.project = project;
@@ -40,12 +41,13 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       ctx.files = ctx.contextVersion.rootDir.contents;
       ctx.files.fetch({ path: '/' }, function (err) {
-        if (err) { done(err); }
+        if (err) { return done(err); }
         ctx.file = ctx.files.models[0];
         ctx.fileId = ctx.file.id();
         ctx.dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
-        ctx.files.createDir({ name:'dir' }, done);
+        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/dir/');
+        ctx.files.createDir('dir', done);
       });
     });
   });
@@ -215,7 +217,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
     describe('permissions', function() {
       describe('regular file', function() {
         describe('owner', function () {
-          it('should let us update a file\'s content', function (done) {
+          it('should let us update a file\'s content', {timeout: 1000}, function (done) {
             var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
             var opts = {
               json: {
@@ -227,6 +229,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.VersionId = exists;
             expected.body = opts.json.body;
             require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/Dockerfile');
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile', opts.json.body);
             dockerfile.update(opts, expects.success(200, expected, done));
           });
           it('should let us rename a file', function (done) {
@@ -241,9 +244,10 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             expected.VersionId = exists;
             expected.name = opts.json.name;
             expected.Key = new RegExp(opts.json.name + '$');
-            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile', 'dockerfileBody');
             require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), '/Dockerfile');
             require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/file.txt');
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/file.txt', 'body');
             dockerfile.update(opts, expects.success(200, expected, function (err) {
               if (err) { return done(err); }
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/file.txt');
@@ -251,7 +255,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
             }));
           });
           it('should let us rename a dir', function (done) {
-            var dir = find(ctx.files.models, hasKeypaths({ 'id()': '/dir' }));
+            var dir = find(ctx.files.models, hasKeypaths({ 'id()': '/dir/' }));
             var body = {
               name: 'dir2'
             };
@@ -405,6 +409,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
       describe('regular file', function() {
         describe('owner', function () {
           it('should delete a file', function (done) {
+            require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/Dockerfile');
             ctx.file.destroy(expects.success(204, function (err) {
               if (err) {
                 return done(err);
