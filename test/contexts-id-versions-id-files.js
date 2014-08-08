@@ -178,7 +178,6 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           var dataDir2 = createFile(ctx.context.id(), '/dir', 'dir2', true);
           require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/dir2/');
           require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/dir/');
-          console.log(dir.constructor.name);
           var dir2 = dir.contents.create(dataDir2,
             expects.success(201, dataDir2, function (err) {
               if (err) { return done(err); }
