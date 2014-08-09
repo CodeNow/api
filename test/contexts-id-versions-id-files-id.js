@@ -305,6 +305,13 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/siblingDir/');
               ctx.siblingDir =
                 ctx.contextVersion.rootDir.contents.createDir('siblingDir', count.inc().next);
+
+              require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/' + dirPathName +
+                '/childDir/');
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/' + dirPathName +
+                '/childDir/');
+              ctx.childDir =
+                ctx.dir.contents.createDir('childDir', count.inc().next);
               // nested files
               require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/' + dirPathName +
                 '/nestedFile.txt');
@@ -316,10 +323,10 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
                   return count.next(err);
                 }
                 require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/' + dirPathName +
-                  '/nestedFile2.txt');
+                  '/childDir/nestedFile2.txt');
                 require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/' + dirPathName +
-                  '/nestedFile2.txt');
-                ctx.nestedFile2 = ctx.dir.contents.createFile('nestedFile2.txt', count.next);
+                  '/childDir/nestedFile2.txt');
+                ctx.nestedFile2 = ctx.childDir.contents.createFile('nestedFile2.txt', count.next);
               });
             });
             it('should rename a nested file', function (done) {
@@ -340,19 +347,21 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
               ctx.nestedFile.update(body, expects.success(200, function (err) {
                 if (err) { return done(err); }
                 var expected = {
-                  '[0].name': 'newName.txt',
+                  '[1].name': 'newName.txt',
                   'length': 2
                 };
                 ctx.dir.contents.fetch(expects.success(200, expected, done));
               }));
             });
-            it('should rename a dir and move it\'s contents', {timeout:1000}, function (done) {
+            it('should rename a dir and move it\'s contents', {timeout:111000}, function (done) {
               var body = {
                 name: 'dir2/'
               };
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
+              require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), ctx.dir.id());
               require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), ctx.dir.id());
               require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), ctx.dir.id());
               require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), ctx.dir.id());
@@ -364,25 +373,43 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
               require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), ctx.nestedFile.id());
               require('./fixtures/mocks/s3/put-object')(ctx.context.id(),
                 ctx.nestedFile.id().replace(ctx.dir.attrs.name, body.name));
+              // childDir
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.childDir.id());
+              require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), ctx.childDir.id());
+              require('./fixtures/mocks/s3/put-object')(ctx.context.id(),
+                ctx.childDir.id().replace(ctx.dir.attrs.name, body.name));
               // nestedFile2
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.nestedFile2.id());
               require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), ctx.nestedFile2.id());
               require('./fixtures/mocks/s3/put-object')(ctx.context.id(),
-                ctx.nestedFile2.id().replace(ctx.dir.attrs.name, body.name));
+                ctx.nestedFile2.id().replace(ctx.dir.attrs.name + '/', body.name));
               ctx.dir.update(body, expects.success(200, function (err) {
                 if (err) {
                   return done(err);
                 }
                 var expected = {
-                  '[0].name': 'nestedFile.txt',
-                  '[0].path': '/dir2',
-                  '[1].name': 'nestedFile2.txt',
+                  '[0].name': 'childDir',
+                  '[0].path': '/dir2/',
+                  '[1].name': 'nestedFile.txt',
                   '[1].path': '/dir2',
                   'length': 2
                 };
+
+                var expectedChild = {
+                  '[0].name': 'nestedFile2.txt',
+                  '[0].path': '/dir2/childDir',
+                  'length': 1
+                };
                 require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
+                require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/dir2/childDir/');
+
                 ctx.dir.contents.fetch(
-                  expects.success(200, expected, done));
+                  expects.success(200, expected, function() {
+                    ctx.dir.contents.fetch('/dir2/childDir/', function () {
+                      var childDir = ctx.dir.contents.models[0];
+                      childDir.contents.fetch( expects.success(200, expectedChild, done));
+                    });
+                  }));
               }));
             });
           });
