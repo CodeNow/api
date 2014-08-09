@@ -326,6 +326,8 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
               var body = {
                 name: 'newName.txt'
               };
+              var path = '/files' + ctx.nestedFile.id();
+              var regexp = new RegExp(regexpQuote(path) + '$');
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
               require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
@@ -334,7 +336,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
               require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), ctx.nestedFile.id());
               require('./fixtures/mocks/s3/put-object')(ctx.context.id(),
                 ctx.nestedFile.id().replace(ctx.nestedFile.attrs.name, body.name));
-              Lab.expect(ctx.nestedFile.path()).to.match(/^.+\/files\/dir\/nestedFile\.txt$/);
+              Lab.expect(ctx.nestedFile.path()).to.match(regexp);
               ctx.nestedFile.update(body, expects.success(200, function (err) {
                 if (err) { return done(err); }
                 var expected = {
