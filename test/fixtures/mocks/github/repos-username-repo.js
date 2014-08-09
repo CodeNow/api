@@ -26,7 +26,7 @@ module.exports = function (userModel, repoName) {
 
   var urlRe = new RegExp('\/repos\/'+username+'\/'+repoName+'.*');
   nock('https://api.github.com:443')
-    .filteringPath(urlRe)
+    .filteringPath(urlRe, '/repos/' + username + '/' + repoName)
     .get('/repos/'+username+'/'+repoName)
     .reply(200, {
       "id": repoId,
