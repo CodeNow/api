@@ -5,7 +5,6 @@
 
     // Predefined globals whom JSHint will ignore.
     "node"          : true,
-    "predef"        : ["escape", "encodeURIComponent"],
 
     // Development.
     "debug"         : false,  // Allow debugger statements e.g. browser breakpoints.
