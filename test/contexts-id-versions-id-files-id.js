@@ -322,6 +322,28 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
                 ctx.nestedFile2 = ctx.dir.contents.createFile('nestedFile2.txt', count.next);
               });
             });
+            it('should rename a nested file', function (done) {
+              var body = {
+                name: 'newName.txt'
+              };
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
+              // nestedFile
+              require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.nestedFile.id());
+              require('./fixtures/mocks/s3/delete-object')(ctx.context.id(), ctx.nestedFile.id());
+              require('./fixtures/mocks/s3/put-object')(ctx.context.id(),
+                ctx.nestedFile.id().replace(ctx.nestedFile.attrs.name, body.name));
+              Lab.expect(ctx.nestedFile.path()).to.match(/^.+\/files\/dir\/nestedFile\.txt$/);
+              ctx.nestedFile.update(body, expects.success(200, function (err) {
+                if (err) { return done(err); }
+                var expected = {
+                  '[0].name': 'newName.txt',
+                  'length': 2
+                };
+                ctx.dir.contents.fetch(expects.success(200, expected, done));
+              }));
+            });
             it('should rename a dir and move it\'s contents', {timeout:1000}, function (done) {
               var body = {
                 name: 'dir2/'
