@@ -353,7 +353,7 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
                 ctx.dir.contents.fetch(expects.success(200, expected, done));
               }));
             });
-            it('should rename a dir and move it\'s contents', {timeout:111000}, function (done) {
+            it('should rename a dir and move it\'s contents', {timeout:1000}, function (done) {
               var body = {
                 name: 'dir2/'
               };
