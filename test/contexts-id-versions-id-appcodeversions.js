@@ -9,6 +9,8 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var expects = require('./fixtures/expects');
 var multi = require('./fixtures/multi-factory');
+var exists = require('101/exists');
+var not = require('101/not');
 
 describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', function () {
   var ctx = {};
@@ -120,23 +122,29 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
         var body = {
           repo: ctx.fullRepoName,
           lowerRepo: ctx.fullRepoName.toLowerCase(),
-          branch: 'Custom',
-          lowerBranch: 'custom',
           commit: '123'
         };
         var expected = {
           repo: ctx.fullRepoName,
           lowerRepo: ctx.fullRepoName.toLowerCase(),
-          branch: 'Custom',
-          lowerBranch: 'custom',
           commit: '123',
-          lockCommit: true
+          lockCommit: true,
+          branch: not(exists),
+          lowerBranch: not(exists)
         };
         var username = ctx.user.attrs.accounts.github.login;
         require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
         require('./fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName);
         require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
         ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, done));
+      });
+      it('should error if both branch and commit are provided', function (done) {
+        var body = {
+          repo: ctx.fullRepoName,
+          branch: 'Custom',
+          commit: '123'
+        };
+        ctx.contextVersion.addGithubRepo(body, expects.error(400, /both/, done));
       });
     });
     describe('built version', function () {
