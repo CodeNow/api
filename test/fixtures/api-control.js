@@ -20,7 +20,6 @@ function stopApi (done) {
     if (err) { return done(err); }
 
     // cleanMongo.dropDatabase(done);
-    console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx stop3');
     done();
   });
 }

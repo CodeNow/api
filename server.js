@@ -1,5 +1,6 @@
 'use strict';
 require('loadenv')();
+var debug = require('debug')('server');
 var cluster = require('cluster');
 var path = require('path');
 var rollbar = require('rollbar');
@@ -22,24 +23,24 @@ var createWorker = function() {
 
 var attachLogs = function(clusters) {
   clusters.on('fork', function(worker) {
-    console.log(new Date(), 'CLUSTER: fork worker', worker.id);
+    debug(new Date(), 'CLUSTER: fork worker', worker.id);
   });
   clusters.on('listening', function(worker, address) {
-    console.log(new Date(), 'CLUSTER: listening worker', worker.id,
+    debug(new Date(), 'CLUSTER: listening worker', worker.id,
       'address', address.address + ':' + address.port);
   });
   clusters.on('exit', function(worker, code, signal) {
     if (code !== 0) {
       rollbar.handleError('CLUSTER: exit worker' + worker.id + 'code' + code + 'signal' + signal);
     }
-    console.log(new Date(), 'CLUSTER: exit worker', worker.id, 'code', code, 'signal', signal);
+    debug(new Date(), 'CLUSTER: exit worker', worker.id, 'code', code, 'signal', signal);
     createWorker();
   });
   clusters.on('online', function(worker) {
-    console.log(new Date(), 'CLUSTER: online worker', worker.id);
+    debug(new Date(), 'CLUSTER: online worker', worker.id);
   });
   clusters.on('disconnect', function(worker) {
-    console.log(new Date(), 'CLUSTER: disconnected worker', worker.id, 'killing now');
+    debug(new Date(), 'CLUSTER: disconnected worker', worker.id, 'killing now');
     worker.kill();
   });
 };
