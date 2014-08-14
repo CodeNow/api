@@ -91,7 +91,7 @@ describe('Instances - /instances', function () {
         });
       });
       describe('with built versions', function () {
-        it('should create an instance', function(done) {
+        it('should create an instance', function (done) {
           var json = {
             name: uuid(),
             build: ctx.build.id()
