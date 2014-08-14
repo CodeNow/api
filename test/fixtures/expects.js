@@ -39,7 +39,7 @@ expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done)
       expect(res.headers).to.be.okay;
       expectKeypaths(res.headers, expectedHeaders);
     }
-    done();
+    done(null, body, code, res);
   };
 };
 
