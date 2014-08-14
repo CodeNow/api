@@ -34,12 +34,36 @@ before(function (done) {
 describe('Github', function () {
   var ctx = {};
 
-  before(api.start.bind(ctx));
-  after(api.stop.bind(ctx));
+  before(function(done){
+    console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx start0');
+    api.start(function(){
+      console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx start1');
+      done();
+    });
+  });
+  after(function(done){
+    api.stop(function(){
+      console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx stop4');
+      done();
+    });
+  });
   before(dock.start.bind(ctx));
-  after(dock.stop.bind(ctx));
-  afterEach(require('./fixtures/clean-mongo').removeEverything);
-  afterEach(require('./fixtures/clean-ctx')(ctx));
+  after(function(done){
+    dock.stop(function(){
+      console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx dockstop1');
+      done();
+    });
+  });
+  afterEach(function(done){
+    console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx mongostop2');
+    require('./fixtures/clean-mongo').removeEverything();
+    done();
+  });
+  afterEach(function(done) {
+    require('./fixtures/clean-ctx')(ctx);
+    console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx mongostop1');
+    done();
+  });
 
   beforeEach(function (done) {
     var kp = new Keypair({
@@ -65,6 +89,7 @@ describe('Github', function () {
   describe('push', function () {
     var ctx = {};
     beforeEach(function (done) {
+      console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx test2');
       ctx.repo = hooks.push.json.repository.owner.name+
         '/'+hooks.push.json.repository.name;
 
