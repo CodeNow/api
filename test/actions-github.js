@@ -34,30 +34,12 @@ before(function (done) {
 describe('Github', function () {
   var ctx = {};
 
-  before(function(done){
-    api.start(function(){
-      done();
-    });
-  });
-  after(function(done){
-    api.stop(function(){
-      done();
-    });
-  });
+  before(api.start.bind(ctx));
+  after(api.stop.bind(ctx));
   before(dock.start.bind(ctx));
-  after(function(done){
-    dock.stop(function(){
-      done();
-    });
-  });
-  afterEach(function(done){
-    require('./fixtures/clean-mongo').removeEverything();
-    done();
-  });
-  afterEach(function(done) {
-    require('./fixtures/clean-ctx')(ctx);
-    done();
-  });
+  after(dock.stop.bind(ctx));
+  afterEach(require('./fixtures/clean-mongo').removeEverything);
+  afterEach(require('./fixtures/clean-ctx')(ctx));
 
   beforeEach(function (done) {
     var kp = new Keypair({
