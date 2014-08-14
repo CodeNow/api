@@ -118,6 +118,23 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
         require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
         ctx.contextVersion.addGithubRepo(body, expects.success(201, body, done));
       });
+      it('should not add a repo the second time', function (done) {
+        var body = {
+          repo: ctx.fullRepoName
+        };
+        var expected = {
+          repo: ctx.fullRepoName,
+          branch: 'master'
+        };
+        var username = ctx.user.attrs.accounts.github.login;
+        require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
+        require('./fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName);
+        require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
+        ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, function (err) {
+          if (err) { return done(err); }
+          ctx.contextVersion.addGithubRepo(body, expects.error(409, /already added/, done));
+        }));
+      });
       it('should add a github repo with optional key commit', function (done) {
         var body = {
           repo: ctx.fullRepoName,
