@@ -7,9 +7,18 @@ var before = Lab.before;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
+var Hashids = require('hashids');
 
 var Instance = require('models/mongo/instance');
 var Container = require('../lib/models/mongo/container');
+
+function getRandomInt (min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+function getRandomHash () {
+  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
+  return hashids.encrypt(getRandomInt(0, 1000))[0];
+}
 
 describe('Instance', function () {
   before(require('./fixtures/mongo').connect);
@@ -18,6 +27,7 @@ describe('Instance', function () {
   function createNewContainer() {
     return new Container({
       name: 'name',
+      shortHash: getRandomHash(),
       context: validation.VALID_OBJECT_ID,
       version: validation.VALID_OBJECT_ID,
       created: Date.now(),
@@ -29,6 +39,7 @@ describe('Instance', function () {
   function createNewInstance() {
     return new Instance({
       name: 'name',
+      shortHash: getRandomHash(),
       public: false,
       owner: { github: validation.VALID_GITHUB_ID },
       createdBy: { github: validation.VALID_GITHUB_ID },
@@ -38,8 +49,8 @@ describe('Instance', function () {
       created: Date.now(),
       containers: [createNewContainer()],
       outputViews: [{
-        name: "testOutputView",
-        type: "test"
+        name: 'testOutputView',
+        type: 'test'
       }]
     });
   }
