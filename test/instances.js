@@ -172,6 +172,25 @@ describe('Instances - /instances', function () {
         });
       });
     });
+    it('should get instances by hashIds', function (done) {
+      var count = createCount(2, done);
+      var query = {
+        shortHash: ctx.instance.json().shortHash
+      };
+      var expected = [{
+        _id: ctx.instance.json()._id,
+        shortHash: ctx.instance.json().shortHash
+      }];
+      ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
+      var query2 = {
+        shortHash: ctx.instance2.json().shortHash
+      };
+      var expected2 = [{
+        _id: ctx.instance2.json()._id,
+        shortHash: ctx.instance2.json().shortHash
+      }];
+      ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
+    });
     it('should list versions by owner.github', function (done) {
       var count = createCount(2, done);
       require('./fixtures/mocks/github/user')(ctx.user);
