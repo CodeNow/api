@@ -2,8 +2,6 @@
 require('loadenv')();
 var debug = require('debug')('server');
 var cluster = require('cluster');
-var path = require('path');
-var rollbar = require('rollbar');
 var numCPUs = require('os').cpus().length;
 var error = require('error');
 // used to store servers so we can close them correctly.
