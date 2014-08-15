@@ -5,7 +5,7 @@ var cluster = require('cluster');
 var path = require('path');
 var rollbar = require('rollbar');
 var numCPUs = require('os').cpus().length;
-
+var error = require('error');
 // used to store servers so we can close them correctly.
 var serverStore = {};
 
@@ -17,40 +17,38 @@ if (process.env.NEWRELIC_KEY) {
 var createWorker = function() {
   var worker = cluster.fork();
   worker.process.on('uncaughtException', function(err) {
-    console.error(new Date(), 'WORKER: uncaughtException:', err);
-    rollbar.handleError(err, function () {
-      // exit after all request are finished
-      if(serverStore[process.pid] &&
-        serverStore[process.pid].stop) {
-        serverStore[process.pid].stop(function(){
-          worker.process.exit(1);
-        });
-      }
-    });
+    error.log(err);
+    if(serverStore[process.pid] &&
+      serverStore[process.pid].stop) {
+      serverStore[process.pid].stop(function() {
+        delete serverStore[process.pid];
+        worker.process.exit(1);
+      });
+    }
   });
   return worker;
 };
 
 var attachLogs = function(clusters) {
   clusters.on('fork', function(worker) {
-    debug(new Date(), 'CLUSTER: fork worker', worker.id);
+    debug(new Date() + 'CLUSTER: fork worker' + worker.id);
   });
   clusters.on('listening', function(worker, address) {
-    debug(new Date(), 'CLUSTER: listening worker', worker.id,
+    debug(new Date() + 'CLUSTER: listening worker' + worker.id,
       'address', address.address + ':' + address.port);
   });
   clusters.on('exit', function(worker, code, signal) {
     if (code !== 0) {
-      rollbar.handleError('CLUSTER: exit worker' + worker.id + 'code' + code + 'signal' + signal);
+      error.log(new Error('CLUSTER: exit worker' + worker.id + 'code' + code + 'signal' + signal));
     }
-    debug(new Date(), 'CLUSTER: exit worker', worker.id, 'code', code, 'signal', signal);
+    debug(new Date() + 'CLUSTER: exit worker' + worker.id + 'code' + code + 'signal' + signal);
     createWorker();
   });
   clusters.on('online', function(worker) {
-    debug(new Date(), 'CLUSTER: online worker', worker.id);
+    debug(new Date() + 'CLUSTER: online worker' + worker.id);
   });
   clusters.on('disconnect', function(worker) {
-    debug(new Date(), 'CLUSTER: disconnected worker', worker.id, 'killing now');
+    debug(new Date() + 'CLUSTER: disconnected worker' + worker.id + 'killing now');
     worker.kill();
   });
 };
@@ -67,10 +65,7 @@ var initExternalServices = function() {
 
 var masterHandleException = function() {
   process.on('uncaughtException', function(err) {
-    console.error(new Date(), 'MASTER: uncaughtException:', err);
-    rollbar.handleError(err, function() {
-      process.exit(1);
-    });
+    error.log(err);
   });
 };
 
@@ -79,6 +74,7 @@ if (cluster.isMaster) {
   initExternalServices();
   masterHandleException();
   // Fork workers. one per cpu
+  numCPUs = 1; // HARDCODE TO 1 FOR NO TODO: FIXME: HACK:
   for (var i = 0; i < numCPUs; i++) {
     createWorker();
   }
@@ -90,10 +86,8 @@ if (cluster.isMaster) {
   serverStore[process.pid] = apiServer;
   apiServer.start(function(err) {
     if (err) {
-      console.error(new Date(), 'can not start server', err);
-      rollbar.handleError(err, function() {
-        process.exit(1);
-      });
+      error.log(err);
+      process.exit(1);
     }
   });
 }
