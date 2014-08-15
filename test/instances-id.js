@@ -61,6 +61,7 @@ describe('Instance - /instances/:id', function () {
             delete ctx.expected.build;
             delete ctx.expected.environment;
             delete ctx.expected.containers;
+            ctx.expected.shortHash = exists;
             ctx.expected['project._id'] = ctx.project.id();
             ctx.expected['environment._id'] = ctx.env.id();
             ctx.expected['build._id'] = ctx.build.id();
@@ -101,6 +102,7 @@ describe('Instance - /instances/:id', function () {
             delete ctx.expected.build;
             delete ctx.expected.environment;
             delete ctx.expected.containers;
+            ctx.expected.shortHash = exists;
             ctx.expected['project._id'] = ctx.project.id();
             ctx.expected['environment._id'] = ctx.env.id();
             ctx.expected['build._id'] = ctx.build.id();
