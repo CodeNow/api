@@ -26,6 +26,33 @@ describe('Instance - /instances/:id', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
+  describe('ORG INSTANCES', function () {
+    beforeEach(function (done) {
+      ctx.orgId = 1001;
+      multi.createInstance(ctx.orgId, function (err, instance, build, env, project, user) {
+        if (err) { return done(err); }
+        ctx.instance = instance;
+        ctx.build = build;
+        ctx.env = env;
+        ctx.project = project;
+        ctx.user = user;
+        done();
+      });
+    });
+    it('should be owned by an org', function (done) {
+      var expected = {
+        'project._id': ctx.project.id(),
+        'environment._id': ctx.env.id(),
+        'build._id': ctx.build.id(),
+        'owner.github': ctx.orgId,
+        'owner.username': 'Runnable'
+      };
+      require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+      require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+      ctx.instance.fetch(expects.success(200, expected, done));
+    });
+  });
+
   beforeEach(function (done) {
     multi.createInstance(function (err, instance, build, env, project, user) {
       if (err) { return done(err); }
@@ -34,6 +61,7 @@ describe('Instance - /instances/:id', function () {
       ctx.env = env;
       ctx.project = project;
       ctx.user = user;
+      require('./fixtures/mocks/github/user')(ctx.user);
       done();
     });
   });
@@ -61,6 +89,7 @@ describe('Instance - /instances/:id', function () {
             delete ctx.expected.build;
             delete ctx.expected.environment;
             delete ctx.expected.containers;
+            ctx.expected.shortHash = exists;
             ctx.expected['project._id'] = ctx.project.id();
             ctx.expected['environment._id'] = ctx.env.id();
             ctx.expected['build._id'] = ctx.build.id();
@@ -101,6 +130,7 @@ describe('Instance - /instances/:id', function () {
             delete ctx.expected.build;
             delete ctx.expected.environment;
             delete ctx.expected.containers;
+            ctx.expected.shortHash = exists;
             ctx.expected['project._id'] = ctx.project.id();
             ctx.expected['environment._id'] = ctx.env.id();
             ctx.expected['build._id'] = ctx.build.id();

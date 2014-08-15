@@ -58,6 +58,42 @@ describe('Instances - /instances', function () {
       // });
     });
 
+    describe('from an organization build', function () {
+      beforeEach(function (done) {
+        ctx.orgId = 1001;
+        multi.createBuiltBuild(ctx.orgId, function (err, build, env, project, user) {
+          ctx.build = build;
+          ctx.env = env;
+          ctx.project = project;
+          ctx.user = user;
+          done(err);
+        });
+      });
+      it('should create an instance', function (done) {
+        var json = {
+          name: uuid(),
+          build: ctx.build.id()
+        };
+        var expected = {
+          _id: exists,
+          name: exists,
+          owner: { github: ctx.orgId },
+          public: false,
+          project: ctx.project.id(),
+          environment: ctx.env.id(),
+          build: ctx.build.id(),
+          containers: exists
+        };
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+        var instance = ctx.user.createInstance(json,
+          expects.success(201, expected, function (err) {
+            if (err) { return done(err); }
+            expectHipacheHostsForContainers(instance.toJSON(), done);
+          })
+        );
+      });
+    });
+
     describe('from build', function () {
       beforeEach(function (done) {
         multi.createBuiltBuild(function (err, build, env, project, user) {
@@ -91,7 +127,7 @@ describe('Instances - /instances', function () {
         });
       });
       describe('with built versions', function () {
-        it('should create an instance', function(done) {
+        it('should create an instance', function (done) {
           var json = {
             name: uuid(),
             build: ctx.build.id()
@@ -136,8 +172,29 @@ describe('Instances - /instances', function () {
         });
       });
     });
+    it('should get instances by hashIds', function (done) {
+      var count = createCount(2, done);
+      var query = {
+        shortHash: ctx.instance.json().shortHash
+      };
+      var expected = [{
+        _id: ctx.instance.json()._id,
+        shortHash: ctx.instance.json().shortHash
+      }];
+      ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
+      var query2 = {
+        shortHash: ctx.instance2.json().shortHash
+      };
+      var expected2 = [{
+        _id: ctx.instance2.json()._id,
+        shortHash: ctx.instance2.json().shortHash
+      }];
+      ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
+    });
     it('should list versions by owner.github', function (done) {
       var count = createCount(2, done);
+      require('./fixtures/mocks/github/user')(ctx.user);
+      require('./fixtures/mocks/github/user')(ctx.user2);
 
       var query = {
         owner: {
@@ -151,12 +208,14 @@ describe('Instances - /instances', function () {
       delete expected[0].build;
       delete expected[0].environment;
       delete expected[0].containers;
+      delete expected[0].owner;
       expected[0]['project._id'] = ctx.project.id();
       expected[0]['environment._id'] = ctx.env.id();
       expected[0]['build._id'] = ctx.build.id();
       expected[0].containers = exists;
       expected[0]['containers[0]'] = exists;
       expected[0]['owner.username'] = ctx.user.json().accounts.github.username;
+      expected[0]['owner.github'] = ctx.user.json().accounts.github.id;
       // FIXME: chai is messing up with eql check:
       delete expected[0].containers;
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
@@ -171,12 +230,14 @@ describe('Instances - /instances', function () {
       delete expected2[0].build;
       delete expected2[0].environment;
       delete expected2[0].containers;
+      delete expected2[0].owner;
       expected2[0]['project._id'] = ctx.project2.id();
       expected2[0]['environment._id'] = ctx.env2.id();
       expected2[0]['build._id'] = ctx.build2.id();
       expected2[0].containers = exists;
       expected2[0]['containers[0]'] = exists;
       expected2[0]['owner.username'] = ctx.user2.json().accounts.github.username;
+      expected2[0]['owner.github'] = ctx.user2.json().accounts.github.id;
       // FIXME: chai is messing up with eql check:
       delete expected2[0].containers;
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
