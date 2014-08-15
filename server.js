@@ -6,6 +6,10 @@ var path = require('path');
 var rollbar = require('rollbar');
 var numCPUs = require('os').cpus().length;
 
+// used to store servers so we can close them correctly.
+var serverStore = {};
+
+
 if (process.env.NEWRELIC_KEY) {
   require('newrelic');
 }
@@ -15,7 +19,13 @@ var createWorker = function() {
   worker.process.on('uncaughtException', function(err) {
     console.error(new Date(), 'WORKER: uncaughtException:', err);
     rollbar.handleError(err, function () {
-      worker.process.exit(1);
+      // exit after all request are finished
+      if(serverStore[process.pid] &&
+        serverStore[process.pid].stop) {
+        serverStore[process.pid].stop(function(){
+          worker.process.exit(1);
+        });
+      }
     });
   });
   return worker;
@@ -77,6 +87,7 @@ if (cluster.isMaster) {
 } else {
   var ApiServer = require('index');
   var apiServer = new ApiServer();
+  serverStore[process.pid] = apiServer;
   apiServer.start(function(err) {
     if (err) {
       console.error(new Date(), 'can not start server', err);
