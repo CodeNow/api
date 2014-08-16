@@ -60,7 +60,7 @@
     "regexp-quote": "0.0.0",
     "request": "^2.37.0",
     "rimraf": "^2.2.8",
-    "rollbar": "^0.3.8",
+    "rollbar": "^0.3.13",
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.24.4",
     "simple-api-client": "^0.5.4",
     "substream": "0.1.1",
