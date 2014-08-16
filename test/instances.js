@@ -174,6 +174,8 @@ describe('Instances - /instances', function () {
     });
     it('should get instances by hashIds', function (done) {
       var count = createCount(2, done);
+      require('./fixtures/mocks/github/user')(ctx.user);
+      require('./fixtures/mocks/github/user')(ctx.user2);
       var query = {
         shortHash: ctx.instance.json().shortHash
       };
