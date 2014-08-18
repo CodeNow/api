@@ -5,6 +5,7 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var expect = Lab.expect;
 
 var expects = require('./fixtures/expects');
 var async = require('async');
@@ -127,6 +128,23 @@ describe('Instances - /instances', function () {
         });
       });
       describe('with built versions', function () {
+        it('should default the name to a short hash', function (done) {
+          var json = {
+            build: ctx.build.id()
+          };
+          var expected = {
+            shortHash: exists,
+            name: exists,
+            _id: exists
+          };
+          var instance = ctx.user.createInstance(json,
+            expects.success(201, expected, function (err, instanceData) {
+              if (err) { return done(err); }
+              expect(instanceData.shortHash).to.equal(instanceData.name);
+              expect(instanceData.shortHash).to.equal(instance.id());
+              done();
+            }));
+        });
         it('should create an instance', function (done) {
           var json = {
             name: uuid(),
@@ -134,7 +152,7 @@ describe('Instances - /instances', function () {
           };
           var expected = {
             _id: exists,
-            name: exists,
+            name: json.name,
             owner: { github: ctx.user.json().accounts.github.id },
             public: false,
             project: ctx.project.id(),
