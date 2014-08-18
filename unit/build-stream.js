@@ -215,31 +215,28 @@ describe('build-stream', function () {
     };
   }
   function handleData(clientId, streamId, expectedData, clientDoneCount) {
+    var expectedDataString = expectedData.join('');
     return function(data) {
-      if (responseCounter[clientId] === null) {
-        return;
-      }
-
       expect(data).to.be.ok;
       resultStrings[streamId][clientId] += data;
       var dataArray = data.split('|');
       if (dataArray[0] === '') { dataArray.pop();}
-      responseCounter[clientId] += dataArray.length;
-      if (clientsReceivedCounts[streamId].length > 0) {
-        clientsReceivedCounts[streamId][0].next();
-      }
-      if (responseCounter[clientId] === expectedData.length) {
+      if (resultStrings[streamId][clientId].length === expectedDataString.length) {
         // Check if the result string matches the
 
-        if (resultStrings[streamId][clientId] !== expectedData.join('')) {
+        if (resultStrings[streamId][clientId] !== expectedDataString) {
           console.log('Uh oh');
         }
-        expect(resultStrings[streamId][clientId]).to.equal(expectedData.join(''));
-
+        expect(resultStrings[streamId][clientId]).to.equal(expectedDataString);
         clients[clientId].end();
         if (clientDoneCount) {
           clientDoneCount.next();
         }
+      }
+
+
+      if (clientsReceivedCounts[streamId].length > 0) {
+        clientsReceivedCounts[streamId][0].next();
       }
     };
   }
