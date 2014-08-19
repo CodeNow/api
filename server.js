@@ -68,7 +68,7 @@ if (cluster.isMaster) {
   // start keygen on master thread only
   require('key-generator').go();
 } else {
-  var ApiServer = require('index');
+  var ApiServer = require('server');
   var apiServer = new ApiServer();
   serverStore[process.pid] = apiServer;
   apiServer.start(function(err) {
