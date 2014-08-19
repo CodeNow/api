@@ -140,7 +140,7 @@ describe('Instances - /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err, instanceData) {
               if (err) { return done(err); }
-              expect(instanceData.shortHash).to.equal(instanceData.name);
+              expect(instanceData.name).to.equal('Instance1');
               expect(instanceData.shortHash).to.equal(instance.id());
               done();
             }));
@@ -165,6 +165,64 @@ describe('Instances - /instances', function () {
               if (err) { return done(err); }
               expectHipacheHostsForContainers(instance.toJSON(), done);
             }));
+        });
+        describe('unique names (by owner) and hashes', function() {
+          beforeEach(function (done) {
+            multi.createBuiltBuild(ctx.orgId, function (err, build, env, project, user) {
+              ctx.build2 = build;
+              ctx.env2 = env;
+              ctx.project2 = project;
+              ctx.user2 = user;
+              done(err);
+            });
+          });
+          it('should generate unique names (by owner) and hashes an instance', function (done) {
+            var json = {
+              build: ctx.build.id()
+            };
+            var expected = {
+              _id: exists,
+              name: 'Instance1',
+              owner: { github: ctx.user.json().accounts.github.id },
+              public: false,
+              project: ctx.project.id(),
+              environment: ctx.env.id(),
+              build: ctx.build.id(),
+              containers: exists,
+              shortHash: exists
+            };
+            ctx.user.createInstance(json, expects.success(201, expected, function (err, body1) {
+              if (err) { return done(err); }
+              expected.name = 'Instance2';
+              expected.shortHash = function (shortHash) {
+                expect(shortHash).to.not.equal(body1.shortHash);
+                return true;
+              };
+              ctx.user.createInstance(json, expects.success(201, expected, function (err, body2) {
+                if (err) { return done(err); }
+                var expected2 = {
+                  _id: exists,
+                  name: 'Instance1',
+                  owner: { github: ctx.user2.json().accounts.github.id },
+                  public: false,
+                  project: ctx.project2.id(),
+                  environment: ctx.env2.id(),
+                  build: ctx.build2.id(),
+                  containers: exists,
+                  shortHash: function (shortHash) {
+                    expect(shortHash)
+                      .to.not.equal(body1.shortHash)
+                      .to.not.equal(body2.shortHash);
+                    return true;
+                  }
+                };
+                var json2 = {
+                  build: ctx.build2.id()
+                };
+                ctx.user2.createInstance(json2, expects.success(201, expected2, done));
+              }));
+            }));
+          });
         });
       });
     });
