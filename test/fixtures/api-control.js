@@ -1,4 +1,4 @@
-var Api = require('index');
+var Api = require('server');
 var cleanMongo = require('./clean-mongo');
 
 module.exports = {
