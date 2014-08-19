@@ -166,7 +166,7 @@ describe('Instances - /instances', function () {
               expectHipacheHostsForContainers(instance.toJSON(), done);
             }));
         });
-        describe('unique names by owner', function() {
+        describe('unique names (by owner) and hashes', function() {
           beforeEach(function (done) {
             multi.createBuiltBuild(ctx.orgId, function (err, build, env, project, user) {
               ctx.build2 = build;
@@ -176,7 +176,7 @@ describe('Instances - /instances', function () {
               done(err);
             });
           });
-          it('should generate unique names by owner an instance', function (done) {
+          it('should generate unique names (by owner) and hashes an instance', function (done) {
             var json = {
               build: ctx.build.id()
             };
@@ -188,12 +188,17 @@ describe('Instances - /instances', function () {
               project: ctx.project.id(),
               environment: ctx.env.id(),
               build: ctx.build.id(),
-              containers: exists
+              containers: exists,
+              shortHash: exists
             };
-            ctx.user.createInstance(json, expects.success(201, expected, function (err) {
+            ctx.user.createInstance(json, expects.success(201, expected, function (err, body1) {
               if (err) { return done(err); }
               expected.name = 'Instance2';
-              ctx.user.createInstance(json, expects.success(201, expected, function (err) {
+              expected.shortHash = function (shortHash) {
+                expect(shortHash).to.not.equal(body1.shortHash);
+                return true;
+              };
+              ctx.user.createInstance(json, expects.success(201, expected, function (err, body2) {
                 if (err) { return done(err); }
                 var expected2 = {
                   _id: exists,
@@ -203,7 +208,13 @@ describe('Instances - /instances', function () {
                   project: ctx.project2.id(),
                   environment: ctx.env2.id(),
                   build: ctx.build2.id(),
-                  containers: exists
+                  containers: exists,
+                  shortHash: function (shortHash) {
+                    expect(shortHash)
+                      .to.not.equal(body1.shortHash)
+                      .to.not.equal(body2.shortHash);
+                    return true;
+                  }
                 };
                 var json2 = {
                   build: ctx.build2.id()
