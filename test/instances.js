@@ -140,7 +140,7 @@ describe('Instances - /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err, instanceData) {
               if (err) { return done(err); }
-              expect(instanceData.shortHash).to.equal(instanceData.name);
+              expect(instanceData.name).to.equal('Instance1');
               expect(instanceData.shortHash).to.equal(instance.id());
               done();
             }));
