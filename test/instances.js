@@ -166,6 +166,53 @@ describe('Instances - /instances', function () {
               expectHipacheHostsForContainers(instance.toJSON(), done);
             }));
         });
+        describe('unique names by owner', function() {
+          beforeEach(function (done) {
+            multi.createBuiltBuild(ctx.orgId, function (err, build, env, project, user) {
+              ctx.build2 = build;
+              ctx.env2 = env;
+              ctx.project2 = project;
+              ctx.user2 = user;
+              done(err);
+            });
+          });
+          it('should generate unique names by owner an instance', function (done) {
+            var json = {
+              build: ctx.build.id()
+            };
+            var expected = {
+              _id: exists,
+              name: 'Instance1',
+              owner: { github: ctx.user.json().accounts.github.id },
+              public: false,
+              project: ctx.project.id(),
+              environment: ctx.env.id(),
+              build: ctx.build.id(),
+              containers: exists
+            };
+            ctx.user.createInstance(json, expects.success(201, expected, function (err) {
+              if (err) { return done(err); }
+              expected.name = 'Instance2';
+              ctx.user.createInstance(json, expects.success(201, expected, function (err) {
+                if (err) { return done(err); }
+                var expected2 = {
+                  _id: exists,
+                  name: 'Instance1',
+                  owner: { github: ctx.user2.json().accounts.github.id },
+                  public: false,
+                  project: ctx.project2.id(),
+                  environment: ctx.env2.id(),
+                  build: ctx.build2.id(),
+                  containers: exists
+                };
+                var json2 = {
+                  build: ctx.build2.id()
+                };
+                ctx.user2.createInstance(json2, expects.success(201, expected2, done));
+              }));
+            }));
+          });
+        });
       });
     });
   });
