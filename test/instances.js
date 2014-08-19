@@ -296,7 +296,7 @@ function expectHipacheHostsForContainers (instance, cb) {
     if (container.ports) {
       Object.keys(container.ports).forEach(function (port) {
         var portNumber = port.split('/')[0];
-        allUrls.push([instance._id, '-', portNumber, '.', process.env.DOMAIN].join(''));
+        allUrls.push([instance.shortHash, '-', portNumber, '.', process.env.DOMAIN].join(''));
       });
     }
   });
