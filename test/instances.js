@@ -17,7 +17,6 @@ var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
 var uuid = require('uuid');
 var createCount = require('callback-count');
-var pluck = require('101/pluck');
 
 describe('Instances - /instances', function () {
   var ctx = {};
