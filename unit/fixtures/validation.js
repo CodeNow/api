@@ -12,8 +12,6 @@ var VALIDATOR_ERROR = 'ValidationError';
 var NOT_URL_SAFE = [Faker.Internet.email(), Faker.Lorem.sentence(), '4t523456&^()*&^)*&^)*(&^)*&^'];
 var URL_SAFE = [String(Faker.Internet.userName()).replace(/[^\w\d]/g ,'_'),
     Faker.Name.firstName(), OBJECT_ID];
-var NAME_SAFE = [Faker.Name.firstName(), OBJECT_ID, Faker.Name.firstName() + ' ' +
-  Faker.Name.lastName(), Faker.Lorem.sentence()];
 var ALPHA_NUM_SAFE = [
   Faker.Name.firstName(),
   OBJECT_ID,
