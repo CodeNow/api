@@ -12,8 +12,6 @@ var VALIDATOR_ERROR = 'ValidationError';
 var NOT_URL_SAFE = [Faker.Internet.email(), Faker.Lorem.sentence(), '4t523456&^()*&^)*&^)*(&^)*&^'];
 var URL_SAFE = [String(Faker.Internet.userName()).replace(/[^\w\d]/g ,'_'),
     Faker.Name.firstName(), OBJECT_ID];
-var NAME_SAFE = [Faker.Name.firstName(), OBJECT_ID, Faker.Name.firstName() + ' ' +
-  Faker.Name.lastName(), Faker.Lorem.sentence()];
 var ALPHA_NUM_SAFE = [
   Faker.Name.firstName(),
   OBJECT_ID,
@@ -221,28 +219,6 @@ var alphaNumNameValidationChecking = function(createModelFunction, property) {
 
 var nameValidationChecking = function(createModelFunction, property) {
   describe('Name Validation', function () {
-    NOT_ALPHA_NUM_W_SPACE_SAFE.forEach(function (string) {
-      it('should fail validation for ' + string, function (done) {
-        var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        errorCheck(model, done, property, schemaValidators.validationMessages.characters);
-      });
-    });
-    NAME_SAFE.forEach(function (string) {
-      it('should succeed validation for ' + string, function (done) {
-        var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        successCheck(model, done, property);
-      });
-    });
-    ALPHA_NUM_W_SPACE_SAFE.forEach(function (string) {
-      it('should succeed validation for ' + string, function (done) {
-        var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        successCheck(model, done, property);
-      });
-    });
-
     stringLengthValidationChecking(createModelFunction, property, 100);
   });
 };
