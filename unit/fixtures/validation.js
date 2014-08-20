@@ -221,28 +221,6 @@ var alphaNumNameValidationChecking = function(createModelFunction, property) {
 
 var nameValidationChecking = function(createModelFunction, property) {
   describe('Name Validation', function () {
-    NOT_ALPHA_NUM_W_SPACE_SAFE.forEach(function (string) {
-      it('should fail validation for ' + string, function (done) {
-        var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        errorCheck(model, done, property, schemaValidators.validationMessages.characters);
-      });
-    });
-    NAME_SAFE.forEach(function (string) {
-      it('should succeed validation for ' + string, function (done) {
-        var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        successCheck(model, done, property);
-      });
-    });
-    ALPHA_NUM_W_SPACE_SAFE.forEach(function (string) {
-      it('should succeed validation for ' + string, function (done) {
-        var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        successCheck(model, done, property);
-      });
-    });
-
     stringLengthValidationChecking(createModelFunction, property, 100);
   });
 };
