@@ -24,29 +24,48 @@ function containerRoot (ctx) {
   return ctx.containerRoot;
 }
 function createFile (ctx, fileName, filePath, fileContent, done) {
-  ctx.file = ctx.container.createFile({
-    json: {
-      name: fileName,
-      path: filePath,
-      isDir: false,
-      content: fileContent
-    }
-  }, function (err, body, code) {
-    if (err) {
-      return done(err);
-    }
-    expect(code).to.equal(201);
-    expect(body).to.have.property('name', fileName);
-    expect(body).to.have.property('path', filePath);
-    expect(body).to.have.property('isDir', false);
-    expect(body).to.have.property('body', fileContent);
-    var content = fs.readFileSync(
-      path.join(containerRoot(ctx), filePath, fileName), {
-        encoding: 'utf8'
-      });
-    expect(content).to.equal(fileContent);
-    done();
+  var FormData = require('form-data');
+  var form = new FormData();
+  form.append('file', fs.createReadStream(path.join(__dirname, 'log-stream.js')));
+  form.getLength(function (err, length) {
+    console.log(length);
+    if (err) { return done(err); }
+
+    var req = ctx.container.post(filePath, { headers: { 'Content-Length': length+2 } }, function (err, res) {
+      console.log('res', err);
+      Lab.expect(res.statusCode).to.equal(201);
+      if (err) { return done(err); }
+      Lab.expect(err).to.be.not.okay;
+      Lab.expect(res).to.be.okay;
+      done();
+    });
+    console.log('setting _form');
+    req._form = form;
+
   });
+  // ctx.file = ctx.container.createFile({
+  //   json: {
+  //     name: fileName,
+  //     path: filePath,
+  //     isDir: false,
+  //     content: fileContent
+  //   }
+  // }, function (err, body, code) {
+  //   if (err) {
+  //     return done(err);
+  //   }
+  //   expect(code).to.equal(201);
+  //   expect(body).to.have.property('name', fileName);
+  //   expect(body).to.have.property('path', filePath);
+  //   expect(body).to.have.property('isDir', false);
+  //   expect(body).to.have.property('body', fileContent);
+  //   var content = fs.readFileSync(
+  //     path.join(containerRoot(ctx), filePath, fileName), {
+  //       encoding: 'utf8'
+  //     });
+  //   expect(content).to.equal(fileContent);
+  //   done();
+  // });
 }
 
 describe('File System - /instances/:id/containers/:id/files/*path*', function () {

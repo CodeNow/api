@@ -67,7 +67,8 @@
     "substream": "0.1.1",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
-    "xtend": "3.0.0"
+    "xtend": "3.0.0",
+    "busboy": "^0.2.8"
   },
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.4",
