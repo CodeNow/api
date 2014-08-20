@@ -78,6 +78,7 @@
     "debug": "^1.0.2",
     "docker-mock": "0.1.1",
     "faker": "^1.0.0",
+    "form-data": "^0.1.4",
     "jsdoc": "^3.2.2",
     "jshint": "^2.5.2",
     "krain": "git://github.com/CodeNow/krain.git#v0.0.7",
