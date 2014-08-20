@@ -8,16 +8,14 @@ var afterEach = Lab.afterEach;
 
 var exists = require('101/exists');
 var join = require('path').join;
+var fs = require('fs');
+var path = require('path');
 
 var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var createCount = require('callback-count');
-require('console-trace')({
-  right: true,
-  always: true
-});
 
 function createFile (contextId, path, name, isDir) {
   var key = (isDir) ? join(contextId, 'source', path, name, '/') : join(contextId, 'source', path, name);
@@ -103,6 +101,79 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
     });
   });
   describe('POST', function () {
+    it('should create a file with multi-part upload', {timeout: 10000}, function (done) {
+      var nock = require('nock');
+      nock('https://s3.amazonaws.com:443')
+        .post('/runnable.context.resources.test/'+ctx.context.id()+'/source/log-stream.js?uploads')
+        .reply(200, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<InitiateMultipartUploadResult xmlns=" +
+          "\"http://s3.amazonaws.com/doc/2006-03-01/\"><Bucket>runnable.context.resources.test</Bucket>" +
+          "<Key>53f4ea8a3def9169f1ca3f22/source/log-stream.js</Key><UploadId>zDoBF96SgVIWck84pRq3CeDkGlTrQU" +
+          "IkMeKAN9EIvfKEBL6rOLSBaJju_w5EKT3ubnvAsgLv2CqVyZSpqk2tAKAtoM5.g2FIybT12MkG8uV38tbHyg79eaZccYEVeMm4" +
+          "</UploadId></InitiateMultipartUploadResult>",
+          { 'x-amz-id-2': 'NnzVVthWi5jyQTbOLNWkVWJHMSuDREdr1VqOdK9lrlLQBpcOJJAATu7shmmSzs9L',
+          'x-amz-request-id': '94C6D17E3B32BBD6',
+          date: 'Wed, 20 Aug 2014 18:35:56 GMT',
+          'transfer-encoding': 'chunked',
+          server: 'AmazonS3' });
+      nock('https://s3.amazonaws.com:443')
+        .filteringRequestBody(function () { return '*'; })
+        .filteringPath(/\/runnable\.context\.resources\.test\/[a-f0-9]+\/source\/log-stream\.js\?partNumber=.+/,
+          '/runnable.context.resources.test/' + ctx.context.id() + '/source/log-stream.js?partNumber=')
+        .put('/runnable.context.resources.test/' + ctx.context.id() + '/source/log-stream.js?partNumber=', '*')
+        .reply(200, '', { 'x-amz-id-2': 'wTyF5nrtfyQxXRuA9dh/UU7KUnAou5Zfhpne142KbO6EhWkJvPD6TKv3RYDwkILs',
+          'x-amz-request-id': '20592F4765C75D9B',
+          date: 'Wed, 20 Aug 2014 18:12:22 GMT',
+          etag: '"fd1e852a58dce3235889b48790c81c51"',
+          'content-length': '0',
+          server: 'AmazonS3' });
+      nock('https://s3.amazonaws.com:443')
+        .filteringRequestBody(function () { return '*'; })
+        .filteringPath(/\/runnable\.context\.resources\.test\/[a-f0-9]+\/source\/log-stream\.js\?.+/,
+          '/runnable.context.resources.test/' + ctx.context.id() + '/source/log-stream.js?')
+        .post('/runnable.context.resources.test/' + ctx.context.id() + '/source/log-stream.js?', '*')
+        .reply(200, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n<CompleteMultipartUploadResult xmlns=" +
+          "\"http://s3.amazonaws.com/doc/2006-03-01/\"><Location>https://s3.amazonaws.com/runnable.context." +
+          "resources.test/" + ctx.context.id() + "%2Fsource%2Flog-stream.js</Location><Bucket>runnable.context." +
+          "resources.test</Bucket><Key>" + ctx.context.id() + "/source/log-stream.js</Key><ETag>&quot;fb617becf82" +
+          "4265cff1e7bbac5d7ba62-1&quot;</ETag></CompleteMultipartUploadResult>",
+          { 'x-amz-id-2': 'HfQFLN+o35g0kXuJc/HNd5jTMjqy3s6Zk+imEMkOEz3B4eIs3Dap1ExOFg2EMn4M',
+          'x-amz-request-id': '6DADF8EBCA65DE86',
+          date: 'Wed, 20 Aug 2014 18:24:30 GMT',
+          'x-amz-version-id': '5Sae_tebJTYHeDf1thrEl2nw3QPE6VvH',
+          'content-type': 'application/xml',
+          'transfer-encoding': 'chunked',
+          server: 'AmazonS3' });
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+      var FormData = require('form-data');
+      var form = new FormData();
+      var pathname = ctx.contextVersion.rootDir.contents.urlPath;
+      form.append('file', fs.createReadStream(path.join(__dirname, 'log-stream.js')));
+      form.getLength(function (err, length) {
+        if (err) { done(err); }
+        else {
+          // require('nock').recorder.rec();
+          var req = ctx.user.client.post(pathname, { headers: { 'Content-Length': length+2 } }, function (err, res) {
+            Lab.expect(res.statusCode).to.equal(201);
+            if (err) { return done(err); }
+            Lab.expect(err).to.be.not.okay;
+            Lab.expect(res).to.be.okay;
+            var expected = {
+              Key: ctx.context.id() + '/source/log-stream.js',
+              VersionId: '5Sae_tebJTYHeDf1thrEl2nw3QPE6VvH',
+              ETag: '"fb617becf824265cff1e7bbac5d7ba62-1"',
+              isDir: false,
+              path: '/',
+              name: 'log-stream.js'
+            };
+            Object.keys(expected).forEach(function (key) {
+              Lab.expect(res.body[key]).to.equal(expected[key]);
+            });
+            done();
+          });
+          req._form = form;
+        }
+      });
+    });
     it('should create a file', function (done) {
       var createExpected = createFile(ctx.context.id(), '/', 'file.txt');
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
