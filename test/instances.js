@@ -269,6 +269,20 @@ describe('Instances - /instances', function () {
       }];
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
+    it('should get instances by project', function (done) {
+      require('./fixtures/mocks/github/user')(ctx.user);
+      var query = {
+        project: ctx.project.id()
+      };
+      var expected = {
+        '[0].shortHash'       : ctx.instance.id(),
+        '[0]._id'             : ctx.instance.attrs._id,
+        '[0].project._id'     : ctx.project.id(),
+        '[0].environment._id' : ctx.env.id(),
+        '[0].build._id'       : ctx.build.id()
+      };
+      ctx.user.fetchInstances(query, expects.success(200, expected, done));
+    });
     it('should list versions by owner.github', function (done) {
       var count = createCount(2, done);
       require('./fixtures/mocks/github/user')(ctx.user);
