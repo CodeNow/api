@@ -67,6 +67,7 @@ if (cluster.isMaster) {
   }
   // start keygen on master thread only
   require('key-generator').go();
+  // FIXME: Cleanup CRON for forked unbuilt builds
 } else {
   var ApiServer = require('server');
   var apiServer = new ApiServer();

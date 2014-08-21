@@ -177,6 +177,51 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
       });
     });
   });
+
+  describe('PATCH', function () {
+    beforeEach(function (done) {
+      multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+        ctx.contextVersion = contextVersion;
+        ctx.context = context;
+        ctx.env = env;
+        ctx.project = project;
+        ctx.user = user;
+        ctx.repoName = 'Dat-middleware';
+        ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
+        require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
+        require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
+        var body = {
+          repo: ctx.fullRepoName
+        };
+        var username = ctx.user.attrs.accounts.github.login;
+        require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
+        ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
+      });
+    });
+    it('it should update an appCodeVersion\'s branch', function (done) {
+      var body = {
+        branch: 'feature1'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.branch = body.branch;
+      expected.lowerBranch = body.branch.toLowerCase();
+      expected.commit = not(exists);
+      expected.lockCommit = false;
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
+    it('it should update an appCodeVersion\'s commit', function (done) {
+      var body = {
+        commit: 'abcdef'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.commit = body.commit;
+      expected.lockCommit = true;
+      expected.branch = not(exists);
+      expected.lowerBranch = not(exists);
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
+  });
+
   describe('DELETE', function () {
     describe('unbuilt', function() {
       beforeEach(function (done) {
@@ -220,7 +265,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
         });
       });
       it('should 404 for non-existant', function (done) {
-        ctx.appCodeVersion.destroy("0000111122223333444455556666", expects.error(404, /AppCodeVersion/, done));
+        ctx.appCodeVersion.destroy("111122223333444455556666", expects.error(404, /AppCodeVersion/, done));
       });
     });
     describe('built version', function () {
