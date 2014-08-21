@@ -422,7 +422,7 @@ describe('build-stream', function () {
     }
   });
 
-  it('should setup n clients to connect to 1 stream, but disconnect halfway', {timeout: 2000},
+  it('should setup n clients to connect to 1 stream, but disconnect halfway', {timeout: 5000},
    function (done) {
     // If this one fails
     var numClients = 100;
@@ -438,6 +438,7 @@ describe('build-stream', function () {
     }
     createBuildResponse2(streamId, function(noop, queue) {
       for (var clientId in clients) {
+        queue.kill();
         onHalfwayDisconnect(clientId, streamId, clientDoneCount, null)(null, queue);
       }
     });
@@ -445,6 +446,7 @@ describe('build-stream', function () {
 
   function onHalfwayDisconnect(clientId, streamId, clientDoneCount, done) {
     return function(noop, queue) {
+      queue.pause();
       queue.kill();
       timers.setTimeout(function() {
         deleteClient(clientDoneCount, clientId, streamId);
