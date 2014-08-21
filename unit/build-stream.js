@@ -408,7 +408,7 @@ describe('build-stream', function () {
   });
 
   it('should have n clients connect to 1 mockStream each, but all disconnect halfway',
-   {timeout: 2000}, function (done) {
+   {timeout: 5000}, function (done) {
     var numClients = 100;
     // Create BuildStreams
     var clientDoneCount = createCount(numClients, done);
@@ -422,7 +422,7 @@ describe('build-stream', function () {
     }
   });
 
-  it('should setup n clients to connect to 1 stream, but disconnect halfway', {timeout: 5000},
+  it('should setup n clients to connect to 1 stream, but disconnect halfway', {timeout: 2000},
    function (done) {
     // If this one fails
     var numClients = 100;
