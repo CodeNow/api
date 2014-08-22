@@ -13,6 +13,7 @@
     "aws-sdk": "~2.0.0-rc.15",
     "bcrypt": "~0.7.5",
     "body-parser": "^1.4.3",
+    "busboy": "^0.2.8",
     "callback-count": "~0.1.0",
     "compression": "^1.0.11",
     "concat-stream": "^1.4.6",
@@ -67,8 +68,7 @@
     "substream": "0.1.1",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
-    "xtend": "3.0.0",
-    "busboy": "^0.2.8"
+    "xtend": "3.0.0"
   },
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.4",
