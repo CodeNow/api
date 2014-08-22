@@ -78,11 +78,12 @@
     "faker": "^1.0.0",
     "jsdoc": "^3.2.2",
     "jshint": "^2.5.2",
-    "krain": "git://github.com/CodeNow/krain.git#v0.0.8",
+    "krain": "git://github.com/CodeNow/krain.git#v0.0.9",
     "lab": "^3.2.1",
     "multiline": "^0.3.4",
     "nock": "^0.41.0",
-    "nodemon": "^1.2.1"
+    "nodemon": "^1.2.1",
+    "form-data": "^0.1.4"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
