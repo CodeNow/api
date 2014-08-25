@@ -142,6 +142,7 @@ describe('Instances - /instances', function () {
               if (err) { return done(err); }
               expect(instanceData.name).to.equal('Instance1');
               expect(instanceData.shortHash).to.equal(instance.id());
+              expect(/[a-z0-9]+/.test(instanceData.shortHash)).to.equal(true);
               done();
             }));
         });
