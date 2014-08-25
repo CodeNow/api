@@ -98,7 +98,6 @@ describe('Versions', function () {
     });
     describe('Branch', function () {
       validation.stringLengthValidationChecking(createNewVersion, 'appCodeVersions.0.branch', 200);
-      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.branch');
     });
     describe('Lock Commit', function () {
       validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.lockCommit');
