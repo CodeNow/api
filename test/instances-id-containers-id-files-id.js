@@ -146,15 +146,13 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             return done(err);
           }
           var newFileContent = "new content is better";
+          var opts = {
+              json: {
+                body: newFileContent
+              }
+            };
 
-          ctx.file.update({
-            json: {
-              name: fileName,
-              path: filePath,
-              isDir: false,
-              content: newFileContent
-            }
-          }, function (err, body, code) {
+          ctx.file.update(opts, function (err, body, code) {
             if (err) {
               return done(err);
             }
@@ -187,7 +185,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             name: fileName,
             path: filePath,
             isDir: false,
-            content: newFileContent
+            body: newFileContent
           }
         }, expects.errorStatus(403, done));
       });
@@ -209,7 +207,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
               name: fileName,
               path: filePath,
               isDir: false,
-              content: newFileContent
+              body: newFileContent
             }
           }, function (err, body, code) {
             if (err) {
