@@ -147,10 +147,10 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           }
           var newFileContent = "new content is better";
           var opts = {
-              json: {
-                body: newFileContent
-              }
-            };
+            json: {
+              body: newFileContent
+            }
+          };
 
           ctx.file.update(opts, function (err, body, code) {
             if (err) {
@@ -179,15 +179,13 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
       beforeEach(createNonOwnerContainer);
       it('should not update content of file (403) ', function (done) {
         var newFileContent = "new content is better";
-        ctx.file = ctx.container.newFile(ctx.fileId);
-        ctx.file.update(ctx.fileId, {
+        var opts = {
           json: {
-            name: fileName,
-            path: filePath,
-            isDir: false,
             body: newFileContent
           }
-        }, expects.errorStatus(403, done));
+        };
+        ctx.file = ctx.container.newFile(ctx.fileId);
+        ctx.file.update(ctx.fileId, opts, expects.errorStatus(403, done));
       });
       afterEach(afterEachNonUserOrMod);
     });
@@ -202,14 +200,13 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           }
 
           var newFileContent = "new content is better";
-          ctx.file.update({
+          var opts = {
             json: {
-              name: fileName,
-              path: filePath,
-              isDir: false,
               body: newFileContent
             }
-          }, function (err, body, code) {
+          };
+
+          ctx.file.update(opts, function (err, body, code) {
             if (err) {
               return done(err);
             }
