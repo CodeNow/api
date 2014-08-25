@@ -172,6 +172,27 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           });
         });
       });
+
+      it('should update name of file', function (done) {
+        createFile(ctx, fileName, filePath, fileContent, function (err) {
+          if (err) {
+            return done(err);
+          }
+          var newName = "new_file.txt";
+          ctx.file.rename(newName, function (err, body, code) {
+            if (err) {
+              return done(err);
+            }
+
+            expect(code).to.equal(200);
+
+            expect(body).to.have.property('name', newName);
+            expect(body).to.have.property('path', filePath);
+            expect(body).to.have.property('isDir', false);
+            done();
+          });
+        });
+      });
     });
     describe('nonOwner', function () {
       beforeEach(createFileForModAndNonUser);
