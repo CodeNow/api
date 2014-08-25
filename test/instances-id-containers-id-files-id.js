@@ -146,15 +146,13 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             return done(err);
           }
           var newFileContent = "new content is better";
-
-          ctx.file.update({
+          var opts = {
             json: {
-              name: fileName,
-              path: filePath,
-              isDir: false,
-              content: newFileContent
+              body: newFileContent
             }
-          }, function (err, body, code) {
+          };
+
+          ctx.file.update(opts, function (err, body, code) {
             if (err) {
               return done(err);
             }
@@ -174,6 +172,40 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           });
         });
       });
+
+      it('should update name of file', function (done) {
+        createFile(ctx, fileName, filePath, fileContent, function (err) {
+          if (err) {
+            return done(err);
+          }
+          var newName = "new_file.txt";
+          ctx.file.rename(newName, function (err, body, code) {
+            if (err) {
+              return done(err);
+            }
+
+            expect(code).to.equal(200);
+
+            expect(body).to.have.property('name', newName);
+            expect(body).to.have.property('path', filePath);
+            expect(body).to.have.property('isDir', false);
+            var fd = path.join(containerRoot(ctx), filePath, newName);
+            var oldFile = path.join(containerRoot(ctx), filePath, fileName);
+
+            var content = fs.readFileSync(fd, {
+                encoding: 'utf8'
+              });
+            expect(content).to.equal(fileContent);
+
+            try {
+              fs.statSync(oldFile);
+            } catch (err) {
+              done();
+            }
+            done(new Error('old file still exists'));
+          });
+        });
+      });
     });
     describe('nonOwner', function () {
       beforeEach(createFileForModAndNonUser);
@@ -181,15 +213,13 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
       beforeEach(createNonOwnerContainer);
       it('should not update content of file (403) ', function (done) {
         var newFileContent = "new content is better";
-        ctx.file = ctx.container.newFile(ctx.fileId);
-        ctx.file.update(ctx.fileId, {
+        var opts = {
           json: {
-            name: fileName,
-            path: filePath,
-            isDir: false,
-            content: newFileContent
+            body: newFileContent
           }
-        }, expects.errorStatus(403, done));
+        };
+        ctx.file = ctx.container.newFile(ctx.fileId);
+        ctx.file.update(ctx.fileId, opts, expects.errorStatus(403, done));
       });
       afterEach(afterEachNonUserOrMod);
     });
@@ -204,14 +234,13 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           }
 
           var newFileContent = "new content is better";
-          ctx.file.update({
+          var opts = {
             json: {
-              name: fileName,
-              path: filePath,
-              isDir: false,
-              content: newFileContent
+              body: newFileContent
             }
-          }, function (err, body, code) {
+          };
+
+          ctx.file.update(opts, function (err, body, code) {
             if (err) {
               return done(err);
             }
