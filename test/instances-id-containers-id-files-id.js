@@ -189,7 +189,20 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             expect(body).to.have.property('name', newName);
             expect(body).to.have.property('path', filePath);
             expect(body).to.have.property('isDir', false);
-            done();
+            var fd = path.join(containerRoot(ctx), filePath, newName);
+            var oldFile = path.join(containerRoot(ctx), filePath, fileName);
+
+            var content = fs.readFileSync(fd, {
+                encoding: 'utf8'
+              });
+            expect(content).to.equal(fileContent);
+
+            try {
+              fs.statSync(oldFile);
+            } catch (err) {
+              done();
+            }
+            done(new Error('old file still exists'));
           });
         });
       });
