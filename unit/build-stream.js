@@ -118,7 +118,7 @@ describe('build-stream', function () {
   function onQueueCallback(queue, streamId, halfwayCb, endCb) {
     return function(halfway, final) {
       if (halfway && halfwayCb) {
-        halfwayCb(streamId);
+        halfwayCb(streamId, queue);
       } else if (final) {
         if (endCb) {
           endCb();
@@ -408,7 +408,7 @@ describe('build-stream', function () {
   });
 
   it('should have n clients connect to 1 mockStream each, but all disconnect halfway',
-   {timeout: 500000}, function (done) {
+   {timeout: 5000}, function (done) {
     var numClients = 100;
     // Create BuildStreams
     var clientDoneCount = createCount(numClients, done);
@@ -422,7 +422,7 @@ describe('build-stream', function () {
     }
   });
 
-  it('should setup n clients to connect to 1 stream, but disconnect halfway', {timeout: 500000},
+  it('should setup n clients to connect to 1 stream, but disconnect halfway', {timeout: 2000},
    function (done) {
     // If this one fails
     var numClients = 100;
@@ -436,15 +436,18 @@ describe('build-stream', function () {
       var clientId = uuid();
       createClient(clientId, streamId, clientDoneCount, done);
     }
-    createBuildResponse2(streamId, function() {
+    createBuildResponse2(streamId, function(noop, queue) {
       for (var clientId in clients) {
-        onHalfwayDisconnect(clientId, streamId, clientDoneCount, null)();
+        queue.kill();
+        onHalfwayDisconnect(clientId, streamId, clientDoneCount, null)(null, queue);
       }
     });
   });
 
   function onHalfwayDisconnect(clientId, streamId, clientDoneCount, done) {
-    return function() {
+    return function(noop, queue) {
+      queue.pause();
+      queue.kill();
       timers.setTimeout(function() {
         deleteClient(clientDoneCount, clientId, streamId);
         if (!clientDoneCount) {
