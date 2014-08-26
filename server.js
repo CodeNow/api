@@ -4,7 +4,7 @@ var debug = require('debug')('server');
 var error = require('error');
 var ApiServer = require('server');
 var apiServer = new ApiServer();
-require('key-generator').go();
+var keyGen = require('key-generator');
 
 if (process.env.NEWRELIC_KEY) {
   require('newrelic');
@@ -15,6 +15,7 @@ apiServer.start(function(err) {
     error.log('API SERVER FAILED TO START', err);
     process.exit(1);
   }
+  keyGen.go();
 });
 
 process.on('uncaughtException', function(err) {
