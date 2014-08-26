@@ -31,7 +31,7 @@ var createdBy = { github: 160236 };
 function createBlankSourceContext (cb) {
   async.waterfall([
     function newContext (cb) {
-      console.log('newContext-blank');
+      console.log('newContext (blank)');
       var context = new Context({
         owner: createdBy,
         name: 'Blank',
@@ -41,12 +41,14 @@ function createBlankSourceContext (cb) {
       context.save(cb);
     },
     function newICV (context, count, cb) {
-      console.log('newICV');
+      console.log('newICV (blank)');
       var icv = new InfraCodeVersion({
         context: context._id
       });
       async.series([
-        icv.initWithDockerfile.bind(icv, ''),
+        icv.initWithDefaults.bind(icv),
+        icv.save.bind(icv),
+        icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: '# Empty Dockerfile!' }),
         icv.save.bind(icv)
       ], function (err) { cb(err, context, icv); });
     },
@@ -57,7 +59,7 @@ function createBlankSourceContext (cb) {
 function createFirstSourceContext (cb) {
   async.waterfall([
     function newContext (cb) {
-      console.log('newContext');
+      console.log('newContext (nodejs)');
       var context = new Context({
         owner: createdBy,
         name: 'NodeJS',
@@ -67,12 +69,14 @@ function createFirstSourceContext (cb) {
       context.save(cb);
     },
     function newICV (context, count, cb) {
-      console.log('newICV');
+      console.log('newICV (nodejs)');
       var icv = new InfraCodeVersion({
         context: context._id
       });
       async.series([
-        icv.initWithDockerfile.bind(icv, 'FROM dockerfile/nodejs\n'),
+        icv.initWithDefaults.bind(icv),
+        icv.save.bind(icv),
+        icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: 'FROM dockerfile/nodejs\n' }),
         icv.save.bind(icv)
       ], function (err) { cb(err, context, icv); });
     },
