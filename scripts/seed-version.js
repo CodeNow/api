@@ -48,8 +48,7 @@ function createBlankSourceContext (cb) {
       async.series([
         icv.initWithDefaults.bind(icv),
         icv.save.bind(icv),
-        icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: '# Empty Dockerfile!' }),
-        icv.save.bind(icv)
+        icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: '# Empty Dockerfile!' })
       ], function (err) { cb(err, context, icv); });
     },
     newCV,
@@ -77,7 +76,6 @@ function createFirstSourceContext (cb) {
         icv.initWithDefaults.bind(icv),
         icv.save.bind(icv),
         icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: 'FROM dockerfile/nodejs\n' }),
-        icv.save.bind(icv)
       ], function (err) { cb(err, context, icv); });
     },
     newCV,
