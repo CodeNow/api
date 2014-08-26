@@ -19,7 +19,9 @@ apiServer.start(function(err) {
 
 process.on('uncaughtException', function(err) {
   error.log(err);
+  debug('stoping app');
   apiServer.stop(function() {
+    debug('exiting process');
     process.exit(1);
-  })
+  });
 });
