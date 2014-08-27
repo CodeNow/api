@@ -161,7 +161,7 @@ describe('Environments - /projects/:id/environments/:id', function() {
         it('should not delete the (default) environment (409)', function (done) {
           ctx.env.destroy(expects.errorStatus(409, done));
         });
-        it('should not delete the other environment', function (done) {
+        it('should delete the other environment, and its children', function (done) {
           ctx.notDefaultEnv.destroy(expects.success(204, function() {
             // Now we need to test to make sure everything connected to this environment was
             // also deleted
