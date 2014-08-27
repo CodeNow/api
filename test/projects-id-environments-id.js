@@ -7,7 +7,6 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 
 var uuid = require('uuid');
-var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
@@ -152,7 +151,10 @@ describe('Environments - /projects/:id/environments/:id', function() {
 
   describe('DELETE', function () {
     beforeEach(function (done) {
-      ctx.notDefaultEnv = ctx.project.createEnvironment({ name: uuid() }, done);
+      ctx.notDefaultEnv = ctx.project.createEnvironment({ name: uuid() }, function() {
+        ctx.notDefaultBuild =
+          ctx.notDefaultEnv.createBuild({ environment: ctx.notDefaultEnv.id() }, done);
+      });
     });
     describe('permissions', function() {
       describe('owner', function () {
@@ -160,7 +162,11 @@ describe('Environments - /projects/:id/environments/:id', function() {
           ctx.env.destroy(expects.errorStatus(409, done));
         });
         it('should not delete the other environment', function (done) {
-          ctx.notDefaultEnv.destroy(expects.success(204, done));
+          ctx.notDefaultEnv.destroy(expects.success(204, function() {
+            // Now we need to test to make sure everything connected to this environment was
+            // also deleted
+            ctx.notDefaultBuild.fetch(expects.errorStatus(404, done));
+          }));
         });
       });
       describe('non-owner', function () {
