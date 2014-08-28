@@ -92,7 +92,7 @@
   "engine": "node >= 0.10.5",
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 100 -e test test/test*.js",
+    "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 100 -e test test/*.js",
     "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",
