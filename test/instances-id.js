@@ -197,7 +197,7 @@ describe('Instance - /instances/:id', function () {
             var expected = extend(json, {
               'containers[0].inspect.State.Running': true
             });
-            ctx.instance.update({ json: json }, expects.success(200, json, done));
+            ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
       });
@@ -228,7 +228,7 @@ describe('Instance - /instances/:id', function () {
             var expected = extend(json, {
               'containers[0].inspect.State.Running': true
             });
-            ctx.instance.update({ json: json }, expects.success(200, json, done));
+            ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
       });
