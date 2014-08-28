@@ -14,6 +14,7 @@ var uuid = require('uuid');
 var async = require('async');
 var RedisList = require('redis-types').List;
 var exists = require('101/exists');
+var extend = require('extend');
 
 describe('Instance - /instances/:id', function () {
   var ctx = {};
@@ -193,7 +194,10 @@ describe('Instance - /instances/:id', function () {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should update instance\'s '+keys+' to '+vals, function (done) {
-            ctx.instance.update({ json: json }, expects.updateSuccess(json, done));
+            var expected = extend(json, {
+              'containers[0].inspect.State.Running': true
+            });
+            ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
       });
@@ -221,7 +225,10 @@ describe('Instance - /instances/:id', function () {
           var vals = keys.map(function (key) { return json[key]; });
           it('should update instance\'s '+keys+' to '+vals, function (done) {
             ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.instance.update({ json: json }, expects.updateSuccess(json, done));
+            var expected = extend(json, {
+              'containers[0].inspect.State.Running': true
+            });
+            ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
       });
