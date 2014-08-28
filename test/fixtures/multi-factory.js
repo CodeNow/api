@@ -1,13 +1,13 @@
 'use strict';
 
 var MongoUser = require('models/mongo/user');
-var host = require('./host');
 var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
 var noop = function () {};
 
 module.exports = {
   createUser: function (cb) {
+    var host = require('./host');
     var token = uuid();
     require('./mocks/github/action-auth')(token);
     var User = require('runnable');
