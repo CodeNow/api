@@ -6,7 +6,6 @@ var after = Lab.after;
 var afterEach = Lab.afterEach;
 var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
-var request = require('request');
 var multi = require('./fixtures/multi-factory');
 
 var api = require('./fixtures/api-control');
