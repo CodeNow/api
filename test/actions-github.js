@@ -8,6 +8,7 @@ var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
 var request = require('request');
 
+var Build = require('models/mongo/build');
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
@@ -90,6 +91,72 @@ describe('Github', function () {
             if (err) { return done(err); }
             multi.buildTheBuild(user, build, done);
           });
+      });
+    });
+    describe('With an unfinished build ', function () {
+      beforeEach(function(done) {
+        delete ctx.build.attrs.completed;
+        Build.findOneAndUpdate({
+          _id: ctx.build.id()
+        }, {
+          $unset: {
+            'completed' : true
+          }
+        }, done);
+      });
+      it('should start a build from one that hasn\'t finished', {timeout:3000}, function (done) {
+        var options = hooks.push;
+        require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+        require('./fixtures/mocks/docker/container-id-attach')();
+        request.post(options, function (err, res, body) {
+          if (err) {
+            done(err);
+          }
+          else {
+            expect(res.statusCode).to.equal(201);
+            expect(body).to.be.okay;
+            expect(body).to.be.an('array');
+            expect(body).to.have.a.lengthOf(1);
+            expect(body[0]).to.have.property('started');
+            expect(body[0]).to.have.property('contextVersions');
+            tailBuildStream(body[0].contextVersions[0], function (err) {
+              if (err) { return done(err); }
+              require('./fixtures/mocks/github/repos-username-repo-commits')
+              ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+              var commit = require('./fixtures/mocks/github/repos-username-repo-commits')
+              ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+
+              var buildExpected = {
+                started: exists,
+                completed: exists,
+                'contextVersions[0].build.started': exists,
+                'contextVersions[0].build.completed': exists,
+                'contextVersions[0].build.triggeredBy.github': exists,
+                'contextVersions[0].build.triggeredBy.username': 'bkendall',
+                'contextVersions[0].build.triggeredBy.gravatar': exists,
+                'contextVersions[0].build.triggeredAction.manual': not(exists),
+                'contextVersions[0].build.triggeredAction.rebuild': not(exists),
+                'contextVersions[0].build.triggeredAction.appCodeVersion.repo': 'bkendall/flaming-octo-nemesis',
+                'contextVersions[0].build.triggeredAction.appCodeVersion.commit': hooks.push.json.head_commit.id,
+                'contextVersions[0].build.triggeredAction.appCodeVersion.commitLog': function (commitLog) {
+                  expect(commitLog).to.be.an('array');
+                  expect(commitLog).to.have.a.lengthOf(1);
+                  expect(commitLog[0].id).to.equal(commit.id);
+                  return true;
+                },
+                'contextVersions[0].build.dockerImage': exists,
+                'contextVersions[0].build.dockerTag': exists,
+                'contextVersions[0].infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
+                'contextVersions[0].appCodeVersions[0].lowerRepo': 'bkendall/flaming-octo-nemesis',
+                'contextVersions[0].appCodeVersions[0].lowerBranch': 'master',
+                'contextVersions[0].appCodeVersions[0].commit': hooks.push.json.head_commit.id,
+                'contextVersions[0].appCodeVersions[0].lockCommit': false
+              };
+              ctx.env.newBuild(body[0]).fetch(
+                expects.success(200, buildExpected, done));
+            });
+          }
+        });
       });
     });
     it('should start a build', {timeout:3000}, function (done) {
