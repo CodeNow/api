@@ -6,4 +6,9 @@ module.exports = function () {
       '/containers/284912fa2cf26d40cc262798ecbb483b58f222d42ab1551e818afe35744688f7/attach')
     .post('/containers/284912fa2cf26d40cc262798ecbb483b58f222d42ab1551e818afe35744688f7/attach')
     .reply(200, 'Successfully built 15e17eedec196751ad15cdb1cef61f6022c19bee01b8079');
+
+  nock('http://localhost:4243', { allowUnmocked: true })
+    .filteringPath(/\/images\/.+\/push/, '/images/repo/push')
+    .post('/images/repo/push')
+    .reply(200);
 };
