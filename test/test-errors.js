@@ -17,10 +17,15 @@ describe('Errors', function () {
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
   beforeEach(function (done) {
-    console.log(process.env.NODE_ENV, process.env.PORT);
+    ctx.LOG_ERRORS = process.env.LOG_ERRORS; // cache orig value
+    process.env.LOG_ERRORS = false; // avoid error.log spam
     ctx.user = multi.createUser(done);
   });
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(function (done) {
+    process.env.LOG_ERRORS = ctx.LOG_ERRORS; // restore orig value
+    done();
+  });
 
   describe('GET /test/errors/runtime', function () {
     it('should respond the error', function (done) {
