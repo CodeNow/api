@@ -79,7 +79,7 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
                     }))
                   ).to.be.ok;
                 });
-                expect(destICV.parentInfraCodeVersion.toString()).to.equal(sourceICV._id.toString());
+                expect(destICV.parent.toString()).to.equal(sourceICV._id.toString());
                 done();
               }
             }));
