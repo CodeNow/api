@@ -88,6 +88,7 @@ function newCV (context, icv, cb) {
   var cv = new ContextVersion({
     createdBy: createdBy,
     context: context._id,
+    project: context._id,
     environment: context._id,
     infraCodeVersion: icv._id,
     build: {
