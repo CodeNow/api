@@ -285,6 +285,28 @@ describe('Instance - /instances/:id', function () {
     });
   });
 
+  describe('RESTART', function () {
+    it('should restart all containers', function (done) {
+      var expected = ctx.instance.json();
+      // FIXME: add some better checks here like State.StartedAt
+      delete expected.containers;
+      delete expected.__v;
+      expected['containers[0].startedBy.github'] = exists;
+      ctx.instance.restart(expects.success(200, expected, done));
+    });
+    describe('and after started', function () {
+      beforeEach(function (done) {
+        ctx.instance.restart(expects.success(200, done));
+      });
+      it('should have correct hipache hosts', function (done) {
+        ctx.instance.fetch(function (err, instance) {
+          if (err) { return done(err); }
+          expectHipacheHostsForContainers(instance, done);
+        });
+      });
+    });
+  });
+
   describe('STOP', function () {
     it('should stop all containers', function (done) {
       var expected = ctx.instance.json();
