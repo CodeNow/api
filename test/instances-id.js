@@ -14,6 +14,7 @@ var uuid = require('uuid');
 var async = require('async');
 var RedisList = require('redis-types').List;
 var exists = require('101/exists');
+var extend = require('extend');
 
 describe('Instance - /instances/:id', function () {
   var ctx = {};
@@ -193,7 +194,10 @@ describe('Instance - /instances/:id', function () {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should update instance\'s '+keys+' to '+vals, function (done) {
-            ctx.instance.update({ json: json }, expects.updateSuccess(json, done));
+            var expected = extend(json, {
+              'containers[0].inspect.State.Running': true
+            });
+            ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
       });
@@ -221,7 +225,10 @@ describe('Instance - /instances/:id', function () {
           var vals = keys.map(function (key) { return json[key]; });
           it('should update instance\'s '+keys+' to '+vals, function (done) {
             ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
-            ctx.instance.update({ json: json }, expects.updateSuccess(json, done));
+            var expected = extend(json, {
+              'containers[0].inspect.State.Running': true
+            });
+            ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
       });
@@ -268,6 +275,28 @@ describe('Instance - /instances/:id', function () {
     describe('and after started', function () {
       beforeEach(function (done) {
         ctx.instance.start(expects.success(200, done));
+      });
+      it('should have correct hipache hosts', function (done) {
+        ctx.instance.fetch(function (err, instance) {
+          if (err) { return done(err); }
+          expectHipacheHostsForContainers(instance, done);
+        });
+      });
+    });
+  });
+
+  describe('RESTART', function () {
+    it('should restart all containers', function (done) {
+      var expected = ctx.instance.json();
+      // FIXME: add some better checks here like State.StartedAt
+      delete expected.containers;
+      delete expected.__v;
+      expected['containers[0].startedBy.github'] = exists;
+      ctx.instance.restart(expects.success(200, expected, done));
+    });
+    describe('and after started', function () {
+      beforeEach(function (done) {
+        ctx.instance.restart(expects.success(200, done));
       });
       it('should have correct hipache hosts', function (done) {
         ctx.instance.fetch(function (err, instance) {

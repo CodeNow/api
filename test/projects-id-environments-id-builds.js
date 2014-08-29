@@ -12,7 +12,6 @@ var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var not = require('101/not');
-var Build = require('models/mongo/build');
 var exists = require('101/exists');
 var tailBuildStream = require('./fixtures/tail-build-stream');
 var equals = require('101/equals');
@@ -78,16 +77,16 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
       });
     });
     describe('Built Projects', function () {
-      beforeEach(function (done) {
-        multi.createBuild(function (err, build, env, project, user) {
-          ctx.build = build;
-          ctx.env = env;
-          ctx.project = project;
-          ctx.user = user;
-          done(err);
-        });
-      });
       describe('parentBuild is unbuilt', function() {
+        beforeEach(function (done) {
+          multi.createBuild(function (err, build, env, project, user) {
+            ctx.build = build;
+            ctx.env = env;
+            ctx.project = project;
+            ctx.user = user;
+            done(err);
+          });
+        });
         it('should NOT create a new build from an it', function (done) {
           var body = {
             parentBuild: ctx.build.id()
@@ -196,27 +195,50 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
                 newBuild.fetch(expects.success(200, expected, done)); // get completed build
               });
             }));
-
         });
-      });
-      it('should fail when the source build hasn\'t finished building', function (done) {
-        delete ctx.build.attrs.completed;
-        Build.findOneAndUpdate({
-          _id: ctx.build.id()
-        }, {
-          $unset: {
-            'completed' : true
-          }
-        },function(err) {
-          if (err) { return done(err); }
-          var inputBody = {
-            projectId: ctx.project.id(),
-            envId: ctx.env.id(),
-            parentBuild: ctx.build.id()
+        describe('fork to new environment', function () {
+          beforeEach(function (done) {
+            ctx.env2 = ctx.project.createEnvironment({ name: 'other' }, done);
+          });
+          it('should create a build to another environment', function (done) {
+            var expected = {
+            project: ctx.project.id(),
+            environment: ctx.env2.id(),
+            contexts: ctx.build.json().contexts,
+            contextVersions: function (val) {
+              expect(val).to.not.eql(ctx.build.json().contextVersions);
+              return true;
+            },
+            started: not(exists),
+            completed: not(exists)
           };
-          ctx.env.createBuild({json: inputBody}, function (err) {
-            expect(err).to.be.ok;
-            done();
+          var newBuild = ctx.build.fork(
+            ctx.env2.id(),
+            expects.success(201, expected, function (err) {
+              if (err) { return done(err); }
+              var i = 0;
+              async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
+                var contextId = ctx.build.json().contexts[i];
+                var oldVersionId = ctx.build.json().contextVersions[i];
+                require('./fixtures/mocks/github/user')(ctx.user);
+                ctx.user
+                  .newContext(contextId)
+                  .newVersion(oldVersionId)
+                  .fetch(function (err, body) {
+                    if (err) { return cb(err); }
+                    var expected = { // ensure infraCodeVersions were copied
+                      infraCodeVersion: not(equals(body.infraCodeVersion)),
+                      environment: equals(ctx.env2.id())
+                    };
+                    require('./fixtures/mocks/github/user')(ctx.user);
+                    ctx.user
+                      .newContext(contextId)
+                      .newVersion(versionId)
+                      .fetch(expects.success(200, expected, cb));
+                  });
+                i++;
+              }, done);
+            }));
           });
         });
       });
