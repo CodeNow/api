@@ -4,9 +4,7 @@ var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
 var afterEach = Lab.afterEach;
-var uuid = require('uuid');
 var validation = require('./fixtures/validation');
-var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 
 var InfracodeVersion = require('../lib/models/mongo/infra-code-version');
 
@@ -54,7 +52,7 @@ describe('Infracode Versions', function () {
         expect(childInfracode.parentEnvironment.toString()).to.equal(infracode.environment.toString());
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
-      })
+      });
     });
   });
 
@@ -69,7 +67,7 @@ describe('Infracode Versions', function () {
         expect(childInfracode.parentEnvironment).to.not.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
-      })
+      });
     });
   });
 
@@ -84,7 +82,7 @@ describe('Infracode Versions', function () {
         expect(childInfracode.parentEnvironment).to.not.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
-      })
+      });
     });
   });
 
@@ -99,7 +97,7 @@ describe('Infracode Versions', function () {
         expect(childInfracode.parentEnvironment).to.not.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
-      })
+      });
     });
   });
 });
