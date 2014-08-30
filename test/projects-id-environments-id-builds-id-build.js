@@ -115,8 +115,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
               'build.dockerImage': exists,
               'build.dockerTag': exists,
               'build.log': exists,
-              'build.triggeredAction.manual': true,
-              'environment': ctx.otherEnv.id()
+              'build.triggeredAction.manual': true
             };
             require('./fixtures/mocks/github/user')(ctx.user); // non owner org
             ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));

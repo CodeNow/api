@@ -202,43 +202,42 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
           });
           it('should create a build to another environment', function (done) {
             var expected = {
-            project: ctx.project.id(),
-            environment: ctx.env2.id(),
-            contexts: ctx.build.json().contexts,
-            contextVersions: function (val) {
-              expect(val).to.not.eql(ctx.build.json().contextVersions);
-              return true;
-            },
-            started: not(exists),
-            completed: not(exists)
-          };
-          var newBuild = ctx.build.fork(
-            ctx.env2.id(),
-            expects.success(201, expected, function (err) {
-              if (err) { return done(err); }
-              var i = 0;
-              async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
-                var contextId = ctx.build.json().contexts[i];
-                var oldVersionId = ctx.build.json().contextVersions[i];
-                require('./fixtures/mocks/github/user')(ctx.user);
-                ctx.user
-                  .newContext(contextId)
-                  .newVersion(oldVersionId)
-                  .fetch(function (err, body) {
-                    if (err) { return cb(err); }
-                    var expected = { // ensure infraCodeVersions were copied
-                      infraCodeVersion: not(equals(body.infraCodeVersion)),
-                      environment: equals(ctx.env2.id())
-                    };
-                    require('./fixtures/mocks/github/user')(ctx.user);
-                    ctx.user
-                      .newContext(contextId)
-                      .newVersion(versionId)
-                      .fetch(expects.success(200, expected, cb));
-                  });
-                i++;
-              }, done);
-            }));
+              project: ctx.project.id(),
+              environment: ctx.env2.id(),
+              contexts: ctx.build.json().contexts,
+              contextVersions: function (val) {
+                expect(val).to.not.eql(ctx.build.json().contextVersions);
+                return true;
+              },
+              started: not(exists),
+              completed: not(exists)
+            };
+            var newBuild = ctx.build.fork(
+              ctx.env2.id(),
+              expects.success(201, expected, function (err) {
+                if (err) { return done(err); }
+                var i = 0;
+                async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
+                  var contextId = ctx.build.json().contexts[i];
+                  var oldVersionId = ctx.build.json().contextVersions[i];
+                  require('./fixtures/mocks/github/user')(ctx.user);
+                  ctx.user
+                    .newContext(contextId)
+                    .newVersion(oldVersionId)
+                    .fetch(function (err, body) {
+                      if (err) { return cb(err); }
+                      var expected = { // ensure infraCodeVersions were copied
+                        infraCodeVersion: not(equals(body.infraCodeVersion))
+                      };
+                      require('./fixtures/mocks/github/user')(ctx.user);
+                      ctx.user
+                        .newContext(contextId)
+                        .newVersion(versionId)
+                        .fetch(expects.success(200, expected, cb));
+                    });
+                  i++;
+                }, done);
+              }));
           });
         });
       });
