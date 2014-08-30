@@ -73,11 +73,6 @@ describe('Versions', function () {
     validation.requiredValidationChecking(createNewVersion, 'context');
   });
 
-  describe('Environment Id Validation', function () {
-    validation.objectIdValidationChecking(createNewVersion, 'environment');
-    validation.requiredValidationChecking(createNewVersion, 'environment');
-  });
-
   describe('Project Id Validation', function () {
     validation.objectIdValidationChecking(createNewVersion, 'project');
     validation.requiredValidationChecking(createNewVersion, 'project');
