@@ -23,6 +23,7 @@ describe('Versions', function () {
       config: validation.VALID_OBJECT_ID,
       created: Date.now(),
       environment: validation.VALID_OBJECT_ID,
+      project: validation.VALID_OBJECT_ID,
       context: validation.VALID_OBJECT_ID,
       files:[{
         Key: "test",
@@ -72,9 +73,9 @@ describe('Versions', function () {
     validation.requiredValidationChecking(createNewVersion, 'context');
   });
 
-  describe('Environment Id Validation', function () {
-    validation.objectIdValidationChecking(createNewVersion, 'environment');
-    validation.requiredValidationChecking(createNewVersion, 'environment');
+  describe('Project Id Validation', function () {
+    validation.objectIdValidationChecking(createNewVersion, 'project');
+    validation.requiredValidationChecking(createNewVersion, 'project');
   });
 
   describe('Build Validation', function () {

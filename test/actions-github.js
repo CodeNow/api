@@ -86,8 +86,8 @@ describe('Github', function () {
         require('./fixtures/mocks/github/repos-keys-post')(username, reponame);
         require('./fixtures/mocks/s3/put-object')('/runnable.deploykeys.test/'+username+'/'+reponame+'.key.pub');
         require('./fixtures/mocks/s3/put-object')('/runnable.deploykeys.test/'+username+'/'+reponame+'.key');
-        ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(ctx.repo,
-          function (err) {
+        ctx.appCodeVersion =
+          ctx.contextVersion.addGithubRepo(ctx.repo, function (err) {
             if (err) { return done(err); }
             multi.buildTheBuild(user, build, done);
           });
@@ -317,6 +317,61 @@ describe('Github', function () {
               });
             }
           ], done);
+        });
+      });
+    });
+    describe('when a build\'s environment has been deleted', function () {
+      beforeEach(function (done) {
+        var kp = new Keypair({
+          publicKey: 'asdf',
+          privateKey: 'fdsa'
+        });
+        kp.save(done);
+      });
+      beforeEach(function (done) {
+        ctx.repo = hooks.push.json.repository.owner.name+
+          '/'+hooks.push.json.repository.name;
+
+        ctx.env2 = ctx.project.createEnvironment({ name: 'otherEnv' }, function (err) {
+          if (err) { return done(err); }
+          ctx.build2 = ctx.env2.createBuild({ parentBuild: ctx.build.id() }, function (err) {
+            if (err) { return done(err); }
+            var username = hooks.push.json.repository.owner.name;
+            var reponame = hooks.push.json.repository.name;
+            require('./fixtures/mocks/github/repos-username-repo')(ctx.user, reponame);
+            require('./fixtures/mocks/github/repos-hooks-get')(username, reponame);
+            require('./fixtures/mocks/github/repos-hooks-post')(username, reponame);
+            require('./fixtures/mocks/github/repos-keys-get')(username, reponame, true);
+            // build2 inherited build1's githubRepos
+            multi.buildTheBuild(ctx.user, ctx.build2, function (err) {
+              if (err) { return done(err); }
+              ctx.env2.destroy(done);
+            });
+          });
+        });
+      });
+      it('should only build the build whose environment exists', {timeout:10000}, function (done) {
+        var options = hooks.push;
+        require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+        require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/github/user')(ctx.user2);
+        require('./fixtures/mocks/docker/container-id-attach')();
+        require('./fixtures/mocks/docker/container-id-attach')();
+        request.post(options, function (err, res, body) {
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(201);
+          expect(body).to.be.okay;
+          expect(body).to.be.an('array');
+          expect(body).to.have.a.lengthOf(1);
+          expect(body[0]).to.have.a.property('environment', ctx.build.attrs.environment);
+          var buildExpected = {
+            started: exists,
+            completed: exists
+          };
+          tailBuildStream(body[0].contextVersions[0], function (err) {
+            if (err) { return done(err); }
+            ctx.build.fetch(expects.success(200, buildExpected, done));
+          });
         });
       });
     });

@@ -52,7 +52,6 @@ describe('Versions - /contexts/:contextid/versions', function () {
         environment: ctx.env.id()
       };
       var expected = {
-        environment: ctx.env.id(),
         infraCodeVersion: exists
       };
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
@@ -64,7 +63,6 @@ describe('Versions - /contexts/:contextid/versions', function () {
           environment: ctx.env.id()
         };
         var expected = {
-          environment: ctx.env.id(),
           infraCodeVersion: exists
         };
         var opts = {

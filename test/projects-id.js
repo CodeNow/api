@@ -200,15 +200,26 @@ describe('Project - /projects/:id', function () {
         });
       });
       it('should delete all the things', function (done) {
-        var count = createCount(6, done);
         ctx.project.destroy(expects.success(204, function (err) {
           if (err) { return done(err); }
-          ctx.instance.fetch(expects.error(404, count.next));
-          ctx.contextVersion.fetch(expects.error(404, count.next));
-          ctx.context.fetch(expects.error(404, count.next));
-          ctx.build.fetch(expects.error(404, count.next));
-          ctx.env.fetch(expects.error(404, count.next));
-          ctx.project.fetch(expects.error(404, count.next));
+          var count = createCount(done);
+          ctx.instance.fetch(expects.error(404, count.inc().next));
+          ctx.contextVersion.fetch(expects.error(404, count.inc().next));
+          ctx.context.fetch(expects.error(404, count.inc().next));
+          ctx.project.fetch(expects.error(404, count.inc().next));
+          ctx.env.fetch(expects.error(404, count.inc().next));
+          ctx.build.fetch(expects.error(404, /Project/, count.inc().next));
+          count.inc();
+          process.nextTick(function () { // for some reason this is necessary..
+            require('models/mongo/build').findById(ctx.build.id(), function (err, build) {
+              if (build) {
+                count.next(new Error('build was not deleted'));
+              }
+              else {
+                count.next(err);
+              }
+            });
+          });
         }));
       });
     });
