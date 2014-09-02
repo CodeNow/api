@@ -3,6 +3,7 @@
 var MongoUser = require('models/mongo/user');
 var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
+var generateKey = require('./key-factory');
 var noop = function () {};
 
 module.exports = {
@@ -132,8 +133,27 @@ module.exports = {
               require('./mocks/s3/put-object')(context.id(), '/');
               require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
               contextVersion.copyFilesFromSource(srcContextVersion.json().infraCodeVersion, function (err) {
-                cb(err, contextVersion, context, build, env, project, user,
-                  [srcContextVersion, srcContext, moderator]);
+                if (err) { return cb(err); }
+                generateKey(function (err) {
+                  if (err) { return cb(err); }
+                  var ghUser = user.json().accounts.github.username;
+                  var ghRepo = 'flaming-octo-nemesis';
+                  var repo = ghUser + '/' + ghRepo;
+                  require('./mocks/github/repos-username-repo')(user, ghRepo);
+                  require('./mocks/github/repos-hooks-get')(ghUser, ghRepo);
+                  require('./mocks/github/repos-hooks-post')(ghUser, ghRepo);
+                  require('./mocks/github/repos-keys-get')(ghUser, ghRepo);
+                  require('./mocks/github/repos-keys-post')(ghUser, ghRepo);
+                  require('./mocks/s3/put-object')('/runnable.deploykeys.test/'+ghUser+'/'+ghRepo+'.key.pub');
+                  require('./mocks/s3/put-object')('/runnable.deploykeys.test/'+ghUser+'/'+ghRepo+'.key');
+                  contextVersion.addGithubRepo(repo, function (err) {
+                    if (err) { return cb(err); }
+                    contextVersion.fetch(function (err) {
+                      cb(err, contextVersion, context, build, env, project, user,
+                        [srcContextVersion, srcContext, moderator]);
+                    });
+                  });
+                });
               });
             });
           });
@@ -205,17 +225,21 @@ module.exports = {
     require('./mocks/docker/container-id-attach')();
     build.fetch(function (err) {
       if (err) { return cb(err); }
-      build.build({ message: uuid() }, function (err) {
-        if (err) {
-          cb = noop;
-          cb(err);
-        }
-        tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
-          if (err) { return cb(err); }
-          require('./mocks/github/user')(user);
-          build.fetch(function (err) {
+      build.contextVersions.models[0].fetch(function (err, cv) {
+        if (err) { return cb(err); }
+        require('./mocks/github/repos-username-repo-branches-branch')(cv);
+        build.build({ message: uuid() }, function (err) {
+          if (err) {
+            cb = noop;
             cb(err);
-          }); // get completed build
+          }
+          tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
+            if (err) { return cb(err); }
+            require('./mocks/github/user')(user);
+            build.fetch(function (err) {
+              cb(err);
+            }); // get completed build
+          });
         });
       });
     });

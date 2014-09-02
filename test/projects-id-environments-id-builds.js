@@ -48,7 +48,12 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
         describe('owner', function () {
           it('should create first build for environment', function (done) {
             var body = {
-              environment: ctx.env.id()
+              environment: ctx.env.id(),
+              'appCodeVersions.length': equals(1),
+              'appCodeVersions[0].repo': exists,
+              'appCodeVersions[0].lowerRepo': exists,
+              'appCodeVersions[0].branch': exists,
+              'appCodeVersions[0].lockCommit': false,
             };
             var expected = {
               environment: ctx.env.id(),
@@ -97,7 +102,8 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
       });
       describe('parentBuild is built', function() {
         beforeEach(function (done) {
-          multi.createBuiltBuild(function (err, build, env, project, user) {
+          multi.createBuiltBuild(function (err, build, env, project, user, others) {
+            ctx.version = others[0];
             ctx.build = build;
             ctx.env = env;
             ctx.project = project;
@@ -106,7 +112,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
           });
         });
         it('should create a new build from an existing one', function (done) {
-          var expected = {
+          var expectedBuild = {
             project: ctx.project.id(),
             environment: ctx.env.id(),
             contexts: ctx.build.json().contexts,
@@ -118,7 +124,7 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
             completed: not(exists)
           };
           var newBuild = ctx.build.fork(
-            expects.success(201, expected, function (err) {
+            expects.success(201, expectedBuild, function (err) {
               if (err) { return done(err); }
               var i = 0;
               async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
@@ -130,14 +136,19 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
                   .newVersion(oldVersionId)
                   .fetch(function (err, body) {
                     if (err) { return cb(err); }
-                    var expected = { // ensure infraCodeVersions were copied
-                      infraCodeVersion: not(equals(body.infraCodeVersion))
+                    var expectedNewVersion = { // ensure infraCodeVersions were copied
+                      infraCodeVersion: not(equals(body.infraCodeVersion)),
+                      'appCodeVersions[0].branch': exists,
+                      'appCodeVersions[0].repo': exists,
+                      'appCodeVersions[0].lowerRepo': exists,
+                      'appCodeVersions[0].lockCommit': false,
+                      'appCodeVersions[0].commit': exists
                     };
                     require('./fixtures/mocks/github/user')(ctx.user);
                     ctx.user
                       .newContext(contextId)
                       .newVersion(versionId)
-                      .fetch(expects.success(200, expected, cb));
+                      .fetch(expects.success(200, expectedNewVersion, cb));
                   });
                 i++;
               }, done);

@@ -36,6 +36,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
         ctx.build = build;
         ctx.user = user;
         ctx.project = project;
+        require('./fixtures/mocks/github/repos-username-repo-branches-branch')(contextVersion);
         done(err);
       });
     });
