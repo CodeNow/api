@@ -22,6 +22,9 @@ var equals = require('101/equals');
 var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
 var createCount = require('callback-count');
+var async = require('async');
+var hasProps = require('101/has-properties');
+var find = require('101/find');
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -283,97 +286,99 @@ describe('Github', function () {
           });
         });
       });
-      // describe('when a repo is linked multiple ways', function () {
-      //   beforeEach(generateKey);
-      //   beforeEach(function (done) {
-      //     var options = hooks(ctx.contextVersion.json()).push;
+      describe('when a repo is linked multiple ways', function () {
+        beforeEach(generateKey);
+        beforeEach(function (done) {
+          var options = hooks(ctx.contextVersion.json()).push;
 
-      //     multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
-      //       ctx.contextVersion2 = contextVersion;
-      //       ctx.context2 = context;
-      //       ctx.build2 = build;
-      //       ctx.env2 = env;
-      //       ctx.project2 = project;
-      //       ctx.user2 = user;
-      //       var username = options.json.repository.owner.name;
-      //       var reponame = options.json.repository.name;
-      //       require('./fixtures/mocks/github/repos-username-repo')(ctx.user, reponame);
-      //       require('./fixtures/mocks/github/repos-hooks-get')(username, reponame);
-      //       require('./fixtures/mocks/github/repos-hooks-post')(username, reponame);
-      //       require('./fixtures/mocks/github/repos-keys-get')(username, reponame, true);
-      //       ctx.appCodeVersion2 = ctx.contextVersion2.addGithubRepo(
-      //         ctx.contextVersion.json().appCodeVersions[0].repo,
-      //         function (err) {
-      //           if (err) { return done(err); }
-      //           var count = createCount(3, done);
-      //           Build.findOneAndUpdate({
-      //             _id: ctx.build2.id()
-      //           }, {
-      //             $set: {
-      //               'started': Date.now(),
-      //               'completed': Date.now()
-      //             }
-      //           }, count.next);
-      //           ContextVersion.findOneAndUpdate({
-      //             _id: ctx.contextVersion2.id()
-      //           }, {
-      //             $set: {
-      //               'build.started': Date.now(),
-      //               'build.completed': Date.now()
-      //             }
-      //           }, count.next);
-      //           ContextVersion.findOneAndUpdate({
-      //             _id: ctx.contextVersion2.id(),
-      //             'appCodeVersions.repo': ctx.contextVersion2.json().appCodeVersions[0].repo
-      //           }, {
-      //             $set: {
-      //               'appCodeVersions.$.commit': 'deadbeef'
-      //             }
-      //           }, count.next);
-      //         });
-      //     });
-      //   });
-      //   it('should build new builds for two projects that are linked to the same repo',
-      //   {timeout: 10000},
-      //   function (done) {
-      //     var options = hooks(ctx.contextVersion.json()).push;
-      //     console.log(options)
-      //     require('./fixtures/mocks/github/users-username')(101, 'bkendall');
-      //     require('./fixtures/mocks/github/user')(ctx.user);
-      //     require('./fixtures/mocks/github/user')(ctx.user2);
-      //     require('./fixtures/mocks/docker/container-id-attach')();
-      //     require('./fixtures/mocks/docker/container-id-attach')();
-      //     request.post(options, function (err, res, body) {
-      //       if (err) { return done(err); }
-      //       expect(res.statusCode).to.equal(201);
-      //       console.log('annnd here we go', body);
-      //       expect(body).to.be.okay;
-      //       expect(body).to.be.an('array');
-      //       expect(body).to.have.a.lengthOf(2);
-      //       var buildExpected = {
-      //         started: exists,
-      //         completed: exists
-      //       };
+          multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+            ctx.contextVersion2 = contextVersion;
+            ctx.context2 = context;
+            ctx.build2 = build;
+            ctx.env2 = env;
+            ctx.project2 = project;
+            ctx.user2 = user;
+            var username = options.json.repository.owner.name;
+            var reponame = options.json.repository.name;
+            require('./fixtures/mocks/github/repos-username-repo')(ctx.user, reponame);
+            require('./fixtures/mocks/github/repos-hooks-get')(username, reponame);
+            require('./fixtures/mocks/github/repos-hooks-post')(username, reponame);
+            require('./fixtures/mocks/github/repos-keys-get')(username, reponame, true);
+            ctx.appCodeVersion2 = ctx.contextVersion2.addGithubRepo(
+              ctx.contextVersion.json().appCodeVersions[0].repo,
+              function (err) {
+                if (err) { return done(err); }
+                var count = createCount(3, done);
+                Build.findOneAndUpdate({
+                  _id: ctx.build2.id()
+                }, {
+                  $set: {
+                    'started': Date.now(),
+                    'completed': Date.now()
+                  }
+                }, count.next);
+                ContextVersion.findOneAndUpdate({
+                  _id: ctx.contextVersion2.id()
+                }, {
+                  $set: {
+                    'build.started': Date.now(),
+                    'build.completed': Date.now()
+                  }
+                }, count.next);
+                ContextVersion.findOneAndUpdate({
+                  _id: ctx.contextVersion2.id(),
+                  'appCodeVersions.repo': ctx.contextVersion2.json().appCodeVersions[0].repo
+                }, {
+                  $set: {
+                    'appCodeVersions.$.commit': 'deadbeef'
+                  }
+                }, count.next);
+              });
+          });
+        });
+        it('should build new builds for two projects that are linked to the same repo',
+        {timeout: 10000},
+        function (done) {
+          var options = hooks(ctx.contextVersion.json()).push;
+          require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user2);
+          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, body) {
+            if (err) { return done(err); }
+            expect(res.statusCode).to.equal(201);
+            console.log('annnd here we go', body);
+            expect(body).to.be.okay;
+            expect(body).to.be.an('array');
+            expect(body).to.have.a.lengthOf(2);
+            var buildExpected = {
+              started: exists,
+              completed: exists
+            };
 
-      //       async.parallel([
-      //         function (cb) {
-      //           var build1 = find(body, hasProps({environment: ctx.env.id()}));
-      //           tailBuildStream(build1.contextVersions[0], function (err) {
-      //             if (err) { return done(err); }
-      //             ctx.build.fetch(expects.success(200, buildExpected, cb));
-      //           });
-      //         },
-      //         function (cb) {
-      //           var build2 = find(body, hasProps({environment: ctx.env2.id()}));
-      //           tailBuildStream(build2.contextVersions[0], function (err) {
-      //             if (err) { return done(err); }
-      //             ctx.build2.fetch(expects.success(200, buildExpected, cb));
-      //           });
-      //         }
-      //       ], done);
-      //     });
-      //   });
-      // });
+            async.parallel([
+              function (cb) {
+                var build1 = find(body, hasProps({environment: ctx.env.id()}));
+                tailBuildStream(build1.contextVersions[0], function (err) {
+                  if (err) { console.log('build1 failed'); return done(err); }
+                  ctx.build.fetch(expects.success(200, buildExpected, cb));
+                });
+              },
+              function (cb) {
+                var build2 = find(body, hasProps({environment: ctx.env2.id()}));
+                tailBuildStream(build2.contextVersions[0], function (err) {
+                  if (err) { console.log('build2 failed'); return done(err); }
+                  ctx.build2.fetch(expects.success(200, buildExpected, cb));
+                });
+              }
+            ], function (err) {
+              console.log('and we are back', err);
+              done(err);
+            });
+          });
+        });
+      });
     });
     // FIXME: MOAR TESTS
     // describe('unbuilt build with github repo', function() {
