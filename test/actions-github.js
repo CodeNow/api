@@ -69,15 +69,13 @@ describe('Github', function () {
       ctx.repo = hooks.push.json.repository.owner.name+
         '/'+hooks.push.json.repository.name;
 
-      multi.createContextVersion(function (err, contextVersion, context, build, env, project, user,
-        sourceArray) { //[srcContextVersion, srcContext, moderator])
+      multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
         ctx.contextVersion = contextVersion;
         ctx.context = context;
         ctx.build = build;
         ctx.env = env;
         ctx.project = project;
         ctx.user = user;
-        ctx.sourceContextVersion = sourceArray[0];
         user.attrs.accounts.github.login = hooks.push.json.repository.owner.name;
         var username = hooks.push.json.repository.owner.name;
         var reponame = hooks.push.json.repository.name;
@@ -148,8 +146,7 @@ describe('Github', function () {
                 },
                 'contextVersions[0].build.dockerImage': exists,
                 'contextVersions[0].build.dockerTag': exists,
-                'contextVersions[0].infraCodeVersion':
-                  equals(ctx.sourceContextVersion.attrs.infraCodeVersion), // should inherit the source context
+                'contextVersions[0].infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
                 'contextVersions[0].appCodeVersions[0].lowerRepo': 'bkendall/flaming-octo-nemesis',
                 'contextVersions[0].appCodeVersions[0].lowerBranch': 'master',
                 'contextVersions[0].appCodeVersions[0].commit': hooks.push.json.head_commit.id,
@@ -204,8 +201,7 @@ describe('Github', function () {
               },
               'contextVersions[0].build.dockerImage': exists,
               'contextVersions[0].build.dockerTag': exists,
-              'contextVersions[0].infraCodeVersion':
-                equals(ctx.sourceContextVersion.attrs.infraCodeVersion), // unchanged
+              'contextVersions[0].infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
               'contextVersions[0].appCodeVersions[0].lowerRepo': 'bkendall/flaming-octo-nemesis',
               'contextVersions[0].appCodeVersions[0].lowerBranch': 'master',
               'contextVersions[0].appCodeVersions[0].commit': hooks.push.json.head_commit.id,
@@ -281,9 +277,7 @@ describe('Github', function () {
           ctx.appCodeVersion2 = ctx.contextVersion2.addGithubRepo(ctx.repo,
             function (err) {
               if (err) { return done(err); }
-              multi.buildTheBuild(user, build, function (err) {
-                done(err);
-              });
+              multi.buildTheBuild(user, build, done);
             });
         });
       });
