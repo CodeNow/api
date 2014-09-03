@@ -12,7 +12,7 @@ var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 // var not = require('101/not');
-// var exists = require('101/exists');
+var exists = require('101/exists');
 // var tailBuildStream = require('./fixtures/tail-build-stream');
 // var equals = require('101/equals');
 // var uuid = require('uuid');
@@ -36,6 +36,8 @@ describe('Builds - /builds', function () {
     describe('empty body', function() {
       it('should create a build', function (done) {
         var expected = {
+          _id: exists,
+          'owner.github': ctx.user.attrs.accounts.github.id,
           'createdBy.github': ctx.user.attrs.accounts.github.id
         };
         ctx.user.createBuild(expects.success(201, expected, done));
@@ -50,6 +52,8 @@ describe('Builds - /builds', function () {
             }
           };
           var expected = {
+            _id: exists,
+            'owner.github': body.owner.github,
             'createdBy.github': ctx.user.attrs.accounts.github.id
           };
           require('./fixtures/mocks/github/user-orgs')(body.owner.github, 'orgname');
