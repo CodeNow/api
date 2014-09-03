@@ -36,235 +36,41 @@ describe('Builds - /builds', function () {
    * we create a build.  Once finished, we should call the rebuild on the build
    */
   describe('POST', function () {
-    describe('Empty body', function () {
-      describe('permissions', function () {
-        describe('owner', function () {
-          it('should create first build for environment', function (done) {
-            var expected = {
-              'createdBy.github': ctx.user.attrs.accounts.github.id
-            };
-            require('./fixtures/mocks/github/user')(ctx.user);
-            ctx.user.createBuild(expects.success(201, expected, done));
-          });
+    describe('empty body', function() {
+      it('should create a build', function (done) {
+        var expected = {
+          'createdBy.github': ctx.user.attrs.accounts.github.id
+        };
+        ctx.user.createBuild(expects.success(201, expected, done));
+      });
+    });
+    describe('specify owner', function () {
+      describe('owner is github org user is a member of', function() {
+        it('should create a build', function (done) {
+          var body = {
+            owner: {
+              github: 1
+            }
+          };
+          var expected = {
+            'createdBy.github': ctx.user.attrs.accounts.github.id
+          };
+          require('./fixtures/mocks/github/user-orgs')(body.owner.github, 'orgname');
+          ctx.user.createBuild(body, expects.success(201, expected, done));
+        });
+      });
+      describe('owner is github org user is NOT a member of', function() {
+        it('should create a build', function (done) {
+          var body = {
+            owner: {
+              github: 1
+            }
+          };
+          require('./fixtures/mocks/github/user-orgs')(2, 'otherorg');
+          ctx.user.createBuild(body, expects.error(403, /denied/, done));
         });
       });
     });
-    describe('Built Projects', function () {
-      describe('parentBuild is unbuilt', function() {
-        beforeEach(function (done) {
-          multi.createBuild(function (err, build, user) {
-            ctx.build = build;
-            ctx.user = user;
-            done(err);
-          });
-        });
-        it('should NOT create a new build from an it', function (done) {
-          var body = {
-            parentBuild: ctx.build.id()
-          };
-          ctx.user.createBuild(body, expects.error(400, /cannot be copied.*started/, done));
-        });
-      });
-      describe('parentBuild is built', function() {
-        beforeEach(function (done) {
-          multi.createBuiltBuild(function (err, build, user) {
-            ctx.build = build;
-            ctx.user = user;
-            done(err);
-          });
-        });
-        it('should create a new build from an existing one', function (done) {
-          var expected = {
-            contexts: ctx.build.json().contexts,
-            contextVersions: function (val) {
-              expect(val).to.not.eql(ctx.build.json().contextVersions);
-              return true;
-            },
-            started: not(exists),
-            completed: not(exists)
-          };
-          var newBuild = ctx.build.fork(
-            expects.success(201, expected, function (err) {
-              if (err) { return done(err); }
-              var i = 0;
-              async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
-                var contextId = ctx.build.json().contexts[i];
-                var oldVersionId = ctx.build.json().contextVersions[i];
-                require('./fixtures/mocks/github/user')(ctx.user);
-                ctx.user
-                  .newContext(contextId)
-                  .newVersion(oldVersionId)
-                  .fetch(function (err, body) {
-                    if (err) { return cb(err); }
-                    var expected = { // ensure infraCodeVersions were copied
-                      infraCodeVersion: not(equals(body.infraCodeVersion))
-                    };
-                    require('./fixtures/mocks/github/user')(ctx.user);
-                    ctx.user
-                      .newContext(contextId)
-                      .newVersion(versionId)
-                      .fetch(expects.success(200, expected, cb));
-                  });
-                i++;
-              }, done);
-            }));
-        });
-      });
-        // it('should rebuild an existing build', {timeout:5000}, function (done) {
-        //   var body = {
-        //     id: ctx.build.id()
-        //   };
-        //   var expected = {
-        //     project: ctx.project.id(),
-        //     environment: ctx.env.id(),
-        //     contexts: ctx.build.json().contexts,
-        //     // The context versions should not be equal, since they were copied, too
-        //     contextVersions: function (val) {
-        //       expect(val).to.not.eql(ctx.build.json().contextVersions);
-        //       return true;
-        //     },
-        //     started: exists,
-        //     completed: not(exists),
-        //     failed: equals(false)
-        //   };
-        //   require('./fixtures/mocks/docker/container-id-attach')();
-        //   var newBuild = ctx.build.rebuild(body,
-        //     expects.success(201, expected, function (err) {
-        //       if (err) { return done(err); }
-        //       var i = 0;
-        //       async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
-        //         var contextId = ctx.build.json().contexts[i];
-        //         var oldVersionId = ctx.build.json().contextVersions[i];
-        //         require('./fixtures/mocks/github/user')(ctx.user);
-        //         ctx.user
-        //           .newContext(contextId)
-        //           .newVersion(oldVersionId)
-        //           .fetch(function (err, body) {
-        //             if (err) { return cb(err); }
-        //             var expected = { // ensure infraCodeVersions were copied
-        //               infraCodeVersion: equals(body.infraCodeVersion)
-        //             };
-        //             require('./fixtures/mocks/github/user')(ctx.user);
-        //             ctx.user
-        //               .newContext(contextId)
-        //               .newVersion(versionId)
-        //               .fetch(expects.success(200, expected, cb));
-        //           });
-        //         i++;
-        //       }, function () {});
-        //       tailBuildStream(newBuild.json().contextVersions[0], function (err) {
-        //         if (err) { return cb(err); }
-        //         var expected = {
-        //           completed: exists,
-        //           duration: exists,
-        //           failed: equals(false)
-        //         };
-        //         require('./fixtures/mocks/github/user')(ctx.user);
-        //         newBuild.fetch(expects.success(200, expected, done)); // get completed build
-        //       });
-        //     }));
-        });
-    //     describe('fork to new environment', function () {
-    //       beforeEach(function (done) {
-    //         ctx.env2 = ctx.project.createEnvironment({ name: 'other' }, done);
-    //       });
-    //       it('should create a build to another environment', function (done) {
-    //         var expected = {
-    //           project: ctx.project.id(),
-    //           environment: ctx.env2.id(),
-    //           contexts: ctx.build.json().contexts,
-    //           contextVersions: function (val) {
-    //             expect(val).to.not.eql(ctx.build.json().contextVersions);
-    //             return true;
-    //           },
-    //           started: not(exists),
-    //           completed: not(exists)
-    //         };
-    //         var newBuild = ctx.build.fork(
-    //           ctx.env2.id(),
-    //           expects.success(201, expected, function (err) {
-    //             if (err) { return done(err); }
-    //             var i = 0;
-    //             async.forEach(newBuild.json().contextVersions, function (versionId, cb) {
-    //               var contextId = ctx.build.json().contexts[i];
-    //               var oldVersionId = ctx.build.json().contextVersions[i];
-    //               require('./fixtures/mocks/github/user')(ctx.user);
-    //               ctx.user
-    //                 .newContext(contextId)
-    //                 .newVersion(oldVersionId)
-    //                 .fetch(function (err, body) {
-    //                   if (err) { return cb(err); }
-    //                   var expected = { // ensure infraCodeVersions were copied
-    //                     infraCodeVersion: not(equals(body.infraCodeVersion))
-    //                   };
-    //                   require('./fixtures/mocks/github/user')(ctx.user);
-    //                   ctx.user
-    //                     .newContext(contextId)
-    //                     .newVersion(versionId)
-    //                     .fetch(expects.success(200, expected, cb));
-    //                 });
-    //               i++;
-    //             }, done);
-    //           }));
-    //       });
-    //     });
-    //   });
-    // });
-    // describe('Failures', function () {
-    //   beforeEach(function (done) {
-    //     multi.createBuild(function (err, build, env, project, user) {
-    //       ctx.build = build;
-    //       ctx.env = env;
-    //       ctx.project = project;
-    //       ctx.user = user;
-    //       done(err);
-    //     });
-    //   });
-    //   it('should fail to create a new build from an unbuilt one', function (done) {
-    //     var inputBody = {
-    //       projectId: ctx.project.id(),
-    //       envId: ctx.env.id(),
-    //       parentBuild: ctx.build.id()
-    //     };
-    //     ctx.env.createBuild({json: inputBody},
-    //       function (err) {
-    //         expect(err).to.be.ok;
-    //         done();
-    //       });
-    //   });
-    //   it('should fail to rebuild from an unbuilt build', function (done) {
-    //     var inputBody = {
-    //       projectId: ctx.project.id(),
-    //       envId: ctx.env.id(),
-    //       id: ctx.build.id()
-    //     };
-    //     ctx.build.rebuild({json: inputBody},
-    //       function (err) {
-    //         expect(err).to.be.ok;
-    //         done();
-    //       });
-    //   });
-    //   it('should fail to create a new build if the input is garbage', function (done) {
-    //     var inputBody = {
-    //     };
-    //     ctx.env.createBuild({json: inputBody},
-    //       function (err) {
-    //         expect(err).to.be.ok;
-    //         done();
-    //       });
-    //   });
-    //   it('should fail to create a new build if the input is garbage, even with a build id',
-    //     function (done) {
-    //       var inputBody = {
-    //         parentBuild: ctx.build.id()
-    //       };
-    //       ctx.env.createBuild({json: inputBody},
-    //         function (err) {
-    //           expect(err).to.be.ok;
-    //           done();
-    //         });
-    //     });
-    // });
   });
   // describe('GET', function () {
   //   beforeEach(function (done) {
