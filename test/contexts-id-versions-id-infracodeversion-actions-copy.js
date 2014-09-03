@@ -49,6 +49,13 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
   // - add a new file, says: Edited
   // - reverting, says: not edited
   describe('Testing edited flag', function () {
+    it('source infracode should have their edit flag as true', function (done) {
+      var expected = { // ensure infraCodeVersions were copied
+        edited: true
+      };
+      InfraCodeVersion.findById(ctx.sourceContextVersion.attrs.infraCodeVersion,
+        expects.success(undefined, expected, done));
+    });
     it('a brand new infracode (based from a source) should always start edited', function (done) {
       var expected = { // ensure infraCodeVersions were copied
         edited: true,
@@ -153,9 +160,9 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
         beforeEach(function(done) {
           multi.buildTheBuild(ctx.user, ctx.build, done);
         });
-        it('built builds should set their edited flag back to false', function (done) {
+        it('built builds should keep their edited flag as true', function (done) {
           var expected = { // ensure infraCodeVersions were copied
-            edited: false
+            edited: true
           };
           InfraCodeVersion.findById(ctx.contextVersion.attrs.infraCodeVersion,
             expects.success(undefined, expected, done));
