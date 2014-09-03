@@ -34,7 +34,7 @@ function tailBuildStream (contextVersionId, cb) {
 
   client.on('data', function(msg) {
     if (msg.error) {
-      throw msg;
+      throw new Error(msg.toString());
     }
     if(msg.event === 'BUILD_STREAM_ENDED' &&
       msg.data.id === contextVersionId) {
