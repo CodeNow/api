@@ -185,7 +185,7 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
                   expects.success(undefined, expected, done));
             });
           });
-          it('should use original icv when built without editing', function (done) {
+          it('should use original icv when built without editing', {timeout: 1000}, function (done) {
             multi.buildTheBuild(ctx.user, ctx.forkedBuild, function(err) {
               if (err) { done(err); }
               var contextId = ctx.forkedBuild.json().contexts[0];

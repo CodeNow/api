@@ -675,10 +675,9 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           if (err) {
             return done(err);
           }
-          var expected = {
-            '[1].name': 'newName.txt',
-            'length': 3
-          };
+          var expected = [{},{
+            name: 'newName.txt',
+          },{}];
           ctx.dir.contents.fetch(expects.success(200, expected, done));
         }));
       });
