@@ -609,13 +609,13 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           if (err) {
             return done(err);
           }
-          var expected = [{
-            name: 'nestedFile.txt',
-            path: '/dir2'
-          },{
-            name: 'nestedFile2.txt',
-            path: '/dir2'
-          }];
+          var expected = {
+            '[0].name': 'nestedFile.txt',
+            '[0].path': '/dir2',
+            '[1].name': 'nestedFile2.txt',
+            '[1].path': '/dir2',
+            'length': 2
+          };
           require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
           ctx.dir.contents.fetch(
             expects.success(200, expected, done));
@@ -675,9 +675,10 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           if (err) {
             return done(err);
           }
-          var expected = [{},{
-            name: 'newName.txt',
-          },{}];
+          var expected = {
+            '[1].name': 'newName.txt',
+            'length': 3
+          };
           ctx.dir.contents.fetch(expects.success(200, expected, done));
         }));
       });
@@ -734,16 +735,15 @@ describe('Version File - /contexts/:contextid/versions/:id/files/:id', function 
           if (err) {
             return done(err);
           }
-          var expected = [{
-            name: 'childDir',
-            path: '/dir2/'
-          },{
-            name: 'nestedFile.txt',
-            path: '/dir2'
-          },{
-            name: 'nestedFile3.txt',
-            path: '/dir2'
-          }];
+          var expected = {
+            '[0].name': 'childDir',
+            '[0].path': '/dir2/',
+            '[1].name': 'nestedFile.txt',
+            '[1].path': '/dir2',
+            '[2].name': 'nestedFile3.txt',
+            '[2].path': '/dir2',
+            'length': 3
+          };
 
           var expectedChild = {
             '[0].name': 'doubleNestedFile.txt',

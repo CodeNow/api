@@ -277,7 +277,9 @@ describe('Github', function () {
           ctx.appCodeVersion2 = ctx.contextVersion2.addGithubRepo(ctx.repo,
             function (err) {
               if (err) { return done(err); }
-              multi.buildTheBuild(user, build, done);
+              multi.buildTheBuild(user, build, function (err) {
+                done(err);
+              });
             });
         });
       });
