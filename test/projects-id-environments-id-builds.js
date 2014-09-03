@@ -96,11 +96,12 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
       });
       describe('parentBuild is built', function() {
         beforeEach(function (done) {
-          multi.createBuiltBuild(function (err, build, env, project, user) {
+          multi.createBuiltBuild(function (err, build, env, project, user, array, srcArray) {
             ctx.build = build;
             ctx.env = env;
             ctx.project = project;
             ctx.user = user;
+            ctx.sourceContextVersion = srcArray[0];
             done(err);
           });
         });
@@ -171,10 +172,10 @@ describe('Builds - /projects/:id/environments/:id/builds', function () {
                 ctx.user
                   .newContext(contextId)
                   .newVersion(oldVersionId)
-                  .fetch(function (err, body) {
+                  .fetch(function (err) {
                     if (err) { return cb(err); }
                     var expected = { // ensure infraCodeVersions were copied
-                      infraCodeVersion: equals(body.infraCodeVersion)
+                      infraCodeVersion: equals(ctx.sourceContextVersion.attrs.infraCodeVersion)
                     };
                     require('./fixtures/mocks/github/user')(ctx.user);
                     ctx.user
