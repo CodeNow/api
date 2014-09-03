@@ -5,17 +5,17 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
-var async = require('async');
+// var expect = Lab.expect;
+// var async = require('async');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
-var not = require('101/not');
-var exists = require('101/exists');
-var tailBuildStream = require('./fixtures/tail-build-stream');
-var equals = require('101/equals');
-var uuid = require('uuid');
+// var not = require('101/not');
+// var exists = require('101/exists');
+// var tailBuildStream = require('./fixtures/tail-build-stream');
+// var equals = require('101/equals');
+// var uuid = require('uuid');
 
 describe('Builds - /builds', function () {
   var ctx = {};
@@ -31,10 +31,7 @@ describe('Builds - /builds', function () {
   beforeEach(function (done) {
     ctx.user = multi.createUser(done);
   });
-  /**
-   * This tests the rebuild functionality of a build.  We first create a user and environment, then
-   * we create a build.  Once finished, we should call the rebuild on the build
-   */
+
   describe('POST', function () {
     describe('empty body', function() {
       it('should create a build', function (done) {
