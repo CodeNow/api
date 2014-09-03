@@ -33,16 +33,10 @@ describe('Versions - /contexts/:contextid/versions', function () {
       ctx.moderator = moderator;
       count.next(err);
     });
-    multi.createEnv(function (err, env, project, user) {
+    var body = { environment: ctx.env.id() };
+    ctx.build = ctx.env.createBuild(body, function (err) {
       if (err) { return done(err); }
-      ctx.user = user;
-      ctx.project = project;
-      ctx.env = env;
-      var body = { environment: ctx.env.id() };
-      ctx.build = ctx.env.createBuild(body, function (err) {
-        if (err) { return done(err); }
-        ctx.context = ctx.user.createContext({ name: uuid() }, count.next);
-      });
+      ctx.context = ctx.user.createContext({ name: uuid() }, count.next);
     });
   });
 

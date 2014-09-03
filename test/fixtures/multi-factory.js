@@ -34,27 +34,11 @@ module.exports = {
       });
     });
   },
-  createProject: function (cb) {
-    var user = this.createUser(function (err) {
-      if (err) { return cb(err); }
-      var project = user.createProject({ name: uuid() }, function (err) {
-        cb(err, project, user);
-      });
-    });
-  },
-  createEnv: function (cb) {
-    this.createProject(function (err, project, user) {
-      if (err) { return cb(err); }
-      var environments = project.fetchEnvironments(function (err) {
-        cb(err, environments.models[0], project, user);
-      });
-    });
-  },
   createBuild: function (cb) {
-    this.createEnv(function (err, env, project, user) {
+    this.createUser(function (err, user) {
       if (err) { return cb(err); }
-      var build = env.createBuild({ environment: env.id() }, function (err) {
-        cb(err, build, env, project, user);
+      var build = user.createBuild(function (err) {
+        cb(err, build, user);
       });
     });
   },
@@ -109,32 +93,23 @@ module.exports = {
         if (err) { return cb(err); }
         var data = { name: uuid() };
         if (ownerId) { data.owner = { github: ownerId }; }
-        var project = user.createProject(data, function (err) {
+        var build = user.createBuild({ message: uuid() }, function (err) {
           if (err) { return cb(err); }
-          var env = project.defaultEnvironment;
-          var build = env.createBuild({ message: uuid() }, function (err) {
-            if (err) { return cb(err); }
-            var opts = {};
-            opts.qs = {
-              // fromSource: srcContextVersion.json().infraCodeVersion,
-              toBuild: build.id()
-            };
-            opts.json = {
-              project: project.id(),
-              environment: env.id()
-            };
+          var opts = {};
+          opts.qs = {
+            toBuild: build.id()
+          };
 
+          require('./mocks/s3/put-object')(context.id(), '/');
+          var contextVersion = context.createVersion(opts, function (err) {
+            if (err) { return cb(err); }
+            require('./mocks/s3/get-object')(srcContext.id(), '/');
+            require('./mocks/s3/get-object')(srcContext.id(), '/Dockerfile');
             require('./mocks/s3/put-object')(context.id(), '/');
-            var contextVersion = context.createVersion(opts, function (err) {
-              if (err) { return cb(err); }
-              require('./mocks/s3/get-object')(srcContext.id(), '/');
-              require('./mocks/s3/get-object')(srcContext.id(), '/Dockerfile');
-              require('./mocks/s3/put-object')(context.id(), '/');
-              require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
-              contextVersion.copyFilesFromSource(srcContextVersion.json().infraCodeVersion, function (err) {
-                cb(err, contextVersion, context, build, env, project, user,
-                  [srcContextVersion, srcContext, moderator]);
-              });
+            require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
+            contextVersion.copyFilesFromSource(srcContextVersion.json().infraCodeVersion, function (err) {
+              cb(err, contextVersion, context, build, user,
+                [srcContextVersion, srcContext, moderator]);
             });
           });
         });
@@ -150,15 +125,15 @@ module.exports = {
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
     var self = this;
-    this.createContextVersion(ownerId, function (err, contextVersion, context, build, env, project, user, srcArray) {
+    this.createContextVersion(ownerId, function (err, contextVersion, context, build, user, srcArray) {
       if (err) { return cb(err); }
       require('./mocks/docker/container-id-attach')();
       self.buildTheBuild(user, build, ownerId, function (err) {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
         contextVersion.fetch(function (err) {
-          cb(err, build, env, project, user,
-              [contextVersion, context, build, env, project, user],
+          cb(err, build, user,
+              [contextVersion, context, build, user],
               srcArray);
         });
       });
