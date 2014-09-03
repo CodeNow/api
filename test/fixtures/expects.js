@@ -10,7 +10,7 @@ var expects = module.exports = function (keypath) {
     keypath.get(expect(val), keypath);
   };
 };
-/*jshint maxdepth:3 */
+
 expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done) {
   if (isFunction(expectedKeypaths)) {
     done = expectedKeypaths;
@@ -26,27 +26,9 @@ expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done)
     if (expectedKeypaths) {
       expect(body).to.be.ok;
       if (Array.isArray(expectedKeypaths) && expectedKeypaths.length) {
-        var expectedNotFound = [];
-        var allItemsFoundInBody = expectedKeypaths.every(function (expectedItem) {
-          var found = body.some(function (bodyItem) {
-            try {
-              expectKeypaths(bodyItem, expectedItem);
-              return true;
-            } catch(err) {
-              return false;
-            }
-          });
-          if (!found) {
-            expectedNotFound.push(expectedItem);
-          }
-          return found;
+        expectedKeypaths.forEach(function (expectedItem, i) {
+          expectKeypaths(body[i], expectedItem);
         });
-        if (!allItemsFoundInBody) {
-          throw new Error([
-            'Body does not contain:', JSON.stringify(expectedNotFound),
-            'Body:', JSON.stringify(body)
-          ].join(' '));
-        }
       } else if (Array.isArray(expectedKeypaths)) {
         expect(body).to.have.length(expectedKeypaths.length);
       } else {
@@ -60,7 +42,7 @@ expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done)
     done(null, body, code, res);
   };
 };
-/*jshint maxdepth:2 */
+
 expects.errorStatus = function (code, messageMatch, done) {
   if (isFunction(messageMatch)) {
     done = messageMatch;
@@ -91,14 +73,7 @@ expects.updateSuccess = function (json, done) {
     done();
   };
 };
-expects.convertObjectId = function(expected) {
-  return function (val) {
-    expect(val.toString()).to.eql(expected);
-    return true;
-  };
-};
 
-expects.expectKeypaths = expectKeypaths;
 
 function expectKeypaths (body, expectedKeypaths) {
   if (expectedKeypaths) {
