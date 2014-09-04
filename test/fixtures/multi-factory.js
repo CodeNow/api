@@ -35,12 +35,8 @@ module.exports = {
     });
   },
   createBuild: function (cb) {
-    this.createUser(function (err, user) {
-      if (err) { return cb(err); }
-      var build = user.createBuild(function (err) {
-        cb(err, build, user);
-      });
-    });
+    var self = this;
+    self.createContextVersion(cb);
   },
   createContext: function (cb) {
     this.createUser(function (err, user) {
@@ -93,7 +89,7 @@ module.exports = {
         if (err) { return cb(err); }
         var data = { name: uuid() };
         if (ownerId) { data.owner = { github: ownerId }; }
-        var build = user.createBuild({ message: uuid() }, function (err) {
+        var build = user.createBuild(function (err) {
           if (err) { return cb(err); }
           var opts = {};
           opts.qs = {
