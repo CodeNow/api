@@ -3,7 +3,6 @@
 var MongoUser = require('models/mongo/user');
 var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
-var Build = require('models/mongo/build');
 var noop = function () {};
 
 module.exports = {
@@ -88,7 +87,7 @@ module.exports = {
       if (err) { return cb(err); }
       self.createContext(function (err, context, user) {
         if (err) { return cb(err); }
-        var data = { };
+        var data = { name: uuid() };
         if (ownerId) { data.owner = { github: ownerId }; }
         var build = user.createBuild(data, function (err) {
           if (err) { return cb(err); }
@@ -144,20 +143,14 @@ module.exports = {
       require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
       require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
     }
-    // Adding this as a hack for now so we can still test built builds.... kinda, at least
-    this.createBuild(function (err, contextVersion, context, build, user) {
-      Build.findById(build.id(), function (err, buildModel) {
-        buildModel.setInProgress(user, function (err, buildModel) {
-          buildModel.setCompleted(function () {
-            var body = {
-              build: build.id(),
-              name: uuid()
-            };
-            var instance = user.createInstance(body, function (err) {
-              cb(err, instance, build, null, null, user, null, null);
-            });
-          });
-        });
+    this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
+      if (err) { return cb(err); }
+      var body = {
+        name: uuid(),
+        build: build.id()
+      };
+      var instance = user.createInstance(body, function (err) {
+        cb(err, instance, build, user, modelsArr, srcArr);
       });
     });
   },
