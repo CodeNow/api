@@ -43,11 +43,9 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
   describe('POST', function () {
     describe('unbuilt', function () {
       beforeEach(function (done) {
-        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
           ctx.contextVersion = contextVersion;
           ctx.context = context;
-          ctx.env = env;
-          ctx.project = project;
           ctx.user = user;
           ctx.repoName = 'Dat-middleware';
           ctx.fullRepoName = ctx.user.attrs.accounts.github.login+'/'+ctx.repoName;
@@ -166,7 +164,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
     });
     describe('built version', function () {
       beforeEach(function (done) {
-        multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
+        multi.createBuiltBuild(function (err, build, user, modelArr) {
           ctx.builtVersion = modelArr[0];
           done(err);
         });
@@ -180,11 +178,9 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
 
   describe('PATCH', function () {
     beforeEach(function (done) {
-      multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+      multi.createContextVersion(function (err, contextVersion, context, build, user) {
         ctx.contextVersion = contextVersion;
         ctx.context = context;
-        ctx.env = env;
-        ctx.project = project;
         ctx.user = user;
         ctx.repoName = 'Dat-middleware';
         ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
@@ -225,11 +221,9 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
   describe('DELETE', function () {
     describe('unbuilt', function() {
       beforeEach(function (done) {
-        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
           ctx.contextVersion = contextVersion;
           ctx.context = context;
-          ctx.env = env;
-          ctx.project = project;
           ctx.user = user;
           ctx.repoName = 'Dat-middleware';
           ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
@@ -270,7 +264,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
     });
     describe('built version', function () {
       beforeEach(function (done) {
-        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
           if (err) { return done(err); }
           ctx.user = user;
           ctx.repoName = 'Dat-middleware';

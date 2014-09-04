@@ -48,9 +48,9 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   }
 
   beforeEach(function (done) {
-    multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
+    multi.createBuiltBuild(function (err, build, user, modelArr) {
+      ctx.build = build;
       ctx.user = user;
-      ctx.environment = env;
       ctx.contextVersion = modelArr[0];
       ctx.context = modelArr[1];
       done();

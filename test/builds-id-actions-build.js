@@ -31,7 +31,7 @@ describe('Build - /builds/:id/actions/build', function() {
 
   describe('POST', function () {
     beforeEach(function (done) {
-      multi.createBuild(function (err, contextVersion, context, build, user) {
+      multi.createContextVersion(function (err, contextVersion, context, build, user) {
         ctx.contextVersion = contextVersion;
         ctx.build = build;
         ctx.user = user;

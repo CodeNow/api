@@ -43,12 +43,10 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
 
 
   beforeEach(function (done) {
-    multi.createContextVersion(function (err, contextVersion, context, build, env, project, user, others) {
+    multi.createContextVersion(function (err, contextVersion, context, build, user, others) {
       ctx.contextVersion = contextVersion;
       ctx.context = context;
       ctx.build = build;
-      ctx.env = env;
-      ctx.project = project;
       ctx.user = user;
       ctx.srcContext = others && others[1];
       done(err);
@@ -246,28 +244,15 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
               json, expects.error(409, /File already exists/, done));
           }));
       });
-      describe('built project', function () {
+      describe('built build', function () {
         beforeEach(function (done) {
-          var json = {
-            json: {
-              name: 'file.txt',
-              path: '/',
-              body: 'content'
-            }
-          };
-          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
-          require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
-          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt');
-          ctx.file = ctx.contextVersion.rootDir.contents.create(json, function (err) {
+          multi.createBuiltBuild(function (err, build, user, modelArr) {
             if (err) { return done(err); }
-            multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
-              if (err) { return done(err); }
-              ctx.contextVersion = modelArr[0];
-              done();
-            });
+            ctx.contextVersion = modelArr[0];
+            done();
           });
         });
-        it('should not allow file creates for built projects', function (done) {
+        it('should not allow file creates for built builds', function (done) {
           var json = {
             json: {
               name: 'file2.txt',

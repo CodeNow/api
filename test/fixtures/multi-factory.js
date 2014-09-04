@@ -34,10 +34,6 @@ module.exports = {
       });
     });
   },
-  createBuild: function (cb) {
-    var self = this;
-    self.createContextVersion(cb);
-  },
   createContext: function (cb) {
     this.createUser(function (err, user) {
       if (err) { return cb(err); }
@@ -77,7 +73,7 @@ module.exports = {
       });
     });
   },
-  createContextVersion: function (ownerId, cb) {
+  createBuild: function (ownerId, cb) {
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -90,24 +86,33 @@ module.exports = {
         var data = { name: uuid() };
         if (ownerId) { data.owner = { github: ownerId }; }
         var build = user.createBuild(function (err) {
-          if (err) { return cb(err); }
-          var opts = {};
-          opts.qs = {
-            toBuild: build.id()
-          };
-
-          require('./mocks/s3/put-object')(context.id(), '/');
-          var contextVersion = context.createVersion(opts, function (err) {
-            if (err) { return cb(err); }
-            require('./mocks/s3/get-object')(srcContext.id(), '/');
-            require('./mocks/s3/get-object')(srcContext.id(), '/Dockerfile');
-            require('./mocks/s3/put-object')(context.id(), '/');
-            require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
-            contextVersion.copyFilesFromSource(srcContextVersion.json().infraCodeVersion, function (err) {
-              cb(err, contextVersion, context, build, user,
-                [srcContextVersion, srcContext, moderator]);
-            });
-          });
+          cb(err, build, context, user, [srcContextVersion, srcContext, moderator]);
+        });
+      });
+    });
+  },
+  createContextVersion: function (ownerId, cb) {
+    if (typeof ownerId === 'function') {
+      cb = ownerId;
+      ownerId = null;
+    }
+    this.createBuild(ownerId, function (err, build, context, user, others) {
+      var srcContextVersion = others[0];
+      var srcContext = others[1];
+      require('./mocks/s3/put-object')(context.id(), '/');
+      var opts = {};
+      opts.qs = {
+        toBuild: build.id()
+      };
+      var contextVersion = context.createVersion(opts, function (err) {
+        if (err) { return cb(err); }
+        require('./mocks/s3/get-object')(srcContext.id(), '/');
+        require('./mocks/s3/get-object')(srcContext.id(), '/Dockerfile');
+        require('./mocks/s3/put-object')(context.id(), '/');
+        require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
+        contextVersion.copyFilesFromSource(srcContextVersion.json().infraCodeVersion, function (err) {
+          cb(err, contextVersion, context, build, user,
+            others);
         });
       });
     });
