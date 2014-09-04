@@ -48,10 +48,8 @@ describe('Build - /builds/:id/actions/build', function() {
         expect(code).to.equal(201);
         expect(body).to.be.ok;
 
-        console.log('tailBuildStream - start');
         tailBuildStream(body.contextVersions[0], function (err, log) {
           if (err) { return done(err); }
-          console.log('tailBuildStream - end');
           expect(log).to.contain('Successfully built');
 
           var count = createCount(2, done);
