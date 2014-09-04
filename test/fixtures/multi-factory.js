@@ -207,12 +207,5 @@ module.exports = {
     return user
       .newInstance(instanceId)
       .newContainer(containerId);
-  },
-
-  createBuildPath: function (user, projectId, envId, buildId) {
-    return user
-      .newProject(projectId)
-      .newEnvironment(envId)
-      .newBuild(buildId);
   }
 };
