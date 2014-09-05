@@ -38,25 +38,52 @@ describe('Versions - /contexts/:contextid/versions', function () {
         var expected = [{
           _id: ctx.contextVersion.id()
         }];
-        console.log(ctx.contextVersion.json().appCodeVersions)
-        var query = {};
-        // ctx.context.fetchVersions(query, expects.success(200, expected, done));
-        ctx.context.fetchVersions(query, function (err, data) {
-          console.log(err, data);
-          done(err, data);
-        });
+        var query = {
+          appCodeVersions: {
+            repo: ctx.contextVersion.json().appCodeVersions[0].repo
+          }
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
       });
     });
-    // describe('via appCodeVersions.repo', function () {
-    //   it('should return us our version', function (done) {
-    //     done(true);
-    //   });
-    // });
-    // describe('via infraCodeVersion', function () {
-    //   it('should return us our version', function (done) {
-    //     done(true);
-    //   });
-    // });
+    describe('via appCodeVersions.commit', function () {
+      it('should return us our version', function (done) {
+        var expected = [{
+          _id: ctx.contextVersion.id()
+        }];
+        var query = {
+          appCodeVersions: {
+            commit: ctx.contextVersion.json().appCodeVersions[0].commit
+          }
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
+      });
+    });
+    describe('via appCodeVersions.commit and .repo', function () {
+      it('should return us our version', function (done) {
+        var expected = [{
+          _id: ctx.contextVersion.id()
+        }];
+        var query = {
+          appCodeVersions: {
+            commit: ctx.contextVersion.json().appCodeVersions[0].commit,
+            repo: ctx.contextVersion.json().appCodeVersions[0].repo
+          }
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
+      });
+    });
+    describe('via infraCodeVersion', function () {
+      it('should return us our version', function (done) {
+        var expected = [{
+          _id: ctx.contextVersion.id()
+        }];
+        var query = {
+          infraCodeVersion: ctx.contextVersion.json().infraCodeVersion
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
+      });
+    });
   });
 
   describe('POST', function () {

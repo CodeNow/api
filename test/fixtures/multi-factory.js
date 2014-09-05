@@ -126,7 +126,12 @@ module.exports = {
             require('./mocks/github/repos-keys-post')(ghUser, ghRepo);
             require('./mocks/s3/put-object')('/runnable.deploykeys.test/'+ghUser+'/'+ghRepo+'.key.pub');
             require('./mocks/s3/put-object')('/runnable.deploykeys.test/'+ghUser+'/'+ghRepo+'.key');
-            contextVersion.addGithubRepo(repo, function (err) {
+            var repoData = {
+              repo: repo,
+              branch: 'master',
+              commit: '065470f6949b0b6f0f0f78f4ee2b0e7a3dc715ac'
+            };
+            contextVersion.addGithubRepo({json: repoData}, function (err) {
               if (err) { return cb(err); }
               contextVersion.fetch(function (err) {
                 cb(err, contextVersion, context, build, user,
