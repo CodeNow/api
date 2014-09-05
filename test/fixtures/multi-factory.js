@@ -174,14 +174,14 @@ module.exports = {
       require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
       require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
     }
-    this.createBuiltBuild(buildOwnerId, function (err, build, env, project, user, modelsArr, srcArr) {
+    this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err); }
       var body = {
         name: uuid(),
         build: build.id()
       };
       var instance = user.createInstance(body, function (err) {
-        cb(err, instance, build, env, project, user, modelsArr, srcArr);
+        cb(err, instance, build, user, modelsArr, srcArr);
       });
     });
   },

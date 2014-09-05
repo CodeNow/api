@@ -17,6 +17,7 @@ var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
 var uuid = require('uuid');
 var createCount = require('callback-count');
+var Build = require('models/mongo/build');
 
 describe('Instances - /instances', function () {
   var ctx = {};
@@ -31,78 +32,94 @@ describe('Instances - /instances', function () {
 
 
   describe('POST', function () {
-    describe('with unbuilt versions', function () {
+    describe('with unbuilt build', function () {
       beforeEach(function (done) {
-        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
-          ctx.contextVersion = contextVersion;
-          ctx.context = context;
+        multi.createBuild(function (err, contextVersion, context, build, user) {
           ctx.build = build;
-          ctx.env = env;
-          ctx.project = project;
           ctx.user = user;
           done(err);
         });
       });
-      it('should error if the environment has unbuilt versions', function(done) {
+      it('should error if the build has unbuilt versions', function(done) {
         var json = { build: ctx.build.id(), name: uuid() };
-        ctx.user.createInstance({ json: json }, expects.error(400, /unbuilt/, done));
+        ctx.user.createInstance({ json: json }, expects.error(400, /been started/, done));
       });
-      // TODO: patch doesn't work :(
-      // it('should error if the environment has failed versions', function(done) {
-      //   ctx.contextVersion.update({ json: {
-      //     erroredContextVersions: [ ctx.build.json().contextVersions[0] ]
-      //   }}, function (err) {
-      //     if (err) { return done(err); }
-      //     var json = { build: ctx.build.id(), name: uuid() };
-      //     ctx.user.createInstance({ json: json }, expects.error(400, /does not have build\.completed/, done));
-      //   });
-      // });
     });
 
-    describe('from an organization build', function () {
+    describe('with started build', function () {
       beforeEach(function (done) {
-        ctx.orgId = 1001;
-        multi.createBuiltBuild(ctx.orgId, function (err, build, env, project, user) {
+        multi.createBuild(function (err, contextVersion, context, build, user) {
           ctx.build = build;
-          ctx.env = env;
-          ctx.project = project;
           ctx.user = user;
-          done(err);
+          ctx.cv = contextVersion;
+          Build.findById(build.id(), function(err, build) {
+            build.setInProgress(user, done);
+          });
         });
       });
-      it('should create an instance', function (done) {
-        var json = {
-          name: uuid(),
-          build: ctx.build.id()
-        };
-        var expected = {
-          _id: exists,
-          name: exists,
-          owner: { github: ctx.orgId },
-          public: false,
-          project: ctx.project.id(),
-          environment: ctx.env.id(),
-          build: ctx.build.id(),
-          containers: exists
-        };
-        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-        var instance = ctx.user.createInstance(json,
-          expects.success(201, expected, function (err) {
-            if (err) { return done(err); }
-            expectHipacheHostsForContainers(instance.toJSON(), done);
-          })
-        );
+      describe('user owned', function () {
+        it('should create a new instance', function(done) {
+          var json = { build: ctx.build.id(), name: uuid() };
+          var expected = {
+            shortHash: exists,
+            'createdBy.github': ctx.user.attrs.accounts.github.id,
+            build: ctx.build.id(),
+            name: exists,
+            'owner.github': ctx.user.attrs.accounts.github.id
+          };
+          ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
+        });
+      });
+      describe('that has failed', function () {
+        beforeEach(function (done) {
+          Build.findById(ctx.build.id(), function(err, build) {
+            build.pushErroredContextVersion(ctx.cv.id(), done);
+          });
+        });
+        it('should create a new instance', function(done) {
+          var json = { build: ctx.build.id(), name: uuid() };
+          var expected = {
+            shortHash: exists,
+            'createdBy.github': ctx.user.attrs.accounts.github.id,
+            build: ctx.build.id(),
+            name: exists,
+            'owner.github': ctx.user.attrs.accounts.github.id
+          };
+          ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
+        });
+      });
+      describe('org owned', function () {
+        beforeEach(function (done) {
+          ctx.orgId = 1001;
+          multi.createBuild(ctx.orgId, function (err, contextVersion, context, build, user) {
+            ctx.build = build;
+            ctx.user = user;
+            Build.findById(build.id(), function(err, build) {
+              build.setInProgress(user, done);
+            });
+          });
+        });
+        it('should create a new instance', function(done) {
+          var json = { build: ctx.build.id(), name: uuid() };
+          var expected = {
+            shortHash: exists,
+            'createdBy.github': ctx.user.attrs.accounts.github.id,
+            build: ctx.build.id(),
+            name: exists,
+            'owner.github': ctx.orgId
+          };
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
+        });
       });
     });
 
-    describe('from build', function () {
+    describe('from built build', function () {
       beforeEach(function (done) {
-        multi.createBuiltBuild(function (err, build, env, project, user) {
+        multi.createBuiltBuild(function (err, build, user) {
           ctx.build = build;
-          ctx.env = env;
-          ctx.project = project;
           ctx.user = user;
-          done(err);
+          done();
         });
       });
 
@@ -146,7 +163,7 @@ describe('Instances - /instances', function () {
               done();
             }));
         });
-        it('should create an instance', function (done) {
+        it('should create an instance, and start it', function (done) {
           var json = {
             name: uuid(),
             build: ctx.build.id()
@@ -156,10 +173,9 @@ describe('Instances - /instances', function () {
             name: json.name,
             owner: { github: ctx.user.json().accounts.github.id },
             public: false,
-            project: ctx.project.id(),
-            environment: ctx.env.id(),
             build: ctx.build.id(),
-            containers: exists
+            containers: exists,
+            'containers[0]': exists
           };
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
@@ -169,10 +185,8 @@ describe('Instances - /instances', function () {
         });
         describe('unique names (by owner) and hashes', function() {
           beforeEach(function (done) {
-            multi.createBuiltBuild(ctx.orgId, function (err, build, env, project, user) {
+            multi.createBuiltBuild(ctx.orgId, function (err, build, user) {
               ctx.build2 = build;
-              ctx.env2 = env;
-              ctx.project2 = project;
               ctx.user2 = user;
               done(err);
             });
@@ -186,8 +200,6 @@ describe('Instances - /instances', function () {
               name: 'Instance1',
               owner: { github: ctx.user.json().accounts.github.id },
               public: false,
-              project: ctx.project.id(),
-              environment: ctx.env.id(),
               build: ctx.build.id(),
               containers: exists,
               shortHash: exists
@@ -206,8 +218,6 @@ describe('Instances - /instances', function () {
                   name: 'Instance1',
                   owner: { github: ctx.user2.json().accounts.github.id },
                   public: false,
-                  project: ctx.project2.id(),
-                  environment: ctx.env2.id(),
                   build: ctx.build2.id(),
                   containers: exists,
                   shortHash: function (shortHash) {
@@ -231,19 +241,15 @@ describe('Instances - /instances', function () {
 
   describe('GET', function() {
     beforeEach(function (done) {
-      multi.createInstance(function (err, instance, build, env, project, user) {
+      multi.createInstance(function (err, instance, build, user) {
         if (err) { return done(err); }
         ctx.instance = instance;
-        ctx.project = project;
         ctx.build = build;
-        ctx.env = env;
         ctx.user = user;
-        multi.createInstance(function (err, instance, build, env, project, user) {
+        multi.createInstance(function (err, instance, build, user) {
           if (err) { return done(err); }
           ctx.instance2 = instance;
-          ctx.project2 = project;
           ctx.build2 = build;
-          ctx.env2 = env;
           ctx.user2 = user;
           done();
         });
@@ -270,20 +276,6 @@ describe('Instances - /instances', function () {
       }];
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
-    it('should get instances by project', function (done) {
-      require('./fixtures/mocks/github/user')(ctx.user);
-      var query = {
-        project: ctx.project.id()
-      };
-      var expected = {
-        '[0].shortHash'       : ctx.instance.id(),
-        '[0]._id'             : ctx.instance.attrs._id,
-        '[0].project._id'     : ctx.project.id(),
-        '[0].environment._id' : ctx.env.id(),
-        '[0].build._id'       : ctx.build.id()
-      };
-      ctx.user.fetchInstances(query, expects.success(200, expected, done));
-    });
     it('should list versions by owner.github', function (done) {
       var count = createCount(2, done);
       require('./fixtures/mocks/github/user')(ctx.user);
@@ -295,22 +287,12 @@ describe('Instances - /instances', function () {
         }
       };
       var expected = [
-        ctx.instance.json()
+        {}
       ];
-      delete expected[0].project;
-      delete expected[0].build;
-      delete expected[0].environment;
-      delete expected[0].containers;
-      delete expected[0].owner;
-      expected[0]['project._id'] = ctx.project.id();
-      expected[0]['environment._id'] = ctx.env.id();
       expected[0]['build._id'] = ctx.build.id();
-      expected[0].containers = exists;
-      expected[0]['containers[0]'] = exists;
       expected[0]['owner.username'] = ctx.user.json().accounts.github.username;
       expected[0]['owner.github'] = ctx.user.json().accounts.github.id;
       // FIXME: chai is messing up with eql check:
-      delete expected[0].containers;
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
 
       var query2 = {
@@ -318,21 +300,11 @@ describe('Instances - /instances', function () {
           github: ctx.user2.attrs.accounts.github.id
         }
       };
-      var expected2 = [ctx.instance2.json()];
-      delete expected2[0].project;
-      delete expected2[0].build;
-      delete expected2[0].environment;
-      delete expected2[0].containers;
-      delete expected2[0].owner;
-      expected2[0]['project._id'] = ctx.project2.id();
-      expected2[0]['environment._id'] = ctx.env2.id();
+      var expected2 = [{}];
       expected2[0]['build._id'] = ctx.build2.id();
-      expected2[0].containers = exists;
-      expected2[0]['containers[0]'] = exists;
       expected2[0]['owner.username'] = ctx.user2.json().accounts.github.username;
       expected2[0]['owner.github'] = ctx.user2.json().accounts.github.id;
       // FIXME: chai is messing up with eql check:
-      delete expected2[0].containers;
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
     describe('errors', function () {
