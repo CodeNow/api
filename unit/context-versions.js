@@ -22,8 +22,6 @@ describe('Versions', function () {
       createdBy: { github: validation.VALID_GITHUB_ID },
       config: validation.VALID_OBJECT_ID,
       created: Date.now(),
-      environment: validation.VALID_OBJECT_ID,
-      project: validation.VALID_OBJECT_ID,
       context: validation.VALID_OBJECT_ID,
       files:[{
         Key: "test",
@@ -63,7 +61,7 @@ describe('Versions', function () {
       schemaValidators.validationMessages.dockerHost);
   });
 
-  describe('Github Owner Id Validation', function () {
+  describe('Github Created By Validation', function () {
     validation.githubUserRefValidationChecking(createNewVersion, 'createdBy.github');
     validation.requiredValidationChecking(createNewVersion, 'createdBy');
   });
@@ -71,11 +69,6 @@ describe('Versions', function () {
   describe('Context Id Validation', function () {
     validation.objectIdValidationChecking(createNewVersion, 'context');
     validation.requiredValidationChecking(createNewVersion, 'context');
-  });
-
-  describe('Project Id Validation', function () {
-    validation.objectIdValidationChecking(createNewVersion, 'project');
-    validation.requiredValidationChecking(createNewVersion, 'project');
   });
 
   describe('Build Validation', function () {
