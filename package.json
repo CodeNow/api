@@ -81,7 +81,7 @@
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
     "jsdoc": "^3.2.2",
-    "jshint": "^2.5.2",
+    "jshint": "^2.5.5",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "^3.2.1",
     "multiline": "^0.3.4",
