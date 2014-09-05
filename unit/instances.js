@@ -43,8 +43,6 @@ describe('Instance', function () {
       public: false,
       owner: { github: validation.VALID_GITHUB_ID },
       createdBy: { github: validation.VALID_GITHUB_ID },
-      project: validation.VALID_OBJECT_ID,
-      environment: validation.VALID_OBJECT_ID,
       build: validation.VALID_OBJECT_ID,
       created: Date.now(),
       containers: [createNewContainer()],
@@ -92,16 +90,6 @@ describe('Instance', function () {
   describe('Github CreatedBy Validation', function () {
     validation.githubUserRefValidationChecking(createNewInstance, 'createdBy.github');
     validation.requiredValidationChecking(createNewInstance, 'createdBy');
-  });
-
-  describe('Project Id Validation', function () {
-    validation.objectIdValidationChecking(createNewInstance, 'project');
-    validation.requiredValidationChecking(createNewInstance, 'project');
-  });
-
-  describe('Environment Id Validation', function () {
-    validation.objectIdValidationChecking(createNewInstance, 'environment');
-    validation.requiredValidationChecking(createNewInstance, 'environment');
   });
 
   describe('OutputViews Validation', function () {
