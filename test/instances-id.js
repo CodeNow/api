@@ -10,9 +10,9 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
-var uuid = require('uuid');
-var async = require('async');
-var RedisList = require('redis-types').List;
+//var uuid = require('uuid');
+//var async = require('async');
+//var RedisList = require('redis-types').List;
 var exists = require('101/exists');
 //var extend = require('extend');
 
@@ -76,7 +76,7 @@ describe('Instance - /instances/:id', function () {
     describe('permissions', function() {
       describe('public', function() {
         beforeEach(function (done) {
-          ctx.instance.update({ json: { public: true } }, function (err, instance) {
+          ctx.instance.update({ json: { public: true } }, function (err) {
             ctx.expected = {};
             ctx.expected.shortHash = exists;
             ctx.expected['build._id'] = ctx.build.id();
@@ -108,7 +108,7 @@ describe('Instance - /instances/:id', function () {
       });
       describe('private', function() {
         beforeEach(function (done) {
-          ctx.instance.update({ json: { public: false } }, function (err, instance) {
+          ctx.instance.update({ json: { public: false } }, function (err) {
             ctx.expected = {};
             ctx.expected.shortHash = exists;
             ctx.expected['build._id'] = ctx.build.id();
@@ -332,31 +332,31 @@ describe('Instance - /instances/:id', function () {
 //    });
 //  });
 });
-
-
-function expectHipacheHostsForContainers (instance, cb) {
-  var containers = instance.containers;
-  var allUrls = [];
-  containers.forEach(function (container) {
-    if (container.ports) {
-      Object.keys(container.ports).forEach(function (port) {
-        var portNumber = port.split('/')[0];
-        allUrls.push([instance.shortHash, '-', portNumber, '.', process.env.DOMAIN].join('').toLowerCase());
-      });
-    }
-  });
-  async.forEach(allUrls, function (url, cb) {
-    var hipacheEntry = new RedisList('frontend:'+url);
-    hipacheEntry.lrange(0, -1, function (err, backends) {
-      if (err) {
-        cb(err);
-      }
-      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
-        cb(new Error('Backends invalid for '+url));
-      }
-      else {
-        cb();
-      }
-    });
-  }, cb);
-}
+//
+//
+//function expectHipacheHostsForContainers (instance, cb) {
+//  var containers = instance.containers;
+//  var allUrls = [];
+//  containers.forEach(function (container) {
+//    if (container.ports) {
+//      Object.keys(container.ports).forEach(function (port) {
+//        var portNumber = port.split('/')[0];
+//        allUrls.push([instance.shortHash, '-', portNumber, '.', process.env.DOMAIN].join('').toLowerCase());
+//      });
+//    }
+//  });
+//  async.forEach(allUrls, function (url, cb) {
+//    var hipacheEntry = new RedisList('frontend:'+url);
+//    hipacheEntry.lrange(0, -1, function (err, backends) {
+//      if (err) {
+//        cb(err);
+//      }
+//      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
+//        cb(new Error('Backends invalid for '+url));
+//      }
+//      else {
+//        cb();
+//      }
+//    });
+//  }, cb);
+//}

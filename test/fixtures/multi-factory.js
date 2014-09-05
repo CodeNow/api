@@ -88,7 +88,12 @@ module.exports = {
       self.createContext(function (err, context, user) {
         if (err) { return cb(err); }
         var data = { name: uuid() };
-        if (ownerId) { data.owner = { github: ownerId }; }
+        if (ownerId) {
+          data.owner = {
+            github: ownerId
+          };
+          require('./mocks/github/user-orgs')(data.owner.github, 'orgname');
+        }
         var build = user.createBuild(data, function (err) {
           if (err) { return cb(err); }
           var opts = {};
