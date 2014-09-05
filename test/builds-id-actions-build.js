@@ -35,6 +35,11 @@ describe('Build - /builds/:id/actions/build', function() {
         ctx.contextVersion = contextVersion;
         ctx.build = build;
         ctx.user = user;
+<<<<<<< HEAD:test/builds-id-actions-build.js
+=======
+        ctx.project = project;
+        require('./fixtures/mocks/github/repos-username-repo-branches-branch')(contextVersion);
+>>>>>>> fix-acv-history:test/projects-id-environments-id-builds-id-build.js
         done(err);
       });
     });
