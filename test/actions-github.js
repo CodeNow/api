@@ -159,10 +159,11 @@ describe('Github', function () {
         });
       });
     });
-    it('should start a build', {timeout:3000}, function (done) {
+    it('should start a build', {timeout:3000000}, function (done) {
       var options = hooks.push;
       require('./fixtures/mocks/github/users-username')(101, 'bkendall');
       require('./fixtures/mocks/docker/container-id-attach')();
+      console.log('XxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXx');
       request.post(options, function (err, res, body) {
         if (err) {
           done(err);
@@ -174,6 +175,7 @@ describe('Github', function () {
           expect(body).to.have.a.lengthOf(1);
           expect(body[0]).to.have.property('started');
           expect(body[0]).to.have.property('contextVersions');
+          require('./fixtures/mocks/docker/container-id-attach')();
           tailBuildStream(body[0].contextVersions[0], function (err) {
             if (err) { return done(err); }
             require('./fixtures/mocks/github/repos-username-repo-commits')
@@ -207,8 +209,13 @@ describe('Github', function () {
               'contextVersions[0].appCodeVersions[0].commit': hooks.push.json.head_commit.id,
               'contextVersions[0].appCodeVersions[0].lockCommit': false
             };
+            console.log('anande checking build');
             ctx.env.newBuild(body[0]).fetch(
-              expects.success(200, buildExpected, done));
+                expects.success(200, buildExpected, done));
+            // ctx.env.newBuild(body[0]).fetch(function(){
+            //   console.log('anande build done', body);
+            //   expects.success(200, buildExpected, done)(arguments);
+            // });
           });
         }
       });

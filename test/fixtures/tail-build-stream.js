@@ -22,7 +22,6 @@ function tailBuildStream (contextVersionId, cb) {
     event: 'build-stream',
     data: {
       id: contextVersionId,
-      build: {},
       streamId: contextVersionId
     }
   });
@@ -38,6 +37,7 @@ function tailBuildStream (contextVersionId, cb) {
     }
     if(msg.event === 'BUILD_STREAM_ENDED' &&
       msg.data.id === contextVersionId) {
+      console.log('anandEND', msg.data.log);
       client.end();
       return cb(null, msg.data.log);
     }

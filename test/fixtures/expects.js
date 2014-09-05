@@ -21,6 +21,9 @@ expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done)
     expectedHeaders = null;
   }
   return function (err, body, code, res) {
+    debug('expect', body.contextVersions[0].build);
+    debug('expect2', body.contextVersions[0]);
+    debug('expect3', body);
     if (err) { return done(err); }
     expect(statusCode).to.equal(code);
     if (expectedKeypaths) {
