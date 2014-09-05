@@ -9,8 +9,6 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var expects = require('./fixtures/expects');
 var multi = require('./fixtures/multi-factory');
-var exists = require('101/exists');
-var not = require('101/not');
 var uuid = require('uuid');
 
 describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', function () {
@@ -117,6 +115,29 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
         };
         ctx.contextVersion.addGithubRepo(body, expects.error(400, /branch/, done));
       });
+      it('should require commit', function (done) {
+        var body = {
+          repo: ctx.fullRepoName,
+          lowerRepo: ctx.fullRepoName.toLowerCase(),
+          branch: 'asdf'
+        };
+        ctx.contextVersion.addGithubRepo(body, expects.error(400, /commit/, done));
+      });
+      it('should require branch', function (done) {
+        var body = {
+          repo: ctx.fullRepoName,
+          lowerRepo: ctx.fullRepoName.toLowerCase(),
+          commit: 'deadbeef'
+        };
+        ctx.contextVersion.addGithubRepo(body, expects.error(400, /branch/, done));
+      });
+      it('should require repo', function (done) {
+        var body = {
+          branch: 'asdf',
+          commit: 'deadbeef'
+        };
+        ctx.contextVersion.addGithubRepo(body, expects.error(400, /repo/, done));
+      });
       it('should not add a repo the second time', function (done) {
         var body = {
           repo: ctx.fullRepoName,
@@ -183,7 +204,6 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
       var expected = ctx.appCodeVersion.json();
       expected.branch = body.branch;
       expected.lowerBranch = body.branch.toLowerCase();
-      expected.commit = not(exists);
       ctx.appCodeVersion.update(body, expects.success(200, expected, done));
     });
     it('it should update an appCodeVersion\'s commit', function (done) {
@@ -192,8 +212,17 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
       };
       var expected = ctx.appCodeVersion.json();
       expected.commit = body.commit;
-      expected.branch = not(exists);
-      expected.lowerBranch = not(exists);
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
+    it('it should update an appCodeVersion\'s commit and branch', function (done) {
+      var body = {
+        branch: 'other-feature',
+        commit: 'abcdef'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.commit = body.commit;
+      expected.branch = body.branch;
+      expected.lowerBranch = body.branch.toLowerCase();
       ctx.appCodeVersion.update(body, expects.success(200, expected, done));
     });
   });
