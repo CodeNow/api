@@ -184,7 +184,6 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
       expected.branch = body.branch;
       expected.lowerBranch = body.branch.toLowerCase();
       expected.commit = not(exists);
-      console.log(expected);
       ctx.appCodeVersion.update(body, expects.success(200, expected, done));
     });
     it('it should update an appCodeVersion\'s commit', function (done) {

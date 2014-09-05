@@ -86,7 +86,7 @@ module.exports = {
         if (err) { return cb(err); }
         var data = { name: uuid() };
         if (ownerId) { data.owner = { github: ownerId }; }
-        var build = user.createBuild(function (err) {
+        var build = user.createBuild(data, function (err) {
           cb(err, build, context, user, [srcContextVersion, srcContext, moderator]);
         });
       });
@@ -98,6 +98,7 @@ module.exports = {
       ownerId = null;
     }
     this.createBuild(ownerId, function (err, build, context, user, others) {
+      if (err) { return cb(err); }
       var srcContextVersion = others[0];
       var srcContext = others[1];
       var moderator = others[2];

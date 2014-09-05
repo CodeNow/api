@@ -34,7 +34,7 @@ describe('Instances - /instances', function () {
   describe('POST', function () {
     describe('with unbuilt build', function () {
       beforeEach(function (done) {
-        multi.createBuild(function (err, contextVersion, context, build, user) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
           ctx.build = build;
           ctx.user = user;
           done(err);
@@ -48,7 +48,7 @@ describe('Instances - /instances', function () {
 
     describe('with started build', function () {
       beforeEach(function (done) {
-        multi.createBuild(function (err, contextVersion, context, build, user) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
           ctx.build = build;
           ctx.user = user;
           ctx.cv = contextVersion;
@@ -91,7 +91,8 @@ describe('Instances - /instances', function () {
       describe('org owned', function () {
         beforeEach(function (done) {
           ctx.orgId = 1001;
-          multi.createBuild(ctx.orgId, function (err, contextVersion, context, build, user) {
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          multi.createContextVersion(ctx.orgId, function (err, contextVersion, context, build, user) {
             ctx.build = build;
             ctx.user = user;
             Build.findById(build.id(), function(err, build) {

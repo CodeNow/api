@@ -51,7 +51,7 @@ describe('Instance - /instances/:id', function () {
   });
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, env, project, user) {
+    multi.createInstance(function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.instance = instance;
       ctx.build = build;
