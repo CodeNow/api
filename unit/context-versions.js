@@ -36,7 +36,7 @@ describe('Versions', function () {
         repo: 'bkendall/flaming-octo-nemisis',
         lowerRepo: 'bkendall/flaming-octo-nemisis',
         branch: 'master',
-        lockCommit: false
+        commit: 'deadbeef'
       }]
     });
   }
@@ -91,10 +91,11 @@ describe('Versions', function () {
       validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.lowerRepo');
     });
     describe('Branch', function () {
+      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.branch');
       validation.stringLengthValidationChecking(createNewVersion, 'appCodeVersions.0.branch', 200);
     });
-    describe('Lock Commit', function () {
-      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.lockCommit');
+    describe('Commit', function () {
+      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.commit');
     });
   });
 });

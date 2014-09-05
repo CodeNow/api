@@ -37,7 +37,7 @@ function createModeratorBuild (build, done) {
 describe('Build - /builds/:id', function () {
   ctx = {};
   beforeEach(function (done) {
-    multi.createBuild(function (err, contextVersion, context, build, user) {
+    multi.createContextVersion(function (err, contextVersion, context, build, user) {
       ctx.contextVersion = contextVersion;
       ctx.context = context;
       ctx.user = user;
@@ -92,7 +92,7 @@ describe('Build - /builds/:id', function () {
 describe('Build Copy - /builds/:id/actions/copy', function () {
   ctx = {};
   beforeEach(function (done) {
-    multi.createBuild(function (err, contextVersion, context, build, user) {
+    multi.createContextVersion(function (err, contextVersion, context, build, user) {
       ctx.contextVersion = contextVersion;
       ctx.context = context;
       ctx.user = user;

@@ -11,8 +11,6 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
-var uuid = require('uuid');
-var createCount = require('callback-count');
 
 describe('Versions - /contexts/:contextid/versions', function () {
   var ctx = {};
@@ -25,40 +23,91 @@ describe('Versions - /contexts/:contextid/versions', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
-  beforeEach(function (done) {
-    var count = createCount(2, done);
-    multi.createSourceContextVersion(function (err, contextVersion, context, moderator) {
-      ctx.sourceContextVersion = contextVersion;
-      ctx.sourceContext = context;
-      ctx.moderator = moderator;
-      count.next(err);
+  describe('GET', function () {
+    beforeEach(function (done) {
+      multi.createBuiltBuild(function (err, build, user, other) {
+        ctx.contextVersion = other[0];
+        ctx.context = other[1];
+        ctx.build = build;
+        ctx.user = user;
+        done(err);
+      });
     });
-    var body = { environment: ctx.env.id() };
-    ctx.build = ctx.env.createBuild(body, function (err) {
-      if (err) { return done(err); }
-      ctx.context = ctx.user.createContext({ name: uuid() }, count.next);
+    describe('via appCodeVersions.repo', function () {
+      it('should return us our version', function (done) {
+        var expected = [{
+          _id: ctx.contextVersion.id()
+        }];
+        var query = {
+          appCodeVersions: {
+            repo: ctx.contextVersion.json().appCodeVersions[0].repo
+          }
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
+      });
+    });
+    describe('via appCodeVersions.commit', function () {
+      it('should return us our version', function (done) {
+        var expected = [{
+          _id: ctx.contextVersion.id()
+        }];
+        var query = {
+          appCodeVersions: {
+            commit: ctx.contextVersion.json().appCodeVersions[0].commit
+          }
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
+      });
+    });
+    describe('via appCodeVersions.commit and .repo', function () {
+      it('should return us our version', function (done) {
+        var expected = [{
+          _id: ctx.contextVersion.id()
+        }];
+        var query = {
+          appCodeVersions: {
+            commit: ctx.contextVersion.json().appCodeVersions[0].commit,
+            repo: ctx.contextVersion.json().appCodeVersions[0].repo
+          }
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
+      });
+    });
+    describe('via infraCodeVersion', function () {
+      it('should return us our version', function (done) {
+        var expected = [{
+          _id: ctx.contextVersion.id()
+        }];
+        var query = {
+          infraCodeVersion: ctx.contextVersion.json().infraCodeVersion
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
+      });
     });
   });
 
   describe('POST', function () {
+    beforeEach(function (done) {
+      multi.createBuild(function (err, build, context, user) {
+        ctx.build = build;
+        ctx.context = context;
+        ctx.user = user;
+        done(err);
+      });
+    });
     it('should create a new version', function (done) {
-      var body = {
-        environment: ctx.env.id()
-      };
       var expected = {
         infraCodeVersion: exists
       };
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
-      ctx.context.createVersion(body, expects.success(201, expected, done));
+      ctx.context.createVersion({}, expects.success(201, expected, done));
     });
     describe('toBuild query', function() {
       it('should create a new version', function (done) {
-        var body = {
-          environment: ctx.env.id()
-        };
         var expected = {
           infraCodeVersion: exists
         };
+        var body = {};
         var opts = {
           json: body,
           qs: {
@@ -71,7 +120,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
             if (err) { return done(err); }
             var buildExpected = {
               contexts: [ctx.context.id()],
-              'contextVersions[0]._id': contextVersion.id()
+              contextVersions: [contextVersion.id()]
             };
             ctx.build.fetch(expects.success(200, buildExpected, done));
           }));
