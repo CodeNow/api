@@ -22,6 +22,9 @@ var uuid = require('uuid');
 var ctx = {};
 
 async.series([
+  // TIP:
+  // generate new token here: https://github.com/settings/applications
+  // w/ permissions: repo, user, write:repo_hook
   function (cb) { ctx.user = user.githubLogin('fc85cf8ce7d69de48cecd29a626dd8cfa6841a49', cb); },
   function (cb) { ctx.sourceContexts = ctx.user.fetchContexts({isSource: true}, cb); },
   function (cb) { ctx.sourceVersions = ctx.sourceContexts.models[0].fetchVersions({}, cb); },

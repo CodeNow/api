@@ -15,11 +15,11 @@ describe('Build', function () {
 
   function createNewBuild() {
     return new Build({
+      owner: { github: validation.VALID_GITHUB_ID },
       contexts: [validation.VALID_OBJECT_ID],
       contextVersions: [validation.VALID_OBJECT_ID],
       created: Date.now(),
-      createdBy: { github: validation.VALID_GITHUB_ID },
-      owner: { github: validation.VALID_GITHUB_ID }
+      createdBy: { github: validation.VALID_GITHUB_ID }
     });
   }
 
@@ -52,8 +52,7 @@ describe('Build', function () {
   });
 
   describe('Owner Validation', function () {
-    // FIXME: this should fail, but it's not
-    // validation.githubUserRefValidationChecking(createNewBuild, 'owner.github');
+    validation.githubUserRefValidationChecking(createNewBuild, 'owner.github');
     validation.requiredValidationChecking(createNewBuild, 'owner');
   });
 

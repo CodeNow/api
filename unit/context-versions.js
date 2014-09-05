@@ -61,7 +61,7 @@ describe('Versions', function () {
       schemaValidators.validationMessages.dockerHost);
   });
 
-  describe('Github Owner Id Validation', function () {
+  describe('Github Created By Validation', function () {
     validation.githubUserRefValidationChecking(createNewVersion, 'createdBy.github');
     validation.requiredValidationChecking(createNewVersion, 'createdBy');
   });
