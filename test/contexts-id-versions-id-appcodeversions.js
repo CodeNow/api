@@ -9,8 +9,6 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var expects = require('./fixtures/expects');
 var multi = require('./fixtures/multi-factory');
-var exists = require('101/exists');
-var not = require('101/not');
 var uuid = require('uuid');
 
 describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', function () {
