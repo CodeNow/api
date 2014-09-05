@@ -22,8 +22,6 @@ describe('Versions', function () {
       createdBy: { github: validation.VALID_GITHUB_ID },
       config: validation.VALID_OBJECT_ID,
       created: Date.now(),
-      environment: validation.VALID_OBJECT_ID,
-      project: validation.VALID_OBJECT_ID,
       context: validation.VALID_OBJECT_ID,
       files:[{
         Key: "test",
@@ -38,7 +36,7 @@ describe('Versions', function () {
         repo: 'bkendall/flaming-octo-nemisis',
         lowerRepo: 'bkendall/flaming-octo-nemisis',
         branch: 'master',
-        lockCommit: false
+        commit: 'deadbeef'
       }]
     });
   }
@@ -73,11 +71,6 @@ describe('Versions', function () {
     validation.requiredValidationChecking(createNewVersion, 'context');
   });
 
-  describe('Project Id Validation', function () {
-    validation.objectIdValidationChecking(createNewVersion, 'project');
-    validation.requiredValidationChecking(createNewVersion, 'project');
-  });
-
   describe('Build Validation', function () {
     describe('Message', function () {
       validation.stringLengthValidationChecking(createNewVersion, 'build.message', 500);
@@ -98,10 +91,11 @@ describe('Versions', function () {
       validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.lowerRepo');
     });
     describe('Branch', function () {
+      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.branch');
       validation.stringLengthValidationChecking(createNewVersion, 'appCodeVersions.0.branch', 200);
     });
-    describe('Lock Commit', function () {
-      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.lockCommit');
+    describe('Commit', function () {
+      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.commit');
     });
   });
 });

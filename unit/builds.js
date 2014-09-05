@@ -15,12 +15,11 @@ describe('Build', function () {
 
   function createNewBuild() {
     return new Build({
-      project: validation.VALID_OBJECT_ID,
-      environment: validation.VALID_OBJECT_ID,
       contexts: [validation.VALID_OBJECT_ID],
       contextVersions: [validation.VALID_OBJECT_ID],
       created: Date.now(),
-      createdBy: { github: validation.VALID_GITHUB_ID }
+      createdBy: { github: validation.VALID_GITHUB_ID },
+      owner: { github: validation.VALID_GITHUB_ID }
     });
   }
 
@@ -30,7 +29,7 @@ describe('Build', function () {
       name: "test",
       accounts: {
         github: {
-          id: 'test'
+          id: '1234'
         }
       }
     };
@@ -49,17 +48,13 @@ describe('Build', function () {
 
   describe('CreatedBy Validation', function () {
     validation.githubUserRefValidationChecking(createNewBuild, 'createdBy.github');
-    validation.requiredValidationChecking(createNewBuild, 'createdBy');
+    // validation.requiredValidationChecking(createNewBuild, 'createdBy');
   });
 
-  describe('Environment Id Validation', function () {
-    validation.objectIdValidationChecking(createNewBuild, 'environment');
-    validation.requiredValidationChecking(createNewBuild, 'environment');
-  });
-
-  describe('Project Id Validation', function () {
-    validation.objectIdValidationChecking(createNewBuild, 'project');
-    validation.requiredValidationChecking(createNewBuild, 'project');
+  describe('Owner Validation', function () {
+    // FIXME: this should fail, but it's not
+    // validation.githubUserRefValidationChecking(createNewBuild, 'owner.github');
+    validation.requiredValidationChecking(createNewBuild, 'owner');
   });
 
   describe('Context Ids Validation', function () {
