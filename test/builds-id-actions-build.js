@@ -30,48 +30,74 @@ describe('Build - /builds/:id/actions/build', function() {
   afterEach(require('./fixtures/clean-nock'));
 
   describe('POST', function () {
-    beforeEach(function (done) {
-      multi.createBuild(function (err, contextVersion, context, build, user) {
-        ctx.contextVersion = contextVersion;
-        ctx.build = build;
-        ctx.user = user;
-        done(err);
+    describe('unbuilt build', function () {
+      beforeEach(function (done) {
+        multi.createBuild(function (err, contextVersion, context, build, user) {
+          ctx.contextVersion = contextVersion;
+          ctx.build = build;
+          ctx.user = user;
+          done(err);
+        });
+      });
+
+      it('should start building the build - return in-progress build', { timeout: 500 }, function (done) {
+        require('./fixtures/mocks/docker/container-id-attach')();
+        require('./fixtures/mocks/github/user')(ctx.user);
+        ctx.build.build({message:'hello!'}, function (err, body, code) {
+          if (err) { return done(err); }
+
+          expect(code).to.equal(201);
+          expect(body).to.be.ok;
+
+          tailBuildStream(body.contextVersions[0], function (err, log) {
+            if (err) { return done(err); }
+            expect(log).to.contain('Successfully built');
+
+            var count = createCount(2, done);
+            var buildExpected = {
+              completed: exists,
+              duration: exists,
+              failed: equals(false)
+            };
+            ctx.build.fetch(expects.success(200, buildExpected, count.next));
+            var versionExpected = {
+              'dockerHost': exists,
+              'build.message': exists,
+              'build.started': exists,
+              'build.completed': exists,
+              'build.dockerImage': exists,
+              'build.dockerTag': exists,
+              'build.log': exists,
+              'build.triggeredAction.manual': true,
+            };
+            require('./fixtures/mocks/github/user')(ctx.user); // non owner org
+            ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
+          });
+        });
+      });
+      describe('errors', function() {
+        it('should error if the build is already in progress', function (done) {
+          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.build.build({message:'hello!'}, function (err) {
+            if (err) { return done(err); }
+            ctx.build.build({message:'hello!'},
+              expects.error(409, /Build is already in progress/, done));
+          });
+        });
       });
     });
-
-    it('should start building the build - return in-progress build', { timeout: 5000 }, function (done) {
-      require('./fixtures/mocks/docker/container-id-attach')();
-      require('./fixtures/mocks/github/user')(ctx.user);
-      ctx.build.build({message:'hello!'}, function (err, body, code) {
-        if (err) { return done(err); }
-
-        expect(code).to.equal(201);
-        expect(body).to.be.ok;
-
-        tailBuildStream(body.contextVersions[0], function (err, log) {
-          if (err) { return done(err); }
-          expect(log).to.contain('Successfully built');
-
-          var count = createCount(2, done);
-          var buildExpected = {
-            completed: exists,
-            duration: exists,
-            failed: equals(false)
-          };
-          ctx.build.fetch(expects.success(200, buildExpected, count.next));
-          var versionExpected = {
-            'dockerHost': exists,
-            'build.message': exists,
-            'build.started': exists,
-            'build.completed': exists,
-            'build.dockerImage': exists,
-            'build.dockerTag': exists,
-            'build.log': exists,
-            'build.triggeredAction.manual': true,
-          };
-          require('./fixtures/mocks/github/user')(ctx.user); // non owner org
-          ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
+    describe('built build', function () {
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, user) {
+          ctx.build = build;
+          ctx.user = user;
+          done(err);
         });
+      });
+      it('should error if the build is already built', function(done) {
+        ctx.build.build({ message: 'hello!' },
+          expects.error(409, /Build is already built/, done));
       });
     });
   });
