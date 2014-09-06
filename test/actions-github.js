@@ -159,7 +159,7 @@ describe('Github', function () {
         });
       });
     });
-    it('should start a build', {timeout:3000000}, function (done) {
+    it('should start a build', {timeout:3000}, function (done) {
       var options = hooks.push;
       require('./fixtures/mocks/github/users-username')(101, 'bkendall');
       require('./fixtures/mocks/docker/container-id-attach')();
@@ -174,7 +174,7 @@ describe('Github', function () {
           expect(body).to.have.a.lengthOf(1);
           expect(body[0]).to.have.property('started');
           expect(body[0]).to.have.property('contextVersions');
-          require('./fixtures/mocks/docker/container-id-attach')();
+
           tailBuildStream(body[0].contextVersions[0], function (err) {
             if (err) { return done(err); }
             require('./fixtures/mocks/github/repos-username-repo-commits')

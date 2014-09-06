@@ -48,6 +48,7 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
 
         expect(code).to.equal(201);
         expect(body).to.be.ok;
+
         tailBuildStream(body.contextVersions[0], function (err, log) {
           if (err) { return done(err); }
 
@@ -59,7 +60,6 @@ describe('Build - /projects/:id/environments/:id/builds/:id/build', function() {
             duration: exists,
             failed: equals(false)
           };
-          // require('./fixtures/mocks/docker/container-id-attach')();
           ctx.build.fetch(expects.success(200, buildExpected, count.next));
           var versionExpected = {
             'dockerHost': exists,

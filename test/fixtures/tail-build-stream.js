@@ -15,6 +15,8 @@ function tailBuildStream (contextVersionId, cb) {
   var client = new primusClient(
     'http://localhost:' +
     process.env.PORT);
+  // create substream for build logs
+  var buildStream = client.substream(contextVersionId);
 
   // start build stream
   client.write({
@@ -22,8 +24,14 @@ function tailBuildStream (contextVersionId, cb) {
     event: 'build-stream',
     data: {
       id: contextVersionId,
+      build: {},
       streamId: contextVersionId
     }
+  });
+
+  var log = '';
+  buildStream.on('data', function(data) {
+    log += data;
   });
 
   client.on('data', function(msg) {
@@ -32,7 +40,6 @@ function tailBuildStream (contextVersionId, cb) {
     }
     if(msg.event === 'BUILD_STREAM_ENDED' &&
       msg.data.id === contextVersionId) {
-
       client.end();
       return cb(null, msg.data.log);
     }

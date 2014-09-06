@@ -193,7 +193,6 @@ module.exports = {
 
   buildTheBuild: function (user, build, ownerId, cb) {
     require('nock').cleanAll();
-
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -206,7 +205,6 @@ module.exports = {
     require('./mocks/docker/container-id-attach')();
     build.fetch(function (err) {
       if (err) { return cb(err); }
-      require('./mocks/docker/container-id-attach')();
       build.build({ message: uuid() }, function (err) {
         if (err) {
           cb = noop;
