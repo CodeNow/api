@@ -163,7 +163,6 @@ describe('Github', function () {
       var options = hooks.push;
       require('./fixtures/mocks/github/users-username')(101, 'bkendall');
       require('./fixtures/mocks/docker/container-id-attach')();
-      console.log('XxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXx');
       request.post(options, function (err, res, body) {
         if (err) {
           done(err);
@@ -209,13 +208,8 @@ describe('Github', function () {
               'contextVersions[0].appCodeVersions[0].commit': hooks.push.json.head_commit.id,
               'contextVersions[0].appCodeVersions[0].lockCommit': false
             };
-            console.log('anande checking build');
             ctx.env.newBuild(body[0]).fetch(
-                expects.success(200, buildExpected, done));
-            // ctx.env.newBuild(body[0]).fetch(function(){
-            //   console.log('anande build done', body);
-            //   expects.success(200, buildExpected, done)(arguments);
-            // });
+              expects.success(200, buildExpected, done));
           });
         }
       });
