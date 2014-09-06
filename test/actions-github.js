@@ -174,7 +174,6 @@ describe('Github', function () {
           expect(body).to.have.a.lengthOf(1);
           expect(body[0]).to.have.property('started');
           expect(body[0]).to.have.property('contextVersions');
-
           tailBuildStream(body[0].contextVersions[0], function (err) {
             if (err) { return done(err); }
             require('./fixtures/mocks/github/repos-username-repo-commits')
