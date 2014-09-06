@@ -10,6 +10,8 @@ var primusClient = Primus.createSocket({
 module.exports = tailBuildStream;
 
 function tailBuildStream (contextVersionId, cb) {
+  require('./mocks/docker/container-id-attach')();
+
   var client = new primusClient(
     'http://localhost:' +
     process.env.PORT);
