@@ -15,7 +15,7 @@ keyGen.go();
 function startServer () {
   apiServer.start(function(err) {
     if (err) {
-      debug('fatal error: can not connect to mongo', err);
+      debug('fatal error: api server failed to start', err);
       error.log(err);
       process.exit(1);
     }
