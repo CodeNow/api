@@ -10,19 +10,28 @@ if (process.env.NEWRELIC_KEY) {
   require('newrelic');
 }
 
-apiServer.start(function(err) {
-  if (err) {
-    error.log('API SERVER FAILED TO START', err);
-    process.exit(1);
-  }
-  keyGen.go();
-});
+keyGen.go();
+
+function startServer () {
+  apiServer.start(function(err) {
+    if (err) {
+      debug('fatal error: api server failed to start', err);
+      error.log(err);
+      process.exit(1);
+    }
+    debug('api server stated', err);
+  });
+}
 
 process.on('uncaughtException', function(err) {
+  debug('stopping app due too uncaughtException:',err);
   error.log(err);
-  debug('stoping app');
-  apiServer.stop(function() {
-    debug('exiting process');
-    process.exit(1);
+  var oldServer = apiServer;
+  oldServer.stop(function() {
+    debug('server stopped');
   });
+  apiServer = new ApiServer();
+  startServer();
 });
+
+startServer();
