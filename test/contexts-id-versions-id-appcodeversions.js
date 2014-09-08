@@ -9,8 +9,7 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var expects = require('./fixtures/expects');
 var multi = require('./fixtures/multi-factory');
-var exists = require('101/exists');
-var not = require('101/not');
+var uuid = require('uuid');
 
 describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', function () {
   var ctx = {};
@@ -43,11 +42,9 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
   describe('POST', function () {
     describe('unbuilt', function () {
       beforeEach(function (done) {
-        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
           ctx.contextVersion = contextVersion;
           ctx.context = context;
-          ctx.env = env;
-          ctx.project = project;
           ctx.user = user;
           ctx.repoName = 'Dat-middleware';
           ctx.fullRepoName = ctx.user.attrs.accounts.github.login+'/'+ctx.repoName;
@@ -57,14 +54,17 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
         });
       });
       describe('should add a github repo', function () {
-        describe('owner', function () {
+        describe('as owner', function () {
           it('should allow', function (done) {
             var body = {
-              repo: ctx.fullRepoName
+              repo: ctx.fullRepoName,
+              branch: 'master',
+              commit: uuid()
             };
             var expected = {
               repo: ctx.fullRepoName,
-              branch: 'master'
+              branch: 'master',
+              commit: body.commit
             };
             var username = ctx.user.attrs.accounts.github.login;
             require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
@@ -73,7 +73,7 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
             ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, done));
           });
         });
-        describe('non-owner', function () {
+        describe('as non-owner', function () {
           beforeEach(createNonOwner);
           it('should fail (403)', function (done) {
             var body = {
@@ -82,15 +82,18 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
             createContextVersion(ctx.nonOwner).addGithubRepo(body, expects.errorStatus(403, done));
           });
         });
-        describe('moderator', function () {
+        describe('as moderator', function () {
           beforeEach(createModUser);
           it('should allow', function (done) {
             var body = {
-              repo: ctx.fullRepoName
+              repo: ctx.fullRepoName,
+              branch: 'master',
+              commit: uuid()
             };
             var expected = {
               repo: ctx.fullRepoName,
-              branch: 'master'
+              branch: 'master',
+              commit: body.commit
             };
             var username = ctx.user.attrs.accounts.github.login;
             require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
@@ -101,30 +104,50 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           });
         });
       });
-      it('should require repo', function (done) {
+      it('should require repo, commit, and branch', function (done) {
         var body = {};
         ctx.contextVersion.addGithubRepo(body, expects.error(400, /repo/, done));
       });
-      it('should add a github repo with optional key branch', function (done) {
+      it('should require branch, commit', function (done) {
+        var body = {
+          repo: ctx.fullRepoName,
+          lowerRepo: ctx.fullRepoName.toLowerCase()
+        };
+        ctx.contextVersion.addGithubRepo(body, expects.error(400, /branch/, done));
+      });
+      it('should require commit', function (done) {
         var body = {
           repo: ctx.fullRepoName,
           lowerRepo: ctx.fullRepoName.toLowerCase(),
-          branch: 'Custom',
-          lowerBranch: 'custom'
+          branch: 'asdf'
         };
-        var username = ctx.user.attrs.accounts.github.login;
-        require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
-        require('./fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName);
-        require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
-        ctx.contextVersion.addGithubRepo(body, expects.success(201, body, done));
+        ctx.contextVersion.addGithubRepo(body, expects.error(400, /commit/, done));
+      });
+      it('should require branch', function (done) {
+        var body = {
+          repo: ctx.fullRepoName,
+          lowerRepo: ctx.fullRepoName.toLowerCase(),
+          commit: 'deadbeef'
+        };
+        ctx.contextVersion.addGithubRepo(body, expects.error(400, /branch/, done));
+      });
+      it('should require repo', function (done) {
+        var body = {
+          branch: 'asdf',
+          commit: 'deadbeef'
+        };
+        ctx.contextVersion.addGithubRepo(body, expects.error(400, /repo/, done));
       });
       it('should not add a repo the second time', function (done) {
         var body = {
-          repo: ctx.fullRepoName
+          repo: ctx.fullRepoName,
+          branch: 'master',
+          commit: uuid()
         };
         var expected = {
           repo: ctx.fullRepoName,
-          branch: 'master'
+          branch: 'master',
+          commit: body.commit
         };
         var username = ctx.user.attrs.accounts.github.login;
         require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
@@ -135,63 +158,39 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           ctx.contextVersion.addGithubRepo(body, expects.error(409, /already added/, done));
         }));
       });
-      it('should add a github repo with optional key commit', function (done) {
-        var body = {
-          repo: ctx.fullRepoName,
-          lowerRepo: ctx.fullRepoName.toLowerCase(),
-          commit: '123'
-        };
-        var expected = {
-          repo: ctx.fullRepoName,
-          lowerRepo: ctx.fullRepoName.toLowerCase(),
-          commit: '123',
-          lockCommit: true,
-          branch: not(exists),
-          lowerBranch: not(exists)
-        };
-        var username = ctx.user.attrs.accounts.github.login;
-        require('./fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
-        require('./fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName);
-        require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
-        ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, done));
-      });
-      it('should error if both branch and commit are provided', function (done) {
-        var body = {
-          repo: ctx.fullRepoName,
-          branch: 'Custom',
-          commit: '123'
-        };
-        ctx.contextVersion.addGithubRepo(body, expects.error(400, /both/, done));
-      });
     });
     describe('built version', function () {
       beforeEach(function (done) {
-        multi.createBuiltBuild(function (err, build, env, project, user, modelArr) {
+        multi.createBuiltBuild(function (err, build, user, modelArr) {
           ctx.builtVersion = modelArr[0];
           done(err);
         });
       });
       it('should not add the repo', function (done) {
-        ctx.builtVersion.addGithubRepo('tjmehta/101',
-          expects.error(400, /Cannot/, done));
+        var data = {
+          repo: 'tjmehta/101',
+          branch: 'master',
+          commit: uuid()
+        };
+        ctx.builtVersion.addGithubRepo(data, expects.error(400, /Cannot/, done));
       });
     });
   });
 
   describe('PATCH', function () {
     beforeEach(function (done) {
-      multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+      multi.createContextVersion(function (err, contextVersion, context, build, user) {
         ctx.contextVersion = contextVersion;
         ctx.context = context;
-        ctx.env = env;
-        ctx.project = project;
         ctx.user = user;
         ctx.repoName = 'Dat-middleware';
         ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
         require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
         require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
         var body = {
-          repo: ctx.fullRepoName
+          repo: ctx.fullRepoName,
+          branch: 'master',
+          commit: uuid()
         };
         var username = ctx.user.attrs.accounts.github.login;
         require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
@@ -205,8 +204,6 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
       var expected = ctx.appCodeVersion.json();
       expected.branch = body.branch;
       expected.lowerBranch = body.branch.toLowerCase();
-      expected.commit = not(exists);
-      expected.lockCommit = false;
       ctx.appCodeVersion.update(body, expects.success(200, expected, done));
     });
     it('it should update an appCodeVersion\'s commit', function (done) {
@@ -215,9 +212,17 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
       };
       var expected = ctx.appCodeVersion.json();
       expected.commit = body.commit;
-      expected.lockCommit = true;
-      expected.branch = not(exists);
-      expected.lowerBranch = not(exists);
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
+    it('it should update an appCodeVersion\'s commit and branch', function (done) {
+      var body = {
+        branch: 'other-feature',
+        commit: 'abcdef'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.commit = body.commit;
+      expected.branch = body.branch;
+      expected.lowerBranch = body.branch.toLowerCase();
       ctx.appCodeVersion.update(body, expects.success(200, expected, done));
     });
   });
@@ -225,18 +230,18 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
   describe('DELETE', function () {
     describe('unbuilt', function() {
       beforeEach(function (done) {
-        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
           ctx.contextVersion = contextVersion;
           ctx.context = context;
-          ctx.env = env;
-          ctx.project = project;
           ctx.user = user;
           ctx.repoName = 'Dat-middleware';
           ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
           require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
           require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
           var body = {
-            repo: ctx.fullRepoName
+            repo: ctx.fullRepoName,
+            branch: 'master',
+            commit: uuid()
           };
           var username = ctx.user.attrs.accounts.github.login;
           require('./fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
@@ -270,13 +275,15 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
     });
     describe('built version', function () {
       beforeEach(function (done) {
-        multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
           if (err) { return done(err); }
           ctx.user = user;
           ctx.repoName = 'Dat-middleware';
           ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
           var body = {
-            repo: ctx.fullRepoName
+            repo: ctx.fullRepoName,
+            branch: 'master',
+            commit: uuid()
           };
           require('./fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
           require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
