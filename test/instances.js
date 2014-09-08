@@ -245,7 +245,7 @@ describe('Instances - /instances', function () {
       multi.createInstance(function (err, instance, build, user) {
         if (err) { return done(err); }
         ctx.instance = instance;
-        ctx.build = build;
+        ctx.build = build; // builtBuild
         ctx.user = user;
         multi.createInstance(function (err, instance, build, user) {
           if (err) { return done(err); }
@@ -265,7 +265,8 @@ describe('Instances - /instances', function () {
       };
       var expected = [{
         _id: ctx.instance.json()._id,
-        shortHash: ctx.instance.json().shortHash
+        shortHash: ctx.instance.json().shortHash,
+        'containers[0].inspect.State.Running': true
       }];
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
       var query2 = {
@@ -273,7 +274,8 @@ describe('Instances - /instances', function () {
       };
       var expected2 = [{
         _id: ctx.instance2.json()._id,
-        shortHash: ctx.instance2.json().shortHash
+        shortHash: ctx.instance2.json().shortHash,
+        'containers[0].inspect.State.Running': true
       }];
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
@@ -293,6 +295,7 @@ describe('Instances - /instances', function () {
       expected[0]['build._id'] = ctx.build.id();
       expected[0]['owner.username'] = ctx.user.json().accounts.github.username;
       expected[0]['owner.github'] = ctx.user.json().accounts.github.id;
+      expected[0]['containers[0].inspect.State.Running'] = true;
       // FIXME: chai is messing up with eql check:
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
 
@@ -305,6 +308,7 @@ describe('Instances - /instances', function () {
       expected2[0]['build._id'] = ctx.build2.id();
       expected2[0]['owner.username'] = ctx.user2.json().accounts.github.username;
       expected2[0]['owner.github'] = ctx.user2.json().accounts.github.id;
+      expected[0]['containers[0].inspect.State.Running'] = true;
       // FIXME: chai is messing up with eql check:
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
