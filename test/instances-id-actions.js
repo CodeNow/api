@@ -177,6 +177,32 @@ describe('Instance - /instances/:id/actions', function () {
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         ctx.user.forkInstance(ctx.instance.id(), expects.success(201, expected, done));
       });
+      describe('Same org, different user', function () {
+        beforeEach(function (done) {
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          ctx.nonOwner = multi.createUser(done);
+        });
+        beforeEach(function (done) {
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          ctx.otherInstance = ctx.user.forkInstance(ctx.instance.id(), done);
+        });
+        it('should fork the instance when part of the same org as the owner', function (done) {
+          var expected = {
+            shortHash: exists,
+            name: exists,
+            public: exists,
+            createdBy: { github: ctx.nonOwner.json().accounts.github.id },
+            'owner.github': ctx.orgId,
+            parent: ctx.otherInstance.id(),
+            build: ctx.build.id(),
+            containers: exists
+          };
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          ctx.nonOwner.forkInstance(ctx.otherInstance.id(), expects.success(201, expected, done));
+        });
+      });
     });
     describe('non-owner', function () {
       beforeEach(function (done) {
