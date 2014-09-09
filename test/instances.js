@@ -343,6 +343,10 @@ function expectHipacheHostsForContainers (instance, cb) {
       Object.keys(container.ports).forEach(function (port) {
         var portNumber = port.split('/')[0];
         allUrls.push([instance.shortHash, '-', portNumber, '.', process.env.DOMAIN].join('').toLowerCase());
+        // special case port 80
+        if (~portNumber.indexOf('80')) {
+          allUrls.push([instance.shortHash, '.', process.env.DOMAIN].join('').toLowerCase());
+        }
       });
     }
   });
