@@ -237,6 +237,33 @@ describe('Instances - /instances', function () {
           });
         });
       });
+      describe('Create instance from parent instance', function() {
+        beforeEach(function (done) {
+          multi.createInstance(function (err, instance, build, user) {
+            ctx.instance = instance;
+            ctx.build = build;
+            ctx.user = user;
+            done(err);
+          });
+        });
+        it('should have the parent instance set in the new one', function (done) {
+          var json = {
+            build: ctx.build.id(),
+            parentInstance: ctx.instance.id()
+          };
+          var expected = {
+            _id: exists,
+            name: 'Instance2',
+            owner: { github: ctx.user.json().accounts.github.id },
+            public: false,
+            build: ctx.build.id(),
+            containers: exists,
+            parent: ctx.instance.id(),
+            shortHash: exists
+          };
+          ctx.user.createInstance(json, expects.success(201, expected, done));
+        });
+      });
     });
   });
 
