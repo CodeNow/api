@@ -115,6 +115,25 @@ describe('Builds - /builds', function () {
         ];
         ctx.user2.fetchBuilds(expects.success(200, expected, done));
       });
+      it('should limit the returned list of builds', function (done) {
+        var query = {
+          limit: 1
+        };
+        var expected = [
+          ctx.builtBuild.json()
+        ];
+        ctx.user2.fetchBuilds(query, expects.success(200, expected, done));
+      });
+      it('should limit and sort the returned list of builds', function (done) {
+        var query = {
+          limit: 1,
+          sort: '-created'
+        };
+        var expected = [
+          ctx.unbuiltBuild.json()
+        ];
+        ctx.user2.fetchBuilds(query, expects.success(200, expected, done));
+      });
       it('should filter by completed return the list of built builds', function (done) {
         var expected = [
           ctx.builtBuild.json()
