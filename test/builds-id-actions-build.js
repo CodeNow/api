@@ -82,8 +82,6 @@ describe('Build - /builds/:id/actions/build', function() {
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.build.build({message:'hello!'}, function (err) {
             if (err) { return done(err); }
-            console.log('anandb');
-            require('./fixtures/mocks/docker/container-id-attach')();
             ctx.build.build({message:'hello!'},
               expects.error(409, /Build is already in progress/, done));
           });

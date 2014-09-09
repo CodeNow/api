@@ -216,12 +216,9 @@ module.exports = {
             cb = noop;
             cb(err);
           }
-          console.log('ananda')
-          require('./mocks/docker/container-id-attach')();
           tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
             if (err) { return cb(err); }
             require('./mocks/github/user')(user);
-            require('./mocks/docker/container-id-attach')();
             build.fetch(function (err) {
               cb(err);
             }); // get completed build
