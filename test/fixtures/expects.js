@@ -26,6 +26,8 @@ expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done)
     if (expectedKeypaths) {
       expect(body).to.be.ok;
       if (Array.isArray(expectedKeypaths) && expectedKeypaths.length) {
+        // don't allow us to have more than we expect
+        expect(body).to.have.length(expectedKeypaths.length);
         var expectedNotFound = [];
         var allItemsFoundInBody = expectedKeypaths.every(function (expectedItem) {
           var found = body.some(function (bodyItem) {
