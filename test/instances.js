@@ -69,6 +69,44 @@ describe('Instances - /instances', function () {
           };
           ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
         });
+        it('should create deploy the instance after the build finishes', function(done) {
+          var userId = ctx.user.attrs.accounts.github.id;
+          var json = { build: ctx.build.id(), name: uuid() };
+          var instance = ctx.user.createInstance({ json: json }, function (err) {
+            if (err) { done(err); }
+            Build.findOneAndUpdate({
+              _id: ctx.build.id()
+            }, {
+              $unset: {
+                started: undefined
+              }
+            }, function (err) {
+              if (err) {
+                done(err);
+              }
+              multi.buildTheBuild(ctx.user, ctx.build, userId, function (err) {
+                if (err) {
+                  done(err);
+                }
+                var expected = {
+                  containers: exists,
+                  'containers[0]': exists
+                };
+                var myTimer = setInterval(function() {
+                  require('./fixtures/mocks/github/user')(ctx.user);
+                  var fetchedInstance = ctx.user.fetchInstance(instance.id(), function (err) {
+                    if (fetchedInstance.attrs.containers &&
+                     fetchedInstance.attrs.containers.length) {
+                      clearInterval(myTimer);
+                      require('./fixtures/mocks/github/user')(ctx.user);
+                      ctx.user.fetchInstance(instance.id(), expects.success(200, expected, done));
+                    }
+                  });
+                }, 200);
+              });
+            });
+          });
+        });
       });
       describe('that has failed', function () {
         beforeEach(function (done) {
