@@ -95,6 +95,9 @@ describe('Instances - /instances', function () {
                 var myTimer = setInterval(function() {
                   require('./fixtures/mocks/github/user')(ctx.user);
                   var fetchedInstance = ctx.user.fetchInstance(instance.id(), function (err) {
+                    if (err) {
+                      done(err);
+                    }
                     if (fetchedInstance.attrs.containers &&
                      fetchedInstance.attrs.containers.length) {
                       clearInterval(myTimer);
