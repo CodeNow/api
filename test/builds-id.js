@@ -10,9 +10,6 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
-var clone = require('101/clone');
-var equals = require('101/equals');
-var not = require('101/not');
 // var exists = require('101/exists');
 // var tailBuildStream = require('./fixtures/tail-build-stream');
 // var createCount = require('callback-count');
@@ -84,57 +81,6 @@ describe('Build - /builds/:id', function () {
     describe('errors', function () {
       it('should fail with 404 if not found', function (done) {
         ctx.user.newBuild(ctx.user.id()).fetch(expects.error(404, /not found/, done));
-      });
-    });
-  });
-});
-
-describe('Build Copy - /builds/:id/actions/copy', function () {
-  ctx = {};
-  beforeEach(function (done) {
-    multi.createContextVersion(function (err, contextVersion, context, build, user) {
-      ctx.contextVersion = contextVersion;
-      ctx.context = context;
-      ctx.user = user;
-      ctx.build = build;
-      done(err);
-    });
-  });
-
-  before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
-  after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
-  afterEach(require('./fixtures/clean-mongo').removeEverything);
-  afterEach(require('./fixtures/clean-ctx')(ctx));
-  afterEach(require('./fixtures/clean-nock'));
-
-  describe('POST', function () {
-    describe('as owner', function () {
-      it('should create a copy of the build', function (done) {
-        var expectedNewBuild = clone(ctx.build.json());
-        expectedNewBuild.contextVersions = [ctx.contextVersion.id()];
-        expectedNewBuild.contexts = [ctx.context.id()];
-        expectedNewBuild._id = not(equals(ctx.build.json()._id));
-        expectedNewBuild.id = not(equals(ctx.build.json().id));
-        expectedNewBuild.created = not(equals(ctx.build.json().created));
-        ctx.build.copy(expects.success(201, expectedNewBuild, done));
-      });
-    });
-    describe('as moderator', function () {
-      beforeEach(function (done) {
-        ctx.moderator = multi.createModerator(done);
-      });
-      it('should create a copy of the build', function (done) {
-        var expectedNewBuild = clone(ctx.build.json());
-        expectedNewBuild.contextVersions = [ctx.contextVersion.id()];
-        expectedNewBuild.contexts = [ctx.context.id()];
-        expectedNewBuild._id = not(equals(ctx.build.json()._id));
-        expectedNewBuild.id = not(equals(ctx.build.json().id));
-        expectedNewBuild.created = not(equals(ctx.build.json().created));
-        expectedNewBuild.createdBy = { github: ctx.moderator.json().accounts.github.id };
-        expectedNewBuild.owner = { github: ctx.moderator.json().accounts.github.id };
-        ctx.moderator.newBuild(ctx.build.id()).copy(expects.success(201, expectedNewBuild, done));
       });
     });
   });
