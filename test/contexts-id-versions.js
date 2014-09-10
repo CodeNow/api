@@ -36,6 +36,38 @@ describe('Versions - /contexts/:contextid/versions', function () {
         done(err);
       });
     });
+    describe('multiple versions', function () {
+      beforeEach(function (done) {
+        ctx.contextVersion2 = ctx.context.createVersion(done);
+      });
+      it('should return all of them', function (done) {
+        var expected = [
+          { _id: ctx.contextVersion.id() },
+          { _id: ctx.contextVersion2.id() }
+        ];
+        ctx.context.fetchVersions(expects.success(200, expected, done));
+      });
+      it('should sort and limit them', function (done) {
+        var expected = [
+          { _id: ctx.contextVersion.id() }
+        ];
+        var query = {
+          limit: 1,
+          sort: 'created'
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
+      });
+      it('should sort and limit them', function (done) {
+        var expected = [
+          { _id: ctx.contextVersion2.id() }
+        ];
+        var query = {
+          limit: 1,
+          sort: '-created'
+        };
+        ctx.context.fetchVersions(query, expects.success(200, expected, done));
+      });
+    });
     describe('via appCodeVersions', function () {
       it('should return us our version', function (done) {
         var expected = [{
