@@ -88,10 +88,6 @@ describe('Instances - /instances', function () {
                 if (err) {
                   done(err);
                 }
-                var expected = {
-                  containers: exists,
-                  'containers[0]': exists
-                };
                 var myTimer = setInterval(function() {
                   require('./fixtures/mocks/github/user')(ctx.user);
                   var fetchedInstance = ctx.user.fetchInstance(instance.id(), function (err) {
@@ -101,8 +97,7 @@ describe('Instances - /instances', function () {
                     if (fetchedInstance.attrs.containers &&
                      fetchedInstance.attrs.containers.length) {
                       clearInterval(myTimer);
-                      require('./fixtures/mocks/github/user')(ctx.user);
-                      ctx.user.fetchInstance(instance.id(), expects.success(200, expected, done));
+                      expect(fetchedInstance.attrs.containers[0]).to.be.okay;
                     }
                   });
                 }, 200);
