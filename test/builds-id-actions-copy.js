@@ -14,6 +14,8 @@ var expects = require('./fixtures/expects');
 var equals = require('101/equals');
 var clone = require('101/clone');
 var not = require('101/not');
+var exists = require('101/exists');
+var createCount = require('callback-count');
 
 
 describe('Build Copy - /builds/:id/actions/copy', function () {
@@ -43,8 +45,8 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
           var expectedNewBuild = clone(ctx.build.json());
           expectedNewBuild.contextVersions = [ctx.contextVersion.id()];
           expectedNewBuild.contexts = [ctx.context.id()];
-          expectedNewBuild._id = not(equals(ctx.build.json()._id));
-          expectedNewBuild.id = not(equals(ctx.build.json().id));
+          expectedNewBuild._id = not(equals(ctx.build.attrs._id));
+          expectedNewBuild.id = not(equals(ctx.build.attrs.id));
           expectedNewBuild.created = not(equals(ctx.build.json().created));
           ctx.build.copy(expects.success(201, expectedNewBuild, done));
         });
@@ -76,10 +78,14 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
             return true;
           };
           expectedNewBuild.contexts = [ctx.context.id()];
-          expectedNewBuild._id = not(equals(ctx.build.json()._id));
-          expectedNewBuild.id = not(equals(ctx.build.json().id));
-          expectedNewBuild.created = not(equals(ctx.build.json().created));
-          ctx.build.deepCopy(expects.success(201, expectedNewBuild, done));
+          expectedNewBuild._id = not(equals(ctx.build.attrs._id));
+          expectedNewBuild.id = not(equals(ctx.build.attrs.id));
+          expectedNewBuild.created = not(equals(ctx.build.attrs.created));
+          expectedNewBuild.started = not(exists);
+          expectedNewBuild.completed = not(exists);
+          expectedNewBuild.duration = not(exists);
+          ctx.buildCopy = ctx.build
+            .deepCopy(expects.success(201, expectedNewBuild, expectUnbuiltVersions(ctx, done)));
         });
       });
       describe('as moderator', function () {
@@ -94,15 +100,35 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
             return true;
           };
           expectedNewBuild.contexts = [ctx.context.id()];
-          expectedNewBuild._id = not(equals(ctx.build.json()._id));
-          expectedNewBuild.id = not(equals(ctx.build.json().id));
-          expectedNewBuild.created = not(equals(ctx.build.json().created));
+          expectedNewBuild._id = not(equals(ctx.build.attrs._id));
+          expectedNewBuild.id = not(equals(ctx.build.attrs.id));
+          expectedNewBuild.created = not(equals(ctx.build.attrs.created));
+          expectedNewBuild.started = not(exists);
+          expectedNewBuild.completed = not(exists);
+          expectedNewBuild.duration = not(exists);
           expectedNewBuild.createdBy = { github: ctx.moderator.json().accounts.github.id };
           expectedNewBuild.owner = { github: ctx.user.json().accounts.github.id };
-          ctx.moderator.newBuild(ctx.build.id())
-            .deepCopy(expects.success(201, expectedNewBuild, done));
+          ctx.buildCopy = ctx.moderator.newBuild(ctx.build.id())
+            .deepCopy(expects.success(201, expectedNewBuild, expectUnbuiltVersions(ctx, done)));
         });
       });
     });
   });
 });
+
+
+function expectUnbuiltVersions (ctx, done) {
+  return function (err) {
+    var build = ctx.buildCopy;
+    if (err) { return done(err); }
+    var count = createCount(build.attrs.contextVersions.length, done);
+    build.attrs.contextVersions.forEach(function (versionId) {
+      var expected = {
+        'build.started': not(exists),
+        'build.completed': not(exists)
+      };
+      ctx.context.fetchVersion(versionId,
+        expects.success(200, expected, count.next));
+    });
+  };
+}
