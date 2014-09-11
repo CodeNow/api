@@ -25,7 +25,7 @@ async.series([
   // TIP:
   // generate new token here: https://github.com/settings/applications
   // w/ permissions: repo, user, write:repo_hook
-  function (cb) { ctx.user = user.githubLogin('fc85cf8ce7d69de48cecd29a626dd8cfa6841a49', cb); },
+  function (cb) { ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', cb); },
   function (cb) { ctx.sourceContexts = ctx.user.fetchContexts({isSource: true}, cb); },
   function (cb) { ctx.sourceVersions = ctx.sourceContexts.models[0].fetchVersions({}, cb); },
   function (cb) { ctx.context = ctx.user.createContext({name: uuid()}, cb); },
