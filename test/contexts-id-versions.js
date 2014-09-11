@@ -5,6 +5,7 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var expect = Lab.expect;
 
 var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
@@ -14,6 +15,8 @@ var exists = require('101/exists');
 var ContextVersions = require('models/mongo/context-version');
 var generateKey = require('./fixtures/key-factory');
 var async = require('async');
+var not = require('101/not');
+var equals = require('101/equals');
 
 describe('Versions - /contexts/:contextid/versions', function () {
   var ctx = {};
@@ -77,13 +80,35 @@ describe('Versions - /contexts/:contextid/versions', function () {
           done();
         });
       });
-      it('should create a contextVersion with infraCodeVersion', function (done) {
+      it('should create a contextVersion with infraCodeVersion', {timeout:1500}, function (done) {
         var expected = {
-          infraCodeVersion: ctx.infraCodeVersionId
+          infraCodeVersion: not(equals(ctx.infraCodeVersionId))
         };
         ctx.context.createVersion({
           infraCodeVersion: ctx.infraCodeVersionId
-        }, expects.success(201, expected, done));
+        }, expects.success(201, expected, function (err, body) {
+          if (err) { return done(err); }
+          require('models/mongo/infra-code-version')
+            .findById(body.infraCodeVersion, function (err, infraCodeVersion) {
+              if (err) { return done(err); }
+              expect(infraCodeVersion.parent.toString()).to.equal(ctx.infraCodeVersionId);
+              done();
+            });
+        }));
+      });
+      describe('errors', function() {
+        beforeEach(function (done) {
+          multi.createBuiltBuild(function (err, build, user, modelArr) {
+            if (err) { return done(err); }
+            ctx.infraCodeVersionId2 = modelArr[0].json().infraCodeVersion;
+            done();
+          });
+        });
+        it('should not create an infraCodeVersion', {timeout:1000}, function (done) {
+          ctx.context.createVersion({
+            infraCodeVersion: ctx.infraCodeVersionId2
+          }, expects.error(400, /same context/, done));
+        });
       });
     });
   });
