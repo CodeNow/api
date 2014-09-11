@@ -12,7 +12,7 @@ describe('Infracode Versions', function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/fixtures/clean-mongo').removeEverything);
 
-  function createNewInfracodeVersion(envId) {
+  function createNewInfracodeVersion() {
     return new InfracodeVersion({
       context: validation.VALID_OBJECT_ID,
       parent: validation.VALID_OBJECT_ID,
@@ -37,8 +37,7 @@ describe('Infracode Versions', function () {
 
 
   it('should be create a copy, and keep the originals env as its parentEnv', function (done) {
-    var envId = '507c7f79bcf86cd7994f6c11';
-    var infracode = createNewInfracodeVersion(envId);
+    var infracode = createNewInfracodeVersion();
     infracode.save(function (err, infracode) {
       var newEnvId = '507c7f79bcf86cd7994f6a11';
       InfracodeVersion.createCopyById(infracode._id, newEnvId, function(err, childInfracode) {
@@ -51,8 +50,7 @@ describe('Infracode Versions', function () {
   });
 
   it('should be create a copy, but not save the parentEnv since it did not change', function (done) {
-    var envId = '507c7f79bcf86cd7994f6c11';
-    var infracode = createNewInfracodeVersion(envId);
+    var infracode = createNewInfracodeVersion();
     infracode.save(function (err, infracode) {
       InfracodeVersion.createCopyById(infracode._id, envId, function(err, childInfracode) {
         if (err) { return done(err); }
@@ -64,8 +62,7 @@ describe('Infracode Versions', function () {
   });
 
   it('should be create a copy, but not save the parentEnv since it did not change', function (done) {
-    var envId = '507c7f79bcf86cd7994f6c11';
-    var infracode = createNewInfracodeVersion(envId);
+    var infracode = createNewInfracodeVersion();
     infracode.save(function (err, infracode) {
       InfracodeVersion.createCopyById(infracode._id, envId, function(err, childInfracode) {
         if (err) { return done(err); }
