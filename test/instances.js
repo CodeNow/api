@@ -69,7 +69,7 @@ describe('Instances - /instances', function () {
           };
           ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
         });
-        it('should deploy the instance after the build finishes', function(done) {
+        it('should deploy the instance after the build finishes', {timeout: 1000}, function(done) {
           var userId = ctx.user.attrs.accounts.github.id;
           var json = { build: ctx.build.id(), name: uuid() };
           var instance = ctx.user.createInstance({ json: json }, function (err) {
@@ -88,19 +88,20 @@ describe('Instances - /instances', function () {
                 if (err) {
                   done(err);
                 }
+                var fetchedInstance = null;
                 var myTimer = setInterval(function() {
                   require('./fixtures/mocks/github/user')(ctx.user);
-                  var fetchedInstance = ctx.user.fetchInstance(instance.id(), function (err) {
-                    if (err) {
-                      done(err);
-                    }
-                    if (fetchedInstance.attrs.containers &&
-                     fetchedInstance.attrs.containers.length) {
-                      clearInterval(myTimer);
-                      expect(fetchedInstance.attrs.containers[0]).to.be.okay;
-                      done();
-                    }
-                  });
+                  if (!fetchedInstance || !fetchedInstance.attrs.containers.length) {
+                    fetchedInstance = ctx.user.fetchInstance(instance.id(), function (err) {
+                      if (err) {
+                        done(err);
+                      }
+                    });
+                  } else {
+                    clearInterval(myTimer);
+                    expect(fetchedInstance.attrs.containers[0]).to.be.okay;
+                    done();
+                  }
                 }, 200);
               });
             });
