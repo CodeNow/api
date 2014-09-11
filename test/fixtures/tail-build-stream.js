@@ -1,5 +1,5 @@
 var Primus = require('primus');
-var primusClient = Primus.createSocket({
+var PrimusClient = Primus.createSocket({
   transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
     'substream': require('substream')
@@ -10,7 +10,7 @@ var primusClient = Primus.createSocket({
 module.exports = tailBuildStream;
 
 function tailBuildStream (contextVersionId, cb) {
-  var client = new primusClient(
+  var client = new PrimusClient(
     'http://localhost:' +
     process.env.PORT);
   // create substream for build logs
@@ -34,7 +34,7 @@ function tailBuildStream (contextVersionId, cb) {
 
   client.on('data', function(msg) {
     if (msg.error) {
-      throw new Error(JSON.stringify(msg));
+      return cb(new Error(JSON.stringify(msg)));
     }
     if(msg.event === 'BUILD_STREAM_ENDED' &&
       msg.data.id === contextVersionId) {
