@@ -69,7 +69,7 @@ describe('Instances - /instances', function () {
           };
           ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
         });
-        it('should create deploy the instance after the build finishes', function(done) {
+        it('should deploy the instance after the build finishes', function(done) {
           var userId = ctx.user.attrs.accounts.github.id;
           var json = { build: ctx.build.id(), name: uuid() };
           var instance = ctx.user.createInstance({ json: json }, function (err) {
@@ -98,6 +98,7 @@ describe('Instances - /instances', function () {
                      fetchedInstance.attrs.containers.length) {
                       clearInterval(myTimer);
                       expect(fetchedInstance.attrs.containers[0]).to.be.okay;
+                      done();
                     }
                   });
                 }, 200);
