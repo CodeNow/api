@@ -16,8 +16,6 @@ describe('Infracode Versions', function () {
     return new InfracodeVersion({
       context: validation.VALID_OBJECT_ID,
       parent: validation.VALID_OBJECT_ID,
-      environment: envId,
-      parentEnvironment: validation.VALID_OBJECT_ID,
       created: Date.now(),
       files:[{
         Key: "test",
@@ -46,8 +44,6 @@ describe('Infracode Versions', function () {
       InfracodeVersion.createCopyById(infracode._id, newEnvId, function(err, childInfracode) {
         if (err) { return done(err); }
         expect(childInfracode).to.be.okay;
-        expect(childInfracode.environment.toString()).to.equal(newEnvId);
-        expect(childInfracode.parentEnvironment.toString()).to.equal(infracode.environment.toString());
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
       });
@@ -61,8 +57,6 @@ describe('Infracode Versions', function () {
       InfracodeVersion.createCopyById(infracode._id, envId, function(err, childInfracode) {
         if (err) { return done(err); }
         expect(childInfracode).to.be.okay;
-        expect(childInfracode.environment.toString()).to.equal(envId);
-        expect(childInfracode.parentEnvironment).to.not.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
       });
@@ -76,8 +70,6 @@ describe('Infracode Versions', function () {
       InfracodeVersion.createCopyById(infracode._id, envId, function(err, childInfracode) {
         if (err) { return done(err); }
         expect(childInfracode).to.be.okay;
-        expect(childInfracode.environment.toString()).to.equal(envId);
-        expect(childInfracode.parentEnvironment).to.not.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
       });
@@ -91,8 +83,6 @@ describe('Infracode Versions', function () {
       InfracodeVersion.createCopyById(infracode._id, envId, function(err, childInfracode) {
         if (err) { return done(err); }
         expect(childInfracode).to.be.okay;
-        expect(childInfracode.environment.toString()).to.equal(envId);
-        expect(childInfracode.parentEnvironment).to.not.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
       });
