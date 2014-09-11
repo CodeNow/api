@@ -39,8 +39,7 @@ describe('Infracode Versions', function () {
   it('should be create a copy, and keep the originals env as its parentEnv', function (done) {
     var infracode = createNewInfracodeVersion();
     infracode.save(function (err, infracode) {
-      var newEnvId = '507c7f79bcf86cd7994f6a11';
-      InfracodeVersion.createCopyById(infracode._id, newEnvId, function(err, childInfracode) {
+      InfracodeVersion.createCopyById(infracode._id, function(err, childInfracode) {
         if (err) { return done(err); }
         expect(childInfracode).to.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
@@ -52,7 +51,7 @@ describe('Infracode Versions', function () {
   it('should be create a copy, but not save the parentEnv since it did not change', function (done) {
     var infracode = createNewInfracodeVersion();
     infracode.save(function (err, infracode) {
-      InfracodeVersion.createCopyById(infracode._id, envId, function(err, childInfracode) {
+      InfracodeVersion.createCopyById(infracode._id, function(err, childInfracode) {
         if (err) { return done(err); }
         expect(childInfracode).to.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
@@ -64,7 +63,7 @@ describe('Infracode Versions', function () {
   it('should be create a copy, but not save the parentEnv since it did not change', function (done) {
     var infracode = createNewInfracodeVersion();
     infracode.save(function (err, infracode) {
-      InfracodeVersion.createCopyById(infracode._id, envId, function(err, childInfracode) {
+      InfracodeVersion.createCopyById(infracode._id, function(err, childInfracode) {
         if (err) { return done(err); }
         expect(childInfracode).to.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
@@ -74,10 +73,9 @@ describe('Infracode Versions', function () {
   });
 
   it('should be create a copy, but not have a parentEnv since the parent did not', function (done) {
-    var envId = '507c7f79bcf86cd7994f6c11';
     var infracode = createNewInfracodeVersion();
     infracode.save(function (err, infracode) {
-      InfracodeVersion.createCopyById(infracode._id, envId, function(err, childInfracode) {
+      InfracodeVersion.createCopyById(infracode._id, function(err, childInfracode) {
         if (err) { return done(err); }
         expect(childInfracode).to.be.okay;
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
