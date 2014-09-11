@@ -52,9 +52,7 @@ describe('Instances - /instances', function () {
           ctx.build = build;
           ctx.user = user;
           ctx.cv = contextVersion;
-          Build.findById(build.id(), function(err, build) {
-            build.setInProgress(user, done);
-          });
+          done();
         });
       });
       describe('user owned', function () {
@@ -67,42 +65,37 @@ describe('Instances - /instances', function () {
             name: exists,
             'owner.github': ctx.user.attrs.accounts.github.id
           };
-          ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
+          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
+          ctx.build.build({ message: uuid() }, function (err) {
+            if (err) {
+              done(err);
+            }
+            var instance = ctx.user.createInstance({ json: json },
+             expects.success(201, expected, function(err) {
+               if (err) {
+                 done(err);
+               }
+              multi.tailInstance(ctx.user, instance, done);
+            }));
+          });
         });
-        it('should deploy the instance after the build finishes', {timeout: 1000}, function(done) {
-          var userId = ctx.user.attrs.accounts.github.id;
+        it('should deploy the instance after the build finishes', {timeout: 500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
-          var instance = ctx.user.createInstance({ json: json }, function (err) {
-            if (err) { done(err); }
-            Build.findOneAndUpdate({
-              _id: ctx.build.id()
-            }, {
-              $unset: {
-                started: undefined
-              }
-            }, function (err) {
+          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
+          ctx.build.build({ message: uuid() }, function (err) {
+            if (err) {
+              done(err);
+            }
+            require('./fixtures/mocks/github/user')(ctx.user);
+            var instance = ctx.user.createInstance({ json: json }, function (err) {
               if (err) {
                 done(err);
               }
-              multi.buildTheBuild(ctx.user, ctx.build, userId, function (err) {
-                if (err) {
-                  done(err);
-                }
-                var fetchedInstance = null;
-                var myTimer = setInterval(function() {
-                  require('./fixtures/mocks/github/user')(ctx.user);
-                  if (!fetchedInstance || !fetchedInstance.attrs.containers.length) {
-                    fetchedInstance = ctx.user.fetchInstance(instance.id(), function (err) {
-                      if (err) {
-                        done(err);
-                      }
-                    });
-                  } else {
-                    clearInterval(myTimer);
-                    expect(fetchedInstance.attrs.containers[0]).to.be.okay;
-                    done();
-                  }
-                }, 200);
+              multi.tailInstance(ctx.user, instance, function(err, instance) {
+                expect(instance.attrs.containers[0]).to.be.okay;
+                done();
               });
             });
           });
@@ -110,8 +103,10 @@ describe('Instances - /instances', function () {
       });
       describe('that has failed', function () {
         beforeEach(function (done) {
+          var count = createCount(2, done);
           Build.findById(ctx.build.id(), function(err, build) {
-            build.pushErroredContextVersion(ctx.cv.id(), done);
+            build.setInProgress(ctx.user, count.next);
+            build.pushErroredContextVersion(ctx.cv.id(), count.next);
           });
         });
         it('should create a new instance', function(done) {
@@ -123,6 +118,7 @@ describe('Instances - /instances', function () {
             name: exists,
             'owner.github': ctx.user.attrs.accounts.github.id
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
         });
       });
@@ -130,12 +126,11 @@ describe('Instances - /instances', function () {
         beforeEach(function (done) {
           ctx.orgId = 1001;
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-          multi.createContextVersion(ctx.orgId, function (err, contextVersion, context, build, user) {
+          multi.createContextVersion(ctx.orgId,
+            function (err, contextVersion, context, build, user) {
             ctx.build = build;
             ctx.user = user;
-            Build.findById(build.id(), function(err, build) {
-              build.setInProgress(user, done);
-            });
+            done();
           });
         });
         it('should create a new instance', function(done) {
@@ -148,7 +143,25 @@ describe('Instances - /instances', function () {
             'owner.github': ctx.orgId
           };
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-          ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
+          ctx.build.build({ message: uuid() }, function (err) {
+            if (err) {
+              done(err);
+            }
+            require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+            require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+            require('./fixtures/mocks/github/user')(ctx.user);
+            var instance = ctx.user.createInstance({ json: json },
+              expects.success(201, expected, function(err) {
+                if (err) {
+                  done(err);
+                }
+                multi.tailInstance(ctx.user, instance, ctx.orgId, done);
+              }));
+          });
         });
       });
     });
