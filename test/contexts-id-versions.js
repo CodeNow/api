@@ -26,6 +26,68 @@ describe('Versions - /contexts/:contextid/versions', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
+  describe('POST', function () {
+    beforeEach(function (done) {
+      multi.createBuild(function (err, build, context, user) {
+        ctx.build = build;
+        ctx.context = context;
+        ctx.user = user;
+        done(err);
+      });
+    });
+    it('should create a new version', function (done) {
+      var expected = {
+        infraCodeVersion: exists
+      };
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
+      ctx.context.createVersion({}, expects.success(201, expected, done));
+    });
+    describe('toBuild query', function() {
+      it('should create a new version', function (done) {
+        var expected = {
+          infraCodeVersion: exists
+        };
+        var body = {};
+        var opts = {
+          json: body,
+          qs: {
+            toBuild: ctx.build.id()
+          }
+        };
+        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
+        var contextVersion =
+          ctx.context.createVersion(opts, expects.success(201, expected, function (err) {
+            if (err) { return done(err); }
+            var buildExpected = {
+              contexts: [ctx.context.id()],
+              contextVersions: [contextVersion.id()]
+            };
+            ctx.build.fetch(expects.success(200, buildExpected, done));
+          }));
+      });
+    });
+    describe('with body', function() {
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, user, modelArr) {
+          if (err) { return done(err); }
+          ctx.build = build;
+          ctx.user = user;
+          ctx.context = modelArr[1];
+          ctx.infraCodeVersionId = modelArr[0].json().infraCodeVersion;
+          done();
+        });
+      });
+      it('should create a contextVersion with infraCodeVersion', function (done) {
+        var expected = {
+          infraCodeVersion: ctx.infraCodeVersionId
+        };
+        ctx.context.createVersion({
+          infraCodeVersion: ctx.infraCodeVersionId
+        }, expects.success(201, expected, done));
+      });
+    });
+  });
+
   describe('GET', function () {
     beforeEach(function (done) {
       multi.createBuiltBuild(function (err, build, user, other) {
@@ -218,48 +280,6 @@ describe('Versions - /contexts/:contextid/versions', function () {
           infraCodeVersion: ctx.contextVersion.json().infraCodeVersion
         };
         ctx.context.fetchVersions(query, expects.success(200, expected, done));
-      });
-    });
-  });
-
-  describe('POST', function () {
-    beforeEach(function (done) {
-      multi.createBuild(function (err, build, context, user) {
-        ctx.build = build;
-        ctx.context = context;
-        ctx.user = user;
-        done(err);
-      });
-    });
-    it('should create a new version', function (done) {
-      var expected = {
-        infraCodeVersion: exists
-      };
-      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
-      ctx.context.createVersion({}, expects.success(201, expected, done));
-    });
-    describe('toBuild query', function() {
-      it('should create a new version', function (done) {
-        var expected = {
-          infraCodeVersion: exists
-        };
-        var body = {};
-        var opts = {
-          json: body,
-          qs: {
-            toBuild: ctx.build.id()
-          }
-        };
-        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
-        var contextVersion =
-          ctx.context.createVersion(opts, expects.success(201, expected, function (err) {
-            if (err) { return done(err); }
-            var buildExpected = {
-              contexts: [ctx.context.id()],
-              contextVersions: [contextVersion.id()]
-            };
-            ctx.build.fetch(expects.success(200, buildExpected, done));
-          }));
       });
     });
   });
