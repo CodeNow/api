@@ -72,6 +72,40 @@ describe('Builds - /builds', function () {
         });
       });
     });
+    describe('specify contextVersions', function () {
+      beforeEach(function (done) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
+          ctx.contextVersion = contextVersion;
+          ctx.user = user;
+          done(err);
+        });
+      });
+      it('should create a build with the contextVersions', function (done) {
+        var body = {
+          contextVersions: [ctx.contextVersion.id()]
+        };
+        var expected = {
+          contexts: [ctx.contextVersion.attrs.context],
+          contextVersions: [ctx.contextVersion.id()]
+        };
+        ctx.user.createBuild(body, expects.success(201, expected, done));
+      });
+      describe('non-owner', function() {
+        beforeEach(function (done) {
+          multi.createContextVersion(function (err, contextVersion) {
+            ctx.contextVersion2 = contextVersion;
+            done(err);
+          });
+        });
+        it('should not create a build with the contextVersions', function (done) {
+          var body = {
+            contextVersions: [ctx.contextVersion2.id()]
+          };
+          require('./fixtures/mocks/github/user-orgs')(2, 'otherorg');
+          ctx.user.createBuild(body, expects.error(403, /denied/, done));
+        });
+      });
+    });
   });
   describe('GET', function () {
     beforeEach(function (done) {
