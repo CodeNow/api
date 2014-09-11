@@ -222,7 +222,7 @@ describe('Instances - /instances', function () {
               expectHipacheHostsForContainers(instance.toJSON(), done);
             }));
         });
-        describe('unique names (by owner) and hashes', function() {
+        describe('unique names (by owner) and hashes', {timeout:1000}, function() {
           beforeEach(function (done) {
             multi.createBuiltBuild(ctx.orgId, function (err, build, user) {
               ctx.build2 = build;
