@@ -80,10 +80,13 @@ describe('Build - /builds/:id/actions/build', function() {
         it('should error if the build is already in progress', function (done) {
           require('./fixtures/mocks/docker/container-id-attach')();
           require('./fixtures/mocks/github/user')(ctx.user);
-          ctx.build.build({message:'hello!'}, function (err) {
+          ctx.build.build({message:'hello!'}, function (err, baseBody) {
             if (err) { return done(err); }
-            ctx.build.build({message:'hello!'},
-              expects.error(409, /Build is already in progress/, done));
+            ctx.build.build({message:'hello!'}, function(err, body, code) {
+              expects.error(409, /Build is already in progress/, function() {
+                tailBuildStream(baseBody.contextVersions[0], done);
+              })(err, body, code);
+            });
           });
         });
       });
