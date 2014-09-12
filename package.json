@@ -71,7 +71,9 @@
     "substream": "0.1.1",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
-    "xtend": "3.0.0"
+    "xtend": "3.0.0",
+    "connect-datadog": "0.0.5",
+    "node-dogstatsd": "0.0.5"
   },
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.4",
@@ -91,7 +93,7 @@
   "engine": "node >= 0.10.5",
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 100 -e test `cat test/whitelist.txt`",
+    "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test `cat test/whitelist.txt`",
     "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",

@@ -52,13 +52,11 @@ describe('Instances - /instances', function () {
           ctx.build = build;
           ctx.user = user;
           ctx.cv = contextVersion;
-          Build.findById(build.id(), function(err, build) {
-            build.setInProgress(user, done);
-          });
+          done();
         });
       });
       describe('user owned', function () {
-        it('should create a new instance', function(done) {
+        it('should create a new instance', {timeout: 1000}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
@@ -67,16 +65,51 @@ describe('Instances - /instances', function () {
             name: exists,
             'owner.github': ctx.user.attrs.accounts.github.id
           };
-          ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
+          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
+          ctx.build.build({ message: uuid() }, function (err) {
+            if (err) {
+              done(err);
+            }
+            var instance = ctx.user.createInstance({ json: json },
+             expects.success(201, expected, function(err) {
+               if (err) {
+                 done(err);
+               }
+              multi.tailInstance(ctx.user, instance, done);
+            }));
+          });
+        });
+        it('should deploy the instance after the build finishes', {timeout: 500}, function(done) {
+          var json = { build: ctx.build.id(), name: uuid() };
+          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
+          ctx.build.build({ message: uuid() }, function (err) {
+            if (err) {
+              done(err);
+            }
+            require('./fixtures/mocks/github/user')(ctx.user);
+            var instance = ctx.user.createInstance({ json: json }, function (err) {
+              if (err) {
+                done(err);
+              }
+              multi.tailInstance(ctx.user, instance, function(err, instance) {
+                expect(instance.attrs.containers[0]).to.be.okay;
+                done();
+              });
+            });
+          });
         });
       });
       describe('that has failed', function () {
         beforeEach(function (done) {
+          var count = createCount(2, done);
           Build.findById(ctx.build.id(), function(err, build) {
-            build.pushErroredContextVersion(ctx.cv.id(), done);
+            build.setInProgress(ctx.user, count.next);
+            build.pushErroredContextVersion(ctx.cv.id(), count.next);
           });
         });
-        it('should create a new instance', function(done) {
+        it('should create a new instance', {timeout: 500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
@@ -85,6 +118,7 @@ describe('Instances - /instances', function () {
             name: exists,
             'owner.github': ctx.user.attrs.accounts.github.id
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
         });
       });
@@ -92,15 +126,14 @@ describe('Instances - /instances', function () {
         beforeEach(function (done) {
           ctx.orgId = 1001;
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-          multi.createContextVersion(ctx.orgId, function (err, contextVersion, context, build, user) {
+          multi.createContextVersion(ctx.orgId,
+            function (err, contextVersion, context, build, user) {
             ctx.build = build;
             ctx.user = user;
-            Build.findById(build.id(), function(err, build) {
-              build.setInProgress(user, done);
-            });
+            done();
           });
         });
-        it('should create a new instance', function(done) {
+        it('should create a new instance', {timeout: 500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
@@ -110,7 +143,25 @@ describe('Instances - /instances', function () {
             'owner.github': ctx.orgId
           };
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-          ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
+          ctx.build.build({ message: uuid() }, function (err) {
+            if (err) {
+              done(err);
+            }
+            require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+            require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+            require('./fixtures/mocks/github/user')(ctx.user);
+            var instance = ctx.user.createInstance({ json: json },
+              expects.success(201, expected, function(err) {
+                if (err) {
+                  done(err);
+                }
+                multi.tailInstance(ctx.user, instance, ctx.orgId, done);
+              }));
+          });
         });
       });
     });
@@ -184,7 +235,7 @@ describe('Instances - /instances', function () {
               expectHipacheHostsForContainers(instance.toJSON(), done);
             }));
         });
-        describe('unique names (by owner) and hashes', function() {
+        describe('unique names (by owner) and hashes', {timeout:1000}, function() {
           beforeEach(function (done) {
             multi.createBuiltBuild(ctx.orgId, function (err, build, user) {
               ctx.build2 = build;
