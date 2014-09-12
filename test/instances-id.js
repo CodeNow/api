@@ -14,6 +14,8 @@ var uuid = require('uuid');
 var async = require('async');
 var RedisList = require('redis-types').List;
 var exists = require('101/exists');
+var not = require('101/not');
+var equals = require('101/equals');
 var Build = require('models/mongo/build');
 var extend = require('extend');
 
@@ -161,6 +163,67 @@ describe('Instance - /instances/:id', function () {
    * be modified all at once
    */
   describe('PATCH', function () {
+    describe('updating the instance\'s build with a new, copied build', function () {
+      beforeEach(function (done) {
+        ctx.newBuild = ctx.build.deepCopy(done);
+      });
+      describe('without changes in appcodeversion and infracodeversion', function () {
+        beforeEach(function (done) {
+          require('./fixtures/mocks/docker/container-id-attach')();
+          var tailBuildStream = require('./fixtures/tail-build-stream');
+          async.series([
+            ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
+            tailBuildStream.bind(null, ctx.newBuild.contextVersions.models[0].id())
+          ], done);
+        });
+        it('should deploy the copied build', function (done) {
+          var update = {
+            build: ctx.newBuild.id().toString()
+          };
+          var expected = {
+            _id: ctx.instance.json()._id,
+            shortHash: ctx.instance.id(),
+            'build._id': ctx.newBuild.id(),
+            // this represents a new docker container! :)
+            'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
+          };
+          ctx.instance.update({json: update}, expects.success(200, expected, done));
+        });
+      });
+      describe('WITH changes in appcodeversion and infracodeversion', function () {
+        beforeEach(function (done) {
+          require('./fixtures/mocks/docker/container-id-attach')();
+          var tailBuildStream = require('./fixtures/tail-build-stream');
+          ctx.newCV = ctx.user
+            .newContext(ctx.newBuild.contexts.models[0].id())
+            .newVersion(ctx.newBuild.contextVersions.models[0].id());
+          async.series([
+            ctx.newCV.fetch.bind(ctx.newCV),
+            function (done) {
+              // this has to be it's own function since models[0] doesn't exist when the series is created
+              ctx.newCV.appCodeVersions.models[0].update({
+                branch: uuid()
+              }, done);
+            },
+            ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
+            tailBuildStream.bind(null, ctx.newBuild.contextVersions.models[0].id())
+          ], done);
+        });
+        it('should deploy the copied (and modified) build', function (done) {
+          var update = {
+            build: ctx.newBuild.id().toString()
+          };
+          var expected = {
+            _id: ctx.instance.json()._id,
+            shortHash: ctx.instance.id(),
+            'build._id': ctx.newBuild.id(),
+            // this represents a new docker container! :)
+            'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
+          };
+          ctx.instance.update({json: update}, expects.success(200, expected, done));
+        });
+      });
+    });
     describe('Patching an unbuilt build', function () {
       beforeEach(function (done) {
         var data = {

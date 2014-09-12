@@ -4,6 +4,7 @@ var MongoUser = require('models/mongo/user');
 var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
 var generateKey = require('./key-factory');
+var EventEmitter = require('events').EventEmitter;
 var noop = function () {};
 
 module.exports = {
@@ -196,6 +197,7 @@ module.exports = {
 
   buildTheBuild: function (user, build, ownerId, cb) {
     require('nock').cleanAll();
+    var dispatch = new EventEmitter();
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -212,6 +214,7 @@ module.exports = {
         if (err) { return cb(err); }
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
         build.build({ message: uuid() }, function (err) {
+          dispatch.emit('started', err);
           if (err) {
             cb = noop;
             cb(err);
@@ -226,6 +229,7 @@ module.exports = {
         });
       });
     });
+    return dispatch;
   },
 
   tailInstance: function (user, instance, ownerId, cb) {
@@ -239,7 +243,8 @@ module.exports = {
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
       }
-      if (!instance.attrs.containers.length) {
+      if (!instance.attrs.containers || !instance.attrs.containers.length ||
+        !instance.attrs.containers[0].inspect) {
         require('./mocks/github/user')(user);
         instance = user.fetchInstance(instance.id(), function (err) {
           if (err) {
