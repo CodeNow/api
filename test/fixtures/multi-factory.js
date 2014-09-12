@@ -242,17 +242,12 @@ module.exports = {
       if (!instance.attrs.containers || !instance.attrs.containers.length ||
         !instance.attrs.containers[0].inspect) {
         require('./mocks/github/user')(user);
-        console.log('Nope');
         instance = user.fetchInstance(instance.id(), function (err) {
           if (err) {
             cb(err);
           }
-          if (instance.attrs.containers) {
-            console.log(instance.id(), instance.attrs.containers.length);
-          }
         });
       } else {
-        console.log('YES');
         clearInterval(myTimer);
         cb(null, instance );
       }
