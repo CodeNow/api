@@ -56,7 +56,7 @@ describe('Instances - /instances', function () {
         });
       });
       describe('user owned', function () {
-        it('should create a new instance', function(done) {
+        it('should create a new instance', {timeout: 1000}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
@@ -109,7 +109,7 @@ describe('Instances - /instances', function () {
             build.pushErroredContextVersion(ctx.cv.id(), count.next);
           });
         });
-        it('should create a new instance', function(done) {
+        it('should create a new instance', {timeout: 500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
@@ -133,7 +133,7 @@ describe('Instances - /instances', function () {
             done();
           });
         });
-        it('should create a new instance', function(done) {
+        it('should create a new instance', {timeout: 500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
