@@ -4,6 +4,7 @@ var MongoUser = require('models/mongo/user');
 var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
 var generateKey = require('./key-factory');
+var EventEmitter = require('events').EventEmitter;
 var noop = function () {};
 
 module.exports = {
@@ -196,6 +197,7 @@ module.exports = {
 
   buildTheBuild: function (user, build, ownerId, cb) {
     require('nock').cleanAll();
+    var dispatch = new EventEmitter();
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -209,14 +211,18 @@ module.exports = {
     build.fetch(function (err) {
       if (err) { return cb(err); }
       build.contextVersions.models[0].fetch(function (err, cv) {
+        console.log('hey123')
         if (err) { return cb(err); }
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
         build.build({ message: uuid() }, function (err) {
+          console.log('hey1234')
+          dispatch.emit('started', err);
           if (err) {
             cb = noop;
             cb(err);
           }
           tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
+            console.log('hey1235', err)
             if (err) { return cb(err); }
             require('./mocks/github/user')(user);
             build.fetch(function (err) {
@@ -226,6 +232,7 @@ module.exports = {
         });
       });
     });
+    return dispatch;
   },
 
   tailInstance: function (user, instance, ownerId, cb) {
