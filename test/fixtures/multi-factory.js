@@ -228,6 +228,31 @@ module.exports = {
     });
   },
 
+  tailInstance: function (user, instance, ownerId, cb) {
+    if (typeof ownerId === 'function') {
+      cb = ownerId;
+      ownerId = null;
+    }
+    var myTimer = setInterval(function () {
+      require('./mocks/github/user')(user);
+      if (ownerId) {
+        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+      }
+      if (!instance.attrs.containers.length) {
+        require('./mocks/github/user')(user);
+        instance = user.fetchInstance(instance.id(), function (err) {
+          if (err) {
+            cb(err);
+          }
+        });
+      } else {
+        clearInterval(myTimer);
+        cb(null, instance );
+      }
+    }, 200);
+  },
+
   createContextPath: function (user, contextId) {
     return user
       .newContext(contextId);

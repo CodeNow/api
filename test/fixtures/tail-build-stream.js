@@ -1,5 +1,5 @@
 var Primus = require('primus');
-var PrimusClient = Primus.createSocket({
+var primusClient = Primus.createSocket({
   transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
     'substream': require('substream')
@@ -10,7 +10,8 @@ var PrimusClient = Primus.createSocket({
 module.exports = tailBuildStream;
 
 function tailBuildStream (contextVersionId, cb) {
-  var client = new PrimusClient(
+  require('./mocks/docker/container-id-attach')();
+  var client = new primusClient(
     'http://localhost:' +
     process.env.PORT);
   // create substream for build logs

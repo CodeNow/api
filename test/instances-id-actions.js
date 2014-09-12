@@ -131,13 +131,13 @@ describe('Instance - /instances/:id/actions', function () {
   });
 
   /**
-   * This tests the fork instance route.  Since this route uses the existing copyBuild and create
+   * This tests the copy instance route.  Since this route uses the existing copyBuild and create
    * instance routes, we don't have to test too much of their logic.  Basic copying logic should
    * be tested here
    */
-  describe('FORK', function () {
+  describe('Copy', function () {
     describe('owner', function () {
-      it('should fork the instance, and give it the same build', function (done) {
+      it('should copy the instance, and give it the same build', function (done) {
         var expected = {
           shortHash: exists,
           name: exists,
@@ -148,7 +148,7 @@ describe('Instance - /instances/:id/actions', function () {
           'build': ctx.build.id(),
           containers: exists
         };
-        ctx.instance.fork(expects.success(201, expected, done));
+        ctx.instance.copy(expects.success(201, expected, done));
       });
     });
 
@@ -162,7 +162,7 @@ describe('Instance - /instances/:id/actions', function () {
           done();
         });
       });
-      it('should fork the instance when part of org', function (done) {
+      it('should copy the instance when part of org', function (done) {
         var expected = {
           shortHash: exists,
           name: exists,
@@ -175,7 +175,7 @@ describe('Instance - /instances/:id/actions', function () {
         };
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-        ctx.user.forkInstance(ctx.instance.id(), expects.success(201, expected, done));
+        ctx.user.copyInstance(ctx.instance.id(), expects.success(201, expected, done));
       });
       describe('Same org, different user', function () {
         beforeEach(function (done) {
@@ -185,9 +185,9 @@ describe('Instance - /instances/:id/actions', function () {
         beforeEach(function (done) {
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-          ctx.otherInstance = ctx.user.forkInstance(ctx.instance.id(), done);
+          ctx.otherInstance = ctx.user.copyInstance(ctx.instance.id(), done);
         });
-        it('should fork the instance when part of the same org as the owner', function (done) {
+        it('should copy the instance when part of the same org as the owner', function (done) {
           var expected = {
             shortHash: exists,
             name: exists,
@@ -200,7 +200,7 @@ describe('Instance - /instances/:id/actions', function () {
           };
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-          ctx.nonOwner.forkInstance(ctx.otherInstance.id(), expects.success(201, expected, done));
+          ctx.nonOwner.copyInstance(ctx.otherInstance.id(), expects.success(201, expected, done));
         });
       });
     });
@@ -209,15 +209,15 @@ describe('Instance - /instances/:id/actions', function () {
         require('./fixtures/mocks/github/user-orgs')(100, 'otherOrg');
         ctx.nonOwner = multi.createUser(done);
       });
-      it('should not fork a private instance', function (done) {
+      it('should not copy a private instance', function (done) {
         var instance = ctx.nonOwner.newInstance(ctx.instance.id());
-        instance.fork(expects.errorStatus(403, done));
+        instance.copy(expects.errorStatus(403, done));
       });
       describe('public instance', function () {
         beforeEach(function (done) {
           ctx.instance.update({ json: { public: true } }, done);
         });
-        it('should fork a public instance', function (done) {
+        it('should copy a public instance', function (done) {
           var expected = {
             shortHash: exists,
             name: exists,
@@ -228,7 +228,7 @@ describe('Instance - /instances/:id/actions', function () {
             'build': ctx.build.id(),
             containers: exists
           };
-          ctx.instance.fork(expects.success(201, expected, done));
+          ctx.instance.copy(expects.success(201, expected, done));
         });
       });
     });
