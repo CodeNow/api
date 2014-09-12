@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 test/builds.js
 test/builds-id.js
 test/builds-id-actions-build.js
@@ -12,6 +11,4 @@ test/instances.js
 test/instances-id.js
 test/instances-id-actions.js
 test/bdd-context-version-deduping.js
-=======
 test/bdd-fork-instance.js
->>>>>>> Stashed changes
