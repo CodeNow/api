@@ -63,7 +63,12 @@ describe('Instances - /instances', function () {
             'createdBy.github': ctx.user.attrs.accounts.github.id,
             build: ctx.build.id(),
             name: exists,
-            'owner.github': ctx.user.attrs.accounts.github.id
+            'owner.github': ctx.user.attrs.accounts.github.id,
+            contextVersionAppCodes: exists,
+            'contextVersionAppCodes[0].contextVersion': ctx.cv.id(),
+            'contextVersionAppCodes[0].appCodeVersions': exists,
+            'contextVersionAppCodes[0].appCodeVersions[0].repo':
+              ctx.cv.appCodeVersions.toJSON()[0].repo
           };
           require('./fixtures/mocks/docker/container-id-attach')();
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);

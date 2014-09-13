@@ -31,11 +31,15 @@ describe('Instance - /instances/:id', function () {
   describe('ORG INSTANCES', function () {
     beforeEach(function (done) {
       ctx.orgId = 1001;
-      multi.createInstance(ctx.orgId, function (err, instance, build, user) {
+      multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
+        //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
         if (err) { return done(err); }
         ctx.instance = instance;
         ctx.build = build;
         ctx.user = user;
+        ctx.cv = mdlArray[0];
+        ctx.context = mdlArray[1];
+        ctx.srcArray = srcArray;
         done();
       });
     });
@@ -52,12 +56,15 @@ describe('Instance - /instances/:id', function () {
   });
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user) {
+    multi.createInstance(function (err, instance, build, user, mdlArray, srcArray) {
+      //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
       if (err) { return done(err); }
       ctx.instance = instance;
       ctx.build = build;
       ctx.user = user;
-      require('./fixtures/mocks/github/user')(ctx.user);
+      ctx.cv = mdlArray[0];
+      ctx.context = mdlArray[1];
+      ctx.srcArray = srcArray;
       done();
     });
   });
@@ -175,12 +182,16 @@ describe('Instance - /instances/:id', function () {
       });
       describe('starting build', function () {
         beforeEach(function (done) {
-          Build.findById(ctx.otherBuild.id(), function (err, build) {
-            build.setInProgress(ctx.user, function (err) {
-              if (err) { done(err); }
-              ctx.otherBuild.fetch(done);
+          multi.addContextVersionToBuild(ctx.user, ctx.otherBuild, ctx.context, ctx.srcArray,
+            function(err, contextVersion) {
+              ctx.otherCv = contextVersion;
+              Build.findById(ctx.otherBuild.id(), function (err, build) {
+                build.setInProgress(ctx.user, function (err) {
+                  if (err) { done(err); }
+                  ctx.otherBuild.fetch(done);
+                });
+              });
             });
-          });
         });
         it('should allow a build that has started ', function (done) {
           var expected = {
@@ -188,6 +199,20 @@ describe('Instance - /instances/:id', function () {
             // still see them running
             'containers[0].inspect.State.Running': true,
             build: ctx.otherBuild.json()
+          };
+          ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
+        });
+        it('should copy the context version app codes during the patch ', function (done) {
+          var expected = {
+            // Since the containers are not removed until the otherBuild has finished, we should
+            // still see them running
+            'containers[0].inspect.State.Running': true,
+            build: ctx.otherBuild.json(),
+            contextVersionAppCodes: exists,
+            'contextVersionAppCodes[0].contextVersion': ctx.otherCv.id(),
+            'contextVersionAppCodes[0].appCodeVersions': exists,
+            'contextVersionAppCodes[0].appCodeVersions[0].repo':
+              ctx.otherCv.appCodeVersions.toJSON()[0].repo
           };
           ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
         });

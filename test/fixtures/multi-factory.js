@@ -24,6 +24,32 @@ module.exports = {
     });
     return user;
   },
+  fetchUserWithGithubId: function (githubId, cb) {
+    var host = require('./host');
+    var token = uuid();
+    require('./mocks/github/action-auth')(token);
+    var User = require('runnable');
+    var user = new User(host);
+    require('models/mongo/user').findOne({'accounts.github.id':githubId}, function (err, mongoUser) {
+      if (err) {
+        return cb(err);
+      }
+      else if (!user) {
+        return cb(new Error('User not found with github id '+githubId));
+      }
+      require('./mocks/github/action-auth')(mongoUser.accounts.github.accessToken);
+      user.githubLogin(mongoUser.accounts.github.accessToken, function (err) {
+        if (err) {
+          return cb(err);
+        }
+        else {
+          user.attrs.accounts.github.accessToken = token;
+          cb(null, user);
+        }
+      });
+    });
+    return user;
+  },
   createModerator: function (cb) {
     return this.createUser(function (err, user) {
       if (err) { return cb(err); }
@@ -138,6 +164,59 @@ module.exports = {
                 cb(err, contextVersion, context, build, user,
                   [srcContextVersion, srcContext, moderator]);
               });
+            });
+          });
+        });
+      });
+    });
+  },
+  addContextVersionToBuild: function (user, build, context, others, cb) {
+    var srcContextVersion = others[0];
+    var srcContext = others[1];
+    var moderator = others[2];
+    require('./mocks/s3/put-object')(context.id(), '/');
+    var opts = {};
+    opts.qs = {
+      toBuild: build.id()
+    };
+    var contextVersion = context.createVersion(opts, function (err) {
+      if (err) {
+        return cb(err);
+      }
+      require('./mocks/s3/get-object')(srcContext.id(), '/');
+      require('./mocks/s3/get-object')(srcContext.id(), '/Dockerfile');
+      require('./mocks/s3/put-object')(context.id(), '/');
+      require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
+      contextVersion.copyFilesFromSource(srcContextVersion.json().infraCodeVersion, function (err) {
+        if (err) {
+          return cb(err);
+        }
+        generateKey(function (err) {
+          if (err) {
+            return cb(err);
+          }
+          var ghUser = user.json().accounts.github.username;
+          var ghRepo = 'flaming-octo-nemesis';
+          var repo = ghUser + '/' + ghRepo;
+          require('./mocks/github/repos-username-repo')(user, ghRepo);
+          require('./mocks/github/repos-hooks-get')(ghUser, ghRepo);
+          require('./mocks/github/repos-hooks-post')(ghUser, ghRepo);
+          require('./mocks/github/repos-keys-get')(ghUser, ghRepo);
+          require('./mocks/github/repos-keys-post')(ghUser, ghRepo);
+          require('./mocks/s3/put-object')('/runnable.deploykeys.test/' + ghUser + '/' + ghRepo + '.key.pub');
+          require('./mocks/s3/put-object')('/runnable.deploykeys.test/' + ghUser + '/' + ghRepo + '.key');
+          var repoData = {
+            repo: repo,
+            branch: 'master',
+            commit: '065470f6949b0b6f0f0f78f4ee2b0e7a3dc715ac'
+          };
+          contextVersion.addGithubRepo({json: repoData}, function (err) {
+            if (err) {
+              return cb(err);
+            }
+            contextVersion.fetch(function (err) {
+              cb(err, contextVersion, context, build, user,
+                [srcContextVersion, srcContext, moderator]);
             });
           });
         });
