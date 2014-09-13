@@ -43,6 +43,7 @@ describe('Instance - /instances/:id/actions', function () {
       var expected = ctx.instance.json();
       // FIXME: add some better checks here like State.StartedAt
       delete expected.containers;
+      delete expected.contextVersionAppCodes[0].appCodeVersions;
       delete expected.__v;
       expected['containers[0].startedBy.github'] = exists;
       ctx.instance.start(expects.success(200, expected, done));
@@ -83,6 +84,7 @@ describe('Instance - /instances/:id/actions', function () {
     it('should stop all containers', function (done) {
       var expected = ctx.instance.json();
       // FIXME: add some better checks here like State.FinishedAt
+      delete expected.contextVersionAppCodes[0].appCodeVersions;
       delete expected.containers;
       delete expected.__v;
       expected['containers[0].stoppedBy.github'] = exists;
