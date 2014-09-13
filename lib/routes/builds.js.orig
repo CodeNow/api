@@ -279,6 +279,7 @@ app.post('/:id/actions/build',
     mw.req('build.successful').require().then(
       // After the build is completed, redeploy all instances with this build
       instances.findByBuild('build'),
+<<<<<<< HEAD
       mw.req('instances').each(
         function (item, req, eachReq, res, next) {
           eachReq.instance = item;
@@ -287,6 +288,11 @@ app.post('/:id/actions/build',
         runnable.create({}, 'sessionUser'),
         runnable.model.redeployInstance('instance'))
       )
+=======
+      runnable.create({}, 'sessionUser'),
+      runnable.model.redeployInstances('instances'),
+      stop)
+>>>>>>> master
   )
 );
 
