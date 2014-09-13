@@ -182,16 +182,12 @@ describe('Instance - /instances/:id', function () {
       });
       describe('starting build', function () {
         beforeEach(function (done) {
-          multi.addContextVersionToBuild(ctx.user, ctx.otherBuild, ctx.context, ctx.srcArray,
-            function(err, contextVersion) {
-              ctx.otherCv = contextVersion;
-              Build.findById(ctx.otherBuild.id(), function (err, build) {
-                build.setInProgress(ctx.user, function (err) {
-                  if (err) { done(err); }
-                  ctx.otherBuild.fetch(done);
-                });
-              });
+          Build.findById(ctx.otherBuild.id(), function (err, build) {
+            build.setInProgress(ctx.user, function (err) {
+              if (err) { done(err); }
+              ctx.otherBuild.fetch(done);
             });
+          });
         });
         it('should allow a build that has started ', function (done) {
           var expected = {
@@ -202,20 +198,32 @@ describe('Instance - /instances/:id', function () {
           };
           ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
         });
-        it('should copy the context version app codes during the patch ', function (done) {
-          var expected = {
-            // Since the containers are not removed until the otherBuild has finished, we should
-            // still see them running
-            'containers[0].inspect.State.Running': true,
-            build: ctx.otherBuild.json(),
-            contextVersionAppCodes: exists,
-            'contextVersionAppCodes[0].contextVersion': ctx.otherCv.id(),
-            'contextVersionAppCodes[0].appCodeVersions': exists,
-            'contextVersionAppCodes[0].appCodeVersions[0].repo':
-              ctx.otherCv.appCodeVersions.toJSON()[0].repo
-          };
-          ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
+      });
+    });
+    describe('Testing appcode copying during patch', function () {
+      beforeEach(function(done) {
+        // We need to deploy the container first before each test.
+        multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build, user,
+                                                                            mdlArray) {
+          if (err) { done(err); }
+          ctx.otherCv = mdlArray[0];
+          ctx.otherBuild = build;
+          done();
         });
+      });
+      it('should copy the context version app codes during the patch ', function (done) {
+        var expected = {
+          // Since the containers are not removed until the otherBuild has finished, we should
+          // still see them running
+          'containers[0].inspect.State.Running': true,
+          build: ctx.otherBuild.json(),
+          contextVersionAppCodes: exists,
+          'contextVersionAppCodes[0].contextVersion': ctx.otherCv.id(),
+          'contextVersionAppCodes[0].appCodeVersions': exists,
+          'contextVersionAppCodes[0].appCodeVersions[0].repo':
+            ctx.otherCv.appCodeVersions.toJSON()[0].repo
+        };
+        ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
       });
     });
     describe('Testing all patching possibilities', function () {
