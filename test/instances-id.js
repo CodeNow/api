@@ -54,8 +54,9 @@ describe('Instance - /instances/:id', function () {
   });
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user) {
+    multi.createInstance(function (err, instance, build, user, modelsArr) {
       if (err) { return done(err); }
+      ctx.context = modelsArr[1];
       ctx.instance = instance;
       ctx.build = build;
       ctx.user = user;
@@ -190,7 +191,7 @@ describe('Instance - /instances/:id', function () {
           ctx.instance.update({json: update}, expects.success(200, expected, done));
         });
       });
-      describe('WITH changes in appcodeversion and infracodeversion', function () {
+      describe('WITH changes in appcodeversion', function () {
         beforeEach(function (done) {
           require('./fixtures/mocks/docker/container-id-attach')();
           var tailBuildStream = require('./fixtures/tail-build-stream');
@@ -205,6 +206,72 @@ describe('Instance - /instances/:id', function () {
                 branch: uuid()
               }, done);
             },
+            ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
+            tailBuildStream.bind(null, ctx.newBuild.contextVersions.models[0].id())
+          ], done);
+        });
+        it('should deploy the copied (and modified) build', function (done) {
+          var update = {
+            build: ctx.newBuild.id().toString()
+          };
+          var expected = {
+            _id: ctx.instance.json()._id,
+            shortHash: ctx.instance.id(),
+            'build._id': ctx.newBuild.id(),
+            // this represents a new docker container! :)
+            'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
+          };
+          ctx.instance.update({json: update}, expects.success(200, expected, done));
+        });
+      });
+      describe('WITH changes in infracodeversion', function () {
+        beforeEach(function (done) {
+          require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
+          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+          require('./fixtures/mocks/docker/container-id-attach')();
+          var tailBuildStream = require('./fixtures/tail-build-stream');
+          ctx.newCV = ctx.user
+            .newContext(ctx.newBuild.contexts.models[0].id())
+            .newVersion(ctx.newBuild.contextVersions.models[0].id());
+          async.series([
+            ctx.newCV.fetch.bind(ctx.newCV),
+            ctx.newCV.rootDir.contents.createFile.bind(ctx.newCV.rootDir.contents, 'file.txt'),
+            ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
+            tailBuildStream.bind(null, ctx.newBuild.contextVersions.models[0].id())
+          ], done);
+        });
+        it('should deploy the copied (and modified) build', function (done) {
+          var update = {
+            build: ctx.newBuild.id().toString()
+          };
+          var expected = {
+            _id: ctx.instance.json()._id,
+            shortHash: ctx.instance.id(),
+            'build._id': ctx.newBuild.id(),
+            // this represents a new docker container! :)
+            'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
+          };
+          ctx.instance.update({json: update}, expects.success(200, expected, done));
+        });
+      });
+      describe('WITH changes in infracodeversion AND appcodeversion', function () {
+        beforeEach(function (done) {
+          require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
+          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+          require('./fixtures/mocks/docker/container-id-attach')();
+          var tailBuildStream = require('./fixtures/tail-build-stream');
+          ctx.newCV = ctx.user
+            .newContext(ctx.newBuild.contexts.models[0].id())
+            .newVersion(ctx.newBuild.contextVersions.models[0].id());
+          async.series([
+            ctx.newCV.fetch.bind(ctx.newCV),
+            function (done) {
+              // this has to be it's own function since models[0] doesn't exist when the series is created
+              ctx.newCV.appCodeVersions.models[0].update({
+                branch: uuid()
+              }, done);
+            },
+            ctx.newCV.rootDir.contents.createFile.bind(ctx.newCV.rootDir.contents, 'file.txt'),
             ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
             tailBuildStream.bind(null, ctx.newBuild.contextVersions.models[0].id())
           ], done);
