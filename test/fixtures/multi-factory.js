@@ -5,7 +5,7 @@ var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
 var generateKey = require('./key-factory');
 var EventEmitter = require('events').EventEmitter;
-var noop = function () {};
+var noop = require('101/noop');
 
 module.exports = {
   createUser: function (cb) {
@@ -219,12 +219,15 @@ module.exports = {
             cb = noop;
             cb(err);
           }
-          tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
-            if (err) { return cb(err); }
-            require('./mocks/github/user')(user);
-            build.fetch(function (err) {
-              cb(err);
-            }); // get completed build
+          require('./mocks/github/user')(user);
+          build.contextVersions.models[0].fetch(function (err, data) {
+            tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
+              if (err) { return cb(err); }
+              require('./mocks/github/user')(user);
+              build.fetch(function (err) {
+                cb(err);
+              }); // get completed build
+            });
           });
         });
       });
@@ -237,25 +240,25 @@ module.exports = {
       cb = ownerId;
       ownerId = null;
     }
-    var myTimer = setInterval(function () {
-      require('./mocks/github/user')(user);
-      if (ownerId) {
-        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
-        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
-      }
-      if (!instance.attrs.containers || !instance.attrs.containers.length ||
-        !instance.attrs.containers[0].inspect) {
-        require('./mocks/github/user')(user);
-        instance = user.fetchInstance(instance.id(), function (err) {
-          if (err) {
-            cb(err);
-          }
-        });
-      } else {
-        clearInterval(myTimer);
-        cb(null, instance );
-      }
-    }, 200);
+    fetchInstanceAndCheckContainers();
+    function fetchInstanceAndCheckContainers () {
+      instance.fetch(function (err) {
+        if (err) {
+          cb(err);
+        }
+        else if (
+          !instance.attrs.containers.length &&
+          !instance.attrs.containers[0].inspect
+        ) {
+          setTimeout(function () {
+            fetchInstanceAndCheckContainers();
+          }, 50);
+        }
+        else {
+          cb();
+        }
+      });
+    }
   },
 
   createContextPath: function (user, contextId) {
