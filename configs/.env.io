@@ -1,4 +1,4 @@
-MONGO="mongodb://10.0.1.166:27017/runnable2"
+MONGO=mongodb://10.0.1.166:27017/alpha
 REDIS_IPADDRESS="10.0.1.79"
 REDIS_PORT="6379"
 PORT=3000
@@ -19,4 +19,4 @@ GITHUB_DEPLOY_KEYS_BUCKET="runnable.context.resources.io"
 KRAIN_PORT=3100
 FILIBUSTER_PORT=3112
 CONTAINER_STOP_LIMIT=10
-MAVIS_HOST="http://mavis.runnable.io"
+MAVIS_HOST="http://mavis.runnable.io:80"
