@@ -242,12 +242,19 @@ module.exports = {
     }
     fetchInstanceAndCheckContainers();
     function fetchInstanceAndCheckContainers () {
+      if (ownerId) {
+        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+      }
+      else {
+        require('./mocks/github/user')(user);
+      }
       instance.fetch(function (err) {
         if (err) {
           cb(err);
         }
         else if (
-          !instance.attrs.containers.length &&
+          !instance.attrs.containers.length ||
           !instance.attrs.containers[0].inspect
         ) {
           setTimeout(function () {
@@ -255,7 +262,7 @@ module.exports = {
           }, 50);
         }
         else {
-          cb();
+          cb(null, instance);
         }
       });
     }

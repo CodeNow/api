@@ -94,7 +94,8 @@ describe('Instances - /instances', function () {
               if (err) {
                 done(err);
               }
-              multi.tailInstance(ctx.user, instance, function(err, instance) {
+              multi.tailInstance(ctx.user, instance, function (err) {
+                if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.be.okay;
                 done();
               });
