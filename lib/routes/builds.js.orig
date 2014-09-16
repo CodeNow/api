@@ -26,7 +26,6 @@ var docker = require('middlewares/apis').docker;
 var error = require('error');
 var createCount = require('callback-count');
 var pluck = require('101/pluck');
-var noop = require('101/noop');
 
 var findBuild = flow.series(
   mw.params('id').require().validate(validations.isObjectId),
@@ -228,12 +227,31 @@ app.post('/:id/actions/build',
             .then(
               mw.req('contextVersion.build.error').require()
                 .then(
+<<<<<<< HEAD
                   builds.model.pushErroredContextVersion('contextVersion._id')))
             .else(
+             function (eachReq, res, next) {
+               var contextVersionId = eachReq.contextVersion._id.toString();
+               tailBuildStream(contextVersionId, function (err) {
+                 if (err) {
+                   eachReq.build.pushErroredContextVersion(contextVersionId,
+                     logIfErrAndNext(next));
+                 }
+                 next();
+               });
+             })
+            )
+        .else(
+=======
+                  // If the context version has errored out, then push it to the
+                  // Errored list
+                  builds.model.pushErroredContextVersion('contextVersion._id'))
+            ).else(
               // If it hasn't completed, then we should poll mongo until we see it finish
               pollMongo('contextVersion', contextVersions, 'build.completed', 'build.error',
-                noop, builds.model.pushErroredContextVersion('contextVersion._id'))))
-        .else(
+                stop,builds.model.pushErroredContextVersion('contextVersion._id')))
+        ).else(
+>>>>>>> master
           contextVersions.model.setBuildStarted('sessionUser', 'mavisResult', 'body'),
           docker.create('mavisResult'),
           contextVersions.model.populate('infraCodeVersion'),
@@ -264,12 +282,16 @@ app.post('/:id/actions/build',
           logIfErrAndNext(count.next.bind(count)));
       },
       checkToRespond
-    )),
+    ),
     builds.model.setCompleted(),
     builds.findById('build.id'),
     mw.req('build.successful').validate(validations.equals(true)).then(
       // After the build is completed, redeploy all instances with this build
+<<<<<<< HEAD
       instances.findUndeployedByBuild('build'),
+=======
+      instances.findByBuild('build'),
+>>>>>>> master
       mw.req('instances').each(
         function (item, req, eachReq, res, next) {
           eachReq.instance = item;
@@ -278,6 +300,10 @@ app.post('/:id/actions/build',
         runnable.create({}, 'sessionUser'),
         runnable.model.redeployInstance('instance')
       )
+<<<<<<< HEAD
+=======
+    )
+>>>>>>> master
   )
 );
 /*jshint maxparams: 6 */

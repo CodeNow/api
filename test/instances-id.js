@@ -170,12 +170,7 @@ describe('Instance - /instances/:id', function () {
       });
       describe('without changes in appcodeversion and infracodeversion', function () {
         beforeEach(function (done) {
-          require('./fixtures/mocks/docker/container-id-attach')();
-          var tailBuildStream = require('./fixtures/tail-build-stream');
-          async.series([
-            ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
-            tailBuildStream.bind(null, ctx.newBuild.contextVersions.models[0].id())
-          ], done);
+          multi.buildTheBuild(ctx.user, ctx.newBuild, done);
         });
         it('should deploy the copied build', function (done) {
           var update = {
