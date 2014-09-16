@@ -224,12 +224,12 @@ app.post('/:id/actions/build',
       // then it will try to end an unstarted contextVersion
       mw.req('contextVersion.build.started').require()
         .then(
-          checkToRespond,
           mw.req('contextVersion.build.completed').require()
             .then(
               mw.req('contextVersion.build.error').require()
                 .then(
-                  builds.model.pushErroredContextVersion('contextVersion._id')))
+                  builds.model.pushErroredContextVersion('contextVersion._id')),
+              checkToRespond)
             .else(
              function (eachReq, res, next) {
                var contextVersionId = eachReq.contextVersion._id.toString();
@@ -278,7 +278,8 @@ app.post('/:id/actions/build',
     builds.findById('build.id'),
     mw.req('build.successful').require().then(
       // After the build is completed, redeploy all instances with this build
-      instances.findUndeployedByBuild('build'),
+      instances.findByBuild('build'),
+<<<<<<< HEAD
       mw.req('instances').each(
         function (item, req, eachReq, res, next) {
           eachReq.instance = item;
@@ -287,6 +288,11 @@ app.post('/:id/actions/build',
         runnable.create({}, 'sessionUser'),
         runnable.model.redeployInstance('instance'))
       )
+=======
+      runnable.create({}, 'sessionUser'),
+      runnable.model.redeployInstances('instances'),
+      stop)
+>>>>>>> master
   )
 );
 
@@ -304,7 +310,7 @@ function checkToRespond (eachReq, res, next) {
   req.attachCount++;
   if (req.attachCount === req.contextVersions.length) {
     req.responseSent = true;
-    res.json(201, eachReq.build);
+    res.json(201, req.build);
   }
   next();
 }
