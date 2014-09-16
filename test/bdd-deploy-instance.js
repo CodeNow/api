@@ -181,7 +181,9 @@ describe('BDD Create Build and Deploy Instance', function () {
         });
       });
       describe('change branch', function() {
-        it('should deploy an instance with new context versions (with same docker image)', { timeout: 5000 }, function (done) {
+        it('should deploy an instance with new context versions (with same docker image)',
+          { timeout: 5000 }, function (done) {
+
           async.waterfall([
             createVersion,
             addAppCodeVersions,
@@ -230,9 +232,12 @@ describe('BDD Create Build and Deploy Instance', function () {
             dispatch.on('started', function () {
               expect(newBuild.attrs.contexts).to.eql(ctx.build.attrs.contexts);
               expect(newBuild.attrs.contextVersions).to.not.eql(ctx.build.attrs.contextVersions);
-              updateInstanceWithBuild(newBuild, function (err) {
-                count2.next(err);
-              });
+              expectVersionBuildsToBeEql(ctx.user, newBuild, ctx.build, function (err) {
+                  if (err) { return count2.next(err); }
+                  updateInstanceWithBuild(newBuild, function (err) {
+                    count2.next(err);
+                  });
+                });
             });
           }
           function updateInstanceWithBuild (newBuild, cb) {
@@ -247,6 +252,19 @@ describe('BDD Create Build and Deploy Instance', function () {
           }
         });
       });
+      function expectVersionBuildsToBeEql (user, build1, build2, cb) {
+        var cV1 = build1.contextVersions.models[0];
+        var cV2 = build2.contextVersions.models[0];
+        var count = createCount(2, function (err) {
+          if (err) { return cb(err); }
+          expect(cV1.attrs.build).to.eql(cV2.attrs.build);
+          cb();
+        });
+        require('./fixtures/mocks/github/user')(user);
+        require('./fixtures/mocks/github/user')(user);
+        cV1.fetch(count.next);
+        cV2.fetch(count.next);
+      }
     });
     describe('edit dockerfile (infraCodeVersion)', function() {
       it('should deploy an instance with new context versions', { timeout: 5000 }, function (done) {
