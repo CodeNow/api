@@ -71,6 +71,7 @@ describe('Instances - /instances', function () {
             if (err) {
               done(err);
             }
+            require('./fixtures/mocks/github/user')(ctx.user);
             var instance = ctx.user.createInstance({ json: json },
              expects.success(201, expected, function(err) {
                if (err) {
