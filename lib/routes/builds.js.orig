@@ -6,6 +6,7 @@ var express = require('express');
 var app = module.exports = express();
 var mw = require('dat-middleware');
 var flow = require('middleware-flow');
+var keypather = require('keypather')();
 var validations = require('middlewares/validations');
 var transformations = require('middlewares/transformations');
 // var apiMiddlewares = require('middlewares/apis');
@@ -18,16 +19,13 @@ var me = require('middlewares/me');
 var checkFound = require('middlewares/check-found');
 var not = require('101/not');
 var hasProps = require('101/has-properties');
-var tailBuildStream = require('../../test/fixtures/tail-build-stream');
 var Boom = mw.Boom;
 var runnable = require('middlewares/apis').runnable;
 var mavis = require('middlewares/apis').mavis;
 var docker = require('middlewares/apis').docker;
 var error = require('error');
 var createCount = require('callback-count');
-var runnable = require('middlewares/apis').runnable;
 var pluck = require('101/pluck');
-var stop = require('101/noop');
 
 var findBuild = flow.series(
   mw.params('id').require().validate(validations.isObjectId),
@@ -224,12 +222,13 @@ app.post('/:id/actions/build',
       // then it will try to end an unstarted contextVersion
       mw.req('contextVersion.build.started').require()
         .then(
+          checkToRespond,
           mw.req('contextVersion.build.completed').require()
             .then(
               mw.req('contextVersion.build.error').require()
                 .then(
-                  builds.model.pushErroredContextVersion('contextVersion._id')),
-              checkToRespond)
+<<<<<<< HEAD
+                  builds.model.pushErroredContextVersion('contextVersion._id')))
             .else(
              function (eachReq, res, next) {
                var contextVersionId = eachReq.contextVersion._id.toString();
@@ -243,6 +242,16 @@ app.post('/:id/actions/build',
              })
             )
         .else(
+=======
+                  // If the context version has errored out, then push it to the
+                  // Errored list
+                  builds.model.pushErroredContextVersion('contextVersion._id'))
+            ).else(
+              // If it hasn't completed, then we should poll mongo until we see it finish
+              pollMongo('contextVersion', contextVersions, 'build.completed', 'build.error',
+                stop,builds.model.pushErroredContextVersion('contextVersion._id')))
+        ).else(
+>>>>>>> master
           contextVersions.model.setBuildStarted('sessionUser', 'mavisResult', 'body'),
           docker.create('mavisResult'),
           contextVersions.model.populate('infraCodeVersion'),
@@ -276,26 +285,43 @@ app.post('/:id/actions/build',
     ),
     builds.model.setCompleted(),
     builds.findById('build.id'),
-    mw.req('build.successful').require().then(
+    mw.req('build.successful').validate(validations.equals(true)).then(
       // After the build is completed, redeploy all instances with this build
-      instances.findByBuild('build'),
 <<<<<<< HEAD
+      instances.findUndeployedByBuild('build'),
+=======
+      instances.findByBuild('build'),
+>>>>>>> master
       mw.req('instances').each(
         function (item, req, eachReq, res, next) {
           eachReq.instance = item;
           next();
         },
         runnable.create({}, 'sessionUser'),
-        runnable.model.redeployInstance('instance'))
+        runnable.model.redeployInstance('instance')
       )
+<<<<<<< HEAD
 =======
-      runnable.create({}, 'sessionUser'),
-      runnable.model.redeployInstances('instances'),
-      stop)
+    )
 >>>>>>> master
   )
 );
-
+/*jshint maxparams: 6 */
+function pollMongo(polledModel, database, successKeyPath, failureKeyPath, successCb, failureCb) {
+  setTimeout(function() {
+    database.findOne({_id: polledModel._id}, function(err, model) {
+      if (keypather.get(model, failureKeyPath)) {
+        failureCb(model);
+      } else if (keypather.get(model, successKeyPath)) {
+        successCb(model);
+      } else {
+        setTimeout(pollMongo(polledModel, database, successKeyPath, failureKeyPath, successCb,
+          failureCb), process.env.BUILD_END_TIMEOUT);
+      }
+    });
+  }, process.env.BUILD_END_TIMEOUT);
+}
+/*jshint maxparams: 5 */
 function logIfErrAndNext (next) {
   return function (err) {
     error.logIfErr(err);
@@ -310,7 +336,7 @@ function checkToRespond (eachReq, res, next) {
   req.attachCount++;
   if (req.attachCount === req.contextVersions.length) {
     req.responseSent = true;
-    res.json(201, req.build);
+    res.json(201, eachReq.build);
   }
   next();
 }
