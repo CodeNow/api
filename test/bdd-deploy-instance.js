@@ -11,6 +11,8 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var async = require('async');
+var find = require('101/find');
+var hasKeypaths = require('101/has-keypaths');
 var RedisList = require('redis-types').List;
 require('console-trace')({
   always: true,
@@ -43,7 +45,7 @@ describe('BDD Create Build and Deploy Instance', function () {
     });
   });
   describe('duplicate build', function() {
-    it('should deploy an instance with new, duplicate build', { timeout: 5000 }, function (done) {
+    it('should deploy an instance deduped context versions', { timeout: 5000 }, function (done) {
       async.waterfall([
         createVersion,
         addAppCodeVersions,
@@ -109,71 +111,223 @@ describe('BDD Create Build and Deploy Instance', function () {
       }
     });
   });
-  describe('modified build (appCodeVersions commit)', function() {
-    it('should deploy an instance with new, duplicate build', { timeout: 5000 }, function (done) {
-      async.waterfall([
-        createVersion,
-        addAppCodeVersions,
-        createBuild,
-        buildBuild,
-        tailInstance
-      ], function (err, newBuild) {
-        if (err) { return done(err); }
-        expect(ctx.instance.build._id).to.equal(newBuild._id);
-        expectHipacheHostsForContainers(ctx.instance);
-        done();
-      });
-      function createVersion (cb) {
-        var newVersion = ctx.context.createVersion({
-          infraCodeVersion: ctx.contextVersion.attrs.infraCodeVersion
-        }, function (err) {
-          cb(err, newVersion);
-        });
-      }
-      function addAppCodeVersions (newVersion, cb) {
-        async.each(ctx.contextVersion.appCodeVersions.models, function (appCodeVersion, cb) {
-          var body = pick(appCodeVersion.attrs, ['repo', 'branch', 'commit']);
-          body.commit = body.commit.replace(/f/g, 'e');
-          var username = body.repo.split('/')[0];
-          var repoName = body.repo.split('/')[1];
-          require('./fixtures/mocks/github/repos-username-repo')(ctx.user, repoName);
-          require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, repoName);
-          require('./fixtures/mocks/github/repos-keys-get')(username, repoName, true);
-          newVersion.appCodeVersions.create(body, cb);
-        }, function (err) {
-          cb(err, newVersion);
-        });
-      }
-      function createBuild (newVersion, cb) {
-        var newBuild = ctx.user.createBuild({
-          contextVersions: [ newVersion.id() ]
-        }, function (err) {
-          cb(err, newBuild);
-        });
-      }
-      function buildBuild (newBuild, cb) {
-        var count2 = createCount(2, function (err) {
-          cb(err, newBuild);
-        });
-        var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next);
-        dispatch.on('started', function () {
-          expect(newBuild.attrs.contexts).to.eql(ctx.build.attrs.contexts);
-          expect(newBuild.attrs.contextVersions).to.not.eql(ctx.build.attrs.contextVersions);
-          updateInstanceWithBuild(newBuild, function (err) {
-            count2.next(err);
+  describe('modified build', function() {
+    describe('appCodeVersions', function() {
+      describe('change commit', function() {
+        it('should deploy an instance with new context versions', { timeout: 5000 }, function (done) {
+          async.waterfall([
+            createVersion,
+            addAppCodeVersions,
+            createBuild,
+            buildBuild,
+            tailInstance
+          ], function (err, newBuild) {
+            if (err) { return done(err); }
+            expect(ctx.instance.build._id).to.equal(newBuild._id);
+            expectHipacheHostsForContainers(ctx.instance);
+            done();
           });
+          function createVersion (cb) {
+            var newVersion = ctx.context.createVersion({
+              infraCodeVersion: ctx.contextVersion.attrs.infraCodeVersion
+            }, function (err) {
+              cb(err, newVersion);
+            });
+          }
+          function addAppCodeVersions (newVersion, cb) {
+            async.each(ctx.contextVersion.appCodeVersions.models, function (appCodeVersion, cb) {
+              var body = pick(appCodeVersion.attrs, ['repo', 'branch', 'commit']);
+              body.commit = body.commit.replace(/f/g, 'e');
+              var username = body.repo.split('/')[0];
+              var repoName = body.repo.split('/')[1];
+              require('./fixtures/mocks/github/repos-username-repo')(ctx.user, repoName);
+              require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, repoName);
+              require('./fixtures/mocks/github/repos-keys-get')(username, repoName, true);
+              newVersion.appCodeVersions.create(body, cb);
+            }, function (err) {
+              cb(err, newVersion);
+            });
+          }
+          function createBuild (newVersion, cb) {
+            var newBuild = ctx.user.createBuild({
+              contextVersions: [ newVersion.id() ]
+            }, function (err) {
+              cb(err, newBuild);
+            });
+          }
+          function buildBuild (newBuild, cb) {
+            var count2 = createCount(2, function (err) {
+              cb(err, newBuild);
+            });
+            var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next);
+            dispatch.on('started', function () {
+              expect(newBuild.attrs.contexts).to.eql(ctx.build.attrs.contexts);
+              expect(newBuild.attrs.contextVersions).to.not.eql(ctx.build.attrs.contextVersions);
+              updateInstanceWithBuild(newBuild, function (err) {
+                count2.next(err);
+              });
+            });
+          }
+          function updateInstanceWithBuild (newBuild, cb) {
+            ctx.instance.update({
+              build: newBuild.id()
+            }, cb);
+          }
+          function tailInstance (newBuild, cb) {
+            multi.tailInstance(ctx.user, ctx.instance, function (err) {
+              cb(err, newBuild);
+            });
+          }
         });
-      }
-      function updateInstanceWithBuild (newBuild, cb) {
-        ctx.instance.update({
-          build: newBuild.id()
-        }, cb);
-      }
-      function tailInstance (newBuild, cb) {
-        multi.tailInstance(ctx.user, ctx.instance, function (err) {
-          cb(err, newBuild);
+      });
+      describe('change branch', function() {
+        it('should deploy an instance with new context versions (with same docker image)', { timeout: 5000 }, function (done) {
+          async.waterfall([
+            createVersion,
+            addAppCodeVersions,
+            createBuild,
+            buildBuild,
+            tailInstance
+          ], function (err, newBuild) {
+            if (err) { return done(err); }
+            expect(ctx.instance.build._id).to.equal(newBuild._id);
+            expectHipacheHostsForContainers(ctx.instance);
+            done();
+          });
+          function createVersion (cb) {
+            var newVersion = ctx.context.createVersion({
+              infraCodeVersion: ctx.contextVersion.attrs.infraCodeVersion
+            }, function (err) {
+              cb(err, newVersion);
+            });
+          }
+          function addAppCodeVersions (newVersion, cb) {
+            async.each(ctx.contextVersion.appCodeVersions.models, function (appCodeVersion, cb) {
+              var body = pick(appCodeVersion.attrs, ['repo', 'branch', 'commit']);
+              body.branch = 'otherBranch';
+              var username = body.repo.split('/')[0];
+              var repoName = body.repo.split('/')[1];
+              require('./fixtures/mocks/github/repos-username-repo')(ctx.user, repoName);
+              require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, repoName);
+              require('./fixtures/mocks/github/repos-keys-get')(username, repoName, true);
+              newVersion.appCodeVersions.create(body, cb);
+            }, function (err) {
+              cb(err, newVersion);
+            });
+          }
+          function createBuild (newVersion, cb) {
+            var newBuild = ctx.user.createBuild({
+              contextVersions: [ newVersion.id() ]
+            }, function (err) {
+              cb(err, newBuild);
+            });
+          }
+          function buildBuild (newBuild, cb) {
+            var count2 = createCount(2, function (err) {
+              cb(err, newBuild);
+            });
+            var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next);
+            dispatch.on('started', function () {
+              expect(newBuild.attrs.contexts).to.eql(ctx.build.attrs.contexts);
+              expect(newBuild.attrs.contextVersions).to.not.eql(ctx.build.attrs.contextVersions);
+              updateInstanceWithBuild(newBuild, function (err) {
+                count2.next(err);
+              });
+            });
+          }
+          function updateInstanceWithBuild (newBuild, cb) {
+            ctx.instance.update({
+              build: newBuild.id()
+            }, cb);
+          }
+          function tailInstance (newBuild, cb) {
+            multi.tailInstance(ctx.user, ctx.instance, function (err) {
+              cb(err, newBuild);
+            });
+          }
         });
-      }
+      });
+    });
+    describe('edit dockerfile (infraCodeVersion)', function() {
+      it('should deploy an instance with new context versions', { timeout: 5000 }, function (done) {
+        async.waterfall([
+          createVersion,
+          modifyDockerfile,
+          addAppCodeVersions,
+          createBuild,
+          buildBuild,
+          tailInstance
+        ], function (err, newBuild) {
+          if (err) { return done(err); }
+          expect(ctx.instance.build._id).to.equal(newBuild._id);
+          expectHipacheHostsForContainers(ctx.instance);
+          done();
+        });
+        function createVersion (cb) {
+          var newVersion = ctx.context.createVersion({
+            infraCodeVersion: ctx.contextVersion.attrs.infraCodeVersion
+          }, function (err) {
+            cb(err, newVersion);
+          });
+        }
+        function modifyDockerfile (newVersion, cb) {
+          var contents = newVersion.rootDir.contents;
+          contents.fetch(function (err) {
+            if (err) { return cb(err); }
+            var dockerfile = find(contents.models, hasKeypaths({ 'attrs.name': 'Dockerfile' }));
+            dockerfile.update({
+              json: {
+                body: 'FROM dockerfile/nodejs'
+              }
+            }, function (err) {
+              cb(err, newVersion);
+            });
+          });
+        }
+        function addAppCodeVersions (newVersion, cb) {
+          async.each(ctx.contextVersion.appCodeVersions.models, function (appCodeVersion, cb) {
+            var body = pick(appCodeVersion.attrs, ['repo', 'branch', 'commit']);
+            var username = body.repo.split('/')[0];
+            var repoName = body.repo.split('/')[1];
+            require('./fixtures/mocks/github/repos-username-repo')(ctx.user, repoName);
+            require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, repoName);
+            require('./fixtures/mocks/github/repos-keys-get')(username, repoName, true);
+            newVersion.appCodeVersions.create(body, cb);
+          }, function (err) {
+            cb(err, newVersion);
+          });
+        }
+        function createBuild (newVersion, cb) {
+          var newBuild = ctx.user.createBuild({
+            contextVersions: [ newVersion.id() ]
+          }, function (err) {
+            cb(err, newBuild);
+          });
+        }
+        function buildBuild (newBuild, cb) {
+          var count2 = createCount(2, function (err) {
+            cb(err, newBuild);
+          });
+          var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next);
+          dispatch.on('started', function () {
+            expect(newBuild.attrs.contexts).to.eql(ctx.build.attrs.contexts);
+            expect(newBuild.attrs.contextVersions).to.not.eql(ctx.build.attrs.contextVersions);
+            updateInstanceWithBuild(newBuild, function (err) {
+              count2.next(err);
+            });
+          });
+        }
+        function updateInstanceWithBuild (newBuild, cb) {
+          ctx.instance.update({
+            build: newBuild.id()
+          }, cb);
+        }
+        function tailInstance (newBuild, cb) {
+          multi.tailInstance(ctx.user, ctx.instance, function (err) {
+            cb(err, newBuild);
+          });
+        }
+      });
     });
   });
 });

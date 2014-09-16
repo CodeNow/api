@@ -220,7 +220,8 @@ module.exports = {
             cb(err);
           }
           require('./mocks/github/user')(user);
-          build.contextVersions.models[0].fetch(function (err, data) {
+          build.contextVersions.models[0].fetch(function (err) {
+            if (err) { return cb(err); }
             tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
               if (err) { return cb(err); }
               require('./mocks/github/user')(user);
