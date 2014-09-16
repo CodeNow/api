@@ -151,7 +151,8 @@ describe('Builds - /builds', function () {
       });
       it('should limit the returned list of builds', function (done) {
         var query = {
-          limit: 1
+          limit: 1,
+          sort: 'created'
         };
         var expected = [
           ctx.builtBuild.json()
