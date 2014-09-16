@@ -239,7 +239,8 @@ module.exports = {
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
       }
-      if (!instance.attrs.containers.length) {
+      if (!instance.attrs.containers || !instance.attrs.containers.length ||
+        !instance.attrs.containers[0].inspect) {
         require('./mocks/github/user')(user);
         instance = user.fetchInstance(instance.id(), function (err) {
           if (err) {

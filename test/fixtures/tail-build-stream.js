@@ -9,8 +9,12 @@ var primusClient = Primus.createSocket({
 
 module.exports = tailBuildStream;
 
-function tailBuildStream (contextVersionId, cb) {
-  require('./mocks/docker/container-id-attach')();
+function tailBuildStream (contextVersionId, failure, cb) {
+  if (typeof failure === 'function') {
+    cb = failure;
+    failure = null;
+  }
+  require('./mocks/docker/container-id-attach')(0, failure);
   var client = new primusClient(
     'http://localhost:' +
     process.env.PORT);
@@ -35,7 +39,12 @@ function tailBuildStream (contextVersionId, cb) {
 
   client.on('data', function(msg) {
     if (msg.error) {
-      throw new Error(JSON.stringify(msg));
+      client.end();
+      if (failure) {
+        return cb(null, msg);
+      } else {
+        return cb(new Error(JSON.stringify(msg.error)));
+      }
     }
     if(msg.event === 'BUILD_STREAM_ENDED' &&
       msg.data.id === contextVersionId) {

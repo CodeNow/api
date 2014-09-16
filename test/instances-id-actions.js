@@ -88,6 +88,18 @@ describe('Instance - /instances/:id/actions', function () {
       expected['containers[0].stoppedBy.github'] = exists;
       ctx.instance.stop(expects.success(200, expected, done));
     });
+
+    it('should not stop an already stopped container', function (done) {
+      var expected = ctx.instance.json();
+      // FIXME: add some better checks here like State.FinishedAt
+      delete expected.containers;
+      delete expected.__v;
+      expected['containers[0].stoppedBy.github'] = exists;
+      ctx.instance.stop(expects.success(200, expected, function(err) {
+        if (err) { return done(err); }
+        ctx.instance.stop(expects.success(304, done));
+      }));
+    });
   });
 
   describe('DELETE', function () {
