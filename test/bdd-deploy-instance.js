@@ -14,10 +14,6 @@ var async = require('async');
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
 var RedisList = require('redis-types').List;
-require('console-trace')({
-  always: true,
-  right: true
-});
 
 var createCount = require('callback-count');
 var pick = require('101/pick');
