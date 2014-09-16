@@ -76,6 +76,7 @@ describe('Instances - /instances', function () {
             if (err) {
               done(err);
             }
+            require('./fixtures/mocks/github/user')(ctx.user);
             var instance = ctx.user.createInstance({ json: json },
              expects.success(201, expected, function(err) {
                if (err) {
@@ -98,7 +99,8 @@ describe('Instances - /instances', function () {
               if (err) {
                 done(err);
               }
-              multi.tailInstance(ctx.user, instance, function(err, instance) {
+              multi.tailInstance(ctx.user, instance, function (err) {
+                if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.be.okay;
                 done();
               });

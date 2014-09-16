@@ -4,7 +4,8 @@ var MongoUser = require('models/mongo/user');
 var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
 var generateKey = require('./key-factory');
-var noop = function () {};
+var EventEmitter = require('events').EventEmitter;
+var noop = require('101/noop');
 
 module.exports = {
   createUser: function (cb) {
@@ -196,6 +197,7 @@ module.exports = {
 
   buildTheBuild: function (user, build, ownerId, cb) {
     require('nock').cleanAll();
+    var dispatch = new EventEmitter();
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -212,20 +214,26 @@ module.exports = {
         if (err) { return cb(err); }
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
         build.build({ message: uuid() }, function (err) {
+          dispatch.emit('started', err);
           if (err) {
             cb = noop;
             cb(err);
           }
-          tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
+          require('./mocks/github/user')(user);
+          build.contextVersions.models[0].fetch(function (err) {
             if (err) { return cb(err); }
-            require('./mocks/github/user')(user);
-            build.fetch(function (err) {
-              cb(err);
-            }); // get completed build
+            tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
+              if (err) { return cb(err); }
+              require('./mocks/github/user')(user);
+              build.fetch(function (err) {
+                cb(err);
+              }); // get completed build
+            });
           });
         });
       });
     });
+    return dispatch;
   },
 
   tailInstance: function (user, instance, ownerId, cb) {
@@ -233,24 +241,32 @@ module.exports = {
       cb = ownerId;
       ownerId = null;
     }
-    var myTimer = setInterval(function () {
-      require('./mocks/github/user')(user);
+    fetchInstanceAndCheckContainers();
+    function fetchInstanceAndCheckContainers () {
       if (ownerId) {
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
       }
-      if (!instance.attrs.containers.length) {
+      else {
         require('./mocks/github/user')(user);
-        instance = user.fetchInstance(instance.id(), function (err) {
-          if (err) {
-            cb(err);
-          }
-        });
-      } else {
-        clearInterval(myTimer);
-        cb(null, instance );
       }
-    }, 200);
+      instance.fetch(function (err) {
+        if (err) {
+          cb(err);
+        }
+        else if (
+          !instance.attrs.containers.length ||
+          !instance.attrs.containers[0].inspect
+        ) {
+          setTimeout(function () {
+            fetchInstanceAndCheckContainers();
+          }, 50);
+        }
+        else {
+          cb(null, instance);
+        }
+      });
+    }
   },
 
   createContextPath: function (user, contextId) {
