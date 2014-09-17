@@ -75,7 +75,7 @@ function createFirstSourceContext (cb) {
       async.series([
         icv.initWithDefaults.bind(icv),
         icv.save.bind(icv),
-        icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: 'FROM dockerfile/nodejs\n' }),
+        icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: 'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log\n' }),
       ], function (err) { cb(err, context, icv); });
     },
     newCV,
