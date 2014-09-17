@@ -37,6 +37,7 @@ describe('BDD Create Build and Deploy Instance', function () {
       ctx.user = user;
       ctx.contextVersion = modelsArr[0];
       ctx.context = modelsArr[1];
+      ctx.oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
       done();
     });
   });
@@ -102,6 +103,7 @@ describe('BDD Create Build and Deploy Instance', function () {
       }
       function tailInstance (newBuild, cb) {
         multi.tailInstance(ctx.user, ctx.instance, function (err) {
+          expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(ctx.oldDockerContainer);
           cb(err, newBuild);
         });
       }
@@ -171,6 +173,7 @@ describe('BDD Create Build and Deploy Instance', function () {
           }
           function tailInstance (newBuild, cb) {
             multi.tailInstance(ctx.user, ctx.instance, function (err) {
+              expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(ctx.oldDockerContainer);
               cb(err, newBuild);
             });
           }
@@ -243,6 +246,7 @@ describe('BDD Create Build and Deploy Instance', function () {
           }
           function tailInstance (newBuild, cb) {
             multi.tailInstance(ctx.user, ctx.instance, function (err) {
+              expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(ctx.oldDockerContainer);
               cb(err, newBuild);
             });
           }
@@ -338,6 +342,7 @@ describe('BDD Create Build and Deploy Instance', function () {
         }
         function tailInstance (newBuild, cb) {
           multi.tailInstance(ctx.user, ctx.instance, function (err) {
+            expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(ctx.oldDockerContainer);
             cb(err, newBuild);
           });
         }
