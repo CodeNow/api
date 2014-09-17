@@ -5,6 +5,7 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var expect = Lab.expect;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -189,7 +190,15 @@ describe('Instance - /instances/:id', function () {
             // this represents a new docker container! :)
             'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
           };
-          ctx.instance.update({json: update}, expects.success(200, expected, done));
+          var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
+          ctx.instance.update({json: update}, expects.success(200, expected, function (err) {
+            if (err) { return done(err); }
+            multi.tailInstance(ctx.user, ctx.instance, function (err) {
+              if (err) { return done(err); }
+              expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(oldDockerContainer);
+              done();
+            });
+          }));
         });
       });
       describe('WITH changes in appcodeversion', function () {
