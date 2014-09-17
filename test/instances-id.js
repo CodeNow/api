@@ -308,18 +308,30 @@ describe('Instance - /instances/:id', function () {
         beforeEach(function (done) {
           Build.findById(ctx.otherBuild.id(), function (err, build) {
             build.setInProgress(ctx.user, function (err) {
-              if (err) { done(err); }
+              if (err) {
+                done(err);
+              }
               ctx.otherBuild.fetch(done);
             });
           });
         });
-        it('should allow a build that has started ', function (done) {
-          var expected = {
-            // Since the containers are not removed until the otherBuild has finished, we should
-            // still see them running
-            'containers[0].inspect.State.Running': true,
-            build: ctx.otherBuild.json()
-          };
+        it('should not allow a build that has started, but who\'s CVs have not', function (done) {
+          ctx.instance.update({ build: ctx.otherBuild.id() }, expects.error(400, done));
+        });
+      });
+    });
+    describe('Patching an unbuilt build', function () {
+      beforeEach(function(done) {
+        ctx.otherBuild = ctx.build.deepCopy(done);
+      });
+      it('should allow a build that has everything started', function (done) {
+        var expected = {
+          // Since the containers are not removed until the otherBuild has finished, we should
+          // still see them running
+          'containers[0].inspect.State.Running': true,
+          'build._id': ctx.otherBuild.id()
+        };
+        multi.buildTheBuild(ctx.user, ctx.otherBuild, function () {
           ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
         });
       });

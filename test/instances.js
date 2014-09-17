@@ -17,6 +17,7 @@ var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
 var uuid = require('uuid');
 var createCount = require('callback-count');
+var ContextVersion = require('models/mongo/context-version');
 var Build = require('models/mongo/build');
 
 describe('Instances - /instances', function () {
@@ -106,12 +107,29 @@ describe('Instances - /instances', function () {
           });
         });
       });
+      describe('without a started context version', function () {
+        beforeEach(function (done) {
+          var count = createCount(2, done);
+          Build.findById(ctx.build.id(), function(err, build) {
+            build.setInProgress(ctx.user, count.next);
+            build.update({contextVersion: ctx.cv.id()}, count.next);
+          });
+        });
+        it('should not create a new instance', {timeout: 500}, function(done) {
+          var json = { build: ctx.build.id(), name: uuid() };
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.user.createInstance({ json: json }, expects.error(400, done));
+        });
+      });
       describe('that has failed', function () {
         beforeEach(function (done) {
           var count = createCount(2, done);
           Build.findById(ctx.build.id(), function(err, build) {
             build.setInProgress(ctx.user, count.next);
-            build.pushErroredContextVersion(ctx.cv.id(), count.next);
+            ContextVersion.update({_id: ctx.cv.id()}, {$set: {'build.started': Date.now()}},
+              function () {
+                build.pushErroredContextVersion(ctx.cv.id(), count.next);
+            });
           });
         });
         it('should create a new instance', {timeout: 500}, function(done) {
