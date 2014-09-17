@@ -61,7 +61,6 @@ describe('Instance - /instances/:id', function () {
     multi.createInstance(function (err, instance, build, user, mdlArray, srcArray) {
       //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
       if (err) { return done(err); }
-      ctx.context = modelsArr[1];
       ctx.instance = instance;
       ctx.build = build;
       ctx.user = user;
@@ -342,11 +341,8 @@ describe('Instance - /instances/:id', function () {
           // still see them running
           'containers[0].inspect.State.Running': true,
           build: ctx.otherBuild.json(),
-          contextVersionAppCodes: exists,
-          'contextVersionAppCodes[0].contextVersion': ctx.otherCv.id(),
-          'contextVersionAppCodes[0].appCodeVersions': exists,
-          'contextVersionAppCodes[0].appCodeVersions[0].repo':
-            ctx.otherCv.appCodeVersions.toJSON()[0].repo
+          'contextVersions[0]._id': ctx.otherCv.id(),
+          'contextVersions[0].appCodeVersions[0]': ctx.otherCv.attrs.appCodeVersions[0]
         };
         ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
       });
