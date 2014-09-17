@@ -33,8 +33,8 @@ describe('Versions', function () {
         dockerTag: "adsgasdfgasdf"
       },
       appCodeVersions: [{
-        repo: 'bkendall/flaming-octo-nemisis',
-        lowerRepo: 'bkendall/flaming-octo-nemisis',
+        repo: 'bkendall/flaming-octo-nemisis._',
+        lowerRepo: 'bkendall/flaming-octo-nemisis._',
         branch: 'master',
         commit: 'deadbeef'
       }]
