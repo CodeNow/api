@@ -127,7 +127,8 @@ describe('Instances - /instances', function () {
           Build.findById(ctx.build.id(), function(err, build) {
             build.setInProgress(ctx.user, count.next);
             ContextVersion.update({_id: ctx.cv.id()}, {$set: {'build.started': Date.now()}},
-              function () {
+              function (err) {
+                if (err) { return count.next(err); }
                 build.pushErroredContextVersion(ctx.cv.id(), count.next);
             });
           });
