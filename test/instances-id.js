@@ -33,11 +33,15 @@ describe('Instance - /instances/:id', function () {
   describe('ORG INSTANCES', function () {
     beforeEach(function (done) {
       ctx.orgId = 1001;
-      multi.createInstance(ctx.orgId, function (err, instance, build, user) {
+      multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
+        //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
         if (err) { return done(err); }
         ctx.instance = instance;
         ctx.build = build;
         ctx.user = user;
+        ctx.cv = mdlArray[0];
+        ctx.context = mdlArray[1];
+        ctx.srcArray = srcArray;
         done();
       });
     });
@@ -54,13 +58,15 @@ describe('Instance - /instances/:id', function () {
   });
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user, modelsArr) {
+    multi.createInstance(function (err, instance, build, user, mdlArray, srcArray) {
+      //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
       if (err) { return done(err); }
-      ctx.context = modelsArr[1];
       ctx.instance = instance;
       ctx.build = build;
       ctx.user = user;
-      require('./fixtures/mocks/github/user')(ctx.user);
+      ctx.cv = mdlArray[0];
+      ctx.context = mdlArray[1];
+      ctx.srcArray = srcArray;
       done();
     });
   });
@@ -302,20 +308,55 @@ describe('Instance - /instances/:id', function () {
         beforeEach(function (done) {
           Build.findById(ctx.otherBuild.id(), function (err, build) {
             build.setInProgress(ctx.user, function (err) {
-              if (err) { done(err); }
+              if (err) {
+                done(err);
+              }
               ctx.otherBuild.fetch(done);
             });
           });
         });
-        it('should allow a build that has started ', function (done) {
-          var expected = {
-            // Since the containers are not removed until the otherBuild has finished, we should
-            // still see them running
-            'containers[0].inspect.State.Running': true,
-            build: ctx.otherBuild.json()
-          };
+        it('should not allow a build that has started, but who\'s CVs have not', function (done) {
+          ctx.instance.update({ build: ctx.otherBuild.id() }, expects.error(400, done));
+        });
+      });
+    });
+    describe('Patching an unbuilt build', function () {
+      beforeEach(function(done) {
+        ctx.otherBuild = ctx.build.deepCopy(done);
+      });
+      it('should allow a build that has everything started', function (done) {
+        var expected = {
+          // Since the containers are not removed until the otherBuild has finished, we should
+          // still see them running
+          'containers[0].inspect.State.Running': true,
+          'build._id': ctx.otherBuild.id()
+        };
+        multi.buildTheBuild(ctx.user, ctx.otherBuild, function () {
           ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
         });
+      });
+    });
+    describe('Testing appcode copying during patch', function () {
+      beforeEach(function(done) {
+        // We need to deploy the container first before each test.
+        multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build, user,
+                                                                            mdlArray) {
+          if (err) { done(err); }
+          ctx.otherCv = mdlArray[0];
+          ctx.otherBuild = build;
+          done();
+        });
+      });
+      it('should copy the context version app codes during the patch ', function (done) {
+        var expected = {
+          // Since the containers are not removed until the otherBuild has finished, we should
+          // still see them running
+          'containers[0].inspect.State.Running': true,
+          build: ctx.otherBuild.json(),
+          'contextVersions[0]._id': ctx.otherCv.id(),
+          'contextVersions[0].appCodeVersions[0]': ctx.otherCv.attrs.appCodeVersions[0]
+        };
+        ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
       });
     });
     describe('Testing all patching possibilities', function () {
