@@ -22,9 +22,6 @@ var equals = require('101/equals');
 var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
 var createCount = require('callback-count');
-var async = require('async');
-var hasProps = require('101/has-properties');
-var find = require('101/find');
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -252,7 +249,7 @@ describe('Github', function () {
           expect(body).to.be.okay;
           expect(body).to.be.an('array');
           expect(body).to.have.a.lengthOf(1);
-          // var versionId1 = body[0]._id;
+          var versionId1 = body[0]._id;
           tailBuildStream(body[0]._id, function (err) {
             if (err) { return done(err); }
             require('./fixtures/mocks/github/users-username')(101, 'bkendall');
@@ -265,9 +262,9 @@ describe('Github', function () {
               expect(body).to.be.okay;
               expect(body).to.be.an('array');
               expect(body).to.have.a.lengthOf(1);
-              // var versionId2 = body[0]._id;
-              // FIXME: this should be true. however, there's some bug so this is not true :(
-              // expect(versionId1).to.equal(versionId2);
+              var versionId2 = body[0]._id;
+              // the versions we get back should be the same, because of dedup
+              expect(versionId1).to.equal(versionId2);
               var contextVersion = body[0];
               tailBuildStream(body[0]._id, function (err) {
                 if (err) { return done(err); }
@@ -320,11 +317,8 @@ describe('Github', function () {
           expect(res.statusCode).to.equal(201);
           expect(body).to.be.okay;
           expect(body).to.be.an('array');
-          // FIXME: this should be 1, but two for now
-          expect(body).to.have.a.lengthOf(2);
-          var count = createCount(2, done);
-          tailBuildStream(body[0]._id, count.next);
-          tailBuildStream(body[1]._id, count.next);
+          expect(body).to.have.a.lengthOf(1);
+          tailBuildStream(body[0]._id, done);
         });
       });
       describe('if the other has been deleted', function () {
