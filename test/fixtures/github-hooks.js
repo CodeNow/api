@@ -111,6 +111,7 @@ module.exports = function (cv) {
         repository: {
           id: 21174769,
           name: repo,
+          full_name: fullRepo,
           url: 'https://github.com/' + fullRepo,
           description: '',
           watchers: 0,

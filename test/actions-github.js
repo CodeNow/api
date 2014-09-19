@@ -22,9 +22,6 @@ var equals = require('101/equals');
 var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
 var createCount = require('callback-count');
-var async = require('async');
-var hasProps = require('101/has-properties');
-var find = require('101/find');
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -61,12 +58,10 @@ describe('Github', function () {
   describe('push', function () {
     var ctx = {};
     beforeEach(function (done) {
-      multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
-        ctx.contextVersion = contextVersion;
-        ctx.context = context;
+      multi.createInstance(function (err, instance, build, user, modelsArr) {
+        ctx.contextVersion = modelsArr[0];
+        ctx.context = modelsArr[1];
         ctx.build = build;
-        ctx.env = env;
-        ctx.project = project;
         ctx.user = user;
         done(err);
       });
@@ -94,7 +89,7 @@ describe('Github', function () {
           }
         }, count.next);
       });
-      it('should start a build from one that hasn\'t finished', {timeout:3000}, function (done) {
+      it('should start a build from one that hasn\'t finished', {timeout: 3000}, function (done) {
         var options = hooks(ctx.contextVersion.json()).push;
         require('./fixtures/mocks/github/users-username')(101, 'bkendall');
         require('./fixtures/mocks/docker/container-id-attach')();
@@ -103,56 +98,52 @@ describe('Github', function () {
         require('./fixtures/mocks/github/repos-username-repo-commits')
           (options.json.repository.owner.name, options.json.repository.name, options.json.head_commit.id);
         request.post(options, function (err, res, body) {
-          if (err) {
-            done(err);
-          }
-          else {
-            expect(res.statusCode).to.equal(201);
-            expect(body).to.be.okay;
-            expect(body).to.be.an('array');
-            expect(body).to.have.a.lengthOf(1);
-            expect(body[0]).to.have.property('started');
-            expect(body[0]).to.have.property('contextVersions');
-            tailBuildStream(body[0].contextVersions[0], function (err) {
-              if (err) { return done(err); }
-              var buildExpected = {
-                started: exists,
-                completed: exists,
-                'contextVersions[0].build.started': exists,
-                'contextVersions[0].build.completed': exists,
-                'contextVersions[0].build.triggeredBy.github': exists,
-                'contextVersions[0].build.triggeredBy.username': options.json.repository.owner.name,
-                'contextVersions[0].build.triggeredBy.gravatar': exists,
-                'contextVersions[0].build.triggeredAction.manual': not(exists),
-                'contextVersions[0].build.triggeredAction.rebuild': not(exists),
-                'contextVersions[0].build.triggeredAction.appCodeVersion.repo':
-                  options.json.repository.owner.name + '/' + options.json.repository.name,
-                'contextVersions[0].build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id,
-                'contextVersions[0].build.triggeredAction.appCodeVersion.commitLog': function (commitLog) {
-                  expect(commitLog).to.be.an('array');
-                  expect(commitLog).to.have.a.lengthOf(1);
-                  expect(commitLog[0].sha).to.equal(options.json.head_commit.id);
-                  return true;
-                },
-                'contextVersions[0].build.dockerImage': exists,
-                'contextVersions[0].build.dockerTag': exists,
-                'contextVersions[0].infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
-                'contextVersions[0].appCodeVersions[0].lowerRepo':
-                  options.json.repository.owner.name + '/' + options.json.repository.name,
-                'contextVersions[0].appCodeVersions[0].lowerBranch': 'master',
-                'contextVersions[0].appCodeVersions[0].commit': options.json.head_commit.id,
-                'contextVersions[0].appCodeVersions[0].lockCommit': false
-              };
-              ctx.env.newBuild(body[0]).fetch(
-                expects.success(200, buildExpected, done));
-            });
-          }
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(201);
+          expect(body).to.be.okay;
+          expect(body).to.be.an('array');
+          expect(body).to.have.a.lengthOf(1);
+          var contextVersion = body[0];
+          expect(contextVersion).to.have.property('build');
+          expect(contextVersion.build).to.have.property('started');
+          tailBuildStream(contextVersion._id, function (err) {
+            if (err) { return done(err); }
+            var contextVersionExpcted = {
+              'build.started': exists,
+              'build.completed': exists,
+              'build.duration': exists,
+              'build.triggeredBy.github': exists,
+              'build.triggeredBy.username': options.json.repository.owner.name,
+              'build.triggeredBy.gravatar': exists,
+              'build.triggeredAction.manual': not(exists),
+              'build.triggeredAction.rebuild': not(exists),
+              'build.triggeredAction.appCodeVersion.repo': options.json.repository.full_name,
+              'build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id,
+              'build.triggeredAction.appCodeVersion.commitLog': function (commitLog) {
+                expect(commitLog).to.be.an('array');
+                expect(commitLog).to.have.a.lengthOf(1);
+                expect(commitLog[0].sha).to.equal(options.json.head_commit.id);
+                return true;
+              },
+              'build.dockerImage': exists,
+              'build.dockerTag': exists,
+              'infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
+              'appCodeVersions[0].lowerRepo': options.json.repository.full_name,
+              'appCodeVersions[0].lowerBranch': 'master',
+              'appCodeVersions[0].commit': options.json.head_commit.id
+            };
+          ctx.user
+            .newContext(contextVersion.context.toString())
+            .newVersion(contextVersion._id.toString())
+            .fetch(expects.success(200, contextVersionExpcted, done));
+          });
         });
       });
     });
     describe('with no build having been started yet', function () {
-      it('should return 204 with no builds to run', {timeout:3000}, function (done) {
+      it('should return 204 with no builds to run', {timeout: 3000}, function (done) {
         var options = hooks(ctx.contextVersion.json()).push;
+        options.json.ref = 'refs/heads/someotherbranch';
         require('./fixtures/mocks/github/users-username')(101, 'bkendall');
         request.post(options, function (err, res) {
           if (err) {
@@ -186,7 +177,7 @@ describe('Github', function () {
           }
         }, count.next);
       });
-      it('should start a build', {timeout:3000}, function (done) {
+      it('should start a build', {timeout: 3000}, function (done) {
         var options = hooks(ctx.contextVersion.json()).push;
         require('./fixtures/mocks/github/users-username')(101, 'bkendall');
         require('./fixtures/mocks/docker/container-id-attach')();
@@ -195,58 +186,54 @@ describe('Github', function () {
         require('./fixtures/mocks/github/repos-username-repo-commits')
           (options.json.repository.owner.name, options.json.repository.name, options.json.head_commit.id);
         request.post(options, function (err, res, body) {
-          if (err) {
-            done(err);
-          }
-          else {
-            expect(res.statusCode).to.equal(201);
-            expect(body).to.be.okay;
-            expect(body).to.be.an('array');
-            expect(body).to.have.a.lengthOf(1);
-            expect(body[0]).to.have.property('started');
-            expect(body[0]).to.have.property('contextVersions');
-            tailBuildStream(body[0].contextVersions[0], function (err) {
-              if (err) { return done(err); }
-              require('./fixtures/mocks/github/repos-username-repo-commits')
-                ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
-              var commit = require('./fixtures/mocks/github/repos-username-repo-commits')
-                ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(201);
+          expect(body).to.be.okay;
+          expect(body).to.be.an('array');
+          expect(body).to.have.a.lengthOf(1);
+          var contextVersion = body[0];
+          expect(contextVersion).to.have.property('build');
+          expect(contextVersion.build).to.have.property('started');
+          expect(contextVersion.appCodeVersions[0].lowerRepo)
+            .to.equal(options.json.repository.full_name.toLowerCase());
+          expect(contextVersion.appCodeVersions[0].lowerBranch)
+            .to.equal(options.json.ref.replace('refs/heads/','').toLowerCase());
+          expect(contextVersion.appCodeVersions[0].commit).to.equal(options.json.head_commit.id);
 
-              var buildExpected = {
-                started: exists,
-                completed: exists,
-                'contextVersions[0].build.started': exists,
-                'contextVersions[0].build.completed': exists,
-                'contextVersions[0].build.triggeredBy.github': exists,
-                'contextVersions[0].build.triggeredBy.username': options.json.repository.owner.name,
-                'contextVersions[0].build.triggeredBy.gravatar': exists,
-                'contextVersions[0].build.triggeredAction.manual': not(exists),
-                'contextVersions[0].build.triggeredAction.rebuild': not(exists),
-                'contextVersions[0].build.triggeredAction.appCodeVersion.repo':
-                 options.json.repository.owner.name + '/' + options.json.repository.name,
-                'contextVersions[0].build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id,
-                'contextVersions[0].build.triggeredAction.appCodeVersion.commitLog': function (commitLog) {
-                  expect(commitLog).to.be.an('array');
-                  expect(commitLog).to.have.a.lengthOf(1);
-                  expect(commitLog[0].id).to.equal(commit.id);
-                  return true;
-                },
-                'contextVersions[0].build.dockerImage': exists,
-                'contextVersions[0].build.dockerTag': exists,
-                'contextVersions[0].infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
-                'contextVersions[0].appCodeVersions[0].lowerRepo':
-                  options.json.repository.owner.name + '/' + options.json.repository.name,
-                'contextVersions[0].appCodeVersions[0].lowerBranch': 'master',
-                'contextVersions[0].appCodeVersions[0].commit': options.json.head_commit.id,
-                'contextVersions[0].appCodeVersions[0].lockCommit': false
-              };
-              ctx.env.newBuild(body[0]).fetch(
-                expects.success(200, buildExpected, done));
-            });
-          }
+          tailBuildStream(contextVersion._id, function (err) {
+            if (err) { return done(err); }
+            var contextVersionExpcted = {
+              'build.started': exists,
+              'build.completed': exists,
+              'build.duration': exists,
+              'build.triggeredBy.github': exists,
+              'build.triggeredBy.username': options.json.repository.owner.name,
+              'build.triggeredBy.gravatar': exists,
+              'build.triggeredAction.manual': not(exists),
+              'build.triggeredAction.rebuild': not(exists),
+              'build.triggeredAction.appCodeVersion.repo': options.json.repository.full_name,
+              'build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id,
+              'build.triggeredAction.appCodeVersion.commitLog': function (commitLog) {
+                expect(commitLog).to.be.an('array');
+                expect(commitLog).to.have.a.lengthOf(1);
+                expect(commitLog[0].sha).to.equal(options.json.head_commit.id);
+                return true;
+              },
+              'build.dockerImage': exists,
+              'build.dockerTag': exists,
+              'infraCodeVersion': equals(ctx.contextVersion.attrs.infraCodeVersion), // unchanged
+              'appCodeVersions[0].lowerRepo': options.json.repository.full_name.toLowerCase(),
+              'appCodeVersions[0].lowerBranch': 'master',
+              'appCodeVersions[0].commit': options.json.head_commit.id,
+            };
+            ctx.user
+              .newContext(contextVersion.context.toString())
+              .newVersion(contextVersion._id.toString())
+              .fetch(expects.success(200, contextVersionExpcted, done));
+          });
         });
       });
-      it('should start two builds back to back', {timeout:3000}, function (done) {
+      it('should start two builds back to back', {timeout: 3000}, function (done) {
         var options = hooks(ctx.contextVersion.json()).push;
         require('./fixtures/mocks/github/users-username')(101, 'bkendall');
         require('./fixtures/mocks/github/repos-username-repo-commits')
@@ -262,7 +249,8 @@ describe('Github', function () {
           expect(body).to.be.okay;
           expect(body).to.be.an('array');
           expect(body).to.have.a.lengthOf(1);
-          tailBuildStream(body[0].contextVersions[0], function (err) {
+          var versionId1 = body[0]._id;
+          tailBuildStream(body[0]._id, function (err) {
             if (err) { return done(err); }
             require('./fixtures/mocks/github/users-username')(101, 'bkendall');
             require('./fixtures/mocks/github/repos-username-repo-commits')
@@ -274,147 +262,54 @@ describe('Github', function () {
               expect(body).to.be.okay;
               expect(body).to.be.an('array');
               expect(body).to.have.a.lengthOf(1);
-              var buildExpected = {
-                started: exists,
-                completed: exists
-              };
-              tailBuildStream(body[0].contextVersions[0], function (err) {
+              var versionId2 = body[0]._id;
+              // the versions we get back should be the same, because of dedup
+              expect(versionId1).to.equal(versionId2);
+              var contextVersion = body[0];
+              tailBuildStream(body[0]._id, function (err) {
                 if (err) { return done(err); }
-                ctx.env.newBuild(body[0]).fetch(expects.success(200, buildExpected, done));
+                var contextVersionExpcted = {
+                  'build.started': exists,
+                  'build.completed': exists
+                };
+                ctx.user
+                  .newContext(contextVersion.context.toString())
+                  .newVersion(contextVersion._id.toString())
+                  .fetch(expects.success(200, contextVersionExpcted, done));
               });
-            });
-          });
-        });
-      });
-      describe('when a repo is linked multiple ways', function () {
-        beforeEach(generateKey);
-        beforeEach(function (done) {
-          var options = hooks(ctx.contextVersion.json()).push;
-
-          multi.createContextVersion(function (err, contextVersion, context, build, env, project, user) {
-            ctx.contextVersion2 = contextVersion;
-            ctx.context2 = context;
-            ctx.build2 = build;
-            ctx.env2 = env;
-            ctx.project2 = project;
-            ctx.user2 = user;
-            var username = options.json.repository.owner.name;
-            var reponame = options.json.repository.name;
-            require('./fixtures/mocks/github/repos-username-repo')(ctx.user, reponame);
-            require('./fixtures/mocks/github/repos-hooks-get')(username, reponame);
-            require('./fixtures/mocks/github/repos-hooks-post')(username, reponame);
-            require('./fixtures/mocks/github/repos-keys-get')(username, reponame, true);
-            ctx.appCodeVersion2 = ctx.contextVersion2.addGithubRepo(
-              ctx.contextVersion.json().appCodeVersions[0].repo,
-              function (err) {
-                if (err) { return done(err); }
-                var count = createCount(3, done);
-                Build.findOneAndUpdate({
-                  _id: ctx.build2.id()
-                }, {
-                  $set: {
-                    'started': Date.now(),
-                    'completed': Date.now()
-                  }
-                }, count.next);
-                ContextVersion.findOneAndUpdate({
-                  _id: ctx.contextVersion2.id()
-                }, {
-                  $set: {
-                    'build.started': Date.now(),
-                    'build.completed': Date.now()
-                  }
-                }, count.next);
-                ContextVersion.findOneAndUpdate({
-                  _id: ctx.contextVersion2.id(),
-                  'appCodeVersions.repo': ctx.contextVersion2.json().appCodeVersions[0].repo
-                }, {
-                  $set: {
-                    'appCodeVersions.$.commit': 'deadbeef'
-                  }
-                }, count.next);
-              });
-          });
-        });
-        it('should build new builds for two projects that are linked to the same repo',
-        {timeout: 10000},
-        function (done) {
-          var options = hooks(ctx.contextVersion.json()).push;
-          require('./fixtures/mocks/github/users-username')(101, 'bkendall');
-          require('./fixtures/mocks/github/user')(ctx.user);
-          require('./fixtures/mocks/github/user')(ctx.user2);
-          require('./fixtures/mocks/docker/container-id-attach')();
-          require('./fixtures/mocks/docker/container-id-attach')();
-          request.post(options, function (err, res, body) {
-            if (err) { return done(err); }
-            expect(res.statusCode).to.equal(201);
-            console.log('annnd here we go', body);
-            expect(body).to.be.okay;
-            expect(body).to.be.an('array');
-            expect(body).to.have.a.lengthOf(2);
-            var buildExpected = {
-              started: exists,
-              completed: exists
-            };
-
-            async.parallel([
-              function (cb) {
-                var build1 = find(body, hasProps({environment: ctx.env.id()}));
-                tailBuildStream(build1.contextVersions[0], function (err) {
-                  if (err) { console.log('build1 failed'); return done(err); }
-                  ctx.build.fetch(expects.success(200, buildExpected, cb));
-                });
-              },
-              function (cb) {
-                var build2 = find(body, hasProps({environment: ctx.env2.id()}));
-                tailBuildStream(build2.contextVersions[0], function (err) {
-                  if (err) { console.log('build2 failed'); return done(err); }
-                  ctx.build2.fetch(expects.success(200, buildExpected, cb));
-                });
-              }
-            ], function (err) {
-              console.log('and we are back', err);
-              done(err);
             });
           });
         });
       });
     });
-    describe('when a build\'s environment has been deleted', function () {
+    describe('with multiple instances using a repo', function () {
+      beforeEach(generateKey);
       beforeEach(function (done) {
-        var kp = new Keypair({
-          publicKey: 'asdf',
-          privateKey: 'fdsa'
-        });
-        kp.save(done);
-      });
-      beforeEach(function (done) {
-        ctx.repo = hooks.push.json.repository.owner.name+
-          '/'+hooks.push.json.repository.name;
-
-        ctx.env2 = ctx.project.createEnvironment({ name: 'otherEnv' }, function (err) {
+        multi.createInstance(function (err, instance, build, user, modelsArr) {
           if (err) { return done(err); }
-          ctx.build2 = ctx.env2.createBuild({ parentBuild: ctx.build.id() }, function (err) {
-            if (err) { return done(err); }
-            var username = hooks.push.json.repository.owner.name;
-            var reponame = hooks.push.json.repository.name;
-            require('./fixtures/mocks/github/repos-username-repo')(ctx.user, reponame);
-            require('./fixtures/mocks/github/repos-hooks-get')(username, reponame);
-            require('./fixtures/mocks/github/repos-hooks-post')(username, reponame);
-            require('./fixtures/mocks/github/repos-keys-get')(username, reponame, true);
-            // build2 inherited build1's githubRepos
-            multi.buildTheBuild(ctx.user, ctx.build2, function (err) {
-              if (err) { return done(err); }
-              ctx.env2.destroy(done);
-            });
-          });
+          ctx.instance = instance;
+          ctx.build = build;
+          ctx.user = user;
+          ctx.contextVersion = modelsArr[0];
+          var options = hooks(ctx.contextVersion.json()).push;
+          var username = options.json.repository.owner.name;
+          var reponame = options.json.repository.name;
+          require('./fixtures/mocks/github/repos-username-repo')(ctx.user, reponame);
+          require('./fixtures/mocks/github/repos-hooks-get')(username, reponame);
+          require('./fixtures/mocks/github/repos-hooks-post')(username, reponame);
+          require('./fixtures/mocks/github/repos-keys-get')(username, reponame, true);
+          ctx.newInstance = ctx.instance.copy(done);
         });
       });
-      it('should only build the build whose environment exists', {timeout:10000}, function (done) {
-        var options = hooks.push;
+      it('should build one new context version for both of the instances', function (done) {
+        var options = hooks(ctx.contextVersion.json()).push;
         require('./fixtures/mocks/github/users-username')(101, 'bkendall');
-        require('./fixtures/mocks/github/user')(ctx.user);
-        require('./fixtures/mocks/github/user')(ctx.user2);
+        require('./fixtures/mocks/github/repos-username-repo-commits')
+          ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+        require('./fixtures/mocks/github/repos-username-repo-commits')
+          (options.json.repository.owner.name, options.json.repository.name, options.json.head_commit.id);
+        require('./fixtures/mocks/github/repos-username-repo-commits')
+          (options.json.repository.owner.name, options.json.repository.name, options.json.head_commit.id);
         require('./fixtures/mocks/docker/container-id-attach')();
         require('./fixtures/mocks/docker/container-id-attach')();
         request.post(options, function (err, res, body) {
@@ -423,17 +318,57 @@ describe('Github', function () {
           expect(body).to.be.okay;
           expect(body).to.be.an('array');
           expect(body).to.have.a.lengthOf(1);
-          expect(body[0]).to.have.a.property('environment', ctx.build.attrs.environment);
-          var buildExpected = {
-            started: exists,
-            completed: exists
-          };
-          tailBuildStream(body[0].contextVersions[0], function (err) {
+          tailBuildStream(body[0]._id, done);
+        });
+      });
+      describe('if the other has been deleted', function () {
+        beforeEach(function (done) {
+          ctx.instance.destroy(done);
+        });
+        it('should build only one context version anyway', function (done) {
+          var options = hooks(ctx.contextVersion.json()).push;
+          require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+          require('./fixtures/mocks/github/repos-username-repo-commits')
+            ('bkendall', 'flaming-octo-nemesis', options.json.head_commit.id);
+          require('./fixtures/mocks/github/repos-username-repo-commits')
+            (options.json.repository.owner.name, options.json.repository.name, options.json.head_commit.id);
+          require('./fixtures/mocks/github/repos-username-repo-commits')
+            (options.json.repository.owner.name, options.json.repository.name, options.json.head_commit.id);
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, body) {
             if (err) { return done(err); }
-            ctx.build.fetch(expects.success(200, buildExpected, done));
+            expect(res.statusCode).to.equal(201);
+            expect(body).to.be.okay;
+            expect(body).to.be.an('array');
+            expect(body).to.have.a.lengthOf(1);
+            tailBuildStream(body[0]._id, done);
           });
         });
       });
+      // it('should only build the build whose instance exists', {timeout:10000}, function (done) {
+      //   var options = hooks.push;
+      //   require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+      //   require('./fixtures/mocks/github/user')(ctx.user);
+      //   require('./fixtures/mocks/github/user')(ctx.user2);
+      //   require('./fixtures/mocks/docker/container-id-attach')();
+      //   require('./fixtures/mocks/docker/container-id-attach')();
+      //   request.post(options, function (err, res, body) {
+      //     if (err) { return done(err); }
+      //     expect(res.statusCode).to.equal(201);
+      //     expect(body).to.be.okay;
+      //     expect(body).to.be.an('array');
+      //     expect(body).to.have.a.lengthOf(1);
+      //     expect(body[0]).to.have.a.property('environment', ctx.build.attrs.environment);
+      //     var buildExpected = {
+      //       started: exists,
+      //       completed: exists
+      //     };
+      //     tailBuildStream(body[0].contextVersions[0], function (err) {
+      //       if (err) { return done(err); }
+      //       ctx.build.fetch(expects.success(200, buildExpected, done));
+      //     });
+      //   });
+      // });
     });
     // FIXME: MOAR TESTS
     // describe('unbuilt build with github repo', function() {
