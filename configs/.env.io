@@ -22,3 +22,6 @@ CONTAINER_STOP_LIMIT=10
 MAVIS_HOST="http://mavis.runnable.io:80"
 DATADOG_HOST="datadog.runnable.io"
 DATADOG_PORT=80
+NEWRELIC_NAME="api-io"
+NEWRELIC_KEY="338516e0826451c297d44dc60aeaf0a0ca4bfead"
+NEWRELIC_LEVEL="info"
