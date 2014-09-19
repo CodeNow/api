@@ -66,7 +66,7 @@
     "request": "^2.37.0",
     "rimraf": "^2.2.8",
     "rollbar": "^0.3.13",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#SAN-123-github-events",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.35.0",
     "s3-stream-upload": "0.0.6",
     "simple-api-client": "^0.5.9",
     "substream": "0.1.1",
@@ -92,7 +92,7 @@
   "engine": "node >= 0.10.5",
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test test/actions-github.js",
+    "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test `cat test/whitelist.txt`",
     "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",
