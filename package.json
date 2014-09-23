@@ -86,7 +86,7 @@
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "^3.2.1",
     "multiline": "^0.3.4",
-    "nock": "^0.41.0",
+    "nock": "^0.48.0",
     "nodemon": "^1.2.1"
   },
   "engine": "node >= 0.10.5",
