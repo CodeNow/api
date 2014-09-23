@@ -1,6 +1,5 @@
 var nock = require('nock');
 var uuid = require('uuid');
-var multiline = require('multiline');
 var isObject = require('101/is-object');
 var zlib = require('zlib');
 
