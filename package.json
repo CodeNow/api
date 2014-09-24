@@ -100,6 +100,7 @@
     "fixme": "grep -nR FIXME lib test",
     "todo": "grep -nR TODO lib test",
     "start": "NODE_PATH=./lib node server.js",
+    "start-debug": "NODE_PATH=./lib node --debug server.js",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs server.js",
     "coverage": "NODE_PATH=./lib NODE_ENV=test lab -vl -m 500 -e test -c -r html test/*.js > coverage.html && if [ $CIRCLE_ARTIFACTS ]; then cp coverage.html $CIRCLE_ARTIFACTS; fi",
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",

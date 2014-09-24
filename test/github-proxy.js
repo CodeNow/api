@@ -40,10 +40,23 @@ describe('Github Proxy', function () {
     });
     it('should return the current user', function (done) {
       var r = ctx.user.client.get('/github/user');
+      r.on('error', done);
       r.pipe(zlib.createGunzip()).pipe(concat(function (body) {
         body = JSON.parse(body.toString());
         expect(body).to.be.okay;
         expect(body.login).to.equal(ctx.user.json().accounts.github.username);
+        done();
+      }));
+    });
+    it('should have the correct headers', function (done) {
+      var r = ctx.user.client.get('/github/user');
+      r.on('error', done);
+      r.pipe(zlib.createGunzip()).pipe(concat(function (body) {
+        expect(body).to.be.okay;
+        // in this case, because of the test, we shouldn't have access-control-allow-origin
+        // (it would be the value set from github if it was here)
+        expect(r.response.headers['access-control-allow-origin']).to.equal(undefined);
+        expect(r.response.headers['access-control-allow-credentials']).to.equal('true');
         done();
       }));
     });
