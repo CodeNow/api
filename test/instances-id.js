@@ -13,6 +13,7 @@ var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var uuid = require('uuid');
 var async = require('async');
+var RedisList = require('redis-types').List;
 var exists = require('101/exists');
 var not = require('101/not');
 var equals = require('101/equals');
