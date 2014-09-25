@@ -48,8 +48,8 @@ describe('Github', function () {
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
 
-        expect(res.statusCode).to.equal(204);
-        expect(body).to.equal(undefined);
+        expect(res.statusCode).to.equal(202);
+        expect(body).to.equal('Hello, Github Ping!');
         done();
       });
     });
@@ -141,7 +141,7 @@ describe('Github', function () {
       });
     });
     describe('with no build having been started yet', function () {
-      it('should return 204 with no builds to run', {timeout: 3000}, function (done) {
+      it('should return 202 with no builds to run', {timeout: 3000}, function (done) {
         var options = hooks(ctx.contextVersion.json()).push;
         options.json.ref = 'refs/heads/someotherbranch';
         require('./fixtures/mocks/github/users-username')(101, 'bkendall');
@@ -150,7 +150,24 @@ describe('Github', function () {
             done(err);
           }
           else {
-            expect(res.statusCode).to.equal(204);
+            expect(res.statusCode).to.equal(202);
+            expect(res.body).to.match(/No.+work to be done/);
+            done();
+          }
+        });
+      });
+    });
+    describe('when a branch was deleted', function () {
+      it('should return 202 with thing to do', {timeout: 3000}, function (done) {
+        var options = hooks(ctx.contextVersion.json()).push_delete;
+        require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+        request.post(options, function (err, res) {
+          if (err) {
+            done(err);
+          }
+          else {
+            expect(res.statusCode).to.equal(202);
+            expect(res.body).to.match(/Deleted the branch\; no work.+/);
             done();
           }
         });
