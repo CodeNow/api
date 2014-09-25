@@ -197,6 +197,7 @@ describe('Instance - /instances/:id', function () {
               multi.tailInstance(ctx.user, ctx.instance, function (err) {
                 if (err) { return done(err); }
                 expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(oldDockerContainer);
+                expect(ctx.instance.attrs.containers[0].inspect.Env).to.eql([]);
                 done();
               });
             }));
