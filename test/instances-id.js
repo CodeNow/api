@@ -440,7 +440,7 @@ describe('Instance - /instances/:id', function () {
             iCauseError: true
           }]
         };
-        ctx.instance.update(body, expects.errorStatus(400, 'should be an array of strings', done));
+        ctx.instance.update(body, expects.errorStatus(400, /should be an array of strings/, done));
       });
     });
 
