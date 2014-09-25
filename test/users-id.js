@@ -34,6 +34,8 @@ describe('User - /users/:id', function () {
 
           expect(code).to.equal(200);
           expectPrivateFields(body);
+          expect(body.gravatar.length).to.not.equal(0);
+          expect(body.gravatar.slice(-1)).to.not.equal('/');
           done();
         });
       });
