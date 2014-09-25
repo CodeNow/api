@@ -95,7 +95,7 @@ describe('Instance - /instances/:id/actions', function () {
       delete expected.containers;
       delete expected.__v;
       expected['containers[0].stoppedBy.github'] = exists;
-      ctx.instance.stop(expects.success(200, expected, function(err) {
+      ctx.instance.stop(expects.success(200, expected, function (err) {
         if (err) { return done(err); }
         ctx.instance.stop(expects.success(304, done));
       }));
@@ -103,7 +103,7 @@ describe('Instance - /instances/:id/actions', function () {
   });
 
   describe('DELETE', function () {
-    describe('permissions', function() {
+    describe('permissions', function () {
       describe('owner', function () {
         it('should delete the instance', function (done) {
           ctx.instance.destroy(expects.success(204, done));
@@ -131,7 +131,7 @@ describe('Instance - /instances/:id/actions', function () {
       });
     });
     ['instance'].forEach(function (destroyName) {
-      describe('not founds', function() {
+      describe('not founds', function () {
         beforeEach(function (done) {
           ctx[destroyName].destroy(done);
         });
@@ -161,6 +161,25 @@ describe('Instance - /instances/:id/actions', function () {
           containers: exists
         };
         ctx.instance.copy(expects.success(201, expected, done));
+      });
+      describe('parent has env', function () {
+        beforeEach(function (done) {
+          ctx.instance.update({ env: ['ONE=1'] }, expects.success(200, done));
+        });
+        it('should copy the instance env vars if it has them', function (done) {
+        var expected = {
+          shortHash: exists,
+          name: exists,
+          public: exists,
+          createdBy: { github: ctx.user.json().accounts.github.id },
+          owner: { github: ctx.user.json().accounts.github.id },
+          parent: ctx.instance.id(),
+          'build': ctx.build.id(),
+          containers: exists,
+          env: ['ONE=1']
+        };
+        ctx.instance.copy(expects.success(201, expected, done));
+      });
       });
     });
 
