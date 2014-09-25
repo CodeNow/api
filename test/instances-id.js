@@ -201,6 +201,33 @@ describe('Instance - /instances/:id', function () {
               });
             }));
           });
+          describe('with env', function() {
+            beforeEach(function (done) {
+              ctx.instance.update({ env: ['ONE=1'] }, expects.success(200, done));
+            });
+            it('should have the env that was set on the instance', function (done) {
+              var update = {
+                build: ctx.newBuild.id().toString()
+              };
+              var expected = {
+                _id: ctx.instance.json()._id,
+                shortHash: ctx.instance.id(),
+                'build._id': ctx.newBuild.id(),
+                // this represents a new docker container! :)
+                'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
+              };
+              var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
+              ctx.instance.update({json: update}, expects.success(200, expected, function (err) {
+                if (err) { return done(err); }
+                multi.tailInstance(ctx.user, ctx.instance, function (err) {
+                  if (err) { return done(err); }
+                  expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(oldDockerContainer);
+                  expect(ctx.instance.attrs.containers[0].inspect.Env).to.eql(['ONE=1']);
+                  done();
+                });
+              }));
+            });
+          });
         });
         describe('WITH changes in appcodeversion', function () {
           beforeEach(function (done) {
