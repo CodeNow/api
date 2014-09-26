@@ -43,6 +43,7 @@ describe('Instances - /instances', function () {
       });
       it('should error if the build has unbuilt versions', function(done) {
         var json = { build: ctx.build.id(), name: uuid() };
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.user.createInstance({ json: json }, expects.error(400, /been started/, done));
       });
     });
@@ -315,6 +316,7 @@ describe('Instances - /instances', function () {
               containers: exists,
               shortHash: exists
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json, expects.success(201, expected, function (err, body1) {
               if (err) { return done(err); }
               expected.name = 'Instance2';
@@ -322,6 +324,7 @@ describe('Instances - /instances', function () {
                 expect(shortHash).to.not.equal(body1.shortHash);
                 return true;
               };
+              require('./fixtures/mocks/github/user')(ctx.user);
               ctx.user.createInstance(json, expects.success(201, expected, function (err, body2) {
                 if (err) { return done(err); }
                 var expected2 = {
@@ -341,6 +344,7 @@ describe('Instances - /instances', function () {
                 var json2 = {
                   build: ctx.build2.id()
                 };
+                require('./fixtures/mocks/github/user')(ctx.user2);
                 ctx.user2.createInstance(json2, expects.success(201, expected2, done));
               }));
             }));
@@ -371,6 +375,7 @@ describe('Instances - /instances', function () {
             parent: ctx.instance.id(),
             shortHash: exists
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.user.createInstance(json, expects.success(201, expected, done));
         });
       });

@@ -182,6 +182,7 @@ module.exports = {
         name: uuid(),
         build: build.id()
       };
+      require('./mocks/github/user')(user);
       var instance = user.createInstance(body, function (err) {
         cb(err, instance, build, user, modelsArr, srcArr);
       });
