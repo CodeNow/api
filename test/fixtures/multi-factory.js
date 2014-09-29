@@ -250,20 +250,19 @@ module.exports = {
       else {
         require('./mocks/github/user')(user);
       }
-      instance.fetch(function (err) {
+      instance.deployed(function (err, deployed) {
         if (err) {
           cb(err);
         }
-        else if (
-          !instance.attrs.containers.length ||
-          !instance.attrs.containers[0].inspect
-        ) {
+        else if (!deployed) {
           setTimeout(function () {
             fetchInstanceAndCheckContainers();
           }, 50);
         }
         else {
-          cb(null, instance);
+          instance.fetch(function (err) {
+            cb(err, instance);
+          });
         }
       });
     }
