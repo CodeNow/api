@@ -8,9 +8,7 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
 var expects = require('./fixtures/expects');
-var async = require('async');
 var clone = require('101/clone');
-var RedisList = require('redis-types').List;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
@@ -43,6 +41,7 @@ describe('Instances - /instances', function () {
       });
       it('should error if the build has unbuilt versions', function(done) {
         var json = { build: ctx.build.id(), name: uuid() };
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.user.createInstance({ json: json }, expects.error(400, /been started/, done));
       });
     });
@@ -256,7 +255,11 @@ describe('Instances - /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
-              expectHipacheHostsForContainers(instance.toJSON(), done);
+              require('./fixtures/mocks/github/user')(ctx.user);
+              instance.fetch(function () {
+                if (err) { return done(err); }
+                expects.updatedHipacheHosts(ctx.user, instance, done);
+              });
             }));
         });
         describe('body.env', function() {
@@ -315,6 +318,7 @@ describe('Instances - /instances', function () {
               containers: exists,
               shortHash: exists
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json, expects.success(201, expected, function (err, body1) {
               if (err) { return done(err); }
               expected.name = 'Instance2';
@@ -322,6 +326,7 @@ describe('Instances - /instances', function () {
                 expect(shortHash).to.not.equal(body1.shortHash);
                 return true;
               };
+              require('./fixtures/mocks/github/user')(ctx.user);
               ctx.user.createInstance(json, expects.success(201, expected, function (err, body2) {
                 if (err) { return done(err); }
                 var expected2 = {
@@ -341,6 +346,7 @@ describe('Instances - /instances', function () {
                 var json2 = {
                   build: ctx.build2.id()
                 };
+                require('./fixtures/mocks/github/user')(ctx.user2);
                 ctx.user2.createInstance(json2, expects.success(201, expected2, done));
               }));
             }));
@@ -371,6 +377,7 @@ describe('Instances - /instances', function () {
             parent: ctx.instance.id(),
             shortHash: exists
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.user.createInstance(json, expects.success(201, expected, done));
         });
       });
@@ -475,34 +482,3 @@ describe('Instances - /instances', function () {
     });
   });
 });
-
-function expectHipacheHostsForContainers (instance, cb) {
-  var containers = instance.containers;
-  var allUrls = [];
-  containers.forEach(function (container) {
-    if (container.ports) {
-      Object.keys(container.ports).forEach(function (port) {
-        var portNumber = port.split('/')[0];
-        allUrls.push([instance.shortHash, '-', portNumber, '.', process.env.DOMAIN].join('').toLowerCase());
-        // special case port 80
-        if (~portNumber.indexOf('80')) {
-          allUrls.push([instance.shortHash, '.', process.env.DOMAIN].join('').toLowerCase());
-        }
-      });
-    }
-  });
-  async.forEach(allUrls, function (url, cb) {
-    var hipacheEntry = new RedisList('frontend:'+url);
-    hipacheEntry.lrange(0, -1, function (err, backends) {
-      if (err) {
-        cb(err);
-      }
-      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
-        cb(new Error('Backends invalid for '+url));
-      }
-      else {
-        cb();
-      }
-    });
-  }, cb);
-}
