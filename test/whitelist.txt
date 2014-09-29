@@ -1,16 +1,3 @@
-test/builds.js
-test/builds-id.js
-test/builds-id-actions-build.js
-test/builds-id-actions-copy.js
-test/contexts-id-versions.js
-test/contexts-id-versions-id.js
-test/contexts-id-versions-id-files.js
-test/contexts-id-versions-id-appcodeversions.js
-test/contexts-id-versions-id-infracodeversion-actions-copy.js
 test/instances.js
 test/instances-id.js
 test/instances-id-actions.js
-test/bdd-deploy-instance.js
-test/github-proxy.js
-test/users-id.js
-test/actions-github.js
