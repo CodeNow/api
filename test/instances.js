@@ -259,6 +259,41 @@ describe('Instances - /instances', function () {
               expectHipacheHostsForContainers(instance.toJSON(), done);
             }));
         });
+        describe('body.env', function() {
+          it('should create an instance, with ENV', function (done) {
+            var json = {
+              name: uuid(),
+              build: ctx.build.id(),
+              env: [
+                'ONE=1',
+                'TWO=2'
+              ]
+            };
+            var expected = {
+              _id: exists,
+              name: json.name,
+              env: json.env,
+              owner: { github: ctx.user.json().accounts.github.id },
+              public: false,
+              build: ctx.build.id(),
+              containers: exists,
+              'containers[0]': exists
+            };
+            ctx.user.createInstance(json,
+              expects.success(201, expected, done));
+          });
+          it('should error if body.env is not an array of strings', function(done) {
+            var json = {
+              name: uuid(),
+              build: ctx.build.id(),
+              env: [{
+                iCauseError: true
+              }]
+            };
+            ctx.user.createInstance(json,
+              expects.errorStatus(400, /should be an array of strings/, done));
+          });
+        });
         describe('unique names (by owner) and hashes', {timeout:1000}, function() {
           beforeEach(function (done) {
             multi.createBuiltBuild(ctx.orgId, function (err, build, user) {
