@@ -73,7 +73,14 @@ describe('Versions', function () {
 
   describe('Build Validation', function () {
     describe('Message', function () {
-      validation.stringLengthValidationChecking(createNewVersion, 'build.message', 500);
+      validation.stringLengthValidationChecking(function() {
+        var newVersion = createNewVersion();
+        newVersion.build.triggeredAction = {
+          manual: true
+        };
+        newVersion.build.triggeredBy =  { github: validation.VALID_GITHUB_ID };
+        return newVersion;
+      }, 'build.message', 500);
     });
     describe('Docker Image', function () {
       validation.stringLengthValidationChecking(createNewVersion, 'build.dockerImage', 200);
@@ -81,7 +88,59 @@ describe('Versions', function () {
     describe('Docker Tag', function () {
       validation.stringLengthValidationChecking(createNewVersion, 'build.dockerTag', 500);
     });
+    describe('Triggering Validation', function () {
+      describe('Triggered Action', function () {
+        it('should fail when triggeredAction is manual, but triggeredBy is null', function (done) {
+          var version = createNewVersion();
+          version.build.message = 'hello!';
+          version.build.triggeredAction = {
+            manual: true
+          };
+          version.save(function (err, model) {
+            expect(model).to.not.be.ok;
+            expect(err).to.be.ok;
+            done();
+          });
+        });
+        it('should fail when triggeredAction is rebuild, but triggeredBy is null', function (done) {
+          var version = createNewVersion();
+          version.build.message = 'hello!';
+          version.build.triggeredAction = {
+            rebuild: true
+          };
+          version.save(function (err, model) {
+            expect(model).to.not.be.ok;
+            expect(err).to.be.ok;
+            done();
+          });
+        });
+        it('should pass when triggeredAction is manual, and triggeredBy is filled', function (done) {
+          var version = createNewVersion();
+          version.build.message = 'hello!';
+          version.build.triggeredAction = {
+            rebuild: true
+          };
+          version.build.triggeredBy = { github: validation.VALID_GITHUB_ID };
+          version.save(function (err, model) {
+            expect(model).to.be.ok;
+            expect(err).to.not.be.ok;
+            done(err);
+          });
+        });
+        it('should fail when triggeredAction is empty, but triggeredBy is filled', function (done) {
+          var version = createNewVersion();
+          version.build.message = 'hello!';
+          version.build.triggeredBy = { github: validation.VALID_GITHUB_ID };
+          version.save(function (err, model) {
+            expect(model).to.not.be.ok;
+            expect(err).to.be.ok;
+            done();
+          });
+        });
+      });
+    });
   });
+
 
   describe('AppCode Validation', function () {
     describe('Repo', function () {
