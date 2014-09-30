@@ -19,6 +19,7 @@ var not = require('101/not');
 var equals = require('101/equals');
 var Build = require('models/mongo/build');
 var extend = require('extend');
+var nock = require('nock');
 
 describe('Instance - /instances/:id', function () {
   var ctx = {};
@@ -171,6 +172,42 @@ describe('Instance - /instances/:id', function () {
    * be modified all at once
    */
   describe('PATCH', function () {
+    describe('Orgs', function () {
+      beforeEach(function (done) {
+        ctx.orgId = 1001;
+        multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
+          //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
+          if (err) {
+            return done(err);
+          }
+          ctx.instance = instance;
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = mdlArray[0];
+          ctx.context = mdlArray[1];
+          ctx.srcArray = srcArray;
+
+          multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build) {
+            if (err) {
+              done(err);
+            }
+            ctx.otherBuild = build;
+            done();
+          });
+        });
+      });
+      it('should not allow a build owned by a user to be patched into an instance ' +
+        'owned by its org', function (done) {
+        nock.cleanAll();
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+        require('./fixtures/mocks/github/user')(ctx.user);
+        var update = {
+          build: ctx.otherBuild.id().toString()
+        };
+        ctx.instance.update(update, expects.error(400, done));
+      });
+    });
     describe('Build', function () {
       describe('updating the instance\'s build with a new, copied build', function () {
         beforeEach(function (done) {
