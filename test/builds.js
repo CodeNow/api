@@ -102,7 +102,7 @@ describe('Builds - /builds', function () {
             contextVersions: [ctx.contextVersion2.id()]
           };
           require('./fixtures/mocks/github/user-orgs')(2, 'otherorg');
-          ctx.user.createBuild(body, expects.error(403, /denied/, done));
+          ctx.user.createBuild(body, expects.error(400, /owner/, done));
         });
       });
     });
