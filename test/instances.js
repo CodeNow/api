@@ -17,6 +17,7 @@ var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
 var uuid = require('uuid');
 var createCount = require('callback-count');
+var ContextVersion = require('models/mongo/context-version');
 var Build = require('models/mongo/build');
 
 describe('Instances - /instances', function () {
@@ -52,7 +53,7 @@ describe('Instances - /instances', function () {
           ctx.build = build;
           ctx.user = user;
           ctx.cv = contextVersion;
-          done();
+          done(err);
         });
       });
       describe('user owned', function () {
@@ -63,7 +64,10 @@ describe('Instances - /instances', function () {
             'createdBy.github': ctx.user.attrs.accounts.github.id,
             build: ctx.build.id(),
             name: exists,
-            'owner.github': ctx.user.attrs.accounts.github.id
+            'owner.github': ctx.user.attrs.accounts.github.id,
+            contextVersions: exists,
+            'contextVersions[0]._id': ctx.cv.id(),
+            'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0]
           };
           require('./fixtures/mocks/docker/container-id-attach')();
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
@@ -103,12 +107,30 @@ describe('Instances - /instances', function () {
           });
         });
       });
+      describe('without a started context version', function () {
+        beforeEach(function (done) {
+          var count = createCount(2, done);
+          Build.findById(ctx.build.id(), function(err, build) {
+            build.setInProgress(ctx.user, count.next);
+            build.update({contextVersion: ctx.cv.id()}, count.next);
+          });
+        });
+        it('should not create a new instance', {timeout: 500}, function(done) {
+          var json = { build: ctx.build.id(), name: uuid() };
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.user.createInstance({ json: json }, expects.error(400, done));
+        });
+      });
       describe('that has failed', function () {
         beforeEach(function (done) {
           var count = createCount(2, done);
           Build.findById(ctx.build.id(), function(err, build) {
             build.setInProgress(ctx.user, count.next);
-            build.pushErroredContextVersion(ctx.cv.id(), count.next);
+            ContextVersion.update({_id: ctx.cv.id()}, {$set: {'build.started': Date.now()}},
+              function (err) {
+                if (err) { return count.next(err); }
+                build.pushErroredContextVersion(ctx.cv.id(), count.next);
+            });
           });
         });
         it('should create a new instance', {timeout: 500}, function(done) {
@@ -130,10 +152,10 @@ describe('Instances - /instances', function () {
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           multi.createContextVersion(ctx.orgId,
             function (err, contextVersion, context, build, user) {
-            ctx.build = build;
-            ctx.user = user;
-            done();
-          });
+              ctx.build = build;
+              ctx.user = user;
+              done(err);
+            });
         });
         it('should create a new instance', {timeout: 500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
@@ -173,7 +195,7 @@ describe('Instances - /instances', function () {
         multi.createBuiltBuild(function (err, build, user) {
           ctx.build = build;
           ctx.user = user;
-          done();
+          done(err);
         });
       });
 
@@ -236,6 +258,41 @@ describe('Instances - /instances', function () {
               if (err) { return done(err); }
               expectHipacheHostsForContainers(instance.toJSON(), done);
             }));
+        });
+        describe('body.env', function() {
+          it('should create an instance, with ENV', function (done) {
+            var json = {
+              name: uuid(),
+              build: ctx.build.id(),
+              env: [
+                'ONE=1',
+                'TWO=2'
+              ]
+            };
+            var expected = {
+              _id: exists,
+              name: json.name,
+              env: json.env,
+              owner: { github: ctx.user.json().accounts.github.id },
+              public: false,
+              build: ctx.build.id(),
+              containers: exists,
+              'containers[0]': exists
+            };
+            ctx.user.createInstance(json,
+              expects.success(201, expected, done));
+          });
+          it('should error if body.env is not an array of strings', function(done) {
+            var json = {
+              name: uuid(),
+              build: ctx.build.id(),
+              env: [{
+                iCauseError: true
+              }]
+            };
+            ctx.user.createInstance(json,
+              expects.errorStatus(400, /should be an array of strings/, done));
+          });
         });
         describe('unique names (by owner) and hashes', {timeout:1000}, function() {
           beforeEach(function (done) {
