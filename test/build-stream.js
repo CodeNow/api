@@ -50,6 +50,7 @@ describe('Build Stream - /projects/:id/environments/:id/builds/:id/build', funct
         if (err) {
           return done(err);
         }
+        var id = body.contextVersions[0];
 
         expect(code).to.equal(201);
         expect(body).to.be.ok;
@@ -62,8 +63,9 @@ describe('Build Stream - /projects/:id/environments/:id/builds/:id/build', funct
           id: 1,
           event: 'build-stream',
           data: {
-            id: body.contextVersions[0],
-            streamId: body.contextVersions[0]
+            id: id,
+            streamId: id,
+            substreamId: id
           }
         });
 
@@ -97,12 +99,14 @@ describe('Build Stream - /projects/:id/environments/:id/builds/:id/build', funct
 
         var client = new primusClient( 'http://localhost:' + process.env.PORT);
         // start build stream
+        var id = body.contextVersions[0];
         client.write({
           id: 1,
           event: 'build-stream',
           data: {
-            id: body.contextVersions[0],
-            streamId: body.contextVersions[0]
+            id: id,
+            streamId: id,
+            substreamId: id
           }
         });
         var log = '';
@@ -137,7 +141,8 @@ describe('Build Stream - /projects/:id/environments/:id/builds/:id/build', funct
         event: 'build-stream',
         data: {
           id: 'fakeVersion',
-          streamId: 'fakeVersion'
+          streamId: 'fakeVersion',
+          substreamId: 'fakeVersion'
         }
       });
 
@@ -157,6 +162,7 @@ describe('Build Stream - /projects/:id/environments/:id/builds/:id/build', funct
         if (err) {
           return done(err);
         }
+        var id = body.contextVersions[0];
 
         expect(code).to.equal(201);
         expect(body).to.be.ok;
@@ -186,8 +192,9 @@ describe('Build Stream - /projects/:id/environments/:id/builds/:id/build', funct
             id: 1,
             event: 'build-stream',
             data: {
-              id: body.contextVersions[0],
-              streamId: body.contextVersions[0]
+              id: id,
+              streamId: id,
+              substreamId: id
             }
           });
 
