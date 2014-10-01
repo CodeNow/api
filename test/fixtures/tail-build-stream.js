@@ -28,7 +28,8 @@ function tailBuildStream (contextVersionId, failure, cb) {
     data: {
       id: contextVersionId,
       build: {},
-      streamId: contextVersionId
+      streamId: contextVersionId,
+      substreamId: contextVersionId
     }
   });
 
