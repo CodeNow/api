@@ -1,4 +1,4 @@
-est/builds.js
+test/builds.js
 test/builds-id.js
 test/builds-id-actions-build.js
 test/builds-id-actions-copy.js
