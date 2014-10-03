@@ -141,9 +141,9 @@ expects.updatedHipacheHosts = function (user, instance, cb) {
       .map(function (port) {
         return [
           'frontend:',
-          container.opts.instanceName, '-',
-          container.opts.ownerUsername, '-',
           port, '.',
+          container.opts.instanceName, '.',
+          container.opts.ownerUsername, '.',
           process.env.DOMAIN
         ].join('');
       });
