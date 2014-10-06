@@ -52,7 +52,7 @@ describe('Instances - /instances', function () {
           ctx.build = build;
           ctx.user = user;
           ctx.cv = contextVersion;
-          done();
+          done(err);
         });
       });
       describe('user owned', function () {
@@ -151,10 +151,10 @@ describe('Instances - /instances', function () {
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           multi.createContextVersion(ctx.orgId,
             function (err, contextVersion, context, build, user) {
-            ctx.build = build;
-            ctx.user = user;
-            done();
-          });
+              ctx.build = build;
+              ctx.user = user;
+              done(err);
+            });
         });
         it('should create a new instance', {timeout: 500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
@@ -194,7 +194,7 @@ describe('Instances - /instances', function () {
         multi.createBuiltBuild(function (err, build, user) {
           ctx.build = build;
           ctx.user = user;
-          done();
+          done(err);
         });
       });
 
