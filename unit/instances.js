@@ -12,10 +12,10 @@ var Hashids = require('hashids');
 var Instance = require('models/mongo/instance');
 var Container = require('../lib/models/mongo/container');
 
-function getRandomInt (min, max) {
+function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
-function getRandomHash () {
+function getRandomHash() {
   var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
   return hashids.encrypt(getRandomInt(0, 1000))[0];
 }
@@ -46,20 +46,42 @@ describe('Instance', function () {
       build: validation.VALID_OBJECT_ID,
       created: Date.now(),
       containers: [createNewContainer()],
-      outputViews: [{
-        name: 'testOutputView',
-        type: 'test'
-      }]
+      outputViews: [
+        {
+          name: 'testOutputView',
+          type: 'test'
+        }
+      ]
     });
   }
 
   it('should be able to save a instance!', function (done) {
     var instance = createNewInstance();
     instance.save(function (err, instance) {
-      if (err) { done(err); }
+      if (err) {
+        done(err);
+      }
       else {
         expect(instance).to.be.okay;
         done();
+      }
+    });
+  });
+  it('should not be able to save an instance with the same name and owner', function (done) {
+    var instance = createNewInstance();
+    instance.save(function (err, instance) {
+      if (err) {
+        done(err);
+      }
+      else {
+        expect(instance).to.be.okay;
+        var newInstance = createNewInstance();
+        newInstance.save(function (err, instance) {
+          expect(instance).to.not.be.okay;
+          expect(err).to.be.okay;
+          expect(err.code).to.equal(11000);
+          done();
+        });
       }
     });
   });
