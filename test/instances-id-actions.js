@@ -10,8 +10,6 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
-var async = require('async');
-var RedisList = require('redis-types').List;
 var exists = require('101/exists');
 
 describe('Instance - /instances/:id/actions', function () {
@@ -45,16 +43,18 @@ describe('Instance - /instances/:id/actions', function () {
       delete expected.containers;
       delete expected.__v;
       expected['containers[0].startedBy.github'] = exists;
+      require('./fixtures/mocks/github/user')(ctx.user);
       ctx.instance.start(expects.success(200, expected, done));
     });
     describe('and after started', function () {
       beforeEach(function (done) {
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.start(expects.success(200, done));
       });
       it('should have correct hipache hosts', function (done) {
-        ctx.instance.fetch(function (err, instance) {
+        ctx.instance.fetch(function (err) {
           if (err) { return done(err); }
-          expectHipacheHostsForContainers(instance, done);
+          expects.updatedHipacheHosts(ctx.user, ctx.instance, done);
         });
       });
     });
@@ -68,12 +68,13 @@ describe('Instance - /instances/:id/actions', function () {
     });
     describe('and after started', function () {
       beforeEach(function (done) {
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.restart(expects.success(200, done));
       });
       it('should have correct hipache hosts', function (done) {
-        ctx.instance.fetch(function (err, instance) {
+        ctx.instance.fetch(function (err) {
           if (err) { return done(err); }
-          expectHipacheHostsForContainers(instance, done);
+          expects.updatedHipacheHosts(ctx.user, ctx.instance, done);
         });
       });
     });
@@ -86,6 +87,7 @@ describe('Instance - /instances/:id/actions', function () {
       delete expected.containers;
       delete expected.__v;
       expected['containers[0].stoppedBy.github'] = exists;
+      require('./fixtures/mocks/github/user')(ctx.user);
       ctx.instance.stop(expects.success(200, expected, done));
     });
 
@@ -97,6 +99,7 @@ describe('Instance - /instances/:id/actions', function () {
       expected['containers[0].stoppedBy.github'] = exists;
       ctx.instance.stop(expects.success(200, expected, function (err) {
         if (err) { return done(err); }
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.stop(expects.success(304, done));
       }));
     });
@@ -160,6 +163,7 @@ describe('Instance - /instances/:id/actions', function () {
           'build': ctx.build.id(),
           containers: exists
         };
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.copy(expects.success(201, expected, done));
       });
       describe('parent has env', function () {
@@ -178,6 +182,7 @@ describe('Instance - /instances/:id/actions', function () {
           containers: exists,
           env: ['ONE=1']
         };
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.copy(expects.success(201, expected, done));
       });
       });
@@ -206,6 +211,8 @@ describe('Instance - /instances/:id/actions', function () {
         };
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         ctx.user.copyInstance(ctx.instance.id(), expects.success(201, expected, done));
       });
       describe('Same org, different user', function () {
@@ -214,6 +221,7 @@ describe('Instance - /instances/:id/actions', function () {
           ctx.nonOwner = multi.createUser(done);
         });
         beforeEach(function (done) {
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           ctx.otherInstance = ctx.user.copyInstance(ctx.instance.id(), done);
@@ -229,6 +237,8 @@ describe('Instance - /instances/:id/actions', function () {
             build: ctx.build.id(),
             containers: exists
           };
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           ctx.nonOwner.copyInstance(ctx.otherInstance.id(), expects.success(201, expected, done));
@@ -259,37 +269,10 @@ describe('Instance - /instances/:id/actions', function () {
             'build': ctx.build.id(),
             containers: exists
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance.copy(expects.success(201, expected, done));
         });
       });
     });
   });
 });
-
-
-function expectHipacheHostsForContainers (instance, cb) {
-  var containers = instance.containers;
-  var allUrls = [];
-  containers.forEach(function (container) {
-    if (container.ports) {
-      Object.keys(container.ports).forEach(function (port) {
-        var portNumber = port.split('/')[0];
-        allUrls.push([instance.shortHash, '-', portNumber, '.', process.env.DOMAIN].join('').toLowerCase());
-      });
-    }
-  });
-  async.forEach(allUrls, function (url, cb) {
-    var hipacheEntry = new RedisList('frontend:'+url);
-    hipacheEntry.lrange(0, -1, function (err, backends) {
-      if (err) {
-        cb(err);
-      }
-      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
-        cb(new Error('Backends invalid for '+url));
-      }
-      else {
-        cb();
-      }
-    });
-  }, cb);
-}

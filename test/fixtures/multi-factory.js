@@ -202,6 +202,8 @@ module.exports = {
       if (buildOwnerId) {
         require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
         require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
+      } else {
+        require('./mocks/github/user')(user);
       }
       var instance = user.createInstance(body, function (err) {
         cb(err, instance, build, user, modelsArr, srcArr);
@@ -234,6 +236,7 @@ module.exports = {
       // build fetch
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
+    require('./mocks/docker/container-id-attach')(100);
     build.fetch(function (err) {
       if (err) { return cb(err); }
       build.contextVersions.models[0].fetch(function (err, cv) {

@@ -123,3 +123,44 @@ function expectKeypaths (body, expectedKeypaths) {
     expect(extracted).to.eql(expected);
   }
 }
+
+//
+var async = require('async');
+var RedisList = require('redis-types').List;
+var keypather = require('keypather')();
+
+expects.updatedHipacheHosts = function (user, instance, cb) {
+  user = user.json();
+  var containers = instance.containers.models;
+  var keys = containers.reduce(function (keys, container) {
+    var ports = keypather.get(container, 'attrs.inspect.NetworkSettings.Ports');
+    var containerKeys = Object.keys(ports)
+      .map(function (port) {
+        return port.split('/').shift();
+      })
+      .map(function (port) {
+        return [
+          'frontend:',
+          port, '.',
+          container.opts.instanceName, '.',
+          container.opts.ownerUsername, '.',
+          process.env.DOMAIN
+        ].join('');
+      });
+    return keys.concat(containerKeys);
+  }, []);
+  async.each(keys, function (key, cb) {
+    var hipacheEntry = new RedisList(key);
+    hipacheEntry.lrange(0, -1, function (err, backends) {
+      if (err) {
+        cb(err);
+      }
+      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
+        cb(new Error('Backends invalid for '+key));
+      }
+      else {
+        hipacheEntry.del(cb);
+      }
+    });
+  }, cb);
+};
