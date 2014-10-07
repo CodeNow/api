@@ -65,6 +65,7 @@
     "redis-types": "^0.2.1",
     "regexp-quote": "0.0.0",
     "request": "2.42.0",
+    "retry": "^0.6.1",
     "rimraf": "^2.2.8",
     "rollbar": "^0.3.13",
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.35.5",
