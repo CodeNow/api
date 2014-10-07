@@ -37,7 +37,7 @@ var NOT_ALPHA_NUM_W_SPACE_SAFE = [
   Faker.Internet.ip()
 ];
 var URLS = [Faker.Image.imageUrl(), 'http://www.google.com',
-  'http://mybucket.s3.amazonaws.com/homepage.html'];
+  'http://my_bucket.s3.amazonaws.com/homepage.html'];
 
 var githubUserRefValidationChecking = function(createModelFunction, property, isList) {
   describe('Github User Ref Validation', function () {
