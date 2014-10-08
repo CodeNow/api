@@ -68,7 +68,7 @@ describe('Instances - /instances', function () {
             'contextVersions[0]._id': ctx.cv.id(),
             'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0]
           };
-          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) {
@@ -84,15 +84,14 @@ describe('Instances - /instances', function () {
             }));
           });
         });
-        it('should deploy the instance after the build finishes', {timeout: 500}, function(done) {
+        it('should deploy the instance after the build finishes', {timeout: 1000}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
-          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) {
               done(err);
             }
-            require('./fixtures/mocks/github/user')(ctx.user);
             var instance = ctx.user.createInstance({ json: json }, function (err) {
               if (err) {
                 done(err);
@@ -168,7 +167,7 @@ describe('Instances - /instances', function () {
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user')(ctx.user);
-          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) {
