@@ -36,9 +36,9 @@ describe('Instance', function () {
     });
   }
 
-  function createNewInstance() {
+  function createNewInstance(name) {
     return new Instance({
-      name: 'name',
+      name: name || 'name',
       shortHash: getRandomHash(),
       public: false,
       owner: { github: validation.VALID_GITHUB_ID },
@@ -60,6 +60,24 @@ describe('Instance', function () {
       else {
         expect(instance).to.be.okay;
         done();
+      }
+    });
+  });
+  it('should not save an instance with the same (lower) name and owner', function (done) {
+    var instance = createNewInstance('hello');
+    instance.save(function (err, instance) {
+      if (err) {
+        done(err);
+      }
+      else {
+        expect(instance).to.be.okay;
+        var newInstance = createNewInstance('Hello');
+        newInstance.save(function (err, instance) {
+          expect(instance).to.not.be.okay;
+          expect(err).to.be.okay;
+          expect(err.code).to.equal(11000);
+          done();
+        });
       }
     });
   });
