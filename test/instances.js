@@ -306,7 +306,7 @@ describe('Instances - /instances', function () {
               ]
             };
             ctx.user.createInstance(json,
-              expects.errorStatus(400, /is not a valid ENV variable/, done));
+              expects.errorStatus(400, /should match/, done));
           });
         });
         describe('unique names (by owner) and hashes', {timeout:1000}, function() {

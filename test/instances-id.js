@@ -526,7 +526,7 @@ describe('Instance - /instances/:id', function () {
             '234^&*%(*&%THREE=3'
           ]
         };
-        ctx.instance.update(body, expects.errorStatus(400, /is not a valid ENV variable/, done));
+        ctx.instance.update(body, expects.errorStatus(400, /should match/, done));
       });
     });
 
