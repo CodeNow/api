@@ -31,7 +31,7 @@ before(function (done) {
   done();
 });
 
-describe('Github', function () {
+describe('Github - /actions/github', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -340,6 +340,7 @@ describe('Github', function () {
       });
       describe('if the other has been deleted', function () {
         beforeEach(function (done) {
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance.destroy(done);
         });
         it('should build only one context version anyway', function (done) {
