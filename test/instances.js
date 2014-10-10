@@ -296,6 +296,18 @@ describe('Instances - /instances', function () {
             ctx.user.createInstance(json,
               expects.errorStatus(400, /should be an array of strings/, done));
           });
+          it('should error if body.env contains an invalid variable', function (done) {
+            var json = {
+              name: uuid(),
+              build: ctx.build.id(),
+              env: [
+                'ONE=1',
+                '$@#4123TWO=2'
+              ]
+            };
+            ctx.user.createInstance(json,
+              expects.errorStatus(400, /should match/, done));
+          });
         });
         describe('unique names (by owner) and hashes', {timeout:1000}, function() {
           beforeEach(function (done) {

@@ -518,6 +518,16 @@ describe('Instance - /instances/:id', function () {
         };
         ctx.instance.update(body, expects.errorStatus(400, /should be an array of strings/, done));
       });
+      it('should error if the env has invalid values', function (done) {
+        var body = {
+          env: [
+            'ONE=1',
+            'TWO=2',
+            '234^&*%(*&%THREE=3'
+          ]
+        };
+        ctx.instance.update(body, expects.errorStatus(400, /should match/, done));
+      });
     });
 
     var updates = [{
