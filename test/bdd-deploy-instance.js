@@ -18,7 +18,7 @@ var RedisList = require('redis-types').List;
 var createCount = require('callback-count');
 var pick = require('101/pick');
 
-describe('BDD Create Build and Deploy Instance', function () {
+describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -98,6 +98,7 @@ describe('BDD Create Build and Deploy Instance', function () {
       }
       function updateInstanceWithBuild (newBuild, cb) {
         require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.update({
           build: newBuild.id()
         }, cb);
@@ -168,6 +169,7 @@ describe('BDD Create Build and Deploy Instance', function () {
             });
           }
           function updateInstanceWithBuild (newBuild, cb) {
+            require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({
               build: newBuild.id()
@@ -242,6 +244,7 @@ describe('BDD Create Build and Deploy Instance', function () {
             });
           }
           function updateInstanceWithBuild (newBuild, cb) {
+            require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({
               build: newBuild.id()
@@ -339,6 +342,7 @@ describe('BDD Create Build and Deploy Instance', function () {
           });
         }
         function updateInstanceWithBuild (newBuild, cb) {
+          require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({
             build: newBuild.id()
