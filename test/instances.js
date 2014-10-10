@@ -8,9 +8,7 @@ var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
 var expects = require('./fixtures/expects');
-var async = require('async');
 var clone = require('101/clone');
-var RedisList = require('redis-types').List;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
@@ -43,6 +41,7 @@ describe('Instances - /instances', function () {
       });
       it('should error if the build has unbuilt versions', function(done) {
         var json = { build: ctx.build.id(), name: uuid() };
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.user.createInstance({ json: json }, expects.error(400, /been started/, done));
       });
     });
@@ -256,7 +255,11 @@ describe('Instances - /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
-              expectHipacheHostsForContainers(instance.toJSON(), done);
+              require('./fixtures/mocks/github/user')(ctx.user);
+              instance.fetch(function () {
+                if (err) { return done(err); }
+                expects.updatedHipacheHosts(ctx.user, instance, done);
+              });
             }));
         });
         describe('body.env', function() {
@@ -293,6 +296,18 @@ describe('Instances - /instances', function () {
             ctx.user.createInstance(json,
               expects.errorStatus(400, /should be an array of strings/, done));
           });
+          it('should error if body.env contains an invalid variable', function (done) {
+            var json = {
+              name: uuid(),
+              build: ctx.build.id(),
+              env: [
+                'ONE=1',
+                '$@#4123TWO=2'
+              ]
+            };
+            ctx.user.createInstance(json,
+              expects.errorStatus(400, /should match/, done));
+          });
         });
         describe('unique names (by owner) and hashes', {timeout:1000}, function() {
           beforeEach(function (done) {
@@ -315,6 +330,7 @@ describe('Instances - /instances', function () {
               containers: exists,
               shortHash: exists
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json, expects.success(201, expected, function (err, body1) {
               if (err) { return done(err); }
               expected.name = 'Instance2';
@@ -322,6 +338,7 @@ describe('Instances - /instances', function () {
                 expect(shortHash).to.not.equal(body1.shortHash);
                 return true;
               };
+              require('./fixtures/mocks/github/user')(ctx.user);
               ctx.user.createInstance(json, expects.success(201, expected, function (err, body2) {
                 if (err) { return done(err); }
                 var expected2 = {
@@ -341,38 +358,64 @@ describe('Instances - /instances', function () {
                 var json2 = {
                   build: ctx.build2.id()
                 };
+                require('./fixtures/mocks/github/user')(ctx.user2);
                 ctx.user2.createInstance(json2, expects.success(201, expected2, done));
               }));
             }));
           });
         });
       });
-      describe('Create instance from parent instance', function() {
+      describe('from different owner', function () {
         beforeEach(function (done) {
-          multi.createInstance(function (err, instance, build, user) {
-            ctx.instance = instance;
-            ctx.build = build;
-            ctx.user = user;
+          var orgInfo = require('./fixtures/mocks/github/user-orgs')();
+          ctx.orgId = orgInfo.orgId;
+          ctx.orgName = orgInfo.orgName;
+          multi.createBuiltBuild(ctx.orgId, function (err, build, user) {
+            ctx.build2 = build;
+            ctx.user2 = user;
             done(err);
           });
         });
-        it('should have the parent instance set in the new one', function (done) {
+        it('should default the name to a short hash', function (done) {
           var json = {
-            build: ctx.build.id(),
-            parentInstance: ctx.instance.id()
+            build: ctx.build2.id(),
+            owner: {
+              github: ctx.user.attrs.accounts.github.id
+            }
           };
-          var expected = {
-            _id: exists,
-            name: 'Instance2',
-            owner: { github: ctx.user.json().accounts.github.id },
-            public: false,
-            build: ctx.build.id(),
-            containers: exists,
-            parent: ctx.instance.id(),
-            shortHash: exists
-          };
-          ctx.user.createInstance(json, expects.success(201, expected, done));
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
+          ctx.user.createInstance(json,
+            expects.errorStatus(400, /owner must match/, done));
         });
+      });
+    });
+    describe('Create instance from parent instance', function() {
+      beforeEach(function (done) {
+        multi.createInstance(function (err, instance, build, user) {
+          ctx.instance = instance;
+          ctx.build = build;
+          ctx.user = user;
+          done(err);
+        });
+      });
+      it('should have the parent instance set in the new one', function (done) {
+        var json = {
+          build: ctx.build.id(),
+          parentInstance: ctx.instance.id()
+        };
+        var expected = {
+          _id: exists,
+          name: 'Instance2',
+          owner: { github: ctx.user.json().accounts.github.id },
+          public: false,
+          build: ctx.build.id(),
+          containers: exists,
+          parent: ctx.instance.id(),
+          shortHash: exists
+        };
+        require('./fixtures/mocks/github/user')(ctx.user);
+        ctx.user.createInstance(json, expects.success(201, expected, done));
       });
     });
   });
@@ -557,34 +600,3 @@ describe('Instances - /instances', function () {
     });
   });
 });
-
-function expectHipacheHostsForContainers (instance, cb) {
-  var containers = instance.containers;
-  var allUrls = [];
-  containers.forEach(function (container) {
-    if (container.ports) {
-      Object.keys(container.ports).forEach(function (port) {
-        var portNumber = port.split('/')[0];
-        allUrls.push([instance.shortHash, '-', portNumber, '.', process.env.DOMAIN].join('').toLowerCase());
-        // special case port 80
-        if (~portNumber.indexOf('80')) {
-          allUrls.push([instance.shortHash, '.', process.env.DOMAIN].join('').toLowerCase());
-        }
-      });
-    }
-  });
-  async.forEach(allUrls, function (url, cb) {
-    var hipacheEntry = new RedisList('frontend:'+url);
-    hipacheEntry.lrange(0, -1, function (err, backends) {
-      if (err) {
-        cb(err);
-      }
-      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
-        cb(new Error('Backends invalid for '+url));
-      }
-      else {
-        cb();
-      }
-    });
-  }, cb);
-}

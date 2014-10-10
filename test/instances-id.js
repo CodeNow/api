@@ -13,7 +13,6 @@ var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var uuid = require('uuid');
 var async = require('async');
-var RedisList = require('redis-types').List;
 var exists = require('101/exists');
 var not = require('101/not');
 var equals = require('101/equals');
@@ -229,6 +228,7 @@ describe('Instance - /instances/:id', function () {
               'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
             };
             var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({json: update}, expects.success(200, expected, function (err) {
               if (err) { return done(err); }
               multi.tailInstance(ctx.user, ctx.instance, function (err) {
@@ -255,6 +255,7 @@ describe('Instance - /instances/:id', function () {
                 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
               };
               var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
+              require('./fixtures/mocks/github/user')(ctx.user);
               ctx.instance.update({json: update}, expects.success(200, expected, function (err) {
                 if (err) { return done(err); }
                 multi.tailInstance(ctx.user, ctx.instance, function (err) {
@@ -297,6 +298,7 @@ describe('Instance - /instances/:id', function () {
               // this represents a new docker container! :)
               'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({json: update}, expects.success(200, expected, done));
           });
         });
@@ -327,6 +329,7 @@ describe('Instance - /instances/:id', function () {
               // this represents a new docker container! :)
               'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({json: update}, expects.success(200, expected, done));
           });
         });
@@ -363,6 +366,7 @@ describe('Instance - /instances/:id', function () {
               // this represents a new docker container! :)
               'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({json: update}, expects.success(200, expected, done));
           });
         });
@@ -376,6 +380,7 @@ describe('Instance - /instances/:id', function () {
           ctx.otherBuild = ctx.user.createBuild(data, done);
         });
         it('shouldn\'t allow a build that hasn\'t started ', function (done) {
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({ build: ctx.otherBuild.id() },
             expects.error(400, /been started/, done));
         });
@@ -391,6 +396,7 @@ describe('Instance - /instances/:id', function () {
             });
           });
           it('should not allow a build that has started, but who\'s CVs have not', function (done) {
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ build: ctx.otherBuild.id() }, expects.error(400, done));
           });
         });
@@ -407,6 +413,7 @@ describe('Instance - /instances/:id', function () {
             'build._id': ctx.otherBuild.id()
           };
           multi.buildTheBuild(ctx.user, ctx.otherBuild, function () {
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
           });
         });
@@ -431,6 +438,8 @@ describe('Instance - /instances/:id', function () {
             'contextVersions[0]._id': ctx.otherCv.id(),
             'contextVersions[0].appCodeVersions[0]': ctx.otherCv.attrs.appCodeVersions[0]
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
         });
       });
@@ -478,6 +487,8 @@ describe('Instance - /instances/:id', function () {
                 expected[key] = json[key];
               }
             });
+            require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
@@ -507,6 +518,16 @@ describe('Instance - /instances/:id', function () {
         };
         ctx.instance.update(body, expects.errorStatus(400, /should be an array of strings/, done));
       });
+      it('should error if the env has invalid values', function (done) {
+        var body = {
+          env: [
+            'ONE=1',
+            'TWO=2',
+            '234^&*%(*&%THREE=3'
+          ]
+        };
+        ctx.instance.update(body, expects.errorStatus(400, /should match/, done));
+      });
     });
 
     var updates = [{
@@ -525,6 +546,7 @@ describe('Instance - /instances/:id', function () {
             var expected = extend(json, {
               'containers[0].inspect.State.Running': true
             });
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
@@ -540,6 +562,7 @@ describe('Instance - /instances/:id', function () {
           var vals = keys.map(function (key) { return json[key]; });
           it('should not update instance\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
             ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.errorStatus(403, done));
           });
         });
@@ -556,6 +579,7 @@ describe('Instance - /instances/:id', function () {
             var expected = extend(json, {
               'containers[0].inspect.State.Running': true
             });
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
@@ -564,11 +588,14 @@ describe('Instance - /instances/:id', function () {
     describe('hipache changes', function () {
       beforeEach(function (done) {
         var newName = ctx.newName = uuid();
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.update({ json: { name: newName }}, done);
       });
       it('should update hipache entries when the name is updated', function (done) {
-        ctx.instance.fetch(function (err, instance) {
-          expectHipacheHostsForContainers(instance, done);
+        require('./fixtures/mocks/github/user')(ctx.user);
+        ctx.instance.fetch(function (err) {
+          if (err) { return done(err); }
+          expects.updatedHipacheHosts(ctx.user, ctx.instance, done);
         });
       });
     });
@@ -588,31 +615,3 @@ describe('Instance - /instances/:id', function () {
     });
   });
 });
-
-
-function expectHipacheHostsForContainers (instance, cb) {
-  var containers = instance.containers;
-  var allUrls = [];
-  containers.forEach(function (container) {
-    if (container.ports) {
-      Object.keys(container.ports).forEach(function (port) {
-        var portNumber = port.split('/')[0];
-        allUrls.push([instance.shortHash, '-', portNumber, '.', process.env.DOMAIN].join('').toLowerCase());
-      });
-    }
-  });
-  async.forEach(allUrls, function (url, cb) {
-    var hipacheEntry = new RedisList('frontend:'+url);
-    hipacheEntry.lrange(0, -1, function (err, backends) {
-      if (err) {
-        cb(err);
-      }
-      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
-        cb(new Error('Backends invalid for '+url));
-      }
-      else {
-        cb();
-      }
-    });
-  }, cb);
-}

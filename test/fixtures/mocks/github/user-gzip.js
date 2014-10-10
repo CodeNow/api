@@ -58,6 +58,8 @@ module.exports = function (userId, username, token, callback) {
     'updated_at': '2014-06-24T23:28:16Z'
   };
   var headers = {
+    'link': '<https://api.github.com/organizations/2828361/repos?page=2>; rel="next", ' +
+      '<https://api.github.com/organizations/2828361/repos?page=7&access_token='+token+'>; rel="last"',
     'content-encoding': 'gzip',
     'access-control-allow-credentials': true,
     'access-control-allow-origin': '*',
