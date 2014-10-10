@@ -365,33 +365,57 @@ describe('Instances - /instances', function () {
           });
         });
       });
-      describe('Create instance from parent instance', function() {
+      describe('from different owner', function () {
         beforeEach(function (done) {
-          multi.createInstance(function (err, instance, build, user) {
-            ctx.instance = instance;
-            ctx.build = build;
-            ctx.user = user;
+          var orgInfo = require('./fixtures/mocks/github/user-orgs')();
+          ctx.orgId = orgInfo.orgId;
+          ctx.orgName = orgInfo.orgName;
+          multi.createBuiltBuild(ctx.orgId, function (err, build, user) {
+            ctx.build2 = build;
+            ctx.user2 = user;
             done(err);
           });
         });
-        it('should have the parent instance set in the new one', function (done) {
+        it('should default the name to a short hash', function (done) {
           var json = {
-            build: ctx.build.id(),
-            parentInstance: ctx.instance.id()
-          };
-          var expected = {
-            _id: exists,
-            name: 'Instance2',
-            owner: { github: ctx.user.json().accounts.github.id },
-            public: false,
-            build: ctx.build.id(),
-            containers: exists,
-            parent: ctx.instance.id(),
-            shortHash: exists
+            build: ctx.build2.id(),
+            owner: {
+              github: ctx.user.attrs.accounts.github.id
+            }
           };
           require('./fixtures/mocks/github/user')(ctx.user);
-          ctx.user.createInstance(json, expects.success(201, expected, done));
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
+          ctx.user.createInstance(json,
+            expects.errorStatus(400, /owner must match/, done));
         });
+      });
+    });
+    describe('Create instance from parent instance', function() {
+      beforeEach(function (done) {
+        multi.createInstance(function (err, instance, build, user) {
+          ctx.instance = instance;
+          ctx.build = build;
+          ctx.user = user;
+          done(err);
+        });
+      });
+      it('should have the parent instance set in the new one', function (done) {
+        var json = {
+          build: ctx.build.id(),
+          parentInstance: ctx.instance.id()
+        };
+        var expected = {
+          _id: exists,
+          name: 'Instance2',
+          owner: { github: ctx.user.json().accounts.github.id },
+          public: false,
+          build: ctx.build.id(),
+          containers: exists,
+          parent: ctx.instance.id(),
+          shortHash: exists
+        };
+        require('./fixtures/mocks/github/user')(ctx.user);
+        ctx.user.createInstance(json, expects.success(201, expected, done));
       });
     });
   });
