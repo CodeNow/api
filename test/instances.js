@@ -529,17 +529,16 @@ describe('Instances - /instances', function () {
     });
     describe('name and owner', function () {
       beforeEach(function (done) {
-        var count = createCount(2, done);
-        ctx.instance.update({name: 'InstanceNumber1'}, count.next);
-        multi.createInstance(ctx.user.json().accounts.github.id,
-          function (err, instance, build) {
-            if (err) {
-              return done(err);
-            }
-            ctx.instance3 = instance;
-            ctx.build3 = build;
-            ctx.instance3.update({name: 'InstanceNumber3'}, count.next);
-          });
+        require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/github/user')(ctx.user);
+        ctx.instance.update({ name: 'InstanceNumber1' }, function (err) {
+          if (err) { return done(err); }
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.instance3 = ctx.user.createInstance({
+            name: 'InstanceNumber3',
+            build: ctx.instance.attrs.build._id
+          }, done);
+        });
       });
       it('should list versions by owner.github and name', function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
@@ -554,7 +553,7 @@ describe('Instances - /instances', function () {
         var expected = [
           {}
         ];
-        expected[0]['build._id'] = ctx.build3.id();
+        expected[0]['build._id'] = ctx.build.id(); // instance3's build
         expected[0].name = 'InstanceNumber3';
         expected[0]['owner.username'] = ctx.user.json().accounts.github.username;
         expected[0]['owner.github'] = ctx.user.json().accounts.github.id;
