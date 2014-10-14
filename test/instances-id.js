@@ -54,6 +54,7 @@ describe('Instance - /instances/:id', function () {
       };
       require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+      require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       ctx.instance.fetch(expects.success(200, expected, done));
     });
   });
@@ -87,6 +88,7 @@ describe('Instance - /instances/:id', function () {
     describe('permissions', function () {
       describe('public', function () {
         beforeEach(function (done) {
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({ json: { public: true } }, function (err) {
             ctx.expected = {};
             ctx.expected.shortHash = exists;
@@ -119,6 +121,7 @@ describe('Instance - /instances/:id', function () {
       });
       describe('private', function () {
         beforeEach(function (done) {
+          require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({ json: { public: false } }, function (err) {
             ctx.expected = {};
             ctx.expected.shortHash = exists;
@@ -204,6 +207,7 @@ describe('Instance - /instances/:id', function () {
         var update = {
           build: ctx.otherBuild.id().toString()
         };
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         ctx.instance.update(update, expects.error(400, done));
       });
     });
@@ -224,10 +228,13 @@ describe('Instance - /instances/:id', function () {
               _id: ctx.instance.json()._id,
               shortHash: ctx.instance.id(),
               'build._id': ctx.newBuild.id(),
+              'owner.github': ctx.user.attrs.accounts.github.id,
+              'owner.username': ctx.user.attrs.accounts.github.login,
               // this represents a new docker container! :)
               'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
             };
             var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
+            require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({json: update}, expects.success(200, expected, function (err) {
               if (err) { return done(err); }
@@ -241,6 +248,7 @@ describe('Instance - /instances/:id', function () {
           });
           describe('with env', function() {
             beforeEach(function (done) {
+              require('./fixtures/mocks/github/user')(ctx.user);
               ctx.instance.update({ env: ['ONE=1'] }, expects.success(200, done));
             });
             it('should have the env that was set on the instance', function (done) {
@@ -251,10 +259,13 @@ describe('Instance - /instances/:id', function () {
                 _id: ctx.instance.json()._id,
                 shortHash: ctx.instance.id(),
                 'build._id': ctx.newBuild.id(),
+                'owner.github': ctx.user.attrs.accounts.github.id,
+                'owner.username': ctx.user.attrs.accounts.github.login,
                 // this represents a new docker container! :)
                 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
               };
               var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
+              require('./fixtures/mocks/github/user')(ctx.user);
               require('./fixtures/mocks/github/user')(ctx.user);
               ctx.instance.update({json: update}, expects.success(200, expected, function (err) {
                 if (err) { return done(err); }
@@ -299,6 +310,7 @@ describe('Instance - /instances/:id', function () {
               'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
             };
             require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({json: update}, expects.success(200, expected, done));
           });
         });
@@ -329,6 +341,7 @@ describe('Instance - /instances/:id', function () {
               // this represents a new docker container! :)
               'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({json: update}, expects.success(200, expected, done));
           });
@@ -367,6 +380,7 @@ describe('Instance - /instances/:id', function () {
               'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
             };
             require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({json: update}, expects.success(200, expected, done));
           });
         });
@@ -380,6 +394,7 @@ describe('Instance - /instances/:id', function () {
           ctx.otherBuild = ctx.user.createBuild(data, done);
         });
         it('shouldn\'t allow a build that hasn\'t started ', function (done) {
+          require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({ build: ctx.otherBuild.id() },
             expects.error(400, /been started/, done));
@@ -397,6 +412,7 @@ describe('Instance - /instances/:id', function () {
           });
           it('should not allow a build that has started, but who\'s CVs have not', function (done) {
             require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ build: ctx.otherBuild.id() }, expects.error(400, done));
           });
         });
@@ -413,6 +429,7 @@ describe('Instance - /instances/:id', function () {
             'build._id': ctx.otherBuild.id()
           };
           multi.buildTheBuild(ctx.user, ctx.otherBuild, function () {
+            require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
           });
@@ -438,6 +455,7 @@ describe('Instance - /instances/:id', function () {
             'contextVersions[0]._id': ctx.otherCv.id(),
             'contextVersions[0].appCodeVersions[0]': ctx.otherCv.attrs.appCodeVersions[0]
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
@@ -489,6 +507,7 @@ describe('Instance - /instances/:id', function () {
             });
             require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
@@ -504,6 +523,7 @@ describe('Instance - /instances/:id', function () {
           ]
         };
         var expected = body;
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.update(body, expects.success(200, expected, function (err) {
           if (err) { return done(err); }
           // sanity check
@@ -516,6 +536,7 @@ describe('Instance - /instances/:id', function () {
             iCauseError: true
           }]
         };
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.update(body, expects.errorStatus(400, /should be an array of strings/, done));
       });
       it('should error if the env has invalid values', function (done) {
@@ -526,6 +547,7 @@ describe('Instance - /instances/:id', function () {
             '234^&*%(*&%THREE=3'
           ]
         };
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.update(body, expects.errorStatus(400, /should match/, done));
       });
     });
@@ -547,6 +569,7 @@ describe('Instance - /instances/:id', function () {
               'containers[0].inspect.State.Running': true
             });
             require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
@@ -562,6 +585,7 @@ describe('Instance - /instances/:id', function () {
           var vals = keys.map(function (key) { return json[key]; });
           it('should not update instance\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
             ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
+            require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.errorStatus(403, done));
           });
@@ -580,6 +604,7 @@ describe('Instance - /instances/:id', function () {
               'containers[0].inspect.State.Running': true
             });
             require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
         });
@@ -588,6 +613,7 @@ describe('Instance - /instances/:id', function () {
     describe('hipache changes', function () {
       beforeEach(function (done) {
         var newName = ctx.newName = uuid();
+        require('./fixtures/mocks/github/user')(ctx.user);
         require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.update({ json: { name: newName }}, done);
       });
@@ -608,6 +634,7 @@ describe('Instance - /instances/:id', function () {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
           it('should not update instance\'s '+keys+' to '+vals+' (404 not found)', function (done) {
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.errorStatus(404, done));
           });
         });
