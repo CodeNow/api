@@ -581,8 +581,6 @@ describe('Instances - /instances', function () {
           ctx.user.json().accounts.github.username);
         ctx.user.fetchInstances(query, expects.success(200, expected, done));
       });
-
-
     });
 
     describe('errors', function () {
@@ -604,6 +602,14 @@ describe('Instances - /instances', function () {
           ctx.user2.fetchInstances(query2, expects.error(403, /denied/, done));
         }));
       });
+      it('should error when the username is not found', function (done) {
+        var query = {
+          githubUsername: ctx.user.json().accounts.github.username
+        };
+        // Make username fetch 404
+        require('./fixtures/mocks/github/users-username')(null, null, null, true);
+        ctx.user.fetchInstances(query, expects.error(404, /failed/, done));
+      });
       it('should require owner.github', function (done) {
         var query = {};
         ctx.user.fetchInstances(query, expects.error(400, /owner[.]github/, done));
@@ -615,6 +621,38 @@ describe('Instances - /instances', function () {
       it('should require owner (with shorthash)', function (done) {
         var query = { shortHash: 'hello' };
         ctx.user.fetchInstances(query, expects.error(400, /owner/, done));
+      });
+    });
+  });
+
+
+  describe('Org Get', function () {
+    beforeEach(function (done) {
+      var orgInfo = require('./fixtures/mocks/github/user-orgs')();
+      ctx.orgId = orgInfo.orgId;
+      ctx.orgName = orgInfo.orgName;
+      multi.createInstance(ctx.orgId, function (err, instance, build, user) {
+        ctx.user = user;
+        ctx.instance = instance;
+        done(err);
+      });
+    });
+    describe('name and owner', function () {
+      it('should list versions by githubUsername and name', function (done) {
+        var query = {
+          githubUsername: ctx.orgName,
+          name: ctx.instance.attrs.name
+        };
+        var expected = [
+          {}
+        ];
+        expected[0].name = ctx.instance.attrs.name;
+        expected[0]['owner.username'] = ctx.orgName;
+        expected[0]['owner.github'] = ctx.orgId;
+        require('./fixtures/mocks/github/users-username')(ctx.orgId, ctx.orgName);
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
+        ctx.user.fetchInstances(query, expects.success(200, expected, done));
       });
     });
   });
