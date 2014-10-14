@@ -1,12 +1,12 @@
 var nock = require('nock');
 var multiline = require('multiline');
 
-module.exports = function (userId, username, isActuallyAnOrg) {
+module.exports = function (userId, username, isActuallyAnOrg, fail) {
 
   nock('https://api.github.com:443')
     .filteringPath(/\/users\/[^\/]+\?.+/, '/users/' + username)
     .get('/users/' + username)
-    .reply(200, {
+    .reply(fail ? 404 : 200, {
       'login': username,
       'id': userId,
       'avatar_url': 'https://avatars.githubusercontent.com/u/'+userId+'?',
