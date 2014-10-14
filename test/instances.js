@@ -531,6 +531,7 @@ describe('Instances - /instances', function () {
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.update({ name: 'InstanceNumber1' }, function (err) {
           if (err) { return done(err); }
           require('./fixtures/mocks/github/user')(ctx.user);
