@@ -561,6 +561,26 @@ describe('Instances - /instances', function () {
         // FIXME: chai is messing up with eql check:
         ctx.user.fetchInstances(query, expects.success(200, expected, done));
       });
+      it('should list versions by githubUsername and name', function (done) {
+        require('./fixtures/mocks/github/user')(ctx.user);
+
+        var query = {
+          githubUsername: ctx.user.json().accounts.github.username,
+          name: 'InstanceNumber3'
+        };
+        var expected = [
+          {}
+        ];
+        expected[0]['build._id'] = ctx.build.id(); // instance3's build
+        expected[0].name = 'InstanceNumber3';
+        expected[0]['owner.username'] = ctx.user.json().accounts.github.username;
+        expected[0]['owner.github'] = ctx.user.json().accounts.github.id;
+        expected[0]['containers[0].inspect.State.Running'] = true;
+        // FIXME: chai is messing up with eql check:
+        require('./fixtures/mocks/github/users-username')(ctx.user.attrs.accounts.github.id,
+          ctx.user.json().accounts.github.username);
+        ctx.user.fetchInstances(query, expects.success(200, expected, done));
+      });
 
 
     });
