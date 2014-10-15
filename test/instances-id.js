@@ -469,6 +469,9 @@ describe('Instance - /instances/:id', function () {
         }, {
           build: 'newBuild'
         }, {
+          env: ['ONE=1']
+        },
+          {
           public: true,
           build: 'newBuild'
         }, {
@@ -476,11 +479,16 @@ describe('Instance - /instances/:id', function () {
           build: 'newBuild'
         }, {
           name: uuid(),
+            env: ['sdfasdfasdfadsf=asdfadsfasdfasdf']
+          },
+          {
+            name: uuid(),
           public: true
         }, {
           name: uuid(),
           build: 'newBuild',
-          public: true
+            public: true,
+            env: ['THREE=1asdfsdf', 'TWO=dsfasdfas']
         }];
         beforeEach(function(done) {
           // We need to deploy the container first before each test.

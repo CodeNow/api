@@ -103,6 +103,7 @@ describe('Building - Context Version Deduping', function () {
             function next (err, instance) {
               if (err) { return count.next(err); }
               expect(instance.containers.length).to.not.be.okay;
+              expect(instance.deploy.error).to.be.okay;
               count.next();
             }
           });
