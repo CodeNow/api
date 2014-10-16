@@ -363,6 +363,31 @@ describe('Instances - /instances', function () {
               }));
             }));
           });
+          it('should error if an instance is created with the same name ' +
+            'as an existing one', function (done) {
+            var json = {
+              name: 'Instance1',
+              build: ctx.build.id()
+            };
+            var expected = {
+              _id: exists,
+              name: 'Instance1',
+              owner: { github: ctx.user.json().accounts.github.id },
+              public: false,
+              build: ctx.build.id(),
+              containers: exists,
+              shortHash: exists
+            };
+            require('./fixtures/mocks/github/user')(ctx.user);
+            ctx.user.createInstance(json, expects.success(201, expected, function (err) {
+              if (err) {
+                return done(err);
+              }
+              require('./fixtures/mocks/github/user')(ctx.user);
+              json.name = 'instance1';
+              ctx.user.createInstance(json, expects.errorStatus(409, /exists/, done));
+            }));
+          });
         });
       });
       describe('from different owner', function () {

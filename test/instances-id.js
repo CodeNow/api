@@ -512,6 +512,21 @@ describe('Instance - /instances/:id', function () {
           });
         });
       });
+      describe('Testing lowername', function () {
+        beforeEach(function (done) {
+          // We need to deploy the container first before each test.
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.otherInstance = ctx.user.createInstance({
+            build: ctx.build.attrs._id,
+            name: 'hello'}, done);
+        });
+        it('should not allow changing the name to one that exists (lowername)', function (done) {
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.instance.update({ name: 'HELLO' }, expects.errorStatus(409, /exists/, done));
+        });
+      });
     });
     describe('env', function () {
       it('should update the env', function (done) {
