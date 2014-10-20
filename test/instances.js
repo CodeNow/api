@@ -401,7 +401,7 @@ describe('Instances - /instances', function () {
       it('should have the parent instance set in the new one', function (done) {
         var json = {
           build: ctx.build.id(),
-          parentInstance: ctx.instance.id()
+          parent: ctx.instance.id()
         };
         var expected = {
           _id: exists,
