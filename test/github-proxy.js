@@ -17,6 +17,7 @@ var zlib = require('zlib');
 var redis = require('models/redis');
 var async = require('async');
 var nock = require('nock');
+var url = require('url');
 
 describe('Github Proxy', function () {
   var ctx = {};
@@ -56,6 +57,23 @@ describe('Github Proxy', function () {
         body = JSON.parse(body.toString());
         expect(body).to.be.okay;
         expect(body.login).to.equal(ctx.user.json().accounts.github.username);
+        done();
+      }));
+    });
+    it('should have the correct link headers', function (done) {
+      var r = ctx.user.client.get('/github/user');
+      r.on('error', done);
+      r.pipe(zlib.createGunzip()).pipe(concat(function (body) {
+        expect(body).to.be.okay;
+        var linkRegexp = /<([^>]+)>; rel\=\"\w+\"/;
+        var parsedTestDomain = url.parse(process.env.FULL_API_DOMAIN);
+        r.response.headers.link.split(', ').forEach(function (link) {
+          var matches = linkRegexp.exec(link);
+          var parsedLink = url.parse(matches[1]);
+          expect(parsedLink.host).to.equal(parsedTestDomain.host);
+          expect(parsedLink.protocol).to.equal(parsedTestDomain.protocol);
+          expect(parsedLink.pathname.indexOf('/github')).to.equal(0);
+        });
         done();
       }));
     });

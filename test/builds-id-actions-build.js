@@ -69,10 +69,103 @@ describe('Build - /builds/:id/actions/build', function() {
               'build.dockerImage': exists,
               'build.dockerTag': exists,
               'build.log': exists,
-              'build.triggeredAction.manual': true,
+              'build.triggeredAction.manual': true
             };
             require('./fixtures/mocks/github/user')(ctx.user); // non owner org
             ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
+          });
+        });
+      });
+      it('copy build, then build both builds, should use same build', { timeout: 500 }, function (done) {
+        ctx.buildCopy = ctx.build.copy(function (err) {
+          if (err) {
+            return done(err);
+          }
+          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.build.build({message: 'hello!'}, function (err, body, code) {
+            if (err) {
+              return done(err);
+            }
+            expect(code).to.equal(201);
+            expect(body).to.be.ok;
+            require('./fixtures/mocks/docker/container-id-attach')();
+            require('./fixtures/mocks/github/user')(ctx.user);
+            ctx.buildCopy.build({message: 'hello!'}, function (err, body, code) {
+
+              expect(code).to.equal(201);
+              expect(body).to.be.ok;
+              expect(body.contextVersions[0]).to.equal(ctx.contextVersion.attrs._id);
+
+              tailBuildStream(body.contextVersions[0], function (err, log) {
+                if (err) {
+                  return done(err);
+                }
+                expect(log).to.contain('Successfully built');
+                var buildExpected = {
+                  completed: exists,
+                  duration: exists,
+                  failed: equals(false)
+                };
+                var count = createCount(3, done);
+                require('./fixtures/mocks/github/user')(ctx.user); // non owner org
+                ctx.build.fetch(expects.success(200, buildExpected, count.next));
+                require('./fixtures/clean-nock')(function () {
+                });
+                require('./fixtures/mocks/github/user')(ctx.user); // non owner org
+                ctx.buildCopy.fetch(expects.success(200, buildExpected, count.next));
+
+                var versionExpected = {
+                  'dockerHost': exists,
+                  'build.message': exists,
+                  'build.started': exists,
+                  'build.completed': exists,
+                  'build.dockerImage': exists,
+                  'build.dockerTag': exists,
+                  'build.log': exists,
+                  'build.triggeredAction.manual': true
+                };
+                require('./fixtures/mocks/github/user')(ctx.user); // non owner org
+                ctx.contextVersion.fetch(expects.success(200, versionExpected, count.next));
+              });
+            });
+          });
+        });
+      });
+      it('copy build, then build both builds (failed), should both fail', { timeout: 5000000 }, function (done) {
+        ctx.buildCopy = ctx.build.copy(function (err) {
+          if (err) {
+            return done(err);
+          }
+          require('./fixtures/mocks/docker/container-id-attach')(0, 'Failure');
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.build.build({message: 'hello!'}, function (err, body, code) {
+            if (err) {
+              return done(err);
+            }
+            expect(code).to.equal(201);
+            expect(body).to.be.ok;
+            require('./fixtures/mocks/github/user')(ctx.user);
+            ctx.buildCopy.build({message: 'hello!'}, function (err, body, code) {
+
+              expect(code).to.equal(201);
+              expect(body).to.be.ok;
+              expect(body.contextVersions[0]).to.equal(ctx.contextVersion.attrs._id);
+
+              tailBuildStream(body.contextVersions[0], 'Failure', function () {
+                var buildExpected = {
+                  duration: exists,
+                  failed: exists
+                };
+                var count = createCount(1, done);
+                require('./fixtures/mocks/github/user')(ctx.user); // non owner org
+                ctx.build.fetch(expects.success(200, buildExpected, function () {
+
+                  require('./fixtures/mocks/github/user')(ctx.user); // non owner org
+                  ctx.buildCopy.fetch(expects.success(200, buildExpected, count.next));
+                }));
+              });
+            });
           });
         });
       });
