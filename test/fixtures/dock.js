@@ -2,6 +2,32 @@ var createCount = require('callback-count');
 var docker = require('./docker');
 var redis = require('models/redis');
 var mavisApp = require('mavis');
+var weaveWrapper = require('sauron/lib/models/weave-wrapper');
+var extend = require('extend');
+extend(weaveWrapper, {
+  status: function (opt, cb) {
+    console.log('mock');
+    return cb('already up');
+  },
+  launch: function (opt, cb) {
+    console.log('mock1');
+    return cb(null, 'mock');
+  },
+  attach: function (opt, cb) {
+    console.log('mock2');
+    return cb(null, 'mock');
+  },
+  detach: function (opt, cb) {
+    console.log('mock3');
+    return cb(null, 'mock');
+  },
+  runCmd: function (opt, cb) {
+    console.log('mock4');
+    return cb(null, 'mock');
+  },
+});
+
+var sauron = require('sauron');
 var url = require('url');
 module.exports = {
   start: startDock,
@@ -14,6 +40,8 @@ function startDock (done) {
   ctx.docker = docker.start(count.inc().next);
   ctx.mavis = mavisApp.listen(url.parse(process.env.MAVIS_HOST).port);
   ctx.mavis.on('listening', count.inc().next);
+  ctx.sauron = sauron.listen(process.env.SAURON_PORT);
+  ctx.sauron.on('listening', count.inc().next);
   redis.lpush(process.env.REDIS_HOST_KEYS, testDockHost, count.inc().next);
   redis.hmset(testDockHost,
     'numContainers',
