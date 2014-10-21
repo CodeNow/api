@@ -13,6 +13,8 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
+var not = require('101/not');
+var equals = require('101/equals');
 var uuid = require('uuid');
 var createCount = require('callback-count');
 var ContextVersion = require('models/mongo/context-version');
@@ -56,7 +58,7 @@ describe('Instances - /instances', function () {
         });
       });
       describe('user owned', function () {
-        it('should create a new instance', {timeout: 1000}, function(done) {
+        it('should create a new instance', {timeout: 1500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
@@ -66,7 +68,9 @@ describe('Instances - /instances', function () {
             'owner.github': ctx.user.attrs.accounts.github.id,
             contextVersions: exists,
             'contextVersions[0]._id': ctx.cv.id(),
-            'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0]
+            'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0],
+            'network.networkIp': exists,
+            'network.hostIp': exists
           };
           require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
@@ -84,7 +88,9 @@ describe('Instances - /instances', function () {
             }));
           });
         });
-        it('should deploy the instance after the build finishes', {timeout: 1000}, function(done) {
+
+        beforeEach(require('./fixtures/weave').clean);
+        it('should deploy the instance after the build finishes', {timeout: 1200}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
@@ -99,6 +105,7 @@ describe('Instances - /instances', function () {
               multi.tailInstance(ctx.user, instance, function (err) {
                 if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.be.okay;
+                expects.updatedWeave(instance.attrs.container.dockerContainer, instance.attrs.network.hostIp);
                 done();
               });
             });
@@ -219,7 +226,7 @@ describe('Instances - /instances', function () {
         });
       });
       describe('with built versions', function () {
-        it('should default the name to a short hash', function (done) {
+        it('should default the name to a short hash', {timeout:1000}, function (done) {
           var json = {
             build: ctx.build.id()
           };
@@ -237,7 +244,7 @@ describe('Instances - /instances', function () {
               done();
             }));
         });
-        it('should create an instance, and start it', function (done) {
+        it('should create an instance, and start it', {timeout:1000}, function (done) {
           var json = {
             name: uuid(),
             build: ctx.build.id()
@@ -262,7 +269,7 @@ describe('Instances - /instances', function () {
             }));
         });
         describe('body.env', function() {
-          it('should create an instance, with ENV', function (done) {
+          it('should create an instance, with ENV', {timeout:1000}, function (done) {
             var json = {
               name: uuid(),
               build: ctx.build.id(),
@@ -411,7 +418,9 @@ describe('Instances - /instances', function () {
           build: ctx.build.id(),
           containers: exists,
           parent: ctx.instance.id(),
-          shortHash: exists
+          shortHash: exists,
+          'network.networkIp': ctx.instance.attrs.network.networkIp, // same owner, same network
+          'network.hostIp': not(equals(ctx.instance.attrs.network.hostIp))
         };
         require('./fixtures/mocks/github/user')(ctx.user);
         ctx.user.createInstance(json, expects.success(201, expected, done));

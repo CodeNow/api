@@ -21,8 +21,8 @@ describe('Build - /builds/:id/actions/build', function() {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  beforeEach(require('./fixtures/nock-github'));
-  beforeEach(require('./fixtures/nock-github'));
+  beforeEach(require('./fixtures/mocks/github/login'));
+  beforeEach(require('./fixtures/mocks/github/login'));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);

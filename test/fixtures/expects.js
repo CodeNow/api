@@ -164,3 +164,12 @@ expects.updatedHipacheHosts = function (user, instance, cb) {
     });
   }, cb);
 };
+/**
+ * asserts weave container attachment
+ * @param  {String} containerId   docker container id
+ * @param  {Object} expectedContainerInfo { hostIp:<>, networkId:<> }
+ */
+expects.updatedWeave = function (containerId, expectedHostIp) {
+  var hostIp = require('./weave').hostIpForContainer(containerId);
+  expect(hostIp, 'hostIp').to.equal(expectedHostIp);
+};
