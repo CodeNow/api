@@ -256,7 +256,9 @@ describe('Instances - /instances', function () {
             public: false,
             build: ctx.build.id(),
             containers: exists,
-            'containers[0]': exists
+            'containers[0]': exists,
+            'network.networkIp': exists,
+            'network.hostIp': exists
           };
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
@@ -265,6 +267,9 @@ describe('Instances - /instances', function () {
               instance.fetch(function () {
                 if (err) { return done(err); }
                 expects.updatedHipacheHosts(ctx.user, instance, done);
+                expects.updatedWeave(
+                  instance.attrs.container.dockerContainer,
+                  instance.attrs.network.hostIp);
               });
             }));
         });
@@ -473,7 +478,7 @@ describe('Instances - /instances', function () {
       }];
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
-    it('should get instances by username', function (done) {
+    it('should get instances by username', {timeout:500}, function (done) {
       var count = createCount(2, done);
       require('./fixtures/mocks/github/user')(ctx.user);
       require('./fixtures/mocks/github/user')(ctx.user2);
