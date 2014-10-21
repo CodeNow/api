@@ -69,6 +69,7 @@ describe('Instance - /instances/:id', function () {
       ctx.cv = mdlArray[0];
       ctx.context = mdlArray[1];
       ctx.srcArray = srcArray;
+      require('./fixtures/mocks/github/user')(ctx.user);
       done();
     });
   });

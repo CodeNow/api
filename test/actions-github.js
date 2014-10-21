@@ -311,6 +311,8 @@ describe('Github', function () {
           var options = hooks(ctx.contextVersion.json()).push;
           var username = options.json.repository.owner.name;
           var reponame = options.json.repository.name;
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/repos-username-repo')(ctx.user, reponame);
           require('./fixtures/mocks/github/repos-hooks-get')(username, reponame);
           require('./fixtures/mocks/github/repos-hooks-post')(username, reponame);

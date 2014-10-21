@@ -125,6 +125,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
     });
     describe('multiple versions', function () {
       beforeEach(function (done) {
+        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
         ctx.contextVersion2 = ctx.context.createVersion(done);
       });
       it('should return all of them', function (done) {
