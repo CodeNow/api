@@ -387,17 +387,21 @@ describe('Instances - /instances', function () {
             var expected = {
               _id: exists,
               name: 'Instance1',
-              owner: { github: ctx.user.json().accounts.github.id },
+              owner: {
+                username: ctx.user.json().accounts.github.username,
+                github: ctx.user.json().accounts.github.id },
               public: false,
               build: ctx.build.id(),
               containers: exists,
               shortHash: exists
             };
             require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json, expects.success(201, expected, function (err) {
               if (err) {
                 return done(err);
               }
+              require('./fixtures/mocks/github/user')(ctx.user);
               require('./fixtures/mocks/github/user')(ctx.user);
               json.name = 'instance1';
               ctx.user.createInstance(json, expects.errorStatus(409, /exists/, done));
