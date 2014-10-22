@@ -72,6 +72,9 @@ describe('Building - Context Version Deduping', function () {
             function next (err, instance) {
               if (err) { return count.next(err); }
               expect(instance.attrs.containers[0].inspect.State.Running).to.be.okay;
+              expect(instance.attrs.deploy).to.be.okay;
+              expect(instance.attrs.deploy.started).to.be.okay;
+              expect(instance.attrs.deploy.error).to.not.be.okay;
               count.next();
             }
           });
@@ -103,6 +106,7 @@ describe('Building - Context Version Deduping', function () {
             function next (err, instance) {
               if (err) { return count.next(err); }
               expect(instance.containers.length).to.not.be.okay;
+              expect(instance.attrs.deploy).to.not.be.okay;
               count.next();
             }
           });
@@ -136,6 +140,7 @@ describe('Building - Context Version Deduping', function () {
                   return done(err);
                 }
                 expect(instance.containers.length).to.not.be.okay;
+                expect(instance.attrs.deploy).to.not.be.okay;
                 done();
               });
             });
@@ -178,6 +183,9 @@ describe('Building - Context Version Deduping', function () {
               return count.next(err);
             }
             expect(instance.attrs.containers[0].inspect.State.Running).to.be.okay;
+            expect(instance.attrs.deploy).to.be.okay;
+            expect(instance.attrs.deploy.started).to.be.okay;
+            expect(instance.attrs.deploy.error).to.not.be.okay;
             count.next();
           }
         });

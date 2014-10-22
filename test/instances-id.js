@@ -231,6 +231,7 @@ describe('Instance - /instances/:id', function () {
               'build._id': ctx.newBuild.id(),
               'owner.github': ctx.user.attrs.accounts.github.id,
               'owner.username': ctx.user.attrs.accounts.github.login,
+              'deploy.started': exists,
               // this represents a new docker container! :)
               'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
             };
@@ -262,6 +263,7 @@ describe('Instance - /instances/:id', function () {
                 'build._id': ctx.newBuild.id(),
                 'owner.github': ctx.user.attrs.accounts.github.id,
                 'owner.username': ctx.user.attrs.accounts.github.login,
+                'deploy.started': exists,
                 // this represents a new docker container! :)
                 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
               };

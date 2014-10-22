@@ -14,6 +14,8 @@ var async = require('async');
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
 var RedisList = require('redis-types').List;
+var exists = require('101/exists');
+var expects = require('./fixtures/expects');
 
 var createCount = require('callback-count');
 var pick = require('101/pick');
@@ -39,6 +41,87 @@ describe('BDD Create Build and Deploy Instance', function () {
       ctx.context = modelsArr[1];
       ctx.oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
       done();
+    });
+  });
+  describe('Checking error on deploy', function () {
+    it('should save error in instance.deploy', { timeout: 5000 }, function (done) {
+      async.waterfall([
+        createVersion,
+        addAppCodeVersions,
+        createBuild,
+        buildBuild
+      ], function (err, newBuild) {
+        if (err) {
+          return done(err);
+        }
+        expect(ctx.instance.build._id).to.equal(newBuild._id);
+        expectHipacheHostsForContainers(ctx.instance);
+        done();
+      });
+      function createVersion(cb) {
+        var newVersion = ctx.context.createVersion({
+          infraCodeVersion: ctx.contextVersion.attrs.infraCodeVersion
+        }, function (err) {
+          cb(err, newVersion);
+        });
+      }
+
+      function addAppCodeVersions(newVersion, cb) {
+        async.each(ctx.contextVersion.appCodeVersions.models, function (appCodeVersion, cb) {
+          var body = pick(appCodeVersion.attrs, ['repo', 'branch', 'commit']);
+          var username = body.repo.split('/')[0];
+          var repoName = body.repo.split('/')[1];
+          require('./fixtures/mocks/github/repos-username-repo')(ctx.user, repoName);
+          require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, repoName);
+          require('./fixtures/mocks/github/repos-keys-get')(username, repoName, true);
+          newVersion.appCodeVersions.create(body, cb);
+        }, function (err) {
+          cb(err, newVersion);
+        });
+      }
+
+      function createBuild(newVersion, cb) {
+        var newBuild = ctx.user.createBuild({
+          contextVersions: [ newVersion.id() ]
+        }, function (err) {
+          cb(err, newBuild);
+        });
+      }
+
+      function buildBuild(newBuild, cb) {
+        var count2 = createCount(2, function (err) {
+          cb(err, newBuild);
+        });
+        var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next);
+        dispatch.on('started', function () {
+          // expect dedupe to work
+          expect(newBuild.attrs.contexts).to.eql(ctx.build.attrs.contexts);
+          expect(newBuild.attrs.contextVersions).to.eql(ctx.build.attrs.contextVersions);
+
+          // Now to cause an error, we shall change the MAVIS_HOST env
+          var tempMAVIS_HOST = process.env.MAVIS_HOST;
+          process.env.MAVIS_HOST = 'http://127.0.0.1:1234';
+          updateInstanceWithBuild(newBuild, function (err) {
+            process.env.MAVIS_HOST = tempMAVIS_HOST;
+            expect(err).to.be.okay;
+            var expected = {};
+            expected['deploy.started'] = exists;
+            expected['deploy.error.stack'] = exists;
+            expected['deploy.error.message'] = /Unable .* dock/;
+            ctx.instance.fetch(expects.success(200, expected, done));
+
+          });
+        });
+      }
+
+      function updateInstanceWithBuild(newBuild, cb) {
+        require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/github/user')(ctx.user);
+        ctx.instance.update({
+          build: newBuild.id()
+        }, cb);
+      }
     });
   });
   describe('duplicate build', function() {
