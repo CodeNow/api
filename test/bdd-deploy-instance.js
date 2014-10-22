@@ -302,6 +302,7 @@ describe('BDD Create Build and Deploy Instance', function () {
           contents.fetch(function (err) {
             if (err) { return cb(err); }
             var dockerfile = find(contents.models, hasKeypaths({ 'attrs.name': 'Dockerfile' }));
+            require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/Dockerfile');
             dockerfile.update({
               json: {
                 body: 'FROM dockerfile/nodejs'

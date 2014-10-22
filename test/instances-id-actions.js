@@ -30,6 +30,7 @@ describe('Instance - /instances/:id/actions', function () {
       ctx.build = build;
       ctx.user = user;
       require('./fixtures/mocks/github/user')(ctx.user);
+      require('./fixtures/mocks/github/user')(ctx.user);
       done();
     });
   });
@@ -39,6 +40,7 @@ describe('Instance - /instances/:id/actions', function () {
     });
     it('should start all containers', function (done) {
       var expected = ctx.instance.json();
+      delete expected.owner.username; // don't expect this here
       // FIXME: add some better checks here like State.StartedAt
       delete expected.containers;
       delete expected.__v;
@@ -83,6 +85,7 @@ describe('Instance - /instances/:id/actions', function () {
   describe('STOP', function () {
     it('should stop all containers', function (done) {
       var expected = ctx.instance.json();
+      delete expected.owner.username; // don't expect this in this case
       // FIXME: add some better checks here like State.FinishedAt
       delete expected.containers;
       delete expected.__v;
@@ -93,6 +96,7 @@ describe('Instance - /instances/:id/actions', function () {
 
     it('should not stop an already stopped container', function (done) {
       var expected = ctx.instance.json();
+      delete expected.owner.username; // don't expect this in this case
       // FIXME: add some better checks here like State.FinishedAt
       delete expected.containers;
       delete expected.__v;
@@ -158,7 +162,8 @@ describe('Instance - /instances/:id/actions', function () {
           name: exists,
           public: exists,
           createdBy: { github: ctx.user.json().accounts.github.id },
-          owner: { github: ctx.user.json().accounts.github.id },
+          owner: { github: ctx.user.json().accounts.github.id,
+                   username: ctx.user.json().accounts.github.username },
           parent: ctx.instance.id(),
           'build': ctx.build.id(),
           containers: exists
@@ -176,7 +181,8 @@ describe('Instance - /instances/:id/actions', function () {
           name: exists,
           public: exists,
           createdBy: { github: ctx.user.json().accounts.github.id },
-          owner: { github: ctx.user.json().accounts.github.id },
+          owner: { github: ctx.user.json().accounts.github.id,
+                   username: ctx.user.json().accounts.github.username },
           parent: ctx.instance.id(),
           'build': ctx.build.id(),
           containers: exists,
@@ -213,6 +219,7 @@ describe('Instance - /instances/:id/actions', function () {
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         ctx.user.copyInstance(ctx.instance.id(), expects.success(201, expected, done));
       });
       describe('Same org, different user', function () {
@@ -221,6 +228,7 @@ describe('Instance - /instances/:id/actions', function () {
           ctx.nonOwner = multi.createUser(done);
         });
         beforeEach(function (done) {
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
@@ -237,6 +245,7 @@ describe('Instance - /instances/:id/actions', function () {
             build: ctx.build.id(),
             containers: exists
           };
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
@@ -264,7 +273,8 @@ describe('Instance - /instances/:id/actions', function () {
             name: exists,
             public: exists,
             createdBy: { github: ctx.user.json().accounts.github.id },
-            owner: { github: ctx.user.json().accounts.github.id },
+            owner: { github: ctx.user.json().accounts.github.id,
+                     username: ctx.user.json().accounts.github.username },
             parent: ctx.instance.id(),
             'build': ctx.build.id(),
             containers: exists
