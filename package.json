@@ -24,6 +24,7 @@
     "dat-middleware": "^1.9.2",
     "debug": "^1.0.2",
     "defaults": "^1.0.0",
+    "docker-stream-cleanser": "^0.1.1",
     "dockerode": "^2.0.3",
     "dogerode": "0.0.3",
     "dogstatsyware": "0.0.1",
