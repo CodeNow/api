@@ -39,7 +39,7 @@
     "fn-object": "~0.2.2",
     "github": "^0.2.1",
     "hashids": "^0.3.3",
-    "http-proxy": "git://github.com/Runnable/node-http-proxy.git#v1.2.0-fork",
+    "http-proxy": "^1.5.3",
     "i": "^0.3.2",
     "json-hash": "0.0.4",
     "keypather": "^1.7.5",
