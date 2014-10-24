@@ -66,12 +66,14 @@ describe('Instances - /instances', function () {
             build: ctx.build.id(),
             name: exists,
             'owner.github': ctx.user.attrs.accounts.github.id,
+            'owner.username': ctx.user.attrs.accounts.github.username,
             contextVersions: exists,
             'contextVersions[0]._id': ctx.cv.id(),
             'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0],
             'network.networkIp': exists,
             'network.hostIp': exists
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
@@ -173,6 +175,7 @@ describe('Instances - /instances', function () {
           };
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
@@ -235,6 +238,7 @@ describe('Instances - /instances', function () {
             name: exists,
             _id: exists
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err, instanceData) {
               if (err) { return done(err); }
@@ -252,7 +256,8 @@ describe('Instances - /instances', function () {
           var expected = {
             _id: exists,
             name: json.name,
-            owner: { github: ctx.user.json().accounts.github.id },
+            owner: { github: ctx.user.json().accounts.github.id,
+                     username: ctx.user.json().accounts.github.username },
             public: false,
             build: ctx.build.id(),
             containers: exists,
@@ -260,6 +265,7 @@ describe('Instances - /instances', function () {
             'network.networkIp': exists,
             'network.hostIp': exists
           };
+          require('./fixtures/mocks/github/user')(ctx.user);
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
@@ -287,12 +293,14 @@ describe('Instances - /instances', function () {
               _id: exists,
               name: json.name,
               env: json.env,
-              owner: { github: ctx.user.json().accounts.github.id },
+              owner: { github: ctx.user.json().accounts.github.id,
+                       username: ctx.user.json().accounts.github.username },
               public: false,
               build: ctx.build.id(),
               containers: exists,
               'containers[0]': exists
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
               expects.success(201, expected, done));
           });
@@ -304,6 +312,7 @@ describe('Instances - /instances', function () {
                 iCauseError: true
               }]
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
               expects.errorStatus(400, /should be an array of strings/, done));
           });
@@ -316,6 +325,7 @@ describe('Instances - /instances', function () {
                 '$@#4123TWO=2'
               ]
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
               expects.errorStatus(400, /should match/, done));
           });
@@ -335,12 +345,14 @@ describe('Instances - /instances', function () {
             var expected = {
               _id: exists,
               name: 'Instance1',
-              owner: { github: ctx.user.json().accounts.github.id },
+              owner: { github: ctx.user.json().accounts.github.id,
+                       username: ctx.user.json().accounts.github.username },
               public: false,
               build: ctx.build.id(),
               containers: exists,
               shortHash: exists
             };
+            require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json, expects.success(201, expected, function (err, body1) {
               if (err) { return done(err); }
@@ -350,12 +362,14 @@ describe('Instances - /instances', function () {
                 return true;
               };
               require('./fixtures/mocks/github/user')(ctx.user);
+              require('./fixtures/mocks/github/user')(ctx.user);
               ctx.user.createInstance(json, expects.success(201, expected, function (err, body2) {
                 if (err) { return done(err); }
                 var expected2 = {
                   _id: exists,
                   name: 'Instance1',
-                  owner: { github: ctx.user2.json().accounts.github.id },
+                  owner: { github: ctx.user2.json().accounts.github.id,
+                           username: ctx.user2.json().accounts.github.username },
                   public: false,
                   build: ctx.build2.id(),
                   containers: exists,
@@ -370,8 +384,38 @@ describe('Instances - /instances', function () {
                   build: ctx.build2.id()
                 };
                 require('./fixtures/mocks/github/user')(ctx.user2);
+                require('./fixtures/mocks/github/user')(ctx.user2);
                 ctx.user2.createInstance(json2, expects.success(201, expected2, done));
               }));
+            }));
+          });
+          it('should error if an instance is created with the same name ' +
+            'as an existing one', function (done) {
+            var json = {
+              name: 'Instance1',
+              build: ctx.build.id()
+            };
+            var expected = {
+              _id: exists,
+              name: 'Instance1',
+              owner: {
+                username: ctx.user.json().accounts.github.username,
+                github: ctx.user.json().accounts.github.id },
+              public: false,
+              build: ctx.build.id(),
+              containers: exists,
+              shortHash: exists
+            };
+            require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
+            ctx.user.createInstance(json, expects.success(201, expected, function (err) {
+              if (err) {
+                return done(err);
+              }
+              require('./fixtures/mocks/github/user')(ctx.user);
+              require('./fixtures/mocks/github/user')(ctx.user);
+              json.name = 'instance1';
+              ctx.user.createInstance(json, expects.errorStatus(409, /exists/, done));
             }));
           });
         });
@@ -418,7 +462,8 @@ describe('Instances - /instances', function () {
         var expected = {
           _id: exists,
           name: 'Instance2',
-          owner: { github: ctx.user.json().accounts.github.id },
+          owner: { github: ctx.user.json().accounts.github.id,
+                   username: ctx.user.json().accounts.github.username },
           public: false,
           build: ctx.build.id(),
           containers: exists,
@@ -428,6 +473,7 @@ describe('Instances - /instances', function () {
           'network.hostIp': not(equals(ctx.instance.attrs.network.hostIp))
         };
         require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/github/user')(ctx.user);
         ctx.user.createInstance(json, expects.success(201, expected, done));
       });
     });
@@ -435,6 +481,8 @@ describe('Instances - /instances', function () {
 
   describe('GET', function() {
     beforeEach(function (done) {
+      require('./fixtures/mocks/github/user')(ctx.user);
+      require('./fixtures/mocks/github/user')(ctx.user2);
       multi.createInstance(function (err, instance, build, user) {
         if (err) { return done(err); }
         ctx.instance = instance;
@@ -547,6 +595,7 @@ describe('Instances - /instances', function () {
         require('./fixtures/mocks/github/user')(ctx.user);
         ctx.instance.update({ name: 'InstanceNumber1' }, function (err) {
           if (err) { return done(err); }
+          require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.instance3 = ctx.user.createInstance({
             name: 'InstanceNumber3',
@@ -664,6 +713,7 @@ describe('Instances - /instances', function () {
         expected[0]['owner.username'] = ctx.orgName;
         expected[0]['owner.github'] = ctx.orgId;
         require('./fixtures/mocks/github/users-username')(ctx.orgId, ctx.orgName);
+        require('./fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
         require('./fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
         ctx.user.fetchInstances(query, expects.success(200, expected, done));

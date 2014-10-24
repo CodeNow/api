@@ -43,6 +43,7 @@ describe('Instance - /instances/:id', function () {
       ctx.cv = mdlArray[0];
       ctx.context = mdlArray[1];
       ctx.srcArray = srcArray;
+      require('./fixtures/mocks/github/user')(ctx.user);
       done();
     });
   });
@@ -364,6 +365,9 @@ describe('Instance - /instances/:id', function () {
         }, {
           build: 'newBuild'
         }, {
+          env: ['ONE=1']
+        },
+          {
           public: true,
           build: 'newBuild'
         }, {
@@ -371,11 +375,16 @@ describe('Instance - /instances/:id', function () {
           build: 'newBuild'
         }, {
           name: uuid(),
+            env: ['sdfasdfasdfadsf=asdfadsfasdfasdf']
+          },
+          {
+            name: uuid(),
           public: true
         }, {
           name: uuid(),
           build: 'newBuild',
-          public: true
+            public: true,
+            env: ['THREE=1asdfsdf', 'TWO=dsfasdfas']
         }];
         beforeEach(function(done) {
           // We need to deploy the container first before each test.
@@ -406,6 +415,21 @@ describe('Instance - /instances/:id', function () {
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.instance.update({ json: json }, expects.success(200, expected, done));
           });
+        });
+      });
+      describe('Testing lowername', function () {
+        beforeEach(function (done) {
+          // We need to deploy the container first before each test.
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.otherInstance = ctx.user.createInstance({
+            build: ctx.build.attrs._id,
+            name: 'hello'}, done);
+        });
+        it('should not allow changing the name to one that exists (lowername)', function (done) {
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.instance.update({ name: 'HELLO' }, expects.errorStatus(409, /exists/, done));
         });
       });
     });
