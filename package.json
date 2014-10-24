@@ -52,7 +52,7 @@
     "mongoose-validator": "^1.0.0",
     "morgan": "^1.1.1",
     "multiparty": "^3.3.2",
-    "newrelic": "^1.11.1",
+    "newrelic": "^1.12.2",
     "node-dogstatsd": "0.0.5",
     "node-forge": "^0.6.12",
     "node-uuid": "~1.4.0",
