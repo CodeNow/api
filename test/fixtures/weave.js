@@ -1,4 +1,4 @@
-var weave = require('sauron/lib/models/weave-wrapper');
+var weave = require('sauron/lib/engines/weave-wrapper');
 var extend = require('extend');
 
 var attached = {};

@@ -124,52 +124,120 @@ function expectKeypaths (body, expectedKeypaths) {
   }
 }
 
-//
-var async = require('async');
-var RedisList = require('redis-types').List;
-var keypather = require('keypather')();
+// Specific expectation helpers
+var HipacheHosts = require('models/redis/hipache-hosts');
+var Sauron = require('models/apis/sauron');
+var url = require('url');
 
+/**
+ * asserts hipache hosts were updated to latest values
+ * @param  {User}     user     user model (instance owner)
+ * @param  {Instance} instance instance model
+ * @param  {Function} cb       callback
+ */
 expects.updatedHipacheHosts = function (user, instance, cb) {
-  user = user.json();
-  var containers = instance.containers.models;
-  var keys = containers.reduce(function (keys, container) {
-    var ports = keypather.get(container, 'attrs.inspect.NetworkSettings.Ports');
-    var containerKeys = Object.keys(ports)
-      .map(function (port) {
-        return port.split('/').shift();
-      })
-      .map(function (port) {
-        return [
-          'frontend:',
-          port, '.',
-          container.opts.instanceName, '.',
-          container.opts.ownerUsername, '.',
-          process.env.DOMAIN
-        ].join('');
+  var container = instance.containers.models[0];
+  var hipacheHosts = new HipacheHosts();
+
+  hipacheHosts.readRoutesForContainer(
+    user.attrs.accounts.github.login,
+    instance.json(),
+    container.json(),
+    function (err, redisData) {
+      if (err) { return cb(err); }
+      var expectedRedisData = {};
+      Object.keys(container.attrs.ports).forEach(function (containerPort) {
+        var key = toHipacheEntryKey(containerPort, instance, user);
+        var val = toHipacheEntryVal(containerPort, container, instance);
+        expectedRedisData[key] = val;
       });
-    return keys.concat(containerKeys);
-  }, []);
-  async.each(keys, function (key, cb) {
-    var hipacheEntry = new RedisList(key);
-    hipacheEntry.lrange(0, -1, function (err, backends) {
-      if (err) {
-        cb(err);
-      }
-      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
-        cb(new Error('Backends invalid for '+key));
-      }
-      else {
-        hipacheEntry.del(cb);
-      }
+      expect(redisData).to.eql(expectedRedisData);
+      cb();
     });
-  }, cb);
 };
+function toHipacheEntryKey (containerPort, instance, user) {
+  containerPort = containerPort.split('/')[0];
+  var instanceName = instance.attrs.name;
+  var ownerUsername = user.attrs.accounts.github.login;
+  var key = containerPort === '80' ?
+    [instanceName, '.', ownerUsername, '.', process.env.DOMAIN] :
+    [containerPort, '.', instanceName, '.', ownerUsername, '.', process.env.DOMAIN];
+  return ['frontend:'].concat(key).join('').toLowerCase();
+}
+function toHipacheEntryVal (containerPort, container, instance) {
+  var actualPort = container.attrs.ports[containerPort][0].HostPort;
+  var parsedDockerHost = url.parse(container.attrs.dockerHost);
+  var backendUrl = url.format({
+    protocol: 'http:',
+    slashes: true,
+    hostname: parsedDockerHost.hostname,
+    port: actualPort
+  });
+  return [
+    instance.attrs.name,
+    backendUrl
+  ];
+}
+
+/**
+ * asserts instance hipache hosts to be deleted
+ * @param  {User}     user      instance owner (client user model)
+ * @param  {Instance} instance  instance (client instance model)
+ * @param  {Function} cb        callback
+ */
+expects.deletedHipacheHosts = function (user, instance, cb) {
+  var container = instance.containers.models[0];
+  var hipacheHosts = new HipacheHosts();
+
+  hipacheHosts.readRoutesForContainer(
+    user.attrs.accounts.github.login,
+    instance.json(),
+    container.json(),
+    function (err, redisData) {
+      if (err) { return cb(err); }
+      var expectedRedisData = {};
+      Object.keys(containerJSON.ports).forEach(function (containerPort) {
+        var key = toHipacheEntryKey(containerPort, instance, user);
+        expectedRedisData[key] = [];
+      });
+      expect(redisData).to.eql(expectedRedisData);
+    });
+};
+
 /**
  * asserts weave container attachment
- * @param  {String} containerId   docker container id
- * @param  {Object} expectedContainerInfo { hostIp:<>, networkId:<> }
+ * @param  {Instance} instance       instance which container belongs to
+ * @param  {Object}   expectedHostIp expected host ip for container
+ * @param  {Function} cb             callback
  */
-expects.updatedWeave = function (containerId, expectedHostIp) {
-  var hostIp = require('./weave').hostIpForContainer(containerId);
-  expect(hostIp, 'hostIp').to.equal(expectedHostIp);
+expects.updatedWeaveHost = function (container, expectedHostIp, cb) {
+  container = container.toJSON();
+  var sauron = new Sauron(container.dockerHost);
+  sauron.getContainerIp(container.dockerContainer, function (err, hostIp) {
+    if (err) { return cb(err); }
+    expect(hostIp, 'hostIp').to.equal(expectedHostIp);
+    cb();
+  });
+};
+
+/**
+ * asserts weave entry was deleted
+ * @param  {Instance}  instance instance which container should'
+ * @param  {Function}  cb       callback
+ */
+expects.deletedWeaveHost = function (container, cb) {
+  container = container.toJSON();
+  var sauron = new Sauron(container.dockerHost);
+  sauron.getContainerIp(container.dockerContainer, function (err) {
+    expect(err).to.exist;
+    expect(err.output.statusCode).to.equal(404);
+    expect(err.message).to.match(/container/);
+    cb();
+  });
+};
+
+expects.expectDeletedRoutes = function (user, instance, cb) {
+  var count = require('callback-count')(cb);
+  expects.deletedWeave(instance, count.inc().next);
+  expects.deletedHipacheHosts(user, instance, count.inc().next);
 };
