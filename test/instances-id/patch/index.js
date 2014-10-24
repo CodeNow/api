@@ -129,7 +129,7 @@ describe('Instance - /instances/:id', function () {
                 expect(container.attrs.inspect.Env).to.eql([]);
                 var count = createCount(done);
                 expects.updatedWeaveHost(
-                  ctx.container, ctx.instance.attrs.network.hostIp, count.inc().next);
+                  container, ctx.instance.attrs.network.hostIp, count.inc().next);
                 expects.deletedWeaveHost(oldContainer, count.inc().next);
                 done();
               });
