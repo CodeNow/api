@@ -37,7 +37,6 @@ describe('Instance', function () {
   }
 
   function createNewInstance(name) {
-    console.log('CREATE NEW TINSTANCE', validation.VALID_GITHUB_ID);
     return new Instance({
       name: name || 'name',
       shortHash: getRandomHash(),
