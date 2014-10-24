@@ -58,6 +58,7 @@ module.exports = function (userId, username, token, callback) {
     'updated_at': '2014-06-24T23:28:16Z'
   };
   var headers = {
+    'etag': uuid(),
     'link': '<https://api.github.com/organizations/2828361/repos?page=2>; rel="next", ' +
       '<https://api.github.com/organizations/2828361/repos?page=7&access_token='+token+'>; rel="last"',
     'content-encoding': 'gzip',
@@ -74,6 +75,7 @@ module.exports = function (userId, username, token, callback) {
     nock('https://api.github.com:443')
       .filteringPath(urlRegExp, '/user')
       .get('/user')
+      .twice()
       .reply(200, [dataZip], headers);
     callback();
   });
