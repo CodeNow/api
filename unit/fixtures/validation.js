@@ -46,6 +46,7 @@ var githubUserRefValidationChecking = function(createModelFunction, property, is
       var myObject = createModelFunction();
       fixArrayKeypathSet(myObject, property, word);
       myObject.save(function (err) {
+        console.log('NO ERORR!', err);
         expect(err).to.be.ok;
         expect(err.name).to.be.ok;
         expect(err.name).to.equal('ValidationError');
