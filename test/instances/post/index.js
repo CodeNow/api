@@ -44,6 +44,7 @@ describe('POST /instances', function () {
       it('should error if the build has unbuilt versions', function(done) {
         var json = { build: ctx.build.id(), name: uuid() };
         require('../../fixtures/mocks/github/user')(ctx.user);
+        require('../../fixtures/mocks/github/user')(ctx.user);
         ctx.user.createInstance({ json: json }, expects.error(400, /been started/, done));
       });
     });
@@ -77,6 +78,8 @@ describe('POST /instances', function () {
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
             require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
             var instance = ctx.user.createInstance({ json: json },
              expects.success(201, expected, function(err) {
                if (err) { return done(err); }
@@ -90,6 +93,8 @@ describe('POST /instances', function () {
           var json = { build: ctx.build.id(), name: uuid() };
           require('../../fixtures/mocks/docker/container-id-attach')(25);
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
             var instance = ctx.user.createInstance({ json: json }, function (err) {
@@ -119,6 +124,7 @@ describe('POST /instances', function () {
         it('should not create a new instance', {timeout: 500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.user.createInstance({ json: json }, expects.error(400, done));
         });
       });
@@ -143,6 +149,7 @@ describe('POST /instances', function () {
             name: exists,
             'owner.github': ctx.user.attrs.accounts.github.id
           };
+          require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
         });
@@ -176,6 +183,7 @@ describe('POST /instances', function () {
             if (err) {
               done(err);
             }
+            require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user')(ctx.user);
@@ -231,6 +239,8 @@ describe('POST /instances', function () {
             name: exists,
             _id: exists
           };
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err, instanceData) {
               if (err) { return done(err); }
@@ -248,7 +258,10 @@ describe('POST /instances', function () {
           var expected = {
             _id: exists,
             name: json.name,
-            owner: { github: ctx.user.json().accounts.github.id },
+            owner: {
+              github: ctx.user.json().accounts.github.id,
+              username: ctx.user.json().accounts.github.login
+            },
             public: false,
             build: ctx.build.id(),
             containers: exists,
@@ -256,6 +269,8 @@ describe('POST /instances', function () {
             'network.networkIp': exists,
             'network.hostIp': exists
           };
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
@@ -285,12 +300,17 @@ describe('POST /instances', function () {
               _id: exists,
               name: json.name,
               env: json.env,
-              owner: { github: ctx.user.json().accounts.github.id },
+              owner: {
+                github: ctx.user.json().accounts.github.id,
+                username: ctx.user.json().accounts.github.login
+              },
               public: false,
               build: ctx.build.id(),
               containers: exists,
               'containers[0]': exists
             };
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
               expects.success(201, expected, done));
           });
@@ -314,6 +334,8 @@ describe('POST /instances', function () {
                 '$@#4123TWO=2'
               ]
             };
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
               expects.errorStatus(400, /should match/, done));
           });
@@ -333,12 +355,16 @@ describe('POST /instances', function () {
             var expected = {
               _id: exists,
               name: 'Instance1',
-              owner: { github: ctx.user.json().accounts.github.id },
+              owner: {
+                github: ctx.user.json().accounts.github.id,
+                username: ctx.user.json().accounts.github.login
+              },
               public: false,
               build: ctx.build.id(),
               containers: exists,
               shortHash: exists
             };
+            require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json, expects.success(201, expected, function (err, body1) {
               if (err) { return done(err); }
@@ -348,12 +374,16 @@ describe('POST /instances', function () {
                 return true;
               };
               require('../../fixtures/mocks/github/user')(ctx.user);
+              require('../../fixtures/mocks/github/user')(ctx.user);
               ctx.user.createInstance(json, expects.success(201, expected, function (err, body2) {
                 if (err) { return done(err); }
                 var expected2 = {
                   _id: exists,
                   name: 'Instance1',
-                  owner: { github: ctx.user2.json().accounts.github.id },
+                  owner: {
+                    github: ctx.user2.json().accounts.github.id,
+                    username: ctx.user2.json().accounts.github.login
+                  },
                   public: false,
                   build: ctx.build2.id(),
                   containers: exists,
@@ -367,6 +397,7 @@ describe('POST /instances', function () {
                 var json2 = {
                   build: ctx.build2.id()
                 };
+                require('../../fixtures/mocks/github/user')(ctx.user2);
                 require('../../fixtures/mocks/github/user')(ctx.user2);
                 ctx.user2.createInstance(json2, expects.success(201, expected2, done));
               }));
@@ -389,7 +420,8 @@ describe('POST /instances', function () {
           var json = {
             build: ctx.build2.id(),
             owner: {
-              github: ctx.user.attrs.accounts.github.id
+              github: ctx.user.attrs.accounts.github.id,
+              username: ctx.user.attrs.accounts.github.login
             }
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
@@ -416,7 +448,10 @@ describe('POST /instances', function () {
         var expected = {
           _id: exists,
           name: 'Instance2',
-          owner: { github: ctx.user.json().accounts.github.id },
+          owner: {
+            github: ctx.user.json().accounts.github.id,
+            username: ctx.user.json().accounts.github.login
+          },
           public: false,
           build: ctx.build.id(),
           containers: exists,

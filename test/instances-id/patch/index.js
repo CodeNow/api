@@ -43,7 +43,7 @@ describe('Instance - /instances/:id', function () {
       ctx.cv = mdlArray[0];
       ctx.context = mdlArray[1];
       ctx.srcArray = srcArray;
-      require('./fixtures/mocks/github/user')(ctx.user);
+      require('../../fixtures/mocks/github/user')(ctx.user);
       done();
     });
   });
@@ -101,7 +101,7 @@ describe('Instance - /instances/:id', function () {
           beforeEach(function (done) {
             multi.buildTheBuild(ctx.user, ctx.newBuild, done);
           });
-          it('should deploy the copied build', function (done) {
+          it('should deploy the copied build', { timeout: 1000 }, function (done) {
             var update = {
               build: ctx.newBuild.id().toString()
             };
@@ -129,10 +129,9 @@ describe('Instance - /instances/:id', function () {
                 expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
                 expect(container.attrs.inspect.Env).to.eql([]);
                 var count = createCount(done);
+                expects.deletedWeaveHost(oldContainer, count.inc().next);
                 expects.updatedWeaveHost(
                   container, ctx.instance.attrs.network.hostIp, count.inc().next);
-                expects.deletedWeaveHost(oldContainer, count.inc().next);
-                done();
               });
             }));
           });
@@ -315,7 +314,7 @@ describe('Instance - /instances/:id', function () {
         beforeEach(function(done) {
           ctx.otherBuild = ctx.build.deepCopy(done);
         });
-        it('should allow a build that has everything started', function (done) {
+        it('should allow a build that has everything started', {timeout:500}, function (done) {
           var expected = {
             // Since the containers are not removed until the otherBuild has finished, we should
             // still see them running
@@ -420,15 +419,15 @@ describe('Instance - /instances/:id', function () {
       describe('Testing lowername', function () {
         beforeEach(function (done) {
           // We need to deploy the container first before each test.
-          require('./fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.otherInstance = ctx.user.createInstance({
             build: ctx.build.attrs._id,
             name: 'hello'}, done);
         });
         it('should not allow changing the name to one that exists (lowername)', function (done) {
-          require('./fixtures/mocks/github/user')(ctx.user);
-          require('./fixtures/mocks/github/user')(ctx.user);
-          require('./fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({ name: 'HELLO' }, expects.errorStatus(409, /exists/, done));
         });
       });

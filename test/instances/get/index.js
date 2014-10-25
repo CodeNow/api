@@ -137,6 +137,7 @@ describe('GET /instances', function () {
         ctx.instance.update({ name: 'InstanceNumber1' }, function (err) {
           if (err) { return done(err); }
           require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.instance3 = ctx.user.createInstance({
             name: 'InstanceNumber3',
             build: ctx.instance.attrs.build._id
