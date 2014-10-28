@@ -159,9 +159,7 @@ function toHipacheEntryKey (containerPort, instance, user) {
   containerPort = containerPort.split('/')[0];
   var instanceName = instance.attrs.name;
   var ownerUsername = user.attrs.accounts.github.login;
-  var key = containerPort === '80' ?
-    [instanceName, '.', ownerUsername, '.', process.env.DOMAIN] :
-    [containerPort, '.', instanceName, '.', ownerUsername, '.', process.env.DOMAIN];
+  var key = [containerPort, '.', instanceName, '.', ownerUsername, '.', process.env.DOMAIN];
   return ['frontend:'].concat(key).join('').toLowerCase();
 }
 function toHipacheEntryVal (containerPort, container, instance) {
