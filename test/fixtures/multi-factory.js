@@ -207,7 +207,6 @@ module.exports = {
         require('./mocks/github/user')(user);
         require('./mocks/github/user')(user);
       }
-      require('./mocks/route53/resource-record-sets.js')();
       var instance = user.createInstance(body, function (err) {
         cb(err, instance, build, user, modelsArr, srcArr);
       });
