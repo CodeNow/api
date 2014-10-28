@@ -59,6 +59,7 @@ describe('Building - Context Version Deduping', function () {
         if (err) { return done(err); }
         // Add it to an instance
         var json = { build: ctx.build.id(), name: uuid() };
+        require('./fixtures/mocks/route53/resource-record-sets.js')();
         var instance = ctx.user.createInstance({ json: json }, function (err) {
           if (err) { return done(err); }
           // Now fork that instance
@@ -87,6 +88,7 @@ describe('Building - Context Version Deduping', function () {
         if (err) { return done(err); }
         // Add it to an instance
         var json = { build: ctx.build.id(), name: uuid() };
+        require('./fixtures/mocks/route53/resource-record-sets.js')();
         var instance = ctx.user.createInstance({ json: json }, function (err) {
           if (err) { return done(err); }
           // Now fork that instance
@@ -119,6 +121,7 @@ describe('Building - Context Version Deduping', function () {
         if (err) { return done(err); }
         // Add it to an instance
         var json = { build: ctx.build.id(), name: uuid() };
+        require('./fixtures/mocks/route53/resource-record-sets.js')();
         var instance = ctx.user.createInstance({ json: json }, function (err) {
           if (err) {
             return done(err);
@@ -160,6 +163,7 @@ describe('Building - Context Version Deduping', function () {
       require('./fixtures/mocks/github/user')(ctx.user);
       // Add it to an instance
       var json = { build: ctx.build.id(), name: uuid() };
+      require('./fixtures/mocks/route53/resource-record-sets.js')();
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) {
           return done(err);

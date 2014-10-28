@@ -45,6 +45,7 @@ describe('POST /instances', function () {
         var json = { build: ctx.build.id(), name: uuid() };
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/user')(ctx.user);
+        require('../../fixtures/mocks/route53/resource-record-sets.js')();
         ctx.user.createInstance({ json: json }, expects.error(400, /been started/, done));
       });
     });
@@ -80,6 +81,7 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/route53/resource-record-sets.js')();
             var instance = ctx.user.createInstance({ json: json },
              expects.success(201, expected, function(err) {
                if (err) { return done(err); }
@@ -97,6 +99,7 @@ describe('POST /instances', function () {
           require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
+            require('../../fixtures/mocks/route53/resource-record-sets.js')();
             var instance = ctx.user.createInstance({ json: json }, function (err) {
               if (err) { return done(err); }
               multi.tailInstance(ctx.user, instance, function (err) {
@@ -125,6 +128,7 @@ describe('POST /instances', function () {
           var json = { build: ctx.build.id(), name: uuid() };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/route53/resource-record-sets.js')();
           ctx.user.createInstance({ json: json }, expects.error(400, done));
         });
       });
@@ -151,6 +155,7 @@ describe('POST /instances', function () {
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/route53/resource-record-sets.js')();
           ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
         });
       });
@@ -187,6 +192,7 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/route53/resource-record-sets.js')();
             var instance = ctx.user.createInstance({ json: json },
               expects.success(201, expected, function(err) {
                 if (err) {
@@ -225,6 +231,7 @@ describe('POST /instances', function () {
           var incompleteBody = clone(json);
           delete incompleteBody[missingBodyKey];
           var errorMsg = new RegExp(missingBodyKey+'.*'+'is required');
+          require('../../fixtures/mocks/route53/resource-record-sets.js')();
           ctx.user.createInstance(incompleteBody,
             expects.error(400, errorMsg, done));
         });
@@ -241,6 +248,7 @@ describe('POST /instances', function () {
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/route53/resource-record-sets.js')();
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err, instanceData) {
               if (err) { return done(err); }
@@ -271,6 +279,7 @@ describe('POST /instances', function () {
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/route53/resource-record-sets.js')();
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
@@ -311,6 +320,7 @@ describe('POST /instances', function () {
             };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/route53/resource-record-sets.js')();
             ctx.user.createInstance(json,
               expects.success(201, expected, done));
           });
@@ -322,6 +332,7 @@ describe('POST /instances', function () {
                 iCauseError: true
               }]
             };
+            require('../../fixtures/mocks/route53/resource-record-sets.js')();
             ctx.user.createInstance(json,
               expects.errorStatus(400, /should be an array of strings/, done));
           });
@@ -336,6 +347,7 @@ describe('POST /instances', function () {
             };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/route53/resource-record-sets.js')();
             ctx.user.createInstance(json,
               expects.errorStatus(400, /should match/, done));
           });
@@ -366,6 +378,7 @@ describe('POST /instances', function () {
             };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/route53/resource-record-sets.js')();
             ctx.user.createInstance(json, expects.success(201, expected, function (err, body1) {
               if (err) { return done(err); }
               expected.name = 'Instance2';
@@ -375,6 +388,7 @@ describe('POST /instances', function () {
               };
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
+              require('../../fixtures/mocks/route53/resource-record-sets.js')();
               ctx.user.createInstance(json, expects.success(201, expected, function (err, body2) {
                 if (err) { return done(err); }
                 var expected2 = {
@@ -399,6 +413,7 @@ describe('POST /instances', function () {
                 };
                 require('../../fixtures/mocks/github/user')(ctx.user2);
                 require('../../fixtures/mocks/github/user')(ctx.user2);
+                require('../../fixtures/mocks/route53/resource-record-sets.js')();
                 ctx.user2.createInstance(json2, expects.success(201, expected2, done));
               }));
             }));
@@ -426,6 +441,7 @@ describe('POST /instances', function () {
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
+          require('../../fixtures/mocks/route53/resource-record-sets.js')();
           ctx.user.createInstance(json,
             expects.errorStatus(400, /owner must match/, done));
         });
@@ -433,6 +449,7 @@ describe('POST /instances', function () {
     });
     describe('Create instance from parent instance', function() {
       beforeEach(function (done) {
+        require('../../fixtures/mocks/route53/resource-record-sets.js')();
         multi.createInstance(function (err, instance, build, user) {
           ctx.instance = instance;
           ctx.build = build;
@@ -461,6 +478,7 @@ describe('POST /instances', function () {
           'network.hostIp': not(equals(ctx.instance.attrs.network.hostIp))
         };
         require('../../fixtures/mocks/github/user')(ctx.user);
+        require('../../fixtures/mocks/route53/resource-record-sets.js')();
         ctx.user.createInstance(json, expects.success(201, expected, done));
       });
     });

@@ -36,6 +36,7 @@ describe('Instance - /instances/:id/actions', function () {
   });
   describe('START', function () {
     beforeEach(function (done) {
+      require('./fixtures/mocks/route53/resource-record-sets.js')();
       ctx.instance.stop(done);
     });
     it('should start all containers', function (done) {
@@ -45,11 +46,13 @@ describe('Instance - /instances/:id/actions', function () {
       delete expected.containers;
       delete expected.__v;
       require('./fixtures/mocks/github/user')(ctx.user);
+      require('./fixtures/mocks/route53/resource-record-sets.js')();
       ctx.instance.start(expects.success(200, expected, done));
     });
     describe('and after started', function () {
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/route53/resource-record-sets.js')();
         ctx.instance.start(expects.success(200, done));
       });
       it('should have correct hipache hosts', function (done) {
@@ -88,6 +91,7 @@ describe('Instance - /instances/:id/actions', function () {
       delete expected.containers;
       delete expected.__v;
       require('./fixtures/mocks/github/user')(ctx.user);
+      require('./fixtures/mocks/route53/resource-record-sets.js')();
       ctx.instance.stop(expects.success(200, expected, done));
     });
 
@@ -97,9 +101,11 @@ describe('Instance - /instances/:id/actions', function () {
       // FIXME: add some better checks here like State.FinishedAt
       delete expected.containers;
       delete expected.__v;
+      require('./fixtures/mocks/route53/resource-record-sets.js')();
       ctx.instance.stop(expects.success(200, expected, function (err) {
         if (err) { return done(err); }
         require('./fixtures/mocks/github/user')(ctx.user);
+        require('./fixtures/mocks/route53/resource-record-sets.js')();
         ctx.instance.stop(expects.success(304, done));
       }));
     });
