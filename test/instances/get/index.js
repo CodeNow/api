@@ -140,7 +140,6 @@ describe('GET /instances', function () {
           if (err) { return done(err); }
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
-          require('../../fixtures/mocks/route53/resource-record-sets.js')();
           ctx.instance3 = ctx.user.createInstance({
             name: 'InstanceNumber3',
             build: ctx.instance.attrs.build._id

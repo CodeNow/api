@@ -422,7 +422,6 @@ describe('Instance - /instances/:id', function () {
         beforeEach(function (done) {
           // We need to deploy the container first before each test.
           require('../../fixtures/mocks/github/user')(ctx.user);
-          require('../../fixtures/mocks/route53/resource-record-sets.js')();
           ctx.otherInstance = ctx.user.createInstance({
             build: ctx.build.attrs._id,
             name: 'hello'}, done);

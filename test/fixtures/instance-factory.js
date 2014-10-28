@@ -7,7 +7,6 @@ module.exports = {
       body = null;
     }
     body = body || {};
-    require('./mocks/route53/resource-record-sets.js')();
     var instance = user.createInstance({ json: body }, cb);
     return instance;
   }
