@@ -138,6 +138,7 @@ describe('Instance - /instances/:id', function () {
           describe('with env', function() {
             beforeEach(function (done) {
               require('../../fixtures/mocks/github/user')(ctx.user);
+              require('../../fixtures/mocks/github/user')(ctx.user);
               ctx.instance.update({ env: ['ONE=1'] }, expects.success(200, done));
             });
             it('should have the env that was set on the instance', function (done) {
@@ -410,6 +411,7 @@ describe('Instance - /instances/:id', function () {
                 expected[key] = json[key];
               }
             });
+            require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);

@@ -96,6 +96,7 @@ describe('POST /instances', function () {
           require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
+            require('../../fixtures/mocks/github/user')(ctx.user);
             var instance = ctx.user.createInstance({ json: json }, function (err) {
               if (err) { return done(err); }
               multi.tailInstance(ctx.user, instance, function (err) {
