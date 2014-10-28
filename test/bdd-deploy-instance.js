@@ -23,8 +23,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  before(require('./fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
+  after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));

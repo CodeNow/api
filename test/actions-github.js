@@ -38,6 +38,8 @@ describe('Github - /actions/github', function () {
   after(api.stop.bind(ctx));
   before(dock.start.bind(ctx));
   after(dock.stop.bind(ctx));
+  before(require('./fixtures/mocks/api-client').setup);
+  after(require('./fixtures/mocks/api-client').clean);
   beforeEach(generateKey);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
