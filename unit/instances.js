@@ -46,12 +46,10 @@ describe('Instance', function () {
       build: validation.VALID_OBJECT_ID,
       created: Date.now(),
       containers: [createNewContainer()],
-      outputViews: [
-        {
-          name: 'testOutputView',
-          type: 'test'
-        }
-      ]
+      network: {
+        networkIp: '1.1.1.1',
+        hostIp: '1.1.1.100'
+      }
     });
   }
 
@@ -129,14 +127,4 @@ describe('Instance', function () {
     validation.githubUserRefValidationChecking(createNewInstance, 'createdBy.github');
     validation.requiredValidationChecking(createNewInstance, 'createdBy');
   });
-
-  describe('OutputViews Validation', function () {
-    describe('Name', function () {
-      validation.alphaNumNameValidationChecking(createNewInstance, 'outputViews.0.name');
-    });
-    describe('Type', function () {
-      validation.alphaNumNameValidationChecking(createNewInstance, 'outputViews.0.type');
-    });
-  });
-
 });

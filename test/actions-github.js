@@ -31,7 +31,7 @@ before(function (done) {
   done();
 });
 
-describe('Github', function () {
+describe('Github - /actions/github', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));

@@ -18,7 +18,7 @@ var RedisList = require('redis-types').List;
 var createCount = require('callback-count');
 var pick = require('101/pick');
 
-describe('BDD Create Build and Deploy Instance', function () {
+describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));

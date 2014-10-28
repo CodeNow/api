@@ -13,6 +13,8 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
+var not = require('101/not');
+var equals = require('101/equals');
 var uuid = require('uuid');
 var createCount = require('callback-count');
 var ContextVersion = require('models/mongo/context-version');
@@ -56,7 +58,7 @@ describe('Instances - /instances', function () {
         });
       });
       describe('user owned', function () {
-        it('should create a new instance', {timeout: 1000}, function(done) {
+        it('should create a new instance', {timeout: 1500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
@@ -67,10 +69,12 @@ describe('Instances - /instances', function () {
             'owner.username': ctx.user.attrs.accounts.github.username,
             contextVersions: exists,
             'contextVersions[0]._id': ctx.cv.id(),
-            'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0]
+            'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0],
+            'network.networkIp': exists,
+            'network.hostIp': exists
           };
           require('./fixtures/mocks/github/user')(ctx.user);
-          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) {
@@ -86,15 +90,16 @@ describe('Instances - /instances', function () {
             }));
           });
         });
-        it('should deploy the instance after the build finishes', {timeout: 500}, function(done) {
+
+        beforeEach(require('./fixtures/weave').clean);
+        it('should deploy the instance after the build finishes', {timeout: 1200}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
-          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) {
               done(err);
             }
-            require('./fixtures/mocks/github/user')(ctx.user);
             var instance = ctx.user.createInstance({ json: json }, function (err) {
               if (err) {
                 done(err);
@@ -102,6 +107,7 @@ describe('Instances - /instances', function () {
               multi.tailInstance(ctx.user, instance, function (err) {
                 if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.be.okay;
+                expects.updatedWeave(instance.attrs.container.dockerContainer, instance.attrs.network.hostIp);
                 done();
               });
             });
@@ -171,7 +177,7 @@ describe('Instances - /instances', function () {
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('./fixtures/mocks/github/user')(ctx.user);
-          require('./fixtures/mocks/docker/container-id-attach')();
+          require('./fixtures/mocks/docker/container-id-attach')(25);
           require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) {
@@ -223,7 +229,7 @@ describe('Instances - /instances', function () {
         });
       });
       describe('with built versions', function () {
-        it('should default the name to a short hash', function (done) {
+        it('should default the name to a short hash', {timeout:1000}, function (done) {
           var json = {
             build: ctx.build.id()
           };
@@ -242,7 +248,7 @@ describe('Instances - /instances', function () {
               done();
             }));
         });
-        it('should create an instance, and start it', function (done) {
+        it('should create an instance, and start it', {timeout:1000}, function (done) {
           var json = {
             name: uuid(),
             build: ctx.build.id()
@@ -255,7 +261,9 @@ describe('Instances - /instances', function () {
             public: false,
             build: ctx.build.id(),
             containers: exists,
-            'containers[0]': exists
+            'containers[0]': exists,
+            'network.networkIp': exists,
+            'network.hostIp': exists
           };
           require('./fixtures/mocks/github/user')(ctx.user);
           var instance = ctx.user.createInstance(json,
@@ -265,11 +273,14 @@ describe('Instances - /instances', function () {
               instance.fetch(function () {
                 if (err) { return done(err); }
                 expects.updatedHipacheHosts(ctx.user, instance, done);
+                expects.updatedWeave(
+                  instance.attrs.container.dockerContainer,
+                  instance.attrs.network.hostIp);
               });
             }));
         });
         describe('body.env', function() {
-          it('should create an instance, with ENV', function (done) {
+          it('should create an instance, with ENV', {timeout:1000}, function (done) {
             var json = {
               name: uuid(),
               build: ctx.build.id(),
@@ -446,7 +457,7 @@ describe('Instances - /instances', function () {
       it('should have the parent instance set in the new one', function (done) {
         var json = {
           build: ctx.build.id(),
-          parentInstance: ctx.instance.id()
+          parent: ctx.instance.id()
         };
         var expected = {
           _id: exists,
@@ -457,7 +468,9 @@ describe('Instances - /instances', function () {
           build: ctx.build.id(),
           containers: exists,
           parent: ctx.instance.id(),
-          shortHash: exists
+          shortHash: exists,
+          'network.networkIp': ctx.instance.attrs.network.networkIp, // same owner, same network
+          'network.hostIp': not(equals(ctx.instance.attrs.network.hostIp))
         };
         require('./fixtures/mocks/github/user')(ctx.user);
         require('./fixtures/mocks/github/user')(ctx.user);
@@ -513,7 +526,7 @@ describe('Instances - /instances', function () {
       }];
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
-    it('should get instances by username', function (done) {
+    it('should get instances by username', {timeout:500}, function (done) {
       var count = createCount(2, done);
       require('./fixtures/mocks/github/user')(ctx.user);
       require('./fixtures/mocks/github/user')(ctx.user2);

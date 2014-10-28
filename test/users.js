@@ -58,11 +58,11 @@
 //       // });
 //     });
 //     // describe('list', function() {
-//     //   beforeEach(require('./fixtures/nock-github'));
-//     //   beforeEach(require('./fixtures/nock-github'));
-//     //   beforeEach(require('./fixtures/nock-github'));
-//     //   beforeEach(require('./fixtures/nock-github'));
-//     //   beforeEach(require('./fixtures/nock-github')); // five
+//     //   beforeEach(require('./fixtures/mocks/github/login'));
+//     //   beforeEach(require('./fixtures/mocks/github/login'));
+//     //   beforeEach(require('./fixtures/mocks/github/login'));
+//     //   beforeEach(require('./fixtures/mocks/github/login'));
+//     //   beforeEach(require('./fixtures/mocks/github/login')); // five
 //     //   beforeEach(function (done) {
 //     //     var count = createCount(done);
 //     //     ctx.users = [

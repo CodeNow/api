@@ -44,7 +44,6 @@
     "i": "^0.3.2",
     "json-hash": "0.0.4",
     "keypather": "^1.7.5",
-    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.1",
     "middleware-flow": "^0.6.1",
     "mkdirp": "^0.5.0",
     "mongoose": "^3.8.13",
@@ -87,9 +86,12 @@
     "jshint": "^2.5.5",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "^3.2.1",
+    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.1",
     "multiline": "^0.3.4",
     "nock": "^0.48.0",
-    "nodemon": "^1.2.1"
+    "nodemon": "^1.2.1",
+    "require-inject": "^1.1.0",
+    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.2"
   },
   "engine": "node >= 0.10.5",
   "scripts": {

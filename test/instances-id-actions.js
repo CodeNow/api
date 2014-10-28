@@ -44,7 +44,6 @@ describe('Instance - /instances/:id/actions', function () {
       // FIXME: add some better checks here like State.StartedAt
       delete expected.containers;
       delete expected.__v;
-      expected['containers[0].startedBy.github'] = exists;
       require('./fixtures/mocks/github/user')(ctx.user);
       ctx.instance.start(expects.success(200, expected, done));
     });
@@ -65,7 +64,6 @@ describe('Instance - /instances/:id/actions', function () {
   describe('RESTART', function () {
     it('should restart all containers', function (done) {
       var expected = {};
-      expected['containers[0].startedBy.github'] = exists;
       ctx.instance.restart(expects.success(200, expected, done));
     });
     describe('and after started', function () {
@@ -89,7 +87,6 @@ describe('Instance - /instances/:id/actions', function () {
       // FIXME: add some better checks here like State.FinishedAt
       delete expected.containers;
       delete expected.__v;
-      expected['containers[0].stoppedBy.github'] = exists;
       require('./fixtures/mocks/github/user')(ctx.user);
       ctx.instance.stop(expects.success(200, expected, done));
     });
@@ -100,7 +97,6 @@ describe('Instance - /instances/:id/actions', function () {
       // FIXME: add some better checks here like State.FinishedAt
       delete expected.containers;
       delete expected.__v;
-      expected['containers[0].stoppedBy.github'] = exists;
       ctx.instance.stop(expects.success(200, expected, function (err) {
         if (err) { return done(err); }
         require('./fixtures/mocks/github/user')(ctx.user);
