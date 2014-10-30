@@ -171,14 +171,14 @@ describe('Build - /builds/:id/actions/build', function() {
         });
       });
       it('add another appcodeversion, build, remove an appcodeversion, it should not reuse cv',
-        function (done) {
+        { timeout: 500 }, function (done) {
           // Add a new repo to the contextVersion
           ctx.repoName = 'Dat-middleware';
           ctx.fullRepoName = ctx.user.json().accounts.github.login + '/' + ctx.repoName;
           var body = {
             repo: ctx.fullRepoName,
             branch: 'master',
-            commit: uuid()
+            commit: uuid().replace(/-/g, '')
           };
           require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
           require('../../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
@@ -189,7 +189,7 @@ describe('Build - /builds/:id/actions/build', function() {
               return done(err);
             }
             // Build the build
-            ctx.buildCopy = ctx.build.copy(function (err) {
+            ctx.buildCopy = ctx.build.deepCopy(function (err) {
               if (err) {
                 return done(err);
               }
@@ -198,12 +198,10 @@ describe('Build - /builds/:id/actions/build', function() {
                   return done(err);
                 }
                 // Now make a copy
-
                 function newCv() {
                   return ctx.user.newContext(ctx.context.id())
                     .newVersion(ctx.buildCopy.attrs.contextVersions[0]);
                 }
-
                 newCv().fetch(function (err, othercv) {
                   if (err) {
                     return done(err);
@@ -215,17 +213,19 @@ describe('Build - /builds/:id/actions/build', function() {
                       return done(err);
                     }
                     // Build the build
-                    require('./../../fixtures/mocks/docker/container-id-attach')(0, 'Failure');
+                    require('./../../fixtures/mocks/docker/container-id-attach')();
                     require('./../../fixtures/mocks/github/user')(ctx.user);
-                    ctx.buildCopy.build({message: 'hello!'}, function (err) {
+                    ctx.buildCopy.build({message: 'hello!'}, function (err, body) {
                       if (err) {
                         return done(err);
                       }
-                      // Now refetch the build, and make sure the cv is different
-                      // It should not have deduped the CV
-                      ctx.buildCopy.fetch(function (err, build) {
-                        expect(build.contextVersions[0]).to.be.equal(ctx.otherCv._id);
-                        done();
+                      tailBuildStream(body.contextVersions[0], function () {
+                        // Now refetch the build, and make sure the cv is different from the
+                        // original ctx.build it was cloned from
+                        ctx.buildCopy.fetch(function (err, build) {
+                          expect(build.contextVersions[0]).to.not.equal(ctx.build.attrs.contextVersions[0]);
+                          done();
+                        });
                       });
                     });
                   });
