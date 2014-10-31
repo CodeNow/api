@@ -4,7 +4,6 @@ var expect = require('lab').expect;
 var keypather = require('keypather')();
 var debug = require('debug')('runnable-api:testing:fixtures:expects');
 var exists = require('101/exists');
-var createCount = require('callback-count');
 
 var expects = module.exports = function (keypath) {
   return function (val) {
