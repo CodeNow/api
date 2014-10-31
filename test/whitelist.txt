@@ -1,6 +1,7 @@
 test/builds.js
 test/builds-id.js
 test/instances-id-actions/build/index.js
+test/instances-id-actions/copy/*
 test/builds-id-actions-copy.js
 test/contexts-id-versions.js
 test/contexts-id-versions-id.js
