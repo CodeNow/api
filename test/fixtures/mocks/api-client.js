@@ -34,11 +34,6 @@ module.exports.setup = function (cb) {
 module.exports.clean = function (cb) {
   // INSTANCE
   Instance.prototype.create = original['instance.create'];
-  Instance.prototype.update = original['instance.update'];
-  Instance.prototype.destroy = original['instance.destroy'];
-  Instance.prototype.restart = original['instance.restart'];
-  Instance.prototype.stop = original['instance.stop'];
-  Instance.prototype.start = original['instance.start'];
   // BUILD
   Build.prototype.build = original['build.build'];
   cb();
