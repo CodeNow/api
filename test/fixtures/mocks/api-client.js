@@ -1,15 +1,19 @@
 var Instance = require('runnable/lib/models/instance');
+var Build = require('runnable/lib/models/build');
 
 // TODO: make this less hardcoded
 
 var original = {};
 
 module.exports.setup = function (cb) {
+  // INSTANCE
   original['instance.create'] = Instance.prototype.create;
   Instance.prototype.create = function () {
     require('./route53/resource-record-sets')();
     require('./route53/resource-record-sets')();
     require('./route53/resource-record-sets')();
+    require('../../fixtures/mocks/github/user')(this.opts.user);
+    require('../../fixtures/mocks/github/user')(this.opts.user);
     original['instance.create'].apply(this, arguments);
   };
   original['instance.update'] = Instance.prototype.update;
@@ -50,15 +54,26 @@ module.exports.setup = function (cb) {
     require('./route53/resource-record-sets')();
     original['instance.start'].apply(this, arguments);
   };
+  // BUILD
+  original['build.build'] = Build.prototype.build;
+  Build.prototype.build = function () {
+    require('../../fixtures/mocks/github/user')(this.opts.user);
+    require('../../fixtures/mocks/github/user')(this.opts.user);
+    require('../../fixtures/mocks/docker/container-id-attach')(20);
+    require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(this.contextVersions.models[0]);
+    original['build.build'].apply(this, arguments);
+  };
   cb();
 };
 
 module.exports.clean = function (cb) {
+  // INSTANCE
   Instance.prototype.create = original['instance.create'];
   Instance.prototype.update = original['instance.update'];
   Instance.prototype.destroy = original['instance.destroy'];
   Instance.prototype.restart = original['instance.restart'];
   Instance.prototype.stop = original['instance.stop'];
   Instance.prototype.start = original['instance.start'];
+  // BUILD
   cb();
 };
