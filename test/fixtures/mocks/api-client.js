@@ -9,64 +9,14 @@ var original = {};
 module.exports.setup = function (cb) {
   // INSTANCE
   original['instance.create'] = Instance.prototype.create;
-  Instance.prototype.create = function (opts) {
+  Instance.prototype.create = function () {
     if (!(this.opts.client.request instanceof ExpressRequest)) {
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
     }
     original['instance.create'].apply(this, arguments);
   };
   original['instance.update'] = Instance.prototype.update;
-  Instance.prototype.update = function () {
-    if (!(this.opts.client.request instanceof ExpressRequest)) {
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-    }
-    original['instance.update'].apply(this, arguments);
-  };
-  original['instance.destroy'] = Instance.prototype.destroy;
-  Instance.prototype.destroy = function () {
-    if (!(this.opts.client.request instanceof ExpressRequest)) {
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-    }
-    original['instance.destroy'].apply(this, arguments);
-  };
-  original['instance.restart'] = Instance.prototype.restart;
-  Instance.prototype.restart = function () {
-    if (!(this.opts.client.request instanceof ExpressRequest)) {
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-    }
-    original['instance.restart'].apply(this, arguments);
-  };
-  original['instance.stop'] = Instance.prototype.stop;
-  Instance.prototype.stop = function () {
-    if (!(this.opts.client.request instanceof ExpressRequest)) {
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-    }
-    original['instance.stop'].apply(this, arguments);
-  };
-  original['instance.start'] = Instance.prototype.start;
-  Instance.prototype.start = function () {
-    if (!(this.opts.client.request instanceof ExpressRequest)) {
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-      require('./route53/resource-record-sets')();
-    }
-    original['instance.start'].apply(this, arguments);
-  };
   // BUILD
   original['build.build'] = Build.prototype.build;
   Build.prototype.build = function () {
