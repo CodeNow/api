@@ -11,6 +11,8 @@ var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
+var equals = require('101/equals');
+var not = require('101/not');
 
 describe('Instance - /instances/:id/actions', function () {
   var ctx = {};
@@ -44,8 +46,13 @@ describe('Instance - /instances/:id/actions', function () {
       var expected = ctx.instance.json();
       delete expected.owner.username; // don't expect this here
       // FIXME: add some better checks here like State.StartedAt
-      delete expected.containers;
       delete expected.__v;
+      expected["containers[0].ports['15000/tcp'][0].HostPort"] =
+        not(equals(expected.containers[0].ports['15000/tcp'][0].HostPort));
+      expected["containers[0].ports['80/tcp'][0].HostPort"] =
+        not(equals(expected.containers[0].ports['80/tcp'][0].HostPort));
+      delete expected.containers;
+      delete expected.container;
       require('./fixtures/mocks/github/user')(ctx.user);
       ctx.instance.start(expects.success(200, expected, done));
     });
