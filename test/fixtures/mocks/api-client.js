@@ -75,5 +75,6 @@ module.exports.clean = function (cb) {
   Instance.prototype.stop = original['instance.stop'];
   Instance.prototype.start = original['instance.start'];
   // BUILD
+  Build.prototype.build = original['build.build'];
   cb();
 };

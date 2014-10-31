@@ -117,7 +117,7 @@ module.exports = {
       // post create app code version
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
       // // fetch build
-      // require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+      require('./mocks/github/user-orgs')(ownerId, 'Runnable');
       // fetch context-version
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }

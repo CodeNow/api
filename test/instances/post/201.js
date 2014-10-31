@@ -89,6 +89,8 @@ describe('200 POST /instances', {timeout:500}, function () {
             },
             containers: exists,
             'containers[0]': exists,
+            'containers[0].dockerHost': exists,
+            'containers[0].dockerContainer': exists,
             'network.networkIp': exists,
             'network.hostIp': exists
           };
