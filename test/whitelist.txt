@@ -16,3 +16,4 @@ test/bdd-deploy-instance.js
 test/github-proxy.js
 test/users-id.js
 test/actions-github.js
+test/builds-id-actions-build/put

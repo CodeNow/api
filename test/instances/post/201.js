@@ -15,7 +15,7 @@ var uuid = require('uuid');
 var createCount = require('callback-count');
 var uuid = require('uuid');
 
-describe('200 POST /instances', {timeout:500}, function () {
+describe('201 POST /instances', {timeout:500}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -110,13 +110,8 @@ describe('200 POST /instances', {timeout:500}, function () {
       createInstanceTests(ctx);
     });
   });
-  describe('for Organization', function () {
-    describe('by member', function () {
+  describe('for Organization by member', function () {
 
-    });
-    describe('by non-member', function () {
-
-    });
   });
 });
 
