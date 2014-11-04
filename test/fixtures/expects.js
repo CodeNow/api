@@ -192,12 +192,13 @@ expects.deletedHipacheHosts = function (user, instance, cb) {
   var HipacheHosts = require('models/redis/hipache-hosts'); // must require here, else dns mocks will break
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var container = instance.containers.models[0];
+  var containerJSON = container.json();
   var hipacheHosts = new HipacheHosts();
 
   hipacheHosts.readRoutesForContainer(
     user.attrs.accounts.github.login,
     instance.json(),
-    container.json(),
+    containerJSON,
     function (err, redisData) {
       if (err) { return cb(err); }
       var expectedRedisData = {};

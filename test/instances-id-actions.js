@@ -18,10 +18,8 @@ describe('Instance - /instances/:id/actions', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  before(require('./fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
@@ -95,6 +93,8 @@ describe('Instance - /instances/:id/actions', function () {
       // FIXME: add some better checks here like State.FinishedAt
       delete expected.containers;
       delete expected.__v;
+      expected.container.inspect.State = { Running: false, Pid: -1 };
+      delete expected.container.inspect.NetworkSettings;
       require('./fixtures/mocks/github/user')(ctx.user);
       ctx.instance.stop(expects.success(200, expected, done));
     });
@@ -105,6 +105,8 @@ describe('Instance - /instances/:id/actions', function () {
       // FIXME: add some better checks here like State.FinishedAt
       delete expected.containers;
       delete expected.__v;
+      expected.container.inspect.State = { Running: false, Pid: -1 };
+      delete expected.container.inspect.NetworkSettings;
       ctx.instance.stop(expects.success(200, expected, function (err) {
         if (err) { return done(err); }
         require('./fixtures/mocks/github/user')(ctx.user);

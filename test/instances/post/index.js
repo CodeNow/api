@@ -25,10 +25,8 @@ describe('POST /instances', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  after(require('../../fixtures/mocks/api-client').clean);
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
@@ -66,7 +64,7 @@ describe('POST /instances', function () {
           var expected = {
             shortHash: exists,
             'createdBy.github': ctx.user.attrs.accounts.github.id,
-            build: ctx.build.id(),
+            'build._id': ctx.build.id(),
             name: exists,
             'owner.github': ctx.user.attrs.accounts.github.id,
             contextVersions: exists,
@@ -147,7 +145,7 @@ describe('POST /instances', function () {
           var expected = {
             shortHash: exists,
             'createdBy.github': ctx.user.attrs.accounts.github.id,
-            build: ctx.build.id(),
+            'build._id': ctx.build.id(),
             name: exists,
             'owner.github': ctx.user.attrs.accounts.github.id
           };
@@ -172,7 +170,7 @@ describe('POST /instances', function () {
           var expected = {
             shortHash: exists,
             'createdBy.github': ctx.user.attrs.accounts.github.id,
-            build: ctx.build.id(),
+            'build._id': ctx.build.id(),
             name: exists,
             'owner.github': ctx.orgId
           };
@@ -265,7 +263,7 @@ describe('POST /instances', function () {
               username: ctx.user.json().accounts.github.login
             },
             public: false,
-            build: ctx.build.id(),
+            'build._id': ctx.build.id(),
             containers: exists,
             'containers[0]': exists,
             'network.networkIp': exists,
@@ -307,7 +305,7 @@ describe('POST /instances', function () {
                 username: ctx.user.json().accounts.github.login
               },
               public: false,
-              build: ctx.build.id(),
+              'build._id': ctx.build.id(),
               containers: exists,
               'containers[0]': exists
             };
@@ -362,7 +360,7 @@ describe('POST /instances', function () {
                 username: ctx.user.json().accounts.github.login
               },
               public: false,
-              build: ctx.build.id(),
+              'build._id': ctx.build.id(),
               containers: exists,
               shortHash: exists
             };
@@ -387,7 +385,7 @@ describe('POST /instances', function () {
                     username: ctx.user2.json().accounts.github.login
                   },
                   public: false,
-                  build: ctx.build2.id(),
+                  'build._id': ctx.build2.id(),
                   containers: exists,
                   shortHash: function (shortHash) {
                     expect(shortHash)
@@ -455,7 +453,7 @@ describe('POST /instances', function () {
             username: ctx.user.json().accounts.github.login
           },
           public: false,
-          build: ctx.build.id(),
+          'build._id': ctx.build.id(),
           containers: exists,
           parent: ctx.instance.id(),
           shortHash: exists,
