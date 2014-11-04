@@ -9,7 +9,9 @@ test/contexts-id-versions-id-appcodeversions.js
 test/contexts-id-versions-id-infracodeversion-actions-copy.js
 test/instances
 test/instances-id
-test/instances-id-actions.js
+test/instances-id-actions-start
+test/instances-id-actions-stop
+test/instances-id-actions-restart
 test/instances-id-actions-copy
 test/instances-id-containers-id-files.js
 test/bdd-deploy-instance.js

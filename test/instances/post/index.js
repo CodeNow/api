@@ -176,6 +176,7 @@ describe('POST /instances', function () {
           };
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/docker/container-id-attach')(25);
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);

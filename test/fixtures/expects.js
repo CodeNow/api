@@ -152,7 +152,8 @@ expects.updatedHipacheHosts = function (user, instance, cb) {
         var val = toHipacheEntryVal(containerPort, container, instance);
         expectedRedisData[key] = val;
         // FIXME: mock get request to route53, and verify using that
-        expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.')))
+        // technically shouldn't be in loop.
+        expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.'), 'dns record'))
           .to.equal(instance.attrs.network.hostIp);
       });
       expect(redisData).to.eql(expectedRedisData);
@@ -205,10 +206,12 @@ expects.deletedHipacheHosts = function (user, instance, cb) {
       Object.keys(containerJSON.ports).forEach(function (containerPort) {
         var key = toHipacheEntryKey(containerPort, instance, user);
         expectedRedisData[key] = [];
+        // FIXME: mock get request to route53, and verify using that
+        // technically shouldn't be in loop.
+        expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.'), 'dns record'))
+          .to.not.be.ok;
       });
       expect(redisData).to.eql(expectedRedisData);
-      expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.')))
-        .to.not.be.ok;
       cb();
     });
 };

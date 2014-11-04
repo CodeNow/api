@@ -17,7 +17,6 @@ var createCount = require('callback-count');
 var uuid = require('uuid');
 var Docker = require('models/apis/docker');
 var extend = require('extend');
-require('console-trace')({always:true, right:true});
 
 describe('201 POST /instances', {timeout:500}, function () {
   var ctx = {};

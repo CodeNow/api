@@ -1,6 +1,7 @@
 var AWS = require('aws-sdk');
 var isObject = require('101/is-object');
 var find = require('101/find');
+var findIndex = require('101/find-index');
 var noop = require('101/noop');
 var exists = require('101/exists');
 var hasKeypaths = require('101/has-keypaths');
@@ -86,7 +87,7 @@ mock.reset = function (cb) {
 };
 
 mock.findRecordIp = function (name) {
-  var record = find(records, hasKeypaths({'Name.toLowerCase()':name})) || {};
+  var record = find(records, hasKeypaths({'Name.toLowerCase()':name.toLowerCase()})) || {};
   return keypather.get(record, 'ResourceRecords[0].Value');
 };
 
@@ -166,10 +167,11 @@ function mockUpsert (resourceRecordSet, cb) {
 function mockDelete (resourceRecordSet, cb) {
   var name = resourceRecordSet.Name;
   var type = resourceRecordSet.Type;
-  var record = find(records, hasKeypaths({
+  var index = findIndex(records, hasKeypaths({
     Name: name,
     Type: type
   }));
+  var record = ~index ? records[index] : null;
   var equalRecord = find(records, hasKeypaths({
     Name: name,
     Type: type,
@@ -183,6 +185,7 @@ function mockDelete (resourceRecordSet, cb) {
     cb(resp.deleteNotFoundErr(name, type));
   }
   else {
+    records.splice(index, 1);
     cb(null, resp.success());
   }
 }
