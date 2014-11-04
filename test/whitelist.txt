@@ -1,6 +1,7 @@
 test/builds.js
 test/builds-id.js
 test/instances-id-actions/build/index.js
+test/instances-id-actions/copy/*
 test/builds-id-actions-copy.js
 test/contexts-id-versions.js
 test/contexts-id-versions-id.js
@@ -15,3 +16,4 @@ test/bdd-deploy-instance.js
 test/github-proxy.js
 test/users-id.js
 test/actions-github.js
+test/builds-id-actions-build/put

@@ -125,7 +125,6 @@ function expectKeypaths (body, expectedKeypaths) {
 }
 
 // Specific expectation helpers
-var HipacheHosts = require('models/redis/hipache-hosts');
 var Sauron = require('models/apis/sauron');
 var url = require('url');
 
@@ -136,6 +135,8 @@ var url = require('url');
  * @param  {Function} cb       callback
  */
 expects.updatedHipacheHosts = function (user, instance, cb) {
+  var HipacheHosts = require('models/redis/hipache-hosts'); // must require here, else dns mocks will break
+  var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var container = instance.containers.models[0];
   var hipacheHosts = new HipacheHosts();
 
@@ -150,10 +151,14 @@ expects.updatedHipacheHosts = function (user, instance, cb) {
         var key = toHipacheEntryKey(containerPort, instance, user);
         var val = toHipacheEntryVal(containerPort, container, instance);
         expectedRedisData[key] = val;
+        // FIXME: mock get request to route53, and verify using that
+        expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.')))
+          .to.equal(instance.attrs.network.hostIp);
       });
       expect(redisData).to.eql(expectedRedisData);
       cb();
     });
+
 };
 function toHipacheEntryKey (containerPort, instance, user) {
   containerPort = containerPort.split('/')[0];
@@ -184,6 +189,8 @@ function toHipacheEntryVal (containerPort, container, instance) {
  * @param  {Function} cb        callback
  */
 expects.deletedHipacheHosts = function (user, instance, cb) {
+  var HipacheHosts = require('models/redis/hipache-hosts'); // must require here, else dns mocks will break
+  var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var container = instance.containers.models[0];
   var hipacheHosts = new HipacheHosts();
 
@@ -199,6 +206,9 @@ expects.deletedHipacheHosts = function (user, instance, cb) {
         expectedRedisData[key] = [];
       });
       expect(redisData).to.eql(expectedRedisData);
+      expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.')))
+        .to.not.be.ok;
+      cb();
     });
 };
 
@@ -232,10 +242,4 @@ expects.deletedWeaveHost = function (container, cb) {
     expect(err.message).to.match(/container/);
     cb();
   });
-};
-
-expects.expectDeletedRoutes = function (user, instance, cb) {
-  var count = require('callback-count')(cb);
-  expects.deletedWeave(instance, count.inc().next);
-  expects.deletedHipacheHosts(user, instance, count.inc().next);
 };

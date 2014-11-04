@@ -4,6 +4,8 @@ var redis = require('models/redis');
 var mavisApp = require('mavis');
 var sauron = require('./sauron');
 
+// fixme: rename this dependencies .. it isnt just a dock now
+
 var url = require('url');
 module.exports = {
   start: startDock,

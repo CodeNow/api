@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -82,6 +82,7 @@
     "docker-mock": "git://github.com/Runnable/docker-mock.git#v0.2.0",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
+    "function-proxy": "^0.5.1",
     "jsdoc": "^3.2.2",
     "jshint": "^2.5.5",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
