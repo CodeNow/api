@@ -14,5 +14,6 @@ test/instances-id-actions.js
 test/instances-id-containers-id-files.js
 test/bdd-deploy-instance.js
 test/github-proxy.js
+test/users.js
 test/users-id.js
 test/actions-github.js
