@@ -103,7 +103,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
-          it('should update context\'s '+keys+' to '+vals, function (done) {
+          it('should 405 update context\'s '+keys+' to '+vals, function (done) {
             ctx.contextVersion.update({ json: json }, expects.errorStatus(405, done));
           });
         });
@@ -114,7 +114,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
-          it('should not update context\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
+          it('should 405 not update context\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
             ctx.nonOwnerContext.updateVersion(ctx.contextVersion.id(), {json: json},
               expects.errorStatus(405, done));
           });
@@ -126,7 +126,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         updates.forEach(function (json) {
           var keys = Object.keys(json);
           var vals = keys.map(function (key) { return json[key]; });
-          it('should update context\'s '+keys+' to '+vals, function (done) {
+          it('should 405 update context\'s '+keys+' to '+vals, function (done) {
             ctx.modContext.updateVersion(ctx.contextVersion.id(), {json: json},
               expects.errorStatus(405, done));
           });
@@ -138,14 +138,14 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   describe('DELETE', function () {
     describe('permissions', function() {
       describe('owner', function () {
-        it('should delete the context', function (done) {
+        it('should 405 delete the context', function (done) {
           ctx.contextVersion.destroy(expects.errorStatus(405, done));
         });
       });
       describe('non-owner', function () {
         beforeEach(createNonOwner);
         beforeEach(createNonOwnerContext);
-        it('should not delete the context (403 forbidden)', function (done) {
+        it('should 405 not delete the context (403 forbidden)', function (done) {
           ctx.nonOwnerContext.destroyVersion(ctx.contextVersion.id(),
             expects.errorStatus(405, done));
         });
@@ -153,7 +153,7 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
       describe('moderator', function () {
         beforeEach(createModUser);
         beforeEach(createModContextVersion);
-        it('should delete the context', function (done) {
+        it('should 405 delete the context', function (done) {
           ctx.modContext.destroyVersion(ctx.contextVersion.id(), expects.errorStatus(405, done));
         });
       });

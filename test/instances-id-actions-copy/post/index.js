@@ -17,10 +17,8 @@ describe('Instance - /instances/:id/actions', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  after(require('../../fixtures/mocks/api-client').clean);
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
@@ -53,7 +51,7 @@ describe('Instance - /instances/:id/actions', function () {
           owner: { github: ctx.user.json().accounts.github.id,
                    username: ctx.user.json().accounts.github.username },
           parent: ctx.instance.id(),
-          'build': ctx.build.id(),
+          'build._id': ctx.build.id(),
           containers: exists
         };
         require('../../fixtures/mocks/github/user')(ctx.user);
@@ -68,7 +66,7 @@ describe('Instance - /instances/:id/actions', function () {
           'owner.github': ctx.user.json().accounts.github.id,
           'owner.username': ctx.user.json().accounts.github.username,
           parent: ctx.instance.id(),
-          'build': ctx.build.id(),
+          'build._id': ctx.build.id(),
           containers: exists
         };
         require('../../fixtures/mocks/github/user')(ctx.user);
@@ -89,7 +87,7 @@ describe('Instance - /instances/:id/actions', function () {
           owner: { github: ctx.user.json().accounts.github.id,
                    username: ctx.user.json().accounts.github.username },
           parent: ctx.instance.id(),
-          'build': ctx.build.id(),
+          'build._id': ctx.build.id(),
           containers: exists,
           env: ['ONE=1']
         };
@@ -117,7 +115,7 @@ describe('Instance - /instances/:id/actions', function () {
           createdBy: { github: ctx.user.json().accounts.github.id },
           'owner.github': ctx.orgId,
           parent: ctx.instance.id(),
-          build: ctx.build.id(),
+          'build._id': ctx.build.id(),
           containers: exists
         };
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
@@ -147,7 +145,7 @@ describe('Instance - /instances/:id/actions', function () {
             createdBy: { github: ctx.nonOwner.json().accounts.github.id },
             'owner.github': ctx.orgId,
             parent: ctx.otherInstance.id(),
-            build: ctx.build.id(),
+            'build._id': ctx.build.id(),
             containers: exists
           };
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
@@ -181,7 +179,7 @@ describe('Instance - /instances/:id/actions', function () {
             owner: { github: ctx.user.json().accounts.github.id,
                      username: ctx.user.json().accounts.github.username },
             parent: ctx.instance.id(),
-            'build': ctx.build.id(),
+            'build._id': ctx.build.id(),
             containers: exists
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
