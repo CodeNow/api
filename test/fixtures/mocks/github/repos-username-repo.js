@@ -14,14 +14,25 @@ function getRepoId (repoName) {
 }
 
 module.exports = function (userModel, repoName) {
-  if (!isObject(userModel)) {
-    throw new TypeError('user must be the user object');
+  var userId;
+  var username;
+  var repoId;
+  if (arguments.length === 2) {
+    if (!isObject(userModel)) {
+      throw new TypeError('user must be the user object');
+    }
+    // assume user model
+    var github = userModel.json().accounts.github;
+    userId = github.id;
+    username = github.login;
+    repoId = getRepoId(repoName);
   }
-  // assume user model
-  var github = userModel.json().accounts.github;
-  var userId = github.id;
-  var username = github.login;
-  var repoId = getRepoId(repoName);
+  else {
+    userId = arguments[0];
+    username = arguments[1];
+    repoName = arguments[2];
+    repoId = getRepoId(repoName);
+  }
 
 
   var urlRe = new RegExp('\/repos\/'+username+'\/'+repoName+'.*');
