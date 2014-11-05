@@ -12,7 +12,7 @@ test/instances-id
 test/instances-id-actions-start
 test/instances-id-actions-stop
 test/instances-id-actions-restart
-test/instances-id-actions-copy
+test/instances-id-actions-copy/post
 test/instances-id-containers-id-files.js
 test/bdd-deploy-instance.js
 test/github-proxy.js
