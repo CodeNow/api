@@ -58,10 +58,31 @@ describe('PUT /instances/:id/actions/start', function () {
     done();
   });
   describe('START', function () {
-    describe('stopped instance', function () {
+    describe('stopped instance (by user)', function () {
       beforeEach(function (done) {
         ctx.oldPorts = ctx.instance.attrs.containers[0].ports;
         ctx.instance.stop(done);
+      });
+      it('should start the instance', function (done) {
+        extend(ctx.expected, {
+          containers: exists,
+          'containers[0]': exists,
+          'containers[0].dockerHost': exists,
+          'containers[0].dockerContainer': exists,
+          "containers[0].ports['15000/tcp'][0].HostPort": not(equals(ctx.oldPorts['15000/tcp'][0].HostPort)),
+          "containers[0].ports['80/tcp'][0].HostPort": not(equals(ctx.oldPorts['80/tcp'][0].HostPort)),
+          'containers[0].inspect.State.Running': true
+        });
+
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        ctx.instance.start(expects.success(200, ctx.expected, done));
+      });
+    });
+    describe('stopped instance (by docker)', function () {
+      beforeEach(function (done) {
+        ctx.oldPorts = ctx.instance.attrs.containers[0].ports;
+        var docker = new Docker(instance.attrs.container.dockerHost);
+        docker.stopContainer(ctx.instance.attrs.container, done);
       });
       it('should start the instance', function (done) {
         extend(ctx.expected, {

@@ -92,7 +92,7 @@
     "nock": "^0.48.0",
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
-    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.2"
+    "sauron": "git+ssh://git@github.com:codenow/sauron#308c108c3590072e8d0b65e78676ddfda113ae2e"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
