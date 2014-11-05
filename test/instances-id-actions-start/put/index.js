@@ -15,6 +15,7 @@ var exists = require('101/exists');
 var not = require('101/not');
 var extend = require('extend');
 var createCount = require('callback-count');
+var Docker = require('models/apis/docker');
 
 describe('PUT /instances/:id/actions/start', function () {
   var ctx = {};
@@ -80,9 +81,10 @@ describe('PUT /instances/:id/actions/start', function () {
     });
     describe('stopped instance (by docker)', function () {
       beforeEach(function (done) {
-        ctx.oldPorts = ctx.instance.attrs.containers[0].ports;
+        var instance = ctx.instance;
+        ctx.oldPorts = instance.attrs.containers[0].ports;
         var docker = new Docker(instance.attrs.container.dockerHost);
-        docker.stopContainer(ctx.instance.attrs.container, done);
+        docker.stopContainer(instance.attrs.container, done);
       });
       it('should start the instance', function (done) {
         extend(ctx.expected, {
