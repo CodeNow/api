@@ -117,7 +117,5 @@ describe('PUT /instances/:id/actions/start', function () {
         });
       });
     });
-    describe('and after started', function () {
-    });
   });
 });

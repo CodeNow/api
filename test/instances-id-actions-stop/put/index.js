@@ -14,6 +14,7 @@ var not = require('101/not');
 var exists = require('101/exists');
 var extend = require('extend');
 var createCount = require('callback-count');
+var Docker = require('models/apis/docker');
 
 describe('PUT /instances/:id/actions/stop', function () {
   var ctx = {};
@@ -72,7 +73,7 @@ describe('PUT /instances/:id/actions/stop', function () {
       require('../../fixtures/mocks/github/user')(ctx.user);
       ctx.instance.stop(expects.success(200, ctx.expected, done));
     });
-    describe('stop container', function() {
+    describe('stop container (by user)', function() {
       beforeEach(function (done) {
         ctx.instance.stop(expects.success(200, done));
       });
@@ -85,6 +86,23 @@ describe('PUT /instances/:id/actions/stop', function () {
         expects.deletedHipacheHosts(ctx.user, ctx.instance, count.inc().next);
         expects.deletedWeaveHost(container, count.inc().next);
       });
+    });
+    describe('stop container (by docker)', function() {
+      beforeEach(function (done) {
+        var instance = ctx.instance;
+        ctx.oldPorts = instance.attrs.containers[0].ports;
+        var docker = new Docker(instance.attrs.container.dockerHost);
+        docker.stopContainer(instance.attrs.container, done);
+      });
+      it('should not stop an already stopped container', function (done) {
+        ctx.instance.stop(expects.success(304, done));
+      });
+      // it('should update hipache hosts, dns, and weave', function (done) {
+      //   var count = createCount(done);
+      //   var container = ctx.instance.containers.models[0];
+      //   expects.deletedHipacheHosts(ctx.user, ctx.instance, count.inc().next);
+      //   expects.deletedWeaveHost(container, count.inc().next);
+      // });
     });
   });
 });
