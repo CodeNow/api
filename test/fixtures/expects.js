@@ -140,7 +140,7 @@ expects.updatedHipacheHosts = function (user, instance, cb) {
   var container = instance.containers.models[0];
   var hipacheHosts = new HipacheHosts();
 
-  hipacheHosts.readRoutesForContainer(
+  hipacheHosts.readHipacheEntriesForContainer(
     user.attrs.accounts.github.login,
     instance.json(),
     container.json(),
@@ -153,7 +153,7 @@ expects.updatedHipacheHosts = function (user, instance, cb) {
         expectedRedisData[key] = val;
         // FIXME: mock get request to route53, and verify using that
         // technically shouldn't be in loop.
-        expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.'), 'dns record'))
+        expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.')), 'dns record')
           .to.equal(instance.attrs.network.hostIp);
       });
       expect(redisData).to.eql(expectedRedisData);
@@ -196,7 +196,7 @@ expects.deletedHipacheHosts = function (user, instance, cb) {
   var containerJSON = container.json();
   var hipacheHosts = new HipacheHosts();
 
-  hipacheHosts.readRoutesForContainer(
+  hipacheHosts.readHipacheEntriesForContainer(
     user.attrs.accounts.github.login,
     instance.json(),
     containerJSON,
@@ -208,7 +208,7 @@ expects.deletedHipacheHosts = function (user, instance, cb) {
         expectedRedisData[key] = [];
         // FIXME: mock get request to route53, and verify using that
         // technically shouldn't be in loop.
-        expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.'), 'dns record'))
+        expect(mockRoute53.findRecordIp(key.split('.').slice(1).join('.')), 'dns record')
           .to.not.be.ok;
       });
       expect(redisData).to.eql(expectedRedisData);

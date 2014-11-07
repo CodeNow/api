@@ -243,12 +243,11 @@ module.exports = {
       // build fetch
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
-    require('./mocks/docker/container-id-attach')(100);
     build.fetch(function (err) {
       if (err) { return cb(err); }
       build.contextVersions.models[0].fetch(function (err, cv) {
         if (err) { return cb(err); }
-        require('./mocks/docker/container-id-attach')();
+        require('./mocks/docker/container-id-attach')(100);
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);

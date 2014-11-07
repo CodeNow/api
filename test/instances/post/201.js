@@ -77,24 +77,27 @@ describe('201 POST /instances', {timeout:500}, function () {
       createInstanceTests(ctx);
     });
     describe('with built build', function () {
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, user, modelsArr) {
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = modelsArr[0];
+          done(err);
+        });
+      });
+      beforeEach(initExpected);
+      beforeEach(function (done) {
+        extend(ctx.expected, {
+          containers: exists,
+          'containers[0]': exists,
+          'containers[0].dockerHost': exists,
+          'containers[0].dockerContainer': exists
+        });
+        done();
+      });
       describe('Long running container', function() {
         beforeEach(function (done) {
-          multi.createBuiltBuild(function (err, build, user, modelsArr) {
-            ctx.build = build;
-            ctx.user = user;
-            ctx.cv = modelsArr[0];
-            done(err);
-          });
-        });
-        beforeEach(initExpected);
-        beforeEach(function (done) {
-          extend(ctx.expected, {
-            containers: exists,
-            'containers[0]': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': true
-          });
+          ctx.expected['containers[0].inspect.State.Running'] = true;
           done();
         });
         afterEach(function (done) {
@@ -111,25 +114,7 @@ describe('201 POST /instances', {timeout:500}, function () {
       });
       describe('Immediately exiting container', function() {
         beforeEach(function (done) {
-          multi.createBuiltBuild(function (err, build, user, modelsArr) {
-            ctx.build = build;
-            ctx.user = user;
-            ctx.cv = modelsArr[0];
-            done(err);
-          });
-        });
-        beforeEach(initExpected);
-        beforeEach(function (done) {
-          extend(ctx.expected, {
-            containers: exists,
-            'containers[0]': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': false
-          });
-          done();
-        });
-        beforeEach(function (done) {
+          ctx.expected['containers[0].inspect.State.Running'] = false;
           ctx.originalStart = Docker.prototype.startContainer;
           Docker.prototype.startContainer = function () {
             var self = this;
@@ -154,6 +139,31 @@ describe('201 POST /instances', {timeout:500}, function () {
 
         createInstanceTests(ctx);
       });
+      describe('Immediately exiting container', function() {
+        beforeEach(function (done) {
+          ctx.expected['containers[0].inspect.State.Running'] = false;
+          ctx.originalStart = Docker.prototype.startContainer;
+          Docker.prototype.startContainer = function () {
+            var self = this;
+            var args = Array.prototype.slice.call(arguments);
+            var container = args[0];
+            var cb = args.pop();
+            args.push(stopContainer);
+            return ctx.originalStart.apply(this, args);
+            function stopContainer (err, start) {
+              if (err) { return cb(err); }
+              self.stopContainer(container, function (err) {
+                cb(err, start);
+              });
+            }
+          };
+          done();
+        });
+        afterEach(function (done) {
+          Docker.prototype.startContainer = ctx.originalStart;
+          done();
+        });
+        createInstanceTests(ctx);
     });
   });
   describe('for Organization by member', function () {

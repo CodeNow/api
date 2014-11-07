@@ -14,6 +14,12 @@ module.exports.setup = function (cb) {
     create: function () {
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
+    },
+    update: function () {
+      require('../../fixtures/mocks/github/user')(this.opts.user);
+      require('../../fixtures/mocks/github/user')(this.opts.user);
+      require('../../fixtures/mocks/github/user')(this.opts.user);
+      require('../../fixtures/mocks/github/user')(this.opts.user);
     }
   });
 
@@ -22,7 +28,7 @@ module.exports.setup = function (cb) {
     build: function () {
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
-      require('../../fixtures/mocks/docker/container-id-attach')(20);
+      require('../../fixtures/mocks/docker/container-id-attach')(100);
       require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(
         this.contextVersions.models[0]);
     }
