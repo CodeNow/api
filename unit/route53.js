@@ -43,7 +43,7 @@ describe('Route53 Unit Tests', function() {
         done();
       });
     });
-    it('delete diffent domain', function(done){
+    it('delete different domain', function(done){
       var params = createParams('DELETE','api.net', '10.0.0.0');
       route53.changeResourceRecordSets(params, function  () {
        done();
