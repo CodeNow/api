@@ -3,6 +3,7 @@ var docker = require('./docker');
 var redis = require('models/redis');
 var mavisApp = require('mavis');
 var sauron = require('./sauron');
+var dockerModuleMock = require('./mocks/dockerModuleMock.js');
 
 // fixme: rename this dependencies .. it isnt just a dock now
 
@@ -29,6 +30,7 @@ function startDock (done) {
     'host',
     testDockHost,
     count.inc().next);
+  dockerModuleMock.setup(count.inc().next);
 }
 function stopDock (done) {
   var count = createCount(done);
@@ -37,5 +39,6 @@ function stopDock (done) {
   ctx.sauron = ctx.sauron.close(count.inc().next);
   redis.del(process.env.REDIS_HOST_KEYS, count.inc().next);
   redis.del(testDockHost, count.inc().next);
+  dockerModuleMock.clean(count.inc().next);
   delete ctx.docker;
 }
