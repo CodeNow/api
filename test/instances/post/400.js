@@ -159,6 +159,49 @@ describe('400 POST /instances', {timeout:500}, function () {
   });
 });
 
+
+var def = {
+  action: 'create an instance',
+  requiredParams: [
+  {
+    name: 'build',
+    type: 'ObjectId'
+  }],
+  optionalParams: [
+  {
+    name: 'name',
+    type: 'string'
+  }]
+};
+
+function makeTestFromDef(def, actionCb) {
+  var types = ['string', 'number', 'boolean', 'object', 'array'];
+  var values = {
+    'string': 'some-string-value',
+    'number': 123, 
+    'boolean': false,
+    'object': {
+      key1: 3,
+      key2: 'some-val',
+    },
+    'array': ['val1', 'val2', 'val3']
+  };
+  def.requiredParams.each(function(param) {
+    var paramTypes = types.filter(function(type) {
+      return type !== param.type;
+    });
+    paramTypes.each(function(type) {
+      it('should ' + def.action + ' when ' + param.name + 'is ' + type, function(done) {
+        var body = {};
+        body[param.name] = values[type];
+        var message = new RegExp('body parameter "' + param.name + '" is not an ' + param.type);
+        actionCb(body, expects.error(400, message, done));
+      });
+    })
+  });
+}
+
+
 function createInstanceTests (ctx) {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
