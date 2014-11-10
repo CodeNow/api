@@ -96,7 +96,7 @@ describe('GET /instances', function () {
       require('../../fixtures/mocks/github/users-username')(ctx.user2.json().accounts.github.id, ctx.user2.username);
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
-    it('should list versions by owner.github', function (done) {
+    it('should list instances by owner.github', function (done) {
       var count = createCount(2, done);
       require('../../fixtures/mocks/github/user')(ctx.user);
       require('../../fixtures/mocks/github/user')(ctx.user2);
@@ -144,10 +144,9 @@ describe('GET /instances', function () {
           }, done);
         });
       });
-      it('should list versions by owner.github and name', function (done) {
+      it('should list instances by owner.github and name', function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/user')(ctx.user2);
-
         var query = {
           owner: {
             github: ctx.user.attrs.accounts.github.id
@@ -165,7 +164,7 @@ describe('GET /instances', function () {
         // FIXME: chai is messing up with eql check:
         ctx.user.fetchInstances(query, expects.success(200, expected, done));
       });
-      it('should list versions by githubUsername and name', function (done) {
+      it('should list instances by githubUsername and name', function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
 
         var query = {
@@ -242,7 +241,7 @@ describe('GET /instances', function () {
       });
     });
     describe('name and owner', function () {
-      it('should list versions by githubUsername and name', function (done) {
+      it('should list instances by githubUsername and name', function (done) {
         var query = {
           githubUsername: ctx.orgName,
           name: ctx.instance.attrs.name

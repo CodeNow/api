@@ -164,6 +164,7 @@ describe('201 POST /instances', {timeout:500}, function () {
           done();
         });
         createInstanceTests(ctx);
+      });
     });
   });
   describe('for Organization by member', function () {

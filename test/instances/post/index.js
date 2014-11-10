@@ -187,6 +187,7 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+            require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user')(ctx.user);
             var instance = ctx.user.createInstance({ json: json },
               expects.success(201, expected, function(err) {
@@ -259,10 +260,8 @@ describe('POST /instances', function () {
           var expected = {
             _id: exists,
             name: json.name,
-            owner: {
-              github: ctx.user.json().accounts.github.id,
-              username: ctx.user.json().accounts.github.login
-            },
+            'owner.github': ctx.user.json().accounts.github.id,
+            'owner.username': ctx.user.json().accounts.github.login,
             public: false,
             'build._id': ctx.build.id(),
             containers: exists,
@@ -275,15 +274,18 @@ describe('POST /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
-              require('../../fixtures/mocks/github/user')(ctx.user);
-              var container = instance.containers.models[0];
-              instance.fetch(function (err) {
+              multi.tailInstance(ctx.user, instance, function (err) {
                 if (err) { return done(err); }
-                var count = createCount(done);
-                expects.updatedHipacheHosts(
-                  ctx.user, instance, count.inc().next);
-                expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.inc().next);
+                require('../../fixtures/mocks/github/user')(ctx.user);
+                var container = instance.containers.models[0];
+                instance.fetch(function (err) {
+                  if (err) { return done(err); }
+                  var count = createCount(done);
+                  expects.updatedHipacheHosts(
+                    ctx.user, instance, count.inc().next);
+                  expects.updatedWeaveHost(
+                    container, instance.attrs.network.hostIp, count.inc().next);
+                });
               });
             }));
         });
@@ -448,7 +450,7 @@ describe('POST /instances', function () {
         };
         var expected = {
           _id: exists,
-          name: 'Instance2',
+          name: 'Instance1', // uuid is used in multi.createInstance
           owner: {
             github: ctx.user.json().accounts.github.id,
             username: ctx.user.json().accounts.github.login

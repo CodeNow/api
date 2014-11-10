@@ -1,5 +1,6 @@
 var isFunction = require('101/is-function');
 var isString = require('101/is-string');
+var isObject = require('101/is-object');
 var expect = require('lab').expect;
 var keypather = require('keypather')();
 var debug = require('debug')('runnable-api:testing:fixtures:expects');
@@ -120,6 +121,9 @@ function expectKeypaths (body, expectedKeypaths) {
         keypather.set(expected, keypath, expectedVal);
       }
     });
+    // bc chai is not asserting eql for nested objects if the key order is diff...
+    extracted = sortKeys(extracted);
+    expected = sortKeys(expected);
     expect(extracted).to.eql(expected);
   }
 }
@@ -135,11 +139,10 @@ var url = require('url');
  * @param  {Function} cb       callback
  */
 expects.updatedHipacheHosts = function (user, instance, cb) {
-  var HipacheHosts = require('models/redis/hipache-hosts'); // must require here, else dns mocks will break
+  var HipacheHosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var container = instance.containers.models[0];
   var hipacheHosts = new HipacheHosts();
-
   hipacheHosts.readHipacheEntriesForContainer(
     user.attrs.accounts.github.login,
     instance.json(),
@@ -190,11 +193,11 @@ function toHipacheEntryVal (containerPort, container, instance) {
  * @param  {Function} cb        callback
  */
 expects.deletedHipacheHosts = function (user, instance, cb) {
-  var HipacheHosts = require('models/redis/hipache-hosts'); // must require here, else dns mocks will break
+  var HOST = require('models/redis/hosts'); // must require here, else dns mocks will break
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var container = instance.containers.models[0];
   var containerJSON = container.json();
-  var hipacheHosts = new HipacheHosts();
+  var hipacheHosts = new HOST();
 
   hipacheHosts.readHipacheEntriesForContainer(
     user.attrs.accounts.github.login,
@@ -247,3 +250,19 @@ expects.deletedWeaveHost = function (container, cb) {
     cb();
   });
 };
+
+// bc chai is not asserting eql for nested objects if the key order is diff...
+function sortKeys (o) {
+  if (!isObject(o)) {
+    return o;
+  }
+  else {
+    var out = {};
+    Object.keys(o).sort().forEach(function (key) {
+      out[key] = isObject(o[key]) ?
+        sortKeys(o[key]) :
+        o[key];
+    });
+    return out;
+  }
+}

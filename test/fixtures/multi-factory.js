@@ -208,6 +208,7 @@ module.exports = {
         require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
         require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
         require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
+        require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
       } else {
         require('./mocks/github/user')(user);
         require('./mocks/github/user')(user);
