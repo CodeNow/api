@@ -106,7 +106,5 @@ describe('Instance - /instances/:id', function () {
       ctx.instance.update(body, cb);
     });
 
-
-    
   });
 });
