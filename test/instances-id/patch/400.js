@@ -11,7 +11,7 @@ var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 
 
-describe('Instance - /instances/:id', function () {
+describe('PATCH 400 - /instances/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -44,28 +44,26 @@ describe('Instance - /instances/:id', function () {
    * be modified all at once
    */
   describe('PATCH', function () {
-    describe('Orgs', function () {
-      beforeEach(function (done) {
-        ctx.orgId = 1001;
-        multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
-          //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
-          if (err) {
-            return done(err);
-          }
-          ctx.instance = instance;
-          ctx.build = build;
-          ctx.user = user;
-          ctx.cv = mdlArray[0];
-          ctx.context = mdlArray[1];
-          ctx.srcArray = srcArray;
+    beforeEach(function (done) {
+      ctx.orgId = 1001;
+      multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
+        //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
+        if (err) {
+          return done(err);
+        }
+        ctx.instance = instance;
+        ctx.build = build;
+        ctx.user = user;
+        ctx.cv = mdlArray[0];
+        ctx.context = mdlArray[1];
+        ctx.srcArray = srcArray;
 
-          multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build) {
-            if (err) {
-              done(err);
-            }
-            ctx.otherBuild = build;
-            done();
-          });
+        multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build) {
+          if (err) {
+            done(err);
+          }
+          ctx.otherBuild = build;
+          done();
         });
       });
     });
@@ -105,6 +103,7 @@ describe('Instance - /instances/:id', function () {
     typesTests.makeTestFromDef(def, ctx, function(body, cb) {
       ctx.instance.update(body, cb);
     });
+
 
   });
 });
