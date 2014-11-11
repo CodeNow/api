@@ -203,6 +203,7 @@ function makeTestFromDef(def, ctx) {
     var paramTypes = types.filter(function(type) {
       return type !== param.type;
     });
+    // TODO (anton) cover case when we have few required parameters
     paramTypes.forEach(function(type) {
       it('should not ' + def.action + ' when `' + param.name + '` param is ' + type, function(done) {
         var body = {};
@@ -210,7 +211,7 @@ function makeTestFromDef(def, ctx) {
         var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, type));
         ctx.user.createInstance(body, expects.error(400, message, done));
       });
-    })
+    });
   });
   def.optionalParams.forEach(function(param) {
     var paramTypes = types.filter(function(type) {
@@ -229,19 +230,25 @@ function makeTestFromDef(def, ctx) {
         return type !== param.itemType;
       });
       arrayItemTypes.forEach(function(arrayItemType) {
-        it('should not ' + def.action + ' when `' + param.name + '` param has ' + arrayItemType + ' items in the array', function(done) {
+        var testName = 'should not ' + def.action + ' when `' + param.name +
+        '` param has ' + arrayItemType + ' items in the array';
+        it(testName, function(done) {
           var body = buildBodyWithRequiredParams(ctx, def.requiredParams);
           body[param.name] = [];
           body[param.name].push(typeValue(ctx, arrayItemType));
           body[param.name].push(typeValue(ctx, arrayItemType));
           body[param.name].push(typeValue(ctx, arrayItemType));
           // e.g. body parameter "env" should be an array of strings
-          var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, arrayItemType) + ' of ' + param.itemType + 's');
+          var regexp = 'body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, arrayItemType) +
+          ' of ' + param.itemType + 's';
+          var message = new RegExp(regexp);
           ctx.user.createInstance(body, expects.error(400, message, done));
         }); 
       });
       param.itemValues.forEach(function(itemValue) {
-        it('should not ' + def.action + ' when `' + param.name + '` param has invalid item value such as ' + itemValue, function(done) {
+        var testName = 'should not ' + def.action + ' when `' + param.name +
+        '` param has invalid item value such as ' + itemValue;
+        it(testName, function(done) {
           var body = buildBodyWithRequiredParams(ctx, def.requiredParams);
           body[param.name] = [itemValue];
           // e.g. "env" should match 
