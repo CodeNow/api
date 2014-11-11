@@ -67,7 +67,7 @@
     "request": "2.42.0",
     "rimraf": "^2.2.8",
     "rollbar": "^0.3.13",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.36.2",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.36.0",
     "s3-stream-upload": "0.0.6",
     "simple-api-client": "^0.5.9",
     "substream": "0.1.1",
