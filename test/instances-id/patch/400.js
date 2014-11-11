@@ -37,13 +37,7 @@ describe('PATCH 400 - /instances/:id', function () {
     });
   });
 
-  /**
-   * Patching has a couple of different jobs.  It allows the user to edit the name of the instance,
-   * modify it's public/private flag, and now, change it's build.  These tests should not only
-   * verify the user can change all of these individually, they should also test everything can
-   * be modified all at once
-   */
-  describe('PATCH', function () {
+  describe('invalid types', function () {
     beforeEach(function (done) {
       ctx.orgId = 1001;
       multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
@@ -68,9 +62,6 @@ describe('PATCH 400 - /instances/:id', function () {
       });
     });
 
-    // NOTE:
-    // there is no way to generate strings that don't match regexp
-    // that is why we need to provide manually test strings that should fail
     var def = {
       action: 'update',
       // requiredParams: [
@@ -78,7 +69,7 @@ describe('PATCH 400 - /instances/:id', function () {
       //   name: 'build',
       //   type: 'ObjectId'
       // }],
-      requiredParams: [
+      optionalParams: [
       {
         name: 'env',
         type: 'array',
@@ -93,10 +84,10 @@ describe('PATCH 400 - /instances/:id', function () {
       {
         name: 'name',
         type: 'string',
-        invalidValues: [
-          'has!',
-          'has.x2'
-        ]
+        // invalidValues: [
+        //   'has!',
+        //   'has.x2'
+        // ]
       }]
     };
 

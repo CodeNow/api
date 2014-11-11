@@ -10,7 +10,7 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 
-describe('Instance - /instances/:id/actions', function () {
+describe('400  POST /instances/:id/actions/copy', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -35,20 +35,17 @@ describe('Instance - /instances/:id/actions', function () {
 
 
   describe('Copy', function () {
-    describe('owner', function () {
-      var def = {
-        action: 'copy the instance',
-        optionalParams: [
-        {
-          name: 'name',
-          type: 'string'
-        }]
-      };
+    var def = {
+      action: 'copy the instance',
+      optionalParams: [
+      {
+        name: 'name',
+        type: 'string'
+      }]
+    };
 
-      typesTests.makeTestFromDef(def, ctx, function(body, cb) {
-        ctx.instance.copy({ json: body }, cb);
-      });
-  
+    typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+      ctx.instance.copy({ json: body }, cb);
     });
 
   });
