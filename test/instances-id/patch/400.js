@@ -74,19 +74,19 @@ describe('Instance - /instances/:id', function () {
     // there is no way to generate strings that don't match regexp
     // that is why we need to provide manually test strings that should fail
     var def = {
-      action: 'update env',
+      action: 'update',
       // requiredParams: [
       // {
       //   name: 'build',
       //   type: 'ObjectId'
       // }],
-      optionalParams: [
+      requiredParams: [
       {
         name: 'env',
         type: 'array',
         itemType: 'string',
         itemRegExp: /^([A-Za-z]+[A-Za-z0-9_]*)=('(\n[^']*')|("[^"]*")|([^\s#]+))$/,
-        itemValues: [
+        invalidValues: [
           'string1',
           '1=X',
           'a!=x'
@@ -94,7 +94,11 @@ describe('Instance - /instances/:id', function () {
       },
       {
         name: 'name',
-        type: 'string'
+        type: 'string',
+        invalidValues: [
+          'has!',
+          'has.x2'
+        ]
       }]
     };
 

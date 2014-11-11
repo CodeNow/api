@@ -80,6 +80,20 @@ function setupTests(ctx, handler, def, types, param, buildBodyFunction, index) {
       handler(body, cb);
     });
   });
+  if(param.invalidValues && param.type !== 'array') {
+    param.invalidValues.forEach(function(invalidValue) {
+      var testName = 'should not ' + def.action + ' when `' + param.name +
+      '` param has invalid value such as ' + invalidValue;
+      it(testName, function(done) {
+        var body = buildBodyFunction(ctx, def.requiredParams, param);
+        body[param.name] = invalidValue;
+        // e.g. "env" should match 
+        var message = new RegExp('"' + param.name + '" should match ');
+        var cb = expects.error(400, message, done);
+        handler(body, cb);
+      }); 
+    });
+  }
 }
 
 function setupArrayParamsTests(ctx, handler, def, types, param, buildBodyFunction) {
@@ -105,12 +119,12 @@ function setupArrayParamsTests(ctx, handler, def, types, param, buildBodyFunctio
         handler(body, cb);
       }); 
     });
-    param.itemValues.forEach(function(itemValue) {
+    param.invalidValues.forEach(function(invalidValue) {
       var testName = 'should not ' + def.action + ' when `' + param.name +
-      '` param has invalid item value such as ' + itemValue;
+      '` param has invalid item value such as ' + invalidValue;
       it(testName, function(done) {
         var body = buildBodyFunction(ctx, def.requiredParams);
-        body[param.name] = [itemValue];
+        body[param.name] = [invalidValue];
         // e.g. "env" should match 
         var message = new RegExp('"' + param.name + '" should match ');
         var cb = expects.error(400, message, done);
