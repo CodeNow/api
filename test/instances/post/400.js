@@ -18,8 +18,6 @@ var uuid = require('uuid');
 var Docker = require('models/apis/docker');
 var extend = require('extend');
 
-var invalidEnvLine = /body parameter "env" should be an array of strings/;
-var invalidEnvLineStr = /\"env\" should match/;
 
 describe('400 POST /instances', {timeout:500}, function () {
   var ctx = {};
@@ -162,12 +160,15 @@ describe('400 POST /instances', {timeout:500}, function () {
 
 
 function makeTestFromDef(def, ctx) {
-  var types = ['string', 'number', 'boolean', 'object', 'array'];
+  // TODO (anton) null and undefined values are breaking code now. Investigate it
+  var types = ['string', 'number', 'boolean', 'object', 'array'];//, 'null', 'undefined'];
   var typeValue = function(ctx, type) {
     var values = {
       'string': 'some-string-value',
       'number': 123, 
       'boolean': false,
+      'null': null,
+      'undefined': undefined,
       'object': {
         key1: 3,
         key2: 'some-val',
@@ -177,14 +178,20 @@ function makeTestFromDef(def, ctx) {
     };
     return values[type];
   };
-  // TODO (anton) clarify these inconsistent messages
-  var errorMessageSuffix = {
-    'string': 'must be a string',
-    'number': 'must be a number',
-    'array': 'should be an array',
-    'object': 'must be an object',
-    'ObjectId': 'is not an ObjectId',
-  }
+  var errorMessageSuffix = function(paramType, type) {
+    if(type === 'null' || type === 'undefined') {
+      return 'is required';
+    }
+    // TODO (anton) clarify these inconsistent messages
+    var suffixes = {
+      'string': 'must be a string',
+      'number': 'must be a number',
+      'array': 'should be an array',
+      'object': 'must be an object',
+      'ObjectId': 'is not an ObjectId',
+    };
+    return suffixes[paramType];
+  };
   var buildBodyWithRequiredParams = function(ctx, requiredParams) {
     var body = {};
     requiredParams.forEach(function(requiredParam) {
@@ -200,7 +207,7 @@ function makeTestFromDef(def, ctx) {
       it('should not ' + def.action + ' when `' + param.name + '` param is ' + type, function(done) {
         var body = {};
         body[param.name] = typeValue(ctx, type);
-        var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix[param.type]);
+        var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, type));
         ctx.user.createInstance(body, expects.error(400, message, done));
       });
     })
@@ -213,10 +220,36 @@ function makeTestFromDef(def, ctx) {
       it('should not ' + def.action + ' when `' + param.name + '` param is ' + type, function(done) {
         var body = buildBodyWithRequiredParams(ctx, def.requiredParams);
         body[param.name] = typeValue(ctx, type);
-        var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix[param.type]);
+        var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, type));
         ctx.user.createInstance(body, expects.error(400, message, done));
       });
-    })
+    });
+    if(param.type === 'array') {
+      var arrayItemTypes = types.filter(function(type) {
+        return type !== param.itemType;
+      });
+      arrayItemTypes.forEach(function(arrayItemType) {
+        it('should not ' + def.action + ' when `' + param.name + '` param has ' + arrayItemType + ' items in the array', function(done) {
+          var body = buildBodyWithRequiredParams(ctx, def.requiredParams);
+          body[param.name] = [];
+          body[param.name].push(typeValue(ctx, arrayItemType));
+          body[param.name].push(typeValue(ctx, arrayItemType));
+          body[param.name].push(typeValue(ctx, arrayItemType));
+          // e.g. body parameter "env" should be an array of strings
+          var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, arrayItemType) + ' of ' + param.itemType + 's');
+          ctx.user.createInstance(body, expects.error(400, message, done));
+        }); 
+      });
+      param.itemValues.forEach(function(itemValue) {
+        it('should not ' + def.action + ' when `' + param.name + '` param has invalid item value such as ' + itemValue, function(done) {
+          var body = buildBodyWithRequiredParams(ctx, def.requiredParams);
+          body[param.name] = [itemValue];
+          // e.g. "env" should match 
+          var message = new RegExp('"' + param.name + '" should match ');
+          ctx.user.createInstance(body, expects.error(400, message, done));
+        }); 
+      });
+    }
   });
 }
 
@@ -225,6 +258,9 @@ function createInstanceTests (ctx) {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+  // NOTE:
+  // there is no way to generate strings that don't match regexp
+  // that is why we need to provide manually test strings that should fail
   var def = {
     action: 'create an instance',
     requiredParams: [
@@ -235,7 +271,14 @@ function createInstanceTests (ctx) {
     optionalParams: [
     {
       name: 'env',
-      type: 'array'
+      type: 'array',
+      itemType: 'string',
+      itemRegExp: /^([A-Za-z]+[A-Za-z0-9_]*)=('(\n[^']*')|("[^"]*")|([^\s#]+))$/,
+      itemValues: [
+        'string1',
+        '1=X',
+        'a!=x'
+      ]
     },
     {
       name: 'name',
@@ -244,54 +287,4 @@ function createInstanceTests (ctx) {
   };
 
   makeTestFromDef(def, ctx);
-  
-
-  it('should not create an instance if env array has numbers', function (done) {
-    var env = [1, 2, 3];
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.user.createInstance(body, expects.error(400, invalidEnvLine, done));
-  });
-  it('should not create an instance if env array has booleans', function (done) {
-    var env = [false, true, false];
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.user.createInstance(body, expects.error(400, invalidEnvLine, done));
-  });
-  it('should not create an instance if env array has objects', function (done) {
-    var env = [{name: 1}, {name: 2}, {name: 3}];
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.user.createInstance(body, expects.error(400, invalidEnvLine, done));
-  });
-  it('should not create an instance if env array has invlaid strings', function (done) {
-    var env = ["STRING1", "STRING2", "STRING3"];
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
-  });
-  it('should not create an instance if env array has string starting from numbers', function (done) {
-    var env = ["1=X", "2=x", "3=x"];
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
-  });
-  it('should not create an instance if env array has special characters in the keys', function (done) {
-    var env = ["a!=X", "a!=x", "a3=x"];
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
-  });
 }
