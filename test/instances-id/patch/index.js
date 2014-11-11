@@ -449,26 +449,6 @@ describe('Instance - /instances/:id', function () {
           ctx.instance.fetch(expects.success(200, expected, done));
         }));
       });
-      it('should error if the env is not an array of strings', function (done) {
-        var body = {
-          env: [{
-            iCauseError: true
-          }]
-        };
-        require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.instance.update(body, expects.errorStatus(400, /should be an array of strings/, done));
-      });
-      it('should error if the env has invalid values', function (done) {
-        var body = {
-          env: [
-            'ONE=1',
-            'TWO=2',
-            '234^&*%(*&%THREE=3'
-          ]
-        };
-        require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.instance.update(body, expects.errorStatus(400, /should match/, done));
-      });
     });
 
     var updates = [{
