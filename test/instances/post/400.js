@@ -192,5 +192,7 @@ function createInstanceTests (ctx) {
     }]
   };
 
-  typesTests.makeTestFromDef(def, ctx, 'user', 'createInstance');
+  typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+    ctx.user.createInstance(body, cb);
+  });
 }

@@ -98,7 +98,9 @@ describe('Instance - /instances/:id', function () {
       // }]
     };
 
-    typesTests.makeTestFromDef(def, ctx, 'instance', 'update');
+    typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+      ctx.instance.update(body, cb);
+    });
 
 
     

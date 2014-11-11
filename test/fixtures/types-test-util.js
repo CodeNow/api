@@ -5,7 +5,7 @@ var expects = require('./expects');
 
 
 
-exports.makeTestFromDef = function(def, ctx, objectName, methodName) {
+exports.makeTestFromDef = function(def, ctx, handler) {
   // TODO (anton) null and undefined values are breaking code now. Investigate it
   var types = ['string', 'number', 'boolean', 'object', 'array'];//, 'null', 'undefined'];
   var typeValue = function(ctx, type) {
@@ -58,7 +58,8 @@ exports.makeTestFromDef = function(def, ctx, objectName, methodName) {
           var body = {};
           body[param.name] = typeValue(ctx, type);
           var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, type));
-          ctx[objectName][methodName](body, expects.error(400, message, done));
+          var cb = expects.error(400, message, done);
+          handler(body, cb);
         });
       });
     });
@@ -73,7 +74,8 @@ exports.makeTestFromDef = function(def, ctx, objectName, methodName) {
           var body = buildBodyWithRequiredParams(ctx, def.requiredParams);
           body[param.name] = typeValue(ctx, type);
           var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, type));
-          ctx[objectName][methodName](body, expects.error(400, message, done));
+          var cb = expects.error(400, message, done);
+          handler(body, cb);
         });
       });
       if(param.type === 'array') {
@@ -93,7 +95,8 @@ exports.makeTestFromDef = function(def, ctx, objectName, methodName) {
             var regexp = 'body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, arrayItemType) +
             ' of ' + param.itemType + 's';
             var message = new RegExp(regexp);
-            ctx[objectName][methodName](body, expects.error(400, message, done));
+            var cb = expects.error(400, message, done);
+            handler(body, cb);
           }); 
         });
         param.itemValues.forEach(function(itemValue) {
@@ -104,7 +107,8 @@ exports.makeTestFromDef = function(def, ctx, objectName, methodName) {
             body[param.name] = [itemValue];
             // e.g. "env" should match 
             var message = new RegExp('"' + param.name + '" should match ');
-            ctx[objectName][methodName](body, expects.error(400, message, done));
+            var cb = expects.error(400, message, done);
+            handler(body, cb);
           }); 
         });
       }
