@@ -177,10 +177,11 @@ function makeTestFromDef(def, ctx) {
     };
     return values[type];
   };
+  // TODO (anton) clarify these inconsistent messages
   var errorMessageSuffix = {
     'string': 'must be a string',
     'number': 'must be a number',
-    'array': 'must be an array',
+    'array': 'should be an array',
     'object': 'must be an object',
     'ObjectId': 'is not an ObjectId',
   }
@@ -196,7 +197,7 @@ function makeTestFromDef(def, ctx) {
       return type !== param.type;
     });
     paramTypes.forEach(function(type) {
-      it('should ' + def.action + ' when ' + param.name + ' is ' + type, function(done) {
+      it('should not ' + def.action + ' when `' + param.name + '` param is ' + type, function(done) {
         var body = {};
         body[param.name] = typeValue(ctx, type);
         var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix[param.type]);
@@ -209,7 +210,7 @@ function makeTestFromDef(def, ctx) {
       return type !== param.type;
     });
     paramTypes.forEach(function(type) {
-      it('should ' + def.action + ' when ' + param.name + ' is ' + type, function(done) {
+      it('should not ' + def.action + ' when `' + param.name + '` param is ' + type, function(done) {
         var body = buildBodyWithRequiredParams(ctx, def.requiredParams);
         body[param.name] = typeValue(ctx, type);
         var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix[param.type]);
@@ -233,6 +234,10 @@ function createInstanceTests (ctx) {
     }],
     optionalParams: [
     {
+      name: 'env',
+      type: 'array'
+    },
+    {
       name: 'name',
       type: 'string'
     }]
@@ -240,50 +245,14 @@ function createInstanceTests (ctx) {
 
   makeTestFromDef(def, ctx);
   
-  it('should not create an instance if env is string', function (done) {
-    var env = 'FOO=BAR';
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "env" should be an array/, done));
-  });
-  it('should not create an instance if env is number', function (done) {
-    var env = 3;
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "env" should be an array/, done));
-  });
-  it('should not create an instance if env is boolean', function (done) {
-    var env = false;
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "env" should be an array/, done));
-  });
-  it('should not create an instance if env is object', function (done) {
-    var env = {key: 3};
-    var body = {
-      env: env,
-      build: ctx.build.id()
-    };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "env" should be an array/, done));
-  });
+
   it('should not create an instance if env array has numbers', function (done) {
     var env = [1, 2, 3];
     var body = {
       env: env,
       build: ctx.build.id()
     };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, invalidEnvLine, done));
+    ctx.user.createInstance(body, expects.error(400, invalidEnvLine, done));
   });
   it('should not create an instance if env array has booleans', function (done) {
     var env = [false, true, false];
@@ -291,8 +260,7 @@ function createInstanceTests (ctx) {
       env: env,
       build: ctx.build.id()
     };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, invalidEnvLine, done));
+    ctx.user.createInstance(body, expects.error(400, invalidEnvLine, done));
   });
   it('should not create an instance if env array has objects', function (done) {
     var env = [{name: 1}, {name: 2}, {name: 3}];
@@ -300,8 +268,7 @@ function createInstanceTests (ctx) {
       env: env,
       build: ctx.build.id()
     };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, invalidEnvLine, done));
+    ctx.user.createInstance(body, expects.error(400, invalidEnvLine, done));
   });
   it('should not create an instance if env array has invlaid strings', function (done) {
     var env = ["STRING1", "STRING2", "STRING3"];
@@ -309,8 +276,7 @@ function createInstanceTests (ctx) {
       env: env,
       build: ctx.build.id()
     };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
+    ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
   });
   it('should not create an instance if env array has string starting from numbers', function (done) {
     var env = ["1=X", "2=x", "3=x"];
@@ -318,8 +284,7 @@ function createInstanceTests (ctx) {
       env: env,
       build: ctx.build.id()
     };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
+    ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
   });
   it('should not create an instance if env array has special characters in the keys', function (done) {
     var env = ["a!=X", "a!=x", "a3=x"];
@@ -327,7 +292,6 @@ function createInstanceTests (ctx) {
       env: env,
       build: ctx.build.id()
     };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
+    ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
   });
 }
