@@ -85,7 +85,7 @@ function setupTests(ctx, handler, def, types, param, buildBodyFunction, index) {
       var testName = 'should not ' + def.action + ' when `' + param.name +
       '` param has invalid value such as ' + invalidValue;
       it(testName, function(done) {
-        var body = buildBodyFunction(ctx, def.requiredParams, param);
+        var body = buildBodyFunction(ctx, def.requiredParams);
         body[param.name] = invalidValue;
         // e.g. "env" should match 
         var message = new RegExp('"' + param.name + '" should match ');
@@ -106,7 +106,7 @@ function setupArrayParamsTests(ctx, handler, def, types, param, buildBodyFunctio
       var testName = 'should not ' + def.action + ' when `' + param.name +
       '` param has ' + arrayItemType + ' items in the array';
       it(testName, function(done) {
-        var body = buildBodyFunction(ctx, def.requiredParams, param);
+        var body = buildBodyFunction(ctx, def.requiredParams);
         body[param.name] = [];
         body[param.name].push(typeValue(ctx, arrayItemType));
         body[param.name].push(typeValue(ctx, arrayItemType));
