@@ -83,7 +83,6 @@ function setupTests(ctx, handler, def, types, param, buildBodyFunction, index) {
 
 function setupArrayParamsTests(ctx, handler, def, types, param, buildBodyFunction) {
   // handle array param
-  // TODO (anton) we should handle required array params too
   if(param.type === 'array') {
     var arrayItemTypes = types.filter(function(type) {
       return type !== param.itemType;
@@ -119,7 +118,12 @@ function setupArrayParamsTests(ctx, handler, def, types, param, buildBodyFunctio
     });
   }
 }
-
+/**
+ * Make type check tests automatically based on `def`
+ * @def - has `action` and arrays of `requiredParams` and `optionalParams`. See actual test for examples
+ * @ctx - test contet object
+ * @handler - handler that would be called on test end. Accepts generated `body` and `cb`
+ */
 exports.makeTestFromDef = function(def, ctx, handler) {
   // TODO (anton) null and undefined values are breaking code now. Investigate it
   var types = ['string', 'number', 'boolean', 'object', 'array'];//, 'null', 'undefined'];
@@ -128,12 +132,14 @@ exports.makeTestFromDef = function(def, ctx, handler) {
   if(def.requiredParams) {
     def.requiredParams.forEach(function(param, index) {
       setupTests(ctx, handler, def, types, param, buildBodyForRequiredParams, index);
+      // more things should be checked for arrays. We should go and check each item
       setupArrayParamsTests(ctx, handler, def, types, param, buildBodyForRequiredParams);
     });
   }
   if(def.optionalParams) {
     def.optionalParams.forEach(function(param, index) {
       setupTests(ctx, handler, def, types, param, buildBodyWithRequiredParams, index);
+      // more things should be checked for arrays. We should go and check each item
       setupArrayParamsTests(ctx, handler, def, types, param, buildBodyWithRequiredParams, index);
     });
   }
