@@ -16,7 +16,7 @@ function typeValue(ctx, type) {
       key2: 'some-val',
     },
     'array': ['val1', 'val2', 'val3'],
-    'ObjectId': ctx.build.id()
+    'ObjectId': ctx.build.id() // TODO (anton) we probably shouldn't use build here
   };
   return values[type];
 }
@@ -51,6 +51,7 @@ function buildBodyWithRequiredParams(ctx, requiredParams, param, type) {
   return body;
 }
 
+// build body for required param. Use requried params prior to the `param`
 function buildBodyForRequiredParams(ctx, requiredParams, param, type, paramIndex) {
   var body = {};
   if(param && type) {
@@ -118,6 +119,7 @@ function setupArrayParamsTests(ctx, handler, def, types, param, buildBodyFunctio
     });
   }
 }
+
 /**
  * Make type check tests automatically based on `def`
  * @def - has `action` and arrays of `requiredParams` and `optionalParams`. See actual test for examples
