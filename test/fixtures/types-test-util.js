@@ -81,7 +81,7 @@ function setupTests(ctx, handler, def, types, param, buildBodyFunction, index) {
   });
 }
 
-function setupArrayParamsTests(ctx, handler, def, types, param, buildBodyFunction, index) {
+function setupArrayParamsTests(ctx, handler, def, types, param, buildBodyFunction) {
   // handle array param
   // TODO (anton) we should handle required array params too
   if(param.type === 'array') {
@@ -128,7 +128,7 @@ exports.makeTestFromDef = function(def, ctx, handler) {
   if(def.requiredParams) {
     def.requiredParams.forEach(function(param, index) {
       setupTests(ctx, handler, def, types, param, buildBodyForRequiredParams, index);
-      setupArrayParamsTests(ctx, handler, def, types, param, buildBodyForRequiredParams, index);
+      setupArrayParamsTests(ctx, handler, def, types, param, buildBodyForRequiredParams);
     });
   }
   if(def.optionalParams) {
