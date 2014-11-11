@@ -95,10 +95,10 @@ describe('Instance - /instances/:id', function () {
       {
         name: 'name',
         type: 'string',
-        // invalidValues: [
-        //   'has!',
-        //   'has.x2'
-        // ]
+        invalidValues: [
+          'has!',
+          'has.x2'
+        ]
       }]
     };
 

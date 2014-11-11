@@ -188,7 +188,11 @@ function createInstanceTests (ctx) {
     },
     {
       name: 'name',
-      type: 'string'
+      type: 'string',
+      invalidValues: [
+        'has!',
+        'has.x2'
+      ]
     }]
   };
 
