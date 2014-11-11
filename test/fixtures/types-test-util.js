@@ -4,58 +4,77 @@ var it = Lab.test;
 var expects = require('./expects');
 
 
+function typeValue(ctx, type) {
+  var values = {
+    'string': 'some-string-value',
+    'number': 123, 
+    'boolean': false,
+    'null': null,
+    'undefined': undefined,
+    'object': {
+      key1: 3,
+      key2: 'some-val',
+    },
+    'array': ['val1', 'val2', 'val3'],
+    'ObjectId': ctx.build.id()
+  };
+  return values[type];
+}
+
+
+function errorMessageSuffix(paramType, type) {
+  if(type === 'null' || type === 'undefined') {
+    return 'is required';
+  }
+  // TODO (anton) clarify these inconsistent messages
+  var suffixes = {
+    'string': 'must be a string',
+    'number': 'must be a number',
+    'array': 'should be an array',
+    'object': 'must be an object',
+    'ObjectId': 'is not an ObjectId',
+  };
+  return suffixes[paramType];
+}
+
+function buildBodyWithRequiredParams(ctx, requiredParams) {
+  var body = {};
+  if(requiredParams) {
+    requiredParams.forEach(function(requiredParam) {
+      body[requiredParam.name] = typeValue(ctx, requiredParam.type);
+    });
+  }
+  return body;
+}
+
+function buildBodyForRequiredParams(ctx, requiredParams, param, paramIndex) {
+  var body = {};
+  body[param.name] = typeValue(ctx, param.type);
+  if(requiredParams) {
+    requiredParams.forEach(function(requiredParam, index) {
+      if(index < paramIndex) {
+        body[requiredParam.name] = typeValue(ctx, requiredParam.type);  
+      }
+      
+    });
+  }
+  return body;
+}
+
 
 exports.makeTestFromDef = function(def, ctx, handler) {
   // TODO (anton) null and undefined values are breaking code now. Investigate it
   var types = ['string', 'number', 'boolean', 'object', 'array'];//, 'null', 'undefined'];
-  var typeValue = function(ctx, type) {
-    var values = {
-      'string': 'some-string-value',
-      'number': 123, 
-      'boolean': false,
-      'null': null,
-      'undefined': undefined,
-      'object': {
-        key1: 3,
-        key2: 'some-val',
-      },
-      'array': ['val1', 'val2', 'val3'],
-      'ObjectId': ctx.build.id()
-    };
-    return values[type];
-  };
-  var errorMessageSuffix = function(paramType, type) {
-    if(type === 'null' || type === 'undefined') {
-      return 'is required';
-    }
-    // TODO (anton) clarify these inconsistent messages
-    var suffixes = {
-      'string': 'must be a string',
-      'number': 'must be a number',
-      'array': 'should be an array',
-      'object': 'must be an object',
-      'ObjectId': 'is not an ObjectId',
-    };
-    return suffixes[paramType];
-  };
-  var buildBodyWithRequiredParams = function(ctx, requiredParams) {
-    var body = {};
-    if(requiredParams) {
-      requiredParams.forEach(function(requiredParam) {
-        body[requiredParam.name] = typeValue(ctx, requiredParam.type);
-      });
-    }
-    return body;
-  };
+
+
   if(def.requiredParams) {
-    def.requiredParams.forEach(function(param) {
+    def.requiredParams.forEach(function(param, index) {
       var paramTypes = types.filter(function(type) {
         return type !== param.type;
       });
-      // TODO (anton) cover case when we have few required parameters
       paramTypes.forEach(function(type) {
         it('should not ' + def.action + ' when `' + param.name + '` param is ' + type, function(done) {
-          var body = {};
+          var body = buildBodyForRequiredParams(ctx, def.requiredParams, param, index);
           body[param.name] = typeValue(ctx, type);
           var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, type));
           var cb = expects.error(400, message, done);
@@ -78,6 +97,8 @@ exports.makeTestFromDef = function(def, ctx, handler) {
           handler(body, cb);
         });
       });
+      // handle array param
+      // TODO (anton) we should handle required array params too
       if(param.type === 'array') {
         var arrayItemTypes = types.filter(function(type) {
           return type !== param.itemType;
