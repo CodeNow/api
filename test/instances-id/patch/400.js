@@ -91,11 +91,11 @@ describe('Instance - /instances/:id', function () {
           '1=X',
           'a!=x'
         ]
+      },
+      {
+        name: 'name',
+        type: 'string'
       }]
-      // {
-      //   name: 'name',
-      //   type: 'string'
-      // }]
     };
 
     typesTests.makeTestFromDef(def, ctx, function(body, cb) {
