@@ -160,42 +160,60 @@ describe('400 POST /instances', {timeout:500}, function () {
 });
 
 
-var def = {
-  action: 'create an instance',
-  requiredParams: [
-  {
-    name: 'build',
-    type: 'ObjectId'
-  }],
-  optionalParams: [
-  {
-    name: 'name',
-    type: 'string'
-  }]
-};
 
-function makeTestFromDef(def, actionCb) {
+function makeTestFromDef(def, ctx) {
   var types = ['string', 'number', 'boolean', 'object', 'array'];
-  var values = {
-    'string': 'some-string-value',
-    'number': 123, 
-    'boolean': false,
-    'object': {
-      key1: 3,
-      key2: 'some-val',
-    },
-    'array': ['val1', 'val2', 'val3']
+  var typeValue = function(ctx, type) {
+    var values = {
+      'string': 'some-string-value',
+      'number': 123, 
+      'boolean': false,
+      'object': {
+        key1: 3,
+        key2: 'some-val',
+      },
+      'array': ['val1', 'val2', 'val3'],
+      'ObjectId': ctx.build.id()
+    };
+    return values[type];
   };
-  def.requiredParams.each(function(param) {
+  var errorMessageSuffix = {
+    'string': 'must be a string',
+    'number': 'must be a number',
+    'array': 'must be an array',
+    'object': 'must be an object',
+    'ObjectId': 'is not an ObjectId',
+  }
+  var buildBodyWithRequiredParams = function(ctx, requiredParams) {
+    var body = {};
+    requiredParams.forEach(function(requiredParam) {
+      body[requiredParam.name] = typeValue(ctx, requiredParam.type);
+    });
+    return body;
+  };
+  def.requiredParams.forEach(function(param) {
     var paramTypes = types.filter(function(type) {
       return type !== param.type;
     });
-    paramTypes.each(function(type) {
-      it('should ' + def.action + ' when ' + param.name + 'is ' + type, function(done) {
+    paramTypes.forEach(function(type) {
+      it('should ' + def.action + ' when ' + param.name + ' is ' + type, function(done) {
         var body = {};
-        body[param.name] = values[type];
-        var message = new RegExp('body parameter "' + param.name + '" is not an ' + param.type);
-        actionCb(body, expects.error(400, message, done));
+        body[param.name] = typeValue(ctx, type);
+        var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix[param.type]);
+        ctx.user.createInstance(body, expects.error(400, message, done));
+      });
+    })
+  });
+  def.optionalParams.forEach(function(param) {
+    var paramTypes = types.filter(function(type) {
+      return type !== param.type;
+    });
+    paramTypes.forEach(function(type) {
+      it('should ' + def.action + ' when ' + param.name + ' is ' + type, function(done) {
+        var body = buildBodyWithRequiredParams(ctx, def.requiredParams);
+        body[param.name] = typeValue(ctx, type);
+        var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix[param.type]);
+        ctx.user.createInstance(body, expects.error(400, message, done));
       });
     })
   });
@@ -206,36 +224,22 @@ function createInstanceTests (ctx) {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
-  it('should not create instance when build is string', function (done) {
-    var body = {
-      build: "some-string-id"
-    };
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "build" is not an ObjectId/, done));
-  });
-  it('should not create instance when build is number', function (done) {
-    var body = {
-      build: 123213
-    };
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "build" is not an ObjectId/, done));
-  });
-  it('should not create instance when build is boolean', function (done) {
-    var body = {
-      build: true
-    };
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "build" is not an ObjectId/, done));
-  });
-  it('should not create instance when build is object', function (done) {
-    var body = {
-      build: {someKey: 3}
-    };
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "build" is not an ObjectId/, done));
-  });
-  it('should not create instance when build is array', function (done) {
-    var body = {
-      build: [3]
-    };
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "build" is not an ObjectId/, done));
-  });
+  var def = {
+    action: 'create an instance',
+    requiredParams: [
+    {
+      name: 'build',
+      type: 'ObjectId'
+    }],
+    optionalParams: [
+    {
+      name: 'name',
+      type: 'string'
+    }]
+  };
+
+  makeTestFromDef(def, ctx);
+  
   it('should not create an instance if env is string', function (done) {
     var env = 'FOO=BAR';
     var body = {
@@ -325,45 +329,5 @@ function createInstanceTests (ctx) {
     };
     ctx.expected.env = env;
     ctx.instance = ctx.user.createInstance(body, expects.error(400, invalidEnvLineStr, done));
-  });
-  it('should not create an instance if name is number', function (done) {
-    var env = ["key1=1", "key2=2", "key3=3"];
-    var body = {
-      env: env,
-      build: ctx.build.id(),
-      name: 3
-    };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "name" must be a string/, done));
-  });
-  it('should not create an instance if name is boolean', function (done) {
-    var env = ["key1=1", "key2=2", "key3=3"];
-    var body = {
-      env: env,
-      build: ctx.build.id(),
-      name: true
-    };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "name" must be a string/, done));
-  });
-  it('should not create an instance if name is object', function (done) {
-    var env = ["key1=1", "key2=2", "key3=3"];
-    var body = {
-      env: env,
-      build: ctx.build.id(),
-      name: {value: 3}
-    };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "name" must be a string/, done));
-  });
-  it('should not create an instance if name is array', function (done) {
-    var env = ["key1=1", "key2=2", "key3=3"];
-    var body = {
-      env: env,
-      build: ctx.build.id(),
-      name: [1,2,3]
-    };
-    ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.error(400, /body parameter "name" must be a string/, done));
   });
 }
