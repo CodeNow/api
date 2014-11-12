@@ -2,7 +2,7 @@ var createCount = require('callback-count');
 var docker = require('./docker');
 var redis = require('models/redis');
 var mavisApp = require('mavis');
-var sauron = require('./sauron');
+var sauron = require('sauron');
 
 // fixme: rename this dependencies .. it isnt just a dock now
 

@@ -88,7 +88,6 @@ describe('POST /instances', function () {
           });
         });
 
-        beforeEach(require('../../fixtures/weave').clean);
         it('should deploy the instance after the build finishes', {timeout: 1200}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           require('../../fixtures/mocks/docker/container-id-attach')(25);

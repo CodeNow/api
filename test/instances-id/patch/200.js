@@ -6,6 +6,7 @@ var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
+var keypather = require('keypather')();
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -24,6 +25,23 @@ var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 var tailBuildStream = require('../../fixtures/tail-build-stream');
+var redisCleaner = function (cb) {
+  var redis = require('models/redis');
+  redis.keys(process.env.WEAVE_NETWORKS+'*', function (err, keys) {
+    if (err) {
+      return cb(err);
+    }
+    if (keys.length === 0) {
+      return cb();
+    }
+
+    var count = createCount(cb);
+    keys.forEach(function (key) {
+      redis.del(key, count.inc().next);
+    });
+  });
+};
+require('console-trace')({right:true, always:true});
 
 describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   var ctx = {};
@@ -35,7 +53,6 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
     args.push(stopContainer);
     return ctx.originalStart.apply(this, args);
     function stopContainer (err, start) {
-      console.log('STOP DAT SHI');
       if (err) { return cb(err); }
       self.stopContainer(container, function (err) {
         cb(err, start);
@@ -59,12 +76,11 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       var container = this;
       var args = arguments;
       setTimeout(function () {
-        console.log('CONTAINER WAIT');
         originalContainerWait.apply(container, args);
       }, ms);
     };
   };
-
+  beforeEach(redisCleaner);
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
@@ -93,35 +109,28 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   }
 
   describe('for User', function () {
-    // describe('create instance with in-progress build', function () {
-    //   beforeEach(function (done) {
-    //     multi.createContextVersion(function (err, contextVersion, context, build, user) {
-    //       if (err) { return done(err); }
-    //       ctx.build = build;
-    //       ctx.user = user;
-    //       ctx.cv = contextVersion;
-    //       // mocks for build
-    //       ctx.build.build({ message: uuid() }, expects.success(201, done));
-    //     });
-    //   });
-    //   beforeEach(initExpected);
-    //   afterEach(function (done) {
-    //     var instance = ctx.instance;
-    //     multi.tailInstance(ctx.user, instance, function (err) {
-    //       if (err) { return done(err); }
-    //       expect(instance.attrs.containers[0]).to.be.okay;
-    //       expect(instance.attrs.containers[0].ports).to.be.okay;
-    //       var count = createCount(done);
-    //       expects.updatedHipacheHosts(
-    //         ctx.user, instance, count.inc().next);
-    //       var container = instance.containers.models[0];
-    //       expects.updatedWeaveHost(
-    //         container, instance.attrs.network.hostIp, count.inc().next);
-    //     });
-    //   });
-
-    //   createInstanceAndRunTests(ctx);
-    // });
+    describe('create instance with in-progress build', function () {
+      beforeEach(function (done) { // delay container wait time to make build time longer
+        ctx.originalContainerWait = Container.prototype.wait;
+        Container.prototype.wait = delayContainerWaitBy(500, ctx.originalContainerWait);
+        done();
+      });
+      afterEach(function (done) { // restore original container wait method
+        Container.prototype.wait = ctx.originalContainerWait;
+        done();
+      });
+      beforeEach(function (done) {
+        multi.createContextVersion(function (err, contextVersion, context, build, user) {
+          if (err) { return done(err); }
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = contextVersion;
+          ctx.build.build({ message: uuid() }, expects.success(201, done));
+        });
+      });
+      beforeEach(initExpected);
+      createInstanceAndRunTests(ctx);
+    });
     describe('create instance with built build', function () {
       beforeEach(function (done) {
         multi.createBuiltBuild(function (err, build, user, modelsArr) {
@@ -133,36 +142,30 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
         });
       });
       beforeEach(initExpected);
-      beforeEach(function (done) {
-        extend(ctx.expected, {
-          containers: exists,
-          'containers[0]': exists,
-          'containers[0].dockerHost': exists,
-          'containers[0].dockerContainer': exists
+      describe('Long running container', function() {
+        beforeEach(function (done) {
+          extend(ctx.expected, {
+            containers: exists,
+            'containers[0]': exists,
+            'containers[0].ports': exists,
+            'containers[0].dockerHost': exists,
+            'containers[0].dockerContainer': exists,
+            'containers[0].inspect.State.Running': true
+          });
+          done();
         });
-        done();
-      });
-// SUCCESS!!
-      // describe('Long running container', function() {
-      //   beforeEach(function (done) {
-      //     ctx.expected['containers[0].inspect.State.Running'] = true;
-      //     done();
-      //   });
-      //   afterEach(function (done) {
-      //     var instance = ctx.instance;
-      //     var count = createCount(done);
-      //     expects.updatedHipacheHosts(
-      //       ctx.user, instance, count.inc().next);
-      //     var container = instance.containers.models[0];
-      //     expects.updatedWeaveHost(
-      //       container, instance.attrs.network.hostIp, count.inc().next);
-      //   });
 
-      //   createInstanceAndRunTests(ctx);
-      // });
+        createInstanceAndRunTests(ctx);
+      });
       describe('Immediately exiting container', function() {
         beforeEach(function (done) {
-          ctx.expected['containers[0].inspect.State.Running'] = false;
+          extend(ctx.expected, {
+            containers: exists,
+            'containers[0]': exists,
+            'containers[0].dockerHost': exists,
+            'containers[0].dockerContainer': exists,
+            'containers[0].inspect.State.Running': false
+          });
           ctx.originalStart = Docker.prototype.startContainer;
           Docker.prototype.startContainer = stopContainerRightAfterStart;
           done();
@@ -175,28 +178,29 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
 
         createInstanceAndRunTests(ctx);
       });
-      // describe('Container create error (Invalid dockerfile CMD)', function() {
-      //   beforeEach(function (done) {
-      //     ctx.expected['containers[0].inspect.State.Running'] = false;
-      //     ctx.originalCreateContainer = Dockerode.prototype.createContainer;
-      //     Dockerode.prototype.createContainer = forceCreateContainerErr;
-      //     done();
-      //   });
-      //   afterEach(function (done) {
-      //     // restore dockerODE.createContainer` back to normal
-      //     Dockerode.prototype.createContainer = ctx.originalCreateContainer;
-      //     done();
-      //   });
+      describe('Container create error (Invalid dockerfile CMD)', function() {
+        beforeEach(function (done) {
+          ctx.expected['containers[0].error.message'] = exists;
+          ctx.expected['containers[0].error.stack'] = exists;
+          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          Dockerode.prototype.createContainer = forceCreateContainerErr;
+          done();
+        });
+        afterEach(function (done) {
+          // restore dockerODE.createContainer` back to normal
+          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          done();
+        });
 
-      //   createInstanceAndRunTests(ctx);
-      // });
+        createInstanceAndRunTests(ctx);
+      });
     });
   });
   // describe('for Organization by member', function () {
     // TODO
   // });
   function createInstanceAndRunTests (ctx) {
-    describe('and env', function() {
+    describe('and env.', function() {
       beforeEach(function (done) {
         var body = {
           env: ['ENV=OLD'],
@@ -204,16 +208,11 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, function (err) {
-          // restore docker and dockerode back to normal
-          if (ctx.originalStart) { Docker.prototype.startContainer = ctx.originalStart; }
-          if (ctx.originalCreateContainer) { Dockerode.prototype.createContainer = ctx.originalCreateContainer; }
-          done(err);
-        }));
+        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
       });
       patchInstanceTests(ctx);
     });
-    describe('and no env', function() {
+    describe('and no env.', function() {
       beforeEach(function (done) {
         var body = {
           build: ctx.build.id()
@@ -225,11 +224,10 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   }
 
   function patchInstanceTests (ctx) {
-    describe('patch without build', function() {
+    describe('Patch without build:', function() {
       afterEach(require('../../fixtures/clean-mongo').removeEverything);
       afterEach(require('../../fixtures/clean-ctx')(ctx));
       afterEach(require('../../fixtures/clean-nock'));
-
       it('should update an instance with new name', function (done) {
         var body = {
           name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ_-'
@@ -261,131 +259,230 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       var patchCv = ctx.patchBuild.contextVersions.models[0];
       initExpected(function () {
         extend(ctx.expected, {
+          'env': ctx.instance.attrs.env,
           'build._id': ctx.patchBuild.id(),
           'contextVersions[0]._id': patchCv.id()
         });
       });
       done();
     }
-    describe('patch instance with in-progress build', function () {
-
-
-      // beforeEach(function (done) { // delay container wait time to make build time longer
-      //   ctx.originalContainerWait = Container.prototype.wait;
-      //   Container.prototype.wait = delayContainerWaitBy(100, ctx.originalContainerWait);
-      //   done();
-      // });
-      // afterEach(function (done) { // restore original container wait method
-      //   Container.prototype.wait = ctx.originalContainerWait;
-      //   done();
-      // });
+    describe('Patch with build:', function() {
       beforeEach(function (done) {
-        ctx.patchBuild = ctx.build.deepCopy(function (err) {
-          if (err) { return done(err); }
-          var update = { json: {body:'FROM dockerfile/node.js'}};
-          ctx.patchBuild.contextVersions.models[0].updateFile('/Dockerfile', update, function (err) {
+        if (ctx.originalStart) { Docker.prototype.startContainer = ctx.originalStart; }
+        if (ctx.originalCreateContainer) { Dockerode.prototype.createContainer = ctx.originalCreateContainer; }
+        if (ctx.originalContainerWait) { Container.prototype.wait = ctx.originalContainerWait; }
+        done();
+      });
+      beforeEach(function (done) {
+        var oldInstanceName = ctx.instance.attrs.name;
+        var oldContainer = keypather.get(ctx.instance, 'containers.models[0]');
+        ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
+        ctx.afterPatchAsserts.push(function (done) {
+          try {
+            if (oldContainer && oldContainer.attrs.dockerContainer) {
+              var count = createCount(3, done);
+              // NOTE!: timeout is required for the following tests, bc container deletion occurs in bg
+              // User create instance with built build Long running container and env.
+              // Patch with build: in-progress build, should update an instance ______.
+              setTimeout(function () {
+                expects.deletedHosts(
+                  ctx.user, oldInstanceName, oldContainer, count.next);
+                expects.deletedWeaveHost(
+                  oldContainer, count.next);
+                expects.deletedContainer(
+                  oldContainer.json(), count.next);
+              }, 18); // 18ms seems to work... :-P
+            }
+            else {
+              done();
+            }
+          }
+          catch (e) {
+            done(e);
+          }
+        });
+        done();
+      });
+// SUCCESS
+      describe('in-progress build,', function () {
+        beforeEach(function (done) { // delay container wait time to make build time longer
+          ctx.originalContainerWait = Container.prototype.wait;
+          Container.prototype.wait = delayContainerWaitBy(300, ctx.originalContainerWait);
+          done();
+        });
+        afterEach(function (done) { // restore original container wait method
+          Container.prototype.wait = ctx.originalContainerWait;
+          done();
+        });
+        beforeEach(function (done) {
+          ctx.patchBuild = ctx.build.deepCopy(function (err) {
             if (err) { return done(err); }
-            ctx.patchBuild.build({ message: uuid() }, expects.success(201, done));
+            var update = { json: {body:'FROM dockerfile/node.js'}}; // invalidate dedupe
+            ctx.patchBuild.contextVersions.models[0].updateFile('/Dockerfile', update, function (err) {
+              if (err) { return done(err); }
+              ctx.patchBuild.build({ message: uuid() }, expects.success(201, done));
+            });
           });
         });
+        beforeEach(initPatchExpected);
+        beforeEach(function (done) {
+          ctx.expected['containers[0]'] = not(exists); // this works bc build takes 100ms
+          done();
+        });
+        beforeEach(function (done) {
+          // TODO make sure old ports and container are deleted if exist
+          var oldInstanceName = ctx.instance.attrs.name;
+          var oldContainer = keypather.get(ctx.instance, 'containers.models[0]');
+          ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
+          ctx.afterPatchAsserts.push(function (done) {
+            var instance = ctx.instance;
+            multi.tailInstance(ctx.user, instance, function (err) {
+              if (err) { return done(err); }
+              try {
+                var count = createCount(done);
+                // assert old values are deleted - technically these are delete on PATCH
+                if (oldContainer && oldContainer.dockerContainer) {
+                  expects.deletedHosts(
+                    ctx.user, oldInstanceName, oldContainer, count.inc().next);
+                  expects.deletedWeaveHost(
+                    oldContainer, count.inc().next);
+                }
+                // assert new values
+                expects.updatedHosts(
+                  ctx.user, instance, count.inc().next);
+                var container = instance.containers.models[0];
+                expects.updatedWeaveHost(
+                  container, instance.attrs.network.hostIp, count.inc().next);
+              }
+              catch (e) {
+                done(e);
+              }
+            });
+          });
+          done();
+        });
+
+        patchInstanceWithBuildTests(ctx);
       });
-      beforeEach(initPatchExpected);
-      // beforeEach(function (done) {
-      //   ctx.expected['containers[0]'] = not(exists); // this works bc build takes 100ms
-      //   done();
-      // });
-      afterEach(function (done) {
-        var instance = ctx.instance;
-        multi.tailInstance(ctx.user, instance, function (err) {
-          if (err) { return done(err); }
-          console.log('build.-id', instance.attrs.build);
-          expect(instance.attrs.containers[0]).to.be.okay;
-          expect(instance.attrs.containers[0].ports).to.be.okay;
-          var count = createCount(done);
-          expects.updatedHipacheHosts(
-            ctx.user, instance, count.inc().next);
-          var container = instance.containers.models[0];
-          expects.updatedWeaveHost(
-            container, instance.attrs.network.hostIp, count.inc().next);
+
+      describe('built-build,', function () {
+        beforeEach(function (done) {
+          ctx.patchBuild = ctx.build.deepCopy(function (err) {
+            if (err) { return done(err); }
+            var update = { json: {body:'FROM dockerfile/node.js'}}; // invalidate dedupe
+            ctx.patchBuild.contextVersions.models[0].updateFile('/Dockerfile', update, function (err) {
+              if (err) { return done(err); }
+              multi.buildTheBuild(ctx.user, ctx.patchBuild, done);
+            });
+          });
+        });
+        beforeEach(initPatchExpected);
+// SUCCESS
+        describe('Long-running container', function() {
+          beforeEach(function (done) {
+            extend(ctx.expected, {
+              containers: exists,
+              'containers[0]': exists,
+              'containers[0].ports': exists,
+              'containers[0].dockerHost': exists,
+              'containers[0].dockerContainer': exists,
+              'containers[0].inspect.State.Running': true
+            });
+            done();
+          });
+          beforeEach(function (done) {
+            ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
+            ctx.afterPatchAsserts.push(function (done) {
+              try {
+                var instance = ctx.instance;
+                var count = createCount(done);
+                ctx.instance.fetch(function (err) {
+                  if (err) { return done(err); }
+                  expects.updatedHosts(
+                    ctx.user, instance, count.inc().next);
+                  var container = instance.containers.models[0];
+                  expects.updatedWeaveHost(
+                    container, instance.attrs.network.hostIp, count.inc().next);
+                });
+              }
+              catch (e) {
+                done(e);
+              }
+            });
+            done();
+          });
+
+          patchInstanceWithBuildTests(ctx);
+        });
+// SUCCESS
+        describe('Immediately exiting container', function() {
+          beforeEach(function (done) {
+            extend(ctx.expected, {
+              containers: exists,
+              'containers[0]': exists,
+              'containers[0].ports': not(exists),
+              'containers[0].dockerHost': exists,
+              'containers[0].dockerContainer': exists,
+              'containers[0].inspect.State.Running': false
+            });
+            done();
+          });
+          beforeEach(function (done) {
+            ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
+            ctx.afterPatchAsserts.push(function (done) {
+              try {
+                var instance = ctx.instance;
+                var count = createCount(done);
+                expects.deletedHosts(
+                  ctx.user, instance, count.inc().next);
+                var container = instance.containers.models[0];
+                expects.deletedWeaveHost(
+                  container, count.inc().next);
+              }
+              catch (e) {
+                done(e);
+              }
+            });
+            done();
+          });
+          beforeEach(function (done) {
+            ctx.originalStart = Docker.prototype.startContainer;
+            Docker.prototype.startContainer = stopContainerRightAfterStart;
+            done();
+          });
+          afterEach(function (done) {
+            // restore docker.startContainer back to normal
+            Docker.prototype.startContainer = ctx.originalStart;
+            done();
+          });
+
+          patchInstanceWithBuildTests(ctx);
+        });
+// SUCCESS
+        describe('Container create error (invalid dockerfile)', function() {
+          beforeEach(function (done) {
+            ctx.expected['containers[0].error.message'] = exists;
+            ctx.expected['containers[0].error.stack'] = exists;
+            ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+            Dockerode.prototype.createContainer = forceCreateContainerErr;
+            done();
+          });
+          afterEach(function (done) {
+            // restore dockerODE.createContainer` back to normal
+            Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+            done();
+          });
+
+          patchInstanceWithBuildTests(ctx);
         });
       });
-
-      patchInstanceWithBuildTests(ctx);
     });
-    // describe('patch instance with built build', function () {
-    //   beforeEach(function (done) {
-    //     ctx.patchBuild = ctx.build.deepCopy(function (err) {
-    //       if (err) { return done(err); }
-    //       multi.buildTheBuild(ctx.user, ctx.patchBuild, done);
-    //     });
-    //   });
-    //   beforeEach(function (done) {
-    //     extend(ctx.expected, {
-    //       containers: exists,
-    //       'containers[0]': exists,
-    //       'containers[0].dockerHost': exists,
-    //       'containers[0].dockerContainer': exists
-    //     });
-    //     done();
-    //   });
-
-      // describe('Long running container', function() {
-      //   beforeEach(function (done) {
-      //     ctx.expected['containers[0].inspect.State.Running'] = true;
-      //     done();
-      //   });
-      //   afterEach(function (done) {
-      //     var instance = ctx.instance;
-      //     var count = createCount(done);
-      //     expects.updatedHipacheHosts(
-      //       ctx.user, instance, count.inc().next);
-      //     var container = instance.containers.models[0];
-      //     expects.updatedWeaveHost(
-      //       container, instance.attrs.network.hostIp, count.inc().next);
-      //   });
-
-      //   patchInstanceWithBuildTests(ctx);
-      // });
-
-      //   createInstanceAndRunTests(ctx);
-      // });
-      // describe('Immediately exiting container', function() {
-      //   beforeEach(function (done) {
-      //     ctx.expected['containers[0].inspect.State.Running'] = false;
-      //     ctx.originalStart = Docker.prototype.startContainer;
-      //     Docker.prototype.startContainer = stopContainerRightAfterStart;
-      //     done();
-      //   });
-      //   afterEach(function (done) {
-      //     // restore docker.startContainer back to normal
-      //     Docker.prototype.startContainer = ctx.originalStart;
-      //     done();
-      //   });
-
-      //   createInstanceAndRunTests(ctx);
-      // });
-      // describe('Container create error (invalid dockerfile)', function() {
-      //   beforeEach(function (done) {
-      //     ctx.expected['containers[0].inspect.State.Running'] = false;
-      //     ctx.originalCreateContainer = Dockerode.prototype.createContainer;
-      //     Dockerode.prototype.createContainer = forceCreateContainerErr;
-      //     done();
-      //   });
-      //   afterEach(function (done) {
-      //     // restore dockerODE.createContainer` back to normal
-      //     Dockerode.prototype.createContainer = ctx.originalCreateContainer;
-      //     done();
-      //   });
-
-      //   createInstanceAndRunTests(ctx);
-      // });
-    // });
   }
 
   function patchInstanceWithBuildTests (ctx) {
-    afterEach(require('../../fixtures/clean-mongo').removeEverything);
     afterEach(require('../../fixtures/clean-ctx')(ctx));
     afterEach(require('../../fixtures/clean-nock'));
+    afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should update an instance with new env and build', function (done) {
       var body = {
@@ -406,7 +503,6 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       };
       ctx.expected.name = body.name;
       ctx.expected['build._id'] = body.build;
-
       waitForInProgressBuildsOrDeploymentsThenAssertUpdate(body, done);
     });
     it('should update an instance with new name, env and build', function (done) {
@@ -425,15 +521,15 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
     });
   }
   function waitForInProgressBuildsOrDeploymentsThenAssertUpdate (body, done) {
-    require('../../fixtures/clean-nock')();
-    tailBuildStream(ctx.build.contextVersions.models[0].id(), function (err) {
+    ctx.instance.update(body, expects.success(200, ctx.expected, function (err) {
       if (err) { return done(err); }
-      // tail instance to avoid deployment collision 409
-      multi.tailInstance(ctx.user, ctx.instance, function (err) {
-        if (err) { return done(err); }
-        console.log()
-        ctx.instance.update(body, expects.success(200, ctx.expected, done));
+      if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {
+        return done();
+      }
+      var count = createCount(ctx.afterPatchAsserts.length, done);
+      ctx.afterPatchAsserts.forEach(function (assert) {
+        assert(count.next);
       });
-    });
+    }));
   }
 });

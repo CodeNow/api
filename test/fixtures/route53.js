@@ -88,6 +88,7 @@ mock.reset = function (cb) {
 
 mock.findRecordIp = function (name) {
   var record = find(records, hasKeypaths({'Name.toLowerCase()':name.toLowerCase()})) || {};
+  console.log(records);
   return keypather.get(record, 'ResourceRecords[0].Value');
 };
 
@@ -153,6 +154,7 @@ function mockUpsert (resourceRecordSet, cb) {
     cb(resp.nameNotPermittedErr(name));
   }
   else {
+    // async
     process.nextTick(function () {
       records.push(resourceRecordSet);
       cb(null, resp.success());
@@ -180,6 +182,7 @@ function mockDelete (resourceRecordSet, cb) {
     'ResourceRecords[0].Value': resourceRecordSet.ResourceRecords[0].Value,
     TTL: resourceRecordSet.TTL
   }));
+  // async
   process.nextTick(function () {
     if (!exists(record)) {
       cb(resp.deleteNotFoundErr(name, type));

@@ -24,7 +24,7 @@
     "dat-middleware": "^1.9.2",
     "debug": "^1.0.2",
     "defaults": "^1.0.0",
-    "docker-stream-cleanser": "^0.1.1",
+    "docker-stream-cleanser": "0.1.2",
     "dockerode": "^2.0.3",
     "dogerode": "0.0.3",
     "dogstatsyware": "0.0.1",
@@ -98,6 +98,7 @@
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
     "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test `cat test/whitelist.txt`",
+    "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node --debug-brk ./node_modules/.bin/lab -v -l -m 200 -e test `cat test/whitelist.txt`",
     "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",
