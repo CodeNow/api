@@ -106,8 +106,13 @@ module.exports.setup = function (cb) {
   mocksForMethods(require('runnable/lib/models/context/version/app-code-version'), {
     create: function () {
       var opts = optsForCreateOrUpdate.apply(this, arguments);
-      var username = opts.json.repo.split('/')[0];
-      var repoName = opts.json.repo.split('/')[1];
+      var username = 'repo-owner';
+      var repoName = 'repo-name';
+      if (typeof opts.json.repo === 'string') {
+        username = opts.json.repo.split('/')[0];
+        repoName = opts.json.repo.split('/')[1];
+      }
+      
       // in case owner is org
       require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
       require('../../fixtures/mocks/github/repos-username-repo')(1, username, repoName);
@@ -117,6 +122,12 @@ module.exports.setup = function (cb) {
       require('../../fixtures/mocks/github/repos-keys-post')(username, repoName);
       require('../../fixtures/mocks/s3/put-object')('/runnable.deploykeys.test/'+opts.json.repo+'.key.pub');
       require('../../fixtures/mocks/s3/put-object')('/runnable.deploykeys.test/'+opts.json.repo+'.key');
+    },
+    initGithubRepo: function () {
+      var opts = optsForCreateOrUpdate.apply(this, arguments);
+      if (typeof opts.json.repo !== 'string') {
+        opts.json.repo = 'repo-owner/repo-name';
+      }
     }
   });
 
