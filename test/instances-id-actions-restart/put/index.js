@@ -78,7 +78,7 @@ describe('PUT /instances/:id/actions/restart', function () {
         ctx.instance.fetch(function (err) {
           if (err) { return done(err); }
           var count = createCount(done);
-          expects.updatedHipacheHosts(ctx.user, ctx.instance, count.inc().next);
+          expects.updatedHosts(ctx.user, ctx.instance, count.inc().next);
           expects.updatedWeaveHost(
             ctx.instance.containers.models[0],
             ctx.instance.attrs.network.hostIp,

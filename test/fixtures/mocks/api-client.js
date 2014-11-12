@@ -20,6 +20,9 @@ module.exports.setup = function (cb) {
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
+    },
+    fetch: function () {
+      require('../../fixtures/mocks/github/user')(this.opts.user);
     }
   });
 

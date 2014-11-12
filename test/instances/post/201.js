@@ -5,18 +5,22 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var exists = require('101/exists');
+var not = require('101/not');
+var last = require('101/last');
+var isFunction = require('101/is-function');
 var uuid = require('uuid');
 var createCount = require('callback-count');
 var uuid = require('uuid');
 var Docker = require('models/apis/docker');
 var extend = require('extend');
+var Docker = require('models/apis/docker');
+var Dockerode = require('dockerode');
 
 describe('201 POST /instances', {timeout:500}, function () {
   var ctx = {};
@@ -28,6 +32,32 @@ describe('201 POST /instances', {timeout:500}, function () {
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
+  var stopContainerRightAfterStart = function () {
+    var self = this;
+    var args = Array.prototype.slice.call(arguments);
+    var container = args[0];
+    var cb = args.pop();
+    args.push(stopContainer);
+    return ctx.originalStart.apply(this, args);
+    function stopContainer (err, start) {
+      if (err) { return cb(err); }
+      self.stopContainer(container, function (err) {
+        cb(err, start);
+      });
+    }
+  };
+  var forceCreateContainerErr = function () {
+    var cb = last(arguments);
+    var createErr = new Error("server error");
+    extend(createErr, {
+      statusCode : 500,
+      reason     : "server error",
+      json       : "No command specified\n"
+    });
+    if (isFunction(cb)) {
+      cb(createErr);
+    }
+  };
   function initExpected (done) {
     ctx.expected = {
       _id: exists,
@@ -61,19 +91,32 @@ describe('201 POST /instances', {timeout:500}, function () {
         });
       });
       beforeEach(initExpected);
-      afterEach(function (done) {
-        var instance = ctx.instance;
-        multi.tailInstance(ctx.user, instance, function (err) {
-          if (err) { return done(err); }
-          expect(instance.attrs.containers[0]).to.be.okay;
-          var count = createCount(done);
-          expects.updatedHipacheHosts(
-            ctx.user, instance, count.inc().next);
-          var container = instance.containers.models[0];
-          expects.updatedWeaveHost(
-            container, instance.attrs.network.hostIp, count.inc().next);
-        });
+      beforeEach(function (done) {
+        ctx.expected['containers[0]'] = not(exists); // this works bc build takes 100ms
+        done();
       });
+      beforeEach(function (done) {
+        ctx.afterPostAsserts = ctx.afterPostAsserts || [];
+        ctx.afterPostAsserts.push(function (done) {
+          var instance = ctx.instance;
+          multi.tailInstance(ctx.user, instance, function (err) {
+            if (err) { return done(err); }
+            try {
+              var count = createCount(done);
+              expects.updatedHosts(
+                ctx.user, instance, count.inc().next);
+              var container = instance.containers.models[0];
+              expects.updatedWeaveHost(
+                container, instance.attrs.network.hostIp, count.inc().next);
+            }
+            catch (e) {
+              done(e);
+            }
+          });
+        });
+        done();
+      });
+
       createInstanceTests(ctx);
     });
     describe('with built build', function () {
@@ -86,83 +129,99 @@ describe('201 POST /instances', {timeout:500}, function () {
         });
       });
       beforeEach(initExpected);
-      beforeEach(function (done) {
-        extend(ctx.expected, {
-          containers: exists,
-          'containers[0]': exists,
-          'containers[0].dockerHost': exists,
-          'containers[0].dockerContainer': exists
-        });
-        done();
-      });
       describe('Long running container', function() {
         beforeEach(function (done) {
           ctx.expected['containers[0].inspect.State.Running'] = true;
           done();
         });
-        afterEach(function (done) {
-          var instance = ctx.instance;
-          var count = createCount(done);
-          expects.updatedHipacheHosts(
-            ctx.user, instance, count.inc().next);
-          var container = instance.containers.models[0];
-          expects.updatedWeaveHost(
-            container, instance.attrs.network.hostIp, count.inc().next);
+        beforeEach(function (done) {
+          extend(ctx.expected, {
+            containers: exists,
+            'containers[0]': exists,
+            'containers[0].ports': exists,
+            'containers[0].dockerHost': exists,
+            'containers[0].dockerContainer': exists,
+            'containers[0].inspect.State.Running': true
+          });
+          done();
+        });
+        beforeEach(function (done) {
+          ctx.afterPostAsserts = ctx.afterPostAsserts || [];
+          ctx.afterPostAsserts.push(function (done) {
+            try {
+              var instance = ctx.instance;
+              var count = createCount(done);
+              ctx.instance.fetch(function (err) {
+                if (err) { return done(err); }
+                expects.updatedHosts(
+                  ctx.user, instance, count.inc().next);
+                var container = instance.containers.models[0];
+                expects.updatedWeaveHost(
+                  container, instance.attrs.network.hostIp, count.inc().next);
+              });
+            }
+            catch (e) {
+              done(e);
+            }
+          });
+          done();
         });
 
         createInstanceTests(ctx);
       });
       describe('Immediately exiting container', function() {
         beforeEach(function (done) {
-          ctx.expected['containers[0].inspect.State.Running'] = false;
+          extend(ctx.expected, {
+            containers: exists,
+            'containers[0]': exists,
+            'containers[0].dockerHost': exists,
+            'containers[0].dockerContainer': exists,
+            'containers[0].inspect.State.Running': false
+          });
           ctx.originalStart = Docker.prototype.startContainer;
-          Docker.prototype.startContainer = function () {
-            var self = this;
-            var args = Array.prototype.slice.call(arguments);
-            var container = args[0];
-            var cb = args.pop();
-            args.push(stopContainer);
-            return ctx.originalStart.apply(this, args);
-            function stopContainer (err, start) {
-              if (err) { return cb(err); }
-              self.stopContainer(container, function (err) {
-                cb(err, start);
-              });
-            }
-          };
+          Docker.prototype.startContainer = stopContainerRightAfterStart;
           done();
         });
         afterEach(function (done) {
+          // restore docker.startContainer back to normal
           Docker.prototype.startContainer = ctx.originalStart;
+          done();
+        });
+        beforeEach(function (done) {
+          ctx.afterPostAsserts = ctx.afterPostAsserts || [];
+          ctx.afterPostAsserts.push(function (done) {
+            try {
+              var instance = ctx.instance;
+              var count = createCount(done);
+              expects.deletedHosts(
+                ctx.user, instance, count.inc().next);
+              var container = instance.containers.models[0];
+              expects.deletedWeaveHost(
+                container, count.inc().next);
+            }
+            catch (e) {
+              done(e);
+            }
+          });
           done();
         });
 
         createInstanceTests(ctx);
       });
-      describe('Immediately exiting container', function() {
+      describe('Container create error (Invalid dockerfile CMD)', function() {
         beforeEach(function (done) {
-          ctx.expected['containers[0].inspect.State.Running'] = false;
-          ctx.originalStart = Docker.prototype.startContainer;
-          Docker.prototype.startContainer = function () {
-            var self = this;
-            var args = Array.prototype.slice.call(arguments);
-            var container = args[0];
-            var cb = args.pop();
-            args.push(stopContainer);
-            return ctx.originalStart.apply(this, args);
-            function stopContainer (err, start) {
-              if (err) { return cb(err); }
-              self.stopContainer(container, function (err) {
-                cb(err, start);
-              });
-            }
-          };
+          ctx.expected['containers[0].error.message'] = exists;
+          ctx.expected['containers[0].error.stack'] = exists;
+          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          Dockerode.prototype.createContainer = forceCreateContainerErr;
           done();
         });
         afterEach(function (done) {
-          Docker.prototype.startContainer = ctx.originalStart;
+          // restore dockerODE.createContainer` back to normal
+          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
           done();
         });
+
         createInstanceTests(ctx);
       });
     });
@@ -180,7 +239,7 @@ function createInstanceTests (ctx) {
     var body = {
       build: ctx.build.id()
     };
-    ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+    assertCreate(body, done);
   });
   it('should create an instance with build and name', function (done) {
     var name = 'ABCDEFGHIJKLMNOPQRSTUVWYXZ_-';
@@ -189,7 +248,7 @@ function createInstanceTests (ctx) {
       build: ctx.build.id()
     };
     ctx.expected.name = name;
-    ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+    assertCreate(body, done);
   });
   it('should create an instance with env and build', function (done) {
     var env = [
@@ -200,7 +259,7 @@ function createInstanceTests (ctx) {
       build: ctx.build.id()
     };
     ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+    assertCreate(body, done);
   });
   it('should create an instance with name, env and build', function (done) {
     var name = uuid();
@@ -214,7 +273,7 @@ function createInstanceTests (ctx) {
     };
     ctx.expected.name = name;
     ctx.expected.env = env;
-    ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+    assertCreate(body, done);
   });
   describe('name generation', function () {
     // TODO
@@ -222,4 +281,16 @@ function createInstanceTests (ctx) {
   describe('ip generation', function () {
     // TODO
   });
+  function assertCreate (body, done) {
+    ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, function (err) {
+      if (err) { return done(err); }
+      if (!ctx.afterPostAsserts || ctx.afterPostAsserts.length === 0) {
+        return done();
+      }
+      var count = createCount(ctx.afterPostAsserts.length, done);
+      ctx.afterPostAsserts.forEach(function (assert) {
+        assert(count.next);
+      });
+    }));
+  }
 }

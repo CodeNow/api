@@ -88,7 +88,6 @@ mock.reset = function (cb) {
 
 mock.findRecordIp = function (name) {
   var record = find(records, hasKeypaths({'Name.toLowerCase()':name.toLowerCase()})) || {};
-  console.log(records);
   return keypather.get(record, 'ResourceRecords[0].Value');
 };
 

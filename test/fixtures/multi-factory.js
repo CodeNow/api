@@ -193,10 +193,14 @@ module.exports = {
       });
     });
   },
-  createInstance: function (buildOwnerId, cb) {
+  createInstance: function (buildOwnerId, buildOwnerName, cb) {
     if (typeof buildOwnerId === 'function') {
       cb = buildOwnerId;
       buildOwnerId = null;
+    }
+    if (typeof buildOwnerName === 'function') {
+      cb = buildOwnerName;
+      buildOwnerName = 'Runnable';
     }
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err); }
@@ -205,10 +209,15 @@ module.exports = {
         build: build.id()
       };
       if (buildOwnerId) {
-        require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
-        require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
-        require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
-        require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        // redeploy
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
       } else {
         require('./mocks/github/user')(user);
         require('./mocks/github/user')(user);

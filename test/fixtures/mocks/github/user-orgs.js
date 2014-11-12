@@ -11,7 +11,6 @@ function nextOrgId () {
 module.exports = function (orgId, orgName) {
   orgName = orgName || uuid();
   orgId = orgId || nextOrgId();
-
   nock('https://api.github.com:443')
     .filteringPath(/\/user\/orgs\?.+/, '/user/orgs')
     .get('/user/orgs')

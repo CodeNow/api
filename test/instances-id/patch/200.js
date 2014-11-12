@@ -302,7 +302,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
         });
         done();
       });
-// SUCCESS
+
       describe('in-progress build,', function () {
         beforeEach(function (done) { // delay container wait time to make build time longer
           ctx.originalContainerWait = Container.prototype.wait;
@@ -329,7 +329,6 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
           done();
         });
         beforeEach(function (done) {
-          // TODO make sure old ports and container are deleted if exist
           var oldInstanceName = ctx.instance.attrs.name;
           var oldContainer = keypather.get(ctx.instance, 'containers.models[0]');
           ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
@@ -376,7 +375,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
           });
         });
         beforeEach(initPatchExpected);
-// SUCCESS
+
         describe('Long-running container', function() {
           beforeEach(function (done) {
             extend(ctx.expected, {
@@ -413,7 +412,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
 
           patchInstanceWithBuildTests(ctx);
         });
-// SUCCESS
+
         describe('Immediately exiting container', function() {
           beforeEach(function (done) {
             extend(ctx.expected, {
@@ -457,7 +456,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
 
           patchInstanceWithBuildTests(ctx);
         });
-// SUCCESS
+
         describe('Container create error (invalid dockerfile)', function() {
           beforeEach(function (done) {
             ctx.expected['containers[0].error.message'] = exists;
@@ -493,7 +492,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       ctx.expected.env = body.env;
       ctx.expected['build._id'] = body.build;
 
-      waitForInProgressBuildsOrDeploymentsThenAssertUpdate(body, done);
+      assertUpdate(body, done);
     });
     it('should update an instance with new build and name', function (done) {
       var body = {
@@ -502,7 +501,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       };
       ctx.expected.name = body.name;
       ctx.expected['build._id'] = body.build;
-      waitForInProgressBuildsOrDeploymentsThenAssertUpdate(body, done);
+      assertUpdate(body, done);
     });
     it('should update an instance with new name, env and build', function (done) {
       var body = {
@@ -516,10 +515,10 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       ctx.expected.env  = body.env;
       ctx.expected['build._id'] = body.build;
 
-      waitForInProgressBuildsOrDeploymentsThenAssertUpdate(body, done);
+      assertUpdate(body, done);
     });
   }
-  function waitForInProgressBuildsOrDeploymentsThenAssertUpdate (body, done) {
+  function assertUpdate (body, done) {
     ctx.instance.update(body, expects.success(200, ctx.expected, function (err) {
       if (err) { return done(err); }
       if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {

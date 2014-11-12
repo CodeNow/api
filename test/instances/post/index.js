@@ -69,7 +69,7 @@ describe('POST /instances', function () {
             'owner.github': ctx.user.attrs.accounts.github.id,
             contextVersions: exists,
             'contextVersions[0]._id': ctx.cv.id(),
-            'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0],
+            'contextVersions[0].appCodeVersions[0]': ctx.cv.json().appCodeVersions[0],
             'network.networkIp': exists,
             'network.hostIp': exists
           };
@@ -102,7 +102,7 @@ describe('POST /instances', function () {
                 if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.be.okay;
                 var count = createCount(done);
-                expects.updatedHipacheHosts(
+                expects.updatedHosts(
                   ctx.user, instance, count.inc().next);
                 var container = instance.containers.models[0];
                 expects.updatedWeaveHost(
@@ -275,16 +275,12 @@ describe('POST /instances', function () {
               if (err) { return done(err); }
               multi.tailInstance(ctx.user, instance, function (err) {
                 if (err) { return done(err); }
-                require('../../fixtures/mocks/github/user')(ctx.user);
                 var container = instance.containers.models[0];
-                instance.fetch(function (err) {
-                  if (err) { return done(err); }
-                  var count = createCount(done);
-                  expects.updatedHipacheHosts(
-                    ctx.user, instance, count.inc().next);
-                  expects.updatedWeaveHost(
-                    container, instance.attrs.network.hostIp, count.inc().next);
-                });
+                var count = createCount(done);
+                expects.updatedHosts(
+                  ctx.user, instance, count.inc().next);
+                expects.updatedWeaveHost(
+                  container, instance.attrs.network.hostIp, count.inc().next);
               });
             }));
         });

@@ -540,7 +540,7 @@ describe('Instance - /instances/:id', function () {
         require('../../fixtures/mocks/github/user')(ctx.user);
         ctx.instance.fetch(function (err) {
           if (err) { return done(err); }
-          expects.updatedHipacheHosts(ctx.user, ctx.instance, done);
+          expects.updatedHosts(ctx.user, ctx.instance, done);
         });
       });
     });

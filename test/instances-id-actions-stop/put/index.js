@@ -83,7 +83,7 @@ describe('PUT /instances/:id/actions/stop', function () {
       it('should update hipache hosts, dns, and weave', function (done) {
         var count = createCount(done);
         var container = ctx.instance.containers.models[0];
-        expects.deletedHipacheHosts(ctx.user, ctx.instance, count.inc().next);
+        expects.deletedHosts(ctx.user, ctx.instance, count.inc().next);
         expects.deletedWeaveHost(container, count.inc().next);
       });
     });
@@ -100,7 +100,7 @@ describe('PUT /instances/:id/actions/stop', function () {
       // it('should update hipache hosts, dns, and weave', function (done) {
       //   var count = createCount(done);
       //   var container = ctx.instance.containers.models[0];
-      //   expects.deletedHipacheHosts(ctx.user, ctx.instance, count.inc().next);
+      //   expects.deletedHosts(ctx.user, ctx.instance, count.inc().next);
       //   expects.deletedWeaveHost(container, count.inc().next);
       // });
     });
