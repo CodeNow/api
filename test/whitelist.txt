@@ -1,7 +1,7 @@
 test/builds
 test/builds.js
 test/builds-id.js
-test/builds-id-actions-build/put
+test/builds-id-actions-build
 test/builds-id-actions-copy.js
 test/contexts
 test/contexts-id-versions-id-files
