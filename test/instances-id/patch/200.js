@@ -5,7 +5,6 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 var keypather = require('keypather')();
 
 var expects = require('../../fixtures/expects');
@@ -24,7 +23,7 @@ var Docker = require('models/apis/docker');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
-var tailBuildStream = require('../../fixtures/tail-build-stream');
+
 var redisCleaner = function (cb) {
   var redis = require('models/redis');
   redis.keys(process.env.WEAVE_NETWORKS+'*', function (err, keys) {
