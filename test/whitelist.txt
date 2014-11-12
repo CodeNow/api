@@ -2,6 +2,9 @@ test/builds.js
 test/builds-id.js
 test/builds-id-actions-build/put
 test/builds-id-actions-copy.js
+test/contexts
+test/contexts-id-versions-id-files
+test/contexts-id-versions-id-files-id
 test/contexts-id-versions.js
 test/contexts-id-versions-id.js
 test/contexts-id-versions-id-files.js

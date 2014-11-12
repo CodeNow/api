@@ -76,7 +76,7 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
 
 
 
-    typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
       require('../../fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
       require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt');

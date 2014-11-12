@@ -24,7 +24,7 @@ describe('400 POST/contexts', function () {
   });
 
 
-  describe('invalid types', function() {
+  describe('invalid types', function () {
     var def = {
       action: 'create a context',
       requiredParams: [
@@ -33,9 +33,21 @@ describe('400 POST/contexts', function () {
           type: 'string'
         }
       ],
+      optionalParams: [
+        {
+          name: 'owner',
+          type: 'object',
+          keys: [
+            {
+              name: 'github',
+              type: 'number'
+            }
+          ]
+        }
+      ],
     };
 
-    typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
       ctx.user.createContext(body, cb);
     });
   });

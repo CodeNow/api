@@ -70,7 +70,7 @@ describe('400 PATCH /contexts/:contextid/versions/:id/files/:id', function () {
       ]
     };
 
-    typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
       var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
       dockerfile.update({json: body}, cb);
     });
