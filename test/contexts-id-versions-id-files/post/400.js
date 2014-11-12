@@ -11,7 +11,6 @@ var hasKeypaths = require('101/has-keypaths');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
-var expects = require('../../fixtures/expects');
 
 var typesTests = require('../../fixtures/types-test-util');
 
@@ -81,7 +80,6 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
       require('../../fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
       require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt');
-      console.log(body)
       ctx.contextVersion.rootDir.contents.create({json: body}, cb);
     });
 
