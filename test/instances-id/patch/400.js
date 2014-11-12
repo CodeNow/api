@@ -62,25 +62,34 @@ describe('PATCH 400 - /instances/:id', function () {
     var def = {
       action: 'update',
       optionalParams: [
-      {
-        name: 'env',
-        type: 'array',
-        itemType: 'string',
-        itemRegExp: /^([A-Za-z]+[A-Za-z0-9_]*)=('(\n[^']*')|("[^"]*")|([^\s#]+))$/,
-        invalidValues: [
-          'string1',
-          '1=X',
-          'a!=x'
-        ]
-      },
-      {
-        name: 'name',
-        type: 'string',
-        invalidValues: [
-          'has!',
-          'has.x2'
-        ]
-      }]
+        {
+          name: 'build',
+          type: 'ObjectId'
+        },
+        {
+          name: 'public',
+          type: 'boolean'
+        },
+        {
+          name: 'env',
+          type: 'array',
+          itemType: 'string',
+          itemRegExp: /^([A-Za-z]+[A-Za-z0-9_]*)=('(\n[^']*')|("[^"]*")|([^\s#]+))$/,
+          invalidValues: [
+            'string1',
+            '1=X',
+            'a!=x'
+          ]
+        },
+        {
+          name: 'name',
+          type: 'string',
+          invalidValues: [
+            'has!',
+            'has.x2'
+          ]
+        }
+      ]
     };
 
     typesTests.makeTestFromDef(def, ctx, function(body, cb) {
