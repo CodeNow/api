@@ -50,7 +50,7 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
   });
 
 
-  describe('invalid types', function() {
+  describe('invalid types', function () {
     var def = {
       action: 'update file',
       optionalParams: [

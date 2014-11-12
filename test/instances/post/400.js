@@ -80,16 +80,16 @@ describe('400 POST /instances', {timeout:500}, function () {
             'has.x2'
           ]
         }, 
-        // {
-        //   name: 'owner',
-        //   type: 'object',
-        //   keys: [
-        //     {
-        //       name: 'github',
-        //       value: 'number'
-        //     }
-        //   ]
-        // }
+        {
+          name: 'owner',
+          type: 'object',
+          keys: [
+            {
+              name: 'github',
+              type: 'number'
+            }
+          ]
+        }
       ]
     };
 
