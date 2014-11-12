@@ -3,7 +3,6 @@ var describe = Lab.experiment;
 var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -31,7 +30,7 @@ describe('400  POST /instances/:id/actions/copy', function () {
   });
 
 
-  describe('Copy', function () {
+  describe('invalid types', function () {
     var def = {
       action: 'copy the instance',
       optionalParams: [

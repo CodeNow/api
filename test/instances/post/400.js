@@ -11,12 +11,9 @@ var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
-var exists = require('101/exists');
 var uuid = require('uuid');
 var createCount = require('callback-count');
 var uuid = require('uuid');
-var Docker = require('models/apis/docker');
-var extend = require('extend');
 
 
 describe('400 POST /instances', {timeout:500}, function () {
