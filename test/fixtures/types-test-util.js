@@ -15,9 +15,11 @@ function typeValue(ctx, type) {
       key1: 3,
       key2: 'some-val',
     },
-    'array': ['val1', 'val2', 'val3'],
-    'ObjectId': ctx.build.id() // TODO (anton) we probably shouldn't use build here
+    'array': ['val1', 'val2', 'val3']
   };
+  if(ctx.build) {
+    values.ObjectId = ctx.build.id(); // TODO (anton) we probably shouldn't use build here
+  }
   return values[type];
 }
 

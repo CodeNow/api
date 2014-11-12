@@ -59,6 +59,7 @@ describe('400 POST /instances', {timeout:500}, function () {
           type: 'ObjectId'
         }
       ],
+      // TODO (anton) ask about parent parameter
       optionalParams: [
         {
           name: 'env',
@@ -78,7 +79,17 @@ describe('400 POST /instances', {timeout:500}, function () {
             'has!',
             'has.x2'
           ]
-        }
+        }, 
+        // {
+        //   name: 'owner',
+        //   type: 'object',
+        //   keys: [
+        //     {
+        //       name: 'github',
+        //       value: 'number'
+        //     }
+        //   ]
+        // }
       ]
     };
 
