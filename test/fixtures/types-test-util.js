@@ -28,6 +28,7 @@ function errorMessageSuffix(paramType, type) {
   }
   // TODO (anton) clarify these inconsistent messages
   var suffixes = {
+    'boolean': 'must be a boolean',
     'string': 'must be a string',
     'number': 'must be a number',
     'array': 'should be an array',

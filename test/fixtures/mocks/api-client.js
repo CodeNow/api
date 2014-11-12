@@ -81,7 +81,15 @@ module.exports.setup = function (cb) {
     create: function () {
       var opts = optsForCreateOrUpdate.apply(this, arguments);
       var contextId = this.path().split('/')[1];
-      var filepath = path.join(opts.json.path, opts.json.name);
+      var name = opts.json.name;
+      if(typeof name !== 'string') {
+        name = '';
+      }
+      var p = opts.json.path;
+      if(typeof p !== 'string') {
+        p = '/';
+      }
+      var filepath = path.join(p, name);
       require('../../fixtures/mocks/s3/put-object')(contextId, filepath);
       // in case owner is org
       require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
