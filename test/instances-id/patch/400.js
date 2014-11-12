@@ -3,7 +3,6 @@ var describe = Lab.experiment;
 var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -16,11 +15,10 @@ describe('PATCH 400 - /instances/:id', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  afterEach(require('../../fixtures/clean-mongo').removeEverything);
-  afterEach(require('../../fixtures/clean-ctx')(ctx));
-  afterEach(require('../../fixtures/clean-nock'));
+  after(require('../../fixtures/mocks/api-client').clean);
 
   beforeEach(function (done) {
     multi.createInstance(function (err, instance, build, user, mdlArray, srcArray) {
@@ -32,7 +30,6 @@ describe('PATCH 400 - /instances/:id', function () {
       ctx.cv = mdlArray[0];
       ctx.context = mdlArray[1];
       ctx.srcArray = srcArray;
-      require('../../fixtures/mocks/github/user')(ctx.user);
       done();
     });
   });
@@ -64,11 +61,6 @@ describe('PATCH 400 - /instances/:id', function () {
 
     var def = {
       action: 'update',
-      // requiredParams: [
-      // {
-      //   name: 'build',
-      //   type: 'ObjectId'
-      // }],
       optionalParams: [
       {
         name: 'env',
@@ -84,10 +76,10 @@ describe('PATCH 400 - /instances/:id', function () {
       {
         name: 'name',
         type: 'string',
-        // invalidValues: [
-        //   'has!',
-        //   'has.x2'
-        // ]
+        invalidValues: [
+          'has!',
+          'has.x2'
+        ]
       }]
     };
 
