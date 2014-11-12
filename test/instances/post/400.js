@@ -29,28 +29,8 @@ describe('400 POST /instances', {timeout:500}, function () {
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
-  function initExpected (done) {
-    ctx.expected = {
-      _id: exists,
-      shortHash: exists,
-      'createdBy.github': ctx.user.attrs.accounts.github.id,
-      'build._id': ctx.build.id(),
-      name: exists,
-      env: [],
-      owner: {
-        username: ctx.user.json().accounts.github.login,
-        github: ctx.user.json().accounts.github.id
-      },
-      contextVersions: exists,
-      'contextVersions[0]._id': ctx.cv.id(),
-      // 'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0],
-      'network.networkIp': exists,
-      'network.hostIp': exists
-    };
-    done();
-  }
 
-  describe('with in-progress build', function () {
+  describe('invalid types', function () {
     beforeEach(function (done) {
       multi.createContextVersion(function (err, contextVersion, context, build, user) {
         ctx.build = build;
@@ -60,7 +40,7 @@ describe('400 POST /instances', {timeout:500}, function () {
         ctx.build.build({ message: uuid() }, expects.success(201, done));
       });
     });
-    beforeEach(initExpected);
+
     afterEach(function (done) {
       var instance = ctx.instance;
       multi.tailInstance(ctx.user, instance, function (err) {
@@ -74,129 +54,40 @@ describe('400 POST /instances', {timeout:500}, function () {
           container, instance.attrs.network.hostIp, count.inc().next);
       });
     });
-    createInstanceTests(ctx);
-  });
-  describe('with built build', function () {
-    describe('Long running container', function() {
-      beforeEach(function (done) {
-        multi.createBuiltBuild(function (err, build, user, modelsArr) {
-          ctx.build = build;
-          ctx.user = user;
-          ctx.cv = modelsArr[0];
-          done(err);
-        });
-      });
-      beforeEach(initExpected);
-      beforeEach(function (done) {
-        extend(ctx.expected, {
-          containers: exists,
-          'containers[0]': exists,
-          'containers[0].dockerHost': exists,
-          'containers[0].dockerContainer': exists,
-          'containers[0].inspect.State.Running': true
-        });
-        done();
-      });
-      afterEach(function (done) {
-        var instance = ctx.instance;
-        var count = createCount(done);
-        expects.updatedHipacheHosts(
-          ctx.user, instance, count.inc().next);
-        var container = instance.containers.models[0];
-        expects.updatedWeaveHost(
-          container, instance.attrs.network.hostIp, count.inc().next);
-      });
+    var def = {
+      action: 'create an instance',
+      requiredParams: [
+        {
+          name: 'build',
+          type: 'ObjectId'
+        }
+      ],
+      optionalParams: [
+        {
+          name: 'env',
+          type: 'array',
+          itemType: 'string',
+          itemRegExp: /^([A-Za-z]+[A-Za-z0-9_]*)=('(\n[^']*')|("[^"]*")|([^\s#]+))$/,
+          itemValues: [
+            'string1',
+            '1=X',
+            'a!=x'
+          ]
+        },
+        {
+          name: 'name',
+          type: 'string',
+          invalidValues: [
+            'has!',
+            'has.x2'
+          ]
+        }
+      ]
+    };
 
-      createInstanceTests(ctx);
-    });
-    describe('Immediately exiting container', function() {
-      beforeEach(function (done) {
-        multi.createBuiltBuild(function (err, build, user, modelsArr) {
-          ctx.build = build;
-          ctx.user = user;
-          ctx.cv = modelsArr[0];
-          done(err);
-        });
-      });
-      beforeEach(initExpected);
-      beforeEach(function (done) {
-        extend(ctx.expected, {
-          containers: exists,
-          'containers[0]': exists,
-          'containers[0].dockerHost': exists,
-          'containers[0].dockerContainer': exists,
-          'containers[0].inspect.State.Running': false
-        });
-        done();
-      });
-      beforeEach(function (done) {
-        ctx.originalStart = Docker.prototype.startContainer;
-        Docker.prototype.startContainer = function () {
-          var self = this;
-          var args = Array.prototype.slice.call(arguments);
-          var container = args[0];
-          var cb = args.pop();
-          args.push(stopContainer);
-          return ctx.originalStart.apply(this, args);
-          function stopContainer (err, start) {
-            if (err) { return cb(err); }
-            self.stopContainer(container, function (err) {
-              cb(err, start);
-            });
-          }
-        };
-        done();
-      });
-      afterEach(function (done) {
-        Docker.prototype.startContainer = ctx.originalStart;
-        done();
-      });
-
-      createInstanceTests(ctx);
+    typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+      ctx.user.createInstance(body, cb);
     });
   });
 });
 
-
-
-
-function createInstanceTests (ctx) {
-  afterEach(require('../../fixtures/clean-mongo').removeEverything);
-  afterEach(require('../../fixtures/clean-ctx')(ctx));
-  afterEach(require('../../fixtures/clean-nock'));
-  // NOTE:
-  // there is no way to generate strings that don't match regexp
-  // that is why we need to provide manually test strings that should fail
-  var def = {
-    action: 'create an instance',
-    requiredParams: [
-    {
-      name: 'build',
-      type: 'ObjectId'
-    }],
-    optionalParams: [
-    {
-      name: 'env',
-      type: 'array',
-      itemType: 'string',
-      itemRegExp: /^([A-Za-z]+[A-Za-z0-9_]*)=('(\n[^']*')|("[^"]*")|([^\s#]+))$/,
-      itemValues: [
-        'string1',
-        '1=X',
-        'a!=x'
-      ]
-    },
-    {
-      name: 'name',
-      type: 'string',
-      invalidValues: [
-        'has!',
-        'has.x2'
-      ]
-    }]
-  };
-
-  typesTests.makeTestFromDef(def, ctx, function(body, cb) {
-    ctx.user.createInstance(body, cb);
-  });
-}

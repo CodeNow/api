@@ -15,11 +15,10 @@ describe('400  POST /instances/:id/actions/copy', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  afterEach(require('../../fixtures/clean-mongo').removeEverything);
-  afterEach(require('../../fixtures/clean-ctx')(ctx));
-  afterEach(require('../../fixtures/clean-nock'));
+  after(require('../../fixtures/mocks/api-client').clean);
 
   beforeEach(function (done) {
     multi.createInstance(function (err, instance, build, user) {
@@ -27,8 +26,6 @@ describe('400  POST /instances/:id/actions/copy', function () {
       ctx.instance = instance;
       ctx.build = build;
       ctx.user = user;
-      require('../../fixtures/mocks/github/user')(ctx.user);
-      require('../../fixtures/mocks/github/user')(ctx.user);
       done();
     });
   });
@@ -40,7 +37,11 @@ describe('400  POST /instances/:id/actions/copy', function () {
       optionalParams: [
       {
         name: 'name',
-        type: 'string'
+        type: 'string',
+        invalidValues: [
+          'has!',
+          'has.x2'
+        ]
       }]
     };
 

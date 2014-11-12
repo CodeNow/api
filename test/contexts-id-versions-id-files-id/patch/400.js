@@ -4,7 +4,6 @@ var describe = Lab.experiment;
 var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
 
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
@@ -21,11 +20,10 @@ describe('400 PATCH /contexts/:contextid/versions/:id/files/:id', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  afterEach(require('../../fixtures/clean-mongo').removeEverything);
-  afterEach(require('../../fixtures/clean-ctx')(ctx));
-  afterEach(require('../../fixtures/clean-nock'));
+  after(require('../../fixtures/mocks/api-client').clean);
 
   var dirPathName = 'dir[]()';
 
@@ -53,22 +51,22 @@ describe('400 PATCH /contexts/:contextid/versions/:id/files/:id', function () {
   });
 
 
-  describe('regular file', function() {
+  describe('invalid types', function() {
     var def = {
       action: 'update file',
       optionalParams: [
-      {
-        name: 'body',
-        type: 'string'
-      },
-      {
-        name: 'name',
-        type: 'string'
-      },
-      {
-        name: 'path',
-        type: 'string'
-      }
+        {
+          name: 'body',
+          type: 'string'
+        },
+        {
+          name: 'name',
+          type: 'string'
+        },
+        {
+          name: 'path',
+          type: 'string'
+        }
       ]
     };
 
