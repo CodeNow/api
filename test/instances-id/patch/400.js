@@ -60,7 +60,7 @@ describe('PATCH 400 - /instances/:id', function () {
     });
 
     var def = {
-      action: 'update',
+      action: 'update an instance',
       optionalParams: [
         {
           name: 'build',

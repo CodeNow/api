@@ -52,7 +52,7 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
 
   describe('invalid types', function () {
     var def = {
-      action: 'update file',
+      action: 'create a file',
       optionalParams: [
         {
           name: 'body',
