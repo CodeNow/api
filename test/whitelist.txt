@@ -4,6 +4,7 @@ test/builds-id.js
 test/builds-id-actions-build
 test/builds-id-actions-copy.js
 test/contexts
+test/contexts-id-versions
 test/contexts-id-versions-id-appcodeversions
 test/contexts-id-versions-id-appcodeversions-id
 test/contexts-id-versions-id-files
