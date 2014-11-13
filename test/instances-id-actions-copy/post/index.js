@@ -135,6 +135,7 @@ describe('Instance - /instances/:id/actions', function () {
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           ctx.otherInstance = ctx.user.copyInstance(ctx.instance.id(), done);
         });
         it('should copy the instance when part of the same org as the owner', function (done) {
@@ -148,6 +149,7 @@ describe('Instance - /instances/:id/actions', function () {
             'build._id': ctx.build.id(),
             containers: exists
           };
+          require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
