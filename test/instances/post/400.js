@@ -59,7 +59,6 @@ describe('400 POST /instances', {timeout:500}, function () {
           type: 'ObjectId'
         }
       ],
-      // TODO (anton) ask about parent parameter
       optionalParams: [
         {
           name: 'parent',
