@@ -72,7 +72,7 @@ expects.errorStatus = function (code, messageMatch, done) {
   }
   return function (err) {
     debug('errorStatus', err);
-    expect(err, 'Expected error response').to.satisfy(exists);
+    expect(err, 'Expected '+code+' error response').to.satisfy(exists);
     expect(err.output.statusCode).to.equal(code);
     if (messageMatch instanceof RegExp) {
       expect(err.message).to.match(messageMatch);
@@ -159,12 +159,18 @@ expects.updatedHosts = function (user, instanceOrName, container, hostIp, cb) {
     process.nextTick(cb);
     return;
   }
+  expects.updatedDnsEntry(user, instanceName, instance.attrs.network.hostIp);
+  expects.updatedHipacheEntries(user, instanceName, container, cb);
+};
+expects.updatedDnsEntry = function (user, instanceName, hostIp) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var dnsUrl = toDnsUrl(user, instanceName);
   expect(mockRoute53.findRecordIp(dnsUrl), 'dns record')
-    .to.equal(instance.attrs.network.hostIp);
+    .to.equal(hostIp);
+};
+expects.updatedHipacheEntries = function (user, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
@@ -205,28 +211,34 @@ expects.deletedHosts = function (user, instanceOrName, container, cb) {
   else {
     instanceName = instanceOrName;
   }
-
+  container = container && container.toJSON ? container.toJSON() : container;
   if (!container || !container.dockerContainer || !container.ports) {
     process.nextTick(cb);
     return;
   }
+  expects.deletedDnsEntry(user, instanceName);
+  expects.deletedHipacheEntries(user, instanceName, container, cb);
+};
+expects.deletedDnsEntry = function (user, instanceName) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var dnsUrl = toDnsUrl(user, instanceName);
   expect(mockRoute53.findRecordIp(dnsUrl), 'dns record')
     .to.not.be.ok;
+};
+expects.deletedHipacheEntries = function (user, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
   hosts.readHipacheEntriesForContainer(
     user.attrs.accounts.github.login,
     instanceName,
-    container.json(),
+    container,
     function (err, redisData) {
       if (err) { return cb(err); }
       var expectedRedisData = {};
-      Object.keys(container.attrs.ports).forEach(function (containerPort) {
+      Object.keys(container.ports).forEach(function (containerPort) {
         var key = toHipacheEntryKey(containerPort, instanceName, user);
         expectedRedisData[key] = [];
       });
@@ -245,6 +257,7 @@ function toDnsUrl (user, instanceName) {
  * @param  {Function} cb        callback
  */
 expects.deletedContainer = function (container, cb) {
+  container = container && container.toJSON ? container.toJSON() : container;
   if (!container.dockerHost) {
     throw new Error('container must have dockerHost');
   }
@@ -281,7 +294,7 @@ function toHipacheEntryVal (containerPort, container, instanceName) {
 }
 
 /**
- * asserts weave container attachment
+ * asserts container is attached to weave network hostIp
  * @param  {Instance} instance       instance which container belongs to
  * @param  {Object}   expectedHostIp expected host ip for container
  * @param  {Function} cb             callback
@@ -291,13 +304,14 @@ expects.updatedWeaveHost = function (container, expectedHostIp, cb) {
   var sauron = new Sauron(container.dockerHost);
   sauron.getContainerIp(container.dockerContainer, function (err, hostIp) {
     if (err) { return cb(err); }
-    expect(hostIp, 'hostIp to equal '+expectedHostIp).to.equal(expectedHostIp);
+    expect(hostIp, 'Container '+container.dockerContainer+' to be attached to '+expectedHostIp)
+      .to.equal(expectedHostIp);
     cb();
   });
 };
 
 /**
- * asserts weave entry was deleted
+ * asserts container detached from all weave network hostIps
  * @param  {Instance}  instance instance which container should'
  * @param  {Function}  cb       callback
  */
@@ -306,7 +320,8 @@ expects.deletedWeaveHost = function (container, cb) {
   var sauron = new Sauron(container.dockerHost);
   sauron.getContainerIp(container.dockerContainer, function (err, val) {
     if (err) { return cb(err); }
-    expect(val).to.not.be.ok;
+    expect(val, 'Container '+container.dockerContainer+' to be unattached')
+      .to.not.be.ok;
     cb();
   });
 };

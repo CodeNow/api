@@ -38,7 +38,6 @@ var redisCleaner = function (cb) {
     });
   });
 };
-require('console-trace')({right:true, always:true});
 
 describe('PUT /instances/:id/actions/start', function () {
   var ctx = {};
@@ -259,11 +258,8 @@ describe('PUT /instances/:id/actions/start', function () {
           if (err) { return count.next(err); }
           instance.start(expects.success(200, ctx.expected, function (err) {
             if (err) { return count.next(err); }
-            instance.fetch(function (err) {
-              if (err) { return count.next(err); }
-              expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
-              expects.updatedHosts(ctx.user, instance, count.next);
-            });
+            expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
+            expects.updatedHosts(ctx.user, instance, count.next);
           }));
         });
       }

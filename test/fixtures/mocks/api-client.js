@@ -23,6 +23,15 @@ module.exports.setup = function (cb) {
     },
     fetch: function () {
       require('../../fixtures/mocks/github/user')(this.opts.user);
+    },
+    start: function () {
+      require('../../fixtures/mocks/github/user')(this.opts.user);
+    },
+    restart: function () {
+      require('../../fixtures/mocks/github/user')(this.opts.user);
+    },
+    stop: function () {
+      require('../../fixtures/mocks/github/user')(this.opts.user);
     }
   });
 
