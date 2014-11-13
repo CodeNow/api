@@ -8,8 +8,6 @@ var afterEach = Lab.afterEach;
 
 var exists = require('101/exists');
 var join = require('path').join;
-var fs = require('fs');
-var path = require('path');
 
 var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
