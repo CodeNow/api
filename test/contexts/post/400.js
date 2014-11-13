@@ -35,6 +35,10 @@ describe('400 POST/contexts', function () {
       ],
       optionalParams: [
         {
+          name: 'isSource',
+          type: 'boolean'
+        },
+        {
           name: 'owner',
           type: 'object',
           keys: [

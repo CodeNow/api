@@ -62,6 +62,10 @@ describe('400 POST /instances', {timeout:500}, function () {
       // TODO (anton) ask about parent parameter
       optionalParams: [
         {
+          name: 'parent',
+          type: 'string'
+        }
+        {
           name: 'env',
           type: 'array',
           itemType: 'string',
