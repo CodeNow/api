@@ -5,7 +5,6 @@ var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
 var generateKey = require('./key-factory');
 var EventEmitter = require('events').EventEmitter;
-var noop = require('101/noop');
 
 module.exports = {
   createUser: function (cb) {
