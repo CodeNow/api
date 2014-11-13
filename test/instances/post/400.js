@@ -64,7 +64,7 @@ describe('400 POST /instances', {timeout:500}, function () {
         {
           name: 'parent',
           type: 'string'
-        }
+        },
         {
           name: 'env',
           type: 'array',
