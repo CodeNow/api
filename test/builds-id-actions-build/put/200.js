@@ -257,6 +257,11 @@ function itShouldBuildTheBuild (ctx) {
           if (err) { return done(err); }
           var count = createCount(done);
           ctx.build.fetch(expects.success(200, ctx.expectBuilt, count.inc().next));
+          console.log('fetch context version');
+          console.log('fetch context version');
+          console.log('fetch context version');
+          console.log('fetch context version');
+          console.log('fetch context version');
           ctx.cv.fetch(expects.success(200, count.inc().next));
         });
       }));

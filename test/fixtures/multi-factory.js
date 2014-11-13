@@ -261,10 +261,7 @@ module.exports = {
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);
-          if (err) {
-            cb = noop;
-            cb(err);
-          }
+          if (err) { return cb(err); }
           require('./mocks/github/user')(user);
           build.contextVersions.models[0].fetch(function (err) {
             if (err) { return cb(err); }
