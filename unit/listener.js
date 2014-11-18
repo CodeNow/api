@@ -55,6 +55,7 @@ describe('event listener', function () {
         subscriber.on('pmessage', function () {
           done();
         });
+
         redis.publish(key, JSON.stringify(testData));
       });
 
@@ -75,6 +76,7 @@ describe('event listener', function () {
         listener.on('runnable:', function() {
           done(new Error('should not have called this'));
         });
+
         redis.publish(key, JSON.stringify(testData));
       });
   }); // onEvent
