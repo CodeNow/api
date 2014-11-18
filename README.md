@@ -128,17 +128,6 @@ Build Page - /project/anandkumar/filibuster/master/build/:id
 
 Instance Page - /project/anandkumar/filibuster/master/build/:id (just like our current container pages except supports multiple containers (full instance))
  - create an instance from a build (create containers for all build images (versions))
-
-
-
-TODO:
-
-builds done in primitive form
-bryan is working builds via docker (then queueing and build logs)
-tj is hooking up files - maybe anand can wrap this up
-mongoose validation plugins
-dotenv for containerization
-how to use real docker in our tests (mocks for dev, real for integration)
 ```
 
 ![Magic](https://s3.amazonaws.com/uploads.hipchat.com/31372/651154/nARA3Q63eW1j5WV/2014-07-04-14-45-39%20%281%29.png)
