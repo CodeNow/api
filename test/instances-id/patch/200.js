@@ -24,6 +24,7 @@ var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 
+
 var redisCleaner = function (cb) {
   var redis = require('models/redis');
   redis.keys(process.env.WEAVE_NETWORKS+'*', function (err, keys) {
@@ -78,6 +79,20 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       }, ms);
     };
   };
+  beforeEach(function (done) {
+    Docker.prototype._origionalPushImageToRegistry = Docker.prototype.pushImageToRegistry;
+    Docker.prototype.pushImageToRegistry = function () {
+      var cb = Array.prototype.slice(arguments).pop();
+      if (typeof cb === 'function') {
+         cb();
+      }
+    };
+    done();
+  });
+  afterEach(function (done) {
+    Docker.prototype.pushImageToRegistry = Docker.prototype._origionalPushImageToRegistry;
+    done();
+  });
   beforeEach(redisCleaner);
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -208,7 +223,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
         ctx.expected['build._id'] = body.build;
         ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
       });
-      patchInstanceTests(ctx);
+      stoppedOrRunningContainerThenPatchInstanceTests(ctx);
     });
     describe('and no env.', function() {
       beforeEach(function (done) {
@@ -217,6 +232,24 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
         };
         ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
       });
+      stoppedOrRunningContainerThenPatchInstanceTests(ctx);
+    });
+  }
+
+  function stoppedOrRunningContainerThenPatchInstanceTests (ctx) {
+    describe('and the container naturally stops like a boss', function() {
+      beforeEach(function (done) {
+        var d = new Docker(ctx.instance.attrs.contextVersions[0].dockerHost);
+        d.docker
+          .getContainer(ctx.instance.attrs.contextVersions[0].containerId)
+          .stop(function () {
+            // we just want it to be stopped. ignore the errors here
+            done();
+          });
+      });
+      patchInstanceTests(ctx);
+    });
+    describe('with the container running normally', function () {
       patchInstanceTests(ctx);
     });
   }
