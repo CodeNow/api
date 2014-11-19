@@ -147,14 +147,15 @@ describe('Instance - /instances/:id', function () {
         });
       });
     });
-    ['instance'].forEach(function (destroyName) {
-      describe('not founds', function () {
-        beforeEach(function (done) {
-          ctx[destroyName].destroy(done);
-        });
-        it('should not get the instance if missing (404 '+destroyName+')', function (done) {
-          ctx.instance.fetch(expects.errorStatus(404, done));
-        });
+
+    describe('not founds', function () {
+      beforeEach(function (done) {
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        ctx.instance.destroy(done);
+      });
+      it('should not get the instance if missing (404)', function (done) {
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        ctx.instance.fetch(expects.error(404, done));
       });
     });
   });

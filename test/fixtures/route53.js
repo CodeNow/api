@@ -153,8 +153,11 @@ function mockUpsert (resourceRecordSet, cb) {
     cb(resp.nameNotPermittedErr(name));
   }
   else {
-    records.push(resourceRecordSet);
-    cb(null, resp.success());
+    // async
+    process.nextTick(function () {
+      records.push(resourceRecordSet);
+      cb(null, resp.success());
+    });
   }
 
 }
@@ -178,16 +181,19 @@ function mockDelete (resourceRecordSet, cb) {
     'ResourceRecords[0].Value': resourceRecordSet.ResourceRecords[0].Value,
     TTL: resourceRecordSet.TTL
   }));
-  if (!exists(record)) {
-    cb(resp.deleteNotFoundErr(name, type));
-  }
-  else if (!exists(equalRecord)){
-    cb(resp.deleteNotFoundErr(name, type));
-  }
-  else {
-    records.splice(index, 1);
-    cb(null, resp.success());
-  }
+  // async
+  process.nextTick(function () {
+    if (!exists(record)) {
+      cb(resp.deleteNotFoundErr(name, type));
+    }
+    else if (!exists(equalRecord)){
+      cb(resp.deleteNotFoundErr(name, type));
+    }
+    else {
+      records.splice(index, 1);
+      cb(null, resp.success());
+    }
+  });
 }
 
 /**

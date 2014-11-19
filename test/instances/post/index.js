@@ -69,7 +69,7 @@ describe('POST /instances', function () {
             'owner.github': ctx.user.attrs.accounts.github.id,
             contextVersions: exists,
             'contextVersions[0]._id': ctx.cv.id(),
-            'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0],
+            'contextVersions[0].appCodeVersions[0]': ctx.cv.json().appCodeVersions[0],
             'network.networkIp': exists,
             'network.hostIp': exists
           };
@@ -88,7 +88,6 @@ describe('POST /instances', function () {
           });
         });
 
-        beforeEach(require('../../fixtures/weave').clean);
         it('should deploy the instance after the build finishes', {timeout: 1200}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           require('../../fixtures/mocks/docker/container-id-attach')(25);
@@ -103,7 +102,7 @@ describe('POST /instances', function () {
                 if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.be.okay;
                 var count = createCount(done);
-                expects.updatedHipacheHosts(
+                expects.updatedHosts(
                   ctx.user, instance, count.inc().next);
                 var container = instance.containers.models[0];
                 expects.updatedWeaveHost(
@@ -187,6 +186,7 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+            require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user')(ctx.user);
             var instance = ctx.user.createInstance({ json: json },
               expects.success(201, expected, function(err) {
@@ -259,10 +259,8 @@ describe('POST /instances', function () {
           var expected = {
             _id: exists,
             name: json.name,
-            owner: {
-              github: ctx.user.json().accounts.github.id,
-              username: ctx.user.json().accounts.github.login
-            },
+            'owner.github': ctx.user.json().accounts.github.id,
+            'owner.username': ctx.user.json().accounts.github.login,
             public: false,
             'build._id': ctx.build.id(),
             containers: exists,
@@ -275,12 +273,11 @@ describe('POST /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err) {
               if (err) { return done(err); }
-              require('../../fixtures/mocks/github/user')(ctx.user);
-              var container = instance.containers.models[0];
-              instance.fetch(function (err) {
+              multi.tailInstance(ctx.user, instance, function (err) {
                 if (err) { return done(err); }
+                var container = instance.containers.models[0];
                 var count = createCount(done);
-                expects.updatedHipacheHosts(
+                expects.updatedHosts(
                   ctx.user, instance, count.inc().next);
                 expects.updatedWeaveHost(
                   container, instance.attrs.network.hostIp, count.inc().next);
@@ -448,7 +445,7 @@ describe('POST /instances', function () {
         };
         var expected = {
           _id: exists,
-          name: 'Instance2',
+          name: 'Instance1', // uuid is used in multi.createInstance
           owner: {
             github: ctx.user.json().accounts.github.id,
             username: ctx.user.json().accounts.github.login
