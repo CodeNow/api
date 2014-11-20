@@ -41,15 +41,15 @@ describe('Instance - /instances/:id/actions', function () {
    * be tested here
    */
   describe('Copy', function () {
-    describe('owner', function () {
+    describe('owner', { timeout: 500 }, function () {
       it('should copy the instance, and give it the same build', function (done) {
         var expected = {
           shortHash: exists,
           name: exists,
           public: exists,
           createdBy: { github: ctx.user.json().accounts.github.id },
-          owner: { github: ctx.user.json().accounts.github.id,
-                   username: ctx.user.json().accounts.github.username },
+          'owner.github': ctx.user.json().accounts.github.id,
+          'owner.username': ctx.user.json().accounts.github.username,
           parent: ctx.instance.id(),
           'build._id': ctx.build.id(),
           containers: exists
@@ -84,8 +84,8 @@ describe('Instance - /instances/:id/actions', function () {
           name: exists,
           public: exists,
           createdBy: { github: ctx.user.json().accounts.github.id },
-          owner: { github: ctx.user.json().accounts.github.id,
-                   username: ctx.user.json().accounts.github.username },
+          'owner.github': ctx.user.json().accounts.github.id,
+          'owner.username': ctx.user.json().accounts.github.username,
           parent: ctx.instance.id(),
           'build._id': ctx.build.id(),
           containers: exists,
