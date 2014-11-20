@@ -239,11 +239,11 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   function stoppedOrRunningContainerThenPatchInstanceTests (ctx) {
     describe('and the container naturally stops like a boss', function() {
       beforeEach(function (done) {
-        var d = new Docker(ctx.instance.attrs.contextVersions[0].dockerHost);
+        var d = new Docker(ctx.instance.attrs.container.dockerHost);
         d.docker
-          .getContainer(ctx.instance.attrs.contextVersions[0].containerId)
+          .getContainer(ctx.instance.attrs.container.dockerContainer)
           .stop(function () {
-            // we just want it to be stopped. ignore the errors here
+            ctx.expected['containers[0].inspect.State.Running'] = false;
             done();
           });
       });
