@@ -237,15 +237,22 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   }
 
   function stoppedOrRunningContainerThenPatchInstanceTests (ctx) {
-    describe('and the container naturally stops like a boss', function() {
+    describe('and the container naturally stops (if there is a container)', function() {
       beforeEach(function (done) {
-        var d = new Docker(ctx.instance.attrs.container.dockerHost);
-        d.docker
-          .getContainer(ctx.instance.attrs.container.dockerContainer)
-          .stop(function () {
-            ctx.expected['containers[0].inspect.State.Running'] = false;
-            done();
-          });
+        if (keypather.get(ctx.instance, 'attrs.container.dockerContainer')) {
+          var docker = new Docker(ctx.instance.attrs.container.dockerHost);
+          docker
+            .stopContainer(ctx.instance.attrs.container, function () {
+              // ignore error we just want it stopped..
+              ctx.expected['containers[0].inspect.State.Running'] = false;
+              done();
+            });
+        }
+        else {
+          // KEEP THIS LOG
+          console.warn('(does not have container so does not stop)');
+          done();
+        }
       });
       patchInstanceTests(ctx);
     });
