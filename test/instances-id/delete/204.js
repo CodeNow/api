@@ -39,7 +39,7 @@ var redisCleaner = function (cb) {
   });
 };
 
-describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
+describe('204 DELETE /instances/:id', {timeout:1000}, function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;
@@ -213,7 +213,7 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
         ctx.expected['build._id'] = body.build;
         ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
       });
-      stopInstanceTests(ctx);
+      deleteInstanceTests(ctx);
     });
     describe('and no env.', function() {
       beforeEach(function (done) {
@@ -222,46 +222,29 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
         };
         ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
       });
-      stopInstanceTests(ctx);
+      deleteInstanceTests(ctx);
     });
   }
 
-  function stopInstanceTests (ctx) {
+  function deleteInstanceTests (ctx) {
     afterEach(require('../../fixtures/clean-ctx')(ctx));
     afterEach(require('../../fixtures/clean-nock'));
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
-    it('should stop an instance', function (done) {
-      if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
-        Docker.prototype.startContainer = ctx.originalStart;
-      }
-      if (ctx.expectNoContainerErr) {
-        ctx.instance.stop(expects.error(400, /not have a container/, done));
-      }
-      else { // success
-        ctx.expected['containers[0].inspect.State.Running'] = false;
-        var assertions = ctx.expectAlreadyStopped ?
-          expects.error(304, startStopAssert) :
-          expects.success(200, ctx.expected, startStopAssert);
-        ctx.instance.stop(assertions);
-      }
-      function startStopAssert (err) {
+    it('should delete an instance', function (done) {
+      var instanceName = ctx.instance.attrs.name;
+      var container = ctx.instance.containers.models[0];
+      ctx.instance.destroy(expects.success(204, assertEverythingCleaned));
+      function assertEverythingCleaned (err) {
         if (err) { return done(err); }
         var count = createCount(done);
-        // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
-        expects.deletedHosts(ctx.user, ctx.instance, count.inc().next);
-        // try stop and start
-        count.inc();
-        var instance = ctx.instance;
-        var container = instance.containers.models[0];
-        instance.start(function (err) {
-          if (err) { return count.next(err); }
-          instance.stop(expects.success(200, ctx.expected, function (err) {
-            if (err) { return count.next(err); }
+        setTimeout(function () {
+          expects.deletedHosts(ctx.user, instanceName, container, count.inc().next);
+          if (container && container.attrs.dockerContainer) {
             expects.deletedWeaveHost(container, count.inc().next);
-            expects.deletedHosts(ctx.user, instance, count.next);
-          }));
-        });
+            expects.deletedContainer(container, count.inc().next);
+          }
+        }, 50); // deletions in route are backgrounded.. so 18ms is enough time..
       }
     });
   }

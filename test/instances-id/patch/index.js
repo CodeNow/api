@@ -341,13 +341,15 @@ describe('Instance - /instances/:id', function () {
           });
         });
         it('should copy the context version app codes during the patch ', function (done) {
+          var acv = ctx.otherCv.attrs.appCodeVersions[0];
+          delete acv.id;
           var expected = {
             // Since the containers are not removed until the otherBuild has finished, we should
             // still see them running
             'containers[0].inspect.State.Running': true,
             build: ctx.otherBuild.json(),
             'contextVersions[0]._id': ctx.otherCv.id(),
-            'contextVersions[0].appCodeVersions[0]': ctx.otherCv.attrs.appCodeVersions[0]
+            'contextVersions[0].appCodeVersions[0]': acv
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
@@ -520,7 +522,7 @@ describe('Instance - /instances/:id', function () {
         require('../../fixtures/mocks/github/user')(ctx.user);
         ctx.instance.fetch(function (err) {
           if (err) { return done(err); }
-          expects.updatedHipacheHosts(ctx.user, ctx.instance, done);
+          expects.updatedHosts(ctx.user, ctx.instance, done);
         });
       });
     });

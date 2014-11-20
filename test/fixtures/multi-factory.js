@@ -5,7 +5,6 @@ var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
 var generateKey = require('./key-factory');
 var EventEmitter = require('events').EventEmitter;
-var noop = require('101/noop');
 
 module.exports = {
   createUser: function (cb) {
@@ -193,10 +192,14 @@ module.exports = {
       });
     });
   },
-  createInstance: function (buildOwnerId, cb) {
+  createInstance: function (buildOwnerId, buildOwnerName, cb) {
     if (typeof buildOwnerId === 'function') {
       cb = buildOwnerId;
       buildOwnerId = null;
+    }
+    if (typeof buildOwnerName === 'function') {
+      cb = buildOwnerName;
+      buildOwnerName = 'Runnable';
     }
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err); }
@@ -205,9 +208,15 @@ module.exports = {
         build: build.id()
       };
       if (buildOwnerId) {
-        require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
-        require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
-        require('./mocks/github/user-orgs')(buildOwnerId, 'Runnable');
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        // redeploy
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
       } else {
         require('./mocks/github/user')(user);
         require('./mocks/github/user')(user);
@@ -243,19 +252,15 @@ module.exports = {
       // build fetch
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
-    require('./mocks/docker/container-id-attach')(100);
     build.fetch(function (err) {
       if (err) { return cb(err); }
       build.contextVersions.models[0].fetch(function (err, cv) {
         if (err) { return cb(err); }
-        require('./mocks/docker/container-id-attach')();
+        require('./mocks/docker/container-id-attach')(100);
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);
-          if (err) {
-            cb = noop;
-            cb(err);
-          }
+          if (err) { return cb(err); }
           require('./mocks/github/user')(user);
           build.contextVersions.models[0].fetch(function (err) {
             if (err) { return cb(err); }

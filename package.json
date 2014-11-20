@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -24,7 +24,7 @@
     "dat-middleware": "^1.9.2",
     "debug": "^1.0.2",
     "defaults": "^1.0.0",
-    "docker-stream-cleanser": "^0.1.1",
+    "docker-stream-cleanser": "0.1.2",
     "dockerode": "^2.0.3",
     "dogerode": "0.0.3",
     "dogstatsyware": "0.0.1",
@@ -67,7 +67,7 @@
     "request": "2.42.0",
     "rimraf": "^2.2.8",
     "rollbar": "^0.3.13",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.36.0",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.37.4",
     "s3-stream-upload": "0.0.6",
     "simple-api-client": "^0.5.9",
     "substream": "0.1.1",
@@ -79,7 +79,7 @@
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.4",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
     "debug": "^1.0.2",
-    "docker-mock": "git://github.com/Runnable/docker-mock.git#v0.2.1",
+    "docker-mock": "git://github.com/Runnable/docker-mock.git#v0.3.1",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
     "function-proxy": "^0.5.1",
@@ -92,12 +92,13 @@
     "nock": "^0.48.0",
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
-    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.3"
+    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.6"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
     "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test `cat test/whitelist.txt`",
+    "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node --debug-brk ./node_modules/.bin/lab -v -l -m 200 -e test `cat test/whitelist.txt`",
     "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",
