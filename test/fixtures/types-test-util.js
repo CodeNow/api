@@ -7,7 +7,7 @@ var expects = require('./expects');
 function typeValue (ctx, type) {
   var values = {
     'string': 'some-string-value',
-    'number': 123, 
+    'number': 123,
     'boolean': false,
     'null': null,
     'undefined': undefined,
@@ -15,11 +15,9 @@ function typeValue (ctx, type) {
       key1: 3,
       key2: 'some-val',
     },
-    'array': ['val1', 'val2', 'val3']
+    'array': ['val1', 'val2', 'val3'],
+    ObjectId: '123456789012345678901234'
   };
-  if (ctx.build) {
-    values.ObjectId = ctx.build.id(); // TODO (anton) we probably shouldn't use build here
-  }
   return values[type];
 }
 
@@ -45,7 +43,7 @@ function buildBodyWithRequiredParams (ctx, requiredParams, param, type) {
   if (param && type) {
     body[param.name] = typeValue(ctx, type);
   }
-  
+
   if (requiredParams) {
     requiredParams.forEach(function(requiredParam) {
       body[requiredParam.name] = typeValue(ctx, requiredParam.type);
@@ -63,9 +61,9 @@ function buildBodyForRequiredParams (ctx, requiredParams, param, type, paramInde
   if (requiredParams) {
     requiredParams.forEach(function(requiredParam, index) {
       if (index < paramIndex) {
-        body[requiredParam.name] = typeValue(ctx, requiredParam.type);  
+        body[requiredParam.name] = typeValue(ctx, requiredParam.type);
       }
-      
+
     });
   }
   return body;
@@ -74,7 +72,7 @@ function buildBodyForRequiredParams (ctx, requiredParams, param, type, paramInde
 function excludeParam (types, excluded) {
   return types.filter(function (type) {
     return type !== excluded;
-  });  
+  });
 }
 
 
@@ -95,11 +93,11 @@ function setupTests (ctx, handler, def, types, param, buildBodyFunction, index) 
       it(testName, function (done) {
         var body = buildBodyFunction(ctx, def.requiredParams);
         body[param.name] = invalidValue;
-        // e.g. "env" should match 
+        // e.g. "env" should match
         var message = new RegExp('"' + param.name + '" should match ');
         var cb = expects.error(400, message, done);
         handler(body, cb);
-      }); 
+      });
     });
   }
   if (param.type === 'object' && param.keys) {
@@ -144,7 +142,7 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
         var message = new RegExp(regexp);
         var cb = expects.error(400, message, done);
         handler(body, cb);
-      }); 
+      });
     });
     if (param.invalidValues) {
       param.invalidValues.forEach(function (invalidValue) {
@@ -153,11 +151,11 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
         it(testName, function (done) {
           var body = buildBodyFunction(ctx, def.requiredParams);
           body[param.name] = [invalidValue];
-          // e.g. "env" should match 
+          // e.g. "env" should match
           var message = new RegExp('"' + param.name + '" should match ');
           var cb = expects.error(400, message, done);
           handler(body, cb);
-        }); 
+        });
       });
     }
   }

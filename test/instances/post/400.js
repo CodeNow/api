@@ -37,20 +37,6 @@ describe('400 POST /instances', {timeout:500}, function () {
         ctx.build.build({ message: uuid() }, expects.success(201, done));
       });
     });
-
-    afterEach(function (done) {
-      var instance = ctx.instance;
-      multi.tailInstance(ctx.user, instance, function (err) {
-        if (err) { return done(err); }
-        expect(instance.attrs.containers[0]).to.be.okay;
-        var count = createCount(done);
-        expects.updatedHipacheHosts(
-          ctx.user, instance, count.inc().next);
-        var container = instance.containers.models[0];
-        expects.updatedWeaveHost(
-          container, instance.attrs.network.hostIp, count.inc().next);
-      });
-    });
     var def = {
       action: 'create an instance',
       requiredParams: [
@@ -82,7 +68,7 @@ describe('400 POST /instances', {timeout:500}, function () {
             'has!',
             'has.x2'
           ]
-        }, 
+        },
         {
           name: 'owner',
           type: 'object',

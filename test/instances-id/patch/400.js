@@ -20,42 +20,12 @@ describe('PATCH 400 - /instances/:id', function () {
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
-  beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user, mdlArray, srcArray) {
-      //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
-      if (err) { return done(err); }
-      ctx.instance = instance;
-      ctx.build = build;
-      ctx.user = user;
-      ctx.cv = mdlArray[0];
-      ctx.context = mdlArray[1];
-      ctx.srcArray = srcArray;
-      done();
-    });
-  });
-
   describe('invalid types', function () {
     beforeEach(function (done) {
-      ctx.orgId = 1001;
-      multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
-        //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
-        if (err) {
-          return done(err);
-        }
+      multi.createInstance(function (err, instance) {
+        if (err) { return done(err); }
         ctx.instance = instance;
-        ctx.build = build;
-        ctx.user = user;
-        ctx.cv = mdlArray[0];
-        ctx.context = mdlArray[1];
-        ctx.srcArray = srcArray;
-
-        multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build) {
-          if (err) {
-            done(err);
-          }
-          ctx.otherBuild = build;
-          done();
-        });
+        done();
       });
     });
 
@@ -92,10 +62,21 @@ describe('PATCH 400 - /instances/:id', function () {
       ]
     };
 
-    typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
       ctx.instance.update(body, cb);
     });
 
-
+    // it('should not update dns and hosts', function (done) {
+    //   ctx.instance.update(body, expects.error(400, function (err) {
+    //     if (err) { return done(err); }
+    //     expect(instance.attrs.containers[0]).to.be.okay;
+    //     var count = createCount(done);
+    //     expects.updatedHipacheHosts(
+    //       ctx.user, instance, count.inc().next);
+    //     var container = instance.containers.models[0];
+    //     expects.updatedWeaveHost(
+    //       container, instance.attrs.network.hostIp, count.inc().next);
+    //   }));
+    // });
   });
 });
