@@ -5,9 +5,11 @@ var uuid = require('uuid');
 var tailBuildStream = require('./tail-build-stream');
 var generateKey = require('./key-factory');
 var EventEmitter = require('events').EventEmitter;
+var debug = require('debug')('runnable-api:multi-factory');
 
 module.exports = {
   createUser: function (cb) {
+    debug('createUser', formatArgs(arguments));
     var host = require('./host');
     var token = uuid();
     require('./mocks/github/action-auth')(token);
@@ -25,6 +27,7 @@ module.exports = {
     return user;
   },
   createModerator: function (cb) {
+    debug('createModerator', formatArgs(arguments));
     return this.createUser(function (err, user) {
       if (err) { return cb(err); }
       var $set = {
@@ -36,6 +39,7 @@ module.exports = {
     });
   },
   createContext: function (ownerId, cb) {
+    debug('createContext', formatArgs(arguments));
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -54,6 +58,7 @@ module.exports = {
     });
   },
   createSourceContext: function (cb) {
+    debug('createSourceContext', formatArgs(arguments));
     this.createModerator(function (err, moderator) {
       if (err) { return cb(err); }
       var body = {
@@ -67,6 +72,7 @@ module.exports = {
     });
   },
   createSourceContextVersion: function (cb) {
+    debug('createSourceContextVersion', formatArgs(arguments));
     this.createSourceContext(function (err, context, moderator) {
       if (err) { return cb(err); }
       require('./mocks/s3/put-object')(context.id(), '/');
@@ -85,6 +91,7 @@ module.exports = {
     });
   },
   createBuild: function (ownerId, cb) {
+    debug('createBuild', formatArgs(arguments));
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -107,6 +114,7 @@ module.exports = {
     });
   },
   createContextVersion: function (ownerId, cb) {
+    debug('createContextVersion', formatArgs(arguments));
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -159,6 +167,7 @@ module.exports = {
               if (err) { return cb(err); }
               build.fetch(function (err) {
                 if (err) { return cb(err); }
+                console.log('CONTEXT VERSION FETCH1')
                 contextVersion.fetch(function (err) {
                   cb(err, contextVersion, context, build, user,
                     [srcContextVersion, srcContext, moderator]);
@@ -171,6 +180,7 @@ module.exports = {
     });
   },
   createBuiltBuild: function (ownerId, cb) {
+    debug('createBuiltBuild', formatArgs(arguments));
     require('nock').cleanAll();
     if (typeof ownerId === 'function') {
       cb = ownerId;
@@ -184,6 +194,7 @@ module.exports = {
       self.buildTheBuild(user, build, ownerId, function (err) {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
+        console.log('CONTEXT VERSION FETCH2')
         contextVersion.fetch(function (err) {
           cb(err, build, user,
               [contextVersion, context, build, user],
@@ -193,6 +204,7 @@ module.exports = {
     });
   },
   createInstance: function (buildOwnerId, buildOwnerName, cb) {
+    debug('createInstance', formatArgs(arguments));
     if (typeof buildOwnerId === 'function') {
       cb = buildOwnerId;
       buildOwnerId = null;
@@ -227,6 +239,7 @@ module.exports = {
     });
   },
   createContainer: function (cb) {
+    debug('createContainer', formatArgs(arguments));
     this.createInstance(function (err, instance, build, env, project, user, modelsArray, srcArr) {
       if (err) { return cb(err); }
       var container = instance.newContainer(instance.json().containers[0]);
@@ -235,6 +248,7 @@ module.exports = {
   },
 
   buildTheBuild: function (user, build, ownerId, cb) {
+    debug('buildTheBuild', formatArgs(arguments));
     require('nock').cleanAll();
     var dispatch = new EventEmitter();
     if (typeof ownerId === 'function') {
@@ -279,6 +293,7 @@ module.exports = {
   },
 
   tailInstance: function (user, instance, ownerId, cb) {
+    debug('tailInstance', formatArgs(arguments));
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -311,19 +326,32 @@ module.exports = {
   },
 
   createContextPath: function (user, contextId) {
+    debug('createContextPath', formatArgs(arguments));
     return user
       .newContext(contextId);
   },
 
   createContextVersionPath: function (user, contextId, contextVersionId) {
+    debug('createContextVersionPath', formatArgs(arguments));
     return user
       .newContext(contextId)
       .newVersion(contextVersionId);
   },
 
   createContainerPath: function (user, instanceId, containerId) {
+    debug('createContainerPath', formatArgs(arguments));
     return user
       .newInstance(instanceId)
       .newContainer(containerId);
   }
 };
+
+function formatArgs (args) {
+  var isFunction = require('101/is-function');
+  return Array.prototype.slice.call(args)
+    .map(function (arg) {
+      return isFunction(arg) ?
+        '[ Function '+(arg.name || 'anonymous')+' ]' :
+        (arg && arg._id || arg);
+    });
+}
