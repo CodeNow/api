@@ -16,8 +16,10 @@ function typeValue (ctx, type) {
       key2: 'some-val',
     },
     'array': ['val1', 'val2', 'val3'],
-    ObjectId: '123456789012345678901234'
   };
+  if (ctx.build) {
+    values.ObjectId = ctx.build.id();
+  }
   return values[type];
 }
 
