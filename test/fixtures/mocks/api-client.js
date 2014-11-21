@@ -52,8 +52,8 @@ module.exports.setup = function (cb) {
     create: function () {
       var opts = optsForCreateOrUpdate.apply(this, arguments);
       if (ownerIsOrg.call(this, opts.json)) {
-        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
-        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
+        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
       }
     }
   });
@@ -64,15 +64,15 @@ module.exports.setup = function (cb) {
       var opts = optsForCreateOrUpdate.apply(this, arguments);
       var contextId = this.path().split('/')[1];
       if (ownerIsOrg.call(this, opts.json)) {
-        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
-        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
+        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
       }
       require('../../fixtures/mocks/s3/put-object')(contextId, '/');
     },
     fetch: function () {
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
+      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
 
       this.appCodeVersions.models.forEach(function (acv) {
         var username = acv.attrs.repo.split('/')[0];
@@ -90,7 +90,7 @@ module.exports.setup = function (cb) {
       require('../../fixtures/mocks/s3/put-object')(contextId, '/');
       require('../../fixtures/mocks/s3/put-object')(contextId, '/Dockerfile');
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
+      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
     }
   });
 
@@ -110,13 +110,13 @@ module.exports.setup = function (cb) {
       var filepath = path.join(p, name);
       require('../../fixtures/mocks/s3/put-object')(contextId, filepath);
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
+      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
     },
     update: function () {
       var contextId = this.path().split('/')[1];
       require('../../fixtures/mocks/s3/put-object')(contextId, this.id());
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
+      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
     }
   });
 
@@ -130,9 +130,9 @@ module.exports.setup = function (cb) {
         username = opts.json.repo.split('/')[0];
         repoName = opts.json.repo.split('/')[1];
       }
-      
+
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1');
+      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
       require('../../fixtures/mocks/github/repos-username-repo')(1, username, repoName);
       require('../../fixtures/mocks/github/repos-hooks-get')(username, repoName);
       require('../../fixtures/mocks/github/repos-hooks-post')(username, repoName);
