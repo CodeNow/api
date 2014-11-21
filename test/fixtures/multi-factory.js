@@ -167,7 +167,6 @@ module.exports = {
               if (err) { return cb(err); }
               build.fetch(function (err) {
                 if (err) { return cb(err); }
-                console.log('CONTEXT VERSION FETCH1')
                 contextVersion.fetch(function (err) {
                   cb(err, contextVersion, context, build, user,
                     [srcContextVersion, srcContext, moderator]);
@@ -194,7 +193,6 @@ module.exports = {
       self.buildTheBuild(user, build, ownerId, function (err) {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
-        console.log('CONTEXT VERSION FETCH2')
         contextVersion.fetch(function (err) {
           cb(err, build, user,
               [contextVersion, context, build, user],

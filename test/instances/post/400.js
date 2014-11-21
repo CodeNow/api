@@ -3,16 +3,12 @@ var describe = Lab.experiment;
 var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
-var uuid = require('uuid');
-var createCount = require('callback-count');
 var uuid = require('uuid');
 
 
