@@ -46,6 +46,9 @@ describe('Instance', function () {
       build: validation.VALID_OBJECT_ID,
       created: Date.now(),
       containers: [createNewContainer()],
+      container: {
+        dockerContainer: validation.VALID_OBJECT_ID
+      },
       network: {
         networkIp: '1.1.1.1',
         hostIp: '1.1.1.100'
@@ -99,6 +102,36 @@ describe('Instance', function () {
       }
     });
   });
+
+  describe('find instance by container id', function () {
+    var savedInstance = null;
+    var instance = null;
+    before(function (done) {
+      instance = createNewInstance();
+      instance.save(function (err, instance) {
+        if (err) { done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance = instance;
+          done();
+        }
+      });
+    })
+
+    it('should find an instance', function (done) {
+      Instance.findByContainerId(savedInstance.container.dockerContainer, function (err, fetchedInstance) {
+        if (err) { done(err); }
+        expect(String(fetchedInstance._id)).to.equal(String(instance._id));
+        expect(fetchedInstance.name).to.equal(instance.name);
+        expect(fetchedInstance.container.dockerContainer).to.equal(instance.container.dockerContainer);
+        expect(fetchedInstance.public).to.equal(instance.public);
+        expect(fetchedInstance.lowerName).to.equal(instance.lowerName);
+        expect(String(fetchedInstance.build)).to.equal(String(instance.build));
+        done();
+      });
+    });
+  });
+
   describe('Name Validation', function () {
     validation.NOT_ALPHA_NUM_SAFE.forEach(function (string) {
       it('should fail validation for ' + string, function (done) {
