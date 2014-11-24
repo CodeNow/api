@@ -274,7 +274,6 @@ describe('BDD - Instance Dependencies', function () {
           require('./fixtures/mocks/github/user')(ctx.user);
           var apiId = ctx.apiInstance.attrs._id.toString();
           var mongoId = ctx.mongoInstance.attrs._id.toString();
-          console.log('getting web instance');
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
             expect(instance.dependencies).to.be.an('object');
@@ -335,7 +334,6 @@ describe('BDD - Instance Dependencies', function () {
           var apiId = ctx.apiInstance.attrs._id.toString();
           var mongoId = ctx.mongoInstance.attrs._id.toString();
           require('./fixtures/mocks/github/user')(ctx.user);
-          console.log('getting web instance');
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
             expect(instance.dependencies).to.be.an('object');
@@ -356,9 +354,157 @@ describe('BDD - Instance Dependencies', function () {
         function checkApiInstance (cb) {
           require('./fixtures/mocks/github/user')(ctx.user);
           var mongoId = ctx.mongoInstance.attrs._id.toString();
-          console.log('getting api instance');
           ctx.apiInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
+            expect(instance.dependencies).to.be.an('object');
+            expect(Object.keys(instance.dependencies).length).to.equal(1);
+            expect(instance.dependencies[mongoId]).to.be.okay;
+            expect(instance.dependencies[mongoId].shortHash).to.equal(ctx.mongoInstance.attrs.shortHash);
+            expect(instance.dependencies[mongoId].lowerName).to.equal(ctx.mongoInstance.attrs.lowerName);
+            expect(instance.dependencies[mongoId].dependencies).to.equal(undefined);
+            cb();
+          });
+        }
+      });
+    });
+    describe('with 1 -> 1 -> 1 and renaming the middle dependency', function () {
+      beforeEach(function (done) {
+        async.series([
+          function addApiToWeb (cb) {
+            require('./fixtures/mocks/github/user')(ctx.user);
+            var depString = 'API_HOST=' +
+              ctx.apiInstance.attrs.lowerName + '.' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+            ctx.webInstance.update({
+              env: [depString]
+            }, cb);
+          },
+          function createMongoInstance (cb) {
+            require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
+            require('./fixtures/mocks/github/user')(ctx.user);
+            ctx.mongoInstance = ctx.user.createInstance({
+              name: 'mongo-instance',
+              build: ctx.build.id()
+            }, cb);
+          },
+          function updateApiInstance (cb) {
+            require('./fixtures/mocks/github/user')(ctx.user);
+            var depString = 'API_HOST=' +
+              ctx.mongoInstance.attrs.lowerName + '.' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+            ctx.apiInstance.update({
+              env: ctx.apiInstance.attrs.env.concat([depString])
+            }, cb);
+          }
+        ], done);
+      });
+      it('should break the dependency tree', { timeout: 250 }, function (done) {
+        async.series([
+          renameApiInstance,
+          checkWebInstance,
+          checkApiInstance
+        ], done);
+
+        function renameApiInstance (cb) {
+          var body = {
+            name: 'api-instance-2'
+          };
+          ctx.apiInstance.update(body, expects.updateSuccess(body, cb));
+        }
+        function checkWebInstance (cb) {
+          ctx.webInstance.fetch(function (err, instance) {
+            if (err) { return cb(err); }
+            expect(instance.dependencies).to.equal(undefined);
+            cb();
+          });
+        }
+        function checkApiInstance (cb) {
+          ctx.apiInstance.fetch(function (err, instance) {
+            if (err) { return cb(err); }
+            var mongoId = ctx.mongoInstance.attrs._id.toString();
+            expect(instance.dependencies).to.be.an('object');
+            expect(Object.keys(instance.dependencies).length).to.equal(1);
+            expect(instance.dependencies[mongoId]).to.be.okay;
+            expect(instance.dependencies[mongoId].shortHash).to.equal(ctx.mongoInstance.attrs.shortHash);
+            expect(instance.dependencies[mongoId].lowerName).to.equal(ctx.mongoInstance.attrs.lowerName);
+            expect(instance.dependencies[mongoId].dependencies).to.equal(undefined);
+            cb();
+          });
+        }
+      });
+      describe('swapping it with another instance', function () {
+        beforeEach(function (done) {
+          var body = { name: 'api-instance-no-longer' };
+          ctx.apiInstance.update(body, expects.updateSuccess(body, done));
+        });
+        it('creating the new instance first', { timeout: 500 }, function (done) {
+          async.series([
+            createRedis,
+            updateWeb,
+            checkChain
+          ], done);
+        });
+        it('updating the config of another instance first', { timeout: 500 }, function (done) {
+          async.series([
+            updateWeb,
+            createRedis,
+            checkChain
+          ], done);
+        });
+
+        function createRedis (cb) {
+          var env = ['SOMETHING=' + ctx.mongoInstance.attrs.lowerName + '.' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN];
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.redisInstance = ctx.user.createInstance({
+            name: 'redis-instance',
+            build: ctx.build.id(),
+            env: env
+          }, cb);
+        }
+        function updateWeb (cb) {
+          var body = {
+            env: ['SOMETHING=' + 'redis-instance' + '.' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN]
+          };
+          ctx.webInstance.update(body, cb);
+        }
+
+        function checkChain (cb) {
+          async.series([
+            checkWebInstance,
+            checkRedisInstance
+          ], cb);
+        }
+
+        function checkWebInstance (cb) {
+          var redisId = ctx.redisInstance.attrs._id.toString();
+          var mongoId = ctx.mongoInstance.attrs._id.toString();
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.webInstance.fetch(function (err, instance) {
+            if (err) { return cb(err); }
+            expect(instance.dependencies).to.be.an('object');
+            expect(Object.keys(instance.dependencies).length).to.equal(1);
+            expect(instance.dependencies[redisId]).to.be.okay;
+            expect(instance.dependencies[redisId].shortHash).to.equal(ctx.redisInstance.attrs.shortHash);
+            expect(instance.dependencies[redisId].lowerName).to.equal(ctx.redisInstance.attrs.lowerName);
+            expect(instance.dependencies[redisId].dependencies).to.be.an('object');
+            expect(instance.dependencies[redisId].dependencies[mongoId]).to.be.okay;
+            expect(instance.dependencies[redisId].dependencies[mongoId].shortHash)
+              .to.equal(ctx.mongoInstance.attrs.shortHash);
+            expect(instance.dependencies[redisId].dependencies[mongoId].lowerName)
+              .to.equal(ctx.mongoInstance.attrs.lowerName);
+            expect(instance.dependencies[redisId].dependencies[mongoId].dependencies).to.equal(undefined);
+            cb();
+          });
+        }
+        function checkRedisInstance (cb) {
+          ctx.redisInstance.fetch(function (err, instance) {
+            if (err) { return cb(err); }
+            var mongoId = ctx.mongoInstance.attrs._id.toString();
             expect(instance.dependencies).to.be.an('object');
             expect(Object.keys(instance.dependencies).length).to.equal(1);
             expect(instance.dependencies[mongoId]).to.be.okay;
