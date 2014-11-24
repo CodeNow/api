@@ -4,6 +4,7 @@ var it = Lab.test;
 var Faker = require('faker');
 var expect = Lab.expect;
 var before = Lab.before;
+var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
@@ -36,7 +37,7 @@ describe('Instance', function () {
     });
   }
 
-  function createNewInstance(name) {
+  function createNewInstance(name, dockerHost) {
     return new Instance({
       name: name || 'name',
       shortHash: getRandomHash(),
@@ -47,7 +48,8 @@ describe('Instance', function () {
       created: Date.now(),
       containers: [createNewContainer()],
       container: {
-        dockerContainer: validation.VALID_OBJECT_ID
+        dockerContainer: validation.VALID_OBJECT_ID,
+        dockerHost: dockerHost || '192.0.0.1'
       },
       network: {
         networkIp: '1.1.1.1',
@@ -120,7 +122,7 @@ describe('Instance', function () {
 
     it('should find an instance', function (done) {
       Instance.findByContainerId(savedInstance.container.dockerContainer, function (err, fetchedInstance) {
-        if (err) { done(err); }
+        if (err) { return done(err); }
         expect(String(fetchedInstance._id)).to.equal(String(instance._id));
         expect(fetchedInstance.name).to.equal(instance.name);
         expect(fetchedInstance.container.dockerContainer).to.equal(instance.container.dockerContainer);
@@ -130,6 +132,52 @@ describe('Instance', function () {
         done();
       });
     });
+  });
+
+  describe('find instances by docker host', function () {
+    var savedInstance = null;
+    var instance = null;
+    beforeEach(function (done) {
+      instance = createNewInstance();
+      instance.save(function (err, instance) {
+        if (err) { return done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance = instance;
+          done();
+        }
+      });
+    });
+
+    it('should not find and intance for the host that doesnot exist', function (done) {
+      Instance.findAllByDockerHost('10.0.0.1', function (err, instances) {
+        if (err) { return done(err); }
+        expect(instances.length).to.equal(0);
+        done();
+      });
+    });
+
+    it('should find one intance for the provided host', function (done) {
+      Instance.findAllByDockerHost('192.0.0.1', function (err, instances) {
+        if (err) { return done(err); }
+        expect(instances.length).to.equal(1);
+        done();
+      });
+    });
+
+    it('should find two intances out of three that match provided docker host', function (done) {
+      createNewInstance('instance2', '192.0.0.2').save(function (err) {
+        if (err) { return done(err); }
+        createNewInstance('instance3', '192.0.0.1').save(function (err) {
+          Instance.findAllByDockerHost('192.0.0.1', function (err, instances) {
+            if (err) { return done(err); }
+            expect(instances.length).to.equal(2);
+            done();
+          });
+        });
+      });
+    });
+
   });
 
   describe('Name Validation', function () {
