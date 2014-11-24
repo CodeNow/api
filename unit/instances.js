@@ -116,7 +116,7 @@ describe('Instance', function () {
           done();
         }
       });
-    })
+    });
 
     it('should find an instance', function (done) {
       Instance.findByContainerId(savedInstance.container.dockerContainer, function (err, fetchedInstance) {
