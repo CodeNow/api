@@ -433,6 +433,73 @@ describe('BDD - Instance Dependencies', function () {
           });
         }
       });
+      describe('swapping it with another instance with the same name (does not change web.env)', function () {
+        beforeEach(function (done) {
+          var body = { name: 'api-instance-no-longer' };
+          ctx.apiInstance.update(body, expects.updateSuccess(body, done));
+        });
+        it('updating the config of another instance first', { timeout: 500 }, function (done) {
+          async.series([
+            createNewApi,
+            checkChain
+          ], done);
+        });
+
+        function createNewApi (cb) {
+          var env = ['SOMETHING=' + ctx.mongoInstance.attrs.lowerName + '.' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN];
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.newApiInstance = ctx.user.createInstance({
+            name: 'api-instance',
+            build: ctx.build.id(),
+            env: env
+          }, cb);
+        }
+
+        function checkChain (cb) {
+          async.series([
+            checkWebInstance,
+            checkNewApiInstance
+          ], cb);
+        }
+
+        function checkWebInstance (cb) {
+          var newApiId = ctx.newApiInstance.attrs._id.toString();
+          var mongoId = ctx.mongoInstance.attrs._id.toString();
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.webInstance.fetch(function (err, instance) {
+            if (err) { return cb(err); }
+            expect(instance.dependencies).to.be.an('object');
+            expect(Object.keys(instance.dependencies).length).to.equal(1);
+            expect(instance.dependencies[newApiId]).to.be.okay;
+            expect(instance.dependencies[newApiId].shortHash).to.equal(ctx.newApiInstance.attrs.shortHash);
+            expect(instance.dependencies[newApiId].lowerName).to.equal(ctx.newApiInstance.attrs.lowerName);
+            expect(instance.dependencies[newApiId].dependencies).to.be.an('object');
+            expect(instance.dependencies[newApiId].dependencies[mongoId]).to.be.okay;
+            expect(instance.dependencies[newApiId].dependencies[mongoId].shortHash)
+              .to.equal(ctx.mongoInstance.attrs.shortHash);
+            expect(instance.dependencies[newApiId].dependencies[mongoId].lowerName)
+              .to.equal(ctx.mongoInstance.attrs.lowerName);
+            expect(instance.dependencies[newApiId].dependencies[mongoId].dependencies).to.equal(undefined);
+            cb();
+          });
+        }
+        function checkNewApiInstance (cb) {
+          ctx.newApiInstance.fetch(function (err, instance) {
+            if (err) { return cb(err); }
+            var mongoId = ctx.mongoInstance.attrs._id.toString();
+            expect(instance.dependencies).to.be.an('object');
+            expect(Object.keys(instance.dependencies).length).to.equal(1);
+            expect(instance.dependencies[mongoId]).to.be.okay;
+            expect(instance.dependencies[mongoId].shortHash).to.equal(ctx.mongoInstance.attrs.shortHash);
+            expect(instance.dependencies[mongoId].lowerName).to.equal(ctx.mongoInstance.attrs.lowerName);
+            expect(instance.dependencies[mongoId].dependencies).to.equal(undefined);
+            cb();
+          });
+        }
+      });
       describe('swapping it with another instance', function () {
         beforeEach(function (done) {
           var body = { name: 'api-instance-no-longer' };
