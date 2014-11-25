@@ -169,6 +169,7 @@ describe('Instance', function () {
       createNewInstance('instance2', '192.0.0.2').save(function (err) {
         if (err) { return done(err); }
         createNewInstance('instance3', '192.0.0.1').save(function (err) {
+          if (err) { return done(err); }
           Instance.findAllByDockerHost('192.0.0.1', function (err, instances) {
             if (err) { return done(err); }
             expect(instances.length).to.equal(2);

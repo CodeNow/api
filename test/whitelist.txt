@@ -7,6 +7,7 @@ test/contexts-id-versions-id.js
 test/contexts-id-versions-id-files.js
 test/contexts-id-versions-id-appcodeversions.js
 test/contexts-id-versions-id-infracodeversion-actions-copy.js
+test/events.js
 test/instances
 test/instances-id
 test/instances-id-actions-start
