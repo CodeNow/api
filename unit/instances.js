@@ -49,7 +49,18 @@ describe('Instance', function () {
       containers: [createNewContainer()],
       container: {
         dockerContainer: validation.VALID_OBJECT_ID,
-        dockerHost: dockerHost || '192.0.0.1'
+        dockerHost: dockerHost || '192.0.0.1',
+        inspect: {
+          state: {
+            'ExitCode': 0,
+            'FinishedAt': '0001-01-01T00:00:00Z',
+            'Paused': false,
+            'Pid': 889,
+            'Restarting': false,
+            'Running': true,
+            'StartedAt': '2014-11-25T22:29:50.23925175Z'
+          },
+        }
       },
       network: {
         networkIp: '1.1.1.1',
@@ -103,6 +114,47 @@ describe('Instance', function () {
         });
       }
     });
+  });
+
+  describe('modifySetContainer', function () {
+    var savedInstance = null;
+    var instance = null;
+    before(function (done) {
+      instance = createNewInstance();
+      instance.save(function (err, instance) {
+        if (err) { done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance = instance;
+          done();
+        }
+      });
+    });
+
+    it('should modify should work for inspect.state', function (done) {
+      var newState = {
+        'ExitCode': 0,
+        'FinishedAt': '2014-11-25T22:39:50.23925175Z',
+        'Paused': false,
+        'Pid': 0,
+        'Restarting': false,
+        'Running': false,
+        'StartedAt': '2014-11-25T22:29:50.23925175Z'
+      };
+      var containerData = {
+        State: newState,
+        Id: '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1'
+      };
+      savedInstance.modifySetContainer(containerData, 'http://192.1.1.2:4248', function (err, newInst) {
+        if (err) { return done(err); }
+        expect(newInst.container.inspect.state.Pid).to.equal(newState.Pid);
+        expect(newInst.container.inspect.state.ExitCode).to.equal(newState.ExitCode);
+        expect(newInst.container.inspect.state.Running).to.equal(newState.Running);
+        expect(newInst.container.inspect.state.FinishedAt).to.equal(newState.FinishedAt);
+        done();
+      });
+    });
+
   });
 
   describe('find instance by container id', function () {
