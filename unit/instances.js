@@ -51,7 +51,7 @@ describe('Instance', function () {
         dockerContainer: validation.VALID_OBJECT_ID,
         dockerHost: dockerHost || '192.0.0.1',
         inspect: {
-          state: {
+          State: {
             'ExitCode': 0,
             'FinishedAt': '0001-01-01T00:00:00Z',
             'Paused': false,
@@ -147,10 +147,10 @@ describe('Instance', function () {
       };
       savedInstance.modifySetContainer(containerData, 'http://192.1.1.2:4248', function (err, newInst) {
         if (err) { return done(err); }
-        expect(newInst.container.inspect.state.Pid).to.equal(newState.Pid);
-        expect(newInst.container.inspect.state.ExitCode).to.equal(newState.ExitCode);
-        expect(newInst.container.inspect.state.Running).to.equal(newState.Running);
-        expect(newInst.container.inspect.state.FinishedAt).to.equal(newState.FinishedAt);
+        expect(newInst.container.inspect.State.Pid).to.equal(newState.Pid);
+        expect(newInst.container.inspect.State.ExitCode).to.equal(newState.ExitCode);
+        expect(newInst.container.inspect.State.Running).to.equal(newState.Running);
+        expect(newInst.container.inspect.State.FinishedAt).to.equal(newState.FinishedAt);
         done();
       });
     });
