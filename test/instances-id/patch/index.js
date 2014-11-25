@@ -343,7 +343,6 @@ describe('Instance - /instances/:id', function () {
         });
         it('should copy the context version app codes during the patch ', function (done) {
           var acv = ctx.otherCv.attrs.appCodeVersions[0];
-          delete acv.id;
           var expected = {
             // Since the containers are not removed until the otherBuild has finished, we should
             // still see them running
