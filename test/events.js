@@ -66,13 +66,11 @@ describe('Events handler', function () {
       afterEach(require('./fixtures/clean-mongo').removeEverything);
 
       it('should stop instance if die event received', function (done) {
-        events.handleContainerDie({id: ctx.container.attrs.inspect.Id, ip: '192.0.0.1'}, function (err) {
+        var eventData = {id: ctx.container.attrs.inspect.Id, ip: '192.0.0.1', time: new Date().getTime()};
+        events.handleContainerDie(eventData, function (err, newInstanceState) {
           if (err) { return done(err); }
-          ctx.instance.fetch(function (err, newInstanceState) {
-            if (err) { return done(err); }
-            expect(newInstanceState.container.inspect.State.Running).to.equal(false);
-            done();
-          });
+          expect(newInstanceState.container.inspect.State.Running).to.equal(false);
+          done();
         });
       });
 
@@ -82,7 +80,8 @@ describe('Events handler', function () {
           ctx.instance.fetch(function (err, instance) {
             if (err) { return done(err); }
             expect(instance.container.inspect.State.Running).to.equal(false);
-            events.handleContainerDie({id: ctx.container.attrs.inspect.Id, ip: '192.0.0.1'}, function (err) {
+            var eventData = {id: ctx.container.attrs.inspect.Id, ip: '192.0.0.1', time: new Date().getTime()};
+            events.handleContainerDie(eventData, function (err) {
               if (err) { return done(err); }
               ctx.instance.fetch(function (err, newInstanceState) {
                 if (err) { return done(err); }
@@ -111,8 +110,15 @@ describe('Events handler', function () {
       });
     });
 
-    it('should fail if container id does not exist', function (done) {
+    it('should fail if time does not exist', function (done) {
       events.handleContainerDie({id: 'duasiduia213', ip: '192.0.0.1'}, function (err) {
+        expect(err.message).to.equal('Invalid data: time is missing');
+        done();
+      });
+    });
+
+    it('should fail if container id does not exist', function (done) {
+      events.handleContainerDie({id: 'duasiduia213', ip: '192.0.0.1', time: new Date().getTime()}, function (err) {
         expect(err.message).to.equal('Invalid data: container with provided id doesnot exist');
         done();
       });
