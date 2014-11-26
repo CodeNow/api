@@ -142,8 +142,11 @@ describe('Instance', function () {
         'StartedAt': '2014-11-25T22:29:50.23925175Z'
       };
       var containerData = {
+        Image: 'f1c42afeb4a42b67a4d469c118c402be4b2be6749375b98288cbb29b5c1d154c',
+        Path: 'nginx',
         State: newState,
-        Id: '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1'
+        Id: '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1',
+        Name: '/sad_engelbart4'
       };
       savedInstance.modifySetContainer(containerData, 'http://192.1.1.2:4248', function (err, newInst) {
         if (err) { return done(err); }
@@ -151,6 +154,9 @@ describe('Instance', function () {
         expect(newInst.container.inspect.State.ExitCode).to.equal(newState.ExitCode);
         expect(newInst.container.inspect.State.Running).to.equal(newState.Running);
         expect(newInst.container.inspect.State.FinishedAt).to.equal(newState.FinishedAt);
+        expect(newInst.container.inspect.Image).to.equal(containerData.Image);
+        expect(newInst.container.inspect.Path).to.equal(containerData.Path);
+        expect(newInst.container.inspect.Name).to.equal(containerData.Name);
         done();
       });
     });
