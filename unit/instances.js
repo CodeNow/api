@@ -1,7 +1,6 @@
 var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
-var Faker = require('faker');
 var expect = Lab.expect;
 var before = Lab.before;
 var beforeEach = Lab.beforeEach;
@@ -11,7 +10,7 @@ var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var Hashids = require('hashids');
 
 var Instance = require('models/mongo/instance');
-var Container = require('../lib/models/mongo/container');
+
 
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
@@ -25,17 +24,6 @@ describe('Instance', function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/fixtures/clean-mongo').removeEverything);
 
-  function createNewContainer() {
-    return new Container({
-      name: 'name',
-      shortHash: getRandomHash(),
-      context: validation.VALID_OBJECT_ID,
-      version: validation.VALID_OBJECT_ID,
-      created: Date.now(),
-      dockerHost: Faker.Image.imageUrl(),
-      dockerContainer: validation.VALID_OBJECT_ID
-    });
-  }
 
   function createNewInstance(name, dockerHost) {
     return new Instance({
@@ -46,7 +34,6 @@ describe('Instance', function () {
       createdBy: { github: validation.VALID_GITHUB_ID },
       build: validation.VALID_OBJECT_ID,
       created: Date.now(),
-      containers: [createNewContainer()],
       container: {
         dockerContainer: validation.VALID_OBJECT_ID,
         dockerHost: dockerHost || '192.0.0.1',
@@ -62,6 +49,7 @@ describe('Instance', function () {
           },
         }
       },
+      containers: [],
       network: {
         networkIp: '1.1.1.1',
         hostIp: '1.1.1.100'
