@@ -169,7 +169,6 @@ describe('Instance', function () {
     it('should modify should work for inspect.state', function (done) {
       savedInstance.setContainerFinishedState('2014-11-25T22:40:50.23925175Z', function (err, newInst) {
         if (err) { return done(err); }
-        console.log('xxxx', newInst);
         expect(newInst.container.inspect.State.Pid).to.equal(0);
         expect(newInst.container.inspect.State.ExitCode).to.equal(instance.container.inspect.State.ExitCode);
         expect(newInst.container.inspect.State.StartedAt).to.equal(instance.container.inspect.State.StartedAt);
