@@ -144,9 +144,17 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       });
       beforeEach(function (done) {
         // make sure build finishes before moving on to the next test
+        var firstBuildId = ctx.build.id();
         ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
         ctx.afterPatchAsserts.push(function (done) {
-          tailBuildStream(ctx.cv.id(), done);
+          if (ctx.instance.build.id() === firstBuildId) {
+            // instance was NOT patched with a new build, make sure to wait until
+            // redeploy route completes (after build completes) before moving on to next test.
+            multi.tailInstance(ctx.user, ctx.instance, done);
+          }
+          else { // instance has been patched with a new build
+            tailBuildStream(ctx.cv.id(), done);
+          }
         });
         done();
       });
