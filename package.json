@@ -78,7 +78,7 @@
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.4",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
-    "docker-mock": "git://github.com/Runnable/docker-mock.git#v0.3.1",
+    "docker-mock": "git://github.com/Runnable/docker-mock.git#v0.5.1",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
     "function-proxy": "^0.5.1",
@@ -86,7 +86,7 @@
     "jshint": "^2.5.5",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "^3.2.1",
-    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.1",
+    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.2",
     "multiline": "^0.3.4",
     "nock": "^0.48.0",
     "nodemon": "^1.2.1",
@@ -97,7 +97,7 @@
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
     "bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test `cat test/whitelist.txt`",
-    "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node --debug-brk ./node_modules/.bin/lab -v -l -m 200 -e test `cat test/whitelist.txt`",
+    "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -v -l -m 36000 -e test `cat test/whitelist.txt`",
     "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",

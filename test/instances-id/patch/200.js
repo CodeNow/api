@@ -15,6 +15,7 @@ var exists = require('101/exists');
 var last = require('101/last');
 var not = require('101/not');
 var isFunction = require('101/is-function');
+var tailBuildStream = require('../../fixtures/tail-build-stream');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
@@ -140,6 +141,14 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
           ctx.cv = contextVersion;
           ctx.build.build({ message: uuid() }, expects.success(201, done));
         });
+      });
+      beforeEach(function (done) {
+        // make sure build finishes before moving on to the next test
+        ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
+        ctx.afterPatchAsserts.push(function (done) {
+          tailBuildStream(ctx.cv.id(), done);
+        });
+        done();
       });
       beforeEach(initExpected);
       createInstanceAndRunTests(ctx);
