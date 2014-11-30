@@ -39,7 +39,7 @@ var redisCleaner = function (cb) {
   });
 };
 
-describe('PUT /instances/:id/actions/restart', {timeout:300}, function () {
+describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;

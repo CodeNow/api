@@ -45,8 +45,6 @@ Resource Overview
 =================
 Mongo Schemas - /lib/models/mongo/schemas/*.js
 
-Project - full blown code project that potentially includes multiple components. Ex: Runnable.com
-
 Configs - Are a way of forking Infrastructure Code of a Project's Components
 
 Components - are application components. Ex: frontend-server, api-server, database
