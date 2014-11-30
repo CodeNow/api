@@ -17,7 +17,7 @@ var exists = require('101/exists');
 var not = require('101/not');
 var extend = require('extend');
 
-describe('200 PUT /builds/:id/actions/build', {timeout: 500}, function() {
+describe('201 POST /builds/:id/actions/build', {timeout: 500}, function() {
   var ctx = {};
 
   before(api.start.bind(ctx));
