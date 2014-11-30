@@ -7,7 +7,6 @@ var beforeEach = Lab.beforeEach;
 require('loadenv')();
 
 var AWS = require('aws-sdk');
-var route53 = new AWS.Route53();
 var uuid = require('uuid');
 
 function createParams (type, name, ip) {
@@ -30,28 +29,31 @@ function createParams (type, name, ip) {
 }
 
 // TODO add assertions
-describe('Route53 Unit Tests', function() {
+describe('Route53 Unit Tests', function () {
   var mockRoute53 = require('../test/fixtures/route53');
   beforeEach(mockRoute53.start);
   afterEach(mockRoute53.reset);
   afterEach(mockRoute53.stop);
 
   describe('DELETE', function () {
-    it('delete non existing', function(done) {
+    it('delete non existing', function (done) {
       var params = createParams('DELETE','mavis.codenow.runnable3.net', '10.0.0.0');
+      var route53 = new AWS.Route53();
       route53.changeResourceRecordSets(params, function () {
         done();
       });
     });
-    it('delete diffent domain', function(done){
+    it('delete diffent domain', function (done){
       var params = createParams('DELETE','api.net', '10.0.0.0');
+      var route53 = new AWS.Route53();
       route53.changeResourceRecordSets(params, function  () {
        done();
       });
     });
-    it('delete valid entry', function(done){
+    it('delete valid entry', function (done){
       var params;
       params = createParams('UPSERT','anand.runnable3.net', '10.0.0.0');
+      var route53 = new AWS.Route53();
       route53.changeResourceRecordSets(params, function () {
         params = createParams('DELETE','anand.runnable3.net', '10.0.0.0');
         route53.changeResourceRecordSets(params, function () {
@@ -59,9 +61,10 @@ describe('Route53 Unit Tests', function() {
         });
       });
     });
-    it('delete valid with different data', function(done){
+    it('delete valid with different data', function (done){
       var params;
       params = createParams('UPSERT','code.runnable3.net', '10.0.0.0');
+      var route53 = new AWS.Route53();
       route53.changeResourceRecordSets(params, function () {
         params = createParams('DELETE','code.runnable3.net', '10.0.0.1');
         route53.changeResourceRecordSets(params, function () {
@@ -76,6 +79,7 @@ describe('Route53 Unit Tests', function() {
     var ctx = {};
     afterEach(function (done) {
       var params = createParams('DELETE', ctx.url, ctx.ip);
+      var route53 = new AWS.Route53();
       route53.changeResourceRecordSets(params, function () {
         done();
       });
@@ -93,6 +97,7 @@ describe('Route53 Unit Tests', function() {
       describe('once', function () {
         it('should create the dns entry', function (done) {
           var params = createParams('UPSERT', ctx.url, ctx.ip);
+          var route53 = new AWS.Route53();
           route53.changeResourceRecordSets(params, function () {
             done();
           });
@@ -101,12 +106,14 @@ describe('Route53 Unit Tests', function() {
       describe('twice', function () {
         beforeEach(function (done) {
           var params = createParams('UPSERT', ctx.url, ctx.ip);
+          var route53 = new AWS.Route53();
           route53.changeResourceRecordSets(params, function () {
             done();
           });
         });
         it('should create the dns entry', function (done) {
           var params = createParams('UPSERT', ctx.url, ctx.ip);
+          var route53 = new AWS.Route53();
           route53.changeResourceRecordSets(params, function () {
             done();
           });
@@ -121,6 +128,7 @@ describe('Route53 Unit Tests', function() {
       });
       it('should NOT create the dns entry', function (done) {
         var params = createParams('UPSERT', ctx.url, ctx.ip);
+        var route53 = new AWS.Route53();
         route53.changeResourceRecordSets(params, function () {
           done();
         });

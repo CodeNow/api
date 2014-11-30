@@ -12,7 +12,7 @@ var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
 var exists = require('101/exists');
 
-describe('Instance - /instances/:id/actions', function () {
+describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
