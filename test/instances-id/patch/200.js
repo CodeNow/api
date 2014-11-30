@@ -283,6 +283,15 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       afterEach(require('../../fixtures/clean-mongo').removeEverything);
       afterEach(require('../../fixtures/clean-ctx')(ctx));
       afterEach(require('../../fixtures/clean-nock'));
+      it('should update an instance with new env', function (done) {
+        var body = {
+          env: [
+            'ENV=NEW'
+          ]
+        };
+        extend(ctx.expected, body);
+        ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
+      });
       describe('update name:', function() {
         beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
         beforeEach(afterEachAssertUpdatedNewHostsAndNetwork);
@@ -303,28 +312,19 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
           extend(ctx.expected, body);
           ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
         });
-        function afterPatchAssertions (done) {
-          return function (err) {
-            if (err) { return done(err); }
-            if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {
-              return done();
-            }
-            var count = createCount(ctx.afterPatchAsserts.length, done);
-            ctx.afterPatchAsserts.forEach(function (assert) {
-              assert(count.next);
-            });
-          };
-        }
       });
-      it('should update an instance with new env', function (done) {
-        var body = {
-          env: [
-            'ENV=NEW'
-          ]
+      function afterPatchAssertions (done) {
+        return function (err) {
+          if (err) { return done(err); }
+          if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {
+            return done();
+          }
+          var count = createCount(ctx.afterPatchAsserts.length, done);
+          ctx.afterPatchAsserts.forEach(function (assert) {
+            assert(count.next);
+          });
         };
-        extend(ctx.expected, body);
-        ctx.instance.update(body, expects.success(200, ctx.expected, done));
-      });
+      }
     });
 
     describe('Patch with build:', function() {
