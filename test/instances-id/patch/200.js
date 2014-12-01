@@ -20,6 +20,7 @@ var uuid = require('uuid');
 var createCount = require('callback-count');
 var uuid = require('uuid');
 var Docker = require('models/apis/docker');
+var Instance = require('models/mongo/instance');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
@@ -54,6 +55,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
     function stopContainer (err, start) {
       if (err) { return cb(err); }
       self.stopContainer(container, function (err) {
+        if (err) {return cb(err); }
         cb(err, start);
       });
     }
@@ -245,7 +247,11 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
             .stopContainer(ctx.instance.attrs.container, function () {
               // ignore error we just want it stopped..
               ctx.expected['containers[0].inspect.State.Running'] = false;
-              done();
+              Instance.findById(ctx.instance.attrs._id, function (err, instance) {
+                if (err) { return done(err); }
+                instance.setContainerFinishedState(new Date().toISOString(), done);
+              });
+
             });
         }
         else {
