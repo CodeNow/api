@@ -22,7 +22,7 @@ var nock = require('nock');
 var createCount = require('callback-count');
 
 
-describe('Instance - /instances/:id', function () {
+describe('Instance - /instances/:id', {timeout:1000}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -101,7 +101,7 @@ describe('Instance - /instances/:id', function () {
           beforeEach(function (done) {
             multi.buildTheBuild(ctx.user, ctx.newBuild, done);
           });
-          it('should deploy the copied build', { timeout: 1000 }, function (done) {
+          it('should deploy the copied build', function (done) {
             var update = {
               build: ctx.newBuild.id().toString()
             };
@@ -314,7 +314,7 @@ describe('Instance - /instances/:id', function () {
         beforeEach(function(done) {
           ctx.otherBuild = ctx.build.deepCopy(done);
         });
-        it('should allow a build that has everything started', {timeout:500}, function (done) {
+        it('should allow a build that has everything started', function (done) {
           var expected = {
             // Since the containers are not removed until the otherBuild has finished, we should
             // still see them running
@@ -450,26 +450,6 @@ describe('Instance - /instances/:id', function () {
           // sanity check
           ctx.instance.fetch(expects.success(200, expected, done));
         }));
-      });
-      it('should error if the env is not an array of strings', function (done) {
-        var body = {
-          env: [{
-            iCauseError: true
-          }]
-        };
-        require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.instance.update(body, expects.errorStatus(400, /should be an array of strings/, done));
-      });
-      it('should error if the env has invalid values', function (done) {
-        var body = {
-          env: [
-            'ONE=1',
-            'TWO=2',
-            '234^&*%(*&%THREE=3'
-          ]
-        };
-        require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.instance.update(body, expects.errorStatus(400, /should match/, done));
       });
     });
 
