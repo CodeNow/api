@@ -266,7 +266,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
               ctx.expected['containers[0].inspect.State.Running'] = false;
               Instance.findById(ctx.instance.attrs._id, function (err, instance) {
                 if (err) { return done(err); }
-                instance.setContainerFinishedState(new Date().toISOString(), done);
+                instance.setContainerFinishedState(new Date().toISOString(), 0, done);
               });
 
             });

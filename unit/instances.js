@@ -119,7 +119,7 @@ describe('Instance', function () {
       });
     });
 
-    it('should modify should work for inspect.state', function (done) {
+    it('should work for inspect.state', function (done) {
       var newState = {
         'ExitCode': 0,
         'FinishedAt': '2014-11-25T22:39:50.23925175Z',
@@ -166,14 +166,15 @@ describe('Instance', function () {
       });
     });
 
-    it('should modify should work for inspect.state', function (done) {
-      savedInstance.setContainerFinishedState('2014-11-25T22:40:50.23925175Z', function (err, newInst) {
+    it('should work for inspect.state', function (done) {
+      savedInstance.setContainerFinishedState('2014-11-25T22:40:50.23925175Z', -1, function (err, newInst) {
         if (err) { return done(err); }
         expect(newInst.container.inspect.State.Pid).to.equal(0);
-        expect(newInst.container.inspect.State.ExitCode).to.equal(instance.container.inspect.State.ExitCode);
+        expect(newInst.container.inspect.State.ExitCode).to.equal(-1);
         expect(newInst.container.inspect.State.StartedAt).to.equal(instance.container.inspect.State.StartedAt);
         expect(newInst.container.inspect.State.Running).to.equal(false);
         expect(newInst.container.inspect.State.FinishedAt).to.equal('2014-11-25T22:40:50.23925175Z');
+        expect(newInst.container.inspect.State.ExitCode).to.equal(-1);
         done();
       });
     });
