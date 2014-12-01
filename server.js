@@ -6,10 +6,6 @@ var ApiServer = require('server');
 var apiServer = new ApiServer();
 var keyGen = require('key-generator');
 
-if (process.env.NEWRELIC_KEY) {
-  require('newrelic');
-}
-
 keyGen.go();
 
 function startServer () {
