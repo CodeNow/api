@@ -13,7 +13,7 @@ var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var async = require('async');
 
-describe('BDD - Instance Dependencies', function () {
+describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
   var ctx = {};
   var restartCayley = null;
 
@@ -255,7 +255,7 @@ describe('BDD - Instance Dependencies', function () {
           }
         ], done);
       });
-      it('should update the deps of an instance', { timeout: 250 }, function (done) {
+      it('should update the deps of an instance', function (done) {
         async.series([
           updateWebInstance,
           checkWebInstance
@@ -314,7 +314,7 @@ describe('BDD - Instance Dependencies', function () {
           }
         ], done);
       });
-      it('should update the deps of an instance', { timeout: 250 }, function (done) {
+      it('should update the deps of an instance', function (done) {
         async.series([
           updateApiInstance,
           checkWebInstance,
@@ -399,7 +399,7 @@ describe('BDD - Instance Dependencies', function () {
           }
         ], done);
       });
-      it('should break the dependency tree', { timeout: 250 }, function (done) {
+      it('should break the dependency tree', function (done) {
         async.series([
           renameApiInstance,
           checkWebInstance,
@@ -438,7 +438,7 @@ describe('BDD - Instance Dependencies', function () {
           var body = { name: 'api-instance-no-longer' };
           ctx.apiInstance.update(body, expects.updateSuccess(body, done));
         });
-        it('updating the config of another instance first', { timeout: 1000 }, function (done) {
+        it('updating the config of another instance first', function (done) {
           async.series([
             createNewApi,
             checkChain
@@ -505,14 +505,14 @@ describe('BDD - Instance Dependencies', function () {
           var body = { name: 'api-instance-no-longer' };
           ctx.apiInstance.update(body, expects.updateSuccess(body, done));
         });
-        it('creating the new instance first', { timeout: 500 }, function (done) {
+        it('creating the new instance first', function (done) {
           async.series([
             createRedis,
             updateWeb,
             checkChain
           ], done);
         });
-        it('updating the config of another instance first', { timeout: 500 }, function (done) {
+        it('updating the config of another instance first', function (done) {
           async.series([
             updateWeb,
             createRedis,
