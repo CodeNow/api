@@ -27,12 +27,8 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
   var dirPathName = 'dir[]()';
 
   beforeEach(function (done) {
-    multi.createContextVersion(function (err, contextVersion, context, build, env, project, user){
+    multi.createContextVersion(function (err, contextVersion, context){
       if (err) { return done(err); }
-      ctx.build = build;
-      ctx.env = env;
-      ctx.project = project;
-      ctx.user = user;
       ctx.contextVersion = contextVersion;
       ctx.context = context;
       require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
@@ -83,7 +79,7 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
       ctx.contextVersion.rootDir.contents.create({json: body}, cb);
     });
 
-    
+
   });
-  
+
 });
