@@ -11,7 +11,9 @@ var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var Hashids = require('hashids');
 
 var Instance = require('models/mongo/instance');
-var docker = require('../test/fixtures/dock');
+var dock = require('../test/fixtures/dock');
+
+var Docker = require('models/apis/docker');
 
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
@@ -37,7 +39,7 @@ describe('Instance', function () {
       created: Date.now(),
       container: {
         dockerContainer: validation.VALID_OBJECT_ID,
-        dockerHost: dockerHost || '192.0.0.1',
+        dockerHost: dockerHost || 'http://localhost:4243',
         inspect: {
           State: {
             'ExitCode': 0,
@@ -137,7 +139,7 @@ describe('Instance', function () {
         Id: '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1',
         Name: '/sad_engelbart4'
       };
-      savedInstance.modifySetContainer(containerData, 'http://192.1.1.2:4248', function (err, newInst) {
+      savedInstance.modifySetContainer(containerData, 'http://localhost:4243', function (err, newInst) {
         if (err) { return done(err); }
         expect(newInst.container.inspect.State.Pid).to.equal(newState.Pid);
         expect(newInst.container.inspect.State.ExitCode).to.equal(newState.ExitCode);
@@ -154,15 +156,15 @@ describe('Instance', function () {
 
 
   describe('inspectAndUpdate', function () {
-    before(docker.start);
-    after(docker.stop);
+    before(dock.start);
+    after(dock.stop);
 
     var savedInstance = null;
     var instance = null;
-    before(function (done) {
+    beforeEach(function (done) {
       instance = createNewInstance();
       instance.save(function (err, instance) {
-        if (err) { done(err); }
+        if (err) { return done(err); }
         else {
           expect(instance).to.be.okay;
           savedInstance = instance;
@@ -178,6 +180,29 @@ describe('Instance', function () {
       savedInstance.inspectAndUpdate(container, 'http://localhost:4243', function (err) {
         expect(err.output.statusCode).to.equal(404);
         done();
+      });
+    });
+
+    it('should work for real found', function (done) {
+      var docker = new Docker('http://localhost:4243');
+      docker.createContainer({}, function (err, cont) {
+        if (err) { return done(err); }
+        var container = {
+          dockerContainer: cont.id
+        };
+        docker.startContainer(container, function (err) {
+          if (err) { return done(err); }
+          docker.stopContainer(container, function (err, data) {
+            if (err) { return done(err); }
+            savedInstance.inspectAndUpdate(container, 'http://localhost:4243', function (err, saved) {
+              if (err) { return done(err); }
+              expect(saved.container.inspect.State.Running).to.equal(false);
+              expect(saved.container.inspect.State.Pid).to.equal(0);
+              done();
+            });
+          });
+        });
+
       });
     });
 
@@ -257,28 +282,28 @@ describe('Instance', function () {
       });
     });
 
-    it('should not find and intance for the host that doesnot exist', function (done) {
-      Instance.findAllByDockerHost('10.0.0.1', function (err, instances) {
+    it('should not find and instance for the host that doesnot exist', function (done) {
+      Instance.findAllByDockerHost('http://localhost:8888', function (err, instances) {
         if (err) { return done(err); }
         expect(instances.length).to.equal(0);
         done();
       });
     });
 
-    it('should find one intance for the provided host', function (done) {
-      Instance.findAllByDockerHost('192.0.0.1', function (err, instances) {
+    it('should find one instance for the provided host', function (done) {
+      Instance.findAllByDockerHost('http://localhost:4243', function (err, instances) {
         if (err) { return done(err); }
         expect(instances.length).to.equal(1);
         done();
       });
     });
 
-    it('should find two intances out of three that match provided docker host', function (done) {
-      createNewInstance('instance2', '192.0.0.2').save(function (err) {
+    it('should find two instances out of three that match provided docker host', function (done) {
+      createNewInstance('instance2', 'http://localhost:8888').save(function (err) {
         if (err) { return done(err); }
-        createNewInstance('instance3', '192.0.0.1').save(function (err) {
+        createNewInstance('instance3', 'http://localhost:4243').save(function (err) {
           if (err) { return done(err); }
-          Instance.findAllByDockerHost('192.0.0.1', function (err, instances) {
+          Instance.findAllByDockerHost('http://localhost:4243', function (err, instances) {
             if (err) { return done(err); }
             expect(instances.length).to.equal(2);
             done();
