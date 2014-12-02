@@ -48,7 +48,7 @@ describe('Redis Flags', function () {
   });
 
   describe('set/get/del/get', function () {
-    // after(redisCleaner);
+
     it('should save new flag', function (done) {
       var flag = new RedisFlag();
       flag.set('some-new-key', 'some-suffix', 'some-value', function (err, value) {

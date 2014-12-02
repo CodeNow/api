@@ -6,17 +6,18 @@ var it = Lab.test;
 var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
-// var afterEach = Lab.afterEach;
+var afterEach = Lab.afterEach;
 
 var expect = Lab.expect;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-// var multi = require('./fixtures/multi-factory');
+var Dockerode = require('dockerode');
+var multi = require('./fixtures/multi-factory');
 
 var createCount = require('callback-count');
 
 var events = require('models/events/docker');
-// var RedisFlag = require('models/redis/flags');
+var RedisFlag = require('models/redis/flags');
 var redis = require('models/redis');
 
 var redisCleaner = function (cb) {
@@ -39,7 +40,7 @@ var redisCleaner = function (cb) {
 describe('Events handler', function () {
   var ctx = {};
 
-  beforeEach(redisCleaner);
+  before(redisCleaner);
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);
@@ -48,28 +49,42 @@ describe('Events handler', function () {
   after(require('./fixtures/mocks/api-client').clean);
 
 
-  describe('docker container die', function () {
+  describe('docker container die',  {timeout: 1000}, function () {
 
 
-    // describe('started instance case', {timeout: 400}, function () {
-    //   beforeEach(function (done) {
-    //     multi.createContainer(function (err, container, instance, build) {
-    //       if (err) { return done(err); }
-    //       ctx.build = build;
-    //       ctx.instance = instance;
-    //       ctx.container = container;
-    //       ctx.build = build;
-    //       expect(instance.attrs.container.inspect.State.Running).to.equal(true);
-    //       done();
-    //     });
-    //   });
+      // afterEach(require('./fixtures/clean-ctx')(ctx));
+      // afterEach(require('./fixtures/clean-nock'));
+      // afterEach(require('./fixtures/clean-mongo').removeEverything);
 
-    //   afterEach(require('./fixtures/clean-ctx')(ctx));
-    //   afterEach(require('./fixtures/clean-nock'));
-    //   afterEach(require('./fixtures/clean-mongo').removeEverything);
+    it('should fail if die-flag is set to ignore', function (done) {
+      multi.createContainer(function (err, container, instance) {
+        if (err) { return done(err); }
+        ctx.instance = instance;
+        ctx.container = container;
+        expect(instance.attrs.container.inspect.State.Running).to.equal(true);
+        var flag = new RedisFlag();
+        var eventData = {id: ctx.container.attrs.inspect.Id, ip: '192.0.0.1', time: new Date().getTime()};
+        flag.set(ctx.container.attrs.inspect.Id, '-die-flag', 'ignore', function (err) {
+          if (err) { return done(err); }
+          events.handleContainerDie(eventData, function (err) {
+            expect(err.output.statusCode).to.equal(409);
+            flag.get(ctx.container.attrs.inspect.Id, '-die-flag', function (err, flag) {
+              if (err) { return done(err); }
+              expect(flag).to.be.null();
+              done();
+            });
+          });
+        });
+      });
+    });
 
-    //   it('should stop instance if die event received', function (done) {
-    //     console.log('11', ctx.container);
+    // it('should stop instance if die event received', function (done) {
+    //   multi.createContainer(function (err, container, instance) {
+    //     if (err) { return done(err); }
+    //     ctx.instance = instance;
+    //     ctx.container = container;
+    //     console.log('aaa', ctx.container.attrs.inspect.Id);
+    //     expect(instance.attrs.container.inspect.State.Running).to.equal(true);
     //     var eventData = {id: ctx.container.attrs.inspect.Id, ip: '192.0.0.1', time: new Date().getTime()};
     //     events.handleContainerDie(eventData, function (err, newInstanceState) {
     //       console.log('asdasdasd')
@@ -78,27 +93,8 @@ describe('Events handler', function () {
     //       done();
     //     });
     //   });
+    // });
 
-    // //   // it('should try to stop stopped instance without error', function (done) {
-    // //   //   ctx.instance.stop(function (err) {
-    // //   //     if (err) { return done(err); }
-    // //   //     ctx.instance.fetch(function (err, instance) {
-    // //   //       if (err) { return done(err); }
-    // //   //       expect(instance.container.inspect.State.Running).to.equal(false);
-    // //   //       var eventData = {id: ctx.container.attrs.inspect.Id, ip: '192.0.0.1', time: new Date().getTime()};
-    // //   //       events.handleContainerDie(eventData, function (err) {
-    // //   //         if (err) { return done(err); }
-    // //   //         ctx.instance.fetch(function (err, newInstanceState) {
-    // //   //           if (err) { return done(err); }
-    // //   //           expect(newInstanceState.container.inspect.State.Running).to.equal(false);
-    // //   //           done();
-    // //   //         });
-    // //   //       });
-    // //   //     });
-    // //   //   });
-    // //   // });
-
-    //  });
 
 
     it('should fail if event data has no id', function (done) {
