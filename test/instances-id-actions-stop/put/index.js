@@ -13,6 +13,7 @@ var multi = require('../../fixtures/multi-factory');
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
+var tailBuildStream = require('../../fixtures/tail-build-stream');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
@@ -123,6 +124,13 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
           ctx.cv = contextVersion;
           ctx.build.build({ message: uuid() }, expects.success(201, done));
         });
+      });
+      beforeEach(function (done) {
+        // make sure build finishes before moving on to the next test
+        ctx.afterAssert = function (done) {
+          tailBuildStream(ctx.cv.id(), done);
+        };
+        done();
       });
       beforeEach(function (done) {
         initExpected(function () {
@@ -260,6 +268,7 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
             if (err) { return count.next(err); }
             expects.deletedWeaveHost(container, count.inc().next);
             expects.deletedHosts(ctx.user, instance, count.next);
+            if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }
           }));
         });
       }
