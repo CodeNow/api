@@ -438,7 +438,7 @@ describe('BDD - Instance Dependencies', function () {
           var body = { name: 'api-instance-no-longer' };
           ctx.apiInstance.update(body, expects.updateSuccess(body, done));
         });
-        it('updating the config of another instance first', { timeout: 500 }, function (done) {
+        it('updating the config of another instance first', { timeout: 1000 }, function (done) {
           async.series([
             createNewApi,
             checkChain
