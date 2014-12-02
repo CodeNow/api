@@ -192,7 +192,7 @@ describe('Instance', function () {
         };
         docker.startContainer(container, function (err) {
           if (err) { return done(err); }
-          docker.stopContainer(container, function (err, data) {
+          docker.stopContainer(container, function (err) {
             if (err) { return done(err); }
             savedInstance.inspectAndUpdate(container, 'http://localhost:4243', function (err, saved) {
               if (err) { return done(err); }

@@ -5,13 +5,11 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var before = Lab.before;
 var after = Lab.after;
-var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 
 var expect = Lab.expect;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var Dockerode = require('dockerode');
 var multi = require('./fixtures/multi-factory');
 
 var createCount = require('callback-count');
@@ -19,6 +17,7 @@ var createCount = require('callback-count');
 var events = require('models/events/docker');
 var RedisFlag = require('models/redis/flags');
 var redis = require('models/redis');
+var Docker = require('models/apis/docker');
 
 var redisCleaner = function (cb) {
 
@@ -49,12 +48,12 @@ describe('Events handler', function () {
   after(require('./fixtures/mocks/api-client').clean);
 
 
-  describe('docker container die',  {timeout: 1000}, function () {
+  describe('docker container die',  {timeout: 2000}, function () {
 
 
-      // afterEach(require('./fixtures/clean-ctx')(ctx));
-      // afterEach(require('./fixtures/clean-nock'));
-      // afterEach(require('./fixtures/clean-mongo').removeEverything);
+    afterEach(require('./fixtures/clean-ctx')(ctx));
+    afterEach(require('./fixtures/clean-nock'));
+    afterEach(require('./fixtures/clean-mongo').removeEverything);
 
     it('should fail if die-flag is set to ignore', function (done) {
       multi.createContainer(function (err, container, instance) {
@@ -78,22 +77,24 @@ describe('Events handler', function () {
       });
     });
 
-    // it('should stop instance if die event received', function (done) {
-    //   multi.createContainer(function (err, container, instance) {
-    //     if (err) { return done(err); }
-    //     ctx.instance = instance;
-    //     ctx.container = container;
-    //     console.log('aaa', ctx.container.attrs.inspect.Id);
-    //     expect(instance.attrs.container.inspect.State.Running).to.equal(true);
-    //     var eventData = {id: ctx.container.attrs.inspect.Id, ip: '192.0.0.1', time: new Date().getTime()};
-    //     events.handleContainerDie(eventData, function (err, newInstanceState) {
-    //       console.log('asdasdasd')
-    //       if (err) { return done(err); }
-    //       expect(newInstanceState.container.inspect.State.Running).to.equal(false);
-    //       done();
-    //     });
-    //   });
-    // });
+    it('should stop instance if die event received', function (done) {
+      multi.createContainer(function (err, container, instance) {
+        if (err) { return done(err); }
+        ctx.instance = instance;
+        ctx.container = container;
+        var docker = new Docker('http://localhost:4243');
+        docker.stopContainer({dockerContainer: ctx.container.attrs.inspect.Id}, function (err) {
+          if (err) { return done(err); }
+          var eventData = {id: ctx.container.attrs.inspect.Id, ip: 'localhost', time: new Date().getTime()};
+          events.handleContainerDie(eventData, function (err, newInstanceState) {
+            if (err) { return done(err); }
+            expect(newInstanceState.container.inspect.State.Running).to.equal(false);
+            expect(newInstanceState.container.inspect.State.Pid).to.equal(0);
+            done();
+          });
+        });
+      });
+    });
 
 
 
