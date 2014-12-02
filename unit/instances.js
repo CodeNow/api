@@ -3,6 +3,7 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
+var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
@@ -10,7 +11,7 @@ var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var Hashids = require('hashids');
 
 var Instance = require('models/mongo/instance');
-
+var docker = require('../test/fixtures/dock');
 
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
@@ -145,6 +146,37 @@ describe('Instance', function () {
         expect(newInst.container.inspect.Image).to.equal(containerData.Image);
         expect(newInst.container.inspect.Path).to.equal(containerData.Path);
         expect(newInst.container.inspect.Name).to.equal(containerData.Name);
+        done();
+      });
+    });
+
+  });
+
+
+  describe('inspectAndUpdate', function () {
+    before(docker.start);
+    after(docker.stop);
+
+    var savedInstance = null;
+    var instance = null;
+    before(function (done) {
+      instance = createNewInstance();
+      instance.save(function (err, instance) {
+        if (err) { done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance = instance;
+          done();
+        }
+      });
+    });
+
+    it('should fail if container is not found', function (done) {
+      var container = {
+        dockerContainer: '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1'
+      };
+      savedInstance.inspectAndUpdate(container, 'http://localhost:4243', function (err) {
+        expect(err.output.statusCode).to.equal(404);
         done();
       });
     });
