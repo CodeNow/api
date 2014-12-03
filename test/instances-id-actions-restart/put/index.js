@@ -22,23 +22,7 @@ var Docker = require('models/apis/docker');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
-
-var redisCleaner = function (cb) {
-  var redis = require('models/redis');
-  redis.keys(process.env.WEAVE_NETWORKS+'*', function (err, keys) {
-    if (err) {
-      return cb(err);
-    }
-    if (keys.length === 0) {
-      return cb();
-    }
-
-    var count = createCount(cb);
-    keys.forEach(function (key) {
-      redis.del(key, count.inc().next);
-    });
-  });
-};
+var redisCleaner = require('./fixtures/redis-cleaner');
 
 describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
   var ctx = {};
@@ -77,7 +61,7 @@ describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
       }, ms);
     };
   };
-  beforeEach(redisCleaner);
+  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);

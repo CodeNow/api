@@ -25,24 +25,8 @@ var Instance = require('models/mongo/instance');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
+var redisCleaner = require('./fixtures/redis-cleaner');
 
-
-var redisCleaner = function (cb) {
-  var redis = require('models/redis');
-  redis.keys(process.env.WEAVE_NETWORKS+'*', function (err, keys) {
-    if (err) {
-      return cb(err);
-    }
-    if (keys.length === 0) {
-      return cb();
-    }
-
-    var count = createCount(cb);
-    keys.forEach(function (key) {
-      redis.del(key, count.inc().next);
-    });
-  });
-};
 
 describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   var ctx = {};
@@ -96,7 +80,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
     Docker.prototype.pushImageToRegistry = Docker.prototype._origionalPushImageToRegistry;
     done();
   });
-  beforeEach(redisCleaner);
+  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);

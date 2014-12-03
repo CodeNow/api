@@ -12,31 +12,14 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 
-var createCount = require('callback-count');
+
 
 var events = require('models/events/docker');
 var RedisFlag = require('models/redis/flags');
-var redis = require('models/redis');
 var pubsub = require('models/redis/pubsub');
 var Docker = require('models/apis/docker');
 var dockerEvents = require('models/events');
-
-var redisCleaner = function (cb) {
-
-  redis.keys('*', function (err, keys) {
-    if (err) {
-      return cb(err);
-    }
-    if (keys.length === 0) {
-      return cb();
-    }
-
-    var count = createCount(cb);
-    keys.forEach(function (key) {
-      redis.del(key, count.inc().next);
-    });
-  });
-};
+var redisCleaner = require('./fixtures/redis-cleaner');
 
 describe('Events handler', function () {
   var ctx = {};
@@ -44,7 +27,7 @@ describe('Events handler', function () {
     dockerEvents.cleanup();
     done();
   });
-  before(redisCleaner);
+  before(redisCleaner.clean('*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);
