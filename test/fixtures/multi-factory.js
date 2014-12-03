@@ -238,10 +238,10 @@ module.exports = {
   },
   createContainer: function (cb) {
     debug('createContainer', formatArgs(arguments));
-    this.createInstance(function (err, instance, build, env, project, user, modelsArray, srcArr) {
+    this.createInstance(function (err, instance, build, user, modelsArray, srcArr) {
       if (err) { return cb(err); }
       var container = instance.newContainer(instance.json().containers[0]);
-      cb(err, container, instance, build, env, project, user, modelsArray, srcArr);
+      cb(err, container, instance, build, user, modelsArray, srcArr);
     });
   },
 

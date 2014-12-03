@@ -31,8 +31,6 @@ describe('400 PATCH /contexts/:contextid/versions/:id/files/:id', function () {
     multi.createContextVersion(function (err, contextVersion, context, build, env, project, user){
       if (err) { return done(err); }
       ctx.build = build;
-      ctx.env = env;
-      ctx.project = project;
       ctx.user = user;
       ctx.contextVersion = contextVersion;
       ctx.context = context;
@@ -75,7 +73,7 @@ describe('400 PATCH /contexts/:contextid/versions/:id/files/:id', function () {
       dockerfile.update({json: body}, cb);
     });
 
-    
+
   });
-  
+
 });
