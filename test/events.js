@@ -17,7 +17,10 @@ var createCount = require('callback-count');
 var events = require('models/events/docker');
 var RedisFlag = require('models/redis/flags');
 var redis = require('models/redis');
+var pubsub = require('models/redis/pubsub');
 var Docker = require('models/apis/docker');
+var dockerEvents = require('models/events');
+var Instance = require('models/mongo/instance');
 
 var redisCleaner = function (cb) {
 
@@ -38,7 +41,10 @@ var redisCleaner = function (cb) {
 
 describe('Events handler', function () {
   var ctx = {};
-
+  before(function (done) {
+    dockerEvents.cleanup();
+    done();
+  });
   before(redisCleaner);
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -97,6 +103,35 @@ describe('Events handler', function () {
     });
 
 
+    it('should stop instance if die event received through pubsub', function (done) {
+      multi.createContainer(function (err, container, instance) {
+        if (err) { return done(err); }
+        ctx.instance = instance;
+        ctx.container = container;
+        var docker = new Docker('http://localhost:4243');
+        docker.stopContainer({dockerContainer: ctx.container.attrs.inspect.Id}, function (err) {
+          if (err) { return done(err); }
+          dockerEvents.listen(function () {});
+          var payload = {
+            uuid: '121213213dasdasdasdasdasduasduasidu',
+            ip: 'localhost',
+            from: 'ubuntu:base',
+            id: ctx.container.attrs.inspect.Id,
+            time: new Date().getTime()
+          };
+          console.log('publish message');
+          pubsub.emit('runnable:docker:die', payload);
+          setTimeout(function () {
+            Instance.findByContainerId(ctx.container.attrs.inspect.Id, function (err, instance) {
+              if (err) { return done(err); }
+              expect(instance.container.inspect.State.Running).to.equal(false);
+              expect(instance.container.inspect.State.Pid).to.equal(0);
+              done();
+            });
+          }, 1000);
+        });
+      });
+    });
 
     it('should fail if event data has no id', function (done) {
       events.handleContainerDie({ip: '192.0.0.1'}, function (err) {
