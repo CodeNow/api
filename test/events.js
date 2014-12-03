@@ -50,7 +50,12 @@ describe('Events handler', function () {
         ctx.container = container;
         expect(instance.attrs.container.inspect.State.Running).to.equal(true);
         var flag = new RedisFlag();
-        var eventData = {id: ctx.container.attrs.inspect.Id, ip: '192.0.0.1', time: new Date().getTime()};
+        var eventData = {
+          id: ctx.container.attrs.inspect.Id,
+          host: 'http://localhost:4243',
+          ip: '192.0.0.1',
+          time: new Date().getTime()
+        };
         flag.set(ctx.container.attrs.inspect.Id, '-die-flag', 'ignore', function (err) {
           if (err) { return done(err); }
           events.handleContainerDie(eventData, function (err) {
@@ -73,7 +78,11 @@ describe('Events handler', function () {
         var docker = new Docker('http://localhost:4243');
         docker.stopContainer({dockerContainer: ctx.container.attrs.inspect.Id}, function (err) {
           if (err) { return done(err); }
-          var eventData = {id: ctx.container.attrs.inspect.Id, ip: 'localhost', time: new Date().getTime()};
+          var eventData = {
+            id: ctx.container.attrs.inspect.Id,
+            host: 'http://localhost:4243',
+            time: new Date().getTime()
+          };
           events.handleContainerDie(eventData, function (err, newInstanceState) {
             if (err) { return done(err); }
             expect(newInstanceState.container.inspect.State.Running).to.equal(false);
@@ -97,6 +106,7 @@ describe('Events handler', function () {
           var payload = {
             uuid: '121213213dasdasdasdasdasduasduasidu',
             ip: 'localhost',
+            host: 'http://localhost:4243',
             from: 'ubuntu:base',
             id: ctx.container.attrs.inspect.Id,
             time: new Date().getTime()
@@ -115,7 +125,7 @@ describe('Events handler', function () {
     });
 
     it('should fail if event data has no id', function (done) {
-      events.handleContainerDie({ip: '192.0.0.1'}, function (err) {
+      events.handleContainerDie({host: 'http://localhost:4243'}, function (err) {
         expect(err.message).to.equal('Invalid data: id is missing');
         done();
       });
@@ -128,15 +138,15 @@ describe('Events handler', function () {
       });
     });
 
-    it('should fail if event data has no ip', function (done) {
+    it('should fail if event data has no host', function (done) {
       events.handleContainerDie({id: 'duasiduia213', time: new Date().getTime() }, function (err) {
-        expect(err.message).to.equal('Invalid data: ip is missing');
+        expect(err.message).to.equal('Invalid data: host is missing');
         done();
       });
     });
 
     it('should fail if time does not exist', function (done) {
-      events.handleContainerDie({id: 'duasiduia213', ip: '192.0.0.1'}, function (err) {
+      events.handleContainerDie({id: 'duasiduia213', host: 'http://localhost:4243'}, function (err) {
         expect(err.message).to.equal('Invalid data: time is missing');
         done();
       });
