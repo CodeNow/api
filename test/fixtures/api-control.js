@@ -8,18 +8,16 @@ module.exports = {
   stop: stopApi
 };
 
-var api;
 function startApi (done) {
-  api = new Api().start(function (err) {
+  global.apiServer = new Api().start(function (err) {
     if (err) { return done(err); }
-
     cleanMongo.removeEverything(done);
   });
 }
 
 function stopApi (done) {
   route53.stop();
-  api.stop(function (err) {
+  global.apiServer.stop(function (err) {
     if (err) { return done(err); }
 
     // cleanMongo.dropDatabase(done);

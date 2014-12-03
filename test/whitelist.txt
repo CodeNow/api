@@ -1,3 +1,4 @@
+test/actions-kill.js
 test/builds
 test/builds.js
 test/builds-id.js
