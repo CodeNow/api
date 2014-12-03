@@ -8,33 +8,16 @@ var createCount = require('callback-count');
 var redis = require('models/redis');
 var RedisFlag = require('models/redis/flags');
 var expect = Lab.expect;
-
+var redisCleaner = require('../test/fixtures/redis-cleaner');
 require('loadenv')();
 
 
 
-var redisCleaner = function (cb) {
-
-  redis.keys('*', function (err, keys) {
-    if (err) {
-      return cb(err);
-    }
-    if (keys.length === 0) {
-      return cb();
-    }
-
-    var count = createCount(cb);
-    keys.forEach(function (key) {
-      redis.del(key, count.inc().next);
-    });
-  });
-};
-
 describe('Redis Flags', function () {
 
   describe('get', function () {
-    before(redisCleaner);
-    after(redisCleaner);
+    before(redisCleaner.clean('*'));
+    after(redisCleaner.clean('*'));
 
     it('should return null for non-existing flag', function (done) {
       var flag = new RedisFlag();

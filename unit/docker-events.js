@@ -9,33 +9,18 @@ var redis = require('models/redis');
 var pubsub = require('models/redis/pubsub');
 var dockerEvents = require('models/events');
 var expect = Lab.expect;
+var redisCleaner = require('../test/fixtures/redis-cleaner');
 
 require('loadenv')();
 
 
 
-var redisCleaner = function (cb) {
-
-  redis.keys('*', function (err, keys) {
-    if (err) {
-      return cb(err);
-    }
-    if (keys.length === 0) {
-      return cb();
-    }
-
-    var count = createCount(cb);
-    keys.forEach(function (key) {
-      redis.del(key, count.inc().next);
-    });
-  });
-};
 
 describe('Docker Events', function () {
 
   describe('listen', function () {
-    before(redisCleaner);
-    after(redisCleaner);
+    before(redisCleaner.clean('*'));
+    after(redisCleaner.clean('*'));
 
     it('should not be possible to process event with the same uuid twice', function (done) {
       dockerEvents.listen(function (err) {
