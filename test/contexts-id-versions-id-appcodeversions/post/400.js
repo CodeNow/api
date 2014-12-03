@@ -55,6 +55,4 @@ describe('400 POST /contexts/:id/versions/:id/appCodeVersions', function () {
       ctx.contextVersion.addGithubRepo(body, cb);
     });
   });
-
-
 });
