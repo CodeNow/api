@@ -38,7 +38,7 @@ describe('400 POST /contexts/:id/versions/:id/appCodeVersions', function () {
       requiredParams: [
         {
           name: 'repo',
-          type: 'string',
+          type: 'repo-string',
         },
         {
           name: 'branch',
@@ -55,6 +55,4 @@ describe('400 POST /contexts/:id/versions/:id/appCodeVersions', function () {
       ctx.contextVersion.addGithubRepo(body, cb);
     });
   });
-      
-  
 });
