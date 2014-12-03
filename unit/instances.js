@@ -139,6 +139,7 @@ describe('Instance', function () {
         Id: '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1',
         Name: '/sad_engelbart4'
       };
+      var currentDate = Date.now();
       savedInstance.modifySetContainer(containerData, 'http://localhost:4243', function (err, newInst) {
         if (err) { return done(err); }
         expect(newInst.container.inspect.State.Pid).to.equal(newState.Pid);
@@ -148,6 +149,7 @@ describe('Instance', function () {
         expect(newInst.container.inspect.Image).to.equal(containerData.Image);
         expect(newInst.container.inspect.Path).to.equal(containerData.Path);
         expect(newInst.container.inspect.Name).to.equal(containerData.Name);
+        expect(newInst.container.inspect._updated).to.be.least(currentDate);
         done();
       });
     });
