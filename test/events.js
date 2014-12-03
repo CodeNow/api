@@ -20,7 +20,6 @@ var redis = require('models/redis');
 var pubsub = require('models/redis/pubsub');
 var Docker = require('models/apis/docker');
 var dockerEvents = require('models/events');
-var Instance = require('models/mongo/instance');
 
 var redisCleaner = function (cb) {
 
@@ -122,7 +121,7 @@ describe('Events handler', function () {
           console.log('publish message');
           pubsub.emit('runnable:docker:die', payload);
           setTimeout(function () {
-            Instance.findByContainerId(ctx.container.attrs.inspect.Id, function (err, instance) {
+            ctx.instance.fetch(function (err, instance) {
               if (err) { return done(err); }
               expect(instance.container.inspect.State.Running).to.equal(false);
               expect(instance.container.inspect.State.Pid).to.equal(0);
