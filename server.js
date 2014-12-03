@@ -37,5 +37,6 @@ process.on('uncaughtException', function(err) {
 startServer();
 
 
-// we are exposing here global ref to the apiServer so that we can stop it from the `/actions/kill` route
+// we are exposing here global ref to the apiServer,
+// so that we can stop it from the `/actions/kill` route
 global.apiServer = apiServer;
