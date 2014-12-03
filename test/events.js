@@ -101,8 +101,7 @@ describe('Events handler', function () {
             id: ctx.container.attrs.inspect.Id,
             time: new Date().getTime()
           };
-          console.log('publish message');
-          pubsub.emit('runnable:docker:die', payload);
+          pubsub.publish('runnable:docker:die', payload);
           setTimeout(function () {
             ctx.instance.fetch(function (err, instance) {
               if (err) { return done(err); }
