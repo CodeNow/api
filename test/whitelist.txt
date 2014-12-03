@@ -1,4 +1,3 @@
-test/actions-kill.js
 test/builds
 test/builds.js
 test/builds-id.js
@@ -27,3 +26,4 @@ test/bdd-deploy-instance.js
 test/github-proxy.js
 test/users-id.js
 test/actions-github.js
+test/actions-kill.js
