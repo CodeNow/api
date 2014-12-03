@@ -6,6 +6,7 @@ var expects = require('./expects');
 
 function typeValue (ctx, type) {
   var values = {
+    'repo-string' : 'user/repo',
     'string': 'some-string-value',
     'number': 123,
     'boolean': false,
@@ -32,6 +33,7 @@ function errorMessageSuffix (paramType, type) {
   var suffixes = {
     'boolean': 'must be a boolean',
     'string': 'must be a string',
+    'repo-string' : 'must be a string',
     'number': 'must be a number',
     'array': 'should be an array',
     'object': 'must be an object',
@@ -73,7 +75,7 @@ function buildBodyForRequiredParams (ctx, requiredParams, param, type, paramInde
 
 function excludeParam (types, excluded) {
   return types.filter(function (type) {
-    return type !== excluded;
+    return !~excluded.indexOf(type);
   });
 }
 

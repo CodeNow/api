@@ -21,6 +21,7 @@ test/instances-id-actions-stop
 test/instances-id-actions-restart
 test/instances-id-actions-copy
 test/instances-id-containers-id-files.js
+test/instances-id-containers-id-files-id.js
 test/bdd-deploy-instance.js
 test/github-proxy.js
 test/users-id.js
