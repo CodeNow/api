@@ -22,7 +22,7 @@ var Docker = require('models/apis/docker');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
-var redisCleaner = require('./fixtures/redis-cleaner');
+var redisCleaner = require('../../fixtures/redis-cleaner');
 
 
 describe('PUT /instances/:id/actions/start', function () {

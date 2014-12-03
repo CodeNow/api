@@ -25,7 +25,7 @@ var Instance = require('models/mongo/instance');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
-var redisCleaner = require('./fixtures/redis-cleaner');
+var redisCleaner = require('../../fixtures/redis-cleaner');
 
 
 describe('200 PATCH /instances/:id', {timeout:1000}, function () {
