@@ -73,7 +73,7 @@ describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
-            expect(instance.dependencies).to.equal(undefined);
+            expect(instance.dependencies).to.eql({});
             cb();
           });
         }
@@ -134,7 +134,7 @@ describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
           expect(body).to.be.okay;
           /* this is a fun test. we _want_ this to be undefined. if cayley was running,
            * it would return a value for dependencies, which we do not want. */
-          expect(body.dependencies).to.equal(undefined);
+          expect(body.dependencies).to.eql({});
           done();
         });
       });
@@ -168,7 +168,7 @@ describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.webInstance.fetch(function (err, instance) {
               if (err) { return cb(err); }
-              expect(instance.dependencies).to.equal(undefined);
+              expect(instance.dependencies).to.eql({});
               cb();
             });
           }
@@ -184,7 +184,7 @@ describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
         it('should not be a dependent of any instance (removed from other instance dependencies)', function (done) {
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return done(err); }
-            expect(instance.dependencies).to.equal(undefined);
+            expect(instance.dependencies).to.eql({});
             done();
           });
         });
@@ -415,7 +415,7 @@ describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
         function checkWebInstance (cb) {
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
-            expect(instance.dependencies).to.equal(undefined);
+            expect(instance.dependencies).to.eql({});
             cb();
           });
         }
