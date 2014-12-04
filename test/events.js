@@ -62,7 +62,7 @@ describe('Events handler', function () {
             expect(err.output.statusCode).to.equal(409);
             flag.exists(function (err, flag) {
               if (err) { return done(err); }
-              expect(flag).to.be.null();
+              expect(flag).to.equal('0');
               done();
             });
           });
