@@ -140,11 +140,11 @@ describe('PUT /instances/:id/actions/start', function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
-            'containers[0]': exists,
-            'containers[0].ports': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': true
+            'container': exists,
+            'container.ports': exists,
+            'container.dockerHost': exists,
+            'container.dockerContainer': exists,
+            'container.inspect.State.Running': true
           });
           ctx.expectAlreadyStarted = true;
           done();
@@ -156,10 +156,10 @@ describe('PUT /instances/:id/actions/start', function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
-            'containers[0]': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': false
+            'container': exists,
+            'container.dockerHost': exists,
+            'container.dockerContainer': exists,
+            'container.inspect.State.Running': false
           });
           ctx.originalStart = Docker.prototype.startContainer;
           Docker.prototype.startContainer = stopContainerRightAfterStart;
@@ -175,8 +175,8 @@ describe('PUT /instances/:id/actions/start', function () {
       });
       describe('Container create error (Invalid dockerfile CMD)', function() {
         beforeEach(function (done) {
-          ctx.expected['containers[0].error.message'] = exists;
-          ctx.expected['containers[0].error.stack'] = exists;
+          ctx.expected['container.error.message'] = exists;
+          ctx.expected['container.error.stack'] = exists;
           ctx.expectNoContainerErr = true;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
           Dockerode.prototype.createContainer = forceCreateContainerErr;

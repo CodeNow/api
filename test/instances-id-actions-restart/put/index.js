@@ -139,11 +139,11 @@ describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
-            'containers[0]': exists,
-            'containers[0].ports': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': true
+            'container': exists,
+            'container.ports': exists,
+            'container.dockerHost': exists,
+            'container.dockerContainer': exists,
+            'container.inspect.State.Running': true
           });
           ctx.expectAlreadyStarted = true;
           done();
@@ -155,10 +155,10 @@ describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
-            'containers[0]': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': false
+            'container': exists,
+            'container.dockerHost': exists,
+            'container.dockerContainer': exists,
+            'container.inspect.State.Running': false
           });
           ctx.originalStart = Docker.prototype.startContainer;
           Docker.prototype.startContainer = stopContainerRightAfterStart;
@@ -174,8 +174,8 @@ describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
       });
       describe('Container create error (Invalid dockerfile CMD)', function() {
         beforeEach(function (done) {
-          ctx.expected['containers[0].error.message'] = exists;
-          ctx.expected['containers[0].error.stack'] = exists;
+          ctx.expected['container.error.message'] = exists;
+          ctx.expected['container.error.stack'] = exists;
           ctx.expectNoContainerErr = true;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
           Dockerode.prototype.createContainer = forceCreateContainerErr;
@@ -226,7 +226,7 @@ describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
     it('should restart an instance', function (done) {
       if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
         Docker.prototype.startContainer = ctx.originalStart;
-        ctx.expected['containers[0].inspect.State.Running'] = true;
+        ctx.expected['container.inspect.State.Running'] = true;
       }
       if (ctx.expectNoContainerErr) {
         ctx.instance.restart(expects.error(400, /not have a container/, done));
