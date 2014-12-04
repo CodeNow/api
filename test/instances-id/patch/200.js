@@ -15,6 +15,7 @@ var exists = require('101/exists');
 var last = require('101/last');
 var not = require('101/not');
 var isFunction = require('101/is-function');
+var tailBuildStream = require('../../fixtures/tail-build-stream');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
@@ -141,6 +142,22 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
           ctx.build.build({ message: uuid() }, expects.success(201, done));
         });
       });
+      beforeEach(function (done) {
+        // make sure build finishes before moving on to the next test
+        var firstBuildId = ctx.build.id();
+        ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
+        ctx.afterPatchAsserts.push(function (done) {
+          if (ctx.instance.build.id() === firstBuildId) {
+            // instance was NOT patched with a new build, make sure to wait until
+            // redeploy route completes (after build completes) before moving on to next test.
+            multi.tailInstance(ctx.user, ctx.instance, done);
+          }
+          else { // instance has been patched with a new build
+            tailBuildStream(ctx.cv.id(), done);
+          }
+        });
+        done();
+      });
       beforeEach(initExpected);
       createInstanceAndRunTests(ctx);
     });
@@ -266,6 +283,15 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       afterEach(require('../../fixtures/clean-mongo').removeEverything);
       afterEach(require('../../fixtures/clean-ctx')(ctx));
       afterEach(require('../../fixtures/clean-nock'));
+      it('should update an instance with new env', function (done) {
+        var body = {
+          env: [
+            'ENV=NEW'
+          ]
+        };
+        extend(ctx.expected, body);
+        ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
+      });
       describe('update name:', function() {
         beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
         beforeEach(afterEachAssertUpdatedNewHostsAndNetwork);
@@ -286,28 +312,19 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
           extend(ctx.expected, body);
           ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
         });
-        function afterPatchAssertions (done) {
-          return function (err) {
-            if (err) { return done(err); }
-            if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {
-              return done();
-            }
-            var count = createCount(ctx.afterPatchAsserts.length, done);
-            ctx.afterPatchAsserts.forEach(function (assert) {
-              assert(count.next);
-            });
-          };
-        }
       });
-      it('should update an instance with new env', function (done) {
-        var body = {
-          env: [
-            'ENV=NEW'
-          ]
+      function afterPatchAssertions (done) {
+        return function (err) {
+          if (err) { return done(err); }
+          if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {
+            return done();
+          }
+          var count = createCount(ctx.afterPatchAsserts.length, done);
+          ctx.afterPatchAsserts.forEach(function (assert) {
+            assert(count.next);
+          });
         };
-        extend(ctx.expected, body);
-        ctx.instance.update(body, expects.success(200, ctx.expected, done));
-      });
+      }
     });
 
     describe('Patch with build:', function() {

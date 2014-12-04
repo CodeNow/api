@@ -22,7 +22,7 @@ var primusClient = Primus.createSocket({
 
 var ctx = {};
 
-describe('Build Stream - /projects/:id/environments/:id/builds/:id/build', function() {
+describe('Build Stream', function() {
   ctx = {};
 
   before(api.start.bind(ctx));
