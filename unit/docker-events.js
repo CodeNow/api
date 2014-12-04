@@ -26,7 +26,7 @@ describe('Docker Events', function () {
       });
       dockerEvents.listen(function (err) {
         expect(err.output.statusCode).to.equal(409);
-        expect(err.output.payload.message).to.equal('Event is currently being updated by another API host.');
+        expect(err.output.payload.message).to.equal('Event is being handled by another API host.');
         done();
       });
       var payload = {
