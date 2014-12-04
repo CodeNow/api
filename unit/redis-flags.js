@@ -13,55 +13,55 @@ require('loadenv')();
 
 describe('Redis Flags', function () {
 
-  describe('get', function () {
+  describe('exists', function () {
     before(redisCleaner.clean('*'));
     after(redisCleaner.clean('*'));
 
     it('should return null for non-existing flag', function (done) {
-      var flag = new RedisFlag();
-      flag.get('some-key', 'some-suffix', function (err, value) {
+      var flag = new RedisFlag('some-ns', 'some-new-key');
+      flag.exists(function (err, value) {
         expect(err).to.be.null();
-        expect(value).to.be.null();
+        expect(value).to.equal('0');
         done();
       });
     });
 
   });
 
-  describe('set/get/del/get', function () {
+  describe('set/exists/del/exists', function () {
 
     it('should save new flag', function (done) {
-      var flag = new RedisFlag();
-      flag.set('some-new-key', 'some-suffix', 'some-value', function (err, value) {
+      var flag = new RedisFlag('some-ns', 'some-new-key');
+      flag.set('some-value', function (err, value) {
         expect(err).to.be.null();
         expect(value).to.equal('OK');
         done();
       });
     });
 
-    it('should get just saved flag', function (done) {
-      var flag = new RedisFlag();
-      flag.get('some-new-key', 'some-suffix', function (err, value) {
-        expect(err).to.be.null();
-        expect(value).to.equal('some-value');
-        done();
-      });
-    });
-
-    it('should del flag', function (done) {
-      var flag = new RedisFlag();
-      flag.del('some-new-key', 'some-suffix', function (err, value) {
+    it('should exists just saved flag', function (done) {
+      var flag = new RedisFlag('some-ns', 'some-new-key');
+      flag.exists(function (err, value) {
         expect(err).to.be.null();
         expect(value).to.equal('1');
         done();
       });
     });
 
-    it('should get null for deleted flag', function (done) {
-      var flag = new RedisFlag();
-      flag.get('some-new-key', 'some-suffix', function (err, value) {
+    it('should del flag', function (done) {
+      var flag = new RedisFlag('some-ns', 'some-new-key');
+      flag.del(function (err, value) {
         expect(err).to.be.null();
-        expect(value).to.be.null();
+        expect(value).to.equal('1');
+        done();
+      });
+    });
+
+    it('should exists null for deleted flag', function (done) {
+      var flag = new RedisFlag('some-ns', 'some-new-key');
+      flag.exists(function (err, value) {
+        expect(err).to.be.null();
+        expect(value).to.equal('0');
         done();
       });
     });

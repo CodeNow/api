@@ -43,24 +43,24 @@ describe('Events handler', function () {
     afterEach(require('./fixtures/clean-nock'));
     afterEach(require('./fixtures/clean-mongo').removeEverything);
 
-    it('should fail if die-flag is set to ignore', function (done) {
+    it('should fail if container-die flag is set to ignore', function (done) {
       multi.createContainer(function (err, container, instance) {
         if (err) { return done(err); }
         ctx.instance = instance;
         ctx.container = container;
         expect(instance.attrs.container.inspect.State.Running).to.equal(true);
-        var flag = new RedisFlag();
+        var flag = new RedisFlag('container-die', ctx.container.attrs.inspect.Id);
         var eventData = {
           id: ctx.container.attrs.inspect.Id,
           host: 'http://localhost:4243',
           ip: '192.0.0.1',
           time: new Date().getTime()
         };
-        flag.set(ctx.container.attrs.inspect.Id, '-die-flag', 'ignore', function (err) {
+        flag.set('ignore', function (err) {
           if (err) { return done(err); }
           events.handleContainerDie(eventData, function (err) {
             expect(err.output.statusCode).to.equal(409);
-            flag.get(ctx.container.attrs.inspect.Id, '-die-flag', function (err, flag) {
+            flag.exists(function (err, flag) {
               if (err) { return done(err); }
               expect(flag).to.be.null();
               done();
