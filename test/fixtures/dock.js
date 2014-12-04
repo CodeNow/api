@@ -19,17 +19,9 @@ function startDock (done) {
   ctx.docker = docker.start(count.inc().next);
   ctx.mavis = mavisApp.listen(url.parse(process.env.MAVIS_HOST).port);
   ctx.mavis.on('listening', count.inc().next);
+  require('mavis/lib/models/dockData').addHost(testDockHost, count.inc().next); // init mavis docks data
   ctx.sauron = sauron.listen(process.env.SAURON_PORT);
   ctx.sauron.on('listening', count.inc().next);
-  redis.lpush(process.env.REDIS_HOST_KEYS, testDockHost, count.inc().next);
-  redis.hmset(testDockHost,
-    'numContainers',
-    '0',
-    'numBuilds',
-    '0',
-    'host',
-    testDockHost,
-    count.inc().next);
   dockerModuleMock.setup(count.inc().next);
 }
 function stopDock (done) {
