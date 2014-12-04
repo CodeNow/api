@@ -21,9 +21,7 @@ describe('Docker Events', function () {
     after(redisCleaner.clean('*'));
 
     it('should not be possible to process event with the same uuid twice', function (done) {
-      dockerEvents.listen(function (err) {
-        expect(err).to.be.null();
-      });
+      dockerEvents.listen();
       dockerEvents.listen(function (err) {
         expect(err.output.statusCode).to.equal(409);
         expect(err.output.payload.message).to.equal('Event is being handled by another API host.');
