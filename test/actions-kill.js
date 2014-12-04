@@ -29,9 +29,46 @@ describe('/actions/kill', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
   describe('kill server', function () {
-    it('should return OKAY', function (done) {
+
+    it('should fail without secret key', function (done) {
       var killUrl = 'http://localhost:' + process.env.PORT + '/actions/kill';
-      request.post(killUrl, function (err, res) {
+      var options = {
+          method: 'POST',
+          url: killUrl
+      };
+      request(options, function (err, res) {
+        if (err) { return done(err); }
+        expect(res.statusCode).to.equal(403);
+        done();
+      });
+    });
+
+    it('should fail with wrong secret key', function (done) {
+      var killUrl = 'http://localhost:' + process.env.PORT + '/actions/kill';
+      var options = {
+          method: 'POST',
+          url: killUrl,
+          headers: {
+            'X-Runnable-Key': 'some-wrong-secret-key'
+          }
+      };
+      request(options, function (err, res) {
+        if (err) { return done(err); }
+        expect(res.statusCode).to.equal(403);
+        done();
+      });
+    });
+
+    it('should work if credentials are fine', function (done) {
+      var killUrl = 'http://localhost:' + process.env.PORT + '/actions/kill';
+      var options = {
+          method: 'POST',
+          url: killUrl,
+          headers: {
+            'X-Runnable-Key': process.env.SECRET_API_KEY
+          }
+      };
+      request(options, function (err, res) {
         if (err) { return done(err); }
         expect(res.statusCode).to.equal(204);
         request.post(killUrl, function (err) {
