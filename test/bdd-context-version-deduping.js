@@ -71,7 +71,7 @@ describe('Building - Context Version Deduping', function () {
             multi.tailInstance(ctx.user, forkedInstance, next);
             function next (err, instance) {
               if (err) { return count.next(err); }
-              expect(instance.attrs.containers[0].inspect.State.Running).to.be.okay;
+              expect(instance.attrs.container.inspect.State.Running).to.be.okay;
               count.next();
             }
           });
@@ -178,7 +178,7 @@ describe('Building - Context Version Deduping', function () {
             if (err) {
               return count.next(err);
             }
-            expect(instance.attrs.containers[0].inspect.State.Running).to.be.okay;
+            expect(instance.attrs.container.inspect.State.Running).to.be.okay;
             count.next();
           }
         });
