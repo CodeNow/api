@@ -11,5 +11,6 @@ test:
     - ulimit -n 10240
   override:
     - npm run lint
-    - npm run bdd
+    - ./scripts/npm-bdd-split-files.sh:
+        parallel: true
     - npm run unit
