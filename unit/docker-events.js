@@ -32,6 +32,7 @@ describe('Docker Events', function () {
       var payload = {
         uuid: 1,
         ip: '192.0.0.1',
+        host: 'http://localhost:4243',
         from: 'ubuntu:base',
         id: '05a8615e0886',
         time: new Date().getTime()
