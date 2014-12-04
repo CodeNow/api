@@ -79,21 +79,40 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
           ctx.instance.update({ env: ['ONE=1'] }, expects.success(200, done));
         });
         it('should copy the instance env vars if it has them', function (done) {
-        var expected = {
-          shortHash: exists,
-          name: exists,
-          public: exists,
-          createdBy: { github: ctx.user.json().accounts.github.id },
-          owner: { github: ctx.user.json().accounts.github.id,
-                   username: ctx.user.json().accounts.github.username },
-          parent: ctx.instance.id(),
-          'build._id': ctx.build.id(),
-          containers: exists,
-          env: ['ONE=1']
-        };
-        require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.instance.copy(expects.success(201, expected, done));
-      });
+          var expected = {
+            shortHash: exists,
+            name: exists,
+            public: exists,
+            createdBy: { github: ctx.user.json().accounts.github.id },
+            owner: { github: ctx.user.json().accounts.github.id,
+                     username: ctx.user.json().accounts.github.username },
+            parent: ctx.instance.id(),
+            'build._id': ctx.build.id(),
+            containers: exists,
+            env: ['ONE=1']
+          };
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          ctx.instance.copy(expects.success(201, expected, done));
+        });
+        it('should accept new envs if they are sent with the copy', function (done) {
+          var expected = {
+            shortHash: exists,
+            name: exists,
+            public: exists,
+            createdBy: { github: ctx.user.json().accounts.github.id },
+            owner: { github: ctx.user.json().accounts.github.id,
+                     username: ctx.user.json().accounts.github.username },
+            parent: ctx.instance.id(),
+            'build._id': ctx.build.id(),
+            containers: exists,
+            env: ['TWO=2']
+          };
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          var body = {
+            env: expected.env
+          };
+          ctx.instance.copy(body, expects.success(201, expected, done));
+        });
       });
     });
 
