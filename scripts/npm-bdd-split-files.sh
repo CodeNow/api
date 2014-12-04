@@ -8,7 +8,7 @@ do
   fi
 done
 
-numTests=$(npm run _bdd -- -d ${files[@]} | grep -e '\d\+ tests complete' | awk '{split($0,r," "); print r[1];}')
+numTests=$(npm run _bdd -- -d ${files[@]} | grep -E '[0-9]+ tests complete' | awk '{split($0,r," "); print r[1];}')
 echo $numTests to run
 
 indexes=()
