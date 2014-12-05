@@ -200,36 +200,107 @@ describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
           env: [depString]
         }, done);
       });
+      beforeEach(function (done) {
+        require('./fixtures/mocks/github/user')(ctx.user);
+        var depString = 'WEB_HOST=' +
+          ctx.webInstance.attrs.lowerName + '.' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+        ctx.apiInstance.update({
+          env: [depString]
+        }, done);
+      });
       it('should update the deps of an instance', function (done) {
-        async.series([
-          updateApiInstance,
-          checkWebInstance
-        ], done);
+        require('./fixtures/mocks/github/user')(ctx.user);
+        var apiId = ctx.apiInstance.attrs._id.toString();
+        ctx.webInstance.fetch(function (err, instance) {
+          if (err) { return cb(err); }
+          expect(instance.dependencies).to.be.an('object');
+          expect(Object.keys(instance.dependencies).length).to.equal(1);
+          expect(instance.dependencies[apiId]).to.be.okay;
+          expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
+          expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
+          expect(instance.dependencies[apiId].dependencies).to.equal(undefined);
 
-        function updateApiInstance (cb) {
-          require('./fixtures/mocks/github/user')(ctx.user);
-          var depString = 'API_HOST=' +
-            ctx.webInstance.attrs.lowerName + '.' +
-            ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
-          ctx.apiInstance.update({
-            env: [depString]
-          }, cb);
-        }
-        function checkWebInstance (cb) {
-          require('./fixtures/mocks/github/user')(ctx.user);
-          var apiId = ctx.apiInstance.attrs._id.toString();
-          ctx.webInstance.fetch(function (err, instance) {
-            if (err) { return cb(err); }
-            expect(instance.dependencies).to.be.an('object');
-            expect(Object.keys(instance.dependencies).length).to.equal(1);
-            expect(instance.dependencies[apiId]).to.be.okay;
-            expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
-            expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
-            expect(instance.dependencies[apiId].dependencies).to.equal(undefined);
+          done();
+        });
+      });
+      describe('and forking it a (the first one)', function () {
+        beforeEach(function (done) {
+          async.parallel([
+            forkWeb,
+            forkApi
+          ], done);
 
-            cb();
-          });
-        }
+          function forkWeb (cb) {
+            async.series([
+              function copyWeb (cb) {
+                ctx.web2 = ctx.webInstance.copy(cb);
+              },
+              function updateWeb2 (cb) {
+                var data = {
+                  name: ctx.webInstance.attrs.lowerName + '-copy',
+                  env: ['API_HOST=' +
+                    ctx.apiInstance.attrs.lowerName + '-copy.' +
+                    ctx.user.attrs.accounts.github.username + '.' +
+                    process.env.DOMAIN]
+                };
+                ctx.web2.update(data, cb);
+              }
+            ], cb);
+          }
+          function forkApi (cb) {
+            async.series([
+              function copyApi (cb) {
+                ctx.api2 = ctx.apiInstance.copy(cb);
+              },
+              function updateApi2 (cb) {
+                var data = {
+                  name: ctx.apiInstance.attrs.lowerName + '-copy',
+                  env: ['WEB_HOST=' +
+                    ctx.webInstance.attrs.lowerName + '-copy.' +
+                    ctx.user.attrs.accounts.github.username + '.' +
+                    process.env.DOMAIN]
+                };
+                ctx.api2.update(data, cb);
+              }
+            ], cb);
+          }
+        });
+        it('should have a correct graph at the end', function (done) {
+          async.series([
+            checkWeb2Instance,
+            checkApi2Instance
+          ], done);
+
+          function checkWeb2Instance (cb) {
+            var api2Id = ctx.api2.attrs._id.toString();
+            require('./fixtures/mocks/github/user')(ctx.user);
+            ctx.web2.fetch(function (err, instance) {
+              if (err) { return cb(err); }
+              expect(instance.dependencies).to.be.an('object');
+              expect(Object.keys(instance.dependencies).length).to.equal(1);
+              expect(instance.dependencies[api2Id]).to.be.okay;
+              expect(instance.dependencies[api2Id].shortHash).to.equal(ctx.api2.attrs.shortHash);
+              expect(instance.dependencies[api2Id].lowerName).to.equal(ctx.api2.attrs.lowerName);
+              expect(instance.dependencies[api2Id].dependencies).to.equal(undefined);
+              cb();
+            });
+          }
+          function checkApi2Instance (cb) {
+            require('./fixtures/mocks/github/user')(ctx.user);
+            var web2Id = ctx.web2.attrs._id.toString();
+            ctx.api2.fetch(function (err, instance) {
+              if (err) { return cb(err); }
+              expect(instance.dependencies).to.be.an('object');
+              expect(Object.keys(instance.dependencies).length).to.equal(1);
+              expect(instance.dependencies[web2Id]).to.be.okay;
+              expect(instance.dependencies[web2Id].shortHash).to.equal(ctx.web2.attrs.shortHash);
+              expect(instance.dependencies[web2Id].lowerName).to.equal(ctx.web2.attrs.lowerName);
+              expect(instance.dependencies[web2Id].dependencies).to.equal(undefined);
+              cb();
+            });
+          }
+        });
       });
     });
     describe('from 1 -> 1 to 1 -> 2 relations', function() {
@@ -291,7 +362,7 @@ describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
         }
       });
     });
-    describe('from 1 -> 1 to 1 -> 1 -> 1 relations', function() {
+    describe('from 1 -> 1', function() {
       beforeEach(function (done) {
         async.series([
           function addApiToWeb (cb) {
@@ -314,57 +385,127 @@ describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
           }
         ], done);
       });
-      it('should update the deps of an instance', function (done) {
-        async.series([
-          updateApiInstance,
-          checkWebInstance,
-          checkApiInstance
-        ], done);
+      describe('and forking it', function () {
+        beforeEach(function (done) {
+          async.parallel([
+            forkWeb,
+            forkApi
+          ], done);
 
-        function updateApiInstance (cb) {
-          require('./fixtures/mocks/github/user')(ctx.user);
-          var depString = 'API_HOST=' +
-            ctx.mongoInstance.attrs.lowerName + '.' +
-            ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
-          ctx.apiInstance.update({
-            env: ctx.apiInstance.attrs.env.concat([depString])
-          }, cb);
-        }
-        function checkWebInstance (cb) {
-          var apiId = ctx.apiInstance.attrs._id.toString();
-          var mongoId = ctx.mongoInstance.attrs._id.toString();
-          require('./fixtures/mocks/github/user')(ctx.user);
-          ctx.webInstance.fetch(function (err, instance) {
-            if (err) { return cb(err); }
-            expect(instance.dependencies).to.be.an('object');
-            expect(Object.keys(instance.dependencies).length).to.equal(1);
-            expect(instance.dependencies[apiId]).to.be.okay;
-            expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
-            expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
-            expect(instance.dependencies[apiId].dependencies).to.be.an('object');
-            expect(instance.dependencies[apiId].dependencies[mongoId]).to.be.okay;
-            expect(instance.dependencies[apiId].dependencies[mongoId].shortHash)
-              .to.equal(ctx.mongoInstance.attrs.shortHash);
-            expect(instance.dependencies[apiId].dependencies[mongoId].lowerName)
-              .to.equal(ctx.mongoInstance.attrs.lowerName);
-            expect(instance.dependencies[apiId].dependencies[mongoId].dependencies).to.equal(undefined);
-            cb();
-          });
-        }
-        function checkApiInstance (cb) {
-          require('./fixtures/mocks/github/user')(ctx.user);
-          var mongoId = ctx.mongoInstance.attrs._id.toString();
-          ctx.apiInstance.fetch(function (err, instance) {
-            if (err) { return cb(err); }
-            expect(instance.dependencies).to.be.an('object');
-            expect(Object.keys(instance.dependencies).length).to.equal(1);
-            expect(instance.dependencies[mongoId]).to.be.okay;
-            expect(instance.dependencies[mongoId].shortHash).to.equal(ctx.mongoInstance.attrs.shortHash);
-            expect(instance.dependencies[mongoId].lowerName).to.equal(ctx.mongoInstance.attrs.lowerName);
-            expect(instance.dependencies[mongoId].dependencies).to.equal(undefined);
-            cb();
-          });
-        }
+          function forkWeb (cb) {
+            async.series([
+              function copyWeb (cb) {
+                ctx.web2 = ctx.webInstance.copy(cb);
+              },
+              function updateWeb2 (cb) {
+                var data = {
+                  name: ctx.webInstance.attrs.lowerName + '-copy',
+                  env: ['API_HOST=' +
+                    ctx.apiInstance.attrs.lowerName + '-copy.' +
+                    ctx.user.attrs.accounts.github.username + '.' +
+                    process.env.DOMAIN]
+                };
+                ctx.web2.update(data, cb);
+              }
+            ], cb);
+          }
+          function forkApi (cb) {
+            async.series([
+              function copyWeb (cb) {
+                ctx.api2 = ctx.apiInstance.copy(cb);
+              },
+              function updateWeb2 (cb) {
+                var data = {
+                  name: ctx.apiInstance.attrs.lowerName + '-copy'
+                };
+                ctx.api2.update(data, cb);
+              }
+            ], cb);
+          }
+        });
+        it('should have a correct graph at the end', function (done) {
+          async.series([
+            checkWeb2Instance,
+            checkApiInstance
+          ], done);
+
+          function checkWeb2Instance (cb) {
+            var api2Id = ctx.api2.attrs._id.toString();
+            require('./fixtures/mocks/github/user')(ctx.user);
+            ctx.web2.fetch(function (err, instance) {
+              if (err) { return cb(err); }
+              expect(instance.dependencies).to.be.an('object');
+              expect(Object.keys(instance.dependencies).length).to.equal(1);
+              expect(instance.dependencies[api2Id]).to.be.okay;
+              expect(instance.dependencies[api2Id].shortHash).to.equal(ctx.api2.attrs.shortHash);
+              expect(instance.dependencies[api2Id].lowerName).to.equal(ctx.api2.attrs.lowerName);
+              expect(instance.dependencies[api2Id].dependencies).to.be.equal(undefined);
+              cb();
+            });
+          }
+          function checkApiInstance (cb) {
+            require('./fixtures/mocks/github/user')(ctx.user);
+            ctx.api2.fetch(function (err, instance) {
+              if (err) { return cb(err); }
+              expect(instance.dependencies).to.be.eql({});
+              cb();
+            });
+          }
+        });
+      });
+      describe('to 1 -> 1 -> 1 relations', function () {
+        it('should update the deps of an instance', function (done) {
+          async.series([
+            updateApiInstance,
+            checkWebInstance,
+            checkApiInstance
+          ], done);
+
+          function updateApiInstance (cb) {
+            require('./fixtures/mocks/github/user')(ctx.user);
+            var depString = 'API_HOST=' +
+              ctx.mongoInstance.attrs.lowerName + '.' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+            ctx.apiInstance.update({
+              env: ctx.apiInstance.attrs.env.concat([depString])
+            }, cb);
+          }
+          function checkWebInstance (cb) {
+            var apiId = ctx.apiInstance.attrs._id.toString();
+            var mongoId = ctx.mongoInstance.attrs._id.toString();
+            require('./fixtures/mocks/github/user')(ctx.user);
+            ctx.webInstance.fetch(function (err, instance) {
+              if (err) { return cb(err); }
+              expect(instance.dependencies).to.be.an('object');
+              expect(Object.keys(instance.dependencies).length).to.equal(1);
+              expect(instance.dependencies[apiId]).to.be.okay;
+              expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
+              expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
+              expect(instance.dependencies[apiId].dependencies).to.be.an('object');
+              expect(instance.dependencies[apiId].dependencies[mongoId]).to.be.okay;
+              expect(instance.dependencies[apiId].dependencies[mongoId].shortHash)
+                .to.equal(ctx.mongoInstance.attrs.shortHash);
+              expect(instance.dependencies[apiId].dependencies[mongoId].lowerName)
+                .to.equal(ctx.mongoInstance.attrs.lowerName);
+              expect(instance.dependencies[apiId].dependencies[mongoId].dependencies).to.equal(undefined);
+              cb();
+            });
+          }
+          function checkApiInstance (cb) {
+            require('./fixtures/mocks/github/user')(ctx.user);
+            var mongoId = ctx.mongoInstance.attrs._id.toString();
+            ctx.apiInstance.fetch(function (err, instance) {
+              if (err) { return cb(err); }
+              expect(instance.dependencies).to.be.an('object');
+              expect(Object.keys(instance.dependencies).length).to.equal(1);
+              expect(instance.dependencies[mongoId]).to.be.okay;
+              expect(instance.dependencies[mongoId].shortHash).to.equal(ctx.mongoInstance.attrs.shortHash);
+              expect(instance.dependencies[mongoId].lowerName).to.equal(ctx.mongoInstance.attrs.lowerName);
+              expect(instance.dependencies[mongoId].dependencies).to.equal(undefined);
+              cb();
+            });
+          }
+        });
       });
     });
     describe('with 1 -> 1 -> 1 and renaming the middle dependency', function () {
