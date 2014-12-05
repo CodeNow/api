@@ -4,14 +4,10 @@ var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
 var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
 
 require('loadenv')();
 var activeApi = require('models/redis/active-api');
 var redis = require('models/redis/index');
-var RedisKey = require('redis-types')({
-  redisClient: redis
-}).Key;
 var async = require('async');
 var uuid = require('uuid');
 
@@ -40,11 +36,11 @@ describe('ActiveApi Lock', function () {
 
   describe('locking with the valid lock', function () {
     it('should happen correctly', function (done) {
-      activeApi.setMe(function (err, result, message) {
+      activeApi.setAsMe(function (err, result, message) {
         if (err) { return done(err); }
         expect(result).to.equal(true);
         expect(message).to.be.okay;
-        redis.get(process.env.REDIS_NAMESPACE + ':active-api-lock', function (err, response) {
+        redis.get(process.env.REDIS_NAMESPACE + ':active-api', function (err, response) {
           if (err) { return done(err); }
           expect(response).to.equal(activeApi.uuid);
           done();
@@ -66,7 +62,7 @@ describe('ActiveApi Lock', function () {
       ], done);
     });
     function setLock (done) {
-      activeApi.setMe(function (err, result, message) {
+      activeApi.setAsMe(function (err, result, message) {
         if (err) { return done(err); }
         expect(result).to.equal(true);
         expect(message).to.be.okay;
@@ -77,7 +73,7 @@ describe('ActiveApi Lock', function () {
 
   describe('checking if we have the lock', function () {
     beforeEach(function (done) {
-      activeApi.setMe(done);
+      activeApi.setAsMe(done);
     });
     describe('when we do have the lock', function () {
       it('should say that we have the lock', function (done) {
