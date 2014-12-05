@@ -757,7 +757,7 @@ describe('BDD - Instance Dependencies', function () {
           var body = { name: 'api-instance-no-longer' };
           ctx.apiInstance.update(body, expects.updateSuccess(body, done));
         });
-        describe('creating the new instance first', function (done) {
+        describe('creating the new instance first', function () {
           beforeEach(function (done) {
             async.series([
               createRedis,
@@ -766,7 +766,7 @@ describe('BDD - Instance Dependencies', function () {
           });
           it('should have the correct graph', checkChain);
         });
-        describe('updating the config of another instance first', function (done) {
+        describe('updating the config of another instance first', function () {
           beforeEach(function (done) {
             async.series([
               updateWeb,
