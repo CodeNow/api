@@ -13,7 +13,7 @@ var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var async = require('async');
 
-describe('BDD - Instance Dependencies', { timeout: 1000 }, function () {
+describe('BDD - Instance Dependencies', function () {
   var ctx = {};
   var restartCayley = null;
 
