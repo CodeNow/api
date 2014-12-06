@@ -5,6 +5,7 @@ var error = require('error');
 var ApiServer = require('server');
 var apiServer = new ApiServer();
 var keyGen = require('key-generator');
+var dnsJobQueue = require('models/redis/dns-job-queue');
 
 if (process.env.NEWRELIC_KEY) {
   require('newrelic');
@@ -19,6 +20,13 @@ function startServer () {
       error.log(err);
       process.exit(1);
     }
+    dnsJobQueue.start(function (err) {
+      if (err) {
+        debug('fatal error: dns job queue failed to start', err);
+        error.log(err);
+        process.exit(1);
+      }
+    });
     debug('api server stated', err);
   });
 }
