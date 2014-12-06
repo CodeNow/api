@@ -40,7 +40,7 @@ describe('ActiveApi Lock', function () {
         if (err) { return done(err); }
         expect(result).to.equal(true);
         expect(message).to.be.okay;
-        redis.get(process.env.REDIS_NAMESPACE + ':active-api', function (err, response) {
+        redis.get(process.env.REDIS_NAMESPACE + 'active-api', function (err, response) {
           if (err) { return done(err); }
           expect(response).to.equal(activeApi.uuid);
           done();
