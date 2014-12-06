@@ -6,10 +6,13 @@ var noop = require('101/noop');
 var exists = require('101/exists');
 var hasKeypaths = require('101/has-keypaths');
 var keypather = require('keypather')();
+var debug = require('run-debug')(__filename);
+var formatArgs = require('format-args');
+
 var requireKeypath = function (obj, keypath) {
   var val = keypather.get(obj, keypath);
   if (!exists(val)) {
-    throw new Error('"params.' + keypath + '" is required');
+    throw new Error('"...' + keypath + '" is required');
   }
   return val;
 };
@@ -37,33 +40,6 @@ mock.start = function (cb) {
   return this;
 };
 
-  function changeResourceRecordSets (params, cb) {
-    if (!params) {
-      throw new Error('params is required');
-    }
-    if (!isObject(params)) {
-      throw new Error('params must be an object');
-    }
-    requireKeypath(params, 'HostedZoneId');
-    var action = requireKeypath(params, 'ChangeBatch.Changes[0].Action');
-    var resourceRecordSet = requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet');
-    requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet.Name');
-    requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet.Type');
-    requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet.ResourceRecords[0].Value');
-    requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet.TTL');
-
-    if (action.toUpperCase() === 'UPSERT') {
-      mockUpsert(resourceRecordSet, cb);
-    }
-    else if (action.toUpperCase() === 'DELETE') {
-      mockDelete(resourceRecordSet, cb);
-    }
-    else {
-      throw new Error('Unexpected "ChangeBatch.Changes[0].Action" value "' +
-        action + '" (mock expects UPSERT|DELETE)');
-    }
-  }
-
 /**
  * stop route53 mock
  * @param  {Function} cb callback
@@ -75,11 +51,13 @@ mock.stop = function (cb) {
   return this;
 };
 
-// mock dns records
-var records = [];
+
 /**
  * reset mock records for route53
  */
+// mock dns records
+var records = [];
+
 mock.reset = function (cb) {
   cb = cb || noop;
   records = [];
@@ -94,7 +72,6 @@ mock.findRecordIp = function (name) {
 /**
  * route53 mock behavior
  */
-
 // all the types of responses route53 can return
 var resp = {
   nameNotPermittedErr: function (name) {
@@ -141,12 +118,45 @@ var resp = {
   }
 };
 
+function changeResourceRecordSets (params, cb) {
+  debug('changeResourceRecordSets', formatArgs(arguments));
+  if (!params) {
+    throw new Error('params is required');
+  }
+  if (!isObject(params)) {
+    throw new Error('params must be an object');
+  }
+  // validate params
+  requireKeypath(params, 'HostedZoneId');
+  requireKeypath(params, 'ChangeBatch.Changes');
+  console.log(params.ChangeBatch.Changes);
+  params.ChangeBatch.Changes.forEach(function (change) {
+    var action = requireKeypath(change, 'Action');
+    var resourceRecordSet = requireKeypath(change, 'ResourceRecordSet');
+    requireKeypath(change, 'ResourceRecordSet.Type');
+    requireKeypath(change, 'ResourceRecordSet.ResourceRecords[0].Value');
+    requireKeypath(change, 'ResourceRecordSet.TTL');
+
+    if (action.toUpperCase() === 'UPSERT') {
+      mockUpsert(resourceRecordSet, cb);
+    }
+    else if (action.toUpperCase() === 'DELETE') {
+      mockDelete(resourceRecordSet, cb);
+    }
+    else {
+      throw new Error('Unexpected "ChangeBatch.Changes[0].Action" value "' +
+        action + '" (mock expects UPSERT|DELETE)');
+    }
+  });
+}
+
 /**
  * mocks route53 upsert action
  * @param  {Object}   resourceRecordSet params.ChangeBatch.Changes[0].ResourceRecordSet
  * @param  {Function} cb                callback
  */
 function mockUpsert (resourceRecordSet, cb) {
+  debug('mockUpsert', formatArgs(arguments));
   var domainRe = new RegExp(escapeRegExp(process.env.DOMAIN)+'$');
   var name = resourceRecordSet.Name;
   if (!domainRe.test(name)) {
@@ -168,6 +178,7 @@ function mockUpsert (resourceRecordSet, cb) {
  * @param  {Function} cb                callback
  */
 function mockDelete (resourceRecordSet, cb) {
+  debug('mockDelete', formatArgs(arguments));
   var name = resourceRecordSet.Name;
   var type = resourceRecordSet.Type;
   var index = findIndex(records, hasKeypaths({
