@@ -58,6 +58,22 @@ describe('201 POST /instances', {timeout:500}, function () {
       cb(createErr);
     }
   };
+  var forceImageNotFoundOnCreateErrOnce = function(oldFn) {
+    return function () {
+      var cb = last(arguments);
+      console.log('forceImageNotFoundOnCreateErr');
+      var createErr = new Error("image not found");
+      extend(createErr, {
+        statusCode : 404,
+        reason     : "no such container",
+        json       : "no such container\n"
+      });
+      if (isFunction(cb)) {
+        cb(createErr);
+      }
+      Dockerode.prototype.createContainer = oldFn;
+    };
+  };
   function initExpected (done) {
     ctx.expected = {
       _id: exists,
@@ -224,6 +240,23 @@ describe('201 POST /instances', {timeout:500}, function () {
 
         createInstanceTests(ctx);
       });
+      describe('Container create error (Image not on dock)', function() {
+        beforeEach(function (done) {
+          extend(ctx.expected, {
+            containers: exists,
+            'containers[0]': exists,
+            'containers[0].ports': exists,
+            'containers[0].dockerHost': exists,
+            'containers[0].dockerContainer': exists,
+            'containers[0].inspect.State.Running': true
+          });
+          Dockerode.prototype.createContainer = forceImageNotFoundOnCreateErrOnce(Dockerode.prototype.createContainer);
+          done();
+        });
+
+        createInstanceTests(ctx);
+      });
+
     });
   });
   describe('for Organization by member', function () {
