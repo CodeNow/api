@@ -33,7 +33,7 @@ describe('GET /status', function () {
     });
   });
   beforeEach(function (done) {
-    redis.del(process.env.RUNNABLE_STATUS_KEY, done);
+    redis.del(process.env.REDIS_NAMESPACE + 'status-message', done);
   });
 
   describe('good', function () {
@@ -50,7 +50,7 @@ describe('GET /status', function () {
   describe('bad', function () {
     describe('with one key', function () {
       beforeEach(function (done) {
-        redis.hset(process.env.RUNNABLE_STATUS_KEY, 'message', 'hello test', done);
+        redis.hset(process.env.REDIS_NAMESPACE + 'status-message', 'message', 'hello test', done);
       });
       it('should return error message that is in redis', function (done) {
         request.get(process.env.FULL_API_DOMAIN + '/status', function (err, res) {
@@ -67,9 +67,9 @@ describe('GET /status', function () {
     describe('with multiple keys including status code', function () {
       beforeEach(function (done) {
         var count = createCount(3, done);
-        redis.hset(process.env.RUNNABLE_STATUS_KEY, 'message', 'hello test', count.next);
-        redis.hset(process.env.RUNNABLE_STATUS_KEY, 'statusCode', '202', count.next);
-        redis.hset(process.env.RUNNABLE_STATUS_KEY, 'helpText', 'yell at TJ', count.next);
+        redis.hset(process.env.REDIS_NAMESPACE + 'status-message', 'message', 'hello test', count.next);
+        redis.hset(process.env.REDIS_NAMESPACE + 'status-message', 'statusCode', '202', count.next);
+        redis.hset(process.env.REDIS_NAMESPACE + 'status-message', 'helpText', 'yell at TJ', count.next);
       });
       it('should return all the information', function (done) {
         request.get(process.env.FULL_API_DOMAIN + '/status', function (err, res) {
