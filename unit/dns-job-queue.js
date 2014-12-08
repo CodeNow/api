@@ -17,6 +17,8 @@ var redis = require('models/redis');
 describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, function () {
   var ctx = {};
 
+  var REDIS_KEY = process.env.REDIS_NAMESPACE+'dns-job-queue';
+
   function tick (ms) {
     ctx.clock.tick(ms || process.env.DNS_JOB_QUEUE_INTERVAL);
   }
@@ -38,7 +40,7 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
       ctx.clock.restore();
       activeApi.del(count.inc().next);
       dnsJobQueue.stop(count.inc().next);
-      redis.del(process.env.REDIS_NAMESPACE+'dns-job-queue', count.inc().next);
+//      redis.del(REDIS_KEY, count.inc().next);
     });
     afterEach(require('fixtures/route53').stop);
 
@@ -74,7 +76,7 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         var found = false;
         async.doWhilst(
           function (cb) {
-            redis.lrange(process.env.REDIS_NAMESPACE+'dns-job-queue', 0, 1, function (err, list) {
+            redis.lrange(REDIS_KEY, 0, 1, function (err, list) {
               if (!list.length) return cb();
               var foundJob = list[list.length-1];
               found = (JSON.parse(foundJob).id === job.id);
@@ -94,7 +96,13 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         var job = Dns.createJob(
           'UPSERT', 'http://hey.'+process.env.DOMAIN, '192.168.1.1');
         dnsJobQueue.execJob(job, function () {
-          done();
+          // assert job queue is empty
+          redis.lrange(REDIS_KEY, 0, 100, function (err, list) {
+            console.log(list);
+            if (err) throw err;
+            expect(list.length).to.equal(0);
+            done();
+          });
         });
       });
 
