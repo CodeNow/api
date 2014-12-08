@@ -37,4 +37,4 @@ process.on('uncaughtException', function(err) {
 startServer();
 
 // we are exposing here apiServer as a singleton
-module.exports = apiServer;
+global.apiServer = apiServer;
