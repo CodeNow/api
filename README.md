@@ -17,7 +17,23 @@ Behavioral tests (BDD) - /test
 Unit Tests - /unit
 Lab - Testing Framework - [spumko/lab](https://github.com/spumko/lab)
 
+Running Tests
+=============
 
+Run all tests:
+```
+npm test
+```
+
+Granular:
+
+Lint: `npm run lint`
+All BDD: `npm run bdd`
+Pass additional arguments to BDD: `npm run bdd -- -d`
+BDD one file: `npm run bdd -- test/path/to/file.js`
+BDD Watch: `npm run bdd-watch`
+BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
+All Unit: `npm run unit`
 
 Opinions
 ========
