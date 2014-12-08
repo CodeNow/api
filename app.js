@@ -69,7 +69,9 @@ Api.prototype.stop = function () {
 var api = new Api();
 api.start();
 
-module.exports = api;
+module.exports = function getCurrentApi () {
+  return api;
+};
 
 
 process.on('uncaughtException', function(err) {
