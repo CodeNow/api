@@ -1,5 +1,26 @@
 #!/bin/bash
 
+extra_args=""
+
+# catch any extra arguments
+# check if files were passed, if that's the case, we just use those
+args=("$@")
+files=()
+for i in $*
+do
+  if [[ -e $i ]]
+  then
+    files+=" $i"
+  else
+    extra_args+=" $i"
+  fi
+done
+if [[ ${#files[@]} -ne 0 ]]
+then
+  npm run _bdd -- ${extra_args[@]} ${files[@]}
+  exit $?
+fi
+
 for file in $(find ./test -path ./test/fixtures -prune -o -name "*.js" -print | sort)
 do
   if [[ "$file" !=   "./test/fixtures" ]]
@@ -20,4 +41,4 @@ do
   fi
 done
 
-npm run _bdd -- ${indexes[@]} ${files[@]}
+npm run _bdd -- ${extra_args[@]} ${indexes[@]} ${files[@]}
