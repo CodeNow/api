@@ -40,7 +40,8 @@ Api.prototype.start = function () {
       error.log(err);
       process.exit(1);
     }
-    debug('API started', err);
+    debug('API started');
+    console.log('API started');
   });
 };
 Api.prototype.stop = function () {
@@ -59,6 +60,7 @@ Api.prototype.stop = function () {
       }, 5000);
     }
     // server stopped successfully (and everything else should be done)
+    console.log('API stopped');
     process.exit(0);
   });
 };
