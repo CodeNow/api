@@ -138,6 +138,7 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
           describe('with env', function() {
             beforeEach(function (done) {
               require('../../fixtures/mocks/github/user')(ctx.user);
+              require('../../fixtures/mocks/github/user')(ctx.user);
               ctx.instance.update({ env: ['ONE=1'] }, expects.success(200, done));
             });
             it('should have the env that was set on the instance', function (done) {
@@ -342,7 +343,6 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
         });
         it('should copy the context version app codes during the patch ', function (done) {
           var acv = ctx.otherCv.attrs.appCodeVersions[0];
-          delete acv.id;
           var expected = {
             // Since the containers are not removed until the otherBuild has finished, we should
             // still see them running
@@ -410,6 +410,7 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
                 expected[key] = json[key];
               }
             });
+            require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);

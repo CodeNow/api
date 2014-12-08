@@ -152,7 +152,7 @@ describe('PUT /instances/:id/actions/start', function () {
 
         createInstanceAndRunTests(ctx);
       });
-      describe('Immediately exiting container (first time only)', function() {
+      describe('Immediately exiting container (first time only)', { timeout: 300 }, function() {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
