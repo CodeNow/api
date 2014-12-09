@@ -115,5 +115,30 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         });
       });
     });
+
+    describe('stop', function () {
+      it('should cease polling for jobs when lock lost', function (done) {
+        //ctx.clock.restore();
+
+        sinon.spy(dnsJobQueue, 'checkForJobs');
+        sinon.spy(dnsJobQueue, 'llen');
+
+        dnsJobQueue.unlock(function () {
+          setTimeout(function () {
+
+            expect(dnsJobQueue.checkForJobs.called).to.equal(true);
+            expect(dnsJobQueue.llen.called).to.equal(false);
+            dnsJobQueue.checkForJobs.restore();
+            dnsJobQueue.llen.restore();
+            done();
+
+          }, 300);
+          tick();
+
+        });
+        tick();
+
+      });
+    });
   });
 });
