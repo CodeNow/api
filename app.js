@@ -35,7 +35,7 @@ Api.prototype.start = function (cb) {
   // start github ssh key generator
   keyGen.start();
   // start listening to events
-  events.subscribeAll();
+  events.listen();
   // express server start
   apiServer.start(function(err) {
     if (cb) { return cb(err); } // if cb exists callback with args and skip below
@@ -52,21 +52,28 @@ Api.prototype.stop = function (cb) {
   debug('stop');
   // stop github ssh key generator
   keyGen.stop();
-  // start listening to events
-  events.unsubscribeAll();
   // express server
   apiServer.stop(function(err) {
-    if (cb) { return cb(err); } // if cb exists callback with args and skip below
-    if (err) {
-      debug('fatal error: API failed to stop', err);
-      error.log(err);
-      setTimeout(function () {
-        process.exit(1);
-      }, 5000);
+    if (cb && err) {
+      return cb(err); // if cb exists callback with args and skip below
     }
-    // server stopped successfully (and everything else should be done)
-    console.log('API stopped');
-    process.exit(0);
+    events.close(function (err) {
+      if (cb) {
+        return cb(err); // if cb exists callback with args and skip below
+      }
+
+      if (err) {
+        debug('fatal error: API failed to stop', err);
+        error.log(err);
+        setTimeout(function () {
+          process.exit(1);
+        }, 5000);
+      }
+      // server stopped successfully (and everything else should be done)
+      console.log('API stopped');
+      process.exit(0);
+    });
+
   });
 };
 
