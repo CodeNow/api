@@ -6,6 +6,7 @@ var tailBuildStream = require('./tail-build-stream');
 var generateKey = require('./key-factory');
 var EventEmitter = require('events').EventEmitter;
 var debug = require('debug')('runnable-api:multi-factory');
+var formatArgs = require('format-args');
 
 module.exports = {
   createUser: function (cb) {
@@ -343,13 +344,3 @@ module.exports = {
       .newContainer(containerId);
   }
 };
-
-function formatArgs (args) {
-  var isFunction = require('101/is-function');
-  return Array.prototype.slice.call(args)
-    .map(function (arg) {
-      return isFunction(arg) ?
-        '[ Function '+(arg.name || 'anonymous')+' ]' :
-        (arg && arg._id || arg);
-    });
-}
