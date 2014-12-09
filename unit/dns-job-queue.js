@@ -128,6 +128,20 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
           done();
         });
       });
+
+      it('should fire all callbacks when route53 API responds', function (done) {
+        ctx.clock.restore();
+        var job = Dns.createJob(
+          'UPSERT', 'http://hey.'+process.env.DOMAIN, '192.168.1.1');
+        var job2 = Dns.createJob(
+          'UPSERT', 'http://hey2.'+process.env.DOMAIN, '192.168.1.2');
+        var count = createCount(function () {
+          // reaching this point indicates all job callbacks fired
+          done();
+        });
+        dnsJobQueue.execJob(job, count.inc().next);
+        dnsJobQueue.execJob(job2, count.inc().next);
+      });
     });
 
     describe('stop', function () {
