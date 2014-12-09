@@ -40,7 +40,7 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
       ctx.clock.restore();
       activeApi.del(count.inc().next);
       dnsJobQueue.stop(count.inc().next);
-//      redis.del(REDIS_KEY, count.inc().next);
+      redis.del(REDIS_KEY, count.inc().next);
     });
     afterEach(require('fixtures/route53').stop);
 
@@ -95,7 +95,9 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         ctx.clock.restore();
         var job = Dns.createJob(
           'UPSERT', 'http://hey.'+process.env.DOMAIN, '192.168.1.1');
-        dnsJobQueue.execJob(job, function () {
+        var job2 = Dns.createJob(
+          'UPSERT', 'http://hey.'+process.env.DOMAIN, '192.168.1.1');
+        var count = createCount(function () {
           // assert job queue is empty
           redis.lrange(REDIS_KEY, 0, 100, function (err, list) {
             console.log(list);
@@ -104,12 +106,20 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
             done();
           });
         });
+        dnsJobQueue.execJob(job, count.inc().next);
+        dnsJobQueue.execJob(job2, count.inc().next);
       });
 
-      it('should fire relevant callbacks when API '+
-         'responds to batch request', function (done) {
-
-        done();
+      it('should unsubscribe & cleanup after API returns', function (done) {
+        ctx.clock.restore();
+        var job = Dns.createJob(
+          'UPSERT', 'http://hey.'+process.env.DOMAIN, '192.168.1.1');
+        sinon.spy(dnsJobQueue, 'unsub');
+        dnsJobQueue.execJob(job, function () {
+          expect(dnsJobQueue.unsub.calledOnce).to.equal(true);
+          expect(dnsJobQueue.unsub.args[0][0]).to.equal(job.id);
+          done();
+        });
       });
     });
   });
