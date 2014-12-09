@@ -85,6 +85,20 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         );
       });
 
+      it('should not make an API request if jobs queue is empty', function (done) {
+        ctx.clock.restore();
+        // verify isMe and llen is 0
+        sinon.spy(dnsJobQueue, 'getJobs');
+        var cache_llen = dnsJobQueue.llen;
+        dnsJobQueue.llen = function () {
+          dnsJobQueue.llen = cache_llen;
+          expect(dnsJobQueue.getJobs.called).to.equal(false);
+          dnsJobQueue.getJobs.restore();
+          done();
+        };
+        dnsJobQueue.checkForJobs();
+      });
+
       it('should remove jobs when querying queue', function (done) {
         ctx.clock.restore();
         var job = Dns.createJob(
