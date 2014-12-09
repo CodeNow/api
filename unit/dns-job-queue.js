@@ -59,7 +59,7 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
           'UPSERT', 'http://hey.'+process.env.DOMAIN, '192.168.1.1');
         sinon.spy(dnsJobQueue, 'on');
         sinon.spy(dnsJobQueue, 'sub');
-        dnsJobQueue.execJob(job, function (err) {
+        dnsJobQueue.execJob(job, function () {
           // callback to fire when API returns
         });
         tick();
@@ -71,14 +71,14 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         async.doWhilst(
           function (cb) {
             redis.lrange(REDIS_KEY, 0, 1, function (err, list) {
-              if (!list.length) return cb();
+              if (!list.length) { return cb(); }
               var foundJob = list[list.length-1];
               found = (JSON.parse(foundJob).id === job.id);
               cb();
             });
           },
           function () { return !found; },
-          function (err) {
+          function () {
             done();
             tick();
           }
@@ -94,7 +94,7 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         var count = createCount(function () {
           // assert job queue is empty
           redis.lrange(REDIS_KEY, 0, 100, function (err, list) {
-            if (err) throw err;
+            if (err) { throw err; }
             expect(list.length).to.equal(0);
             done();
           });
