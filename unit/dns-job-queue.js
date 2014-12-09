@@ -52,7 +52,7 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
       done();
     });
 
-    describe('createJob', function() {
+    describe('execJob', function() {
       it('should create an upsert job '+
          'and register API completion event callbacks', function(done) {
         var job = Dns.createJob(
