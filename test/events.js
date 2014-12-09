@@ -124,33 +124,7 @@
 //       });
 //     });
 
-//     it('should fail if event data has no id', function (done) {
-//       events.handleContainerDie({host: 'http://localhost:4243'}, function (err) {
-//         expect(err.message).to.equal('Invalid data: id is missing');
-//         done();
-//       });
-//     });
 
-//     it('should fail if event data has no time', function (done) {
-//       events.handleContainerDie({id: 'duasiduia213'}, function (err) {
-//         expect(err.message).to.equal('Invalid data: time is missing');
-//         done();
-//       });
-//     });
-
-//     it('should fail if event data has no host', function (done) {
-//       events.handleContainerDie({id: 'duasiduia213', time: new Date().getTime() }, function (err) {
-//         expect(err.message).to.equal('Invalid data: host is missing');
-//         done();
-//       });
-//     });
-
-//     it('should fail if time does not exist', function (done) {
-//       events.handleContainerDie({id: 'duasiduia213', host: 'http://localhost:4243'}, function (err) {
-//         expect(err.message).to.equal('Invalid data: time is missing');
-//         done();
-//       });
-//     });
 
 //   });
 

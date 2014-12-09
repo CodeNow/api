@@ -7,6 +7,7 @@ var before = Lab.before;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var pubsub = require('models/redis/pubsub');
+var error = require('error');
 var dockerEvents = require('models/events/docker');
 var expect = Lab.expect;
 var redisCleaner = require('../test/fixtures/redis-cleaner');
@@ -20,6 +21,59 @@ require('loadenv')();
 
 describe('Docker Events', function () {
   var ctx = {};
+
+
+  describe('handleDie', function () {
+    before(redisCleaner.clean('*'));
+    after(redisCleaner.clean('*'));
+    afterEach(function (done) {
+      dockerEvents.close(done);
+    });
+
+    beforeEach(function (done) {
+      ctx.origErrorLog = error.log;
+      done();
+    });
+
+    afterEach(function (done) {
+      error.log = ctx.origErrorLog;
+      done();
+    });
+
+    it('should fail if event data has no uuid', function (done) {
+      error.log = function (err) {
+        expect(err.output.payload.message).to.equal('Invalid data: uuid is missing');
+        done();
+      };
+      dockerEvents.handleDie({host: 'http://localhost:4243'});
+    });
+
+    it('should fail if event data has no id', function (done) {
+      error.log = function (err) {
+        expect(err.output.payload.message).to.equal('Invalid data: container id is missing');
+        done();
+      };
+      dockerEvents.handleDie({uuid: 'some-uuid'});
+    });
+
+    it('should fail if event data has no time', function (done) {
+      error.log = function (err) {
+        expect(err.output.payload.message).to.equal('Invalid data: time is missing');
+        done();
+      };
+      dockerEvents.handleDie({uuid: 'some-uuid', id: 'some-id'});
+    });
+
+    it('should fail if event data has no host', function (done) {
+      error.log = function (err) {
+        expect(err.output.payload.message).to.equal('Invalid data: host is missing');
+        done();
+      };
+      dockerEvents.handleDie({uuid: 'some-uuid', id: 'some-id', time: new Date().getTime() });
+    });
+
+  });
+
 
   describe('listen', function () {
     before(redisCleaner.clean('*'));

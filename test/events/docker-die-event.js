@@ -27,6 +27,7 @@ describe('EVENT runnable:docker:events:die', function () {
   after(require('../fixtures/mocks/api-client').clean);
 
   describe('container dies naturally', function() {
+
     beforeEach(function (done) {
       multi.createContainer(function (err, container, instance) {
         if (err) { return done(err); }
