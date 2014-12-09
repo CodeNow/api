@@ -14,7 +14,7 @@ var dockerEvents = require('models/events/docker');
 var Docker = require('models/apis/docker');
 var createCount = require('callback-count');
 var UserStoppedContainer = require('models/redis/user-stopped-container');
-var Instance = require('models/mongo/instance');
+
 
 describe('EVENT runnable:docker:events:die', function () {
   var ctx = {};
@@ -111,7 +111,7 @@ describe('EVENT runnable:docker:events:die', function () {
 
       it('should acquire event lock', function (done) {
         var count = createCount(3, done);
-        dockerEvents.getEventLock = function (eventId, cb) {
+        dockerEvents.getEventLock = function (eventId) {
           expect(eventId).to.be.ok();
           count.next();
         };
