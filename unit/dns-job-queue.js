@@ -85,6 +85,20 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         );
       });
 
+      it('should not make an API request if jobs queue is empty', function (done) {
+        ctx.clock.restore();
+        // verify isMe and llen is 0
+        sinon.spy(dnsJobQueue, 'getJobs');
+        var cache_llen = dnsJobQueue.llen;
+        dnsJobQueue.llen = function () {
+          dnsJobQueue.llen = cache_llen;
+          expect(dnsJobQueue.getJobs.called).to.equal(false);
+          dnsJobQueue.getJobs.restore();
+          done();
+        };
+        dnsJobQueue.checkForJobs();
+      });
+
       it('should remove jobs when querying queue', function (done) {
         ctx.clock.restore();
         var job = Dns.createJob(
@@ -113,6 +127,20 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
           expect(dnsJobQueue.unsub.args[0][0]).to.equal(job.id);
           done();
         });
+      });
+
+      it('should fire all callbacks when route53 API responds', function (done) {
+        ctx.clock.restore();
+        var job = Dns.createJob(
+          'UPSERT', 'http://hey.'+process.env.DOMAIN, '192.168.1.1');
+        var job2 = Dns.createJob(
+          'UPSERT', 'http://hey2.'+process.env.DOMAIN, '192.168.1.2');
+        var count = createCount(function () {
+          // reaching this point indicates all job callbacks fired
+          done();
+        });
+        dnsJobQueue.execJob(job, count.inc().next);
+        dnsJobQueue.execJob(job2, count.inc().next);
       });
     });
 
