@@ -9,7 +9,6 @@ var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
 var request = require('request');
 
-var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var generateKey = require('./fixtures/key-factory');
 
@@ -18,8 +17,15 @@ var generateKey = require('./fixtures/key-factory');
 describe('/actions/kill', function () {
   var ctx = {};
 
-  before(api.start.bind(ctx));
-  after(api.stop.bind(ctx));
+  before(function (done) {
+    ctx.api = require('../app')();
+    ctx.api.start(done);
+  });
+  after(function (done) {
+    ctx.api.stop(function () {
+      done(); // ignore errors.
+    });
+  });
   before(dock.start.bind(ctx));
   after(dock.stop.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);

@@ -6,6 +6,7 @@ var apiServer = new ApiServer();
 var keyGen = require('key-generator');
 var events = require('models/events');
 var debug = require('debug')('runnable-api');
+var uuid = require('uuid');
 
 if (process.env.NEWRELIC_KEY) {
   require('newrelic');
@@ -25,16 +26,19 @@ mongoose.connect(process.env.MONGO, mongooseOptions, function(err) {
   }
 });
 
-function Api () {}
+function Api () {
+  this.uuid = uuid();
+}
 
-Api.prototype.start = function () {
+Api.prototype.start = function (cb) {
   debug('start');
   // start github ssh key generator
   keyGen.start();
   // start listening to events
-  events.listen();
+  events.subscribeAll();
   // express server start
   apiServer.start(function(err) {
+    if (cb) { return cb(err); } // if cb exists callback with args and skip below
     if (err) {
       debug('fatal error: API failed to start', err);
       error.log(err);
@@ -44,14 +48,15 @@ Api.prototype.start = function () {
     console.log('API started');
   });
 };
-Api.prototype.stop = function () {
+Api.prototype.stop = function (cb) {
   debug('stop');
   // stop github ssh key generator
   keyGen.stop();
   // start listening to events
-  events.clean();
+  events.unsubscribeAll();
   // express server
   apiServer.stop(function(err) {
+    if (cb) { return cb(err); } // if cb exists callback with args and skip below
     if (err) {
       debug('fatal error: API failed to stop', err);
       error.log(err);
@@ -65,13 +70,19 @@ Api.prototype.stop = function () {
   });
 };
 
-// we are exposing here apiServer as a singleton
-var api = new Api();
-api.start();
+// we are exposing here apiServer as a singletond
 
-module.exports = function getCurrentApi () {
-  return api;
-};
+var api = new Api();
+
+if (!module.parent) { // npm start
+  api.start();
+}
+else { // being required as module
+  module.exports = function getCurrentApi () {
+    return api;
+  };
+}
+
 
 
 process.on('uncaughtException', function(err) {
