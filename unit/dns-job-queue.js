@@ -53,12 +53,6 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
     });
 
     describe('createJob', function() {
-      afterEach(function (done) {
-        // necessary to force Lab to continue
-        //tick();
-        done();
-      });
-
       it('should create an upsert job '+
          'and register API completion event callbacks', function(done) {
         var job = Dns.createJob(
@@ -91,7 +85,7 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         );
       });
 
-      it('should remove jobs when interval ticks', function (done) {
+      it('should remove jobs when querying queue', function (done) {
         ctx.clock.restore();
         var job = Dns.createJob(
           'UPSERT', 'http://hey.'+process.env.DOMAIN, '192.168.1.1');
@@ -100,7 +94,6 @@ describe('DnsJobQueue', { timeout: process.env.DNS_JOB_QUEUE_INTERVAL*5 }, funct
         var count = createCount(function () {
           // assert job queue is empty
           redis.lrange(REDIS_KEY, 0, 100, function (err, list) {
-            console.log(list);
             if (err) throw err;
             expect(list.length).to.equal(0);
             done();
