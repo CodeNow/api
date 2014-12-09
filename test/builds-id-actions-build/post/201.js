@@ -267,6 +267,8 @@ function itShouldBuildTheBuild (ctx) {
               if (err) { return done(err); }
               expect(data.Binds).to.have.length(1);
               expect(data.Binds[0]).to.match(new RegExp(process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw'));
+              expect(Object.keys(data.Volumes)).to.have.length(1);
+              expect(data.Volumes['/cache']).to.eql({});
               count.next(err);
             });
           }));
