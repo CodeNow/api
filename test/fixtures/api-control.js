@@ -4,15 +4,31 @@ var ApiServer = require('server');
 var cleanMongo = require('./clean-mongo');
 var cayley = require('./cayley');
 
+var mongoose = require('mongoose');
+var mongooseOptions = {};
+if (process.env.MONGO_REPLSET_NAME) {
+  mongooseOptions.replset = {
+    rs_name: process.env.MONGO_REPLSET_NAME
+  };
+}
+mongoose.connect(process.env.MONGO, mongooseOptions, function(err) {
+  if (err) {
+    debug('fatal error: can not connect to mongo', err);
+    error.log(err);
+    process.exit(1);
+  }
+});
+
 module.exports = {
   start: startApi,
   stop: stopApi
 };
 
+var apiServer;
 function startApi (done) {
   var ctx = this;
   ctx.cayley = cayley;
-  this.apiServer = new ApiServer().start(function (err) {
+  apiServer = new ApiServer().start(function (err) {
     if (err) { return done(err); }
     cayley.start(function () {
       cleanMongo.removeEverything(done);
@@ -22,7 +38,7 @@ function startApi (done) {
 
 function stopApi (done) {
   route53.stop();
-  this.apiServer.stop(function (err) {
+  apiServer.stop(function (err) {
     if (err) { return done(err); }
     cayley.stop(done);
     // cleanMongo.dropDatabase(done);

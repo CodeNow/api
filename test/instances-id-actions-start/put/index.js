@@ -25,7 +25,7 @@ var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 
 
-describe('PUT /instances/:id/actions/start', function () {
+describe('PUT /instances/:id/actions/start', { timeout: 300 }, function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;
@@ -152,7 +152,7 @@ describe('PUT /instances/:id/actions/start', function () {
 
         createInstanceAndRunTests(ctx);
       });
-      describe('Immediately exiting container (first time only)', { timeout: 300 }, function() {
+      describe('Immediately exiting container (first time only)', function() {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
