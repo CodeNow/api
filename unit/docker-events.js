@@ -39,23 +39,23 @@ describe('Docker Events', function () {
       });
     });
 
-    it('should not be possible to process event with the same uuid twice', function (done) {
-      dockerEvents.listen();
-      dockerEvents.listen(function (err) {
-        expect(err.output.statusCode).to.equal(409);
-        expect(err.output.payload.message).to.equal('Event is being handled by another API host.');
-        done();
-      });
-      var payload = {
-        uuid: 1,
-        ip: '192.0.0.1',
-        host: 'http://localhost:4243',
-        from: 'ubuntu:base',
-        id: '05a8615e0886',
-        time: new Date().getTime()
-      };
-      pubsub.publish('runnable:docker:die', payload);
-    });
+    // it('should not be possible to process event with the same uuid twice', function (done) {
+    //   dockerEvents.listen();
+    //   dockerEvents.listen(function (err) {
+    //     expect(err.output.statusCode).to.equal(409);
+    //     expect(err.output.payload.message).to.equal('Event is being handled by another API host.');
+    //     done();
+    //   });
+    //   var payload = {
+    //     uuid: 1,
+    //     ip: '192.0.0.1',
+    //     host: 'http://localhost:4243',
+    //     from: 'ubuntu:base',
+    //     id: '05a8615e0886',
+    //     time: new Date().getTime()
+    //   };
+    //   pubsub.publish('runnable:docker:die', payload);
+    // });
 
   });
 
