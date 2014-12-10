@@ -19,7 +19,6 @@ var tailBuildStream = require('../../fixtures/tail-build-stream');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
-var uuid = require('uuid');
 var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
 var Container = require('dockerode/lib/container');
@@ -40,7 +39,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
     function stopContainer (err, start) {
       if (err) { return cb(err); }
       self.stopContainer(container, function (err) {
-        if (err) {return cb(err); }
+        if (err) { return cb(err); }
         cb(err, start);
       });
     }
