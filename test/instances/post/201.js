@@ -61,7 +61,6 @@ describe('201 POST /instances', {timeout:500}, function () {
   var forceImageNotFoundOnCreateErrOnce = function(oldFn) {
     return function () {
       var cb = last(arguments);
-      console.log('forceImageNotFoundOnCreateErr');
       var createErr = new Error("image not found");
       extend(createErr, {
         statusCode : 404,
