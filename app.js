@@ -7,6 +7,9 @@ var keyGen = require('key-generator');
 var events = require('models/events');
 var debug = require('debug')('runnable-api');
 var uuid = require('uuid');
+var createCount = require('callback-count');
+var Boom = require('dat-middleware').Boom;
+var activeApi = require('models/redis/active-api');
 
 if (process.env.NEWRELIC_KEY) {
   require('newrelic');
@@ -34,63 +37,59 @@ Api.prototype.start = function (cb) {
   debug('start');
   // start github ssh key generator
   keyGen.start();
+  var count = createCount(2, callback);
   // start listening to events
-  events.listen();
+  activeApi.setAsMe(function (err) {
+    if (err) { return count.next(err); }
+    events.listen(count.next);
+  });
   // express server start
-  apiServer.start(function(err) {
-    if (cb) { return cb(err); } // if cb exists callback with args and skip below
+  apiServer.start(count.next); // no inc.
+  // all started callback
+  function callback (err) {
     if (err) {
       debug('fatal error: API failed to start', err);
       error.log(err);
-      process.exit(1);
+      if (cb) {
+        cb(err);
+      }
+      else {
+        process.exit(1);
+      }
+      return;
     }
     debug('API started');
     console.log('API started');
-  });
+    if (cb) {
+      cb();
+    }
+  }
 };
 Api.prototype.stop = function (cb) {
   debug('stop');
-  // stop github ssh key generator
-  keyGen.stop();
-  // express server
-  apiServer.stop(function(err) {
-    if (cb && err) {
-      return cb(err); // if cb exists callback with args and skip below
+  cb = cb || error.logIfErr;
+  activeApi.isMe(function (err, meIsActiveApi) {
+    if (err) { return cb(err); }
+    if (meIsActiveApi) {
+      // if this is the active api, block stop
+      return cb(Boom.create(500, 'Cannot stop current activeApi'));
     }
-    events.close(function (err) {
-      if (cb) {
-        return cb(err); // if cb exists callback with args and skip below
-      }
-
-      if (err) {
-        debug('fatal error: API failed to stop', err);
-        error.log(err);
-        setTimeout(function () {
-          process.exit(1);
-        }, 5000);
-      }
-      // server stopped successfully (and everything else should be done)
-      console.log('API stopped');
-      process.exit(0);
-    });
-
+    // stop github ssh key generator
+    keyGen.stop();
+    // express server
+    var count = createCount(cb);
+    events.close(count.inc().next);
+    apiServer.stop(count.inc().next);
   });
 };
 
 // we are exposing here apiServer as a singletond
 
-var api = new Api();
+var api = global.api = new Api();
 
 if (!module.parent) { // npm start
   api.start();
 }
-else { // being required as module
-  module.exports = function getCurrentApi () {
-    return api;
-  };
-}
-
-
 
 process.on('uncaughtException', function(err) {
   debug('stopping app due too uncaughtException:',err);
