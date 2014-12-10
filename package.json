@@ -80,6 +80,7 @@
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.4",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
+    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v0.1.1",
     "docker-mock": "git://github.com/Runnable/docker-mock.git#v0.5.4",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
@@ -94,7 +95,7 @@
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
     "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.6",
-    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v0.1.1"
+    "server-destroy": "^1.0.0"
   },
   "engine": "node >= 0.10.5",
   "scripts": {
