@@ -6,7 +6,6 @@ var apiServer = new ApiServer();
 var keyGen = require('key-generator');
 var events = require('models/events');
 var debug = require('debug')('runnable-api');
-var uuid = require('uuid');
 var createCount = require('callback-count');
 var Boom = require('dat-middleware').Boom;
 var activeApi = require('models/redis/active-api');
@@ -29,9 +28,7 @@ mongoose.connect(process.env.MONGO, mongooseOptions, function(err) {
   }
 });
 
-function Api () {
-  this.uuid = uuid();
-}
+function Api () {}
 
 Api.prototype.start = function (cb) {
   debug('start');
@@ -85,7 +82,7 @@ Api.prototype.stop = function (cb) {
 
 // we are exposing here apiServer as a singletond
 
-var api = global.api = new Api();
+var api = module.exports = new Api();
 
 if (!module.parent) { // npm start
   api.start();
