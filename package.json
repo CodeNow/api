@@ -23,6 +23,7 @@
     "connect-redis": "^2.0.0",
     "cors": "^2.4.1",
     "dat-middleware": "^1.9.2",
+    "debounce": "^1.0.0",
     "debug": "^1.0.2",
     "defaults": "^1.0.0",
     "docker-stream-cleanser": "0.1.2",
@@ -97,7 +98,7 @@
   "engine": "node >= 0.10.5",
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "_bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test",
+    "_bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test -i353 `cat test/whitelist.txt`",
     "bdd": "CIRCLE_NODE_TOTAL=1 CIRCLE_NODE_INDEX=0 ./scripts/npm-bdd-split-files.sh",
     "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -v -l -m 36000 -e test `cat test/whitelist.txt`",
     "bdd-watch": "killall node; killall cayley_osx; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd",
