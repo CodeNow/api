@@ -25,7 +25,7 @@ var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 
 
-describe('PUT /instances/:id/actions/start', { timeout: 300 }, function () {
+describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;
