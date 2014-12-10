@@ -79,7 +79,7 @@
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.4",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
-    "docker-mock": "git://github.com/Runnable/docker-mock.git#v0.5.3",
+    "docker-mock": "git://github.com/Runnable/docker-mock.git#v0.5.4",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
     "function-proxy": "^0.5.1",
