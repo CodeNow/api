@@ -15,7 +15,8 @@ function startApi (done) {
   ctx.cayley = cayley;
   api = new Api().start(function (err) {
     if (err) { return done(err); }
-    cayley.start(function () {
+    cayley.start(function (err) {
+      if (err) { console.error(err); }
       cleanMongo.removeEverything(done);
     });
   });
@@ -24,8 +25,8 @@ function startApi (done) {
 function stopApi (done) {
   route53.stop();
   api.stop(function (err) {
-    if (err) { return done(err); }
-    cayley.stop(done);
-    // cleanMongo.dropDatabase(done);
+    cayley.stop(function (err2) {
+      done(err||err2);
+    });
   });
 }
