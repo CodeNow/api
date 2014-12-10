@@ -7,6 +7,9 @@ var exists = require('101/exists');
 var hasKeypaths = require('101/has-keypaths');
 var keypather = require('keypather')();
 var async = require('async');
+var formatArgs = require('format-args');
+var debug = require('debug')('runnable-api:fixtures:route53');
+
 var requireKeypath = function (obj, keypath) {
   var val = keypather.get(obj, keypath);
   if (!exists(val)) {
@@ -24,6 +27,7 @@ var mock = module.exports = {};
  * @param  {Function} cb callback
  */
 mock.start = function (cb) {
+  debug('start', formatArgs(arguments));
   cb = cb || noop;
   if (AWS.Route53 !== Route53) {
     console.log('already started');
@@ -39,6 +43,7 @@ mock.start = function (cb) {
 };
 
   function changeResourceRecordSets (params, cb) {
+    debug('changeResourceRecordSets mock!', params);
     if (!params) {
       throw new Error('params is required');
     }
@@ -46,7 +51,9 @@ mock.start = function (cb) {
       throw new Error('params must be an object');
     }
     requireKeypath(params, 'HostedZoneId');
-    async.each(function (change, cb) {
+    requireKeypath(params, 'ChangeBatch');
+    requireKeypath(params, 'ChangeBatch.Changes');
+    async.each(params.ChangeBatch.Changes, function (change, cb) {
       var action = requireKeypath(change, 'Action');
       var resourceRecordSet = requireKeypath(change, 'ResourceRecordSet');
       requireKeypath(change, 'ResourceRecordSet.Name');
@@ -66,24 +73,26 @@ mock.start = function (cb) {
     }, cb);
   }
 
-// mock dns records
-var records = [];
 /**
  * stop route53 mock
  * @param  {Function} cb callback
  */
 mock.stop = function (cb) {
+  debug('stop', formatArgs(arguments));
   cb = cb || noop;
   AWS.Route53 = Route53;
-  records = [];
+  mock.reset();
   cb();
   return this;
 };
 
+// mock dns records
+var records = [];
 /**
  * reset mock records for route53
  */
 mock.reset = function (cb) {
+  debug('reset');
   cb = cb || noop;
   records = [];
   cb();
@@ -150,6 +159,7 @@ var resp = {
  * @param  {Function} cb                callback
  */
 function mockUpsert (resourceRecordSet, cb) {
+  debug('mockUpsert', formatArgs(arguments));
   var domainRe = new RegExp(escapeRegExp(process.env.DOMAIN)+'$');
   var name = resourceRecordSet.Name;
   if (!domainRe.test(name)) {
@@ -171,6 +181,7 @@ function mockUpsert (resourceRecordSet, cb) {
  * @param  {Function} cb                callback
  */
 function mockDelete (resourceRecordSet, cb) {
+  debug('mockDelete', formatArgs(arguments));
   var name = resourceRecordSet.Name;
   var type = resourceRecordSet.Type;
   var index = findIndex(records, hasKeypaths({
