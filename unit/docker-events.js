@@ -93,25 +93,51 @@ describe('Docker Events', function () {
       });
     });
 
-    // it('should not be possible to process event with the same uuid twice', function (done) {
-    //   dockerEvents.listen();
-    //   dockerEvents.listen(function (err) {
-    //     expect(err.output.statusCode).to.equal(409);
-    //     expect(err.output.payload.message).to.equal('Event is being handled by another API host.');
-    //     done();
-    //   });
-    //   var payload = {
-    //     uuid: 1,
-    //     ip: '192.0.0.1',
-    //     host: 'http://localhost:4243',
-    //     from: 'ubuntu:base',
-    //     id: '05a8615e0886',
-    //     time: new Date().getTime()
-    //   };
-    //   pubsub.publish('runnable:docker:die', payload);
-    // });
-
   });
+
+  describe('event lock', function () {
+    before(redisCleaner.clean('*'));
+    after(redisCleaner.clean('*'));
+    before(function (done) {
+      ctx.origHandleDieGetEventLock = dockerEvents.getEventLock;
+      done();
+    });
+    after(function (done) {
+      dockerEvents.getEventLock = ctx.origHandleDieGetEventLock;
+      dockerEvents.close(done);
+    });
+    it('should not be possible to process event with the same uuid twice', function (done) {
+      var count = createCount(3, done);
+      var counter = 0;
+      dockerEvents.getEventLock = function (eventId, cb) {
+        ctx.origHandleDieGetEventLock.bind(dockerEvents)(eventId, function (err, mutex) {
+          if (counter === 0) {
+            expect(mutex.unlock).to.exist();
+          }
+          if (counter === 1) {
+            expect(err.output.statusCode).to.equal(409);
+            expect(err.output.payload.message).to.equal('Event is being handled by another API host.');
+          }
+          counter++;
+
+          cb(err, mutex);
+          count.next();
+        });
+      };
+      dockerEvents.listen(function (err) {
+        var payload = {
+          uuid: uuid(),
+          id: 'some-id',
+          time: new Date().getTime(),
+          host: 'http://localhost:4243'
+        };
+        dockerEvents.handleDie(payload);
+        dockerEvents.handleDie(payload);
+        count.next();
+      });
+    });
+  });
+
 
   describe('close', function () {
     describe('not listening', function () {
@@ -151,7 +177,7 @@ describe('Docker Events', function () {
         dockerEvents.listen(function (err) {
           if (err) { return count.next(err); }
           // trigger die event
-          pubsub.publish(process.env.DOCKER_EVENTS_NAMESPACE+'die', {});
+          pubsub.publish(process.env.DOCKER_EVENTS_NAMESPACE + 'die', {});
         });
         // call close while outstanding events are occuring
         function callClose () {
