@@ -128,13 +128,14 @@ describe('EVENT runnable:docker:events:die', function () {
           ctx.originalUserStoppedContainerLock.bind(userStoppedContainer)(function (err, success) {
             if (lockCounter === 0) {
               expect(success).to.equal(true);
+              count.next();
             }
             if (lockCounter === 1) {
               expect(success).to.equal(false);
+              count.next();
             }
             lockCounter++;
             cb(err, success);
-            count.next();
           });
         };
         dockerEvents.listen(count.next);
