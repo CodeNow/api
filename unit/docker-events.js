@@ -124,7 +124,7 @@ describe('Docker Events', function () {
           count.next();
         });
       };
-      dockerEvents.listen(function (err) {
+      dockerEvents.listen(function () {
         var payload = {
           uuid: uuid(),
           id: 'some-id',
