@@ -29,7 +29,7 @@ function startApi (done) {
   var ctx = this;
   ctx.cayley = cayley;
   route53.start(); // must be before api require, and here
-  apiServer = new Api().start(function (err) {
+  apiServer = new ApiServer().start(function (err) {
     if (err) { return done(err); }
     cayley.start(function () {
       cleanMongo.removeEverything(done);
