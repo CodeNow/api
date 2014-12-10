@@ -9,24 +9,12 @@ var debug = require('debug')('runnable-api');
 var createCount = require('callback-count');
 var Boom = require('dat-middleware').Boom;
 var activeApi = require('models/redis/active-api');
+var mongooseControl = require('models/mongo/mongoose-control');
+var envIs = require('101/env-is');
 
 if (process.env.NEWRELIC_KEY) {
   require('newrelic');
 }
-var mongoose = require('mongoose');
-var mongooseOptions = {};
-if (process.env.MONGO_REPLSET_NAME) {
-  mongooseOptions.replset = {
-    rs_name: process.env.MONGO_REPLSET_NAME
-  };
-}
-mongoose.connect(process.env.MONGO, mongooseOptions, function(err) {
-  if (err) {
-    debug('fatal error: can not connect to mongo', err);
-    error.log(err);
-    process.exit(1);
-  }
-});
 
 function Api () {}
 
@@ -34,14 +22,17 @@ Api.prototype.start = function (cb) {
   debug('start');
   // start github ssh key generator
   keyGen.start();
-  var count = createCount(2, callback);
+  var count = createCount(callback);
+  // connect to mongoose
+  mongooseControl.start(count.inc.next);
   // start listening to events
+  count.inc();
   activeApi.setAsMe(function (err) {
     if (err) { return count.next(err); }
     events.listen(count.next);
   });
   // express server start
-  apiServer.start(count.next); // no inc.
+  apiServer.start(count.inc().next);
   // all started callback
   function callback (err) {
     if (err) {
@@ -67,14 +58,15 @@ Api.prototype.stop = function (cb) {
   cb = cb || error.logIfErr;
   activeApi.isMe(function (err, meIsActiveApi) {
     if (err) { return cb(err); }
-    if (meIsActiveApi) {
+    if (meIsActiveApi && !envIs('test')) {
       // if this is the active api, block stop
       return cb(Boom.create(500, 'Cannot stop current activeApi'));
     }
+    var count = createCount(cb);
     // stop github ssh key generator
     keyGen.stop();
     // express server
-    var count = createCount(cb);
+    mongooseControl.stop(count.inc().next);
     events.close(count.inc().next);
     apiServer.stop(count.inc().next);
   });
