@@ -109,11 +109,6 @@ describe('Docker Events', function () {
       });
 
       it('should throw an error if close in progress', function (done) {
-        var count = createCount(1, function (err) {
-          if (err) { return done(err); }
-          expect(dockerEvents.eventLockCount).to.equal(0);
-          done();
-        });
         dockerEvents.eventLockCount = 1;
         dockerEvents.close();
         dockerEvents.listen(function (err) {
