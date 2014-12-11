@@ -13,15 +13,12 @@ var expect = Lab.expect;
 var redisCleaner = require('../test/fixtures/redis-cleaner');
 var createCount = require('callback-count');
 var uuid = require('uuid');
+var activeApi = require('models/redis/active-api');
 
 require('loadenv')();
 
-
-
-
 describe('Docker Events', function () {
   var ctx = {};
-
 
   describe('handleDie', function () {
     before(redisCleaner.clean('*'));
@@ -101,6 +98,9 @@ describe('Docker Events', function () {
     before(function (done) {
       ctx.origHandleDieGetEventLock = dockerEvents.getEventLock;
       done();
+    });
+    beforeEach(function (done) {
+      activeApi.setAsMe(done);
     });
     after(function (done) {
       dockerEvents.getEventLock = ctx.origHandleDieGetEventLock;
