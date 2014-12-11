@@ -245,7 +245,7 @@ describe('Instance', function () {
           dockerContainer: cont.id
         };
         var instance = createNewInstance('new-inst', 'http://localhost:4243', cont.id);
-        instance.save(function (err, instance) {
+        instance.save(function (err) {
           if (err) { return done(err); }
           docker.startContainer(container, function (err) {
             if (err) { return done(err); }
