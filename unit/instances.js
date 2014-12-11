@@ -28,7 +28,7 @@ describe('Instance', function () {
   afterEach(require('../test/fixtures/clean-mongo').removeEverything);
 
 
-  function createNewInstance(name, dockerHost) {
+  function createNewInstance(name, dockerHost, containerId) {
     return new Instance({
       name: name || 'name',
       shortHash: getRandomHash(),
@@ -38,7 +38,7 @@ describe('Instance', function () {
       build: validation.VALID_OBJECT_ID,
       created: Date.now(),
       container: {
-        dockerContainer: validation.VALID_OBJECT_ID,
+        dockerContainer: containerId || validation.VALID_OBJECT_ID,
         dockerHost: dockerHost || 'http://localhost:4243',
         inspect: {
           State: {
@@ -185,7 +185,7 @@ describe('Instance', function () {
       });
     });
 
-    it('should work for real found', function (done) {
+    it('should work for real created container', function (done) {
       var docker = new Docker('http://localhost:4243');
       docker.createContainer({}, function (err, cont) {
         if (err) { return done(err); }
@@ -211,6 +211,62 @@ describe('Instance', function () {
   });
 
 
+  describe('inspectAndUpdateByContainer', function () {
+    before(dock.start);
+    after(dock.stop);
+
+    var savedInstance = null;
+    var instance = null;
+    beforeEach(function (done) {
+      instance = createNewInstance();
+      instance.save(function (err, instance) {
+        if (err) { return done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance = instance;
+          done();
+        }
+      });
+    });
+
+    it('should fail if container is not found', function (done) {
+      var containerId = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
+      Instance.inspectAndUpdateByContainer(containerId, function (err) {
+        expect(err.output.statusCode).to.equal(404);
+        done();
+      });
+    });
+
+    it('should work for real created container', function (done) {
+      var docker = new Docker('http://localhost:4243');
+      docker.createContainer({}, function (err, cont) {
+        if (err) { return done(err); }
+        var container = {
+          dockerContainer: cont.id
+        };
+        var instance = createNewInstance('new-inst', 'http://localhost:4243', cont.id);
+        instance.save(function (err, instance) {
+          if (err) { return done(err); }
+          docker.startContainer(container, function (err) {
+            if (err) { return done(err); }
+            docker.stopContainer(container, function (err) {
+              if (err) { return done(err); }
+              Instance.inspectAndUpdateByContainer(container.dockerContainer, function (err, saved) {
+                if (err) { return done(err); }
+                expect(saved.container.inspect.State.Running).to.equal(false);
+                expect(saved.container.inspect.State.Pid).to.equal(0);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+  });
+
+
+
   describe('modifyContainerCreateErr', function () {
     var savedInstance = null;
     var instance = null;
@@ -232,7 +288,7 @@ describe('Instance', function () {
         data: 'random data',
         stack: 'random stack',
         field: 'random field',
-      }
+      };
       savedInstance.modifyContainerCreateErr(error, function (err, newInst) {
         if (err) { return done(err); }
         expect(newInst.container.error.message).to.equal(error.message);
@@ -268,7 +324,7 @@ describe('Instance', function () {
         data: 'random data',
         stack: 'random stack',
         field: 'random field',
-      }
+      };
       savedInstance.modifySetContainerInspectErr(error, function (err, newInst) {
         if (err) { return done(err); }
         expect(newInst.container.inspect.error.message).to.equal(error.message);
