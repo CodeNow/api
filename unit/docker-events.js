@@ -69,6 +69,30 @@ describe('Docker Events', function () {
       dockerEvents.handleDie({uuid: 'some-uuid', id: 'some-id', time: new Date().getTime() });
     });
 
+    it('should fail if event data has no from', function (done) {
+      error.log = function (err) {
+        expect(err.output.payload.message).to.equal('Invalid data: from is missing');
+        done();
+      };
+      dockerEvents.handleDie({
+        uuid: 'some-uuid',
+        id: 'some-id',
+        time: new Date().getTime(),
+        host: 'http://localhost:4243'
+      });
+    });
+
+    it('should return if image builder image', function (done) {
+      var out = dockerEvents.handleDie({
+        uuid: 'some-uuid',
+        id: 'some-id',
+        time: new Date().getTime(),
+        host: 'http://localhost:4243',
+        from: process.env.IMAGE_BUILDER
+      });
+      expect(out).to.have.property('skip');
+      done();
+    });
   });
 
 
@@ -129,7 +153,8 @@ describe('Docker Events', function () {
           uuid: uuid(),
           id: 'some-id',
           time: new Date().getTime(),
-          host: 'http://localhost:4243'
+          host: 'http://localhost:4243',
+          from: 'container/name'
         };
         dockerEvents.handleDie(payload);
         dockerEvents.handleDie(payload);
