@@ -193,7 +193,7 @@ describe('Docker Events', function () {
         dockerEvents.close();
         dockerEvents.close(function (err) {
           expect(err.output.statusCode).to.equal(409);
-          expect(err.output.payload.message).to.equal('closing events listener is in progress');
+          expect(err.output.payload.message).to.equal('already closing events listener');
           done();
         });
         dockerEvents.decLockCount();
