@@ -181,6 +181,27 @@ describe('Docker Events', function () {
       });
     });
 
+    describe('close second time when first one is progress', function () {
+
+      afterEach(function (done) {
+        dockerEvents.eventLockCount = 0;
+        dockerEvents.close(done);
+      });
+
+      it('should fail for the second close', function (done) {
+        dockerEvents.eventLockCount = 1;
+        dockerEvents.close();
+        dockerEvents.close(function (err) {
+          expect(err.output.statusCode).to.equal(409);
+          expect(err.output.payload.message).to.equal('closing events listener is in progress');
+          done();
+        });
+        dockerEvents.decLockCount();
+      });
+
+    });
+
+
     describe('with active lock', function () {
       afterEach(function (done) {
         dockerEvents.eventLockCount = 0;
