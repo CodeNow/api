@@ -9,6 +9,7 @@ var afterEach = Lab.afterEach;
 var pubsub = require('models/redis/pubsub');
 var error = require('error');
 var dockerEvents = require('models/events/docker');
+var events = require('models/events/index');
 var expect = Lab.expect;
 var redisCleaner = require('../test/fixtures/redis-cleaner');
 var createCount = require('callback-count');
@@ -75,18 +76,29 @@ describe('Docker Events', function () {
   describe('listen', function () {
     before(redisCleaner.clean('*'));
     after(redisCleaner.clean('*'));
-    afterEach(function (done) {
-      dockerEvents.close(done);
-    });
+    afterEach(events.close.bind(events));
+
     it('should start listening and callback', function (done) {
-      dockerEvents.listen(done);
+      events.listen(done);
     });
     describe('listen twice', function () {
-      beforeEach(function (done) {
-        dockerEvents.listen(done);
-      });
       it('should callback an error', function (done) {
-        dockerEvents.listen(done);
+        var count = createCount(2, function (err) {
+          expect(err.output.statusCode).to.equal(409);
+          expect(err.output.payload.message).to.equal('Events were already started');
+          done();
+        });
+        events.listen(count.next);
+        events.listen(count.next);
+      });
+    });
+
+    describe('listen, close, listen', function () {
+      it('should start listening ok', function (done) {
+        var count = createCount(done);
+        events.listen(count.inc().next);
+        events.close(count.inc().next);
+        events.listen(count.inc().next);
       });
     });
 
