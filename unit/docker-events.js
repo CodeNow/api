@@ -102,6 +102,29 @@ describe('Docker Events', function () {
       });
     });
 
+    describe('closing', function () {
+      afterEach(function (done) {
+        dockerEvents.eventLockCount = 0;
+        dockerEvents.close(done);
+      });
+
+      it('should throw an error if close in progress', function (done) {
+        var count = createCount(1, function (err) {
+          if (err) { return done(err); }
+          expect(dockerEvents.eventLockCount).to.equal(0);
+          done();
+        });
+        dockerEvents.eventLockCount = 1;
+        dockerEvents.close();
+        dockerEvents.listen(function (err) {
+          expect(err.output.statusCode).to.equal(409);
+          expect(err.output.payload.message).to.equal('closing events listener is in progress');
+          done();
+        });
+        dockerEvents.decLockCount();
+      });
+    });
+
   });
 
   describe('event lock', function () {
@@ -158,7 +181,7 @@ describe('Docker Events', function () {
       });
     });
 
-    describe('twice', function () {
+    describe('with active lock', function () {
       afterEach(function (done) {
         dockerEvents.eventLockCount = 0;
         dockerEvents.close(done);
@@ -175,6 +198,7 @@ describe('Docker Events', function () {
         dockerEvents.decLockCount();
       });
     });
+
 
     describe('listening', function () {
       beforeEach(function (done) {
