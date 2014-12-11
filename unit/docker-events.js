@@ -95,10 +95,10 @@ describe('Docker Events', function () {
 
     describe('listen, close, listen', function () {
       it('should start listening ok', function (done) {
-        var count = createCount(done);
-        events.listen(count.inc().next);
-        events.close(count.inc().next);
-        events.listen(count.inc().next);
+        var count = createCount(3, done);
+        events.listen(count.next);
+        events.close(count.next);
+        events.listen(count.next);
       });
     });
 
@@ -157,6 +157,25 @@ describe('Docker Events', function () {
         dockerEvents.close(done);
       });
     });
+
+    describe('twice', function () {
+      afterEach(function (done) {
+        dockerEvents.eventLockCount = 0;
+        dockerEvents.close(done);
+      });
+
+      it('should close after lock decrement', function (done) {
+        var count = createCount(1, function (err) {
+          if (err) { return done(err); }
+          expect(dockerEvents.eventLockCount).to.equal(0);
+          done();
+        });
+        dockerEvents.eventLockCount = 1;
+        dockerEvents.close(count.next);
+        dockerEvents.decLockCount();
+      });
+    });
+
     describe('listening', function () {
       beforeEach(function (done) {
         dockerEvents.listen(done);
