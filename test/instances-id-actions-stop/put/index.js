@@ -22,23 +22,8 @@ var Docker = require('models/apis/docker');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
+var redisCleaner = require('../../fixtures/redis-cleaner');
 
-var redisCleaner = function (cb) {
-  var redis = require('models/redis');
-  redis.keys(process.env.WEAVE_NETWORKS+'*', function (err, keys) {
-    if (err) {
-      return cb(err);
-    }
-    if (keys.length === 0) {
-      return cb();
-    }
-
-    var count = createCount(cb);
-    keys.forEach(function (key) {
-      redis.del(key, count.inc().next);
-    });
-  });
-};
 
 describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
   var ctx = {};
@@ -77,7 +62,7 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
       }, ms);
     };
   };
-  beforeEach(redisCleaner);
+  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
@@ -155,11 +140,11 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
-            'containers[0]': exists,
-            'containers[0].ports': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': true
+            'container': exists,
+            'container.ports': exists,
+            'container.dockerHost': exists,
+            'container.dockerContainer': exists,
+            'container.inspect.State.Running': true
           });
           done();
         });
@@ -170,10 +155,10 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
-            'containers[0]': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': false
+            'container': exists,
+            'container.dockerHost': exists,
+            'container.dockerContainer': exists,
+            'container.inspect.State.Running': false
           });
           ctx.expectAlreadyStopped = true;
           ctx.originalStart = Docker.prototype.startContainer;
@@ -247,10 +232,8 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
         ctx.instance.stop(expects.error(400, /not have a container/, done));
       }
       else { // success
-        ctx.expected['containers[0].inspect.State.Running'] = false;
-        var assertions = ctx.expectAlreadyStopped ?
-          expects.error(304, startStopAssert) :
-          expects.success(200, ctx.expected, startStopAssert);
+        ctx.expected['container.inspect.State.Running'] = false;
+        var assertions = expects.success(200, ctx.expected, startStopAssert);
         ctx.instance.stop(assertions);
       }
       function startStopAssert (err) {

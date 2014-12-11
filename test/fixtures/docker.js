@@ -13,11 +13,12 @@ module.exports.start = function (port, cb) {
     self.started = true;
     cb(err);
   });
+  require('server-destroy')(this.server);
   return this;
 };
 module.exports.stop = function (cb) {
   var self = this;
-  this.server.close(function (err) {
+  this.server.destroy(function (err) {
     self.started = false;
     cb(err);
   });

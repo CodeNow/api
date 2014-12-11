@@ -168,7 +168,7 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
 /**
  * Make type check tests automatically based on `def`
  * @def - has `action` and arrays of `requiredParams` and `optionalParams`. See actual test for examples
- * @ctx - test contet object
+ * @ctx - test content object
  * @handler - handler that would be called on test end. Accepts generated `body` and `cb`
  */
 exports.makeTestFromDef = function (def, ctx, handler) {

@@ -1,4 +1,5 @@
 test/actions-github.js
+test/actions-kill.js
 test/bdd-context-version-deduping.js
 test/bdd-deploy-instance.js
 test/bdd-instance-dependencies.js
@@ -24,6 +25,7 @@ test/contexts-id-versions/post/400.js
 test/contexts-id.js
 test/contexts.js
 test/contexts/post/400.js
+test/events/docker-die-event.js
 test/github-proxy.js
 test/github.js
 test/instances-id-actions-copy/post/400.js

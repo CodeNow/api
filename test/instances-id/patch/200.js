@@ -19,29 +19,13 @@ var tailBuildStream = require('../../fixtures/tail-build-stream');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
-var uuid = require('uuid');
 var Docker = require('models/apis/docker');
+var Instance = require('models/mongo/instance');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
+var redisCleaner = require('../../fixtures/redis-cleaner');
 
-
-var redisCleaner = function (cb) {
-  var redis = require('models/redis');
-  redis.keys(process.env.WEAVE_NETWORKS+'*', function (err, keys) {
-    if (err) {
-      return cb(err);
-    }
-    if (keys.length === 0) {
-      return cb();
-    }
-
-    var count = createCount(cb);
-    keys.forEach(function (key) {
-      redis.del(key, count.inc().next);
-    });
-  });
-};
 
 describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   var ctx = {};
@@ -55,6 +39,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
     function stopContainer (err, start) {
       if (err) { return cb(err); }
       self.stopContainer(container, function (err) {
+        if (err) { return cb(err); }
         cb(err, start);
       });
     }
@@ -94,7 +79,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
     Docker.prototype.pushImageToRegistry = Docker.prototype._origionalPushImageToRegistry;
     done();
   });
-  beforeEach(redisCleaner);
+  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
@@ -262,7 +247,11 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
             .stopContainer(ctx.instance.attrs.container, function () {
               // ignore error we just want it stopped..
               ctx.expected['containers[0].inspect.State.Running'] = false;
-              done();
+              Instance.findById(ctx.instance.attrs._id, function (err, instance) {
+                if (err) { return done(err); }
+                instance.setContainerFinishedState(new Date().toISOString(), 0, done);
+              });
+
             });
         }
         else {

@@ -22,25 +22,10 @@ var Docker = require('models/apis/docker');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
+var redisCleaner = require('../../fixtures/redis-cleaner');
 
-var redisCleaner = function (cb) {
-  var redis = require('models/redis');
-  redis.keys(process.env.WEAVE_NETWORKS+'*', function (err, keys) {
-    if (err) {
-      return cb(err);
-    }
-    if (keys.length === 0) {
-      return cb();
-    }
 
-    var count = createCount(cb);
-    keys.forEach(function (key) {
-      redis.del(key, count.inc().next);
-    });
-  });
-};
-
-describe('PUT /instances/:id/actions/start', function () {
+describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;
@@ -77,7 +62,7 @@ describe('PUT /instances/:id/actions/start', function () {
       }, ms);
     };
   };
-  beforeEach(redisCleaner);
+  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
@@ -167,7 +152,7 @@ describe('PUT /instances/:id/actions/start', function () {
 
         createInstanceAndRunTests(ctx);
       });
-      describe('Immediately exiting container (first time only)', { timeout: 300 }, function() {
+      describe('Immediately exiting container (first time only)', function() {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,

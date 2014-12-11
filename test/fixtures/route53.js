@@ -30,7 +30,7 @@ mock.start = function (cb) {
   debug('start', formatArgs(arguments));
   cb = cb || noop;
   if (AWS.Route53 !== Route53) {
-    console.log('already started');
+    console.log('route53 mock already started', !!AWS.Route53, !!Route53);
     return cb();
   }
   AWS.Route53 = function () {
