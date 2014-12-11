@@ -210,6 +210,81 @@ describe('Instance', function () {
 
   });
 
+
+  describe('modifyContainerCreateErr', function () {
+    var savedInstance = null;
+    var instance = null;
+    before(function (done) {
+      instance = createNewInstance();
+      instance.save(function (err, instance) {
+        if (err) { done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance = instance;
+          done();
+        }
+      });
+    });
+
+    it('should pick message, stack and data fields', function (done) {
+      var error = {
+        message: 'random message',
+        data: 'random data',
+        stack: 'random stack',
+        field: 'random field',
+      }
+      savedInstance.modifyContainerCreateErr(error, function (err, newInst) {
+        if (err) { return done(err); }
+        expect(newInst.container.error.message).to.equal(error.message);
+        expect(newInst.container.error.data).to.equal(error.data);
+        expect(newInst.container.error.stack).to.equal(error.stack);
+        expect(newInst.container.error.field).to.not.exist();
+        done();
+      });
+    });
+
+  });
+
+
+
+  describe('modifySetContainerInspectErr', function () {
+    var savedInstance = null;
+    var instance = null;
+    before(function (done) {
+      instance = createNewInstance();
+      instance.save(function (err, instance) {
+        if (err) { done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance = instance;
+          done();
+        }
+      });
+    });
+
+    it('should pick message, stack and data fields', function (done) {
+      var error = {
+        message: 'random message',
+        data: 'random data',
+        stack: 'random stack',
+        field: 'random field',
+      }
+      savedInstance.modifySetContainerInspectErr(error, function (err, newInst) {
+        if (err) { return done(err); }
+        expect(newInst.container.inspect.error.message).to.equal(error.message);
+        expect(newInst.container.inspect.error.data).to.equal(error.data);
+        expect(newInst.container.inspect.error.stack).to.equal(error.stack);
+        expect(newInst.container.inspect.error.field).to.not.exist();
+        done();
+      });
+    });
+
+  });
+
+
+
+
+
   describe('setContainerFinishedState', function () {
     var savedInstance = null;
     var instance = null;
