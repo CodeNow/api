@@ -70,6 +70,35 @@ describe('Docker Events', function () {
       dockerEvents.handleDie({uuid: 'some-uuid', id: 'some-id', time: new Date().getTime() });
     });
 
+    describe('while closing', function () {
+      afterEach(events.close.bind(events));
+
+      it('should not process and error should be logged', function (done) {
+        // NOTE: this is very experimental way to test our code.
+        // we patch debug here and ensure that debug was called with proper message
+        // I'd prefer handleDie accepts callback, but it was discussed with tj and
+        // decided against callbacks
+        var requireInject = require('require-inject');
+        var count = 0;
+        var de = requireInject('models/events/docker', {
+          'debug': function (ns) {
+            return function (message) {
+              if (count === 0) {
+                expect(message).to.equal('handleDie');
+              }
+              if (count === 1) {
+                expect(message).to.equal('events are stopping');
+                done();
+              }
+              count++;
+            }
+        } });
+        de.closeHandler = function () {};
+        de.handleDie();
+      });
+
+    });
+
   });
 
 
