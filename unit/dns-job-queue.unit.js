@@ -49,13 +49,11 @@ describe('dnsJobQueue', function () {
   });
 
   it ('should queue and run UPSERT+DELETE jobs', function (done) {
-
     var cb = function () {
       expect(upsertQueue.length).to.equal(0);
       done();
     };
     dnsJobQueue.start();
-
     var upsertQueue = dnsJobQueue.__get__('upsertQueue');
     expect(upsertQueue.length).to.equal(0);
     dnsJobQueue.createJob('UPSERT',
@@ -63,6 +61,9 @@ describe('dnsJobQueue', function () {
                           '0.0.0.0',
                           cb);
     expect(upsertQueue.length).to.equal(1);
-
+    expect(upsertQueue[0].change.Action).to.equal('UPSERT');
+    expect(upsertQueue[0].change.ResourceRecordSet.Name).to.equal('test-upsert-1');
+    expect(upsertQueue[0].change.ResourceRecordSet.ResourceRecords[0].Value).to.equal('0.0.0.0');
+    expect(upsertQueue[0].cb).to.equal(cb);
   });
 });
