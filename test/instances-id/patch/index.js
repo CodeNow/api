@@ -419,7 +419,16 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
           });
         });
       });
-      describe('Testing lowername', function () {
+      describe('Testing lowername', function (done) {
+        beforeEach(function () {
+          // circleci is not playing nice with this test.
+          // it is not applying indexes immediately for some reason.
+          require('models/mongo/schemas/instance')
+            .index(
+              { lowerName: 1, 'owner.github': 1 },
+              { unique: true });
+          done();
+        });
         beforeEach(function (done) {
           // We need to deploy the container first before each test.
           require('../../fixtures/mocks/github/user')(ctx.user);
