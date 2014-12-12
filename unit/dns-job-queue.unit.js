@@ -2,16 +2,13 @@ var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
-//var before = Lab.before;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var rewire = require('rewire');
 var sinon = require('sinon');
 var createCount = require('callback-count');
-//var clone = require('101/clone');
-require('loadenv')();
-
 var route53Fixture = require('fixtures/route53');
+require('loadenv')();
 
 var dnsJobQueue;
 
@@ -53,19 +50,19 @@ describe('dnsJobQueue', function () {
 
   it ('should queue and run UPSERT+DELETE jobs', function (done) {
 
-    var clock = sinon.useFakeTimers();
-    var cb = sinon.spy(function () {
-      clock.restore();
+    var cb = function () {
+      expect(upsertQueue.length).to.equal(0);
       done();
-    });
+    };
     dnsJobQueue.start();
-    clock.tick(10);
+
     var upsertQueue = dnsJobQueue.__get__('upsertQueue');
     expect(upsertQueue.length).to.equal(0);
-    dnsJobQueue.createJob('UPSERT', 'test-upsert-1', '0.0.0.0', cb);
+    dnsJobQueue.createJob('UPSERT',
+                          'test-upsert-1',
+                          '0.0.0.0',
+                          cb);
     expect(upsertQueue.length).to.equal(1);
-    clock.tick(process.env.DNS_JOB_QUEUE_INTERVAL);
-    clock.tick(process.env.DNS_JOB_QUEUE_INTERVAL);
 
   });
 });
