@@ -5,7 +5,7 @@ var expect = Lab.expect;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var rewire = require('rewire');
-var sinon = require('sinon');
+//var sinon = require('sinon');
 var createCount = require('callback-count');
 var route53Fixture = require('fixtures/route53');
 require('loadenv')();
