@@ -89,7 +89,7 @@
     "jshint": "^2.5.5",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "^3.2.1",
-    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.3",
+    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.4",
     "multiline": "^0.3.4",
     "nock": "^0.48.0",
     "nodemon": "^1.2.1",
