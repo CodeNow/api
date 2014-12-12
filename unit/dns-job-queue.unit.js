@@ -5,9 +5,9 @@ var expect = Lab.expect;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var rewire = require('rewire');
-//var sinon = require('sinon');
-var createCount = require('callback-count');
+var sinon = require('sinon');
 var route53Fixture = require('fixtures/route53');
+var createCounter = require('callback-count');
 require('loadenv')();
 
 var dnsJobQueue;
@@ -30,7 +30,7 @@ describe('dnsJobQueue', function () {
   });
 
   afterEach(function (done) {
-    var count = createCount(done);
+    var count = createCounter(done);
     dnsJobQueue.stop(count.inc().next);
     route53Fixture.stop(count.inc().next);
   });
@@ -48,22 +48,58 @@ describe('dnsJobQueue', function () {
     done();
   });
 
-  it ('should queue and run UPSERT+DELETE jobs', function (done) {
+  it('should properly queue and run UPSERT+DELETE jobs; '+
+     'removing jobs from queue after processing', function (done) {
     var cb = function () {
       expect(upsertQueue.length).to.equal(0);
       done();
     };
     dnsJobQueue.start();
     var upsertQueue = dnsJobQueue.__get__('upsertQueue');
+    var deleteQueue = dnsJobQueue.__get__('deleteQueue');
     expect(upsertQueue.length).to.equal(0);
     dnsJobQueue.createJob('UPSERT',
                           'test-upsert-1',
                           '0.0.0.0',
                           cb);
+    expect(deleteQueue.length).to.equal(0);
     expect(upsertQueue.length).to.equal(1);
     expect(upsertQueue[0].change.Action).to.equal('UPSERT');
     expect(upsertQueue[0].change.ResourceRecordSet.Name).to.equal('test-upsert-1');
     expect(upsertQueue[0].change.ResourceRecordSet.ResourceRecords[0].Value).to.equal('0.0.0.0');
     expect(upsertQueue[0].cb).to.equal(cb);
   });
+
+  it('should properly complete all jobs before stopping', function (done) {
+    var upsertQueue = dnsJobQueue.__get__('upsertQueue');
+    var deleteQueue = dnsJobQueue.__get__('deleteQueue');
+    var finalCallback = sinon.spy();
+    var count = createCounter(finalCallback);
+    var cb1 = count.inc().next;
+    var cb2 = count.inc().next;
+    var cb3 = count.inc().next;
+    var cb4 = count.inc().next;
+    dnsJobQueue.createJob('UPSERT',
+                          'test-upsert-1',
+                          '0.0.0.0',
+                          cb1);
+    dnsJobQueue.createJob('UPSERT',
+                          'test-upsert-2',
+                          '0.0.0.0',
+                          cb2);
+    dnsJobQueue.createJob('UPSERT',
+                          'test-upsert-3',
+                          '0.0.0.0',
+                          cb3);
+    dnsJobQueue.createJob('DELETE',
+                          'test-delete-1',
+                          '0.0.0.0',
+                          cb4);
+    dnsJobQueue.start();
+    dnsJobQueue.stop(function () {
+      sinon.assert.calledOnce(finalCallback);
+      done();
+    });
+  });
+
 });
