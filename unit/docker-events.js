@@ -81,7 +81,7 @@ describe('Docker Events', function () {
         var requireInject = require('require-inject');
         var count = 0;
         var de = requireInject('models/events/docker', {
-          'debug': function (ns) {
+          'debug': function () {
             return function (message) {
               if (count === 0) {
                 expect(message).to.equal('handleDie');
@@ -91,10 +91,59 @@ describe('Docker Events', function () {
                 done();
               }
               count++;
-            }
+            };
         } });
         de.closeHandler = function () {};
         de.handleDie();
+      });
+
+    });
+
+    describe('when API is not active', function () {
+
+      afterEach(events.close.bind(events));
+
+      before(function (done) {
+        ctx.origIsMe = activeApi.isMe;
+        activeApi.isMe = function (cb) {
+          cb(null, false);
+        };
+        done();
+      });
+
+      after(function (done) {
+        activeApi.isMe = ctx.origIsMe;
+        done();
+      });
+
+
+      it('should not process the event data', function (done) {
+        // NOTE: this is very experimental way to test our code.
+        // we patch debug here and ensure that debug was called with proper message
+        // I'd prefer handleDie accepts callback, but it was discussed with tj and
+        // decided against callbacks
+        var requireInject = require('require-inject');
+        var count = 0;
+        var de = requireInject('models/events/docker', {
+          'debug': function () {
+            return function (message) {
+              if (count === 0) {
+                expect(message).to.equal('handleDie');
+              }
+              if (count === 1) {
+                expect(message).to.equal('not active api');
+                done();
+              }
+              count++;
+            };
+        } });
+        var data = {
+          uuid: 'some-uuid',
+          id: 'some-id',
+          time: new Date().getTime(),
+          host: 'http://127.0.0.1:4242'
+        };
+        de.handleDie(data);
       });
 
     });
@@ -246,11 +295,11 @@ describe('Docker Events', function () {
 
 
     describe('listening', function () {
-      beforeEach(function (done) {
-        dockerEvents.listen(done);
+      afterEach(function (done) {
+        dockerEvents.close(done);
       });
       it('should callback', function (done) {
-        dockerEvents.close(done);
+        dockerEvents.listen(done);
       });
     });
     describe('while handling events', function () {

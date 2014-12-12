@@ -4,22 +4,13 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var after = Lab.after;
 var before = Lab.before;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var pubsub = require('models/redis/pubsub');
-var error = require('error');
-var dockerEvents = require('models/events/docker');
-var events = require('models/events/index');
 var expect = Lab.expect;
 var redisCleaner = require('../test/fixtures/redis-cleaner');
-var createCount = require('callback-count');
-var uuid = require('uuid');
 var activeApi = require('models/redis/active-api');
 
 require('loadenv')();
 
 describe('Active API', function () {
-  var ctx = {};
 
   describe('isMe', function () {
     before(redisCleaner.clean('*'));
