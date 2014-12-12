@@ -171,7 +171,7 @@ describe('Docker Events', function () {
       });
     });
 
-    describe('listen, close, listen', function () {
+    describe('close, listen', function () {
       it('should start listening ok', function (done) {
         var count = createCount(3, done);
         events.listen(count.next);
@@ -180,13 +180,13 @@ describe('Docker Events', function () {
       });
     });
 
-    describe('closing', function () {
+    describe('while closing', function () {
       afterEach(function (done) {
         dockerEvents.eventLockCount = 0;
         dockerEvents.close(done);
       });
 
-      it('should throw an error if close in progress', function (done) {
+      it('should return an error if close in progress', function (done) {
         dockerEvents.eventLockCount = 1;
         dockerEvents.close();
         dockerEvents.listen(function (err) {
