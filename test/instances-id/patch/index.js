@@ -424,13 +424,14 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
             // circleci is not playing nice with this test.
             // it is not applying indexes immediately for some reason.
             if (process.env.CIRCLECI) {
-              var script = 'db.instances.ensureIndex({"lowerName":1, "owner.github":1}, {unique:true})';
+              var exec = require('child_process').exec;
+              var script = '"db.instances.ensureIndex({\'lowerName\':1,\'owner.github\':1}, {unique:true})"';
               var mongoCmd = [
                 'mongo',
                 '--eval', script,
-                process.env.MONGO
+                process.env.MONGO.split('/').pop() // db name only
               ].join(' ');
-              exec(mongoCmd, opts, done);
+              exec(mongoCmd, done);
             }
             else {
               done();
