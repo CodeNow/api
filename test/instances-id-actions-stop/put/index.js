@@ -233,7 +233,9 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
       }
       else { // success
         ctx.expected['containers[0].inspect.State.Running'] = false;
-        var assertions = expects.success(200, ctx.expected, startStopAssert);
+        var assertions = ctx.expectAlreadyStopped ?
+          expects.error(304, startStopAssert) :
+          expects.success(200, ctx.expected, startStopAssert);
         ctx.instance.stop(assertions);
       }
       function startStopAssert (err) {
