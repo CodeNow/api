@@ -71,7 +71,7 @@ describe('Docker Events', function () {
     });
 
     describe('while closing', function () {
-      afterEach(events.close.bind(events));
+      afterEach(dockerEvents.close.bind(dockerEvents));
 
       it('should not process and error should be logged', function (done) {
         // NOTE: this is very experimental way to test our code.
@@ -101,7 +101,7 @@ describe('Docker Events', function () {
 
     describe('when API is not active', function () {
 
-      afterEach(events.close.bind(events));
+      afterEach(dockerEvents.close.bind(dockerEvents));
 
       before(function (done) {
         ctx.origIsMe = activeApi.isMe;
@@ -151,34 +151,49 @@ describe('Docker Events', function () {
   });
 
 
+  describe('events wrapper', function () {
+
+    describe('listen', function () {
+      before(redisCleaner.clean('*'));
+      after(redisCleaner.clean('*'));
+      afterEach(events.close.bind(events));
+
+      it('should start listening and callback', function (done) {
+        events.listen(done);
+      });
+      describe('listen twice', function () {
+        it('should callback an error', function (done) {
+          var count = createCount(2, function (err) {
+            expect(err.output.statusCode).to.equal(409);
+            expect(err.output.payload.message).to.equal('events were already started');
+            done();
+          });
+          events.listen(count.next);
+          events.listen(count.next);
+        });
+      });
+
+      describe('close, listen', function () {
+        it('should start listening ok', function (done) {
+          var count = createCount(2, done);
+          events.listen(count.next);
+          events.close(function (err) {
+            if (err) { return done(err); }
+            process.nextTick(function () {
+              events.listen(count.next);
+            });
+          });
+        });
+      });
+    });
+  });
+
+
   describe('listen', function () {
     before(redisCleaner.clean('*'));
     after(redisCleaner.clean('*'));
-    afterEach(events.close.bind(events));
+    afterEach(dockerEvents.close.bind(dockerEvents));
 
-    it('should start listening and callback', function (done) {
-      events.listen(done);
-    });
-    describe('listen twice', function () {
-      it('should callback an error', function (done) {
-        var count = createCount(2, function (err) {
-          expect(err.output.statusCode).to.equal(409);
-          expect(err.output.payload.message).to.equal('Events were already started');
-          done();
-        });
-        events.listen(count.next);
-        events.listen(count.next);
-      });
-    });
-
-    describe('close, listen', function () {
-      it('should start listening ok', function (done) {
-        var count = createCount(3, done);
-        events.listen(count.next);
-        events.close(count.next);
-        events.listen(count.next);
-      });
-    });
 
     describe('while closing', function () {
       afterEach(function (done) {
