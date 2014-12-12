@@ -6,6 +6,10 @@ var noop = require('101/noop');
 var exists = require('101/exists');
 var hasKeypaths = require('101/has-keypaths');
 var keypather = require('keypather')();
+var async = require('async');
+var formatArgs = require('format-args');
+var debug = require('debug')('runnable-api:fixtures:route53');
+
 var requireKeypath = function (obj, keypath) {
   var val = keypather.get(obj, keypath);
   if (!exists(val)) {
@@ -23,9 +27,10 @@ var mock = module.exports = {};
  * @param  {Function} cb callback
  */
 mock.start = function (cb) {
+  debug('start', formatArgs(arguments));
   cb = cb || noop;
   if (AWS.Route53 !== Route53) {
-    console.log('already started');
+    console.log('route53 mock already started', !!AWS.Route53, !!Route53);
     return cb();
   }
   AWS.Route53 = function () {
@@ -38,6 +43,7 @@ mock.start = function (cb) {
 };
 
   function changeResourceRecordSets (params, cb) {
+    debug('changeResourceRecordSets mock!', params);
     if (!params) {
       throw new Error('params is required');
     }
@@ -45,23 +51,26 @@ mock.start = function (cb) {
       throw new Error('params must be an object');
     }
     requireKeypath(params, 'HostedZoneId');
-    var action = requireKeypath(params, 'ChangeBatch.Changes[0].Action');
-    var resourceRecordSet = requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet');
-    requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet.Name');
-    requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet.Type');
-    requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet.ResourceRecords[0].Value');
-    requireKeypath(params, 'ChangeBatch.Changes[0].ResourceRecordSet.TTL');
-
-    if (action.toUpperCase() === 'UPSERT') {
-      mockUpsert(resourceRecordSet, cb);
-    }
-    else if (action.toUpperCase() === 'DELETE') {
-      mockDelete(resourceRecordSet, cb);
-    }
-    else {
-      throw new Error('Unexpected "ChangeBatch.Changes[0].Action" value "' +
-        action + '" (mock expects UPSERT|DELETE)');
-    }
+    requireKeypath(params, 'ChangeBatch');
+    requireKeypath(params, 'ChangeBatch.Changes');
+    async.each(params.ChangeBatch.Changes, function (change, cb) {
+      var action = requireKeypath(change, 'Action');
+      var resourceRecordSet = requireKeypath(change, 'ResourceRecordSet');
+      requireKeypath(change, 'ResourceRecordSet.Name');
+      requireKeypath(change, 'ResourceRecordSet.Type');
+      requireKeypath(change, 'ResourceRecordSet.ResourceRecords[0].Value');
+      requireKeypath(change, 'ResourceRecordSet.TTL');
+      if (action.toUpperCase() === 'UPSERT') {
+        mockUpsert(resourceRecordSet, cb);
+      }
+      else if (action.toUpperCase() === 'DELETE') {
+        mockDelete(resourceRecordSet, cb);
+      }
+      else {
+        throw new Error('Unexpected "ChangeBatch.Changes[0].Action" value "' +
+          action + '" (mock expects UPSERT|DELETE)');
+      }
+    }, cb);
   }
 
 /**
@@ -69,8 +78,10 @@ mock.start = function (cb) {
  * @param  {Function} cb callback
  */
 mock.stop = function (cb) {
+  debug('stop', formatArgs(arguments));
   cb = cb || noop;
   AWS.Route53 = Route53;
+  mock.reset();
   cb();
   return this;
 };
@@ -81,6 +92,7 @@ var records = [];
  * reset mock records for route53
  */
 mock.reset = function (cb) {
+  debug('reset');
   cb = cb || noop;
   records = [];
   cb();
@@ -147,6 +159,7 @@ var resp = {
  * @param  {Function} cb                callback
  */
 function mockUpsert (resourceRecordSet, cb) {
+  debug('mockUpsert', formatArgs(arguments));
   var domainRe = new RegExp(escapeRegExp(process.env.DOMAIN)+'$');
   var name = resourceRecordSet.Name;
   if (!domainRe.test(name)) {
@@ -168,6 +181,7 @@ function mockUpsert (resourceRecordSet, cb) {
  * @param  {Function} cb                callback
  */
 function mockDelete (resourceRecordSet, cb) {
+  debug('mockDelete', formatArgs(arguments));
   var name = resourceRecordSet.Name;
   var type = resourceRecordSet.Type;
   var index = findIndex(records, hasKeypaths({

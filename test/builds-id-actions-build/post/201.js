@@ -5,6 +5,7 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var expect = Lab.expect;
 
 var api = require('./../../fixtures/api-control');
 var dock = require('./../../fixtures/dock');
@@ -16,6 +17,7 @@ var uuid = require('uuid');
 var exists = require('101/exists');
 var not = require('101/not');
 var extend = require('extend');
+var Docker = require('models/apis/docker');
 
 describe('201 POST /builds/:id/actions/build', {timeout: 500}, function() {
   var ctx = {};
@@ -257,7 +259,19 @@ function itShouldBuildTheBuild (ctx) {
           if (err) { return done(err); }
           var count = createCount(done);
           ctx.build.fetch(expects.success(200, ctx.expectBuilt, count.inc().next));
-          ctx.cv.fetch(expects.success(200, count.inc().next));
+          count.inc();
+          ctx.cv.fetch(expects.success(200, function (err, cv) {
+            if (err) { return done(err); }
+            var docker = new Docker(cv.dockerHost);
+            docker.docker.getContainer(cv.containerId).inspect(function (err, data) {
+              if (err) { return done(err); }
+              expect(data.Binds).to.have.length(1);
+              expect(data.Binds[0]).to.match(new RegExp(process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw'));
+              expect(Object.keys(data.Volumes)).to.have.length(1);
+              expect(data.Volumes['/cache']).to.eql({});
+              count.next(err);
+            });
+          }));
         });
       }));
   });
