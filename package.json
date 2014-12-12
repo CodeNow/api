@@ -94,7 +94,7 @@
     "nock": "^0.48.0",
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
-    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.6",
+    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.7",
     "server-destroy": "^1.0.0"
   },
   "engine": "node >= 0.10.5",
