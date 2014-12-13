@@ -12,16 +12,6 @@ require('loadenv')();
 
 var dnsJobQueue;
 
-var baseUpsertJob = {
-  Action: null, // type
-  ResourceRecordSet: {
-    Name: null, // name
-    Type: 'A',
-    ResourceRecords: [], // { Value: ip }
-    TTL: 60
-  }
-};
-
 describe('dnsJobQueue', function () {
   beforeEach(function (done) {
     route53Fixture.start();
@@ -96,8 +86,13 @@ describe('dnsJobQueue', function () {
                           '0.0.0.0',
                           cb4);
     dnsJobQueue.start();
+    expect(upsertQueue.length).to.equal(3);
+    expect(deleteQueue.length).to.equal(1);
     dnsJobQueue.stop(function () {
+      expect(upsertQueue.length).to.equal(0);
+      expect(deleteQueue.length).to.equal(0);
       sinon.assert.calledOnce(finalCallback);
+      expect();
       done();
     });
   });
