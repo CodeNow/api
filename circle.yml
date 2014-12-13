@@ -1,5 +1,6 @@
 machine:
   environment:
+    NODE_PATH: ./lib:./test
     NODE_ENV: testing
 dependencies:
   override:
