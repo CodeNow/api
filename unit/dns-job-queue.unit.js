@@ -6,7 +6,7 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var rewire = require('rewire');
 var sinon = require('sinon');
-var route53Fixture = require('fixtures/route53');
+var route53Fixture = require('./fixtures/route53');
 var createCounter = require('callback-count');
 require('loadenv')();
 
