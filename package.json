@@ -95,7 +95,7 @@
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
     "rewire": "^2.1.3",
-    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.6",
+    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.7",
     "server-destroy": "^1.0.0",
     "sinon": "^1.12.2"
   },
