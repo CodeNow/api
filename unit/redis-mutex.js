@@ -56,7 +56,7 @@ describe('RedisMutex', function () {
         done();
       });
       after(function (done) {
-        ctx.originREDIS_LOCK_EXPIRES = process.env.REDIS_LOCK_EXPIRES;
+        process.env.REDIS_LOCK_EXPIRES = ctx.originREDIS_LOCK_EXPIRES;
         done();
       });
 
