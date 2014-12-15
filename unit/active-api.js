@@ -11,7 +11,7 @@ var activeApi = require('models/redis/active-api');
 require('loadenv')();
 
 describe('Active API', function () {
-
+  var ctx = {};
   describe('isMe', function () {
     before(redisCleaner.clean('*'));
     after(redisCleaner.clean('*'));
@@ -29,6 +29,16 @@ describe('Active API', function () {
   describe('setAsMe', function () {
     before(redisCleaner.clean('*'));
     after(redisCleaner.clean('*'));
+
+    before(function (done) {
+      ctx.originUUID = process.env.UUID;
+      done();
+    });
+
+    after(function (done) {
+      process.env.UUID = ctx.originUUID;
+      done();
+    });
 
 
     it('should return success if key was set', function (done) {
