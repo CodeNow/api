@@ -13,6 +13,7 @@ var multi = require('../../fixtures/multi-factory');
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
+var tailBuildStream = require('../../fixtures/tail-build-stream');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
@@ -21,25 +22,10 @@ var Docker = require('models/apis/docker');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
+var redisCleaner = require('../../fixtures/redis-cleaner');
 
-var redisCleaner = function (cb) {
-  var redis = require('models/redis');
-  redis.keys(process.env.WEAVE_NETWORKS+'*', function (err, keys) {
-    if (err) {
-      return cb(err);
-    }
-    if (keys.length === 0) {
-      return cb();
-    }
 
-    var count = createCount(cb);
-    keys.forEach(function (key) {
-      redis.del(key, count.inc().next);
-    });
-  });
-};
-
-describe('PUT /instances/:id/actions/start', function () {
+describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;
@@ -76,7 +62,7 @@ describe('PUT /instances/:id/actions/start', function () {
       }, ms);
     };
   };
-  beforeEach(redisCleaner);
+  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
@@ -123,6 +109,13 @@ describe('PUT /instances/:id/actions/start', function () {
           ctx.cv = contextVersion;
           ctx.build.build({ message: uuid() }, expects.success(201, done));
         });
+      });
+      beforeEach(function (done) {
+        // make sure build finishes before moving on to the next test
+        ctx.afterAssert = function (done) {
+          tailBuildStream(ctx.cv.id(), done);
+        };
+        done();
       });
       beforeEach(function (done) {
         initExpected(function () {
@@ -260,6 +253,7 @@ describe('PUT /instances/:id/actions/start', function () {
             if (err) { return count.next(err); }
             expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
             expects.updatedHosts(ctx.user, instance, count.next);
+            if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }
           }));
         });
       }

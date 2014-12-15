@@ -1,19 +1,23 @@
 var route53 = require('./route53');
 route53.start(); // must be before api require
-var Api = require('server');
+var api = require('../../app');
 var cleanMongo = require('./clean-mongo');
+var cayley = require('./cayley');
 
 module.exports = {
   start: startApi,
   stop: stopApi
 };
 
-var api;
 function startApi (done) {
-  api = new Api().start(function (err) {
+  var ctx = this;
+  ctx.cayley = cayley;
+  route53.start(); // must be before api require, and here
+  api.start(function (err) {
     if (err) { return done(err); }
-
-    cleanMongo.removeEverything(done);
+    cayley.start(function () {
+      cleanMongo.removeEverything(done);
+    });
   });
 }
 
@@ -21,8 +25,7 @@ function stopApi (done) {
   route53.stop();
   api.stop(function (err) {
     if (err) { return done(err); }
-
+    cayley.stop(done);
     // cleanMongo.dropDatabase(done);
-    done();
   });
 }
