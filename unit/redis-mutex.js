@@ -2,13 +2,15 @@ var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
-
+var before = Lab.before;
+var after = Lab.after;
+var createCount = require('callback-count');
 
 var RedisMutex = require('models/redis/mutex');
 
 
 describe('RedisMutex', function () {
-
+  var ctx = {};
 
   describe('lock', function () {
 
@@ -45,6 +47,41 @@ describe('RedisMutex', function () {
         });
       });
 
+    });
+
+
+    describe('ttl', function () {
+      before(function (done) {
+        ctx.originREDIS_LOCK_EXPIRES = process.env.REDIS_LOCK_EXPIRES;
+        done();
+      });
+      after(function (done) {
+        ctx.originREDIS_LOCK_EXPIRES = process.env.REDIS_LOCK_EXPIRES;
+        done();
+      });
+
+      it('should release lock after expiration time', function (done) {
+        var count = createCount(2, done);
+        process.env.REDIS_LOCK_EXPIRES = 500;
+        var mutex1 = new RedisMutex('key-1');
+        var mutex2 = new RedisMutex('key-1');
+        setTimeout(function () {
+          mutex2.lock(function (err, success) {
+            if (err) { return done(err); }
+            expect(success).to.equal(false);
+            count.next();
+          });
+        }, 500);
+        mutex1.lock(function (err, success) {
+          if (err) { return done(err); }
+          expect(success).to.equal(false);
+          mutex2.lock(function (err, success) {
+            if (err) { return done(err); }
+            expect(success).to.equal(false);
+            count.next();
+          });
+        });
+      });
     });
 
   });
