@@ -65,7 +65,7 @@ describe('RedisMutex', function () {
 
       it('should release lock after expiration time', function (done) {
         var count = createCount(2, done);
-        process.env.REDIS_LOCK_EXPIRES = 200;
+        process.env.REDIS_LOCK_EXPIRES = 50;
         var mutex1 = new RedisMutex('new-key-1');
         var mutex2 = new RedisMutex('new-key-1');
         setTimeout(function () {
@@ -74,7 +74,7 @@ describe('RedisMutex', function () {
             expect(success).to.equal(true);
             count.next();
           });
-        }, 200);
+        }, 50);
         mutex1.lock(function (err, success) {
           if (err) { return done(err); }
           expect(success).to.equal(true);
