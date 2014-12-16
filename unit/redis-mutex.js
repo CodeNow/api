@@ -5,13 +5,13 @@ var expect = Lab.expect;
 var before = Lab.before;
 var after = Lab.after;
 var createCount = require('callback-count');
-var redisCleaner = require('../test/fixtures/redis-cleaner');
 var RedisMutex = require('models/redis/mutex');
+var redis = require('models/redis');
 
 
 describe('RedisMutex', function () {
-  before(redisCleaner.clean('*'));
-  after(redisCleaner.clean('*'));
+  before(redis.flushdb.bind(redis));
+  after(redis.flushdb.bind(redis));
 
   var ctx = {};
 
