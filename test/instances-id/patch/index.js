@@ -477,6 +477,20 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
             ctx.instance.fetch(expects.success(200, expected, done));
           }));
         });
+        it('should filter empty/whitespace-only strings from env array', function (done) {
+          var body = {
+            env: ['', '  ', 'ONE=1']
+          };
+          var expected = {
+            env: ['ONE=1']
+          };
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          ctx.instance.update(body, expects.success(200, expected, function (err) {
+            if (err) { return done(err); }
+            //sanity check
+            ctx.instance.fetch(expects.success(200, expected, done));
+          }));
+        });
       });
 
       var updates = [{

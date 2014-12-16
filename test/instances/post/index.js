@@ -309,7 +309,6 @@ describe('POST /instances', function () {
               'containers[0]': exists
             };
             require('../../fixtures/mocks/github/user')(ctx.user);
-            require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
               expects.success(201, expected, done));
           });
@@ -323,6 +322,31 @@ describe('POST /instances', function () {
             };
             ctx.user.createInstance(json,
               expects.errorStatus(400, /should be an array of strings/, done));
+          });
+          it('should filter empty/whitespace-only strings from env array', function (done) {
+            var json = {
+              name: uuid(),
+              build: ctx.build.id(),
+              env: [
+                '', ' ', 'ONE=1'
+              ]
+            };
+            var expected = {
+              _id: exists,
+              name: json.name,
+              env: ['ONE=1'],
+              owner: {
+                github: ctx.user.json().accounts.github.id,
+                username: ctx.user.json().accounts.github.login
+              },
+              public: false,
+              'build._id': ctx.build.id(),
+              containers: exists,
+              'containers[0]': exists
+            };
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            ctx.user.createInstance(json,
+              expects.success(201, expected, done));
           });
           it('should error if body.env contains an invalid variable', function (done) {
             var json = {
