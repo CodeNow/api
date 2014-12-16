@@ -5,7 +5,7 @@ var it = Lab.test;
 var after = Lab.after;
 var before = Lab.before;
 var expect = Lab.expect;
-var redisCleaner = require('../test/fixtures/redis-cleaner');
+var redis = require('models/redis');
 var activeApi = require('models/redis/active-api');
 
 require('loadenv')();
@@ -13,8 +13,8 @@ require('loadenv')();
 describe('Active API', function () {
   var ctx = {};
   describe('isMe', function () {
-    before(redisCleaner.clean('*'));
-    after(redisCleaner.clean('*'));
+    before(redis.flushdb.bind(redis));
+    after(redis.flushdb.bind(redis));
 
     it('should return false if setAsMe was never called', function (done) {
       activeApi.isMe(function (err, isActive) {
@@ -27,8 +27,8 @@ describe('Active API', function () {
   });
 
   describe('setAsMe', function () {
-    before(redisCleaner.clean('*'));
-    after(redisCleaner.clean('*'));
+    before(redis.flushdb.bind(redis));
+    after(redis.flushdb.bind(redis));
 
     before(function (done) {
       ctx.originUUID = process.env.UUID;
