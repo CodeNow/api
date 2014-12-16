@@ -74,10 +74,6 @@ describe('Docker Events', function () {
       afterEach(dockerEvents.close.bind(dockerEvents));
 
       it('should not process and error should be logged', function (done) {
-        // NOTE: this is very experimental way to test our code.
-        // we patch debug here and ensure that debug was called with proper message
-        // I'd prefer handleDie accepts callback, but it was discussed with tj and
-        // decided against callbacks
         var requireInject = require('require-inject');
         var count = 0;
         var de = requireInject('models/events/docker', {
@@ -118,10 +114,6 @@ describe('Docker Events', function () {
 
 
       it('should not process the event data', function (done) {
-        // NOTE: this is very experimental way to test our code.
-        // we patch debug here and ensure that debug was called with proper message
-        // I'd prefer handleDie accepts callback, but it was discussed with tj and
-        // decided against callbacks
         var requireInject = require('require-inject');
         var count = 0;
         var de = requireInject('models/events/docker', {
