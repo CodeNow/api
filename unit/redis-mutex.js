@@ -5,11 +5,14 @@ var expect = Lab.expect;
 var before = Lab.before;
 var after = Lab.after;
 var createCount = require('callback-count');
-
+var redisCleaner = require('../test/fixtures/redis-cleaner');
 var RedisMutex = require('models/redis/mutex');
 
 
 describe('RedisMutex', function () {
+  before(redisCleaner.clean('*'));
+  after(redisCleaner.clean('*'));
+
   var ctx = {};
 
   describe('lock', function () {
@@ -62,19 +65,19 @@ describe('RedisMutex', function () {
 
       it('should release lock after expiration time', function (done) {
         var count = createCount(2, done);
-        process.env.REDIS_LOCK_EXPIRES = 500;
-        var mutex1 = new RedisMutex('key-1');
-        var mutex2 = new RedisMutex('key-1');
+        process.env.REDIS_LOCK_EXPIRES = 200;
+        var mutex1 = new RedisMutex('new-key-1');
+        var mutex2 = new RedisMutex('new-key-1');
         setTimeout(function () {
           mutex2.lock(function (err, success) {
             if (err) { return done(err); }
-            expect(success).to.equal(false);
+            expect(success).to.equal(true);
             count.next();
           });
-        }, 500);
+        }, 200);
         mutex1.lock(function (err, success) {
           if (err) { return done(err); }
-          expect(success).to.equal(false);
+          expect(success).to.equal(true);
           mutex2.lock(function (err, success) {
             if (err) { return done(err); }
             expect(success).to.equal(false);
