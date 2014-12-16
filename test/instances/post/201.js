@@ -243,11 +243,9 @@ describe('201 POST /instances', {timeout:500}, function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
-            'containers[0]': exists,
-            'containers[0].ports': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': true
+            'containers[0].error.message': exists,
+            'containers[0].error.stack': exists,
+            'containers[0].error.imageIsPulling': true
           });
           Dockerode.prototype.createContainer = forceImageNotFoundOnCreateErrOnce(Dockerode.prototype.createContainer);
           done();
