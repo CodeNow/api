@@ -321,7 +321,7 @@ describe('POST /instances', function () {
               }]
             };
             ctx.user.createInstance(json,
-              expects.errorStatus(400, /should be an array of strings/, done));
+              expects.errorStatus(400, /"env" should match/, done));
           });
           it('should filter empty/whitespace-only strings from env array', function (done) {
             var json = {
