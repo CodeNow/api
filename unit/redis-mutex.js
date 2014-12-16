@@ -74,7 +74,7 @@ describe('RedisMutex', function () {
             expect(success).to.equal(true);
             count.next();
           });
-        }, 50);
+        }, 100);
         mutex1.lock(function (err, success) {
           if (err) { return done(err); }
           expect(success).to.equal(true);
