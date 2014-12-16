@@ -140,11 +140,6 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
         body[param.name].push(typeValue(ctx, arrayItemType));
         body[param.name].push(typeValue(ctx, arrayItemType));
         body[param.name].push(typeValue(ctx, arrayItemType));
-
-        // e.g. body parameter "env" should be an array of strings
-        var regexp = 'body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, arrayItemType) +
-        ' of ' + param.itemType + 's';
-
         regexp = '"env" should match';
         var message = new RegExp(regexp);
         var cb = expects.error(400, message, done);
