@@ -42,36 +42,36 @@ mock.start = function (cb) {
   return this;
 };
 
-  function changeResourceRecordSets (params, cb) {
-    debug('changeResourceRecordSets mock!', params);
-    if (!params) {
-      throw new Error('params is required');
-    }
-    if (!isObject(params)) {
-      throw new Error('params must be an object');
-    }
-    requireKeypath(params, 'HostedZoneId');
-    requireKeypath(params, 'ChangeBatch');
-    requireKeypath(params, 'ChangeBatch.Changes');
-    async.each(params.ChangeBatch.Changes, function (change, cb) {
-      var action = requireKeypath(change, 'Action');
-      var resourceRecordSet = requireKeypath(change, 'ResourceRecordSet');
-      requireKeypath(change, 'ResourceRecordSet.Name');
-      requireKeypath(change, 'ResourceRecordSet.Type');
-      requireKeypath(change, 'ResourceRecordSet.ResourceRecords[0].Value');
-      requireKeypath(change, 'ResourceRecordSet.TTL');
-      if (action.toUpperCase() === 'UPSERT') {
-        mockUpsert(resourceRecordSet, cb);
-      }
-      else if (action.toUpperCase() === 'DELETE') {
-        mockDelete(resourceRecordSet, cb);
-      }
-      else {
-        throw new Error('Unexpected "ChangeBatch.Changes[0].Action" value "' +
-          action + '" (mock expects UPSERT|DELETE)');
-      }
-    }, cb);
+function changeResourceRecordSets (params, cb) {
+  debug('changeResourceRecordSets mock!', params);
+  if (!params) {
+    throw new Error('params is required');
   }
+  if (!isObject(params)) {
+    throw new Error('params must be an object');
+  }
+  requireKeypath(params, 'HostedZoneId');
+  requireKeypath(params, 'ChangeBatch');
+  requireKeypath(params, 'ChangeBatch.Changes');
+  async.each(params.ChangeBatch.Changes, function (change, cb) {
+    var action = requireKeypath(change, 'Action');
+    var resourceRecordSet = requireKeypath(change, 'ResourceRecordSet');
+    requireKeypath(change, 'ResourceRecordSet.Name');
+    requireKeypath(change, 'ResourceRecordSet.Type');
+    requireKeypath(change, 'ResourceRecordSet.ResourceRecords[0].Value');
+    requireKeypath(change, 'ResourceRecordSet.TTL');
+    if (action.toUpperCase() === 'UPSERT') {
+      mockUpsert(resourceRecordSet, cb);
+    }
+    else if (action.toUpperCase() === 'DELETE') {
+      mockDelete(resourceRecordSet, cb);
+    }
+    else {
+      throw new Error('Unexpected "ChangeBatch.Changes[0].Action" value "' +
+        action + '" (mock expects UPSERT|DELETE)');
+    }
+  }, cb);
+}
 
 /**
  * stop route53 mock
