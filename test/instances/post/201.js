@@ -221,7 +221,6 @@ describe('201 POST /instances', {timeout:500}, function () {
           Dockerode.prototype.createContainer = ctx.originalCreateContainer;
           done();
         });
-
         createInstanceTests(ctx);
       });
     });
