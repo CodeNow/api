@@ -70,6 +70,18 @@ describe('Docker Events', function () {
       dockerEvents.handleDie({uuid: 'some-uuid', id: 'some-id', time: new Date().getTime() });
     });
 
+    it('should return if image builder image', function (done) {
+      var out = dockerEvents.handleDie({
+        uuid: 'some-uuid',
+        id: 'some-id',
+        time: new Date().getTime(),
+        host: 'http://localhost:4243',
+        from: process.env.IMAGE_BUILDER
+      });
+      expect(out).to.have.property('skip');
+      done();
+    });
+
     describe('while closing', function () {
       afterEach(dockerEvents.close.bind(dockerEvents));
 
@@ -133,7 +145,8 @@ describe('Docker Events', function () {
           uuid: 'some-uuid',
           id: 'some-id',
           time: new Date().getTime(),
-          host: 'http://127.0.0.1:4242'
+          host: 'http://127.0.0.1:4242',
+          from: 'container/name'
         };
         de.handleDie(data);
       });
@@ -244,7 +257,8 @@ describe('Docker Events', function () {
           uuid: uuid(),
           id: 'some-id',
           time: new Date().getTime(),
-          host: 'http://localhost:4243'
+          host: 'http://localhost:4243',
+          from: 'container/name'
         };
         dockerEvents.handleDie(payload);
         dockerEvents.handleDie(payload);
