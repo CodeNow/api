@@ -187,7 +187,6 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
           Dockerode.prototype.createContainer = ctx.originalCreateContainer;
           done();
         });
-
         createInstanceAndRunTests(ctx);
       });
     });
