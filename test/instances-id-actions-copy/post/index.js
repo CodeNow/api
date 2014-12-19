@@ -196,15 +196,19 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
             shortHash: exists,
             name: exists,
             public: exists,
-            createdBy: { github: ctx.user.json().accounts.github.id },
-            owner: { github: ctx.user.json().accounts.github.id,
-                     username: ctx.user.json().accounts.github.username },
+            createdBy: {github: ctx.nonOwner.json().accounts.github.id},
+            owner: {
+              github: ctx.nonOwner.json().accounts.github.id,
+              username: ctx.nonOwner.json().accounts.github.username
+            },
             parent: ctx.instance.id(),
             'build._id': ctx.build.id(),
             containers: exists
           };
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.instance.copy(expects.success(201, expected, done));
+          require('../../fixtures/mocks/github/user')(ctx.nonOwner);
+          require('../../fixtures/mocks/github/user')(ctx.nonOwner);
+          var instance = ctx.nonOwner.newInstance(ctx.instance.id());
+          instance.copy(expects.success(201, expected, done));
         });
       });
     });
