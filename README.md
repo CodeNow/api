@@ -134,7 +134,7 @@ Build List Page - /project/anandkumar/filibuster/master
  - has a listing of builds for an environment
 
 Build Page - /project/anandkumar/filibuster/master/build/:id
- - most complex page
+ - is the most complex page
  - you can edit build files and create new builds
  - you can rebuild - create a new build from a build
  - shows logs if in progress, shows all logs if complete
