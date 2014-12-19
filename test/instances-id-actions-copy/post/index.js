@@ -11,6 +11,8 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
 var exists = require('101/exists');
+var equals = require('101/equals');
+var not = require('101/not');
 
 describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
   var ctx = {};
@@ -24,11 +26,12 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
   afterEach(require('../../fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user) {
+    multi.createInstance(function (err, instance, build, user, modelsArr) {
       if (err) { return done(err); }
       ctx.instance = instance;
       ctx.build = build;
       ctx.user = user;
+      ctx.context = modelsArr[1];
       require('../../fixtures/mocks/github/user')(ctx.user);
       require('../../fixtures/mocks/github/user')(ctx.user);
       done();
@@ -191,6 +194,9 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
         beforeEach(function (done) {
           ctx.instance.update({ json: { public: true } }, done);
         });
+        beforeEach(function (done) {
+          ctx.context.update({json: {public: true}}, done);
+        });
         it('should copy a public instance', function (done) {
           var expected = {
             shortHash: exists,
@@ -202,11 +208,12 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
               username: ctx.nonOwner.json().accounts.github.username
             },
             parent: ctx.instance.id(),
-            'build._id': ctx.build.id(),
+            'build._id': not(equals(ctx.build.id())),
             containers: exists
           };
           require('../../fixtures/mocks/github/user')(ctx.nonOwner);
           require('../../fixtures/mocks/github/user')(ctx.nonOwner);
+          require('../../fixtures/mocks/github/user-orgs')(100, 'otherOrg');
           var instance = ctx.nonOwner.newInstance(ctx.instance.id());
           instance.copy(expects.success(201, expected, done));
         });
