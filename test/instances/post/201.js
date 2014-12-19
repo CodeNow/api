@@ -304,6 +304,44 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, done);
   });
+  it('should create a private instance by default', function (done) {
+    var name = uuid();
+    var env = [
+      'FOO=BAR'
+    ];
+    var body = {
+      name: name,
+      build: ctx.build.id(),
+      env: env
+    };
+    ctx.expected.name = name;
+    ctx.expected.env = env;
+    assertCreate(body, function () {
+      Lab.expect(ctx.instance.attrs.public).to.equal(false);
+      done();
+    });
+  });
+  it('should create a public instance if '+
+     'sessionUser.github.id === process.env.HELLO_RUNNABLE_GITHUB_ID', function (done) {
+    var name = uuid();
+    var env = [
+      'FOO=BAR'
+    ];
+    var body = {
+      name: name,
+      build: ctx.build.id(),
+      env: env
+    };
+    ctx.expected.name = name;
+    ctx.expected.env = env;
+    multi.createHelloRunnableUser(function (err, user) {
+      ctx.user = user;
+      ctx.instance = ctx.user.createInstance(body, function () {
+        Lab.expect(ctx.instance.attrs.public).to.equal(true);
+        done();
+      });
+    });
+  });
   describe('name generation', function () {
     // TODO
   });
