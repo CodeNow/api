@@ -33,6 +33,7 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
       ctx.build = build;
       ctx.user = user;
       ctx.context = modelsArr[1];
+      ctx.contextVersion = modelsArr[0];
       require('../../fixtures/mocks/github/user')(ctx.user);
       require('../../fixtures/mocks/github/user')(ctx.user);
       done();
@@ -217,9 +218,9 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
           require('../../fixtures/mocks/github/user-orgs')(100, 'otherOrg');
           var instance = ctx.nonOwner.newInstance(ctx.instance.id());
           var newInstance = instance.copy(expects.success(201, expected, function () {
-            //ctx.nonOwner.fetchBuild(newInstance.build._id,
-            console.log(newInstance.build.attrs);
             expect(newInstance.build.attrs.contexts[0]).to.not.equal(ctx.context.id());
+            expect(newInstance.build.attrs.contextVersions[0]).to.not.equal(ctx.contextVersion.id());
+            expect(newInstance.attrs.contextVersion.context).to.not.equal(ctx.context.id());
             done();
           }));
         });
