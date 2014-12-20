@@ -5,6 +5,7 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var expect = Lab.expect;
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -215,7 +216,12 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
           require('../../fixtures/mocks/github/user')(ctx.nonOwner);
           require('../../fixtures/mocks/github/user-orgs')(100, 'otherOrg');
           var instance = ctx.nonOwner.newInstance(ctx.instance.id());
-          instance.copy(expects.success(201, expected, done));
+          var newInstance = instance.copy(expects.success(201, expected, function () {
+            //ctx.nonOwner.fetchBuild(newInstance.build._id,
+            console.log(newInstance.build.attrs);
+            expect(newInstance.build.attrs.contexts[0]).to.not.equal(ctx.context.id());
+            done();
+          }));
         });
       });
     });
