@@ -61,13 +61,7 @@ Resource Overview
 =================
 Mongo Schemas - /lib/models/mongo/schemas/*.js
 
-Configs - Are a way of forking Infrastructure Code of a Project's Components
-
-Components - are application components. Ex: frontend-server, api-server, database
-* Infrastructure code - environment definition code
-* Application code - node.js code or etc. (github)
-
-Component Versions - a snapshot of infrastructure code version and application code version
+Context Versions - a snapshot of infrastructure code version and application code version
 * Dockerfile v0.1.0 and api-server v0.1.0
 * Can be built on unbuilt
 
@@ -106,11 +100,6 @@ npm run client-version # this will update the client's version to the latest in 
 ```
 ```
 Models:
-
-projects (full blown project - that has multiple components)
- - environments (subdoc)
-  - builds    (collection)
-   - versions (collection) [redis v0.7, api v0.8, mongo v2.7]
 
 
 A context represents a project context (like redis)
