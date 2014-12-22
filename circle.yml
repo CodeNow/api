@@ -5,6 +5,7 @@ dependencies:
   override:
     - nvm install 0.10.28
     - nvm alias default 0.10.28
+    - npm install -g npm@2.1.11
     - npm install
 test:
   pre:
