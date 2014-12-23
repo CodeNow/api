@@ -190,9 +190,8 @@ describe('Notifier',  function () {
         }
       }
     }];
-    hipchat.notifyOnInstance(contextVersions, function (err, status) {
+    hipchat.notifyOnInstance(contextVersions, function (err) {
       if (err) { return done(err); }
-      console.log('status', status, randomUsername);
       var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
       setTimeout(function () {
         hc.api.rooms.history({
@@ -201,7 +200,6 @@ describe('Notifier',  function () {
         }, function (err, resp) {
           if (err) { return done(err); }
           var messages = resp.messages;
-          console.log('messages', messages);
           expect(messages.length).to.be.above(1);
           var properMessages = messages.filter(function (message) {
             return message.message.indexOf(randomUsername) > -1;
