@@ -37,4 +37,68 @@ describe('Notifier', function () {
       done();
     }
   });
+
+  it('should render proper text on notifyOnBuild call', function (done) {
+    var slack = new Notifier('slack', {});
+    slack.send = function (text, cb) {
+      var message = 'podviaznikov latest push to api@develop is now runnable.\n';
+      message += 'There are 1 commits in this push.\n';
+      message += 'The change is ready to be deployed...'
+      expect(text).to.equal(message);
+      cb();
+    };
+    var contextVersions = [{
+      appCodeVersions: [
+        {
+          repo: 'api',
+          branch: 'develop'
+        }
+      ],
+      build: {
+        triggeredAction: {
+          appCodeVersion: {
+            commitLog: [{
+              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+              author: {
+                username: 'podviaznikov'
+              }
+            }]
+          }
+        }
+      }
+    }];
+    slack.notifyOnBuild(contextVersions, done);
+  });
+
+  it('should render proper text on notifyOnInstance call', function (done) {
+    var slack = new Notifier('slack', {});
+    slack.send = function (text, cb) {
+      var message = 'podviaznikov latest push to api@develop is now runnable.\n';
+      message += 'There are 1 commits in this push.\n';
+      message += 'The change is deployed ...'
+      expect(text).to.equal(message);
+      cb();
+    };
+    var contextVersions = [{
+      appCodeVersions: [
+        {
+          repo: 'api',
+          branch: 'develop'
+        }
+      ],
+      build: {
+        triggeredAction: {
+          appCodeVersion: {
+            commitLog: [{
+              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+              author: {
+                username: 'podviaznikov'
+              }
+            }]
+          }
+        }
+      }
+    }];
+    slack.notifyOnInstance(contextVersions, done);
+  });
 });
