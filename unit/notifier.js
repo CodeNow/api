@@ -198,6 +198,7 @@ describe('Notifier',  function () {
         date: 'recent'
       }, function (err, resp) {
         if (err) { return done(err); }
+        console.log('messages', resp);
         var messages = resp.messages;
         expect(messages.length).to.be.above(1);
         var properMessages = messages.filter(function (message) {
