@@ -4,6 +4,7 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
 var Notifier = require('models/notifications/notifier');
+var Slack = require('models/notifications/slack');
 
 describe('Notifier', function () {
 
@@ -28,7 +29,7 @@ describe('Notifier', function () {
   it('should throw an error if tpls were not found', function (done) {
     try {
       var facebook = new Notifier('facebook', {});
-      facebook.notifyOnBuild();
+      facebook.notifyOnBuild([]);
       done(new Error('should throw an error'));
     } catch (e) {
       expect(e.message).to.contain(['ENOENT, no such file or directory']);
@@ -36,8 +37,8 @@ describe('Notifier', function () {
     }
   });
 
-  it('should render proper text on notifyOnBuild call', function (done) {
-    var slack = new Notifier('slack', {});
+  it('should render proper text on slack.notifyOnBuild call', function (done) {
+    var slack = new Slack({});
     slack.send = function (text, cb) {
       var message = 'podviaznikov latest push to api@develop is now runnable.\n';
       message += 'There are 1 commits in this push.\n';
@@ -68,8 +69,8 @@ describe('Notifier', function () {
     slack.notifyOnBuild(contextVersions, done);
   });
 
-  it('should render proper text on notifyOnInstance call', function (done) {
-    var slack = new Notifier('slack', {});
+  it('should render proper text on slack.notifyOnInstance call', function (done) {
+    var slack = new Slack({});
     slack.send = function (text, cb) {
       var message = 'podviaznikov latest push to api@develop is now runnable.\n';
       message += 'There are 1 commits in this push.\n';
