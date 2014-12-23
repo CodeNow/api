@@ -3,10 +3,6 @@ var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
 var Notifier = require('models/notifications/notifier');
 
 describe('Notifier', function () {
@@ -14,6 +10,7 @@ describe('Notifier', function () {
   it('should throw an error name was not provided', function (done) {
     try {
       var slack = new Notifier();
+      slack.notifyOnBuild();
       done(new Error('should throw an error'));
     } catch (e) {
       expect(e.message).to.equal('Please provide name for the notifier');
@@ -31,6 +28,7 @@ describe('Notifier', function () {
   it('should throw an error if tpls were not found', function (done) {
     try {
       var facebook = new Notifier('facebook', {});
+      facebook.notifyOnBuild();
       done(new Error('should throw an error'));
     } catch (e) {
       expect(e.message).to.contain(['ENOENT, no such file or directory']);
@@ -43,7 +41,7 @@ describe('Notifier', function () {
     slack.send = function (text, cb) {
       var message = 'podviaznikov latest push to api@develop is now runnable.\n';
       message += 'There are 1 commits in this push.\n';
-      message += 'The change is ready to be deployed...'
+      message += 'The change is ready to be deployed...';
       expect(text).to.equal(message);
       cb();
     };
@@ -75,7 +73,7 @@ describe('Notifier', function () {
     slack.send = function (text, cb) {
       var message = 'podviaznikov latest push to api@develop is now runnable.\n';
       message += 'There are 1 commits in this push.\n';
-      message += 'The change is deployed ...'
+      message += 'The change is deployed ...';
       expect(text).to.equal(message);
       cb();
     };
