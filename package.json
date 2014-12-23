@@ -41,6 +41,7 @@
     "fn-object": "~0.2.2",
     "github": "^0.2.1",
     "hashids": "^0.3.3",
+    "hipchat-client": "^1.0.2",
     "hogan.js": "^3.0.2",
     "http-proxy": "^1.5.3",
     "i": "^0.3.2",

@@ -5,6 +5,8 @@ var it = Lab.test;
 var expect = Lab.expect;
 var Notifier = require('models/notifications/notifier');
 var Slack = require('models/notifications/slack');
+var HipChat = require('models/notifications/hipchat');
+var HipChatClient = require('hipchat-client');
 
 describe('Notifier', function () {
 
@@ -99,5 +101,111 @@ describe('Notifier', function () {
       }
     }];
     slack.notifyOnInstance(contextVersions, done);
+  });
+
+  it('should render proper text on hipchat.notifyOnBuild call', function (done) {
+    var hipchat = new HipChat({});
+    hipchat.send = function (text, cb) {
+      var message = 'podviaznikov latest push to api@develop is now runnable.\n';
+      message += 'There are 1 commits in this push.\n';
+      message += 'The change is ready to be deployed...';
+      expect(text).to.equal(message);
+      cb();
+    };
+    var contextVersions = [{
+      appCodeVersions: [
+        {
+          repo: 'api',
+          branch: 'develop'
+        }
+      ],
+      build: {
+        triggeredAction: {
+          appCodeVersion: {
+            commitLog: [{
+              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+              author: {
+                username: 'podviaznikov'
+              }
+            }]
+          }
+        }
+      }
+    }];
+    hipchat.notifyOnBuild(contextVersions, done);
+  });
+
+  it('should render proper text on hipchat.notifyOnInstance call', function (done) {
+    var hipchat = new HipChat({});
+    hipchat.send = function (text, cb) {
+      var message = 'podviaznikov latest push to api@develop is now runnable.\n';
+      message += 'There are 1 commits in this push.\n';
+      message += 'The change is deployed ...';
+      expect(text).to.equal(message);
+      cb();
+    };
+    var contextVersions = [{
+      appCodeVersions: [
+        {
+          repo: 'api',
+          branch: 'develop'
+        }
+      ],
+      build: {
+        triggeredAction: {
+          appCodeVersion: {
+            commitLog: [{
+              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+              author: {
+                username: 'podviaznikov'
+              }
+            }]
+          }
+        }
+      }
+    }];
+    hipchat.notifyOnInstance(contextVersions, done);
+  });
+
+  it('should send message to HipChat', function (done) {
+    var time = new Date();
+    var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
+    var randomUsername = 'podviaznikov' + new Date().getTime();
+    var contextVersions = [{
+      appCodeVersions: [
+        {
+          repo: 'api',
+          branch: 'develop'
+        }
+      ],
+      build: {
+        triggeredAction: {
+          appCodeVersion: {
+            commitLog: [{
+              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+              author: {
+                username: randomUsername
+              }
+            }]
+          }
+        }
+      }
+    }];
+    hipchat.notifyOnInstance(contextVersions, function (err) {
+      if (err) { return done(err); }
+      var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
+      hc.api.rooms.history({
+        room_id: '1076330',
+        date: 'recent'
+      }, function (err, resp) {
+        if (err) { return done(err); }
+        var messages = resp.messages;
+        // expect(messages.length).to.be.above(1);
+        var lastMessage = messages[messages.length - 1];
+        expect(lastMessage.message).to.contain([randomUsername]);
+        expect(lastMessage.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
+        done();
+      })
+    });
   });
 });
