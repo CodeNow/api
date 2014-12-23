@@ -1,7 +1,11 @@
-## Temporary API endpoints docs and dependencies
+## Temporary API endpoints docs (initial coverage)
 
 
 ### UI and API relationships
+============================
+
+Description of what API calls are made when user performs UI actions.
+
 
 
 #### New box (press "New box" button)
@@ -73,4 +77,70 @@
         github: user_github_id
     response:
       new instance object
+```
+
+
+### Rename box
+
+```
+  PATCH /instances/:id
+    request:
+      name: new name
+    response:
+      update instance object
+```
+
+
+### Edit box
+
+```
+  POST /builds/:build_id/actions/copy?deep=true
+    request: empty
+    response:
+      new build object
+
+  // change docker file
+  PATCH /contexts/:context_id/versions/:context_version_id/files/Dockerfile
+    request:
+      body: docker file content
+    response:
+      file object
+  // build a build
+  POST /builds/:new_build_id/actions/build
+    request:
+      message: "Manual build"
+    response:
+      build object
+  // poll container until found. Containers will always have one container!
+  GET /instances/:instance_id/containers
+    response: [new container object]
+  // patch instance with a new build
+  PATCH /instances/:instance_id/
+    request:
+      build: build_id
+    response:
+      instance object
+```
+
+
+### Stop box
+
+```
+  PUT /instances/:instance_id/actions/stop
+```
+
+### Stop box
+
+```
+  PUT /instances/:instance_id/actions/stop
+```
+
+### Fork box
+
+```
+  POST /instances/:instance_id/actions/copy
+    request:
+      name: forked box name
+    response:
+      instance object
 ```
