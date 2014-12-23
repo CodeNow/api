@@ -168,7 +168,6 @@ describe('Notifier', function () {
   });
 
   it('should send message to HipChat', function (done) {
-    var time = new Date();
     var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
     var randomUsername = 'podviaznikov' + new Date().getTime();
     var contextVersions = [{
@@ -205,7 +204,7 @@ describe('Notifier', function () {
         expect(lastMessage.message).to.contain([randomUsername]);
         expect(lastMessage.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
         done();
-      })
+      });
     });
   });
 });
