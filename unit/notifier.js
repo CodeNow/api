@@ -167,7 +167,7 @@ describe('Notifier',  function () {
     hipchat.notifyOnInstance(contextVersions, done);
   });
 
-  it('should send message to HipChat', {timeout: 1200}, function (done) {
+  it('should send message to HipChat', {timeout: 2000}, function (done) {
     var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
     var randomUsername = 'podviaznikov' + new Date().getTime();
     var contextVersions = [{
@@ -190,16 +190,17 @@ describe('Notifier',  function () {
         }
       }
     }];
-    hipchat.notifyOnInstance(contextVersions, function (err) {
+    hipchat.notifyOnInstance(contextVersions, function (err, status) {
       if (err) { return done(err); }
+      console.log('status', status, randomUsername);
       var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
       hc.api.rooms.history({
         room_id: '1076330',
         date: 'recent'
       }, function (err, resp) {
         if (err) { return done(err); }
-        console.log('messages', resp);
         var messages = resp.messages;
+        console.log('messages', messages);
         expect(messages.length).to.be.above(1);
         var properMessages = messages.filter(function (message) {
           return message.message.indexOf(randomUsername) > -1;
