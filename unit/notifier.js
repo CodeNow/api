@@ -8,7 +8,7 @@ var Slack = require('models/notifications/slack');
 var HipChat = require('models/notifications/hipchat');
 var HipChatClient = require('hipchat-client');
 
-describe('Notifier', function () {
+describe('Notifier',  function () {
 
   it('should throw an error name was not provided', function (done) {
     try {
@@ -167,7 +167,7 @@ describe('Notifier', function () {
     hipchat.notifyOnInstance(contextVersions, done);
   });
 
-  it('should send message to HipChat', function (done) {
+  it('should send message to HipChat', {timeout: 1200}, function (done) {
     var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
     var randomUsername = 'podviaznikov' + new Date().getTime();
     var contextVersions = [{
