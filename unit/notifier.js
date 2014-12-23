@@ -199,10 +199,14 @@ describe('Notifier', function () {
       }, function (err, resp) {
         if (err) { return done(err); }
         var messages = resp.messages;
-        // expect(messages.length).to.be.above(1);
-        var lastMessage = messages[messages.length - 1];
-        expect(lastMessage.message).to.contain([randomUsername]);
-        expect(lastMessage.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
+        expect(messages.length).to.be.above(1);
+        var properMessages = messages.filter(function (message) {
+          return message.message.indexOf(randomUsername) > -1;
+        });
+        expect(properMessages.length).to.be.equal(1);
+        messages.forEach(function (message) {
+          expect(message.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
+        });
         done();
       });
     });
