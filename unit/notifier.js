@@ -194,23 +194,25 @@ describe('Notifier',  function () {
       if (err) { return done(err); }
       console.log('status', status, randomUsername);
       var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
-      hc.api.rooms.history({
-        room_id: '1076330',
-        date: 'recent'
-      }, function (err, resp) {
-        if (err) { return done(err); }
-        var messages = resp.messages;
-        console.log('messages', messages);
-        expect(messages.length).to.be.above(1);
-        var properMessages = messages.filter(function (message) {
-          return message.message.indexOf(randomUsername) > -1;
+      setTimeout(function () {
+        hc.api.rooms.history({
+          room_id: '1076330',
+          date: 'recent'
+        }, function (err, resp) {
+          if (err) { return done(err); }
+          var messages = resp.messages;
+          console.log('messages', messages);
+          expect(messages.length).to.be.above(1);
+          var properMessages = messages.filter(function (message) {
+            return message.message.indexOf(randomUsername) > -1;
+          });
+          expect(properMessages.length).to.be.equal(1);
+          messages.forEach(function (message) {
+            expect(message.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
+          });
+          done();
         });
-        expect(properMessages.length).to.be.equal(1);
-        messages.forEach(function (message) {
-          expect(message.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
-        });
-        done();
-      });
+      }, 200);
     });
   });
 });
