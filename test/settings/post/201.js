@@ -25,15 +25,15 @@ describe('201 POST /settings', {timeout:500}, function () {
     it('should be possible to create settings', function (done) {
       multi.createRunnableClient(function (err, runnable) {
         if (err) { return done(err); }
+        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
         runnable.client.request.post(runnable.host + '/settings', {owner: {github: 1}}, function (err, resp, body) {
           if (err) { return done(err); }
-          console.log('seetingssss', body, resp.status);
+          console.log('seetings:', body, resp.status);
           done();
         });
       });
     });
 
   });
-
 
 });
