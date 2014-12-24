@@ -9,6 +9,26 @@ var debug = require('debug')('runnable-api:multi-factory');
 var formatArgs = require('format-args');
 
 module.exports = {
+
+  createRunnableClient: function (cb) {
+    var host = require('./host');
+    var token = uuid();
+    require('./mocks/github/action-auth')(token);
+    var Runnable = require('runnable');
+    var runnable = new Runnable(host);
+    runnable.githubLogin(token, function (err) {
+      if (err) {
+        return cb(err);
+      }
+      else {
+        runnable.attrs.accounts.github.accessToken = token;
+        cb(null, runnable);
+      }
+    });
+    return runnable;
+  },
+
+
   createUser: function (cb) {
     debug('createUser', formatArgs(arguments));
     var host = require('./host');
