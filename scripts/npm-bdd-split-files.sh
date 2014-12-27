@@ -41,4 +41,7 @@ do
   fi
 done
 
+killall node
+killall cayley_osx
+killall cayley_linux
 npm run _bdd -- ${extra_args[@]} ${indexes[@]} ${files[@]}
