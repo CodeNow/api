@@ -47,6 +47,71 @@ describe('400 POST /settings', {timeout:500}, function () {
       });
     });
 
+    it('should not be possible to create settings if github wasnot a number', function (done) {
+      multi.createRunnableClient(function (err, runnable) {
+        if (err) { return done(err); }
+        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
+        var settings = {
+          owner: {
+            github: 'not-a-number'
+          },
+          notifications: {
+            slack: {
+              webhookUrl: 'http://slack.com/some-web-hook-url'
+            },
+            hipchat: {
+              authToken: 'some-hipchat-token',
+              roomId: 123123
+            }
+          }
+        };
+        runnable.client.request.post(runnable.host + '/settings', {json: settings}, function (err, resp, body) {
+          if (err) { return done(err); }
+          expect(body.statusCode).to.equal(400);
+          expect(body.error).to.equal('Bad Request');
+          expect(body.message).to.equal('body parameter "owner.github" must be a number');
+          done();
+        });
+      });
+    });
+
+
+    it('should not be possible to create settings for the same owner twice', function (done) {
+      multi.createRunnableClient(function (err, runnable) {
+        if (err) { return done(err); }
+        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
+        var settings = {
+          owner: {
+            github: 1
+          },
+          notifications: {
+            slack: {
+              webhookUrl: 'http://slack.com/some-web-hook-url'
+            },
+            hipchat: {
+              authToken: 'some-hipchat-token',
+              roomId: 123123
+            }
+          }
+        };
+        runnable.client.request.post(runnable.host + '/settings', {json: settings}, function (err, resp, body) {
+          if (err) { return done(err); }
+          expect(body._id).to.exist();
+          expect(body.owner.github).to.equal(1);
+          expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+          expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
+          expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+          runnable.client.request.post(runnable.host + '/settings', {json: settings}, function (err, resp, body) {
+            if (err) { return done(err); }
+            expect(body.statusCode).to.equal(409);
+            expect(body.error).to.equal('Conflict');
+            expect(body.message).to.equal('setting with owner already exists');
+            done();
+          });
+        });
+      });
+    });
+
   });
 
 });

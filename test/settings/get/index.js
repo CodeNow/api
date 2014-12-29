@@ -73,6 +73,34 @@ describe('GET /settings', {timeout:500}, function () {
       });
     });
 
+    it('should return 404 for fake settings-id', function (done) {
+      multi.createRunnableClient(function (err, runnable) {
+        if (err) { return done(err); }
+        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
+
+        runnable.client.request.get(runnable.host + '/settings/507f1f77bcf86cd799439011', function (err, resp, body) {
+          if (err) { return done(err); }
+          expect(body.statusCode).to.equal(404);
+          expect(body.message).to.equal('Setting not found');
+          done();
+        });
+      });
+    });
+
+    it('should return 400 for non-objectId settings-id', function (done) {
+      multi.createRunnableClient(function (err, runnable) {
+        if (err) { return done(err); }
+        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
+
+        runnable.client.request.get(runnable.host + '/settings/fake-id', function (err, resp, body) {
+          if (err) { return done(err); }
+          expect(body.statusCode).to.equal(400);
+          expect(body.message).to.equal('url parameter \"id\" is not an ObjectId');
+          done();
+        });
+      });
+    });
+
   });
 
 });
