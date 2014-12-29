@@ -10,7 +10,7 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 
 
-describe('201 POST /settings', {timeout:500}, function () {
+describe('400 POST /settings', {timeout:500}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -23,14 +23,11 @@ describe('201 POST /settings', {timeout:500}, function () {
 
   describe('create new settings', function () {
 
-    it('should be possible to create settings with slack & hipchat', function (done) {
+    it('should not create setting without an owner', function (done) {
       multi.createRunnableClient(function (err, runnable) {
         if (err) { return done(err); }
         // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
         var settings = {
-          owner: {
-            github: 1
-          },
           notifications: {
             slack: {
               webhookUrl: 'http://slack.com/some-web-hook-url'
@@ -43,11 +40,8 @@ describe('201 POST /settings', {timeout:500}, function () {
         };
         runnable.client.request.post(runnable.host + '/settings', {json: settings}, function (err, resp, body) {
           if (err) { return done(err); }
-          expect(body._id).to.exist();
-          expect(body.owner.github).to.equal(1);
-          expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-          expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
-          expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+          expect(body.statusCode).to.equal(400);
+          expect(body.message).to.equal('Owner is mandatory');
           done();
         });
       });

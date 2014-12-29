@@ -10,7 +10,7 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 
 
-describe('201 POST /settings', {timeout:500}, function () {
+describe('GET /settings', {timeout:500}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -21,27 +21,47 @@ describe('201 POST /settings', {timeout:500}, function () {
   after(require('../../fixtures/mocks/api-client').clean);
 
 
-  describe('create new settings', function () {
+  describe('create and get', function () {
+    var settings = {
+      owner: {
+        github: 1
+      },
+      notifications: {
+        slack: {
+          webhookUrl: 'http://slack.com/some-web-hook-url'
+        },
+        hipchat: {
+          authToken: 'some-hipchat-token',
+          roomId: 123123
+        }
+      }
+    };
 
-    it('should be possible to create settings with slack & hipchat', function (done) {
+    var settingsId = null;
+
+    before(function (done) {
       multi.createRunnableClient(function (err, runnable) {
         if (err) { return done(err); }
         // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
-        var settings = {
-          owner: {
-            github: 1
-          },
-          notifications: {
-            slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
-            },
-            hipchat: {
-              authToken: 'some-hipchat-token',
-              roomId: 123123
-            }
-          }
-        };
+
         runnable.client.request.post(runnable.host + '/settings', {json: settings}, function (err, resp, body) {
+          if (err) { return done(err); }
+          expect(body._id).to.exist();
+          settingsId = body._id;
+          done();
+        });
+      });
+    });
+
+
+
+
+    it('should be possible to fetch settings that were just created', function (done) {
+      multi.createRunnableClient(function (err, runnable) {
+        if (err) { return done(err); }
+        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
+
+        runnable.client.request.get(runnable.host + '/settings/' + settingsId, function (err, resp, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(1);
