@@ -50,13 +50,21 @@ function buildBodyWithRequiredParams (ctx, requiredParams, param, type) {
 
   if (requiredParams) {
     requiredParams.forEach(function(requiredParam) {
-      body[requiredParam.name] = typeValue(ctx, requiredParam.type);
+      if (requiredParam.type === 'object' && requiredParam.keys) {
+        var param = {};
+        requiredParam.keys.forEach(function (subparam) {
+          param[subparam.name] = typeValue(ctx, subparam.type);
+        });
+        body[requiredParam.name] = param;
+      } else {
+        body[requiredParam.name] = typeValue(ctx, requiredParam.type);
+      }
     });
   }
   return body;
 }
 
-// build body for required param. Use requried params prior to the `param`
+// build body for required param. Use required params prior to the `param`
 function buildBodyForRequiredParams (ctx, requiredParams, param, type, paramIndex) {
   var body = {};
   if (param && type) {
@@ -65,7 +73,15 @@ function buildBodyForRequiredParams (ctx, requiredParams, param, type, paramInde
   if (requiredParams) {
     requiredParams.forEach(function(requiredParam, index) {
       if (index < paramIndex) {
-        body[requiredParam.name] = typeValue(ctx, requiredParam.type);
+        if (requiredParam.type === 'object' && requiredParam.keys) {
+          var param = {};
+          requiredParam.keys.forEach(function (subparam) {
+            param[subparam.name] = typeValue(ctx, subparam.type);
+          });
+          body[requiredParam.name] = param;
+        } else {
+          body[requiredParam.name] = typeValue(ctx, requiredParam.type);
+        }
       }
 
     });
@@ -140,7 +156,7 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
         body[param.name].push(typeValue(ctx, arrayItemType));
         body[param.name].push(typeValue(ctx, arrayItemType));
         body[param.name].push(typeValue(ctx, arrayItemType));
-        regexp = '"env" should match';
+        var regexp = '"env" should match';
         var message = new RegExp(regexp);
         var cb = expects.error(400, message, done);
         handler(body, cb);

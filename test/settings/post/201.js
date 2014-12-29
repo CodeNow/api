@@ -24,9 +24,8 @@ describe('201 POST /settings', {timeout:500}, function () {
   describe('create new settings', function () {
 
     it('should be possible to create settings with slack & hipchat', function (done) {
-      multi.createRunnableClient(function (err, runnable) {
+      multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
-        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
         var settings = {
           owner: {
             github: 1
@@ -41,7 +40,7 @@ describe('201 POST /settings', {timeout:500}, function () {
             }
           }
         };
-        runnable.client.request.post(runnable.host + '/settings', {json: settings}, function (err, resp, body) {
+        runnable.createSetting({json: settings}, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(1);

@@ -8,9 +8,9 @@ var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var typesTests = require('../../fixtures/types-test-util');
 
-
-describe('PATCH /settings/:id', {timeout:500}, function () {
+describe('400 PATCH /settings/:id', {timeout:500}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -21,7 +21,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
   after(require('../../fixtures/mocks/api-client').clean);
 
 
-  describe('create and get', function () {
+  describe('update settings', function () {
+
     var settings = {
       owner: {
         github: 1
@@ -42,6 +43,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
     before(function (done) {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
+        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
 
         runnable.createSetting({json: settings}, function (err, body) {
           if (err) { return done(err); }
@@ -52,29 +54,51 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       });
     });
 
-
-    it('should be possible to update setting', function (done) {
+    it('should fail updating non-existing setting', function (done) {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
-        var newSettings = {
+        var settings = {
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/new-web-hook-url'
+              webhookUrl: 'http://slack.com/some-web-hook-url'
             },
             hipchat: {
-              authToken: 'new-hipchat-token',
-              roomId: 1231231
+              authToken: 'some-hipchat-token',
+              roomId: 123123
             }
           }
         };
-        runnable.newSetting(settingsId).update({json: newSettings}, function (err, body) {
-          if (err) { return done(err); }
-          expect(body._id).to.exist();
-          expect(body.owner.github).to.equal(1);
-          expect(body.notifications.slack.webhookUrl).to.equal(newSettings.notifications.slack.webhookUrl);
-          expect(body.notifications.hipchat.authToken).to.equal(newSettings.notifications.hipchat.authToken);
-          expect(body.notifications.hipchat.roomId).to.equal(newSettings.notifications.hipchat.roomId);
+        runnable.newSetting('507f1f77bcf86cd799439011').update({json: settings}, function (err) {
+          expect(err.data.statusCode).to.equal(404);
+          expect(err.data.message).to.equal('Setting not found');
           done();
+        });
+      });
+    });
+
+
+
+    describe('invalid types', function () {
+      var def = {
+        action: 'update setting',
+        requiredParams: [
+          {
+            name: 'owner',
+            type: 'object',
+            keys: [
+              {
+                name: 'github',
+                type: 'number'
+              }
+            ]
+          }
+        ]
+      };
+
+      typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+        multi.createUser(function (err, runnable) {
+          if (err) { return cb(err); }
+          runnable.newSetting(settingsId).update({json: body}, cb);
         });
       });
     });

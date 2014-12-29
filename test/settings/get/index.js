@@ -40,11 +40,10 @@ describe('GET /settings', {timeout:500}, function () {
     var settingsId = null;
 
     before(function (done) {
-      multi.createRunnableClient(function (err, runnable) {
+      multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
-        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
 
-        runnable.client.request.post(runnable.host + '/settings', {json: settings}, function (err, resp, body) {
+        runnable.createSetting({json: settings}, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           settingsId = body._id;
@@ -54,14 +53,10 @@ describe('GET /settings', {timeout:500}, function () {
     });
 
 
-
-
     it('should be possible to fetch settings that were just created', function (done) {
-      multi.createRunnableClient(function (err, runnable) {
+      multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
-        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
-
-        runnable.client.request.get(runnable.host + '/settings/' + settingsId, function (err, resp, body) {
+        runnable.fetchSetting(settingsId, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(1);
@@ -74,28 +69,23 @@ describe('GET /settings', {timeout:500}, function () {
     });
 
     it('should return 404 for fake settings-id', function (done) {
-      multi.createRunnableClient(function (err, runnable) {
+      multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
-        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
-
-        runnable.client.request.get(runnable.host + '/settings/507f1f77bcf86cd799439011', function (err, resp, body) {
-          if (err) { return done(err); }
-          expect(body.statusCode).to.equal(404);
-          expect(body.message).to.equal('Setting not found');
+        runnable.fetchSetting('507f1f77bcf86cd799439011', function (err) {
+          expect(err.data.statusCode).to.equal(404);
+          expect(err.data.message).to.equal('Setting not found');
           done();
         });
       });
     });
 
     it('should return 400 for non-objectId settings-id', function (done) {
-      multi.createRunnableClient(function (err, runnable) {
+      multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
-        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
 
-        runnable.client.request.get(runnable.host + '/settings/fake-id', function (err, resp, body) {
-          if (err) { return done(err); }
-          expect(body.statusCode).to.equal(400);
-          expect(body.message).to.equal('url parameter \"id\" is not an ObjectId');
+        runnable.fetchSetting('fake-id', function (err) {
+          expect(err.data.statusCode).to.equal(400);
+          expect(err.data.message).to.equal('url parameter \"id\" is not an ObjectId');
           done();
         });
       });
