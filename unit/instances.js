@@ -12,6 +12,8 @@ var Hashids = require('hashids');
 
 var Instance = require('models/mongo/instance');
 var dock = require('../test/fixtures/dock');
+var Version = require('models/mongo/context-version');
+
 
 var Docker = require('models/apis/docker');
 
@@ -28,6 +30,32 @@ describe('Instance', function () {
   afterEach(require('../test/fixtures/clean-mongo').removeEverything);
 
 
+  function createNewVersion() {
+    return new Version({
+      message: "test",
+      owner: { github: validation.VALID_GITHUB_ID },
+      createdBy: { github: validation.VALID_GITHUB_ID },
+      config: validation.VALID_OBJECT_ID,
+      created: Date.now(),
+      context: validation.VALID_OBJECT_ID,
+      files:[{
+        Key: "test",
+        ETag: "test",
+        VersionId: validation.VALID_OBJECT_ID
+      }],
+      build: {
+        dockerImage: "testing",
+        dockerTag: "adsgasdfgasdf"
+      },
+      appCodeVersions: [{
+        repo: 'bkendall/flaming-octo-nemisis._',
+        lowerRepo: 'bkendall/flaming-octo-nemisis._',
+        branch: 'master',
+        commit: 'deadbeef'
+      }]
+    });
+  }
+
   function createNewInstance(name, dockerHost, containerId) {
     return new Instance({
       name: name || 'name',
@@ -37,6 +65,7 @@ describe('Instance', function () {
       createdBy: { github: validation.VALID_GITHUB_ID },
       build: validation.VALID_OBJECT_ID,
       created: Date.now(),
+      contextVersion: createNewVersion(),
       container: {
         dockerContainer: containerId || validation.VALID_OBJECT_ID,
         dockerHost: dockerHost || 'http://localhost:4243',
@@ -446,6 +475,54 @@ describe('Instance', function () {
     });
 
   });
+
+  describe('find by repo', function () {
+    var savedInstance1 = null;
+    var savedInstance2 = null;
+    beforeEach(function (done) {
+      var instance = createNewInstance('instance1');
+      instance.save(function (err, instance) {
+        if (err) { return done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance1 = instance;
+          done();
+        }
+      });
+    });
+    beforeEach(function (done) {
+      var instance = createNewInstance('instance2');
+      instance.save(function (err, instance) {
+        if (err) { return done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance2 = instance;
+          done();
+        }
+      });
+    });
+
+    it('should find instances using repo name and branch', function (done) {
+      Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
+        if (err) { return done(err); }
+        expect(insts.length).to.equal(2);
+        expect(insts[0].name).to.equal('instance1');
+        expect(insts[1].name).to.equal('instance2');
+        done();
+      });
+    });
+
+    it('should find context versions using repo name', function (done) {
+      Instance.findContextVersionsForRepo('bkendall/flaming-octo-nemisis._', function (err, cvs) {
+        if (err) { return done(err); }
+        expect(cvs.length).to.equal(2);
+        expect(String(cvs[1])).to.equal(String(savedInstance1.contextVersion._id));
+        expect(String(cvs[0])).to.equal(String(savedInstance2.contextVersion._id));
+        done();
+      });
+    });
+  });
+
 
   describe('Name Validation', function () {
     validation.NOT_ALPHA_NUM_SAFE.forEach(function (string) {
