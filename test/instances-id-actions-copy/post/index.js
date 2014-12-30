@@ -7,6 +7,7 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var InfraCodeVersion = require('models/mongo/infra-code-version');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
@@ -221,7 +222,11 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
             expect(newInstance.build.attrs.contexts[0]).to.not.equal(ctx.context.id());
             expect(newInstance.build.attrs.contextVersions[0]).to.not.equal(ctx.contextVersion.id());
             expect(newInstance.attrs.contextVersion.context).to.not.equal(ctx.context.id());
-            done();
+            console.log(newInstance.attrs.contextVersion.infraCodeVersion);
+            InfraCodeVersion.findById(newInstance.attrs.contextVersion.infraCodeVersion, function (a, b, c) {
+              console.log(a, b, c);
+              done();
+            });
           }));
         });
       });
