@@ -144,3 +144,42 @@ Description of what API calls are made when user performs UI actions.
     response:
       instance object
 ```
+
+
+### Update box to commit version
+
+```
+  // create new context verison
+  POST /contexts/:context_id/versions
+    request:
+      infraCodeVersion: id of existing infracode version
+    response:
+      new contex version withou appCode
+  // create new app code version
+  POST /contexts/:context_id/versions/:created_context_version_id/appCodeVersions/
+    request:
+      branch:
+      commit:
+      repo:
+    response:
+      new app code version
+  // create new build
+  POST /builds
+    request: 
+      owner: github owner data
+      contextVersions: [context version id]
+    response:
+      new build object
+  // build a build
+  POST /builds/:new_build_id/actions/build
+    request:
+      message: "Update application code version(s)"
+    response:
+      build object
+  // patch instance with a new build
+  PATCH /instances/:instance_id/
+    request:
+      build: build_id
+    response:
+      instance object
+```
