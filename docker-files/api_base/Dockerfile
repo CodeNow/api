@@ -1,17 +1,21 @@
 #
 # api_base Dockerfile
-# Author anandkumarpatel
-##
+#
 
 # Pull base image.
 FROM registry.runnable.com/runnable/base:latest
 
-WORKDIR /
+# Node.js @ 10.28
+$ npm     @  2.1.8
 
-# Installing Node.js
-RUN wget http://nodejs.org/dist/v0.10.29/node-v0.10.29.tar.gz
-RUN tar xvf node-v*.tar.gz
-WORKDIR node-v0.10.29/
-RUN ./configure
-RUN make -j16
-RUN make install
+# install required packages
+#    lsof: required for open file monitoring
+
+RUN wget http://nodejs.org/dist/v0.10.28/node-v0.10.28.tar.gz \
+  && tar xvf node-v*.tar.gz \
+  && cd node-v0.10.28 \
+  && ./configure \
+  && make -j16 \
+  && make install \
+  && npm install -g npm@2.1.8 \
+  && apt-get install lsof
