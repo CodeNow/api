@@ -45,6 +45,11 @@ test/instances/get/index.js
 test/instances/post/201.js
 test/instances/post/400.js
 test/instances/post/index.js
+test/settings/post/201.js
+test/settings/post/400.js
+test/settings/get/index.js
+test/settings/patch/index.js
+test/settings/patch/400.js
 test/log-stream.js
 test/terminal-stream.js
 test/test-errors.js

@@ -447,10 +447,7 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
           beforeEach(function (done) {
             require('models/mongo/instance').find({
               lowerName: 'hello'
-            }, function (err, instance) {
-              console.log(instance);
-              done(err);
-            });
+            }, done);
           });
           it('should not allow changing the name to one that exists (lowername)', function (done) {
             require('../../fixtures/mocks/github/user')(ctx.user);
