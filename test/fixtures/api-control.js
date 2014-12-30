@@ -21,8 +21,8 @@ function ensureIndex (script, cb) {
 }
 
 // This was added because of circle ci
-// circleci is not playing nice with this test.
-// it is not applying indexes immediately for some reason.
+// circleci is not applying mongodb indexes immediately for some reason.
+// that break few tests
 function ensureIndexes (cb) {
   var scripts = [
     '"db.instances.ensureIndex({\'lowerName\':1,\'owner.github\':1}, {unique:true})"',
