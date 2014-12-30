@@ -421,23 +421,6 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
         });
         describe('Testing lowername', function () {
           beforeEach(function (done) {
-            // circleci is not playing nice with this test.
-            // it is not applying indexes immediately for some reason.
-            if (process.env.CIRCLECI) {
-              var exec = require('child_process').exec;
-              var script = '"db.instances.ensureIndex({\'lowerName\':1,\'owner.github\':1}, {unique:true})"';
-              var mongoCmd = [
-                'mongo',
-                '--eval', script,
-                process.env.MONGO.split('/').pop() // db name only
-              ].join(' ');
-              exec(mongoCmd, done);
-            }
-            else {
-              done();
-            }
-          });
-          beforeEach(function (done) {
             // We need to deploy the container first before each test.
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.otherInstance = ctx.user.createInstance({
