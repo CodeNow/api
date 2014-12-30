@@ -10,7 +10,7 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 
-describe('400 POST /settings', {timeout:500}, function () {
+describe('400 POST /settings', {timeout: 700}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
