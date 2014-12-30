@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -99,8 +99,8 @@
   },
   "engineStrict": true,
   "engine": {
-    "node" : "0.10.28",
-    "npm" : "2.1.8"
+    "node": "0.10.28",
+    "npm": "2.1.8"
   },
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
