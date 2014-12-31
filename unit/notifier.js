@@ -205,7 +205,7 @@ describe('Notifier',  function () {
             return message.message.indexOf(randomUsername) > -1;
           });
           expect(properMessages.length).to.be.equal(1);
-          messages.forEach(function (message) {
+          properMessages.forEach(function (message) {
             expect(message.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
           });
           done();
