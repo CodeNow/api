@@ -9,6 +9,7 @@ var debug = require('debug')('runnable-api:multi-factory');
 var formatArgs = require('format-args');
 
 module.exports = {
+
   createUser: function (cb) {
     debug('createUser', formatArgs(arguments));
     var host = require('./host');
