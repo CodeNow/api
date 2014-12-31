@@ -15,6 +15,7 @@ var tailBuildStream = require('./../../fixtures/tail-build-stream');
 var createCount = require('callback-count');
 var exists = require('101/exists');
 var equals = require('101/equals');
+var noop = require('101/noop');
 var uuid = require('uuid');
 
 describe('Build - /builds/:id/actions/build', function() {
@@ -79,29 +80,26 @@ describe('Build - /builds/:id/actions/build', function() {
       });
       it('copy build, then build both builds, should use same build', { timeout: 500 }, function (done) {
         ctx.buildCopy = ctx.build.copy(function (err) {
-          if (err) {
-            return done(err);
-          }
+          if (err) { return done(err); }
+
           require('./../../fixtures/mocks/docker/container-id-attach')();
           require('./../../fixtures/mocks/github/user')(ctx.user);
           ctx.build.build({message: 'hello!'}, function (err, body, code) {
-            if (err) {
-              return done(err);
-            }
+            if (err) { return done(err); }
+
             expect(code).to.equal(201);
             expect(body).to.be.ok;
             require('./../../fixtures/mocks/docker/container-id-attach')();
             require('./../../fixtures/mocks/github/user')(ctx.user);
             ctx.buildCopy.build({message: 'hello!'}, function (err, body, code) {
-
+              if (err) { return done(err); }
               expect(code).to.equal(201);
               expect(body).to.be.ok;
               expect(body.contextVersions[0]).to.equal(ctx.contextVersion.attrs._id);
 
               tailBuildStream(body.contextVersions[0], function (err, log) {
-                if (err) {
-                  return done(err);
-                }
+                if (err) { return done(err); }
+
                 expect(log).to.contain('Successfully built');
                 var buildExpected = {
                   completed: exists,
@@ -111,8 +109,7 @@ describe('Build - /builds/:id/actions/build', function() {
                 var count = createCount(3, done);
                 require('./../../fixtures/mocks/github/user')(ctx.user); // non owner org
                 ctx.build.fetch(expects.success(200, buildExpected, count.next));
-                require('./../../fixtures/clean-nock')(function () {
-                });
+                require('./../../fixtures/clean-nock')(noop);
                 require('./../../fixtures/mocks/github/user')(ctx.user); // non owner org
                 ctx.buildCopy.fetch(expects.success(200, buildExpected, count.next));
 
@@ -135,35 +132,31 @@ describe('Build - /builds/:id/actions/build', function() {
       });
       it('copy build, then build both builds (failed), should both fail', { timeout: 500 }, function (done) {
         ctx.buildCopy = ctx.build.copy(function (err) {
-          if (err) {
-            return done(err);
-          }
+          if (err) { return done(err); }
           require('./../../fixtures/mocks/docker/container-id-attach')(0, 'Failure');
           require('./../../fixtures/mocks/github/user')(ctx.user);
           ctx.build.build({message: 'hello!'}, function (err, body, code) {
-            if (err) {
-              return done(err);
-            }
+            if (err) { return done(err); }
             expect(code).to.equal(201);
             expect(body).to.be.ok;
             require('./../../fixtures/mocks/github/user')(ctx.user);
             ctx.buildCopy.build({message: 'hello!'}, function (err, body, code) {
-
+              if (err) { return done(err); }
               expect(code).to.equal(201);
               expect(body).to.be.ok;
               expect(body.contextVersions[0]).to.equal(ctx.contextVersion.attrs._id);
 
-              tailBuildStream(body.contextVersions[0], 'Failure', function () {
+              tailBuildStream(body.contextVersions[0], 'Failure', function (err) {
+                if (err) { return done(err); }
                 var buildExpected = {
                   duration: exists,
                   failed: exists
                 };
-                var count = createCount(1, done);
                 require('./../../fixtures/mocks/github/user')(ctx.user); // non owner org
-                ctx.build.fetch(expects.success(200, buildExpected, function () {
-
+                ctx.build.fetch(expects.success(200, buildExpected, function (err) {
+                  if (err) { return done(err); }
                   require('./../../fixtures/mocks/github/user')(ctx.user); // non owner org
-                  ctx.buildCopy.fetch(expects.success(200, buildExpected, count.next));
+                  ctx.buildCopy.fetch(expects.success(200, buildExpected, done));
                 }));
               });
             });
@@ -185,44 +178,34 @@ describe('Build - /builds/:id/actions/build', function() {
           var username = ctx.user.attrs.accounts.github.login;
           require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
           ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, function (err) {
-            if (err) {
-              return done(err);
-            }
+            if (err) { return done(err); }
             // Build the build
             ctx.buildCopy = ctx.build.deepCopy(function (err) {
-              if (err) {
-                return done(err);
-              }
+              if (err) { return done(err); }
               multi.buildTheBuild(ctx.user, ctx.build, function (err) {
-                if (err) {
-                  return done(err);
-                }
+                if (err) { return done(err); }
                 // Now make a copy
                 function newCv() {
                   return ctx.user.newContext(ctx.context.id())
                     .newVersion(ctx.buildCopy.attrs.contextVersions[0]);
                 }
                 newCv().fetch(function (err, othercv) {
-                  if (err) {
-                    return done(err);
-                  }
+                  if (err) { return done(err); }
                   ctx.otherCv = othercv;
                   // Now remove the repo
                   newCv().destroyAppCodeVersion(ctx.appCodeVersion.id(), function () {
-                    if (err) {
-                      return done(err);
-                    }
+                    if (err) { return done(err); }
                     // Build the build
                     require('./../../fixtures/mocks/docker/container-id-attach')();
                     require('./../../fixtures/mocks/github/user')(ctx.user);
                     ctx.buildCopy.build({message: 'hello!'}, function (err, body) {
-                      if (err) {
-                        return done(err);
-                      }
-                      tailBuildStream(body.contextVersions[0], function () {
+                      if (err) { return done(err); }
+                      tailBuildStream(body.contextVersions[0], function (err) {
+                        if (err) { return done(err); }
                         // Now refetch the build, and make sure the cv is different from the
                         // original ctx.build it was cloned from
                         ctx.buildCopy.fetch(function (err, build) {
+                          if (err) { return done(err); }
                           expect(build.contextVersions[0]).to.not.equal(ctx.build.attrs.contextVersions[0]);
                           done();
                         });
