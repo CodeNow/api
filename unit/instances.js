@@ -506,8 +506,7 @@ describe('Instance', function () {
       Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
         if (err) { return done(err); }
         expect(insts.length).to.equal(2);
-        expect(insts[0].name).to.equal('instance1');
-        expect(insts[1].name).to.equal('instance2');
+        expect([insts[0].name, insts[1].name]).to.deep.equal(['instance1', 'instance2']);
         done();
       });
     });
@@ -516,8 +515,9 @@ describe('Instance', function () {
       Instance.findContextVersionsForRepo('bkendall/flaming-octo-nemisis._', function (err, cvs) {
         if (err) { return done(err); }
         expect(cvs.length).to.equal(2);
-        expect(String(cvs[1])).to.equal(String(savedInstance1.contextVersion._id));
-        expect(String(cvs[0])).to.equal(String(savedInstance2.contextVersion._id));
+        var actual = [String(cvs[1]), String(cvs[0])];
+        expect(actual).to.deep.include(String(savedInstance1.contextVersion._id));
+        expect(actual).to.deep.include(String(savedInstance2.contextVersion._id));
         done();
       });
     });
