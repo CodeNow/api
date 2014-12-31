@@ -511,8 +511,8 @@ describe('Instance', function () {
       });
     });
 
-    it('should find context versions using repo name', function (done) {
-      Instance.findContextVersionsForRepo('bkendall/flaming-octo-nemisis._', function (err, cvs) {
+    it('should find context versions using repo name and branch', function (done) {
+      Instance.findContextVersionsForRepoBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, cvs) {
         if (err) { return done(err); }
         expect(cvs.length).to.equal(2);
         var actual = [String(cvs[1]), String(cvs[0])];
