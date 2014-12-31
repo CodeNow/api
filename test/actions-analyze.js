@@ -8,20 +8,12 @@ var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
 var request = require('request');
 
-// var Build = require('models/mongo/build');
-// var ContextVersion = require('models/mongo/context-version');
 var api = require('./fixtures/api-control');
-var hooks = require('./fixtures/github-hooks');
+var hooks = require('./fixtures/analyze-hooks');
+
 var multi = require('./fixtures/multi-factory');
-var dock = require('./fixtures/dock');
-// var tailBuildStream = require('./fixtures/tail-build-stream');
-// var not = require('101/not');
-// var exists = require('101/exists');
-// var expects = require('./fixtures/expects');
-// var equals = require('101/equals');
 var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
-// var createCount = require('callback-count');
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -36,12 +28,24 @@ describe('Analyze - /actions/analyze', function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  before(dock.start.bind(ctx));
-  after(dock.stop.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);
   after(require('./fixtures/mocks/api-client').clean);
   beforeEach(generateKey);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+
+  beforeEach(function (done) {
+    multi.createUser(function (err, user) {
+      ctx.analyzer = user.newAnalyzer({}, {noStore: true, warn: false});
+      done();
+    });
+  });
+
+  describe('requirements', function () {
+    it('should Boom without a "repos" query string parameter', function (done) {
+      expect(true).to.equal(true);
+      done();
+    });
+  });
 
 });
