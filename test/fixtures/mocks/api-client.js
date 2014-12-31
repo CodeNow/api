@@ -43,6 +43,10 @@ module.exports.setup = function (cb) {
       require('../../fixtures/mocks/docker/container-id-attach')(100);
       require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(
         this.contextVersions.models[0]);
+      // for cv build loopback
+      require('../../fixtures/mocks/github/user')(this.opts.user);
+      // in case owner is org
+      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
     }
   });
 

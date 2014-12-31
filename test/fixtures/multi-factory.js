@@ -264,6 +264,8 @@ module.exports = {
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
       // build fetch
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+      // version fetch
+      require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
     build.fetch(function (err) {
       if (err) { return cb(err); }
@@ -275,9 +277,15 @@ module.exports = {
           dispatch.emit('started', err);
           if (err) { return cb(err); }
           require('./mocks/github/user')(user);
-          build.contextVersions.models[0].fetch(function (err) {
+          require('./mocks/github/user')(user);
+          var cv = build.contextVersions.models[0];
+          cv.fetch(function (err) {
             if (err) { return cb(err); }
-            tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
+            if (cv.attrs.build.error) {
+              console.log('cv errored');
+              throw cv.attrs.build.error;
+            }
+            tailBuildStream(cv.id(), function (err) { // FIXME: maybe
               if (err) { return cb(err); }
               require('./mocks/github/user')(user);
               build.fetch(function (err) {
