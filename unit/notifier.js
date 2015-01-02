@@ -70,7 +70,7 @@ describe('Notifier',  function () {
     slack.send = function (text, cb) {
       var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
       message += 'There are 2 commits in this push.\n';
-      message += 'The change is deployed on\n  instance1\n';
+      message += 'The change is deployed on\n http://runnable.io/podviaznikov/instance1\n';
       expect(text).to.equal(message);
       cb();
     };
@@ -96,7 +96,10 @@ describe('Notifier',  function () {
     }];
     var instances = [
       {
-        name: 'instance1'
+        name: 'instance1',
+        owner: {
+          username: 'podviaznikov'
+        }
       }
     ];
     slack.notifyOnInstances(commitLog, contextVersions, instances, done);
@@ -133,7 +136,9 @@ describe('Notifier',  function () {
     hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
       message += 'There is 1 commit in this push.\n';
-      message += 'The change is deployed on\n  instance1\n  instance2\n';
+      message += 'The change is deployed on\n ';
+      message += '<a href="http://runnable.io/podviaznikov/instance1">instance1</a>\n ';
+      message += '<a href="http://runnable.io/podviaznikov/instance2">instance2</a>\n';
       expect(text).to.equal(message);
       cb();
     };
@@ -187,7 +192,10 @@ describe('Notifier',  function () {
     }];
     var instances = [
       {
-        name: 'instance1'
+        name: 'instance1',
+        owner: {
+          username: 'podviaznikov'
+        }
       }
     ];
     hipchat.notifyOnInstances(commitLog, contextVersions, instances, function (err) {
