@@ -48,27 +48,21 @@ describe('Notifier',  function () {
       expect(text).to.equal(message);
       cb();
     };
+    var commitLog = [{
+      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      author: {
+        username: 'podviaznikov'
+      }
+    }];
     var contextVersions = [{
       appCodeVersions: [
         {
           repo: 'api',
           branch: 'develop'
         }
-      ],
-      build: {
-        triggeredAction: {
-          appCodeVersion: {
-            commitLog: [{
-              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-              author: {
-                username: 'podviaznikov'
-              }
-            }]
-          }
-        }
-      }
+      ]
     }];
-    slack.notifyOnBuild(contextVersions, done);
+    slack.notifyOnBuild(commitLog, contextVersions, done);
   });
 
   it('should render proper text on slack.notifyOnInstance call', function (done) {
@@ -80,27 +74,21 @@ describe('Notifier',  function () {
       expect(text).to.equal(message);
       cb();
     };
+    var commitLog = [{
+      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      author: {
+        username: 'podviaznikov'
+      }
+    }];
     var contextVersions = [{
       appCodeVersions: [
         {
           repo: 'api',
           branch: 'develop'
         }
-      ],
-      build: {
-        triggeredAction: {
-          appCodeVersion: {
-            commitLog: [{
-              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-              author: {
-                username: 'podviaznikov'
-              }
-            }]
-          }
-        }
-      }
+      ]
     }];
-    slack.notifyOnInstance(contextVersions, done);
+    slack.notifyOnInstance(commitLog, contextVersions, done);
   });
 
   it('should render proper text on hipchat.notifyOnBuild call', function (done) {
@@ -112,27 +100,21 @@ describe('Notifier',  function () {
       expect(text).to.equal(message);
       cb();
     };
+    var commitLog = [{
+      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      author: {
+        username: 'podviaznikov'
+      }
+    }];
     var contextVersions = [{
       appCodeVersions: [
         {
           repo: 'api',
           branch: 'develop'
         }
-      ],
-      build: {
-        triggeredAction: {
-          appCodeVersion: {
-            commitLog: [{
-              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-              author: {
-                username: 'podviaznikov'
-              }
-            }]
-          }
-        }
-      }
+      ]
     }];
-    hipchat.notifyOnBuild(contextVersions, done);
+    hipchat.notifyOnBuild(commitLog, contextVersions, done);
   });
 
   it('should render proper text on hipchat.notifyOnInstance call', function (done) {
@@ -144,53 +126,41 @@ describe('Notifier',  function () {
       expect(text).to.equal(message);
       cb();
     };
+    var commitLog = [{
+      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      author: {
+        username: 'podviaznikov'
+      }
+    }];
     var contextVersions = [{
       appCodeVersions: [
         {
           repo: 'api',
           branch: 'develop'
         }
-      ],
-      build: {
-        triggeredAction: {
-          appCodeVersion: {
-            commitLog: [{
-              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-              author: {
-                username: 'podviaznikov'
-              }
-            }]
-          }
-        }
-      }
+      ]
     }];
-    hipchat.notifyOnInstance(contextVersions, done);
+    hipchat.notifyOnInstance(commitLog, contextVersions, done);
   });
 
   it('should send message to HipChat', {timeout: 3000}, function (done) {
     var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
     var randomUsername = 'podviaznikov' + new Date().getTime();
+    var commitLog = [{
+      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      author: {
+        username: randomUsername
+      }
+    }];
     var contextVersions = [{
       appCodeVersions: [
         {
           repo: 'api',
           branch: 'develop'
         }
-      ],
-      build: {
-        triggeredAction: {
-          appCodeVersion: {
-            commitLog: [{
-              id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-              author: {
-                username: randomUsername
-              }
-            }]
-          }
-        }
-      }
+      ]
     }];
-    hipchat.notifyOnInstance(contextVersions, function (err) {
+    hipchat.notifyOnInstance(commitLog, contextVersions, function (err) {
       if (err) { return done(err); }
       var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
       setTimeout(function () {
