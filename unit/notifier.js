@@ -42,9 +42,9 @@ describe('Notifier',  function () {
   it('should render proper text on slack.notifyOnBuild call', function (done) {
     var slack = new Slack({});
     slack.send = function (text, cb) {
-      var message = 'podviaznikov latest push to api@develop is now runnable.\n';
-      message += 'There are 1 commits in this push.\n';
-      message += 'The change is ready to be deployed...';
+      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
+      message += 'There is 1 commit in this push.\n';
+      message += 'Choose a Box to run develop.';
       expect(text).to.equal(message);
       cb();
     };
@@ -65,12 +65,12 @@ describe('Notifier',  function () {
     slack.notifyOnBuild(commitLog, contextVersions, done);
   });
 
-  it('should render proper text on slack.notifyOnInstance call', function (done) {
+  it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
     slack.send = function (text, cb) {
-      var message = 'podviaznikov latest push to api@develop is now runnable.\n';
-      message += 'There are 1 commits in this push.\n';
-      message += 'The change is deployed ...';
+      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
+      message += 'There are 2 commits in this push.\n';
+      message += 'The change is deployed on\n  instance1\n';
       expect(text).to.equal(message);
       cb();
     };
@@ -78,6 +78,12 @@ describe('Notifier',  function () {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       author: {
         username: 'podviaznikov'
+      }
+    },
+    {
+      id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
+      author: {
+        username: 'tjmehta'
       }
     }];
     var contextVersions = [{
@@ -88,15 +94,20 @@ describe('Notifier',  function () {
         }
       ]
     }];
-    slack.notifyOnInstance(commitLog, contextVersions, done);
+    var instances = [
+      {
+        name: 'instance1'
+      }
+    ];
+    slack.notifyOnInstances(commitLog, contextVersions, instances, done);
   });
 
   it('should render proper text on hipchat.notifyOnBuild call', function (done) {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
-      var message = 'podviaznikov latest push to api@develop is now runnable.\n';
-      message += 'There are 1 commits in this push.\n';
-      message += 'The change is ready to be deployed...';
+      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
+      message += 'There is 1 commit in this push.\n';
+      message += 'Choose a Box to run develop.';
       expect(text).to.equal(message);
       cb();
     };
@@ -117,12 +128,12 @@ describe('Notifier',  function () {
     hipchat.notifyOnBuild(commitLog, contextVersions, done);
   });
 
-  it('should render proper text on hipchat.notifyOnInstance call', function (done) {
+  it('should render proper text on hipchat.notifyOnInstances call', function (done) {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
-      var message = 'podviaznikov latest push to api@develop is now runnable.\n';
-      message += 'There are 1 commits in this push.\n';
-      message += 'The change is deployed ...';
+      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
+      message += 'There is 1 commit in this push.\n';
+      message += 'The change is deployed on\n  instance1\n  instance2\n';
       expect(text).to.equal(message);
       cb();
     };
@@ -140,7 +151,21 @@ describe('Notifier',  function () {
         }
       ]
     }];
-    hipchat.notifyOnInstance(commitLog, contextVersions, done);
+    var instances = [
+      {
+        name: 'instance1',
+        owner: {
+          username: 'podviaznikov'
+        }
+      },
+      {
+        name: 'instance2',
+        owner: {
+          username: 'podviaznikov'
+        }
+      }
+    ];
+    hipchat.notifyOnInstances(commitLog, contextVersions, instances, done);
   });
 
   it('should send message to HipChat', {timeout: 3000}, function (done) {
@@ -160,7 +185,12 @@ describe('Notifier',  function () {
         }
       ]
     }];
-    hipchat.notifyOnInstance(commitLog, contextVersions, function (err) {
+    var instances = [
+      {
+        name: 'instance1'
+      }
+    ];
+    hipchat.notifyOnInstances(commitLog, contextVersions, instances, function (err) {
       if (err) { return done(err); }
       var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
       setTimeout(function () {

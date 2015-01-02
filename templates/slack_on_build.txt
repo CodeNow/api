@@ -1,3 +1,0 @@
-{{username}} latest push to {{appCode.repo}}@{{appCode.branch}} is now runnable.
-There are {{commitLog.length}} commits in this push.
-The change is ready to be deployed...
