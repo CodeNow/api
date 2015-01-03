@@ -1,19 +1,18 @@
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
 var after = Lab.after;
 var afterEach = Lab.afterEach;
+var before = Lab.before;
 var beforeEach = Lab.beforeEach;
+var describe = Lab.experiment;
 var expect = Lab.expect;
-var request = require('request');
+var it = Lab.test;
 
 var api = require('./fixtures/api-control');
+var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/analyze-hooks');
-
 var multi = require('./fixtures/multi-factory');
 var nock = require('nock');
-var generateKey = require('./fixtures/key-factory');
+var request = require('request');
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -36,15 +35,20 @@ describe('Analyze - /actions/analyze', function () {
 
   beforeEach(function (done) {
     multi.createUser(function (err, user) {
-      ctx.analyzer = user.newAnalyzer({}, {noStore: true, warn: false});
+      ctx.user = user;
       done();
     });
   });
 
   describe('requirements', function () {
-    it('should Boom without a "repos" query string parameter', function (done) {
-      expect(true).to.equal(true);
-      done();
+    it('should return 400 code without a "repo" query parameter', function (done) {
+      ctx.user.client.request.get(
+        hooks.getErrorNoQueryParam,
+        function (err, res, body) {
+          expect(res.statusCode).to.equal(400);
+          expect(res.body.message).to.equal('query parameter "repo" must be a string');
+          done();
+      });
     });
   });
 
