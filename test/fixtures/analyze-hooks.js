@@ -19,5 +19,12 @@ module.exports = {
   getErrorNoQueryParam: {
     url: buildUrlAndPath('actions/analyze'),
     headers: defaultHeaders
+  },
+  getSuccess: {
+    url: buildUrlAndPath('actions/analyze'),
+    qs: {
+      repo: 'cflynn07/101'
+    },
+    headers: defaultHeaders
   }
 };
