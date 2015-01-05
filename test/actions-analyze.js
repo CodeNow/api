@@ -30,9 +30,6 @@ describe('Analyze - /actions/analyze', function () {
   before(require('./fixtures/mocks/api-client').setup);
   after(require('./fixtures/mocks/api-client').clean);
   beforeEach(generateKey);
-  afterEach(require('./fixtures/clean-mongo').removeEverything);
-  afterEach(require('./fixtures/clean-ctx')(ctx));
-
   beforeEach(function (done) {
     multi.createUser(function (err, user) {
       ctx.user = user;
@@ -40,6 +37,8 @@ describe('Analyze - /actions/analyze', function () {
       done();
     });
   });
+  //afterEach(require('./fixtures/clean-mongo').removeEverything);
+  afterEach(require('./fixtures/clean-ctx')(ctx));
 
   describe('requirements', function () {
     it('should return 400 code without a "repo" query parameter', function (done) {
@@ -57,7 +56,9 @@ describe('Analyze - /actions/analyze', function () {
        'determine any Dockerfile component '+
        'suggestions due to no Github repo language '+
        'information', function (done) {
-      repoMock.standardRepo();
+      repoMock.standardRepo({
+        language: null
+      });
       ctx.request.get(
         hooks.getSuccess,
         function (err, res) {
