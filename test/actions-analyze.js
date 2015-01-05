@@ -40,7 +40,7 @@ describe('Analyze - /actions/analyze', function () {
   //afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
-  describe('requirements', function () {
+  describe('Error conditions', function () {
     it('should return 400 code without a "repo" query parameter', function (done) {
       ctx.request.get(
         hooks.getErrorNoQueryParam,
@@ -83,6 +83,12 @@ describe('Analyze - /actions/analyze', function () {
           done();
         }
       );
+    });
+  });
+
+  describe('Success conditions', function () {
+    it('Returns inferred suggestions for JavaScript/NodeJS repository', function (done) {
+      done();
     });
   });
 });
