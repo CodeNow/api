@@ -439,6 +439,40 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
             ctx.instance.update({ name: 'HELLO' }, expects.errorStatus(409, /exists/, done));
           });
         });
+        describe('Locking instance', function () {
+          beforeEach(function (done) {
+            // We need to deploy the container first before each test.
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            ctx.otherInstance = ctx.user.createInstance({
+              build: ctx.build.attrs._id,
+              name: 'hello'}, done);
+          });
+          beforeEach(function (done) {
+            require('models/mongo/instance').find({
+              lowerName: 'hello'
+            }, done);
+          });
+          it('should be able to set locked to true', function (done) {
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            ctx.instance.update({ locked: true }, function (err, instance) {
+              if (err) { return done(err); }
+              expect(instance.locked).to.equal(true);
+              done();
+            });
+          });
+          it('should be able to set locked to false', function (done) {
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            ctx.instance.update({ locked: false }, function (err, instance) {
+              if (err) { return done(err); }
+              expect(instance.locked).to.equal(false);
+              done();
+            });
+          });
+        });
       });
       describe('env', function () {
         it('should update the env', function (done) {
