@@ -535,7 +535,7 @@ describe('Instance', function () {
       });
     });
 
-    it('should findnot find instances using repo name and branch if it was locked', function (done) {
+    it('should not find instance using repo name and branch if it was locked', function (done) {
       Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
         if (err) { return done(err); }
         expect(insts.length).to.equal(0);
