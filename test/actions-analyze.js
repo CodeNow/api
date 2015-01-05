@@ -11,7 +11,6 @@ var api = require('./fixtures/api-control');
 var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/analyze-hooks');
 var multi = require('./fixtures/multi-factory');
-var multiline = require('multiline');
 var nock = require('nock');
 var repoMock = require('./fixtures/mocks/github/repo');
 
