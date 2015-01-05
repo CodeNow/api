@@ -30,7 +30,7 @@ describe('Instance', function () {
   afterEach(require('../test/fixtures/clean-mongo').removeEverything);
 
 
-  function createNewVersion() {
+  function createNewVersion(opts) {
     return new Version({
       message: "test",
       owner: { github: validation.VALID_GITHUB_ID },
@@ -48,27 +48,29 @@ describe('Instance', function () {
         dockerTag: "adsgasdfgasdf"
       },
       appCodeVersions: [{
-        repo: 'bkendall/flaming-octo-nemisis._',
-        lowerRepo: 'bkendall/flaming-octo-nemisis._',
-        branch: 'master',
+        repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+        lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+        branch: opts.branch || 'master',
         commit: 'deadbeef'
       }]
     });
   }
 
-  function createNewInstance(name, dockerHost, containerId) {
+  function createNewInstance(name, opts) {
+    opts = opts || {};
     return new Instance({
       name: name || 'name',
       shortHash: getRandomHash(),
+      locked: opts.locked || false,
       public: false,
       owner: { github: validation.VALID_GITHUB_ID },
       createdBy: { github: validation.VALID_GITHUB_ID },
       build: validation.VALID_OBJECT_ID,
       created: Date.now(),
-      contextVersion: createNewVersion(),
+      contextVersion: createNewVersion(opts),
       container: {
-        dockerContainer: containerId || validation.VALID_OBJECT_ID,
-        dockerHost: dockerHost || 'http://localhost:4243',
+        dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
+        dockerHost: opts.dockerHost || 'http://localhost:4243',
         inspect: {
           State: {
             'ExitCode': 0,
@@ -273,7 +275,11 @@ describe('Instance', function () {
         var container = {
           dockerContainer: cont.id
         };
-        var instance = createNewInstance('new-inst', 'http://localhost:4243', cont.id);
+        var opts = {
+          dockerHost: 'http://localhost:4243',
+          containerId: cont.id
+        };
+        var instance = createNewInstance('new-inst', opts);
         instance.save(function (err) {
           if (err) { return done(err); }
           docker.startContainer(container, function (err) {
@@ -461,9 +467,15 @@ describe('Instance', function () {
     });
 
     it('should find two instances out of three that match provided docker host', function (done) {
-      createNewInstance('instance2', 'http://localhost:8888').save(function (err) {
+      var opts1 = {
+        dockerHost: 'http://localhost:8888'
+      };
+      createNewInstance('instance2', opts1).save(function (err) {
         if (err) { return done(err); }
-        createNewInstance('instance3', 'http://localhost:4243').save(function (err) {
+        var opts2 = {
+          dockerHost: 'http://localhost:4243'
+        };
+        createNewInstance('instance3', opts2).save(function (err) {
           if (err) { return done(err); }
           Instance.findAllByDockerHost('http://localhost:4243', function (err, instances) {
             if (err) { return done(err); }
@@ -479,6 +491,7 @@ describe('Instance', function () {
   describe('find by repo', function () {
     var savedInstance1 = null;
     var savedInstance2 = null;
+    var savedInstance3 = null;
     beforeEach(function (done) {
       var instance = createNewInstance('instance1');
       instance.save(function (err, instance) {
@@ -491,12 +504,23 @@ describe('Instance', function () {
       });
     });
     beforeEach(function (done) {
-      var instance = createNewInstance('instance2');
+      var instance = createNewInstance('instance2', {locked: false});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
         else {
           expect(instance).to.be.okay;
           savedInstance2 = instance;
+          done();
+        }
+      });
+    });
+    beforeEach(function (done) {
+      var instance = createNewInstance('instance3', {locked: true, repo: 'podviaznikov/hello'});
+      instance.save(function (err, instance) {
+        if (err) { return done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance3 = instance;
           done();
         }
       });
@@ -507,6 +531,14 @@ describe('Instance', function () {
         if (err) { return done(err); }
         expect(insts.length).to.equal(2);
         expect([insts[0].name, insts[1].name]).to.deep.equal(['instance1', 'instance2']);
+        done();
+      });
+    });
+
+    it('should findnot find instances using repo name and branch if it was locked', function (done) {
+      Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
+        if (err) { return done(err); }
+        expect(insts.length).to.equal(0);
         done();
       });
     });
