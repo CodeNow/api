@@ -530,7 +530,9 @@ describe('Instance', function () {
       Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
         if (err) { return done(err); }
         expect(insts.length).to.equal(2);
-        expect([insts[0].name, insts[1].name]).to.deep.equal(['instance1', 'instance2']);
+        insts.forEach(function (inst) {
+          expect(['instance1', 'instance2']).to.include(inst.name);
+        });
         done();
       });
     });
