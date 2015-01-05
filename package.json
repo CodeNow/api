@@ -74,7 +74,7 @@
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#settings",
     "s3-stream-upload": "0.0.6",
     "simple-api-client": "^0.5.9",
-    "slack-notify": "^0.1.2",
+    "slack-notify": "git+ssh://git@github.com:podviaznikov/slack-notify",
     "substream": "0.1.1",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
