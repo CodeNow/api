@@ -32,7 +32,7 @@ describe('POST /instances', function () {
   afterEach(require('../../fixtures/clean-nock'));
 
 
-  describe('POST', function () {
+  describe('POST', {timeout: 1000}, function () {
     describe('with unbuilt build', function () {
       beforeEach(function (done) {
         multi.createContextVersion(function (err, contextVersion, context, build, user) {
