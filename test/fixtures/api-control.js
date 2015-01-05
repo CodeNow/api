@@ -26,7 +26,8 @@ function ensureIndex (script, cb) {
 function ensureIndexes (cb) {
   var scripts = [
     '"db.instances.ensureIndex({\'lowerName\':1,\'owner.github\':1}, {unique:true})"',
-    '"db.settings.ensureIndex({\'owner\':1}, {unique:true})"'
+    '"db.settings.ensureIndex({\'owner\':1}, {unique:true})"',
+    '"db.settings.ensureIndex({\'owner.github\':1}, {unique:true})"'
   ];
   async.each(scripts, ensureIndex, cb);
 }
