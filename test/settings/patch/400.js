@@ -77,33 +77,6 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
     });
 
 
-
-    describe('invalid types', function () {
-      var def = {
-        action: 'update setting',
-        requiredParams: [
-          {
-            name: 'owner',
-            type: 'object',
-            keys: [
-              {
-                name: 'github',
-                type: 'number'
-              }
-            ]
-          }
-        ]
-      };
-
-      typesTests.makeTestFromDef(def, ctx, function(body, cb) {
-        multi.createUser(function (err, runnable) {
-          if (err) { return cb(err); }
-          runnable.newSetting(settingsId).update({json: body}, cb);
-        });
-      });
-    });
-
-
   });
 
 });
