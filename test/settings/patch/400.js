@@ -8,7 +8,6 @@ var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
-var typesTests = require('../../fixtures/types-test-util');
 
 describe('400 PATCH /settings/:id', {timeout:500}, function () {
   var ctx = {};
