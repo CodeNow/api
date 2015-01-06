@@ -23,9 +23,7 @@ describe('GET /settings', {timeout:500}, function () {
 
   describe('create and get', function () {
     var settings = {
-      owner: {
-        github: 13
-      },
+      owner: {},
       notifications: {
         slack: {
           webhookUrl: 'http://slack.com/some-web-hook-url'
@@ -38,11 +36,11 @@ describe('GET /settings', {timeout:500}, function () {
     };
 
     var settingsId = null;
-
     before(function (done) {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
-
+        ctx.user = runnable;
+        settings.owner.github = runnable.user.attrs.accounts.github.id;
         runnable.createSetting({json: settings}, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
@@ -54,15 +52,24 @@ describe('GET /settings', {timeout:500}, function () {
 
 
     it('should be possible to fetch settings that were just created', function (done) {
+      ctx.user.fetchSetting(settingsId, function (err, body) {
+        if (err) { return done(err); }
+        expect(body._id).to.exist();
+        expect(body.owner.github).to.equal(settings.owner.github);
+        expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+        expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
+        expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+        done();
+      });
+    });
+
+    it('should fail if another user wanted to fetch settings without permissions', function (done) {
+      require('../../fixtures/mocks/github/user-orgs')(ctx.user);
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
-        runnable.fetchSetting(settingsId, function (err, body) {
-          if (err) { return done(err); }
-          expect(body._id).to.exist();
-          expect(body.owner.github).to.equal(13);
-          expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-          expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
-          expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+        runnable.fetchSetting(settingsId, function (err) {
+          expect(err.output.payload.statusCode).to.equal(403);
+          expect(err.output.payload.message).to.equal('Access denied (!owner)');
           done();
         });
       });

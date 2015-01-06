@@ -28,7 +28,7 @@ describe('201 POST /settings', {timeout:500}, function () {
         if (err) { return done(err); }
         var settings = {
           owner: {
-            github: 13
+            github: runnable.user.attrs.accounts.github.id
           },
           notifications: {
             slack: {
@@ -43,7 +43,7 @@ describe('201 POST /settings', {timeout:500}, function () {
         runnable.createSetting({json: settings}, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
-          expect(body.owner.github).to.equal(13);
+          expect(body.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
           expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
           expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
           expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
