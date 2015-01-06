@@ -24,7 +24,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
   describe('create and get', function () {
     var settings = {
       owner: {
-        github: 1
+        github: 13
       },
       notifications: {
         slack: {
@@ -70,7 +70,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         runnable.newSetting(settingsId).update({json: newSettings}, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
-          expect(body.owner.github).to.equal(1);
+          expect(body.owner.github).to.equal(13);
           expect(body.notifications.slack.webhookUrl).to.equal(newSettings.notifications.slack.webhookUrl);
           expect(body.notifications.hipchat.authToken).to.equal(newSettings.notifications.hipchat.authToken);
           expect(body.notifications.hipchat.roomId).to.equal(newSettings.notifications.hipchat.roomId);

@@ -51,7 +51,7 @@ describe('400 POST /settings', {timeout: 700}, function () {
         if (err) { return done(err); }
         var settings = {
           owner: {
-            github: 1
+            github: 13
           },
           notifications: {
             slack: {
@@ -66,14 +66,14 @@ describe('400 POST /settings', {timeout: 700}, function () {
         runnable.createSetting({json: settings}, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
-          expect(body.owner.github).to.equal(1);
+          expect(body.owner.github).to.equal(13);
           expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
           expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
           expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
           runnable.createSetting({json: settings}, function (err) {
             expect(err.data.statusCode).to.equal(409);
             expect(err.data.error).to.equal('Conflict');
-            expect(err.data.message).to.equal('setting with owner.github already exists');
+            expect(err.data.message).to.equal('setting with owner already exists');
             done();
           });
         });

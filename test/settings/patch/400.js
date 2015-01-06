@@ -24,7 +24,7 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
 
     var settings = {
       owner: {
-        github: 1
+        github: 13
       },
       notifications: {
         slack: {
