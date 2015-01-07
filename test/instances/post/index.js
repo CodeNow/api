@@ -323,7 +323,7 @@ describe('POST /instances', function () {
             ctx.user.createInstance(json,
               expects.errorStatus(400, /"env" should match/, done));
           });
-          it('should filter empty/whitespace-only strings from env array', function (done) {
+          it('should filter empty/whitespace-only strings from env array', {timeout: 500}, function (done) {
             var json = {
               name: uuid(),
               build: ctx.build.id(),

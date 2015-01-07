@@ -57,10 +57,13 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  // FIXME: push is currently disabled. delete this and re-add the block below when enabled
-  describe('push', function () {
+  describe('disabled hooks', function () {
     var ctx = {};
     beforeEach(function (done) {
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
+      /* jshint -W069 */
+      delete process.env['ENABLE_BUILDS_ON_GIT_PUSH'];
+      /* jshint +W069 */
       multi.createInstance(function (err, instance, build, user, modelsArr) {
         ctx.contextVersion = modelsArr[0];
         ctx.context = modelsArr[1];
@@ -69,21 +72,25 @@ describe('Github - /actions/github', function () {
         done(err);
       });
     });
-    // it('should just say hi', function (done) {
-    //   var options = hooks(ctx.contextVersion.json()).push;
-    //   options.json.ref = 'refs/heads/someotherbranch';
-    //   // require('./fixtures/mocks/github/users-username')(101, 'bkendall');
-    //   request.post(options, function (err, res) {
-    //     if (err) {
-    //       done(err);
-    //     }
-    //     else {
-    //       expect(res.statusCode).to.equal(202);
-    //       expect(res.body).to.match(/hooks are currently disabled\. but we gotchu/);
-    //       done();
-    //     }
-    //   });
-    // });
+    afterEach(function (done) {
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
+      done();
+    });
+    it('should just say hi if hooks are disabled', function (done) {
+      var options = hooks(ctx.contextVersion.json()).push;
+      options.json.ref = 'refs/heads/someotherbranch';
+      // require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+      request.post(options, function (err, res) {
+        if (err) {
+          done(err);
+        }
+        else {
+          expect(res.statusCode).to.equal(202);
+          expect(res.body).to.match(/hooks are currently disabled\. but we gotchu/);
+          done();
+        }
+      });
+    });
   });
 
   // describe('push', function () {
