@@ -52,6 +52,23 @@ describe('GET /settings', {timeout:500}, function () {
 
     describe('get by owner', function () {
 
+      it('should create settings if they are not exist', function (done) {
+        multi.createUser(function (err, runnable) {
+          if (err) { return done(err); }
+          var st = runnable.newSettings([], {qs: {owner: {github: runnable.user.attrs.accounts.github.id}}});
+          st.fetch(function (err, body) {
+            if (err) { return done(err); }
+            var settings = body[0];
+            expect(settings._id).to.exist();
+            expect(settings.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
+            expect(settings.notifications).to.not.exist();
+            done();
+          });
+        });
+      });
+
+
+
       it('should be possible to fetch settings that were just created by owner', function (done) {
         var st = ctx.user.newSettings([], {qs: {owner: {github: settings.owner.github}}});
         st.fetch(function (err, body) {
