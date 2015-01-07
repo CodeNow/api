@@ -104,6 +104,9 @@ describe('GET /instances', function () {
           appCodeVersions: {
             repo: ctx.instance.attrs.contextVersion.appCodeVersions[0].repo
           }
+        },
+        owner: {
+          github: ctx.user.attrs.accounts.github.id
         }
       };
       var expected = [
