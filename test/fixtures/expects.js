@@ -279,10 +279,11 @@ function toHipacheEntryKey (containerPort, instanceName, user) {
 }
 function toHipacheEntryVal (containerPort, container, instanceName) {
   if (container.toJSON) { container = container.toJSON(); }
+  var exposedPort = containerPort.split('/')[0];
   var actualPort = container.ports[containerPort][0].HostPort;
   var parsedDockerHost = url.parse(container.dockerHost);
   var backendUrl = url.format({
-    protocol: 'http:',
+    protocol: (exposedPort === '443') ? 'https:' : 'http:',
     slashes: true,
     hostname: parsedDockerHost.hostname,
     port: actualPort
