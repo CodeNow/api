@@ -66,11 +66,29 @@ describe('GET /settings', {timeout:500}, function () {
         });
       });
 
+      it('should be possible to fetch settings by githubUsername', function (done) {
+        require('../../fixtures/mocks/github/user-orgs')(ctx.user);
+        require('../../fixtures/mocks/github/users-username')(ctx.user.attrs.accounts.github.id,
+          ctx.user.json().accounts.github.username);
+        var query = {
+          githubUsername: ctx.user.json().accounts.github.username
+        };
+        ctx.user.fetchSettings(query, function (err, body) {
+          if (err) { return done(err); }
+          var settings = body[0];
+          expect(settings._id).to.exist();
+          expect(settings.owner.github).to.equal(settings.owner.github);
+          expect(settings.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+          expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
+          expect(settings.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+          done();
+        });
+      });
 
       it('should fail if owner id is not matching', function (done) {
         require('../../fixtures/mocks/github/user-orgs')(ctx.user);
         var st = ctx.user.newSettings([], {qs: {owner: {github: 9999}}});
-        st.fetch(function (err, body) {
+        st.fetch(function (err) {
           expect(err.output.payload.statusCode).to.equal(403);
           expect(err.output.payload.message).to.equal('Access denied (!owner)');
           done();
@@ -82,7 +100,7 @@ describe('GET /settings', {timeout:500}, function () {
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
           var st = runnable.newSettings([], {qs: {owner: {github: settings.owner.github}}});
-          st.fetch(function (err, body) {
+          st.fetch(function (err) {
             expect(err.output.payload.statusCode).to.equal(403);
             expect(err.output.payload.message).to.equal('Access denied (!owner)');
             done();
