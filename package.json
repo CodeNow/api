@@ -97,7 +97,11 @@
     "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.8",
     "server-destroy": "^1.0.0"
   },
-  "engine": "node >= 0.10.5",
+  "engineStrict": true,
+  "engine": {
+    "node" : "0.10.28",
+    "npm" : "2.1.8"
+  },
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
     "_bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test",
