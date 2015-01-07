@@ -63,6 +63,7 @@ describe('Github - /actions/github', function () {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       /* jshint -W069 */
       delete process.env['ENABLE_BUILDS_ON_GIT_PUSH'];
+      /* jshint +W069 */
       multi.createInstance(function (err, instance, build, user, modelsArr) {
         ctx.contextVersion = modelsArr[0];
         ctx.context = modelsArr[1];
