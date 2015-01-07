@@ -51,6 +51,10 @@ describe('201 POST /builds/:id/actions/build', {timeout: 500}, function() {
       ctx.bodyOwner = {
         github: 11111 // org id, requires mocks. (api-client.js)
       };              // user belongs to this org.
+      // build build
+      require('../../fixtures/mocks/github/user-orgs')(ctx.bodyOwner.github, 'Runnable');
+      // build build -> cv build
+      require('../../fixtures/mocks/github/user-orgs')(ctx.bodyOwner.github, 'Runnable');
       done();
     });
 
