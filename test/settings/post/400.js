@@ -73,7 +73,7 @@ describe('400 POST /settings', {timeout: 700}, function () {
           runnable.createSetting({json: settings}, function (err) {
             expect(err.data.statusCode).to.equal(409);
             expect(err.data.error).to.equal('Conflict');
-            expect(err.data.message).to.equal('setting with owner already exists');
+            expect(err.data.message).to.equal('setting with owner.github already exists');
             done();
           });
         });
