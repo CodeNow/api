@@ -22,7 +22,7 @@
     "connect-datadog": "0.0.5",
     "connect-redis": "^2.0.0",
     "cors": "^2.4.1",
-    "dat-middleware": "^1.9.3",
+    "dat-middleware": "^1.9.4",
     "debug": "^1.0.2",
     "defaults": "^1.0.0",
     "docker-stream-cleanser": "0.1.2",
