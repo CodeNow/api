@@ -555,7 +555,7 @@ describe('Instance', function () {
   //       done();
   //     });
   //   });
-  // });
+  });
 
 
   describe('Name Validation', function () {
