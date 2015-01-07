@@ -526,36 +526,36 @@ describe('Instance', function () {
       });
     });
 
-    it('should find instances using repo name and branch', function (done) {
-      Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
-        if (err) { return done(err); }
-        expect(insts.length).to.equal(2);
-        insts.forEach(function (inst) {
-          expect(['instance1', 'instance2']).to.include(inst.name);
-        });
-        done();
-      });
-    });
+  //   it('should find instances using repo name and branch', function (done) {
+  //     Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
+  //       if (err) { return done(err); }
+  //       expect(insts.length).to.equal(2);
+  //       insts.forEach(function (inst) {
+  //         expect(['instance1', 'instance2']).to.include(inst.name);
+  //       });
+  //       done();
+  //     });
+  //   });
 
-    it('should not find instance using repo name and branch if it was locked', function (done) {
-      Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
-        if (err) { return done(err); }
-        expect(insts.length).to.equal(0);
-        done();
-      });
-    });
+  //   it('should not find instance using repo name and branch if it was locked', function (done) {
+  //     Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
+  //       if (err) { return done(err); }
+  //       expect(insts.length).to.equal(0);
+  //       done();
+  //     });
+  //   });
 
-    it('should find context versions using repo name and branch', function (done) {
-      Instance.findContextVersionsForRepoBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, cvs) {
-        if (err) { return done(err); }
-        expect(cvs.length).to.equal(2);
-        var actual = [String(cvs[1]), String(cvs[0])];
-        expect(actual).to.deep.include(String(savedInstance1.contextVersion._id));
-        expect(actual).to.deep.include(String(savedInstance2.contextVersion._id));
-        done();
-      });
-    });
-  });
+  //   it('should find context versions using repo name and branch', function (done) {
+  //     Instance.findContextVersionsForRepoBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, cvs) {
+  //       if (err) { return done(err); }
+  //       expect(cvs.length).to.equal(2);
+  //       var actual = [String(cvs[1]), String(cvs[0])];
+  //       expect(actual).to.deep.include(String(savedInstance1.contextVersion._id));
+  //       expect(actual).to.deep.include(String(savedInstance2.contextVersion._id));
+  //       done();
+  //     });
+  //   });
+  // });
 
 
   describe('Name Validation', function () {
