@@ -173,9 +173,9 @@ describe('Notifier',  function () {
     hipchat.notifyOnInstances(commitLog, contextVersions, instances, done);
   });
 
-  it('should send message to HipChat', {timeout: 3000}, function (done) {
+  it('should send message to HipChat', {timeout: 4000}, function (done) {
     var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
-    var randomUsername = 'podviaznikov' + new Date().getTime();
+    var randomUsername = 'user' + new Date().getTime();
     var commitLog = [{
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       author: {
