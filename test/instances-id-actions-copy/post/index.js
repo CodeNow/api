@@ -142,7 +142,9 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-        ctx.user.copyInstance(ctx.instance.id(), expects.success(201, expected, done));
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        ctx.user.copyInstance(ctx.instance.id(), {owner:{github:ctx.orgId}}, expects.success(201, expected, done));
       });
       describe('Same org, different user', function () {
         beforeEach(function (done) {

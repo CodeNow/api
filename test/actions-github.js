@@ -69,21 +69,21 @@ describe('Github - /actions/github', function () {
         done(err);
       });
     });
-    it('should just say hi', function (done) {
-      var options = hooks(ctx.contextVersion.json()).push;
-      options.json.ref = 'refs/heads/someotherbranch';
-      // require('./fixtures/mocks/github/users-username')(101, 'bkendall');
-      request.post(options, function (err, res) {
-        if (err) {
-          done(err);
-        }
-        else {
-          expect(res.statusCode).to.equal(202);
-          expect(res.body).to.match(/hooks are currently disabled\. but we gotchu/);
-          done();
-        }
-      });
-    });
+    // it('should just say hi', function (done) {
+    //   var options = hooks(ctx.contextVersion.json()).push;
+    //   options.json.ref = 'refs/heads/someotherbranch';
+    //   // require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+    //   request.post(options, function (err, res) {
+    //     if (err) {
+    //       done(err);
+    //     }
+    //     else {
+    //       expect(res.statusCode).to.equal(202);
+    //       expect(res.body).to.match(/hooks are currently disabled\. but we gotchu/);
+    //       done();
+    //     }
+    //   });
+    // });
   });
 
   // describe('push', function () {

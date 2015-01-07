@@ -9,6 +9,7 @@ var debug = require('debug')('runnable-api:multi-factory');
 var formatArgs = require('format-args');
 
 module.exports = {
+
   createUser: function (cb) {
     debug('createUser', formatArgs(arguments));
     var host = require('./host');
@@ -194,6 +195,7 @@ module.exports = {
       self.buildTheBuild(user, build, ownerId, function (err) {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
+        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
         contextVersion.fetch(function (err) {
           cb(err, build, user,
               [contextVersion, context, build, user],
@@ -232,6 +234,7 @@ module.exports = {
         require('./mocks/github/user')(user);
         require('./mocks/github/user')(user);
       }
+      require('./mocks/github/user')(user);
       var instance = user.createInstance(body, function (err) {
         cb(err, instance, build, user, modelsArr, srcArr);
       });
