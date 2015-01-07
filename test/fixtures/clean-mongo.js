@@ -26,6 +26,8 @@ var cleanMongo = module.exports = {
     });
   },
   removeEverything: function (cb) {
+    // FIXME: stores: uncomment if we start using stores in tests as we should
+    // reset model-store and collection-store here
     var self = cleanMongo;
     var collectionNames = Object.keys(mongoose.connection.collections);
     var count = createCount(collectionNames.length, cb);
