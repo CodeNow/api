@@ -32,12 +32,16 @@ module.exports.setup = function (cb) {
     },
     stop: function () {
       require('../../fixtures/mocks/github/user')(this.opts.user);
+    },
+    copy: function () {
+      require('../../fixtures/mocks/github/user')(this.opts.user);
     }
   });
 
   // BUILD
   mocksForMethods(require('runnable/lib/models/build'), {
     build: function () {
+      require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/docker/container-id-attach')(100);
@@ -91,6 +95,9 @@ module.exports.setup = function (cb) {
       require('../../fixtures/mocks/s3/put-object')(contextId, '/Dockerfile');
       // in case owner is org
       require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+    },
+    build: function () {
+      require('../../fixtures/mocks/docker/container-id-attach')(100);
     }
   });
 
