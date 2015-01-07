@@ -146,70 +146,70 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       beforeEach(initExpected);
       createInstanceAndRunTests(ctx);
     });
-    // describe('create instance with built build', function () {
-    //   beforeEach(function (done) {
-    //     multi.createBuiltBuild(function (err, build, user, modelsArr) {
-    //       if (err) { return done(err); }
-    //       ctx.build = build;
-    //       ctx.user = user;
-    //       ctx.cv = modelsArr[0];
-    //       done();
-    //     });
-    //   });
-    //   beforeEach(initExpected);
-    //   describe('Long running container', function() {
-    //     beforeEach(function (done) {
-    //       extend(ctx.expected, {
-    //         containers: exists,
-    //         'containers[0]': exists,
-    //         'containers[0].ports': exists,
-    //         'containers[0].dockerHost': exists,
-    //         'containers[0].dockerContainer': exists,
-    //         'containers[0].inspect.State.Running': true
-    //       });
-    //       done();
-    //     });
+    describe('create instance with built build', function () {
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, user, modelsArr) {
+          if (err) { return done(err); }
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = modelsArr[0];
+          done();
+        });
+      });
+      beforeEach(initExpected);
+      describe('Long running container', function() {
+        beforeEach(function (done) {
+          extend(ctx.expected, {
+            containers: exists,
+            'containers[0]': exists,
+            'containers[0].ports': exists,
+            'containers[0].dockerHost': exists,
+            'containers[0].dockerContainer': exists,
+            'containers[0].inspect.State.Running': true
+          });
+          done();
+        });
 
-    //     createInstanceAndRunTests(ctx);
-    //   });
-    //   describe('Immediately exiting container', function() {
-    //     beforeEach(function (done) {
-    //       extend(ctx.expected, {
-    //         containers: exists,
-    //         'containers[0]': exists,
-    //         'containers[0].dockerHost': exists,
-    //         'containers[0].dockerContainer': exists,
-    //         'containers[0].inspect.State.Running': false
-    //       });
-    //       ctx.originalStart = Docker.prototype.startContainer;
-    //       Docker.prototype.startContainer = stopContainerRightAfterStart;
-    //       done();
-    //     });
-    //     afterEach(function (done) {
-    //       // restore docker.startContainer back to normal
-    //       Docker.prototype.startContainer = ctx.originalStart;
-    //       done();
-    //     });
+        createInstanceAndRunTests(ctx);
+      });
+      describe('Immediately exiting container', function() {
+        beforeEach(function (done) {
+          extend(ctx.expected, {
+            containers: exists,
+            'containers[0]': exists,
+            'containers[0].dockerHost': exists,
+            'containers[0].dockerContainer': exists,
+            'containers[0].inspect.State.Running': false
+          });
+          ctx.originalStart = Docker.prototype.startContainer;
+          Docker.prototype.startContainer = stopContainerRightAfterStart;
+          done();
+        });
+        afterEach(function (done) {
+          // restore docker.startContainer back to normal
+          Docker.prototype.startContainer = ctx.originalStart;
+          done();
+        });
 
-    //     createInstanceAndRunTests(ctx);
-    //   });
-    //   describe('Container create error (Invalid dockerfile CMD)', function() {
-    //     beforeEach(function (done) {
-    //       ctx.expected['containers[0].error.message'] = exists;
-    //       ctx.expected['containers[0].error.stack'] = exists;
-    //       ctx.originalCreateContainer = Dockerode.prototype.createContainer;
-    //       Dockerode.prototype.createContainer = forceCreateContainerErr;
-    //       done();
-    //     });
-    //     afterEach(function (done) {
-    //       // restore dockerODE.createContainer` back to normal
-    //       Dockerode.prototype.createContainer = ctx.originalCreateContainer;
-    //       done();
-    //     });
+        createInstanceAndRunTests(ctx);
+      });
+      describe('Container create error (Invalid dockerfile CMD)', function() {
+        beforeEach(function (done) {
+          ctx.expected['containers[0].error.message'] = exists;
+          ctx.expected['containers[0].error.stack'] = exists;
+          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          Dockerode.prototype.createContainer = forceCreateContainerErr;
+          done();
+        });
+        afterEach(function (done) {
+          // restore dockerODE.createContainer` back to normal
+          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          done();
+        });
 
-    //     createInstanceAndRunTests(ctx);
-    //   });
-    // });
+        createInstanceAndRunTests(ctx);
+      });
+    });
   });
   // describe('for Organization by member', function () {
     // TODO
@@ -268,53 +268,53 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   }
 
   function patchInstanceTests (ctx) {
-    // describe('Patch without build:', function() {
-    //   afterEach(require('../../fixtures/clean-mongo').removeEverything);
-    //   afterEach(require('../../fixtures/clean-ctx')(ctx));
-    //   afterEach(require('../../fixtures/clean-nock'));
-    //   it('should update an instance with new env', function (done) {
-    //     var body = {
-    //       env: [
-    //         'ENV=NEW'
-    //       ]
-    //     };
-    //     extend(ctx.expected, body);
-    //     ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
-    //   });
-    //   describe('update name:', function() {
-    //     beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
-    //     beforeEach(afterEachAssertUpdatedNewHostsAndNetwork);
-    //     it('should update an instance with new name', function (done) {
-    //       var body = {
-    //         name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ_-'
-    //       };
-    //       extend(ctx.expected, body);
-    //       ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
-    //     });
-    //     it('should update an instance with new name and env', function (done) {
-    //       var body = {
-    //         name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ_-',
-    //         env: [
-    //           'ENV=NEW'
-    //         ]
-    //       };
-    //       extend(ctx.expected, body);
-    //       ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
-    //     });
-    //   });
-    //   function afterPatchAssertions (done) {
-    //     return function (err) {
-    //       if (err) { return done(err); }
-    //       if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {
-    //         return done();
-    //       }
-    //       var count = createCount(ctx.afterPatchAsserts.length, done);
-    //       ctx.afterPatchAsserts.forEach(function (assert) {
-    //         assert(count.next);
-    //       });
-    //     };
-    //   }
-    // });
+    describe('Patch without build:', function() {
+      afterEach(require('../../fixtures/clean-mongo').removeEverything);
+      afterEach(require('../../fixtures/clean-ctx')(ctx));
+      afterEach(require('../../fixtures/clean-nock'));
+      it('should update an instance with new env', function (done) {
+        var body = {
+          env: [
+            'ENV=NEW'
+          ]
+        };
+        extend(ctx.expected, body);
+        ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
+      });
+      describe('update name:', function() {
+        beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
+        beforeEach(afterEachAssertUpdatedNewHostsAndNetwork);
+        it('should update an instance with new name', function (done) {
+          var body = {
+            name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ_-'
+          };
+          extend(ctx.expected, body);
+          ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
+        });
+        it('should update an instance with new name and env', function (done) {
+          var body = {
+            name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ_-',
+            env: [
+              'ENV=NEW'
+            ]
+          };
+          extend(ctx.expected, body);
+          ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
+        });
+      });
+      function afterPatchAssertions (done) {
+        return function (err) {
+          if (err) { return done(err); }
+          if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {
+            return done();
+          }
+          var count = createCount(ctx.afterPatchAsserts.length, done);
+          ctx.afterPatchAsserts.forEach(function (assert) {
+            assert(count.next);
+          });
+        };
+      }
+    });
 
     describe('Patch with build:', function() {
       function initPatchExpected (done) {
