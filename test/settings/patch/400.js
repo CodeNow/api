@@ -8,6 +8,8 @@ var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var typesTests = require('../../fixtures/types-test-util');
+
 
 describe('400 PATCH /settings/:id', {timeout:500}, function () {
   var ctx = {};
@@ -42,7 +44,6 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
     before(function (done) {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
-        // NOTE: I don't have this in runnable-api-client yet. That is why such hacky test
 
         runnable.createSetting({json: settings}, function (err, body) {
           if (err) { return done(err); }
@@ -75,6 +76,31 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
       });
     });
 
+
+    describe('invalid types', function () {
+      var def = {
+        action: 'create a setting',
+        requiredParams: [
+          {
+            name: 'owner',
+            type: 'object',
+            keys: [
+              {
+                name: 'github',
+                type: 'number'
+              }
+            ]
+          }
+        ]
+      };
+
+      typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+        multi.createUser(function (err, runnable) {
+          if (err) { return cb(err); }
+          runnable.newSetting(settingsId).update({json: body}, cb);
+        });
+      });
+    });
 
   });
 
