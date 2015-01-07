@@ -102,7 +102,7 @@ describe('GET /instances', function () {
       var query = {
         contextVersion: {
           appCodeVersions: {
-            repo: ctx.instance.attrs.contextVersion.appCodeVersion.repo
+            repo: ctx.instance.attrs.contextVersion.appCodeVersions[0].repo
           }
         }
       };
