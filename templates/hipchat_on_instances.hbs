@@ -1,0 +1,6 @@
+{{username}}'s latest push to {{appCode.repo}}@{{appCode.branch}} is now runnable.
+There {{commitsFormat commitLog}} in this push.
+The change is deployed on
+{{#each instances}}
+ <a href="http://runnable.io/{{this.owner.username}}/{{this.name}}">{{this.name}}</a>
+{{/each}}

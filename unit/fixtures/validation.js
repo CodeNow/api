@@ -16,13 +16,13 @@ var ALPHA_NUM_SAFE = [
   Faker.Name.firstName(),
   OBJECT_ID,
   'Container-123',
-  'this-is-my-contianer'
+  'this-is-my-container'
 ];
 var ALPHA_NUM_W_SPACE_SAFE = [
   Faker.Name.firstName(),
   OBJECT_ID,
   'Container-123',
-  'this-is-my-contianer',
+  'this-is-my-container',
   'Container 123'
 ];
 var NOT_ALPHA_NUM_SAFE = [
