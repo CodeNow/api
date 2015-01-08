@@ -58,7 +58,8 @@ describe('Notifier',  function () {
       appCodeVersions: [
         {
           repo: 'api',
-          branch: 'develop'
+          branch: 'develop',
+          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
         }
       ]
     }];
@@ -90,7 +91,8 @@ describe('Notifier',  function () {
       appCodeVersions: [
         {
           repo: 'api',
-          branch: 'develop'
+          branch: 'develop',
+          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
         }
       ]
     }];
@@ -124,7 +126,8 @@ describe('Notifier',  function () {
       appCodeVersions: [
         {
           repo: 'api',
-          branch: 'develop'
+          branch: 'develop',
+          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
         }
       ]
     }];
@@ -152,7 +155,8 @@ describe('Notifier',  function () {
       appCodeVersions: [
         {
           repo: 'api',
-          branch: 'develop'
+          branch: 'develop',
+          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
         }
       ]
     }];
@@ -186,7 +190,8 @@ describe('Notifier',  function () {
       appCodeVersions: [
         {
           repo: 'api',
-          branch: 'develop'
+          branch: 'develop',
+          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
         }
       ]
     }];
