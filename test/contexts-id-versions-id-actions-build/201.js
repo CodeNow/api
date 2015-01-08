@@ -50,24 +50,24 @@ describe('201 POST /contexts/:id/versions/:id/actions/build', {timeout: 2000}, f
 
     buildTheVersionTests(ctx);
   });
-  // describe('for Org by member', function () {
-  //   beforeEach(function (done) {
-  //     ctx.bodyOwner = {
-  //       github: 11111 // org id, requires mocks. (api-client.js)
-  //     };              // user belongs to this org.
-  //     done();
-  //   });
-  //   beforeEach(function (done) {
-  //     multi.createContextVersion(ctx.bodyOwner.github, function (err, contextVersion, context, build, user) {
-  //       if (err) { return done(err); }
-  //       ctx.cv = contextVersion;
-  //       ctx.user = user;
-  //       done();
-  //     });
-  //   });
+  describe('for Org by member', function () {
+    beforeEach(function (done) {
+      ctx.bodyOwner = {
+        github: 11111 // org id, requires mocks. (api-client.js)
+      };              // user belongs to this org.
+      done();
+    });
+    beforeEach(function (done) {
+      multi.createContextVersion(ctx.bodyOwner.github, function (err, contextVersion, context, build, user) {
+        if (err) { return done(err); }
+        ctx.cv = contextVersion;
+        ctx.user = user;
+        done();
+      });
+    });
 
-  //   buildTheVersionTests(ctx);
-  // });
+    buildTheVersionTests(ctx);
+  });
 });
 
 
@@ -122,29 +122,97 @@ function buildTheVersionTests (ctx) {
         });
 
         describe('deduped builds', function() {
-          beforeEach(function (done) {
-            ctx.expected = {
-              build: ctx.cv.toJSON().build
-            };
-            done();
-          });
-          it('should dedupe spaces change', function(done) {
-            var rootDir = ctx.copiedCv.rootDir;
-            rootDir.contents.fetch(function (err) {
-              if (err) { return done(err); }
-              rootDir.contents.models[0].update({ json: {body:'FROM dockerfile/nodejs'} }, function(){
-                require('../fixtures/mocks/github/user')(ctx.user);
-                ctx.copiedCv.build(function (err) {
-                  if (err) { return done(err); }
-                  ctx.copiedCv.fetch(function(err, copied) {
+          [
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\n',
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n \n',
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log \n\n',
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log \n \n',
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\n',
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log \n',
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n ',
+          'FROM dockerfile/nodejs \nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs \nCMD tail -f /var/log/dpkg.log \n',
+          'FROM dockerfile/nodejs \nCMD tail -f /var/log/dpkg.log\n ',
+          'FROM dockerfile/nodejs\n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\n \nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs \n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs \n \nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\n    \nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs    \n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs    \n    \nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs \n \n\n \n\n\n \n\n\n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs  \n  \n\n  \n\n\n  \n\n\n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\n\n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\n\n \nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\n \n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\n \n \nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs \n\n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs \n\n \nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs \n \n\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs \n \n \nCMD tail -f /var/log/dpkg.log\n',
+          '\nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          '\n\nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          '\n \nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          ' \n\nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          ' \n \nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\t\n',
+          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\r',
+          ].forEach(function(fileInfo) {
+            it('should dedupe whitespace changes: ' + fileInfo, function(done) {
+              var rootDir = ctx.copiedCv.rootDir;
+              rootDir.contents.fetch(function (err) {
+                if (err) { return done(err); }
+                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(){
+                  require('../fixtures/mocks/github/user')(ctx.user);
+                  ctx.copiedCv.build(function (err) {
                     if (err) { return done(err); }
-                    ctx.cv.fetch(function(err, old) {
+                    ctx.copiedCv.fetch(function(err, copied) {
                       if (err) { return done(err); }
-                      expect(old.build).to.deep.equal(copied.build);
-                      expect(old.containerId).to.equal(copied.containerId);
-                      expect(old._id).to.not.equal(copied._id);
-                      expect(old.id).to.not.equal(copied.id);
-                      done();
+                      ctx.cv.fetch(function(err, old) {
+                        if (err) { return done(err); }
+                        expect(old.build).to.deep.equal(copied.build);
+                        expect(old.containerId).to.equal(copied.containerId);
+                        expect(old._id).to.not.equal(copied._id);
+                        expect(old.id).to.not.equal(copied.id);
+                        done();
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+
+          [
+          'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log\n',
+          'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log \n',
+          'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log\n ',
+          'FROM dockerfile/nodejs\n  CMD tail -f /var/log/dpkg.log\n',
+          ' FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          '  FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          '\tFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          '\rFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
+          ].forEach(function(fileInfo) {
+            it('should NOT dedupe whitespace changes: ' + fileInfo, function(done) {
+              var rootDir = ctx.copiedCv.rootDir;
+              rootDir.contents.fetch(function (err) {
+                if (err) { return done(err); }
+                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(){
+                  require('../fixtures/mocks/github/user')(ctx.user);
+                  ctx.copiedCv.build(function (err) {
+                    if (err) { return done(err); }
+                    ctx.copiedCv.fetch(function(err, copied) {
+                      if (err) { return done(err); }
+                      ctx.cv.fetch(function(err, old) {
+                        if (err) { return done(err); }
+                        expect(old.build).to.not.deep.equal(copied.build);
+                        expect(old.containerId).to.not.equal(copied.containerId);
+                        expect(old._id).to.not.equal(copied._id);
+                        expect(old.id).to.not.equal(copied.id);
+                        done();
+                      });
                     });
                   });
                 });
@@ -152,6 +220,7 @@ function buildTheVersionTests (ctx) {
             });
           });
         });
+
 
         describe('edited infra', function() {
           beforeEach(function (done) {
@@ -183,7 +252,6 @@ function buildTheVersionTests (ctx) {
       });
     });
     describe('with one appCodeVersion', function () {
-
       it('should build', function (done) {
         require('../fixtures/mocks/github/user')(ctx.user);
         ctx.cv.build(expects.success(201, ctx.expected, function (err) {
