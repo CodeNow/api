@@ -13,6 +13,7 @@ var expects = require('../fixtures/expects');
 var exists = require('101/exists');
 var multi = require('../fixtures/multi-factory');
 var keypather = require('keypather')();
+var expect = require('lab').expect;
 
 describe('201 POST /contexts/:id/versions/:id/actions/build', {timeout: 2000}, function() {
   var ctx = {};
@@ -118,6 +119,38 @@ function buildTheVersionTests (ctx) {
             // cv was deduped, so dupe is deleted
             ctx.copiedCv.fetch(expects.error(404, done));
           }));
+        });
+
+        describe('deduped builds', function() {
+          beforeEach(function (done) {
+            ctx.expected = {
+              build: ctx.cv.toJSON().build
+            };
+            done();
+          });
+          it('should dedupe spaces change', function(done) {
+            var rootDir = ctx.copiedCv.rootDir;
+            rootDir.contents.fetch(function (err) {
+              if (err) { return done(err); }
+              rootDir.contents.models[0].update({ json: {body:'FROM dockerfile/nodejs'} }, function(){
+                require('../fixtures/mocks/github/user')(ctx.user);
+                ctx.copiedCv.build(function (err) {
+                  if (err) { return done(err); }
+                  ctx.copiedCv.fetch(function(err, copied) {
+                    if (err) { return done(err); }
+                    ctx.cv.fetch(function(err, old) {
+                      if (err) { return done(err); }
+                      expect(old.build).to.deep.equal(copied.build);
+                      expect(old.containerId).to.equal(copied.containerId);
+                      expect(old._id).to.not.equal(copied._id);
+                      expect(old.id).to.not.equal(copied.id);
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+          });
         });
 
         describe('edited infra', function() {
