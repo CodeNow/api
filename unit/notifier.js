@@ -69,7 +69,7 @@ describe('Notifier',  function () {
   it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
     slack.send = function (text, cb) {
-      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
+      var message = 'tjmehta\'s latest push to api@develop is now runnable.\n';
       message += 'There are 2 commits in this push.\n';
       message += 'The change is deployed on\n http://runnable.io/podviaznikov/instance1\n';
       expect(text).to.equal(message);
@@ -92,7 +92,7 @@ describe('Notifier',  function () {
         {
           repo: 'api',
           branch: 'develop',
-          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
+          commit: 'b240edf982d467201845b3bf10bbbe16f6049eb1'
         }
       ]
     }];
