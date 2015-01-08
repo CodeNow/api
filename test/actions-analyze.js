@@ -51,39 +51,6 @@ describe('Analyze - /actions/analyze', function () {
       });
     });
 
-    it('should return 400 with message '+
-       'indicating server unable to '+
-       'determine any Dockerfile component '+
-       'suggestions due to no Github repo language '+
-       'information', function (done) {
-      repoMock.standardRepo({
-        language: null
-      });
-      ctx.request.get(
-        hooks.getSuccess,
-        function (err, res) {
-          expect(res.statusCode).to.equal(400);
-          expect(res.body.message).to.equal('"githubResult.language" should not be null');
-          done();
-        }
-      );
-    });
-
-    it('should return error if repo language '+
-       'not in list of supported languages', function (done) {
-      var lang = 'CoffeeScript';
-      repoMock.standardRepo({
-        language: lang
-      });
-      ctx.request.get(
-        hooks.getSuccess,
-        function (err, res) {
-          expect(res.statusCode).to.equal(400);
-          expect(res.body.message).to.equal('"githubResult.language" value: "'+lang+'" not found in array');
-          done();
-        }
-      );
-    });
   });
 
   describe('Success conditions', function () {
