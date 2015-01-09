@@ -48,54 +48,31 @@ describe('Notifier',  function () {
       expect(text).to.equal(message);
       cb();
     };
-    var commitLog = [{
+
+    var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: {
-        username: 'podviaznikov'
-      }
-    }];
-    var contextVersions = [{
-      appCodeVersions: [
-        {
-          repo: 'api',
-          branch: 'develop',
-          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
-        }
-      ]
-    }];
-    slack.notifyOnBuild(commitLog, contextVersions, done);
+      author: 'podviaznikov'
+    };
+    var githubPushInfo = {
+      commitLog: [headCommit],
+      repo: 'api',
+      branch: 'develop',
+      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      headCommit: headCommit
+    };
+
+    slack.notifyOnBuild(githubPushInfo, done);
   });
 
   it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
     slack.send = function (text, cb) {
-      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
+      var message = 'tjmehta\'s latest push to api@develop is now runnable.\n';
       message += 'There are 2 commits in this push.\n';
       message += 'The change is deployed on\n http://runnable.io/podviaznikov/instance1\n';
       expect(text).to.equal(message);
       cb();
     };
-    var commitLog = [{
-      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: {
-        username: 'podviaznikov'
-      }
-    },
-    {
-      id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
-      author: {
-        username: 'tjmehta'
-      }
-    }];
-    var contextVersions = [{
-      appCodeVersions: [
-        {
-          repo: 'api',
-          branch: 'develop',
-          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
-        }
-      ]
-    }];
     var instances = [
       {
         name: 'instance1',
@@ -104,7 +81,24 @@ describe('Notifier',  function () {
         }
       }
     ];
-    slack.notifyOnInstances(commitLog, contextVersions, instances, done);
+    var headCommit = {
+      id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
+      author: 'tjmehta'
+    };
+    var githubPushInfo = {
+      commitLog: [headCommit,
+        {
+          id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+          author: {
+            username: 'podviaznikov'
+          }
+        }],
+      repo: 'api',
+      branch: 'develop',
+      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      headCommit: headCommit
+    };
+    slack.notifyOnInstances(githubPushInfo, instances, done);
   });
 
   it('should render proper text on hipchat.notifyOnBuild call', function (done) {
@@ -116,22 +110,18 @@ describe('Notifier',  function () {
       expect(text).to.equal(message);
       cb();
     };
-    var commitLog = [{
+    var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: {
-        username: 'podviaznikov'
-      }
-    }];
-    var contextVersions = [{
-      appCodeVersions: [
-        {
-          repo: 'api',
-          branch: 'develop',
-          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
-        }
-      ]
-    }];
-    hipchat.notifyOnBuild(commitLog, contextVersions, done);
+      author: 'podviaznikov'
+    };
+    var githubPushInfo = {
+      commitLog: [headCommit],
+      repo: 'api',
+      branch: 'develop',
+      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      headCommit: headCommit
+    };
+    hipchat.notifyOnBuild(githubPushInfo, done);
   });
 
   it('should render proper text on hipchat.notifyOnInstances call', function (done) {
@@ -145,21 +135,17 @@ describe('Notifier',  function () {
       expect(text).to.equal(message);
       cb();
     };
-    var commitLog = [{
+    var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: {
-        username: 'podviaznikov'
-      }
-    }];
-    var contextVersions = [{
-      appCodeVersions: [
-        {
-          repo: 'api',
-          branch: 'develop',
-          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
-        }
-      ]
-    }];
+      author: 'podviaznikov'
+    };
+    var githubPushInfo = {
+      commitLog: [headCommit],
+      repo: 'api',
+      branch: 'develop',
+      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      headCommit: headCommit
+    };
     var instances = [
       {
         name: 'instance1',
@@ -174,27 +160,12 @@ describe('Notifier',  function () {
         }
       }
     ];
-    hipchat.notifyOnInstances(commitLog, contextVersions, instances, done);
+    hipchat.notifyOnInstances(githubPushInfo, instances, done);
   });
 
   it('should send message to HipChat', {timeout: 4000}, function (done) {
     var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
     var randomUsername = 'user' + new Date().getTime();
-    var commitLog = [{
-      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: {
-        username: randomUsername
-      }
-    }];
-    var contextVersions = [{
-      appCodeVersions: [
-        {
-          repo: 'api',
-          branch: 'develop',
-          commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9'
-        }
-      ]
-    }];
     var instances = [
       {
         name: 'instance1',
@@ -203,7 +174,18 @@ describe('Notifier',  function () {
         }
       }
     ];
-    hipchat.notifyOnInstances(commitLog, contextVersions, instances, function (err) {
+    var headCommit = {
+      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      author: randomUsername
+    };
+    var githubPushInfo = {
+      commitLog: [headCommit],
+      repo: 'api',
+      branch: 'develop',
+      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+      headCommit: headCommit
+    };
+    hipchat.notifyOnInstances(githubPushInfo, instances, function (err) {
       if (err) { return done(err); }
       var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
       setTimeout(function () {

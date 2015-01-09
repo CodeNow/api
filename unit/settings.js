@@ -35,7 +35,7 @@ describe('Settings',  function () {
     });
 
     it('should be possible to find settings by owner\'s github id', function (done) {
-      Settings.findSettingsForOwnerGihubId(savedSettings.owner.github, function (err, settings) {
+      Settings.findOneByGithubId(savedSettings.owner.github, function (err, settings) {
         if (err) { return done(err); }
         expect(String(settings._id)).to.equal(String(savedSettings._id));
         expect(settings.owner.github).to.equal(savedSettings.owner.github);
