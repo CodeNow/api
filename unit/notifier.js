@@ -44,14 +44,15 @@ describe('Notifier',  function () {
     slack.send = function (text, cb) {
       var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
       message += 'There is 1 commit in this push.\n';
-      message += 'Choose a Box to run develop.';
+      message += 'Choose a Box to run develop:\nhttp://runnable.io/';
+      message += 'podviaznikov/boxSelection/api/develop/init/a240edf982d467201845b3bf10ccbe16f6049ea9'
       expect(text).to.equal(message);
       cb();
     };
 
     var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: 'podviaznikov'
+      message: 'init'
     };
     var githubPushInfo = {
       commitLog: [headCommit],
@@ -60,6 +61,9 @@ describe('Notifier',  function () {
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
       user: {
+        login: 'podviaznikov'
+      },
+      owner: {
         login: 'podviaznikov'
       }
     };
@@ -86,7 +90,6 @@ describe('Notifier',  function () {
     ];
     var headCommit = {
       id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
-      author: 'tjmehta'
     };
     var githubPushInfo = {
       commitLog: [headCommit,
@@ -112,13 +115,15 @@ describe('Notifier',  function () {
     hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
       message += 'There is 1 commit in this push.\n';
-      message += 'Choose a Box to run develop.';
+      message += 'Click <a href="http://runnable.io/podviaznikov/boxSelection/api/develop';
+      message += '/hello/a240edf982d467201845b3bf10ccbe16f6049ea9">here</a>\n';
+      message += 'to choose a box to run develop.'
       expect(text).to.equal(message);
       cb();
     };
     var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: 'podviaznikov'
+      message: 'hello'
     };
     var githubPushInfo = {
       commitLog: [headCommit],
@@ -127,6 +132,9 @@ describe('Notifier',  function () {
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
       user: {
+        login: 'podviaznikov'
+      },
+      owner: {
         login: 'podviaznikov'
       }
     };
