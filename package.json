@@ -108,6 +108,7 @@
     "bdd": "CIRCLE_NODE_TOTAL=1 CIRCLE_NODE_INDEX=0 ./scripts/npm-bdd-split-files.sh",
     "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -v -l -m 36000 -e test `cat test/whitelist.txt`",
     "bdd-watch": "killall node; killall cayley_osx; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd",
+    "bdd-whitelist": "npm run clear; killall cayley_osx; NODE_PATH=./lib lab -v -l -m 200 -e test `cat test/whitelist.txt`",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",
     "docs": "jsdoc -r -d docs lib/ && if [ $CIRCLE_ARTIFACTS ]; then cp -r docs $CIRCLE_ARTIFACTS; fi",
