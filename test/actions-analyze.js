@@ -77,6 +77,32 @@ describe('Analyze - /actions/analyze', function () {
       );
     });
 
+    it('returns 0 inferred suggestions for JavaScript/NodeJS '+
+       'repository with 0 matching dependencies and X non-matching dependencies', function (done) {
+      var packageFile = {
+        dependencies: {
+          '101': '>=5.0.0',
+          'dat-middlware': '0.0.0'
+        }
+      };
+      repoContentsMock.repoContentsDirectory();
+      repoContentsMock.repoContentsFile({
+        name: 'package.json',
+        path: 'package.json',
+        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('array');
+          expect(res.body).to.have.length(0);
+          done();
+        }
+      );
+    });
+
     it('returns 1 inferred suggestion for JavaScript/NodeJS '+
        'repository with 1 matching dependency', function (done) {
       var packageFile = {
