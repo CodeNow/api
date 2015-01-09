@@ -87,6 +87,7 @@ function buildTheVersionTests (ctx) {
 
     describe('with no appCodeVersions', function () {
       beforeEach(function (done) {
+        ctx.noAppCodeVersions = true;
         ctx.expected.appCodeVersions = [];
         ctx.cv.appCodeVersions.models[0].destroy(done);
       });
@@ -152,6 +153,23 @@ function buildTheVersionTests (ctx) {
         });
       });
 
+      dedupeFirstBuildCompletedTest();
+    });
+
+
+    describe('with one appCodeVersion', function () {
+      it('should build', function (done) {
+        require('../fixtures/mocks/github/user')(ctx.user);
+        ctx.cv.build(expects.success(201, ctx.expected, function (err) {
+          if (err) { return done(err); }
+          waitForCvBuildToComplete(ctx.copiedCv, ctx.user, done);
+        }));
+      });
+      // uncomment when we can build context versions with a specific owner
+      // dedupeFirstBuildCompletedTest();
+    });
+
+    function dedupeFirstBuildCompletedTest() {
       describe('deduped builds', function() {
         beforeEach(function (done) {
           multi.createContextVersion(function (err, contextVersion, context, build, user) {
@@ -162,7 +180,11 @@ function buildTheVersionTests (ctx) {
           });
         });
         beforeEach(function (done) {
-          ctx.cv2.appCodeVersions.models[0].destroy(done);
+          if (ctx.noAppCodeVersions) {
+            ctx.cv2.appCodeVersions.models[0].destroy(done);
+          } else {
+            done();
+          }
         });
         describe('first build completed', function() {
           beforeEach(function (done) {
@@ -214,7 +236,8 @@ function buildTheVersionTests (ctx) {
               var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }
-                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(){
+                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(err){
+                  if (err) { return done(err); }
                   ctx.cv2.build(function (err) {
                     if (err) { return done(err); }
                     waitForCvBuildToComplete(ctx.cv2, ctx.user2, function(err) {
@@ -244,7 +267,8 @@ function buildTheVersionTests (ctx) {
                var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }
-                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(){
+                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(err) {
+                  if (err) { return done(err); }
                   ctx.cv2.build(function (err) {
                     if (err) { return done(err); }
                     waitForCvBuildToComplete(ctx.cv2, ctx.user2, function(err) {
@@ -259,30 +283,39 @@ function buildTheVersionTests (ctx) {
               });
             });
           });
-          it('should dedupe in progress builds', { timeout: 1000 }, function (done) {
-            multi.createContextVersion(function (err, contextVersion, context, build, user) {
-              if (err) { return done(err); }
-              ctx.cv3 = contextVersion;
-              ctx.user3 = user;
-              ctx.cv3.appCodeVersions.models[0].destroy(function(err) {
+          describe('in progress builds', function() {
+            beforeEach(function(done) {
+              multi.createContextVersion(function (err, contextVersion, context, build, user) {
                 if (err) { return done(err); }
-                ctx.cv2.build(function (err) {
+                ctx.cv3 = contextVersion;
+                ctx.user3 = user;
+                done();
+              });
+            });
+            beforeEach(function(done) {
+              if (ctx.noAppCodeVersions) {
+                ctx.cv3.appCodeVersions.models[0].destroy(done);
+              } else {
+                done();
+              }
+            });
+            it('should dedupe in progress builds', { timeout: 1000 }, function (done) {
+              ctx.cv2.build(function (err) {
+                if (err) { return done(err); }
+                ctx.cv3.build(function (err) {
                   if (err) { return done(err); }
-                  ctx.cv3.build(function (err) {
+                  waitForCvBuildToComplete(ctx.cv2, ctx.user, function(err){
                     if (err) { return done(err); }
-                    waitForCvBuildToComplete(ctx.cv2, ctx.user, function(err){
+                    waitForCvBuildToComplete(ctx.cv3, ctx.user, function(err) {
                       if (err) { return done(err); }
-                      waitForCvBuildToComplete(ctx.cv3, ctx.user, function(err) {
-                        if (err) { return done(err); }
-                        expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build);
-                        expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv3.attrs.build);
-                        expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId);
-                        expect(ctx.cv.attrs.containerId).to.equal(ctx.cv3.attrs.containerId);
-                        expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
-                        expect(ctx.cv.attrs._id).to.not.equal(ctx.cv3.attrs._id);
-                        expect(ctx.cv2.attrs._id).to.not.equal(ctx.cv3.attrs._id);
-                        done();
-                      });
+                      expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build);
+                      expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv3.attrs.build);
+                      expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId);
+                      expect(ctx.cv.attrs.containerId).to.equal(ctx.cv3.attrs.containerId);
+                      expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
+                      expect(ctx.cv.attrs._id).to.not.equal(ctx.cv3.attrs._id);
+                      expect(ctx.cv2.attrs._id).to.not.equal(ctx.cv3.attrs._id);
+                      done();
                     });
                   });
                 });
@@ -311,16 +344,7 @@ function buildTheVersionTests (ctx) {
           });
         });
       });
-    });
-    describe('with one appCodeVersion', function () {
-      it('should build', function (done) {
-        require('../fixtures/mocks/github/user')(ctx.user);
-        ctx.cv.build(expects.success(201, ctx.expected, function (err) {
-          if (err) { return done(err); }
-          waitForCvBuildToComplete(ctx.copiedCv, ctx.user, done);
-        }));
-      });
-    });
+    } // dedupeFirstBuildCompletedTest
   });
 
   function waitForCvBuildToComplete (cv, user, done) {
