@@ -1,14 +1,14 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.4.1",
+  "version": "0.4.3",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
   },
   "private": true,
   "dependencies": {
-    "101": "^0.7.3",
+    "101": "^0.8.2",
     "async": "^0.9.0",
     "aws-sdk": "^2.0.14",
     "batch": "^0.5.1",
@@ -22,7 +22,7 @@
     "connect-datadog": "0.0.5",
     "connect-redis": "^2.0.0",
     "cors": "^2.4.1",
-    "dat-middleware": "^1.9.4",
+    "dat-middleware": "^1.10.3",
     "debug": "^1.0.2",
     "defaults": "^1.0.0",
     "docker-stream-cleanser": "0.1.2",
@@ -44,7 +44,7 @@
     "http-proxy": "^1.5.3",
     "i": "^0.3.2",
     "json-hash": "0.0.4",
-    "keypather": "^1.7.5",
+    "keypather": "^1.8.1",
     "middleware-flow": "^0.6.1",
     "mkdirp": "^0.5.0",
     "mongoose": "^3.8.13",
@@ -81,7 +81,7 @@
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.4",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
     "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v0.1.1",
-    "docker-mock": "git://github.com/Runnable/docker-mock.git#v0.5.4",
+    "docker-mock": "^0.5.5",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
     "function-proxy": "^0.5.1",
@@ -97,7 +97,11 @@
     "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.8",
     "server-destroy": "^1.0.0"
   },
-  "engine": "node >= 0.10.5",
+  "engineStrict": true,
+  "engine": {
+    "node": "0.10.28",
+    "npm": "2.1.8"
+  },
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
     "_bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test",

@@ -11,6 +11,7 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var async = require('async');
+var Url = require('url');
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
 var RedisList = require('redis-types').List;
@@ -52,8 +53,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
       ], function (err, newBuild) {
         if (err) { return done(err); }
         expect(ctx.instance.build._id).to.equal(newBuild._id);
-        expectHipacheHostsForContainers(ctx.instance);
-        done();
+        expectHipacheHostsForContainers(ctx.instance, done);
       });
       function createVersion (cb) {
         var newVersion = ctx.context.createVersion({
@@ -125,8 +125,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
           ], function (err, newBuild) {
             if (err) { return done(err); }
             expect(ctx.instance.build._id).to.equal(newBuild._id);
-            expectHipacheHostsForContainers(ctx.instance);
-            done();
+            expectHipacheHostsForContainers(ctx.instance, done);
           });
           function createVersion (cb) {
             var newVersion = ctx.context.createVersion({
@@ -199,8 +198,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
           ], function (err, newBuild) {
             if (err) { return done(err); }
             expect(ctx.instance.build._id).to.equal(newBuild._id);
-            expectHipacheHostsForContainers(ctx.instance);
-            done();
+            expectHipacheHostsForContainers(ctx.instance, done);
           });
           function createVersion (cb) {
             var newVersion = ctx.context.createVersion({
@@ -288,8 +286,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         ], function (err, newBuild) {
           if (err) { return done(err); }
           expect(ctx.instance.build._id).to.equal(newBuild._id);
-          expectHipacheHostsForContainers(ctx.instance);
-          done();
+          expectHipacheHostsForContainers(ctx.instance, done);
         });
         function createVersion (cb) {
           var newVersion = ctx.context.createVersion({
@@ -365,28 +362,46 @@ describe('BDD - Create Build and Deploy Instance', function () {
   });
 });
 
-
+// KEEP THIS UPDATED.
 function expectHipacheHostsForContainers (instance, cb) {
   var containers = instance.containers;
   var allUrls = [];
+  var fail = false;
   containers.forEach(function (container) {
-    if (container.ports) {
-      Object.keys(container.ports).forEach(function (port) {
+    var ports = container.json().ports;
+    if (ports) {
+      Object.keys(ports).forEach(function (port) {
         var portNumber = port.split('/')[0];
-        allUrls.push([instance.shortHash, '-', portNumber, '.', process.env.DOMAIN].join('').toLowerCase());
+
+        var instanceName = instance.attrs.lowerName;
+        var ownerUsername = instance.attrs.owner.username;
+        allUrls.push([portNumber, '.',
+          instanceName, '.',
+          ownerUsername, '.',
+          process.env.DOMAIN].join('').toLowerCase());
       });
+    } else {
+      fail = true;
     }
   });
+  if (fail) {
+    return cb(new Error('all the containers _should_ have ports'));
+  }
   async.forEach(allUrls, function (url, cb) {
+    var exposedPort = url.split('.')[0];
     var hipacheEntry = new RedisList('frontend:'+url);
     hipacheEntry.lrange(0, -1, function (err, backends) {
       if (err) {
         cb(err);
       }
-      else if (backends.length !== 2 || backends[1].toString().indexOf(':') === -1) {
+      else if (backends.length !== 2 || ! /^https?:\/\/[^\:]+:[\d]+$/.test(backends[1].toString())) {
         cb(new Error('Backends invalid for '+url));
       }
       else {
+        var u = Url.parse(backends[1].toString());
+        if (exposedPort === '443' && u.protocol !== 'https:') {
+          return cb(new Error('https is not on port 443 ' + backends[1].toString));
+        }
         cb();
       }
     });
