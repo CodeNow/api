@@ -54,8 +54,8 @@ describe('Analyze - /actions/analyze', function () {
   });
 
   describe('Success conditions', function () {
-    it('Returns 0 inferred suggestions for JavaScript/NodeJS '+
-       'repository with no dependencies', function (done) {
+    it('returns 0 inferred suggestions for JavaScript/NodeJS '+
+       'repository with 0 dependencies', function (done) {
       var packageFile = {
         dependencies: []
       };
@@ -70,9 +70,35 @@ describe('Analyze - /actions/analyze', function () {
         //hooks.getErrorNoQueryParam,
         function (err, res) {
           expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('array');
+          expect(res.body).to.have.length(0);
           done();
         }
       );
     });
+
+    it('returns 0 inferred suggestions for JavaScript/NodeJS '+
+       'repository with 0 dependencies', function (done) {
+      var packageFile = {
+        dependencies: []
+      };
+      repoContentsMock.repoContentsDirectory();
+      repoContentsMock.repoContentsFile({
+        name: 'package.json',
+        path: 'package.json',
+        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('array');
+          expect(res.body).to.have.length(0);
+          done();
+        }
+      );
+    });
+
   });
 });
