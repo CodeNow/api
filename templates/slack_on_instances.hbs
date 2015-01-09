@@ -4,3 +4,4 @@ The change is deployed on
 {{#each instances}}
  http://runnable.io/{{this.owner.username}}/{{this.name}}
 {{/each}}
+Or you can click http://runnable.io/{{instances.[0].owner.username}}/boxSelection/{{repo}}/{{branch}}/{{encode headCommit.message}}/{{headCommit.id}} to choose another Box to run {{branch}} also.

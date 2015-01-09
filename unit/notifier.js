@@ -77,6 +77,8 @@ describe('Notifier',  function () {
       var message = 'tjmehta\'s latest push to api@develop is now runnable.\n';
       message += 'There are 2 commits in this push.\n';
       message += 'The change is deployed on\n http://runnable.io/podviaznikov/instance1\n';
+      message += 'Or you can click http://runnable.io/podviaznikov/boxSelection/api/develop/init';
+      message += '/b240edf982d467201845b3bf10bbbe16f6049eb1 to choose another Box to run develop also.';
       expect(text).to.equal(message);
       cb();
     };
@@ -90,6 +92,7 @@ describe('Notifier',  function () {
     ];
     var headCommit = {
       id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
+      message: 'init'
     };
     var githubPushInfo = {
       commitLog: [headCommit,
@@ -148,13 +151,17 @@ describe('Notifier',  function () {
       message += 'There is 1 commit in this push.\n';
       message += 'The change is deployed on\n ';
       message += '<a href="http://runnable.io/podviaznikov/instance1">instance1</a>\n ';
-      message += '<a href="http://runnable.io/podviaznikov/instance2">instance2</a>\n';
+      message += '<a href="http://runnable.io/podviaznikov/instance2">instance2</a>\n.\n';
+      message += 'Or you can click <a href=\"http://runnable.io/podviaznikov/boxSelection/';
+      message += 'api/develop/init/a240edf982d467201845b3bf10ccbe16f6049ea9\">here</a>';
+      message += ' to choose another Box to run develop also.';
+
       expect(text).to.equal(message);
       cb();
     };
     var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: 'podviaznikov'
+      message: 'init'
     };
     var githubPushInfo = {
       commitLog: [headCommit],
