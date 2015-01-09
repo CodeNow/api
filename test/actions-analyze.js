@@ -57,7 +57,7 @@ describe('Analyze - /actions/analyze', function () {
     it('returns 0 inferred suggestions for JavaScript/NodeJS '+
        'repository with 0 dependencies', function (done) {
       var packageFile = {
-        dependencies: []
+        dependencies: {}
       };
       repoContentsMock.repoContentsDirectory();
       repoContentsMock.repoContentsFile({
@@ -77,10 +77,12 @@ describe('Analyze - /actions/analyze', function () {
       );
     });
 
-    it('returns 0 inferred suggestions for JavaScript/NodeJS '+
-       'repository with 0 dependencies', function (done) {
+    it('returns 1 inferred suggestion for JavaScript/NodeJS '+
+       'repository with 1 matching dependency', function (done) {
       var packageFile = {
-        dependencies: []
+        dependencies: {
+          'mongodb': '>=5.0.0'
+        }
       };
       repoContentsMock.repoContentsDirectory();
       repoContentsMock.repoContentsFile({
@@ -94,7 +96,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('array');
-          expect(res.body).to.have.length(0);
+          expect(res.body).to.have.length(1);
           done();
         }
       );
