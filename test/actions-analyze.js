@@ -153,5 +153,30 @@ describe('Analyze - /actions/analyze', function () {
       );
     });
 
+    it('returns 1 inferred suggestion for JavaScript/NodeJS '+
+       'repository with dependency that is a substring of matching dependency', function (done) {
+      var packageFile = {
+        dependencies: {
+          'mongodude': '>=5.0.0',
+        }
+      };
+      repoContentsMock.repoContentsDirectory();
+      repoContentsMock.repoContentsFile({
+        name: 'package.json',
+        path: 'package.json',
+        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('array');
+          expect(res.body).to.have.length(1);
+          expect(res.body[0]).to.equal('mongodb');
+          done();
+        }
+      );
+    });
+
   });
 });
