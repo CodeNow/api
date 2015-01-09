@@ -145,7 +145,10 @@ module.exports.repoContentsFile = function (opts) {
 };
 
 function setupMock (repoContents, opts) {
-  var mockData = defaults(opts||{}, repoContents);
+  var mockData = repoContents;
+  if (opts) {
+    mockData = defaults(opts, repoContents);
+  }
   var replacePath = '/repos/github_user/github_repo/contents/'+((Array.isArray(repoContents)) ? '' : repoContents.path);
   var mockHeaders = {
     server: 'GitHub.com',
