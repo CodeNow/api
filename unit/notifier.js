@@ -58,7 +58,10 @@ describe('Notifier',  function () {
       repo: 'api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      headCommit: headCommit
+      headCommit: headCommit,
+      user: {
+        login: 'podviaznikov'
+      }
     };
 
     slack.notifyOnBuild(githubPushInfo, done);
@@ -95,8 +98,11 @@ describe('Notifier',  function () {
         }],
       repo: 'api',
       branch: 'develop',
-      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      headCommit: headCommit
+      commit: 'a240edf982d46720,1845b3bf10ccbe16f6049ea9',
+      headCommit: headCommit,
+      user: {
+        login: 'tjmehta'
+      }
     };
     slack.notifyOnInstances(githubPushInfo, instances, done);
   });
@@ -119,7 +125,10 @@ describe('Notifier',  function () {
       repo: 'api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      headCommit: headCommit
+      headCommit: headCommit,
+      user: {
+        login: 'podviaznikov'
+      }
     };
     hipchat.notifyOnBuild(githubPushInfo, done);
   });
@@ -144,7 +153,10 @@ describe('Notifier',  function () {
       repo: 'api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      headCommit: headCommit
+      headCommit: headCommit,
+      user: {
+        login: 'podviaznikov'
+      }
     };
     var instances = [
       {
@@ -183,7 +195,10 @@ describe('Notifier',  function () {
       repo: 'api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      headCommit: headCommit
+      headCommit: headCommit,
+      user: {
+        login: randomUsername
+      }
     };
     hipchat.notifyOnInstances(githubPushInfo, instances, function (err) {
       if (err) { return done(err); }
