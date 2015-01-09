@@ -6,7 +6,7 @@
 FROM registry.runnable.com/runnable/base:latest
 
 # Node.js @ 10.28
-$ npm     @  2.1.8
+# npm     @  2.1.8
 
 # install required packages
 #    lsof: required for open file monitoring
@@ -17,5 +17,5 @@ RUN wget http://nodejs.org/dist/v0.10.28/node-v0.10.28.tar.gz \
   && ./configure \
   && make -j16 \
   && make install \
-  && npm install -g npm@2.1.8 \
+  && npm install -g npm@2.1.11 \
   && apt-get install lsof
