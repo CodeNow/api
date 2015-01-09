@@ -93,7 +93,6 @@ describe('Analyze - /actions/analyze', function () {
       });
       ctx.request.get(
         hooks.getSuccess,
-        //hooks.getErrorNoQueryParam,
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('array');
@@ -118,11 +117,37 @@ describe('Analyze - /actions/analyze', function () {
       });
       ctx.request.get(
         hooks.getSuccess,
-        //hooks.getErrorNoQueryParam,
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('array');
           expect(res.body).to.have.length(1);
+          done();
+        }
+      );
+    });
+
+    it('returns 3 inferred suggestions for JavaScript/NodeJS '+
+       'repository with 3 matching dependency', function (done) {
+      var packageFile = {
+        dependencies: {
+          'mongodb': '>=5.0.0',
+          'redis': '>=5.0.0',
+          'mysql': '>=5.0.0',
+          'somethingfake': '0.0.0'
+        }
+      };
+      repoContentsMock.repoContentsDirectory();
+      repoContentsMock.repoContentsFile({
+        name: 'package.json',
+        path: 'package.json',
+        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('array');
+          expect(res.body).to.have.length(3);
           done();
         }
       );
