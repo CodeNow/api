@@ -178,5 +178,27 @@ describe('Analyze - /actions/analyze', function () {
       );
     });
 
+    it('returns 0 inferred suggestion for JavaScript/NodeJS '+
+       'repository with no dependency property in package.json file', function (done) {
+      var packageFile = {};
+      repoContentsMock.repoContentsDirectory();
+      repoContentsMock.repoContentsFile({
+        name: 'package.json',
+        path: 'package.json',
+        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('array');
+          expect(res.body).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+
+
   });
 });
