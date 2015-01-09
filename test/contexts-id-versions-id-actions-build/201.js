@@ -95,7 +95,7 @@ function buildTheVersionTests (ctx) {
         require('../fixtures/mocks/github/user')(ctx.user);
         ctx.cv.build(expects.success(201, ctx.expected, function (err) {
           if (err) { return done(err); }
-          waitForCvBuildToComplete(ctx.copiedCv, done);
+          waitForCvBuildToComplete(ctx.copiedCv, ctx.user, done);
         }));
       });
 
@@ -105,7 +105,7 @@ function buildTheVersionTests (ctx) {
           require('../fixtures/mocks/github/user')(ctx.user);
           ctx.cv.build(expects.success(201, ctx.expected, function (err) {
             if (err) { return done(err); }
-            waitForCvBuildToComplete(ctx.cv, done);
+            waitForCvBuildToComplete(ctx.cv, ctx.user, done);
           }));
         });
         beforeEach(function (done) {
@@ -121,7 +121,57 @@ function buildTheVersionTests (ctx) {
           }));
         });
 
-        describe('deduped builds', function() {
+
+
+        describe('edited infra', function() {
+          beforeEach(function (done) {
+            ctx.expected = ctx.copiedCv.toJSON();
+            delete ctx.expected.build;
+            ctx.expected.dockerHost = 'http://localhost:4243';
+            ctx.expected['build._id'] = exists;
+            ctx.expected['build.started'] = exists;
+            ctx.expected['build.triggeredBy.github'] = ctx.user.attrs.accounts.github.id;
+            ctx.expected['build.triggeredAction.manual'] = true;
+            done();
+          });
+          beforeEach(function (done) {
+            var rootDir = ctx.copiedCv.rootDir;
+            rootDir.contents.fetch(function (err) {
+              if (err) { return done(err); }
+              rootDir.contents.models[0].update({ json: {body:'new'} }, done);
+            });
+          });
+
+          it('should build', function(done) {
+            require('../fixtures/mocks/github/user')(ctx.user);
+            ctx.copiedCv.build(expects.success(201, ctx.expected, function (err) {
+              if (err) { return done(err); }
+              waitForCvBuildToComplete(ctx.copiedCv, ctx.user, done);
+            }));
+          });
+        });
+      });
+
+      describe('deduped builds', function() {
+        beforeEach(function (done) {
+          multi.createContextVersion(function (err, contextVersion, context, build, user) {
+            if (err) { return done(err); }
+            ctx.cv2 = contextVersion;
+            ctx.user2 = user;
+            done();
+          });
+        });
+        beforeEach(function (done) {
+          ctx.cv2.appCodeVersions.models[0].destroy(done);
+        });
+        describe('first build completed', function() {
+          beforeEach(function (done) {
+            require('../fixtures/mocks/github/user')(ctx.user);
+            ctx.cv.build(expects.success(201, ctx.expected, function (err) {
+              if (err) { return done(err); }
+              waitForCvBuildToComplete(ctx.cv, ctx.user, done);
+            }));
+          });
           [
           'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
           'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\n',
@@ -161,23 +211,18 @@ function buildTheVersionTests (ctx) {
           'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\r',
           ].forEach(function(fileInfo) {
             it('should dedupe whitespace changes: ' + fileInfo, function(done) {
-              var rootDir = ctx.copiedCv.rootDir;
+              var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }
                 rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(){
-                  require('../fixtures/mocks/github/user')(ctx.user);
-                  ctx.copiedCv.build(function (err) {
+                  ctx.cv2.build(function (err) {
                     if (err) { return done(err); }
-                    ctx.copiedCv.fetch(function(err, copied) {
+                    waitForCvBuildToComplete(ctx.cv2, ctx.user2, function(err) {
                       if (err) { return done(err); }
-                      ctx.cv.fetch(function(err, old) {
-                        if (err) { return done(err); }
-                        expect(old.build).to.deep.equal(copied.build);
-                        expect(old.containerId).to.equal(copied.containerId);
-                        expect(old._id).to.not.equal(copied._id);
-                        expect(old.id).to.not.equal(copied.id);
-                        done();
-                      });
+                      expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build);
+                      expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId);
+                      expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
+                      done();
                     });
                   });
                 });
@@ -196,21 +241,46 @@ function buildTheVersionTests (ctx) {
           '\rFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
           ].forEach(function(fileInfo) {
             it('should NOT dedupe whitespace changes: ' + fileInfo, function(done) {
-              var rootDir = ctx.copiedCv.rootDir;
+               var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }
                 rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(){
-                  require('../fixtures/mocks/github/user')(ctx.user);
-                  ctx.copiedCv.build(function (err) {
+                  ctx.cv2.build(function (err) {
                     if (err) { return done(err); }
-                    ctx.copiedCv.fetch(function(err, copied) {
+                    waitForCvBuildToComplete(ctx.cv2, ctx.user2, function(err) {
                       if (err) { return done(err); }
-                      ctx.cv.fetch(function(err, old) {
+                      expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build);
+                      expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId);
+                      expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+          });
+          it('should dedupe in progress builds', { timeout: 1000 }, function (done) {
+            multi.createContextVersion(function (err, contextVersion, context, build, user) {
+              if (err) { return done(err); }
+              ctx.cv3 = contextVersion;
+              ctx.user3 = user;
+              ctx.cv3.appCodeVersions.models[0].destroy(function(err) {
+                if (err) { return done(err); }
+                ctx.cv2.build(function (err) {
+                  if (err) { return done(err); }
+                  ctx.cv3.build(function (err) {
+                    if (err) { return done(err); }
+                    waitForCvBuildToComplete(ctx.cv2, ctx.user, function(err){
+                      if (err) { return done(err); }
+                      waitForCvBuildToComplete(ctx.cv3, ctx.user, function(err) {
                         if (err) { return done(err); }
-                        expect(old.build).to.not.deep.equal(copied.build);
-                        expect(old.containerId).to.not.equal(copied.containerId);
-                        expect(old._id).to.not.equal(copied._id);
-                        expect(old.id).to.not.equal(copied.id);
+                        expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build);
+                        expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv3.attrs.build);
+                        expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId);
+                        expect(ctx.cv.attrs.containerId).to.equal(ctx.cv3.attrs.containerId);
+                        expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
+                        expect(ctx.cv.attrs._id).to.not.equal(ctx.cv3.attrs._id);
+                        expect(ctx.cv2.attrs._id).to.not.equal(ctx.cv3.attrs._id);
                         done();
                       });
                     });
@@ -220,33 +290,24 @@ function buildTheVersionTests (ctx) {
             });
           });
         });
-
-
-        describe('edited infra', function() {
-          beforeEach(function (done) {
-            ctx.expected = ctx.copiedCv.toJSON();
-            delete ctx.expected.build;
-            ctx.expected.dockerHost = 'http://localhost:4243';
-            ctx.expected['build._id'] = exists;
-            ctx.expected['build.started'] = exists;
-            ctx.expected['build.triggeredBy.github'] = ctx.user.attrs.accounts.github.id;
-            ctx.expected['build.triggeredAction.manual'] = true;
-            done();
-          });
-          beforeEach(function (done) {
-            var rootDir = ctx.copiedCv.rootDir;
-            rootDir.contents.fetch(function (err) {
+        describe('with in progress builds', function() {
+          it('should dedupe', { timeout: 1000 }, function (done) {
+            ctx.cv.build(function (err) {
               if (err) { return done(err); }
-              rootDir.contents.models[0].update({ json: {body:'new'} }, done);
+              ctx.cv2.build(function (err) {
+                if (err) { return done(err); }
+                waitForCvBuildToComplete(ctx.cv, ctx.user, function(){
+                  if (err) { return done(err); }
+                  waitForCvBuildToComplete(ctx.cv2, ctx.user, function(err) {
+                    if (err) { return done(err); }
+                    expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build);
+                    expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId);
+                    expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
+                    done();
+                  });
+                });
+              });
             });
-          });
-
-          it('should build', function(done) {
-            require('../fixtures/mocks/github/user')(ctx.user);
-            ctx.copiedCv.build(expects.success(201, ctx.expected, function (err) {
-              if (err) { return done(err); }
-              waitForCvBuildToComplete(ctx.copiedCv, done);
-            }));
           });
         });
       });
@@ -256,25 +317,26 @@ function buildTheVersionTests (ctx) {
         require('../fixtures/mocks/github/user')(ctx.user);
         ctx.cv.build(expects.success(201, ctx.expected, function (err) {
           if (err) { return done(err); }
-          waitForCvBuildToComplete(ctx.copiedCv, done);
+          waitForCvBuildToComplete(ctx.copiedCv, ctx.user, done);
         }));
       });
     });
-    function waitForCvBuildToComplete (cv, done) {
-      checkCvBuildCompleted();
-      function checkCvBuildCompleted () {
-        if (!cv) { return done(); }
-        require('../fixtures/mocks/github/user')(ctx.user);
-        cv.fetch(function (err) {
-          if (err) { return done(err); }
-          var buildCompleted = keypather.get(cv, 'attrs.build.completed');
-          if (buildCompleted) {
-            return done();
-          }
-          // cv build not completed, check again
-          setTimeout(checkCvBuildCompleted, 10);
-        });
-      }
-    }
   });
+
+  function waitForCvBuildToComplete (cv, user, done) {
+    checkCvBuildCompleted();
+    function checkCvBuildCompleted () {
+      if (!cv) { return done(); }
+      require('../fixtures/mocks/github/user')(user);
+      cv.fetch(function (err, body) {
+        if (err) { return done(err); }
+        var buildCompleted = keypather.get(cv, 'attrs.build.completed');
+        if (buildCompleted) {
+          return done(null, body);
+        }
+        // cv build not completed, check again
+        setTimeout(checkCvBuildCompleted, 10);
+      });
+    }
+  }
 }
