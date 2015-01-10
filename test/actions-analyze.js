@@ -198,7 +198,5 @@ describe('Analyze - /actions/analyze', function () {
       );
     });
 
-
-
   });
 });
