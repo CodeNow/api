@@ -12,7 +12,7 @@ var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/analyze-hooks');
 var multi = require('./fixtures/multi-factory');
 var nock = require('nock');
-var repoMock = require('./fixtures/mocks/github/repo');
+//var repoMock = require('./fixtures/mocks/github/repo');
 var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
 
 before(function (done) {
