@@ -80,7 +80,8 @@ describe('Notifier',  function () {
     slack.send = function (text, cb) {
       var message = 'tjmehta\'s ';
       message += '<' + headCommit.url + '|changes>';
-      message += ' (init) to CodeNow/api (develop) are deployed on servers:\n';
+      message += ' (init repo and  <https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4|1 more>)';
+      message += ' to CodeNow/api (develop) are deployed on servers:\n';
       message += ' <http://runnable3.net/podviaznikov/instance1|instance1>\n';
       expect(text).to.equal(message);
       cb();
@@ -95,7 +96,7 @@ describe('Notifier',  function () {
     ];
     var headCommit = {
       id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
-      message: 'init',
+      message: 'init repo',
       url: 'https://github.com/CodeNow/api/commit/b240edf982d467201845b3bf10bbbe16f6049eb1'
     };
     var githubPushInfo = {
