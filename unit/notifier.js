@@ -42,11 +42,10 @@ describe('Notifier',  function () {
   it('should render proper text on slack.notifyOnBuild call', function (done) {
     var slack = new Slack({});
     slack.send = function (text, cb) {
-      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
-      message += 'There is 1 commit in this push.\n';
-      message += 'Click <http://runnable3.net/';
-      message += 'podviaznikov/boxSelection/api/develop/init%20me/a240edf982d467201845b3bf10ccbe16f6049ea9';
-      message += '|here> to choose a box to run develop.';
+      var message = 'podviaznikov\'s changes to CodeNow/api (develop) are ready.\n';
+      message += '<http://runnable3.net/';
+      message += 'podviaznikov/boxSelection/CodeNow/api/develop/init%20me/a240edf982d467201845b3bf10ccbe16f6049ea9';
+      message += '|Choose a server to run develop>.';
       expect(text).to.equal(message);
       cb();
     };
@@ -57,7 +56,7 @@ describe('Notifier',  function () {
     };
     var githubPushInfo = {
       commitLog: [headCommit],
-      repo: 'api',
+      repo: 'CodeNow/api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
@@ -76,7 +75,6 @@ describe('Notifier',  function () {
     var slack = new Slack({});
     slack.send = function (text, cb) {
       var message = 'tjmehta\'s latest push to api@develop is now runnable.\n';
-      message += 'There are 2 commits in this push.\n';
       message += 'The change is deployed on servers:\n <http://runnable3.net/podviaznikov/instance1|instance1>\n';
       expect(text).to.equal(message);
       cb();
@@ -115,11 +113,9 @@ describe('Notifier',  function () {
   it('should render proper text on hipchat.notifyOnBuild call', function (done) {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
-      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
-      message += 'There is 1 commit in this push.\n';
-      message += 'Click <a href="http://runnable3.net/podviaznikov/boxSelection/api/develop';
-      message += '/hey%20there/a240edf982d467201845b3bf10ccbe16f6049ea9">here</a> ';
-      message += 'to choose a box to run develop.';
+      var message = 'podviaznikov\'s changes to Runnable/api (develop) are now ready.\n';
+      message += '<a href="http://runnable3.net/podviaznikov/boxSelection/Runnable/api/develop';
+      message += '/hey%20there/a240edf982d467201845b3bf10ccbe16f6049ea9">Choose a server to run develop</a>.';
       expect(text).to.equal(message);
       cb();
     };
@@ -129,7 +125,7 @@ describe('Notifier',  function () {
     };
     var githubPushInfo = {
       commitLog: [headCommit],
-      repo: 'api',
+      repo: 'Runnable/api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
@@ -147,7 +143,6 @@ describe('Notifier',  function () {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
-      message += 'There is 1 commit in this push.\n';
       message += 'The change is deployed on servers:\n ';
       message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a></br>\n ';
       message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a></br>\n.\n';
