@@ -15,6 +15,8 @@ var nock = require('nock');
 //var repoMock = require('./fixtures/mocks/github/repo');
 var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
 
+var javascript_nodejs = 'javascript_nodejs';
+
 before(function (done) {
   nock('http://runnable.com:80')
     .persist()
@@ -70,8 +72,9 @@ describe('Analyze - /actions/analyze', function () {
         //hooks.getErrorNoQueryParam,
         function (err, res) {
           expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('array');
-          expect(res.body).to.have.length(0);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
       );
@@ -95,8 +98,9 @@ describe('Analyze - /actions/analyze', function () {
         hooks.getSuccess,
         function (err, res) {
           expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('array');
-          expect(res.body).to.have.length(0);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
       );
@@ -119,8 +123,9 @@ describe('Analyze - /actions/analyze', function () {
         hooks.getSuccess,
         function (err, res) {
           expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('array');
-          expect(res.body).to.have.length(1);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.serviceDependencies).to.have.length(1);
           done();
         }
       );
@@ -146,8 +151,9 @@ describe('Analyze - /actions/analyze', function () {
         hooks.getSuccess,
         function (err, res) {
           expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('array');
-          expect(res.body).to.have.length(3);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.serviceDependencies).to.have.length(3);
           done();
         }
       );
@@ -170,9 +176,10 @@ describe('Analyze - /actions/analyze', function () {
         hooks.getSuccess,
         function (err, res) {
           expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('array');
-          expect(res.body).to.have.length(1);
-          expect(res.body[0]).to.equal('mongodb');
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.serviceDependencies).to.have.length(1);
+          expect(res.body.serviceDependencies[0]).to.equal('mongodb');
           done();
         }
       );
@@ -191,8 +198,9 @@ describe('Analyze - /actions/analyze', function () {
         hooks.getSuccess,
         function (err, res) {
           expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('array');
-          expect(res.body).to.have.length(0);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
       );
