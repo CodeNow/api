@@ -1,10 +1,11 @@
-// ./migrate.js <dock_ip>
 'use strict';
 require('loadenv')();
+
+var async = require('async');
 var request = require('request');
 var Dockerode = require('dockerode');
 var hostPort = '4242';
-var hostUrl = 'http://'+process.env.DOCK;
+var hostUrl = 'http://'+process.env.TARGET_DOCK;
 var fullUrl = hostUrl + ':'+hostPort;
 var dockerode = new Dockerode({
   host: hostUrl,
@@ -12,8 +13,23 @@ var dockerode = new Dockerode({
 });
 var redis = require('models/redis');
 var createCount = require('callback-count');
+var Runnable = require('runnable');
+var user = new Runnable('localhost:3030');
+var saveKey = 'migrateDock:' + process.env.TARGET_DOCK;
+var MongoUser = require('models/mongo/user');
+var Instance = require('models/mongo/instance');
 
-var saveKey = 'migrateDock:' + process.env.DOCK;
+var mongoose = require('mongoose');
+mongoose.connect(process.env.MONGO);
+
+// ensure env's
+['MONGO', 'MAVIS_HOST', 'TARGET_DOCK'].forEach(function(item) {
+  if (!process.env[item]) {
+    console.error('missing', item);
+    process.exit(1);
+  }
+});
+
 //  remove dock from mavis
 function removeFromMavis(cb) {
   request({
@@ -53,17 +69,21 @@ function killAllContainers(cb) {
     });
   });
 }
-//  update docker
-function updateDocker (cb) {
-  console.log('update docker now');
-  console.log('curl -sSL https://get.docker.com/ubuntu/ | sudo sh');
-  process.exit();
-}
 
+function saveAndKill (cb) {
+  async.waterfall([
+    removeFromMavis,
+    saveList,
+    killAllContainers
+  ], cb);
+}
 
 ////////////////////////////////////////////////////
 // part 2 (seemless restart)
 ////////////////////////////////////////////////////
+
+var user = {};
+
 //  put back into mavis
 function addToMavis (cb) {
   request({
@@ -79,7 +99,70 @@ function addToMavis (cb) {
   });
 }
 
+function login (cb) {
+  user = user.githubLogin('f914c65e30f6519cfb4d10d0aa81e235dd9b3652', cb);
+}
 
-//  api start route on saved containers
-//      query redis
-//      api start them
+function sudo (cb) {
+  MongoUser.updateById(user.id(), { $set: { permissionLevel: 5 } }, cb);
+}
+
+function getAllContainers(cb) {
+  redis.lrange(saveKey, 0, -1, cb);
+}
+
+function startAllContainers(containers, cb) {
+  async.each(containers, function(containerId, next) {
+    findInstanceFromContainer(containerId, function(err, instance) {
+      if (err) { return next(err); }
+      startInstance(instance, next);
+    });
+  }, cb);
+}
+
+function findInstanceFromContainer (containerId, cb) {
+  Instance.findOne({'container.dockerContainer': containerId}, cb);
+}
+
+function startInstance (instance, cb) {
+  var Instance = user.fetchInstance(instance.shortHash, function(err) {
+    if (err) { return cb(err); }
+    Instance.start(cb);
+  });
+}
+
+function restore(cb) {
+  async.waterfall([
+    login,
+    sudo,
+    getAllContainers,
+    startAllContainers,
+    addToMavis
+  ], cb);
+}
+
+///////////////////////
+/// helpers
+
+function waitForYes (cb) {
+  console.log('curl -sSL https://get.docker.com/ubuntu/ | sudo sh');
+  console.log('update docker now, type yes to contine');
+  process.stdin.on('data', function read (chunk) {
+    if (chunk === 'yes') {
+      process.stdin.removeListener('data', read);
+      cb();
+    }
+  });
+}
+
+function finish (err) {
+  console.log('DONE: err?', err);
+  process.exit();
+}
+
+// program
+async.waterfall([
+  saveAndKill,
+  waitForYes,
+  restore
+], finish);
