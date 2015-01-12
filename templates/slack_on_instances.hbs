@@ -1,5 +1,4 @@
-{{user.login}}'s latest push to {{repo}} ({{branch}}) is now runnable.
-The change is deployed on servers:
+{{user.login}}'s <{{headCommit.url}}|changes> ({{headCommit.message}}) to {{repo}} ({{branch}}) are deployed on servers:
 {{#each instances}}
  <http://{{../domain}}/{{this.owner.username}}/{{this.name}}|{{this.name}}>
 {{/each}}
