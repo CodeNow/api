@@ -91,7 +91,7 @@
     "lab": "^3.2.1",
     "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.3",
     "multiline": "^0.3.4",
-    "nock": "^0.48.0",
+    "nock": "^0.51.0",
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
     "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.8",
