@@ -44,7 +44,7 @@ describe('Notifier',  function () {
     slack.send = function (text, cb) {
       var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
       message += 'There is 1 commit in this push.\n';
-      message += 'Click <http://runnable.io/';
+      message += 'Click <http://runnable3.net/';
       message += 'podviaznikov/boxSelection/api/develop/init%20me/a240edf982d467201845b3bf10ccbe16f6049ea9';
       message += '|here> to choose a box to run develop.';
       expect(text).to.equal(message);
@@ -77,9 +77,7 @@ describe('Notifier',  function () {
     slack.send = function (text, cb) {
       var message = 'tjmehta\'s latest push to api@develop is now runnable.\n';
       message += 'There are 2 commits in this push.\n';
-      message += 'The change is deployed on\n <http://runnable.io/podviaznikov/instance1|instance1>\n';
-      message += 'Or you can click <http://runnable.io/podviaznikov/boxSelection/api/develop/init';
-      message += '/b240edf982d467201845b3bf10bbbe16f6049eb1|here> to choose another Box to run develop also.';
+      message += 'The change is deployed on servers:\n <http://runnable3.net/podviaznikov/instance1|instance1>\n';
       expect(text).to.equal(message);
       cb();
     };
@@ -119,7 +117,7 @@ describe('Notifier',  function () {
     hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
       message += 'There is 1 commit in this push.\n';
-      message += 'Click <a href="http://runnable.io/podviaznikov/boxSelection/api/develop';
+      message += 'Click <a href="http://runnable3.net/podviaznikov/boxSelection/api/develop';
       message += '/hey%20there/a240edf982d467201845b3bf10ccbe16f6049ea9">here</a> ';
       message += 'to choose a box to run develop.';
       expect(text).to.equal(message);
@@ -150,12 +148,9 @@ describe('Notifier',  function () {
     hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
       message += 'There is 1 commit in this push.\n';
-      message += 'The change is deployed on\n ';
-      message += '<a href="http://runnable.io/podviaznikov/instance1">instance1</a>\n ';
-      message += '<a href="http://runnable.io/podviaznikov/instance2">instance2</a>\n.\n';
-      message += 'Or you can click <a href=\"http://runnable.io/podviaznikov/boxSelection/';
-      message += 'api/develop/init/a240edf982d467201845b3bf10ccbe16f6049ea9\">here</a>';
-      message += ' to choose another Box to run develop also.';
+      message += 'The change is deployed on servers:\n ';
+      message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a></br>\n ';
+      message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a></br>\n.\n';
 
       expect(text).to.equal(message);
       cb();
