@@ -2,6 +2,5 @@
 There {{commitsFormat commitLog}} in this push.
 The change is deployed on
 {{#each instances}}
- <a href="http://runnable.io/{{this.owner.username}}/{{this.name}}">{{this.name}}</a>
+ <a href="http://{{../domain}}/{{this.owner.username}}/{{this.name}}">{{this.name}}</a>
 {{/each}}.
-Or you can click <a href="http://runnable.io/{{instances.[0].owner.username}}/boxSelection/{{repo}}/{{branch}}/{{encode headCommit.message}}/{{headCommit.id}}">here</a> to choose another Box to run {{branch}} also.
