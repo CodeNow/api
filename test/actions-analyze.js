@@ -15,7 +15,7 @@ var nock = require('nock');
 //var repoMock = require('./fixtures/mocks/github/repo');
 var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
 
-var javascript_nodejs = 'javascript_nodejs';
+var javascript_nodejs = 'nodejs';
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -50,6 +50,19 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(400);
           expect(res.body.message).to.equal('query parameter "repo" must be a string');
+          done();
+      });
+    });
+
+    it('should return 400 code for repository with no recognized dependency file', function (done) {
+      repoContentsMock.repoContentsDirectory([{
+        name: "README.md"
+      }]);
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(400);
+          expect(res.body.message).to.equal('unknown language/framework type');
           done();
       });
     });
