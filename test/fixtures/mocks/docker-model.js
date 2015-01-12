@@ -6,7 +6,7 @@ var check = {};
 module.exports.setup = function (cb) {
   mocker.mocksForMethods(require('../../../lib/models/apis/docker.js'), {
     startImageBuilderAndWait: function () {
-      nock('http://localhost:4243')
+      nock('http://localhost:4243', { allowUnmocked: true })
           .filteringPath(function(path) {
             if (/\/images\/.+\/push/.test(path)) {
               path = '/images/repo/push';

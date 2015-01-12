@@ -1,0 +1,6 @@
+{{user.login}}'s latest push to {{repo}}@{{branch}} is now runnable.
+There {{commitsFormat commitLog}} in this push.
+The change is deployed on
+{{#each instances}}
+ <http://{{../domain}}/{{this.owner.username}}/{{this.name}}|{{this.name}}>
+{{/each}}
