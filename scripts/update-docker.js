@@ -34,7 +34,7 @@ function login (cb) {
 
 //  remove dock from mavis
 function removeFromMavis(cb) {
-  console.log('removeFromMavis');
+  debug('removeFromMavis');
   request({
     method: 'DELETE',
     url: process.env.MAVIS_HOST + '/docks',
@@ -80,7 +80,7 @@ function stopAllContainers(cb) {
 
 function stopInstance (shortHash, cb) {
   var Instance = user.fetchInstance(shortHash, function(err) {
-   if (err) {
+    if (err) {
       ERRORS.push({
         func: 'stopInstance:fetchInstance',
         err: err.message,
