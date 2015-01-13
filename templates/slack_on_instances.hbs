@@ -1,6 +1,4 @@
-{{user.login}}'s latest push to {{repo}}@{{branch}} is now runnable.
-There {{commitsFormat commitLog}} in this push.
-The change is deployed on
+{{user.login}}'s <{{headCommit.url}}|changes> ({{headCommit.message}}{{{moreChangesSlack repo commitLog}}}) to {{repo}} ({{branch}}) are deployed on servers:
 {{#each instances}}
  <http://{{../domain}}/{{this.owner.username}}/{{this.name}}|{{this.name}}>
 {{/each}}

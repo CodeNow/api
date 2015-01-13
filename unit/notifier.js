@@ -42,22 +42,25 @@ describe('Notifier',  function () {
   it('should render proper text on slack.notifyOnBuild call', function (done) {
     var slack = new Slack({});
     slack.send = function (text, cb) {
-      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
-      message += 'There is 1 commit in this push.\n';
-      message += 'Click <http://runnable.io/';
+      var message = 'podviaznikov\'s ';
+      message += '<' + headCommit.url + '|changes>';
+      message += ' (init me) to CodeNow/api (develop) are ready.\n';
+      message += '<http://runnable3.net/';
       message += 'podviaznikov/boxSelection/api/develop/init%20me/a240edf982d467201845b3bf10ccbe16f6049ea9';
-      message += '|here> to choose a box to run develop.';
+      message += '|Choose a server to run develop>.';
       expect(text).to.equal(message);
       cb();
     };
 
     var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      message: 'init me'
+      message: 'init me',
+      url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
     };
     var githubPushInfo = {
       commitLog: [headCommit],
-      repo: 'api',
+      repo: 'CodeNow/api',
+      repoName: 'api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
@@ -75,11 +78,11 @@ describe('Notifier',  function () {
   it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
     slack.send = function (text, cb) {
-      var message = 'tjmehta\'s latest push to api@develop is now runnable.\n';
-      message += 'There are 2 commits in this push.\n';
-      message += 'The change is deployed on\n <http://runnable.io/podviaznikov/instance1|instance1>\n';
-      message += 'Or you can click <http://runnable.io/podviaznikov/boxSelection/api/develop/init';
-      message += '/b240edf982d467201845b3bf10bbbe16f6049eb1|here> to choose another Box to run develop also.';
+      var message = 'tjmehta\'s ';
+      message += '<' + headCommit.url + '|changes>';
+      message += ' (init repo and  <https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4|1 more>)';
+      message += ' to CodeNow/api (develop) are deployed on servers:\n';
+      message += ' <http://runnable3.net/podviaznikov/instance1|instance1>\n';
       expect(text).to.equal(message);
       cb();
     };
@@ -93,7 +96,8 @@ describe('Notifier',  function () {
     ];
     var headCommit = {
       id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
-      message: 'init'
+      message: 'init repo',
+      url: 'https://github.com/CodeNow/api/commit/b240edf982d467201845b3bf10bbbe16f6049eb1'
     };
     var githubPushInfo = {
       commitLog: [headCommit,
@@ -103,7 +107,8 @@ describe('Notifier',  function () {
             username: 'podviaznikov'
           }
         }],
-      repo: 'api',
+      repo: 'CodeNow/api',
+      repoName: 'api',
       branch: 'develop',
       commit: 'a240edf982d46720,1845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
@@ -117,21 +122,23 @@ describe('Notifier',  function () {
   it('should render proper text on hipchat.notifyOnBuild call', function (done) {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
-      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
-      message += 'There is 1 commit in this push.\n';
-      message += 'Click <a href="http://runnable.io/podviaznikov/boxSelection/api/develop';
-      message += '/hey%20there/a240edf982d467201845b3bf10ccbe16f6049ea9">here</a> ';
-      message += 'to choose a box to run develop.';
+      var message = 'podviaznikov\'s ';
+      message += '<a href="' + headCommit.url + '">changes</a>';
+      message += ' (hey there) to Runnable/api (develop) are ready.\n';
+      message += '<a href="http://runnable3.net/podviaznikov/boxSelection/api/develop';
+      message += '/hey%20there/a240edf982d467201845b3bf10ccbe16f6049ea9">Choose a server to run develop</a>.';
       expect(text).to.equal(message);
       cb();
     };
     var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      message: 'hey there'
+      message: 'hey there',
+      url: 'https://github.com/Runnable/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
     };
     var githubPushInfo = {
       commitLog: [headCommit],
-      repo: 'api',
+      repo: 'Runnable/api',
+      repoName: 'api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
@@ -148,25 +155,24 @@ describe('Notifier',  function () {
   it('should render proper text on hipchat.notifyOnInstances call', function (done) {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
-      var message = 'podviaznikov\'s latest push to api@develop is now runnable.\n';
-      message += 'There is 1 commit in this push.\n';
-      message += 'The change is deployed on\n ';
-      message += '<a href="http://runnable.io/podviaznikov/instance1">instance1</a>\n ';
-      message += '<a href="http://runnable.io/podviaznikov/instance2">instance2</a>\n.\n';
-      message += 'Or you can click <a href=\"http://runnable.io/podviaznikov/boxSelection/';
-      message += 'api/develop/init/a240edf982d467201845b3bf10ccbe16f6049ea9\">here</a>';
-      message += ' to choose another Box to run develop also.';
+      var message = 'podviaznikov\'s ';
+      message += '<a href="' + headCommit.url + '">changes</a>';
+      message += ' (init) to CodeNow/api (develop) are deployed on servers:\n ';
+      message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a></br>\n ';
+      message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a></br>\n.\n';
 
       expect(text).to.equal(message);
       cb();
     };
     var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      message: 'init'
+      message: 'init',
+      url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
     };
     var githubPushInfo = {
       commitLog: [headCommit],
-      repo: 'api',
+      repo: 'CodeNow/api',
+      repoName: 'api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
@@ -204,11 +210,13 @@ describe('Notifier',  function () {
     ];
     var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: randomUsername
+      author: randomUsername,
+      url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
     };
     var githubPushInfo = {
       commitLog: [headCommit],
-      repo: 'api',
+      repo: 'CodeNow/api',
+      repoName: 'api',
       branch: 'develop',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
