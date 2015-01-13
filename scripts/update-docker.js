@@ -68,8 +68,8 @@ function saveList(cb) {
 
 //  stop all containers
 function stopAllContainers(cb) {
-  async.each(thisList, function(shortHash, next) {
-    stopInstance(shortHash, next);
+  async.each(thisList, function(instance, next) {
+    stopInstance(instance.shortHash, next);
   }, cb);
 }
 
