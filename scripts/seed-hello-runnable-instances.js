@@ -13,17 +13,16 @@ var uuid = require('uuid');
 
 var ctx = {};
 
+var createdBy = {
+  github: process.env.HELLO_RUNNABLE_GITHUB_ID
+};
+
 mongoose.connect(process.env.MONGO);
+
 async.series([
-  function ensureMongooseIsConnected (cb) {
-    console.log('ensure');
-    if (mongoose.connection.readyState === 1) {
-      cb();
-    }
-    else {
-      mongoose.connection.once('connected', cb);
-    }
-  },
+  ensureMongooseIsConnected,
+  createContexts,
+
   // TIP:
   // generate new token here: https://github.com/settings/applications
   // w/ permissions: repo, user, write:repo_hook
@@ -65,3 +64,61 @@ async.series([
     console.log('done');
   }
 });
+
+
+
+function ensureMongooseIsConnected (cb) {
+  console.log('ensure');
+  if (mongoose.connection.readyState === 1) {
+    cb();
+  }
+  else {
+    mongoose.connection.once('connected', cb);
+  }
+}
+
+function createContexts (cb) {
+  async.waterfall([
+    function newContext (cb) {
+      var context = new Context({
+        owner: createdBy,
+        name: 'mongodb',
+        description: 'mongodb',
+        isSource: false
+      });
+      context.save(cb);
+    },
+    function newICV (context, count, cb) {
+      var icv = new InfraCodeVersion({
+        context: context._id
+      });
+      async.series([
+        icv.initWithDefaults.bind(icv),
+        icv.save.bind(icv),
+        icv.createFs.bind(icv, {
+          name: 'Dockerfile',
+          path: '/',
+          body: 'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n'
+        }),
+      ], function (err) {
+        cb(err, context, icv);
+      });
+    },
+    function newCV (context, icv, cb) {
+      console.log('newCV');
+      var d = new Date();
+      var cv = new ContextVersion({
+        createdBy: createdBy,
+        context: context._id,
+        project: context._id,
+        environment: context._id,
+        infraCodeVersion: icv._id,
+        build: {
+          started: d,
+          completed: d
+        }
+      });
+      cv.save(cb);
+    }
+  ], cb);
+}
