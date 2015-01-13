@@ -49,11 +49,15 @@ function removeFromMavis(cb) {
 //      docker ps
 //      get context-version of containers and save in redis
 function saveList(cb) {
-  dockerode.listContainers(function(err, containers){
+  Instance.find({
+    'container.dockerHost': fullUrl,
+    'container.inspect.State.Running': true,
+  }, function(err, containers) {
     if (err) { return cb(err); }
     var multi = redis.multi();
+    multi.del(saveKey);
     containers.forEach(function(item) {
-      multi.lpush(saveKey, item.Id);
+      multi.lpush(saveKey, item.shortHash);
     });
     multi.exec(cb);
   });
@@ -63,9 +67,10 @@ function saveList(cb) {
 function killAllContainers(cb) {
   dockerode.listContainers(function (err, containers) {
     if (err) { return cb(err); }
-    var count = createCount(containers.length, cb);
+    // ignore errors here since we will be killing docker
+    var count = createCount(containers.length, function() { cb(); });
     containers.forEach(function (containerInfo) {
-      dockerode.getContainer(containerInfo.Id).stop(count.next);
+      dockerode.getContainer(containerInfo.Id).kill(count.next);
     });
   });
 }
@@ -118,21 +123,14 @@ function getAllContainers(cb) {
   redis.lrange(saveKey, 0, -1, cb);
 }
 
-function startAllContainers(containers, cb) {
-  async.each(containers, function(containerId, next) {
-    findInstanceFromContainer(containerId, function(err, instance) {
-      if (err) { return next(err); }
-      startInstance(instance, next);
-    });
+function startAllContainers(instances, cb) {
+  async.each(instances, function(shortHash, next) {
+    startInstance(shortHash, next);
   }, emptyCb(cb));
 }
 
-function findInstanceFromContainer (containerId, cb) {
-  Instance.findOne({'container.dockerContainer': containerId}, cb);
-}
-
-function startInstance (instance, cb) {
-  var Instance = user.fetchInstance(instance.shortHash, function(err) {
+function startInstance (shortHash, cb) {
+  var Instance = user.fetchInstance(shortHash, function(err) {
     if (err) { return cb(err); }
     Instance.start(cb);
   });
