@@ -3,18 +3,10 @@ require('loadenv')();
 
 var async = require('async');
 var request = require('request');
-var Dockerode = require('dockerode');
-var hostPort = '4242';
-var hostUrl = 'http://'+process.env.TARGET_DOCK;
-var fullUrl = hostUrl + ':'+hostPort;
-var dockerode = new Dockerode({
-  host: hostUrl,
-  port: hostPort
-});
+var fullUrl = 'http://'+process.env.TARGET_DOCK + ':4242';
 var redis = require('models/redis');
-var createCount = require('callback-count');
 var Runnable = require('runnable');
-var user = new Runnable('localhost:3030');
+var user = new Runnable('localhost:80');
 var saveKey = 'migrateDock:' + process.env.TARGET_DOCK;
 var MongoUser = require('models/mongo/user');
 var Instance = require('models/mongo/instance');
