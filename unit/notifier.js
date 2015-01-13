@@ -196,55 +196,55 @@ describe('Notifier',  function () {
     ];
     hipchat.notifyOnInstances(githubPushInfo, instances, done);
   });
-
-  it('should send message to HipChat', {timeout: 4000}, function (done) {
-    var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
-    var randomUsername = 'user' + new Date().getTime();
-    var instances = [
-      {
-        name: 'instance1',
-        owner: {
-          username: 'podviaznikov'
-        }
-      }
-    ];
-    var headCommit = {
-      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      author: randomUsername,
-      url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
-    };
-    var githubPushInfo = {
-      commitLog: [headCommit],
-      repo: 'CodeNow/api',
-      repoName: 'api',
-      branch: 'develop',
-      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      headCommit: headCommit,
-      user: {
-        login: randomUsername
-      }
-    };
-    hipchat.notifyOnInstances(githubPushInfo, instances, function (err) {
-      if (err) { return done(err); }
-      var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
-      setTimeout(function () {
-        hc.api.rooms.history({
-          room_id: '1076330',
-          date: 'recent'
-        }, function (err, resp) {
-          if (err) { return done(err); }
-          var messages = resp.messages;
-          expect(messages.length).to.be.above(1);
-          var properMessages = messages.filter(function (message) {
-            return message.message.indexOf(randomUsername) > -1;
-          });
-          expect(properMessages.length).to.be.equal(1);
-          properMessages.forEach(function (message) {
-            expect(message.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
-          });
-          done();
-        });
-      }, 200);
-    });
-  });
+  // FIXME: anton
+  // it('should send message to HipChat', {timeout: 4000}, function (done) {
+  //   var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
+  //   var randomUsername = 'user' + new Date().getTime();
+  //   var instances = [
+  //     {
+  //       name: 'instance1',
+  //       owner: {
+  //         username: 'podviaznikov'
+  //       }
+  //     }
+  //   ];
+  //   var headCommit = {
+  //     id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+  //     author: randomUsername,
+  //     url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
+  //   };
+  //   var githubPushInfo = {
+  //     commitLog: [headCommit],
+  //     repo: 'CodeNow/api',
+  //     repoName: 'api',
+  //     branch: 'develop',
+  //     commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+  //     headCommit: headCommit,
+  //     user: {
+  //       login: randomUsername
+  //     }
+  //   };
+  //   hipchat.notifyOnInstances(githubPushInfo, instances, function (err) {
+  //     if (err) { return done(err); }
+  //     var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
+  //     setTimeout(function () {
+  //       hc.api.rooms.history({
+  //         room_id: '1076330',
+  //         date: 'recent'
+  //       }, function (err, resp) {
+  //         if (err) { return done(err); }
+  //         var messages = resp.messages;
+  //         expect(messages.length).to.be.above(1);
+  //         var properMessages = messages.filter(function (message) {
+  //           return message.message.indexOf(randomUsername) > -1;
+  //         });
+  //         expect(properMessages.length).to.be.equal(1);
+  //         properMessages.forEach(function (message) {
+  //           expect(message.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
+  //         });
+  //         done();
+  //       });
+  //     }, 200);
+  //   });
+  // });
 });
