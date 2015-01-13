@@ -85,7 +85,7 @@ module.exports = {
         require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
         version.rootDir.contents.create({
           name: 'Dockerfile',
-          body: 'FROM dockerfile/nodejs\n'
+          body: 'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n'
         }, function (err) {
           cb(err, version, context, moderator);
         });
