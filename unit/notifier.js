@@ -6,7 +6,7 @@ var expect = Lab.expect;
 var Notifier = require('models/notifications/notifier');
 var Slack = require('models/notifications/slack');
 var HipChat = require('models/notifications/hipchat');
-var HipChatClient = require('hipchat-client');
+// var HipChatClient = require('hipchat-client'); FIXME: anton
 
 describe('Notifier',  function () {
 
