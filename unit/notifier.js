@@ -77,12 +77,11 @@ describe('Notifier',  function () {
 
   it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
-    slack.send = function (text, cb) {
+    slack.send = function (text, instances, cb) {
       var message = 'tjmehta\'s ';
       message += '<' + headCommit.url + '|changes>';
       message += ' (init repo and  <https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4|1 more>)';
-      message += ' to CodeNow/api (develop) are deployed on servers:\n';
-      message += ' <http://runnable3.net/podviaznikov/instance1|instance1>\n';
+      message += ' to CodeNow/api (develop) are deployed on servers:';
       expect(text).to.equal(message);
       cb();
     };
@@ -154,7 +153,7 @@ describe('Notifier',  function () {
 
   it('should render proper text on hipchat.notifyOnInstances call', function (done) {
     var hipchat = new HipChat({});
-    hipchat.send = function (text, cb) {
+    hipchat.send = function (text, instances, cb) {
       var message = 'podviaznikov\'s ';
       message += '<a href="' + headCommit.url + '">changes</a>';
       message += ' (init) to CodeNow/api (develop) are deployed on servers:\n ';
