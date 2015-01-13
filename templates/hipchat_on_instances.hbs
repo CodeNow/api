@@ -1,7 +1,4 @@
-{{user.login}}'s latest push to {{repo}}@{{branch}} is now runnable.
-There {{commitsFormat commitLog}} in this push.
-The change is deployed on
+{{user.login}}'s <a href="{{headCommit.url}}">changes</a> ({{headCommit.message}}{{{moreChangesHipchat repo commitLog}}}) to {{repo}} ({{branch}}) are deployed on servers:
 {{#each instances}}
- <a href="http://runnable.io/{{this.owner.username}}/{{this.name}}">{{this.name}}</a>
+ <a href="http://{{../domain}}/{{this.owner.username}}/{{this.name}}">{{this.name}}</a></br>
 {{/each}}.
-Or you can click <a href="http://runnable.io/{{instances.[0].owner.username}}/boxSelection/{{repo}}/{{branch}}/{{encode headCommit.message}}/{{headCommit.id}}">here</a> to choose another Box to run {{branch}} also.

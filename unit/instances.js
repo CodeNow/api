@@ -435,58 +435,6 @@ describe('Instance', function () {
     });
   });
 
-  describe('find instances by docker host', function () {
-    var savedInstance = null;
-    var instance = null;
-    beforeEach(function (done) {
-      instance = createNewInstance();
-      instance.save(function (err, instance) {
-        if (err) { return done(err); }
-        else {
-          expect(instance).to.be.okay;
-          savedInstance = instance;
-          done();
-        }
-      });
-    });
-
-    it('should not find and instance for the host that doesnot exist', function (done) {
-      Instance.findAllByDockerHost('http://localhost:8888', function (err, instances) {
-        if (err) { return done(err); }
-        expect(instances.length).to.equal(0);
-        done();
-      });
-    });
-
-    it('should find one instance for the provided host', function (done) {
-      Instance.findAllByDockerHost('http://localhost:4243', function (err, instances) {
-        if (err) { return done(err); }
-        expect(instances.length).to.equal(1);
-        done();
-      });
-    });
-
-    it('should find two instances out of three that match provided docker host', function (done) {
-      var opts1 = {
-        dockerHost: 'http://localhost:8888'
-      };
-      createNewInstance('instance2', opts1).save(function (err) {
-        if (err) { return done(err); }
-        var opts2 = {
-          dockerHost: 'http://localhost:4243'
-        };
-        createNewInstance('instance3', opts2).save(function (err) {
-          if (err) { return done(err); }
-          Instance.findAllByDockerHost('http://localhost:4243', function (err, instances) {
-            if (err) { return done(err); }
-            expect(instances.length).to.equal(2);
-            done();
-          });
-        });
-      });
-    });
-
-  });
 
   describe('find by repo', function () {
     var savedInstance1 = null;

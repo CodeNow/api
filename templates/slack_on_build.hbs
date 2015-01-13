@@ -1,3 +1,2 @@
-{{user.login}}'s latest push to {{repo}}@{{branch}} is now runnable.
-There {{commitsFormat commitLog}} in this push.
-Click <http://runnable.io/{{owner.login}}/boxSelection/{{repo}}/{{branch}}/{{encode headCommit.message}}/{{headCommit.id}}|here> to choose a box to run {{branch}}.
+{{user.login}}'s <{{headCommit.url}}|changes> ({{headCommit.message}}{{{moreChangesSlack repo commitLog}}}) to {{repo}} ({{branch}}) are ready.
+<http://{{domain}}/{{owner.login}}/boxSelection/{{repoName}}/{{branch}}/{{encode headCommit.message}}/{{headCommit.id}}|Choose a server to run {{branch}}>.
