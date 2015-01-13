@@ -71,7 +71,7 @@ function killAllContainers(cb) {
 }
 
 function saveAndKill (cb) {
-  async.waterfall([
+  async.series([
     removeFromMavis,
     saveList,
     killAllContainers
@@ -99,12 +99,19 @@ function addToMavis (cb) {
   });
 }
 
+function emptyCb(cb) {
+  return function(err) {
+    if (err) { return cb(err); }
+    cb();
+  };
+}
+
 function login (cb) {
-  user = user.githubLogin('f914c65e30f6519cfb4d10d0aa81e235dd9b3652', cb);
+  user = user.githubLogin('f914c65e30f6519cfb4d10d0aa81e235dd9b3652', emptyCb(cb));
 }
 
 function sudo (cb) {
-  MongoUser.updateById(user.id(), { $set: { permissionLevel: 5 } }, cb);
+  MongoUser.updateById(user.id(), { $set: { permissionLevel: 5 } }, emptyCb(cb));
 }
 
 function getAllContainers(cb) {
@@ -117,7 +124,7 @@ function startAllContainers(containers, cb) {
       if (err) { return next(err); }
       startInstance(instance, next);
     });
-  }, cb);
+  }, emptyCb(cb));
 }
 
 function findInstanceFromContainer (containerId, cb) {
