@@ -10,6 +10,7 @@ var user = new Runnable('localhost:80');
 var saveKey = 'migrateDock:' + process.env.TARGET_DOCK;
 var MongoUser = require('models/mongo/user');
 var Instance = require('models/mongo/instance');
+var debug = require('debug')('script');
 
 var mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO);
@@ -24,6 +25,7 @@ var ERRORS = [];
 });
 
 function login (cb) {
+  debug('login');
   var thisUser = user.githubLogin('f914c65e30f6519cfb4d10d0aa81e235dd9b3652', function(err) {
     if (err) { return cb(err); }
     MongoUser.updateById(thisUser.id(), { $set: { permissionLevel: 5 } }, cb);
@@ -32,6 +34,7 @@ function login (cb) {
 
 //  remove dock from mavis
 function removeFromMavis(cb) {
+  console.log('removeFromMavis');
   request({
     method: 'DELETE',
     url: process.env.MAVIS_HOST + '/docks',
@@ -51,6 +54,7 @@ function removeFromMavis(cb) {
 var thisList = {};
 
 function saveList(cb) {
+  debug('saveList');
   Instance.find({
     'container.dockerHost': fullUrl,
     'container.inspect.State.Running': true,
@@ -68,6 +72,7 @@ function saveList(cb) {
 
 //  stop all containers
 function stopAllContainers(cb) {
+  debug('stopAllContainers');
   async.each(thisList, function(instance, next) {
     stopInstance(instance.shortHash, next);
   }, cb);
@@ -104,6 +109,7 @@ function saveAndKill (cb) {
 
 //  put back into mavis
 function addToMavis (cb) {
+  debug('addToMavis');
   request({
     method: 'PUT',
     url: process.env.MAVIS_HOST + '/docks',
@@ -118,10 +124,12 @@ function addToMavis (cb) {
 }
 
 function getAllContainers(cb) {
+  debug('getAllContainers');
   redis.lrange(saveKey, 0, -1, cb);
 }
 
 function startAllContainers(instances, cb) {
+  debug('instances');
   async.each(instances, function(shortHash, next) {
     startInstance(shortHash, next);
   }, cb);
