@@ -7,6 +7,7 @@ var Notifier = require('models/notifications/notifier');
 var Slack = require('models/notifications/slack');
 var HipChat = require('models/notifications/hipchat');
 var HipChatClient = require('hipchat-client');
+var uuid = require('uuid');
 
 describe('Notifier',  function () {
 
@@ -157,8 +158,8 @@ describe('Notifier',  function () {
       var message = 'podviaznikov\'s ';
       message += '<a href="' + headCommit.url + '">changes</a>';
       message += ' (init) to CodeNow/api (develop) are deployed on servers:\n ';
-      message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a></br>\n ';
-      message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a></br>\n.\n';
+      message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a><br/>\n ';
+      message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a><br/>\n.\n';
 
       expect(text).to.equal(message);
       cb();
@@ -196,9 +197,9 @@ describe('Notifier',  function () {
     hipchat.notifyOnInstances(githubPushInfo, instances, done);
   });
 
-  it('should send message to HipChat', {timeout: 4000}, function (done) {
+  it('should send message to HipChat', {timeout: 2000}, function (done) {
     var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
-    var randomUsername = 'user' + new Date().getTime();
+    var randomUsername = 'user' + uuid();
     var instances = [
       {
         name: 'instance1',
@@ -243,7 +244,7 @@ describe('Notifier',  function () {
           });
           done();
         });
-      }, 200);
+      }, 800);
     });
   });
 });
