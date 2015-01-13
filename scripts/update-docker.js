@@ -22,6 +22,7 @@ var Instance = require('models/mongo/instance');
 var mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO);
 
+var ERRORS = [];
 // ensure env's
 ['MONGO', 'MAVIS_HOST', 'TARGET_DOCK'].forEach(function(item) {
   if (!process.env[item]) {
@@ -29,6 +30,13 @@ mongoose.connect(process.env.MONGO);
     process.exit(1);
   }
 });
+
+function login (cb) {
+  var thisUser = user.githubLogin('f914c65e30f6519cfb4d10d0aa81e235dd9b3652', function(err) {
+    if (err) { return cb(err); }
+    MongoUser.updateById(thisUser.id(), { $set: { permissionLevel: 5 } }, cb);
+  });
+}
 
 //  remove dock from mavis
 function removeFromMavis(cb) {
@@ -48,46 +56,59 @@ function removeFromMavis(cb) {
 //  save list of running containers
 //      docker ps
 //      get context-version of containers and save in redis
+var thisList = {};
+
 function saveList(cb) {
   Instance.find({
     'container.dockerHost': fullUrl,
     'container.inspect.State.Running': true,
-  }, function(err, containers) {
+  }, function(err, instances) {
     if (err) { return cb(err); }
+    thisList = instances;
     var multi = redis.multi();
     multi.del(saveKey);
-    containers.forEach(function(item) {
+    instances.forEach(function(item) {
       multi.lpush(saveKey, item.shortHash);
     });
     multi.exec(cb);
   });
 }
 
-//  kill all containers
-function killAllContainers(cb) {
-  dockerode.listContainers(function (err, containers) {
+//  stop all containers
+function stopAllContainers(cb) {
+  async.each(thisList, function(shortHash, next) {
+    stopInstance(shortHash, next);
+  }, cb);
+}
+
+function stopInstance (shortHash, cb) {
+  var Instance = user.fetchInstance(shortHash, function(err) {
     if (err) { return cb(err); }
-    // ignore errors here since we will be killing docker
-    var count = createCount(containers.length, function() { cb(); });
-    containers.forEach(function (containerInfo) {
-      dockerode.getContainer(containerInfo.Id).kill(count.next);
+    Instance.stop(function(err) {
+      if (err) {
+        ERRORS.push({
+          func: 'stop',
+          err: err.message,
+          shortHash: shortHash
+        });
+      }
+      cb();
     });
   });
 }
 
 function saveAndKill (cb) {
   async.series([
+    login,
     removeFromMavis,
     saveList,
-    killAllContainers
+    stopAllContainers
   ], cb);
 }
 
 ////////////////////////////////////////////////////
 // part 2 (seemless restart)
 ////////////////////////////////////////////////////
-
-var user = {};
 
 //  put back into mavis
 function addToMavis (cb) {
@@ -104,21 +125,6 @@ function addToMavis (cb) {
   });
 }
 
-function emptyCb(cb) {
-  return function(err) {
-    if (err) { return cb(err); }
-    cb();
-  };
-}
-
-function login (cb) {
-  user = user.githubLogin('f914c65e30f6519cfb4d10d0aa81e235dd9b3652', emptyCb(cb));
-}
-
-function sudo (cb) {
-  MongoUser.updateById(user.id(), { $set: { permissionLevel: 5 } }, emptyCb(cb));
-}
-
 function getAllContainers(cb) {
   redis.lrange(saveKey, 0, -1, cb);
 }
@@ -126,20 +132,27 @@ function getAllContainers(cb) {
 function startAllContainers(instances, cb) {
   async.each(instances, function(shortHash, next) {
     startInstance(shortHash, next);
-  }, emptyCb(cb));
+  }, cb);
 }
 
 function startInstance (shortHash, cb) {
   var Instance = user.fetchInstance(shortHash, function(err) {
     if (err) { return cb(err); }
-    Instance.start(cb);
+    Instance.start(function(err) {
+      if (err) {
+        ERRORS.push({
+          func: 'start',
+          err: err.message,
+          shortHash: shortHash
+        });
+      }
+      cb();
+    });
   });
 }
 
 function restore(cb) {
   async.waterfall([
-    login,
-    sudo,
     getAllContainers,
     startAllContainers,
     addToMavis
@@ -153,15 +166,18 @@ function waitForYes (cb) {
   console.log('curl -sSL https://get.docker.com/ubuntu/ | sudo sh');
   console.log('update docker now, type yes to contine');
   process.stdin.on('data', function read (chunk) {
-    if (chunk === 'yes') {
+    if (~chunk.toString().indexOf('yes')) {
       process.stdin.removeListener('data', read);
       cb();
+    } else {
+      console.log('must type yes to continue');
     }
   });
 }
 
 function finish (err) {
   console.log('DONE: err?', err);
+  console.log('all erros encounted', ERRORS);
   process.exit();
 }
 
