@@ -1,0 +1,25 @@
+{
+  "mongodb": [
+    "mongo",
+    "mongo-mapper",
+    "mongo3",
+    "mongodb",
+    "mongoid"
+  ],
+  "mysql": [],
+  "postgresql": [
+    "jdbc-postgres",
+    "pg",
+    "postgres",
+    "ruby-pg"
+  ],
+  "rabbitmq": [],
+  "redis": [
+    "redis"
+  ],
+  "Cassandra": [],
+  "ElasticSearch": [],
+  "HBase": [],
+  "Nginx": [],
+  "memcached": []
+}

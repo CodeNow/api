@@ -1,0 +1,27 @@
+{
+  "mongodb": [
+    "best-mongo",
+    "mongo",
+    "mongo-bluebird",
+    "mongodb",
+    "mongoose",
+    "sails-mongo"
+  ],
+  "mysql": [
+    "mysql",
+    "sequelize"
+  ],
+  "postgresql": [
+  ],
+  "rabbitmq": [
+  ],
+  "redis": [
+    "kue",
+    "node-redis-session",
+    "redis",
+    "redis-api",
+    "redis-fast-driver",
+    "redis-sentinel",
+    "reds"
+  ]
+}

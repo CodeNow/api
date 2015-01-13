@@ -1,0 +1,12 @@
+{
+  "mongodb": [
+  ],
+  "mysql": [
+  ],
+  "postgresql": [
+  ],
+  "rabbitmq": [
+  ],
+  "redis": [
+  ]
+}
