@@ -5,12 +5,16 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var expect = Lab.expect;
 
+var InfraCodeVersion = require('models/mongo/infra-code-version');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
 var exists = require('101/exists');
+var equals = require('101/equals');
+var not = require('101/not');
 
 describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
   var ctx = {};
@@ -24,11 +28,13 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
   afterEach(require('../../fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user) {
+    multi.createInstance(function (err, instance, build, user, modelsArr) {
       if (err) { return done(err); }
       ctx.instance = instance;
       ctx.build = build;
       ctx.user = user;
+      ctx.context = modelsArr[1];
+      ctx.contextVersion = modelsArr[0];
       require('../../fixtures/mocks/github/user')(ctx.user);
       require('../../fixtures/mocks/github/user')(ctx.user);
       done();
@@ -193,20 +199,37 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
         beforeEach(function (done) {
           ctx.instance.update({ json: { public: true } }, done);
         });
+        beforeEach(function (done) {
+          ctx.context.update({json: {public: true}}, done);
+        });
         it('should copy a public instance', function (done) {
           var expected = {
             shortHash: exists,
             name: exists,
             public: exists,
-            createdBy: { github: ctx.user.json().accounts.github.id },
-            owner: { github: ctx.user.json().accounts.github.id,
-                     username: ctx.user.json().accounts.github.username },
+            createdBy: {github: ctx.nonOwner.json().accounts.github.id},
+            owner: {
+              github: ctx.nonOwner.json().accounts.github.id,
+              username: ctx.nonOwner.json().accounts.github.username
+            },
             parent: ctx.instance.id(),
-            'build._id': ctx.build.id(),
+            'build._id': not(equals(ctx.build.id())),
             containers: exists
           };
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.instance.copy(expects.success(201, expected, done));
+          require('../../fixtures/mocks/github/user')(ctx.nonOwner);
+          require('../../fixtures/mocks/github/user')(ctx.nonOwner);
+          require('../../fixtures/mocks/github/user-orgs')(100, 'otherOrg');
+          var instance = ctx.nonOwner.newInstance(ctx.instance.id());
+          var newInstance = instance.copy(expects.success(201, expected, function () {
+            expect(newInstance.build.attrs.contexts[0]).to.not.equal(ctx.context.id());
+            expect(newInstance.build.attrs.contextVersions[0]).to.not.equal(ctx.contextVersion.id());
+            expect(newInstance.attrs.contextVersion.context).to.not.equal(ctx.context.id());
+            console.log(newInstance.attrs.contextVersion.infraCodeVersion);
+            InfraCodeVersion.findById(newInstance.attrs.contextVersion.infraCodeVersion, function (a, b, c) {
+              console.log(a, b, c);
+              done();
+            });
+          }));
         });
       });
     });
