@@ -80,11 +80,18 @@ function stopAllContainers(cb) {
 
 function stopInstance (shortHash, cb) {
   var Instance = user.fetchInstance(shortHash, function(err) {
-    if (err) { return cb(err); }
+   if (err) {
+      ERRORS.push({
+        func: 'stopInstance:fetchInstance',
+        err: err.message,
+        shortHash: shortHash
+      });
+      return cb();
+    }
     Instance.stop(function(err) {
       if (err) {
         ERRORS.push({
-          func: 'stop',
+          func: 'stopInstance:stop',
           err: err.message,
           shortHash: shortHash
         });
@@ -137,11 +144,18 @@ function startAllContainers(instances, cb) {
 
 function startInstance (shortHash, cb) {
   var Instance = user.fetchInstance(shortHash, function(err) {
-    if (err) { return cb(err); }
+    if (err) {
+      ERRORS.push({
+        func: 'startInstance:fetchInstance',
+        err: err.message,
+        shortHash: shortHash
+      });
+      return cb();
+    }
     Instance.start(function(err) {
       if (err) {
         ERRORS.push({
-          func: 'start',
+          func: 'startInstance:start',
           err: err.message,
           shortHash: shortHash
         });
