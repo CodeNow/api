@@ -32,7 +32,7 @@ do
 done
 if [[ ${#files[@]} -ne 0 ]]
 then
-  echo npm run _bdd -- ${indexes[@]} ${extra_args[@]} ${files[@]}
+  npm run _bdd -- ${indexes[@]} ${extra_args[@]} ${files[@]}
   exit $?
 fi
 
