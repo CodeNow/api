@@ -436,11 +436,11 @@ describe('Instance', function () {
   });
 
 
-  describe('find by repo', function () {
+  describe('find by repo and branch', function () {
     var savedInstance1 = null;
     var savedInstance2 = null;
     var savedInstance3 = null;
-    beforeEach(function (done) {
+    before(function (done) {
       var instance = createNewInstance('instance1');
       instance.save(function (err, instance) {
         if (err) { return done(err); }
@@ -451,7 +451,7 @@ describe('Instance', function () {
         }
       });
     });
-    beforeEach(function (done) {
+    before(function (done) {
       var instance = createNewInstance('instance2', {locked: false});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
@@ -462,7 +462,7 @@ describe('Instance', function () {
         }
       });
     });
-    beforeEach(function (done) {
+    before(function (done) {
       var instance = createNewInstance('instance3', {locked: true, repo: 'podviaznikov/hello'});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
@@ -474,35 +474,49 @@ describe('Instance', function () {
       });
     });
 
-  //   it('should find instances using repo name and branch', function (done) {
-  //     Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
-  //       if (err) { return done(err); }
-  //       expect(insts.length).to.equal(2);
-  //       insts.forEach(function (inst) {
-  //         expect(['instance1', 'instance2']).to.include(inst.name);
-  //       });
-  //       done();
-  //     });
-  //   });
+    it('should find instances using repo name and branch', function (done) {
+      Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
+        if (err) { return done(err); }
+        expect(insts.length).to.equal(2);
+        insts.forEach(function (inst) {
+          expect(['instance1', 'instance2']).to.include(inst.name);
+        });
+        done();
+      });
+    });
 
-  //   it('should not find instance using repo name and branch if it was locked', function (done) {
-  //     Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
-  //       if (err) { return done(err); }
-  //       expect(insts.length).to.equal(0);
-  //       done();
-  //     });
-  //   });
+    it('should not find instance using repo name and branch if it was locked', function (done) {
+      Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
+        if (err) { return done(err); }
+        expect(insts.length).to.equal(0);
+        done();
+      });
+    });
 
-  //   it('should find context versions using repo name and branch', function (done) {
-  //     Instance.findContextVersionsForRepoBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, cvs) {
-  //       if (err) { return done(err); }
-  //       expect(cvs.length).to.equal(2);
-  //       var actual = [String(cvs[1]), String(cvs[0])];
-  //       expect(actual).to.deep.include(String(savedInstance1.contextVersion._id));
-  //       expect(actual).to.deep.include(String(savedInstance2.contextVersion._id));
-  //       done();
-  //     });
-  //   });
+  });
+
+  describe('#findContextVersionsForRepo', function () {
+    var savedInstance = null;
+    before(function (done) {
+      var instance = createNewInstance('instance-name', {locked: true, repo: 'podviaznikov/hello'});
+      instance.save(function (err, instance) {
+        if (err) { return done(err); }
+        else {
+          expect(instance).to.be.okay;
+          savedInstance = instance;
+          done();
+        }
+      });
+    });
+    it('should find context versions using repo name', function (done) {
+      Instance.findContextVersionsForRepo('podviaznikov/hello', function (err, cvs) {
+        if (err) { return done(err); }
+        expect(cvs.length).to.equal(1);
+        expect(String(cvs[0])).to.equal(String(savedInstance.contextVersion._id));
+        done();
+      });
+    });
+
   });
 
 
