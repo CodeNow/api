@@ -13,9 +13,11 @@ var hooks = require('./fixtures/analyze-info-hooks');
 var multi = require('./fixtures/multi-factory');
 var nock = require('nock');
 
+/*
 var supportedLanguageVersionsNode = require('../lib/routes/actions/analyze/data/supported-language-versions-nodejs');
 var supportedLanguageVersionsPython = require('../lib/routes/actions/analyze/data/supported-language-versions-python');
 var supportedLanguageVersionsRuby = require('../lib/routes/actions/analyze/data/supported-language-versions-ruby');
+*/
 
 before(function (done) {
   nock('http://runnable.com:80')
