@@ -21,51 +21,12 @@ mongoose.connect(process.env.MONGO);
 
 async.series([
   ensureMongooseIsConnected,
-  createContexts,
-
-  // TIP:
-  // generate new token here: https://github.com/settings/applications
-  // w/ permissions: repo, user, write:repo_hook
   function (cb) { ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', cb); },
-  function (cb) { ctx.sourceContexts = ctx.user.fetchContexts({isSource: true}, cb); },
-  function (cb) { ctx.sourceVersions = ctx.sourceContexts.models[0].fetchVersions({}, cb); },
-  function (cb) { ctx.context = ctx.user.createContext({name: uuid()}, cb); },
-  function (cb) { ctx.build = ctx.user.createBuild(cb); },
-  function (cb) {
-    ctx.contextVersion = ctx.context.createVersion({qs: {
-      toBuild: ctx.build.id()
-    }}, cb);
-  },
-  function (cb) {
-    var icv = ctx.sourceVersions.models[0].json().infraCodeVersion;
-    ctx.contextVersion.copyFilesFromSource(icv, cb);
-  },
-  function (cb) { ctx.build.build({ message: 'seed instance script' }, cb); },
-  function (cb) {
-    async.whilst(
-      function () {
-        return ctx.build &&
-          !(ctx.build.json().completed || ctx.build.json().erroredContextVersions.length);
-      },
-      function (cb) { ctx.build.fetch(cb); },
-      cb);
-  },
-  function (cb) {
-    ctx.instance = ctx.user.createInstance({json: {
-      build: ctx.build.id(),
-      name: uuid()
-    }}, cb);
-  }
+  createContexts,
 ], function (err) {
-  if (err) {
-    console.error(err);
-    process.exit(1);
-  } else {
-    console.log('done');
-  }
+  console.log(err, 'done');
+  process.exit(1);
 });
-
-
 
 function ensureMongooseIsConnected (cb) {
   console.log('ensure');
@@ -80,15 +41,17 @@ function ensureMongooseIsConnected (cb) {
 function createContexts (cb) {
   async.waterfall([
     function newContext (cb) {
+      console.log('newContext (blank)');
       var context = new Context({
         owner: createdBy,
-        name: 'mongodb',
-        description: 'mongodb',
-        isSource: false
+        name: 'Blank',
+        description: 'An empty template!',
+        isSource: true
       });
       context.save(cb);
     },
     function newICV (context, count, cb) {
+      console.log('newICV (blank)');
       var icv = new InfraCodeVersion({
         context: context._id
       });
@@ -96,29 +59,55 @@ function createContexts (cb) {
         icv.initWithDefaults.bind(icv),
         icv.save.bind(icv),
         icv.createFs.bind(icv, {
+          body: 'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
           name: 'Dockerfile',
-          path: '/',
-          body: 'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n'
-        }),
-      ], function (err) {
-        cb(err, context, icv);
+          path: '/'
+        })
+      ], function (err) { cb(err, context, icv); });
+    },
+    function newBuild (cv, context, icv) {
+      var build = ctx.user.createBuild(function (err) {
+        cb(err, build, context, icv);
       });
     },
-    function newCV (context, icv, cb) {
+    function newCV (build, context, icv, cb) {
       console.log('newCV');
-      var d = new Date();
-      var cv = new ContextVersion({
-        createdBy: createdBy,
-        context: context._id,
-        project: context._id,
-        environment: context._id,
-        infraCodeVersion: icv._id,
-        build: {
-          started: d,
-          completed: d
+      var cv = context.createVersion({
+        qs: {
+          toBuild: build.id()
         }
+      }, function (err) {
+        cb(err, cv, build, context, icv);
       });
-      cv.save(cb);
+    },
+    function (cv, build, context, icv, cb) {
+      cv.copyFilesFromSource(icv, function (err) {
+        cb(err, cv, build, context, icv);
+      });
+    },
+    function (cv, build, context, icv, cb) {
+      build.build({ message: 'seed instance script' }, function (err) {
+        cb(err, cv, build, context, icv);
+      });
+    },
+    function (cv, build, context, icv, cb) {
+      async.whilst(
+        function () {
+          return build && !(build.json().completed || build.json().erroredContextVersions.length);
+        },
+        function (cb) {
+          build.fetch(cb);
+        },
+        function (err) {
+          cb(err, cv, build, context, icv);
+        }
+      );
+    },
+    function (cv, build, context, icv, cb) {
+      var instance = ctx.user.createInstance({json: {
+        build: build.id(),
+        name: 'mongodb'
+      }}, cb);
     }
   ], cb);
 }
