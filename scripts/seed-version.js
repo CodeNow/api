@@ -86,7 +86,7 @@ function createFirstSourceContext (cb) {
     return function (cb) {
       async.waterfall([
         function removeExistingInstance(cb) {
-          Instance.find({'name': 'TEMPLATE' + model.name}, function (err, docs) {
+          Instance.find({'name': 'TEMPLATE_' + model.name}, function (err, docs) {
             console.log('REMOVING existing instance for (', model.name, ')');
             if (!err && docs) {
               docs.forEach(function (doc) {
@@ -146,7 +146,7 @@ function createFirstSourceContext (cb) {
       console.log('createInstance (', model.name, ')');
       var instance = ctx.user.createInstance({
         build: build.id(),
-        name: 'TEMPLATE' + model.name,
+        name: 'TEMPLATE_' + model.name,
         owner: createdBy
       }, function (err, newInstance) {
         if (err) {
