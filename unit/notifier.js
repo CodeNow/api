@@ -45,9 +45,10 @@ describe('Notifier',  function () {
     slack.send = function (text, cb) {
       var message = 'podviaznikov\'s ';
       message += '<' + headCommit.url + '|changes>';
-      message += ' (init me) to CodeNow/api (develop) are ready.\n';
+      message += ' (init &amp; commit &amp; push) to CodeNow/api (develop) are ready.\n';
       message += '<http://runnable3.net/';
-      message += 'podviaznikov/boxSelection/api/develop/init%20me/a240edf982d467201845b3bf10ccbe16f6049ea9';
+      message += 'podviaznikov/boxSelection/api/develop/init%20%26%20commit%20%26%20push';
+      message += '/a240edf982d467201845b3bf10ccbe16f6049ea9';
       message += '|Choose a server to run develop>.';
       expect(text).to.equal(message);
       cb();
@@ -55,7 +56,7 @@ describe('Notifier',  function () {
 
     var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      message: 'init me',
+      message: 'init & commit & push',
       url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
     };
     var githubPushInfo = {
@@ -81,7 +82,8 @@ describe('Notifier',  function () {
     slack.send = function (message, cb) {
       var text = 'tjmehta\'s ';
       text += '<' + headCommit.url + '|changes>';
-      text += ' (init repo and  <https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4|1 more>)';
+      text += ' (init &amp; commit &lt;p&gt;Hello&lt;/p&gt; and  ';
+      text += '<https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4|1 more>)';
       text += ' to CodeNow/api (develop) are deployed on servers:';
       expect(text).to.equal(message.text);
       expect(message.attachments.length).to.equal(1);
@@ -101,7 +103,7 @@ describe('Notifier',  function () {
     ];
     var headCommit = {
       id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
-      message: 'init repo',
+      message: 'init & commit <p>Hello</p>',
       url: 'https://github.com/CodeNow/api/commit/b240edf982d467201845b3bf10bbbe16f6049eb1'
     };
     var githubPushInfo = {
@@ -202,7 +204,7 @@ describe('Notifier',  function () {
     hipchat.notifyOnInstances(githubPushInfo, instances, done);
   });
 
-  it('should send message to HipChat', {timeout: 2000}, function (done) {
+  it('should send message to HipChat', {timeout: 4000}, function (done) {
     var hipchat = new HipChat({authToken: 'a4bcd2c7007379398f5158d7785fa0', roomId: '1076330'});
     var randomUsername = 'user' + uuid();
     var instances = [
@@ -250,7 +252,7 @@ describe('Notifier',  function () {
           });
           done();
         });
-      }, 800);
+      }, 2200);
     });
   });
 });
