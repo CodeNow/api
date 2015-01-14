@@ -78,12 +78,17 @@ describe('Notifier',  function () {
 
   it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
-    slack.send = function (text, instances, cb) {
-      var message = 'tjmehta\'s ';
-      message += '<' + headCommit.url + '|changes>';
-      message += ' (init repo and  <https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4|1 more>)';
-      message += ' to CodeNow/api (develop) are deployed on servers:';
-      expect(text).to.equal(message);
+    slack.send = function (message, cb) {
+      var text = 'tjmehta\'s ';
+      text += '<' + headCommit.url + '|changes>';
+      text += ' (init repo and  <https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4|1 more>)';
+      text += ' to CodeNow/api (develop) are deployed on servers:';
+      expect(text).to.equal(message.text);
+      expect(message.attachments.length).to.equal(1);
+      var attachment = message.attachments[0];
+      expect(attachment.fallback).equal('<http://runnable3.net/podviaznikov/instance1|instance1>');
+      expect(attachment.color).equal('#5b3777');
+      expect(attachment.fields[0].value).equal('<http://runnable3.net/podviaznikov/instance1|instance1>');
       cb();
     };
     var instances = [
@@ -154,12 +159,12 @@ describe('Notifier',  function () {
 
   it('should render proper text on hipchat.notifyOnInstances call', function (done) {
     var hipchat = new HipChat({});
-    hipchat.send = function (text, instances, cb) {
+    hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s ';
       message += '<a href="' + headCommit.url + '">changes</a>';
-      message += ' (init) to CodeNow/api (develop) are deployed on servers:\n ';
+      message += ' (init) to CodeNow/api (develop) are deployed on servers:<br/>\n ';
       message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a><br/>\n ';
-      message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a><br/>\n.\n';
+      message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a><br/>\n';
 
       expect(text).to.equal(message);
       cb();
@@ -211,7 +216,8 @@ describe('Notifier',  function () {
     var headCommit = {
       id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       author: randomUsername,
-      url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
+      url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9',
+      message: 'some commit'
     };
     var githubPushInfo = {
       commitLog: [headCommit],
