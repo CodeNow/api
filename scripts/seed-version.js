@@ -11,6 +11,7 @@ var async = require('async');
 var Runnable = require('runnable');
 var user = new Runnable('localhost:3030');
 var mongoose = require('mongoose');
+var keypather = require('keypather')();
 
 
 var ctx = {};
@@ -27,7 +28,7 @@ async.series([
   },
   function (cb) {
     ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', function () {
-      ctx.user.attrs.accounts.github.id = process.env.HELLO_RUNNABLE_GITHUB_ID;
+      keypather.set(ctx.user, 'attrs.accounts.github.id', process.env.HELLO_RUNNABLE_GITHUB_ID);
       cb();
     });
   },
