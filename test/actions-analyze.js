@@ -15,7 +15,7 @@ var nock = require('nock');
 //var repoMock = require('./fixtures/mocks/github/repo');
 var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
 
-var javascript_nodejs = 'node.js';
+var javascript_nodejs = 'node';
 
 before(function (done) {
   nock('http://runnable.com:80')
