@@ -93,6 +93,29 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       });
     });
 
+    it('should be possible to remove setting', function (done) {
+      var newSettings = {
+        notifications: {
+          slack: {
+            webhookUrl: ''
+          },
+          hipchat: {
+            authToken: 'new-hipchat-token',
+            roomId: 1231231
+          }
+        }
+      };
+      ctx.user.newSetting(settingsId).update({json: newSettings}, function (err, body) {
+        if (err) { return done(err); }
+        expect(body._id).to.exist();
+        expect(body.owner.github).to.equal(settings.owner.github);
+        expect(body.notifications.slack.webhookUrl).to.equal(newSettings.notifications.slack.webhookUrl);
+        expect(body.notifications.hipchat.authToken).to.equal(newSettings.notifications.hipchat.authToken);
+        expect(body.notifications.hipchat.roomId).to.equal(newSettings.notifications.hipchat.roomId);
+        done();
+      });
+    });
+
 
     it('should not be possible to update setting using the wrong user', function (done) {
       require('../../fixtures/mocks/github/user-orgs')(ctx.user);
