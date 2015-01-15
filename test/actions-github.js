@@ -1,3 +1,4 @@
+'use strict';
 var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
@@ -57,10 +58,13 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  // FIXME: push is currently disabled. delete this and re-add the block below when enabled
-  describe('push', function () {
+  describe('disabled hooks', function () {
     var ctx = {};
     beforeEach(function (done) {
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
+      /* jshint -W069 */
+      delete process.env['ENABLE_BUILDS_ON_GIT_PUSH'];
+      /* jshint +W069 */
       multi.createInstance(function (err, instance, build, user, modelsArr) {
         ctx.contextVersion = modelsArr[0];
         ctx.context = modelsArr[1];
@@ -69,10 +73,14 @@ describe('Github - /actions/github', function () {
         done(err);
       });
     });
-    it('should just say hi', function (done) {
+    afterEach(function (done) {
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
+      done();
+    });
+    it('should send response immediately if hooks are disabled', function (done) {
       var options = hooks(ctx.contextVersion.json()).push;
       options.json.ref = 'refs/heads/someotherbranch';
-      // require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+      require('./fixtures/mocks/github/users-username')(101, 'bkendall');
       request.post(options, function (err, res) {
         if (err) {
           done(err);
@@ -85,6 +93,55 @@ describe('Github - /actions/github', function () {
       });
     });
   });
+
+  describe('ignore hooks without commits data', function () {
+    var ctx = {};
+    beforeEach(function (done) {
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
+      multi.createInstance(function (err, instance, build, user, modelsArr) {
+        ctx.contextVersion = modelsArr[0];
+        ctx.context = modelsArr[1];
+        ctx.build = build;
+        ctx.user = user;
+        done(err);
+      });
+    });
+
+    it('should send response immediately there are no commits data ([]) in the payload ', function (done) {
+      var options = hooks(ctx.contextVersion.json()).push;
+      options.json.ref = 'refs/heads/someotherbranch';
+      options.json.commits = [];
+      require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+      request.post(options, function (err, res) {
+        if (err) {
+          done(err);
+        }
+        else {
+          expect(res.statusCode).to.equal(202);
+          expect(res.body).to.equal('No commits pushed; no work to be done.');
+          done();
+        }
+      });
+    });
+
+    it('should send response immediately there are no commits data (null) in the payload ', function (done) {
+      var options = hooks(ctx.contextVersion.json()).push;
+      options.json.ref = 'refs/heads/someotherbranch';
+      options.json.commits = null;
+      require('./fixtures/mocks/github/users-username')(101, 'bkendall');
+      request.post(options, function (err, res) {
+        if (err) {
+          done(err);
+        }
+        else {
+          expect(res.statusCode).to.equal(202);
+          expect(res.body).to.equal('No commits pushed; no work to be done.');
+          done();
+        }
+      });
+    });
+  });
+
 
   // describe('push', function () {
   //   var ctx = {};

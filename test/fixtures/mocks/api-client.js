@@ -32,12 +32,16 @@ module.exports.setup = function (cb) {
     },
     stop: function () {
       require('../../fixtures/mocks/github/user')(this.opts.user);
+    },
+    copy: function () {
+      require('../../fixtures/mocks/github/user')(this.opts.user);
     }
   });
 
   // BUILD
   mocksForMethods(require('runnable/lib/models/build'), {
     build: function () {
+      require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/docker/container-id-attach')(100);
@@ -72,7 +76,13 @@ module.exports.setup = function (cb) {
       // in case owner is org
       require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
       require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
-
+      // FIXME: stores: uncomment if we start using stores in tests as we should
+      // var user = this.opts.user;
+      // var context = user.newContext(this.attrs.context);
+      // if (context.attrs.owner &&
+      //   context.attrs.owner.github === this.opts.user.attrs.accounts.github.id) {
+      //   require('../../fixtures/mocks/github/user')(user);
+      // }
       this.appCodeVersions.models.forEach(function (acv) {
         var username = acv.attrs.repo.split('/')[0];
         var repoName = acv.attrs.repo.split('/')[1];
@@ -90,6 +100,16 @@ module.exports.setup = function (cb) {
       require('../../fixtures/mocks/s3/put-object')(contextId, '/Dockerfile');
       // in case owner is org
       require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+    },
+    build: function () {
+      // FIXME: stores: uncomment if we start using stores in tests as we should
+      // var user = this.opts.user;
+      // var context = user.newContext(this.attrs.context);
+      // if (context.attrs.owner &&
+      //   context.attrs.owner.github === this.opts.user.attrs.accounts.github.id) {
+      //   require('../../fixtures/mocks/github/user')(user);
+      // }
+      require('../../fixtures/mocks/docker/container-id-attach')(100);
     }
   });
 
