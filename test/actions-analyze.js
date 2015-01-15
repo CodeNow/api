@@ -16,6 +16,7 @@ var nock = require('nock');
 var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
 
 var javascript_nodejs = 'nodejs';
+var python = 'python';
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -68,7 +69,37 @@ describe('Analyze - /actions/analyze', function () {
     });
   });
 
-  describe('Success conditions', function () {
+  describe('Success conditions - python', function () {
+    it('returns 0 inferred suggestions for python '+
+       'repository with 0 dependencies', function (done) {
+      var requirements = 'Django==1.3\n'+
+        'stripe\n'+
+        'py-bcrypt';
+      repoContentsMock.repoContentsDirectoryPython();
+      repoContentsMock.repoContentsFile({
+        name: 'requirements.txt',
+        path: 'requirements.txt',
+        content: (new Buffer(requirements, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(python);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+
+    });
+  });
+
+  describe('Success conditions - ruby', function () {
+  });
+
+  describe('Success conditions - javascript', function () {
     it('returns 0 inferred suggestions for JavaScript/NodeJS '+
        'repository with 0 dependencies', function (done) {
       var packageFile = {

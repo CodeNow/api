@@ -148,8 +148,95 @@ var repoContentsFile = {
     }
 };
 
+var repoContentsDirectoryPython = [
+  {
+    "name": ".gitignore",
+    "path": ".gitignore",
+    "sha": "53ace37d532616f10c38d2bf8e7e68e95ed22043",
+    "size": 19,
+    "url": "https://api.github.com/repos/sundippatel/monospace-django/contents/.gitignore?ref=master",
+    "html_url": "https://github.com/sundippatel/monospace-django/blob/master/.gitignore",
+    "git_url": "https://api.github.com/repos/sundippatel/monospace-django/git/blobs/53ace37d532616f10c38d2bf8e7e68e95ed22043",
+    "download_url": "https://raw.githubusercontent.com/sundippatel/monospace-django/master/.gitignore",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/sundippatel/monospace-django/contents/.gitignore?ref=master",
+      "git": "https://api.github.com/repos/sundippatel/monospace-django/git/blobs/53ace37d532616f10c38d2bf8e7e68e95ed22043",
+      "html": "https://github.com/sundippatel/monospace-django/blob/master/.gitignore"
+    }
+  },
+  {
+    "name": "LICENSE",
+    "path": "LICENSE",
+    "sha": "877ee042fd5bea9a76e423615826d89838fd19df",
+    "size": 1050,
+    "url": "https://api.github.com/repos/sundippatel/monospace-django/contents/LICENSE?ref=master",
+    "html_url": "https://github.com/sundippatel/monospace-django/blob/master/LICENSE",
+    "git_url": "https://api.github.com/repos/sundippatel/monospace-django/git/blobs/877ee042fd5bea9a76e423615826d89838fd19df",
+    "download_url": "https://raw.githubusercontent.com/sundippatel/monospace-django/master/LICENSE",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/sundippatel/monospace-django/contents/LICENSE?ref=master",
+      "git": "https://api.github.com/repos/sundippatel/monospace-django/git/blobs/877ee042fd5bea9a76e423615826d89838fd19df",
+      "html": "https://github.com/sundippatel/monospace-django/blob/master/LICENSE"
+    }
+  },
+  {
+    "name": "README.md",
+    "path": "README.md",
+    "sha": "ec1d652d0d8ff14c39a96f29e8544baf0ca5d572",
+    "size": 794,
+    "url": "https://api.github.com/repos/sundippatel/monospace-django/contents/README.md?ref=master",
+    "html_url": "https://github.com/sundippatel/monospace-django/blob/master/README.md",
+    "git_url": "https://api.github.com/repos/sundippatel/monospace-django/git/blobs/ec1d652d0d8ff14c39a96f29e8544baf0ca5d572",
+    "download_url": "https://raw.githubusercontent.com/sundippatel/monospace-django/master/README.md",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/sundippatel/monospace-django/contents/README.md?ref=master",
+      "git": "https://api.github.com/repos/sundippatel/monospace-django/git/blobs/ec1d652d0d8ff14c39a96f29e8544baf0ca5d572",
+      "html": "https://github.com/sundippatel/monospace-django/blob/master/README.md"
+    }
+  },
+  {
+    "name": "monospace",
+    "path": "monospace",
+    "sha": "66dd3a1e6379bb0c14212a3ac890a876803fdff3",
+    "size": 0,
+    "url": "https://api.github.com/repos/sundippatel/monospace-django/contents/monospace?ref=master",
+    "html_url": "https://github.com/sundippatel/monospace-django/tree/master/monospace",
+    "git_url": "https://api.github.com/repos/sundippatel/monospace-django/git/trees/66dd3a1e6379bb0c14212a3ac890a876803fdff3",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/sundippatel/monospace-django/contents/monospace?ref=master",
+      "git": "https://api.github.com/repos/sundippatel/monospace-django/git/trees/66dd3a1e6379bb0c14212a3ac890a876803fdff3",
+      "html": "https://github.com/sundippatel/monospace-django/tree/master/monospace"
+    }
+  },
+  {
+    "name": "requirements.txt",
+    "path": "requirements.txt",
+    "sha": "34f9eda6ccdc180f9103bd7ed802d143ef3d6ae0",
+    "size": 29,
+    "url": "https://api.github.com/repos/sundippatel/monospace-django/contents/requirements.txt?ref=master",
+    "html_url": "https://github.com/sundippatel/monospace-django/blob/master/requirements.txt",
+    "git_url": "https://api.github.com/repos/sundippatel/monospace-django/git/blobs/34f9eda6ccdc180f9103bd7ed802d143ef3d6ae0",
+    "download_url": "https://raw.githubusercontent.com/sundippatel/monospace-django/master/requirements.txt",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/sundippatel/monospace-django/contents/requirements.txt?ref=master",
+      "git": "https://api.github.com/repos/sundippatel/monospace-django/git/blobs/34f9eda6ccdc180f9103bd7ed802d143ef3d6ae0",
+      "html": "https://github.com/sundippatel/monospace-django/blob/master/requirements.txt"
+    }
+  }
+];
+
 module.exports.repoContentsDirectory = function (opts) {
   setupMock(repoContentsDirectory, opts);
+};
+
+module.exports.repoContentsDirectoryPython = function (opts) {
+  setupMock(repoContentsDirectoryPython, opts);
 };
 
 module.exports.repoContentsFile = function (opts) {
