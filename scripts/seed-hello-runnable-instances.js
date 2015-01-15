@@ -1,7 +1,6 @@
 'use strict';
 
 require('loadenv')();
-
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
@@ -13,15 +12,18 @@ var uuid = require('uuid');
 
 var ctx = {};
 
+var HELLO_RUNNABLE_ACCESS_TOKEN = "e9bdfb84960b6d6aded1910a007c2ab716571c84";
+
 var createdBy = {
-  github: process.env.HELLO_RUNNABLE_GITHUB_ID
+  github: 10224339
 };
 
 mongoose.connect(process.env.MONGO);
+console.log('process.env.MONGO\n', process.env.MONGO);
 
 async.series([
   ensureMongooseIsConnected,
-  function (cb) { ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', cb); },
+  function (cb) { ctx.user = user.githubLogin(HELLO_RUNNABLE_ACCESS_TOKEN, cb); },
   createContexts,
 ], function (err) {
   console.log(err, 'done');
@@ -53,6 +55,7 @@ function createContexts (cb) {
     function newICV (context, count, cb) {
       console.log('newICV (blank)');
       var icv = new InfraCodeVersion({
+        owner: createdBy,
         context: context._id
       });
       async.series([
@@ -63,29 +66,37 @@ function createContexts (cb) {
           name: 'Dockerfile',
           path: '/'
         })
-      ], function (err) { cb(err, context, icv); });
+      ], function (err) {
+        cb(err, context, icv);
+      });
     },
-    function newBuild (cv, context, icv) {
+    function newBuild (context, icv, cb) {
+      console.log('new build');
+      console.log(arguments);
       var build = ctx.user.createBuild(function (err) {
+        console.log('err', err);
         cb(err, build, context, icv);
       });
     },
     function newCV (build, context, icv, cb) {
       console.log('newCV');
-      var cv = context.createVersion({
+      var contextModel = ctx.user.newContext(context.id);
+      var cv = contextModel.createVersion({
         qs: {
           toBuild: build.id()
         }
       }, function (err) {
-        cb(err, cv, build, context, icv);
+        cb(err, cv, build, contextModel, icv);
       });
     },
     function (cv, build, context, icv, cb) {
+      console.log('copyFilesFromSource');
       cv.copyFilesFromSource(icv, function (err) {
         cb(err, cv, build, context, icv);
       });
     },
     function (cv, build, context, icv, cb) {
+      console.log('build.build');
       build.build({ message: 'seed instance script' }, function (err) {
         cb(err, cv, build, context, icv);
       });
@@ -104,10 +115,14 @@ function createContexts (cb) {
       );
     },
     function (cv, build, context, icv, cb) {
+      console.log('create instance');
       var instance = ctx.user.createInstance({json: {
         build: build.id(),
         name: 'mongodb'
-      }}, cb);
+      }}, function (err) {
+        console.log('instance', instance);
+        cb(err);
+      });
     }
   ], cb);
 }

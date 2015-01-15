@@ -19,7 +19,7 @@
     "preEnvMarker": "<%= ENV[\"",
     "postEnvMarker": "]%>\""
   },
-  "node": {
+  "nodejs": {
     "name": "Node.Js",
     "versions": [
       "0.8",
