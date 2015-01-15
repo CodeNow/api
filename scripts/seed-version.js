@@ -9,7 +9,7 @@ var Build = require('models/mongo/build');
 var User = require('models/mongo/user');
 var async = require('async');
 var Runnable = require('runnable');
-var user = new Runnable('localhost:3030');
+var user = new Runnable(process.env.FULL_API_DOMAIN);
 var mongoose = require('mongoose');
 var keypather = require('keypather')();
 
@@ -27,14 +27,20 @@ async.series([
     }
   },
   function (cb) {
+    var called = false;
     ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', function () {
       keypather.set(ctx.user, 'attrs.accounts.github.id', process.env.HELLO_RUNNABLE_GITHUB_ID);
-      cb();
+      if (!called) {
+        called = true;
+        cb();
+      } else {
+        console.log('WTF?');
+      }
     });
   },
   removeCurrentSourceTemplates,
-  createBlankSourceContext,
-  createFirstSourceContext
+  createFirstSourceContext,
+  createBlankSourceContext
 ], function (err) {
   console.log('done');
   if (err) { console.error(err); }
@@ -82,11 +88,11 @@ function createBlankSourceContext (cb) {
   ], cb);
 }
 
-function createFirstSourceContext (cb) {
+function createFirstSourceContext(finalCB) {
   var parallelFunctions = sources.map(function (model) {
-    return function (cb) {
+    return function (thisCb) {
       async.waterfall([
-        function removeExistingInstance(cb) {
+        function (cb) {
           Instance.find({
             'name': 'TEMPLATE_' + model.name,
             'owner': createdBy
@@ -96,6 +102,7 @@ function createFirstSourceContext (cb) {
               docs.forEach(function (doc) {
                 doc.remove();
               });
+              console.log('REMOVING INSTANCES', docs);
             }
             cb();
           })
@@ -108,7 +115,9 @@ function createFirstSourceContext (cb) {
             description: 'The most awesome dockerfile, EVER',
             isSource: true
           });
-          context.save(cb);
+          context.save(function (err, context, count) {
+            cb(err, context, count);
+          });
         },
         function newICV(context, count, cb) {
           console.log('newICV (', model.name, ')');
@@ -127,7 +136,7 @@ function createFirstSourceContext (cb) {
         createBuild,
         buildBuild,
         createInstance
-      ], cb);
+      ], thisCb);
     };
     function createBuild(version, cb) {
       console.log('createBuild (', model.name, ')');
@@ -163,7 +172,7 @@ function createFirstSourceContext (cb) {
 
   });
 
-  async.parallel(parallelFunctions, cb);
+  async.parallel(parallelFunctions, finalCB);
 }
 
 function newCV (context, icv, cb) {
@@ -186,8 +195,8 @@ function newCV (context, icv, cb) {
 }
 var sources = [{
   name: 'NodeJs',
-  body: '# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/' +
-  'FROM node:<node-version>\n' +
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
+  'FROM node:<nodejs-version>\n' +
   '\n' +
   '# Open up ports on the server\n' +
   'EXPOSE <user-specified-ports>\n' +
@@ -197,7 +206,7 @@ var sources = [{
   'WORKDIR /<repo-name>\n' +
   '\n' +
   '# Install dependencies\n' +
-  'RUN apt-get update && /\n' +
+  'RUN apt-get update \n' +
   '<add-dependencies>\n' +
   '\n' +
   'RUN npm install\n' +
@@ -226,7 +235,7 @@ var sources = [{
   'WORKDIR /<repo-name>\n' +
   '\n' +
   '# Install dependencies\n' +
-  'RUN apt-get update && /\n' +
+  'RUN apt-get update \n' +
   '<add-dependencies>\n' +
   '\n' +
   'RUN bundle install\n' +
@@ -254,7 +263,7 @@ var sources = [{
   'WORKDIR /<repo-name>\n' +
   '\n' +
   '# Install dependencies\n' +
-  'RUN apt-get update && /\n' +
+  'RUN apt-get update \n' +
   '<add-dependencies>\n' +
   '\n' +
   'RUN bundle install\n' +
@@ -281,7 +290,7 @@ var sources = [{
   '# Install dependencies\n' +
   'RUN pip install -r /home/requirements.txt\n' +
   '\n' +
-  'RUN apt-get update && /\n' +
+  'RUN apt-get update \n' +
   '<add-dependencies>\n' +
   '\n' +
   '# Command to start the app\n' +
