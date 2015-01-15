@@ -12,6 +12,7 @@ var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/analyze-hooks');
 var multi = require('./fixtures/multi-factory');
 var nock = require('nock');
+
 //var repoMock = require('./fixtures/mocks/github/repo');
 var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
 
@@ -56,9 +57,7 @@ describe('Analyze - /actions/analyze', function () {
     });
 
     it('should return 400 code for repository with no recognized dependency file', function (done) {
-      repoContentsMock.repoContentsDirectory([{
-        name: "README.md"
-      }]);
+      repoContentsMock.repoContentsDirectory('python', {});
       ctx.request.get(
         hooks.getSuccess,
         function (err, res) {
@@ -75,8 +74,8 @@ describe('Analyze - /actions/analyze', function () {
       var requirements = 'Django==1.3\n'+
         'stripe\n'+
         'py-bcrypt';
-      repoContentsMock.repoContentsDirectoryPython();
-      repoContentsMock.repoContentsFile({
+      repoContentsMock.repoContentsDirectory('python', {});
+      repoContentsMock.repoContentsFile('python', {
         name: 'requirements.txt',
         path: 'requirements.txt',
         content: (new Buffer(requirements, 'utf8').toString('base64'))
@@ -105,8 +104,8 @@ describe('Analyze - /actions/analyze', function () {
       var packageFile = {
         dependencies: {}
       };
-      repoContentsMock.repoContentsDirectory();
-      repoContentsMock.repoContentsFile({
+      repoContentsMock.repoContentsDirectory('nodejs', {});
+      repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
         content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
@@ -132,8 +131,8 @@ describe('Analyze - /actions/analyze', function () {
           'dat-middlware': '0.0.0'
         }
       };
-      repoContentsMock.repoContentsDirectory();
-      repoContentsMock.repoContentsFile({
+      repoContentsMock.repoContentsDirectory('nodejs', {});
+      repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
         content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
@@ -157,8 +156,8 @@ describe('Analyze - /actions/analyze', function () {
           'mongodb': '>=5.0.0'
         }
       };
-      repoContentsMock.repoContentsDirectory();
-      repoContentsMock.repoContentsFile({
+      repoContentsMock.repoContentsDirectory('nodejs', {});
+      repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
         content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
@@ -185,8 +184,8 @@ describe('Analyze - /actions/analyze', function () {
           'somethingfake': '0.0.0'
         }
       };
-      repoContentsMock.repoContentsDirectory();
-      repoContentsMock.repoContentsFile({
+      repoContentsMock.repoContentsDirectory('nodejs', {});
+      repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
         content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
@@ -210,8 +209,8 @@ describe('Analyze - /actions/analyze', function () {
           'mongodude': '>=5.0.0',
         }
       };
-      repoContentsMock.repoContentsDirectory();
-      repoContentsMock.repoContentsFile({
+      repoContentsMock.repoContentsDirectory('nodejs', {});
+      repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
         content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
@@ -232,8 +231,8 @@ describe('Analyze - /actions/analyze', function () {
     it('returns 0 inferred suggestion for JavaScript/NodeJS '+
        'repository with no dependency property in package.json file', function (done) {
       var packageFile = {};
-      repoContentsMock.repoContentsDirectory();
-      repoContentsMock.repoContentsFile({
+      repoContentsMock.repoContentsDirectory('nodejs', {});
+      repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
         content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
