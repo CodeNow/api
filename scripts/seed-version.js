@@ -9,7 +9,7 @@ var Build = require('models/mongo/build');
 var User = require('models/mongo/user');
 var async = require('async');
 var Runnable = require('runnable');
-var user = new Runnable('localhost:3030');
+var user = new Runnable(process.env.API_HOST);
 var mongoose = require('mongoose');
 var keypather = require('keypather')();
 
