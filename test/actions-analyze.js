@@ -42,7 +42,6 @@ describe('Analyze - /actions/analyze', function () {
       done();
     });
   });
-  //afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
   describe('Error conditions', function () {
@@ -91,7 +90,6 @@ describe('Analyze - /actions/analyze', function () {
           done();
         }
       );
-
     });
   });
 
