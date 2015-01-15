@@ -17,6 +17,7 @@ var fs = require('fs');
     fjson[key] = fjson[key].map(function (val) {
       return val.replace(' ', '');
     });
+    //
   });
   fs.writeFileSync(__dirname + '/../lib/routes/actions/analyze/data/suggestable-services-'+lang+'.json',
                    JSON.stringify(fjson, null, ' '));
