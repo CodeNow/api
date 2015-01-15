@@ -134,12 +134,115 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(python);
           expect(res.body.serviceDependencies).to.have.length(1);
-
+          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
           done();
         }
       );
     });
 
+    it('returns 3 inferred suggestions for python '+
+       'repository with 3 matching dependency', function (done) {
+      var requirements = 'Django==1.3\n'+
+        'stripe\n'+
+        'Eve-Elastic==0.10.0\n'+ //matching dependency (ElasticSearch)
+        'fooddep\n'+
+        'casscache\n'+ //matching (memcached)
+        'Djamo\n'+ //matching (mongodb)
+        'py-bcrypt';
+      repoContentsMock.repoContentsDirectory('python', {});
+      repoContentsMock.repoContentsFile('python', {
+        name: 'requirements.txt',
+        path: 'requirements.txt',
+        content: (new Buffer(requirements, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(python);
+          expect(res.body.serviceDependencies).to.have.length(3);
+          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[1]).to.equal('memcached');
+          expect(res.body.serviceDependencies[2]).to.equal('mongodb');
+          done();
+        }
+      );
+    });
+
+    it('returns 0 inferred suggestions for python '+
+       'repository with dependency that is a substring of matching dependency', function (done) {
+      var requirements = 'Django==1.3\n'+
+        'stripe\n'+
+        'Eve-Ela==0.10.0\n'+ //matching dependency SUBSTRING (ElasticSearch)
+        'fooddep\n'+
+        'cassc\n'+ //matching SUBSTRING (memcached)
+        'Dj\n'+ //matching SUBSTRING (mongodb)
+        'py-bcrypt';
+      repoContentsMock.repoContentsDirectory('python', {});
+      repoContentsMock.repoContentsFile('python', {
+        name: 'requirements.txt',
+        path: 'requirements.txt',
+        content: (new Buffer(requirements, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(python);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('returns 0 inferred suggestions for python '+
+       'repository with 0 dependencies in dependency file', function (done) {
+      var requirements = '';
+      repoContentsMock.repoContentsDirectory('python', {});
+      repoContentsMock.repoContentsFile('python', {
+        name: 'requirements.txt',
+        path: 'requirements.txt',
+        content: (new Buffer(requirements, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(python);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('returns 1 inferred suggestions for python '+
+       'repository with multiple matching known modules', function (done) {
+      // 3 matching known dependencies
+      var requirements = 'elasticstack\n'+
+        'elasticsearch\n'+
+        'elong';
+      repoContentsMock.repoContentsDirectory('python', {});
+      repoContentsMock.repoContentsFile('python', {
+        name: 'requirements.txt',
+        path: 'requirements.txt',
+        content: (new Buffer(requirements, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(python);
+          expect(res.body.serviceDependencies).to.have.length(1);
+          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          done();
+        }
+      );
+    });
   });
 
   describe('Success conditions - ruby', function () {
@@ -290,6 +393,35 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(javascript_nodejs);
           expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('returns 1 inferred suggestion for JavaScript/NodeJS '+
+       'repository with multiple matching known modules', function (done) {
+      var packageFile = {
+        // 3 matching ElasticSearch dependencies
+        dependencies: {
+          'es': '0.0.0',
+          'es-cli': '0.0.0',
+          'esa': '0.0.0'
+        }
+      };
+      repoContentsMock.repoContentsDirectory('nodejs', {});
+      repoContentsMock.repoContentsFile('nodejs', {
+        name: 'package.json',
+        path: 'package.json',
+        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.serviceDependencies).to.have.length(1);
+          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
           done();
         }
       );
