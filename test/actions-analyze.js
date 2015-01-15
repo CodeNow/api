@@ -12,12 +12,14 @@ var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/analyze-hooks');
 var multi = require('./fixtures/multi-factory');
 var nock = require('nock');
+var fs = require('fs');
 
 //var repoMock = require('./fixtures/mocks/github/repo');
 var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
 
 var javascript_nodejs = 'nodejs';
 var python = 'python';
+var ruby_ror = 'ruby_ror';
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -198,27 +200,6 @@ describe('Analyze - /actions/analyze', function () {
       );
     });
 
-    it('returns 0 inferred suggestions for python '+
-       'repository with 0 dependencies in dependency file', function (done) {
-      var requirements = '';
-      repoContentsMock.repoContentsDirectory('python', {});
-      repoContentsMock.repoContentsFile('python', {
-        name: 'requirements.txt',
-        path: 'requirements.txt',
-        content: (new Buffer(requirements, 'utf8').toString('base64'))
-      });
-      ctx.request.get(
-        hooks.getSuccess,
-        function (err, res) {
-          expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(python);
-          expect(res.body.serviceDependencies).to.have.length(0);
-          done();
-        }
-      );
-    });
-
     it('returns 1 inferred suggestions for python '+
        'repository with multiple matching known modules', function (done) {
       // 3 matching known dependencies
@@ -243,9 +224,6 @@ describe('Analyze - /actions/analyze', function () {
         }
       );
     });
-  });
-
-  describe('Success conditions - ruby', function () {
   });
 
   describe('Success conditions - javascript', function () {
@@ -412,7 +390,7 @@ describe('Analyze - /actions/analyze', function () {
       repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
-        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+        content: (new Buffer(JSON.stringify(packageFile), 'utf8').toString('base64'))
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -426,6 +404,145 @@ describe('Analyze - /actions/analyze', function () {
         }
       );
     });
+  });
 
+  describe('Success conditions - ruby', function () {
+    it('returns 0 inferred suggestions for Ruby/RoR '+
+       'repository with 0 dependencies', function (done) {
+      var Gemfile = '';
+      repoContentsMock.repoContentsDirectory('ruby', {});
+      repoContentsMock.repoContentsFile('ruby', {
+        name: 'Gemfile',
+        path: 'Gemfile',
+        content: (new Buffer(Gemfile, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('returns 0 inferred suggestions for Ruby/RoR '+
+       'repository with 0 MATCHING dependencies', function (done) {
+      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_nomatch';
+      var Gemfile = fs.readFileSync(filePath);
+      repoContentsMock.repoContentsDirectory('ruby', {});
+      repoContentsMock.repoContentsFile('ruby', {
+        name: 'Gemfile',
+        path: 'Gemfile',
+        content: (Gemfile.toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('returns 1 inferred suggestion for Ruby/RoR '+
+       'repository with 1 matching dependency', function (done) {
+      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_cassandra';
+      var Gemfile = fs.readFileSync(filePath);
+      repoContentsMock.repoContentsDirectory('ruby', {});
+      repoContentsMock.repoContentsFile('ruby', {
+        name: 'Gemfile',
+        path: 'Gemfile',
+        content: (Gemfile.toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.serviceDependencies).to.have.length(1);
+          expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
+          done();
+        }
+      );
+    });
+
+    it('returns 3 inferred suggestions for Ruby/RoR '+
+       'repository with 3 matching dependency', function (done) {
+      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_3';
+      var Gemfile = fs.readFileSync(filePath);
+      repoContentsMock.repoContentsDirectory('ruby', {});
+      repoContentsMock.repoContentsFile('ruby', {
+        name: 'Gemfile',
+        path: 'Gemfile',
+        content: (Gemfile.toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.serviceDependencies).to.have.length(3);
+          expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
+          expect(res.body.serviceDependencies[1]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[2]).to.equal('HBase');
+          done();
+        }
+      );
+    });
+
+    it('returns 0 inferred suggestions for Ruby/RoR '+
+       'repository with dependency that is a substring of matching dependency', function (done) {
+      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_substring';
+      var Gemfile = fs.readFileSync(filePath);
+      repoContentsMock.repoContentsDirectory('ruby', {});
+      repoContentsMock.repoContentsFile('ruby', {
+        name: 'Gemfile',
+        path: 'Gemfile',
+        content: (Gemfile.toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('returns 1 inferred suggestion for Ruby/RoR '+
+       'repository with multiple matching known modules', function (done) {
+      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/'+
+        'gemfiles/sample_gemfile_match_multiple_cassandra';
+      var Gemfile = fs.readFileSync(filePath);
+      repoContentsMock.repoContentsDirectory('ruby', {});
+      repoContentsMock.repoContentsFile('ruby', {
+        name: 'Gemfile',
+        path: 'Gemfile',
+        content: (Gemfile.toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.serviceDependencies).to.have.length(1);
+          expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
+          done();
+        }
+      );
+    });
   });
 });
