@@ -47,7 +47,7 @@ describe('Notifier',  function () {
       message += '<' + headCommit.url + '|changes>';
       message += ' (init &amp; commit &amp; push) to CodeNow/api (develop) are ready.\n';
       message += '<http://runnable3.net/';
-      message += 'podviaznikov/boxSelection/api/develop/init%20%26%20commit%20%26%20push';
+      message += 'podviaznikov/boxSelection/api/develop/init%2520%2526%2520commit%2520%2526%2520push';
       message += '/a240edf982d467201845b3bf10ccbe16f6049ea9';
       message += '|Choose a server to run develop>.';
       expect(text).to.equal(message);
@@ -84,7 +84,7 @@ describe('Notifier',  function () {
       message += '<' + headCommit.url + '|changes>';
       message += ' (init &amp; commit &amp; push) to CodeNow/api (feature-1/fix) are ready.\n';
       message += '<http://runnable3.net/';
-      message += 'podviaznikov/boxSelection/api/feature-1%2Ffix/init%20%26%20commit%20%26%20push';
+      message += 'podviaznikov/boxSelection/api/feature-1%252Ffix/init%2520%2526%2520commit%2520%2526%2520push';
       message += '/a240edf982d467201845b3bf10ccbe16f6049ea9';
       message += '|Choose a server to run feature-1/fix>.';
       expect(text).to.equal(message);
@@ -169,8 +169,8 @@ describe('Notifier',  function () {
       var message = 'podviaznikov\'s ';
       message += '<a href="' + headCommit.url + '">changes</a>';
       message += ' (hey there) to Runnable/api (feature-1/fix) are ready.\n';
-      message += '<a href="http://runnable3.net/podviaznikov/boxSelection/api/feature-1%2Ffix';
-      message += '/hey%20there/a240edf982d467201845b3bf10ccbe16f6049ea9">Choose a server to run feature-1/fix</a>.';
+      message += '<a href="http://runnable3.net/podviaznikov/boxSelection/api/feature-1%252Ffix';
+      message += '/hey%2520there/a240edf982d467201845b3bf10ccbe16f6049ea9">Choose a server to run feature-1/fix</a>.';
       expect(text).to.equal(message);
       cb();
     };
