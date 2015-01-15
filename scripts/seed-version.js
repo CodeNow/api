@@ -9,7 +9,7 @@ var Build = require('models/mongo/build');
 var User = require('models/mongo/user');
 var async = require('async');
 var Runnable = require('runnable');
-var user = new Runnable(process.env.API_HOST);
+var user = new Runnable(process.env.FULL_API_DOMAIN);
 var mongoose = require('mongoose');
 var keypather = require('keypather')();
 
@@ -27,14 +27,20 @@ async.series([
     }
   },
   function (cb) {
+    var called = false;
     ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', function () {
       keypather.set(ctx.user, 'attrs.accounts.github.id', process.env.HELLO_RUNNABLE_GITHUB_ID);
-      cb();
+      if (!called) {
+        called = true;
+        cb();
+      } else {
+        console.log('WTF?');
+      }
     });
   },
   removeCurrentSourceTemplates,
-  createBlankSourceContext,
-  createFirstSourceContext
+  createFirstSourceContext,
+  createBlankSourceContext
 ], function (err) {
   console.log('done');
   if (err) { console.error(err); }
@@ -82,11 +88,11 @@ function createBlankSourceContext (cb) {
   ], cb);
 }
 
-function createFirstSourceContext (cb) {
+function createFirstSourceContext(finalCB) {
   var parallelFunctions = sources.map(function (model) {
-    return function (cb) {
+    return function (thisCb) {
       async.waterfall([
-        function removeExistingInstance(cb) {
+        function (cb) {
           Instance.find({
             'name': 'TEMPLATE_' + model.name,
             'owner': createdBy
@@ -96,6 +102,7 @@ function createFirstSourceContext (cb) {
               docs.forEach(function (doc) {
                 doc.remove();
               });
+              console.log('REMOVING INSTANCES', docs);
             }
             cb();
           })
@@ -108,7 +115,9 @@ function createFirstSourceContext (cb) {
             description: 'The most awesome dockerfile, EVER',
             isSource: true
           });
-          context.save(cb);
+          context.save(function (err, context, count) {
+            cb(err, context, count);
+          });
         },
         function newICV(context, count, cb) {
           console.log('newICV (', model.name, ')');
@@ -127,7 +136,7 @@ function createFirstSourceContext (cb) {
         createBuild,
         buildBuild,
         createInstance
-      ], cb);
+      ], thisCb);
     };
     function createBuild(version, cb) {
       console.log('createBuild (', model.name, ')');
@@ -163,7 +172,7 @@ function createFirstSourceContext (cb) {
 
   });
 
-  async.parallel(parallelFunctions, cb);
+  async.parallel(parallelFunctions, finalCB);
 }
 
 function newCV (context, icv, cb) {
