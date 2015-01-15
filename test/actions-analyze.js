@@ -14,7 +14,7 @@ var multi = require('./fixtures/multi-factory');
 var nock = require('nock');
 var fs = require('fs');
 
-//var repoMock = require('./fixtures/mocks/github/repo');
+var repoMock = require('./fixtures/mocks/github/repo');
 var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
 
 var javascript_nodejs = 'nodejs';
@@ -66,6 +66,64 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body.message).to.equal('unknown language/framework type');
           done();
       });
+    });
+  });
+
+  /**
+   * Testing backup method of language/dependency inferrence using GitHub Repo API
+   * Backup method used when no dependency file detected in project. We can infer language
+   * but no dependencies
+   */
+  describe('Success conditions - unknown', function () {
+    it('should successfully identify language as JavaScript w/ no package.json '+
+       'present & GitHub API indicates JavaScript', function (done) {
+      repoContentsMock.repoContentsDirectory('unknown', {});
+      repoMock.standardRepo({language: 'JavaScript'});
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('should successfully identify language as Python w/ no requirements.txt '+
+       'present & GitHub API indicates Python', function (done) {
+      repoContentsMock.repoContentsDirectory('unknown', {});
+      repoMock.standardRepo({language: 'Python'});
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(python);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('should successfully identify language as Ruby w/ no Gemfile '+
+       'present & GitHub API indicates Ruby', function (done) {
+      repoContentsMock.repoContentsDirectory('unknown', {});
+      repoMock.standardRepo({language: 'Ruby'});
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
     });
   });
 
