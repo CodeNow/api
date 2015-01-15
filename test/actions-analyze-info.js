@@ -50,10 +50,6 @@ describe('Analyze - /actions/analyze/info', function () {
       function (err, res) {
         expect(res.statusCode).to.equal(200);
         expect(res.body).to.be.an('object');
-        expect(res.body.supportedLanguageVersions).to.be.an('object');
-        expect(res.body.supportedLanguageVersions.node).to.be.an('array');
-        expect(res.body.supportedLanguageVersions.ruby).to.be.an('array');
-        expect(res.body.supportedLanguageVersions.python).to.be.an('array');
         done();
       }
     );
