@@ -196,7 +196,7 @@ function newCV (context, icv, cb) {
 var sources = [{
   name: 'NodeJs',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
-  'FROM node:<node-version>\n' +
+  'FROM node:<nodejs-version>\n' +
   '\n' +
   '# Open up ports on the server\n' +
   'EXPOSE <user-specified-ports>\n' +
