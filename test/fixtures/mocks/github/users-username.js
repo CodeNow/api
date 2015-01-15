@@ -3,9 +3,10 @@ var multiline = require('multiline');
 
 module.exports = function (userId, username, isActuallyAnOrg, fail) {
 
-  var body = fail ?
-    { 'message': 'Not found', 'documentation_url': 'http:no.can.do' } :
-    {
+  nock('https://api.github.com:443')
+    .filteringPath(/\/users\/[^\/]+\?.+/, '/users/' + username)
+    .get('/users/' + username)
+    .reply(fail ? 404 : 200, {
       'login': username,
       'id': userId,
       'avatar_url': 'https://avatars.githubusercontent.com/u/'+userId+'?',
@@ -36,13 +37,11 @@ module.exports = function (userId, username, isActuallyAnOrg, fail) {
       'following': 90,
       'created_at': '2011-02-27T01:20:41Z',
       'updated_at': '2014-06-24T23:28:16Z'
-    };
-
-  var headers = {
+    }, {
       server: 'GitHub.com',
       date: new Date().toString(),
       'content-type': 'application/json; charset=utf-8',
-      status: fail ? '404 Not Found' : '200 OK',
+      status: '200 OK',
       'x-ratelimit-limit': '5000',
       'x-ratelimit-remaining': '4969',
       'x-ratelimit-reset': '1403655035',
@@ -75,10 +74,5 @@ module.exports = function (userId, username, isActuallyAnOrg, fail) {
       'strict-transport-security': 'max-age=31536000',
       'x-content-type-options': 'nosniff',
       'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
-    };
-
-  nock('https://api.github.com:443')
-    .filteringPath(/\/users\/[^\/]+\?.+/, '/users/' + username)
-    .get('/users/' + username)
-    .reply(fail ? 404 : 200, body, headers);
+    });
 };

@@ -247,7 +247,7 @@ describe('GET /instances', function () {
         };
         // Make username fetch 404
         require('../../fixtures/mocks/github/users-username')(null, null, null, true);
-        ctx.user.fetchInstances(query, expects.error(404, /Not found/, done));
+        ctx.user.fetchInstances(query, expects.error(404, /failed/, done));
       });
       it('should require owner.github', function (done) {
         var query = {};

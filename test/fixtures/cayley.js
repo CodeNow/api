@@ -15,6 +15,7 @@ module.exports.start = function (cb) {
   if (process.env.CIRCLECI) {
     cayleyExec = './cayley_linux';
   }
+  module.exports.started = true;
   module.exports._cayley = spawn(cayleyExec,
     [
       'http',
@@ -25,24 +26,14 @@ module.exports.start = function (cb) {
       detached: true
     }
   );
-  module.exports._cayley.stderr.on('data', function (d) {
-    console.error(d.toString());
-    if (!module.exports.started) { cb(); }
-  });
-  module.exports._cayley.stdout.on('data', function () {
-    if (!module.exports.started) {
-      module.exports.started = true;
-      cb();
-    }
-  });
+  module.exports._cayley.stderr.on('data', function (d) { console.error(d.toString()); });
   module.exports._cayley.on('error', function (err) {
     console.error(err);
-    if (!module.exports.started) { cb(); }
   });
   module.exports._cayley.on('exit', function () {
-    if (!module.exports.started) { cb(); }
     module.exports.started = false;
   });
+  cb();
 };
 module.exports.stop = function (cb) {
   if (module.exports.started) {
