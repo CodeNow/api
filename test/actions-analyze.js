@@ -70,6 +70,28 @@ describe('Analyze - /actions/analyze', function () {
   describe('Success conditions - python', function () {
     it('returns 0 inferred suggestions for python '+
        'repository with 0 dependencies', function (done) {
+      var requirements = '';
+      repoContentsMock.repoContentsDirectory('python', {});
+      repoContentsMock.repoContentsFile('python', {
+        name: 'requirements.txt',
+        path: 'requirements.txt',
+        content: (new Buffer(requirements, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(python);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+   it('returns 0 inferred suggestions for python '+
+       'repository with 0 MATCHING dependencies', function (done) {
       var requirements = 'Django==1.3\n'+
         'stripe\n'+
         'py-bcrypt';
@@ -91,6 +113,33 @@ describe('Analyze - /actions/analyze', function () {
         }
       );
     });
+
+    it('returns 1 inferred suggestions for python '+
+       'repository with 1 matching dependency', function (done) {
+      var requirements = 'Django==1.3\n'+
+        'stripe\n'+
+        'Eve-Elastic\n'+ //matching dependency
+        'py-bcrypt';
+      repoContentsMock.repoContentsDirectory('python', {});
+      repoContentsMock.repoContentsFile('python', {
+        name: 'requirements.txt',
+        path: 'requirements.txt',
+        content: (new Buffer(requirements, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(python);
+          expect(res.body.serviceDependencies).to.have.length(1);
+
+          done();
+        }
+      );
+    });
+
   });
 
   describe('Success conditions - ruby', function () {
@@ -200,7 +249,7 @@ describe('Analyze - /actions/analyze', function () {
       );
     });
 
-    it('returns 1 inferred suggestion for JavaScript/NodeJS '+
+    it('returns 0 inferred suggestions for JavaScript/NodeJS '+
        'repository with dependency that is a substring of matching dependency', function (done) {
       var packageFile = {
         dependencies: {
@@ -219,8 +268,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(javascript_nodejs);
-          expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('mongodb');
+          expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
       );
