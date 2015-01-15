@@ -197,7 +197,7 @@ var sources = [{
   'WORKDIR /<repo-name>\n' +
   '\n' +
   '# Install dependencies\n' +
-  'RUN apt-get update /\n' +
+  'RUN apt-get update \n' +
   '<add-dependencies>\n' +
   '\n' +
   'RUN npm install\n' +
@@ -226,7 +226,7 @@ var sources = [{
   'WORKDIR /<repo-name>\n' +
   '\n' +
   '# Install dependencies\n' +
-  'RUN apt-get update /\n' +
+  'RUN apt-get update \n' +
   '<add-dependencies>\n' +
   '\n' +
   'RUN bundle install\n' +
@@ -254,7 +254,7 @@ var sources = [{
   'WORKDIR /<repo-name>\n' +
   '\n' +
   '# Install dependencies\n' +
-  'RUN apt-get update /\n' +
+  'RUN apt-get update \n' +
   '<add-dependencies>\n' +
   '\n' +
   'RUN bundle install\n' +
@@ -281,7 +281,7 @@ var sources = [{
   '# Install dependencies\n' +
   'RUN pip install -r /home/requirements.txt\n' +
   '\n' +
-  'RUN apt-get update /\n' +
+  'RUN apt-get update \n' +
   '<add-dependencies>\n' +
   '\n' +
   '# Command to start the app\n' +
