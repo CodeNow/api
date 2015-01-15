@@ -12,6 +12,8 @@ var uuid = require('uuid');
 
 var ctx = {};
 
+var HELLO_RUNNABLE_ACCESS_TOKEN = "e9bdfb84960b6d6aded1910a007c2ab716571c84";
+
 var createdBy = {
   github: 10224339
 };
@@ -21,7 +23,7 @@ console.log('process.env.MONGO\n', process.env.MONGO);
 
 async.series([
   ensureMongooseIsConnected,
-  function (cb) { ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', cb); },
+  function (cb) { ctx.user = user.githubLogin(HELLO_RUNNABLE_ACCESS_TOKEN, cb); },
   createContexts,
 ], function (err) {
   console.log(err, 'done');
@@ -53,6 +55,7 @@ function createContexts (cb) {
     function newICV (context, count, cb) {
       console.log('newICV (blank)');
       var icv = new InfraCodeVersion({
+        owner: createdBy,
         context: context._id
       });
       async.series([
