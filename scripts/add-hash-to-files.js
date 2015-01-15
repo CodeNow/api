@@ -6,18 +6,16 @@ var debug = require('debug')('script');
 var mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO);
 var async = require('async');
-var createCount = require('callback-count');
 
 async.waterfall([
   getAllInfra,
   eachInfra
   ], function(err) {
     if (err) {
-      console.log('ERROR', err.stack);
-      process.exit(1);
+      return console.log('ERROR', err.stack);
     }
     console.log('done everything went well');
-    process.exit(0);
+    mongoose.disconnect();
 });
 
 function getAllInfra (cb) {
@@ -45,22 +43,27 @@ function hashString(data, cb) {
 
 function eachInfra (infras, cb) {
   debug('eachInfra');
-  var count = createCount(1, cb);
+  if(!infras || infras.length === 0) {
+    return cb();
+  }
   // get all infracodes
-  infras.forEach(function(infra) {
+  async.eachLimit(infras, 1000, function (infra, cb) {
     debug('eachInfra:infra', infra._id);
     // for each file
-    infra.files.forEach(function(file) {
-      if(file.isDir || file.hash) { return; }
-      count.inc();
+
+    async.each(infra.files, function(file, cb) {
+      if(file.isDir || file.hash) { return cb(); }
+
       debug('eachInfra:infra:file', infra._id, file._id);
       var filePath = file.Key.substr(file.Key.indexOf('/source')+7);
       // get contance of file
       infra.bucket().getFile(filePath, file.VersionId, file.ETag, function (err, data) {
         if (err)  { return cb(err); }
+
         // create hash of file
         hashString(data.Body.toString(), function(err, hash) {
           if (err)  { return cb(err); }
+
           file.hash = hash;
           debug('eachInfra:infra:file:hash', infra._id, file._id, file.hash);
           // update mongo of file with hash
@@ -71,10 +74,9 @@ function eachInfra (infras, cb) {
             $set: {
               'files.$': file
             }
-          }, count.next);
+          }, cb);
         });
       });
-    });
-  });
-  count.next();
+    }, cb);
+  }, cb);
 }
