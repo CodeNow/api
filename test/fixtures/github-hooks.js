@@ -262,7 +262,7 @@ module.exports = function (data) {
           'organization': 'CodeNow'
         },
         'pusher': {
-          'name': 'bkendall',
+          'name': owner,
           'email': 'bryan.a.kendall@gmail.com'
         },
         'organization': {
@@ -276,7 +276,7 @@ module.exports = function (data) {
           'avatar_url': 'https://avatars.githubusercontent.com/u/2335750?v=2'
         },
         'sender': {
-          'login': 'bkendall',
+          'login': owner,
           'id': 160236,
           'avatar_url': 'https://avatars.githubusercontent.com/u/160236?v=2',
           'gravatar_id': '',
