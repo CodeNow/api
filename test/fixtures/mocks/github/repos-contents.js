@@ -12,7 +12,7 @@ var python_repo_module_file = require('./repos-contents/python-repo-module-file'
 var ruby_repo_module_file = require('./repos-contents/ruby-repo-module-file');
 */
 
-module.exports.repoContentsDirectory = function (type, opts) {
+module.exports.repoContentsDirectory = function (type) {
   setupMock(require('./repos-contents/'+type+'-repo-dir'));
 };
 

@@ -51,6 +51,6 @@
     "maxparams"     : 5,
     "maxdepth"      : 2,
     "maxstatements" : 50,
-    "maxcomplexity" : 7,
+    "maxcomplexity" : 5,
     "maxlen"        : 100
 }
