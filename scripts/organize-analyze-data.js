@@ -1,5 +1,9 @@
 'use strict';
 
+/**
+ * Script to keep JSON files neat / alphabetically organized
+ */
+
 var fs = require('fs');
 
 [
