@@ -123,6 +123,16 @@ function buildTheVersionTests (ctx) {
         });
 
 
+        it('should NOT build deduped with noCache flag', function(done) {
+          require('../fixtures/mocks/github/user')(ctx.user);
+          ctx.copiedCv.build({json: {noCache: true}}, function(err, body) {
+            if (err) { return done(err); }
+            expect(body._id).to.not.equal(ctx.cv.attrs._id);
+            expect(body.id).to.not.equal(ctx.cv.attrs.id);
+            expect(body.containerId).to.not.equal(ctx.cv.attrs.containerId);
+            done();
+          });
+        });
 
         describe('edited infra', function() {
           beforeEach(function (done) {
