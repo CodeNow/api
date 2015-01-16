@@ -206,7 +206,7 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it('should create a build for an existing branch if instance is locked', function (done) {
+      it('should create a build for an existing branch if instance is locked', {timeout: 500}, function (done) {
         ctx.instance.update({locked: true}, function (err) {
           if (err) { return done(err); }
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
