@@ -15,6 +15,9 @@ var HELLO_RUNNABLE_GITHUB_ID = 10224339;
 var seedInstances = [{
   name: 'mongodb',
   Dockerfile: 'FROM ubuntu\n'
+}, {
+  name: 'redis',
+  Dockerfile: 'From redis\n'
 }];
 
 function blockOnMongo (cb) {
@@ -32,8 +35,8 @@ async.eachSeries(seedInstances, function (instanceData, cb) {
     blockOnMongo,
 
     function authenticateUser (cb) {
-
-      ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', cb);
+      ctx.user = user.githubLogin(process.env.GH_TOKEN ||
+                                  'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', cb);
       //ctx.user = user.githubLogin(HELLO_RUNNABLE_ACCESS_TOKEN, cb);
     },
 
