@@ -2,3 +2,5 @@ node_modules
 scripts
 docs
 test/fixtures/cayley/
+test/fixtures/
+test/fixtures/mocks/github/repos-contents/
