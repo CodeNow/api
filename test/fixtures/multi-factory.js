@@ -33,7 +33,7 @@ module.exports = {
     var host = require('./host');
     var token = uuid();
     require('./mocks/github/action-auth')(token,
-                                          process.env.HELLO_RUNNABLE_GITHUB_ID);
+      process.env.HELLO_RUNNABLE_GITHUB_ID);
     var User = require('runnable');
     var user = new User(host);
     user.githubLogin(token, function (err) {
