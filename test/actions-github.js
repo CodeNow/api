@@ -244,7 +244,6 @@ describe('Github - /actions/github', function () {
               expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog[0].id)
                 .to.equal(options.json.head_commit.id);
               // wait until cv is build.
-              // setTimeout(function () {
               tailBuildStream(cvId, function (err) {
                  if (err) { return done(err); }
                 ContextVersion.findById(cvId, function (err, contextVersion) {
@@ -310,7 +309,6 @@ describe('Github - /actions/github', function () {
             expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog[0].id)
               .to.equal(options.json.head_commit.id);
             // wait until cv is build.
-            // setTimeout(function () {
             tailBuildStream(cvId, function (err) {
                if (err) { return done(err); }
               ContextVersion.findById(cvId, function (err, contextVersion) {
@@ -409,7 +407,6 @@ describe('Github - /actions/github', function () {
 
       ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
         if (err) { return done(err); }
-        console.log('instancesssss', instance2, ctx.instance.attrs.contextVersion);
         var acv = ctx.contextVersion.attrs.appCodeVersions[0];
         var data = {
           branch: 'master',
