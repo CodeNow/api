@@ -403,7 +403,7 @@ describe('Github - /actions/github', function () {
       });
     });
 
-    it('should create redeploy two instances with new build', {timeout: 6000}, function (done) {
+    it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
 
       ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
         if (err) { return done(err); }
