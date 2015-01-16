@@ -10,7 +10,7 @@ mongoose.connect(process.env.MONGO);
 
 var user = new Runnable('http://localhost:3030');
 var HELLO_RUNNABLE_ACCESS_TOKEN = "e9bdfb84960b6d6aded1910a007c2ab716571c84";
-var HELLO_RUNNABLE_GITHUB_ID = 10224339;
+var HELLO_RUNNABLE_GITHUB_ID = process.env.HELLO_RUNNABLE_GITHUB_ID; // 10224339;
 
 var seedInstances = [{
   name: 'mongodb',
@@ -35,9 +35,7 @@ async.eachSeries(seedInstances, function (instanceData, cb) {
     blockOnMongo,
 
     function authenticateUser (cb) {
-      ctx.user = user.githubLogin(process.env.GH_TOKEN ||
-                                  'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', cb);
-      //ctx.user = user.githubLogin(HELLO_RUNNABLE_ACCESS_TOKEN, cb);
+      ctx.user = user.githubLogin(HELLO_RUNNABLE_ACCESS_TOKEN, cb);
     },
 
     function createContext (cb) {

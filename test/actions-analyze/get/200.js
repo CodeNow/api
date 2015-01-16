@@ -17,9 +17,9 @@ var fs = require('fs');
 var repoMock = require('./fixtures/mocks/github/repo');
 var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
 
-var javascript_nodejs = 'nodejs';
+var javascriptNodeJS = 'nodejs';
 var python = 'python';
-var ruby_ror = 'ruby_ror';
+var rubyRor = 'ruby_ror';
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -46,29 +46,6 @@ describe('Analyze - /actions/analyze', function () {
   });
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
-  describe('Error conditions', function () {
-    it('should return 400 code without a "repo" query parameter', function (done) {
-      ctx.request.get(
-        hooks.getErrorNoQueryParam,
-        function (err, res) {
-          expect(res.statusCode).to.equal(400);
-          expect(res.body.message).to.equal('query parameter "repo" must be a string');
-          done();
-      });
-    });
-
-    it('should return 400 code for repository with no recognized dependency file', function (done) {
-      repoContentsMock.repoContentsDirectory('python', {});
-      ctx.request.get(
-        hooks.getSuccess,
-        function (err, res) {
-          expect(res.statusCode).to.equal(400);
-          expect(res.body.message).to.equal('unknown language/framework type');
-          done();
-      });
-    });
-  });
-
   /**
    * Testing backup method of language/dependency inferrence using GitHub Repo API
    * Backup method used when no dependency file detected in project. We can infer language
@@ -85,7 +62,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
@@ -119,7 +96,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
@@ -302,7 +279,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
@@ -328,7 +305,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
@@ -353,7 +330,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(1);
           done();
         }
@@ -381,7 +358,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(3);
           done();
         }
@@ -406,7 +383,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
@@ -427,7 +404,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
@@ -455,7 +432,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(javascript_nodejs);
+          expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(1);
           expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
           done();
@@ -480,7 +457,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
@@ -502,7 +479,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
@@ -524,7 +501,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(1);
           expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
           done();
@@ -547,7 +524,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(3);
           expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
           expect(res.body.serviceDependencies[1]).to.equal('ElasticSearch');
@@ -572,7 +549,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(0);
           done();
         }
@@ -595,7 +572,7 @@ describe('Analyze - /actions/analyze', function () {
         function (err, res) {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(ruby_ror);
+          expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(1);
           expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
           done();

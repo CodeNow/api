@@ -2,6 +2,8 @@
 
 /**
  * Script to keep JSON files neat / alphabetically organized
+ * usage:
+ *   node ./organize-analyze-data.js
  */
 
 var fs = require('fs');
