@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -72,7 +72,7 @@
     "request": "2.42.0",
     "rimraf": "^2.2.8",
     "rollbar": "^0.3.13",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.38.12",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.38.16",
     "s3-stream-upload": "0.0.6",
     "simple-api-client": "^0.5.9",
     "slack-notify": "0.1.3",

@@ -123,6 +123,16 @@ function buildTheVersionTests (ctx) {
         });
 
 
+        it('should NOT build deduped with noCache flag', function(done) {
+          require('../fixtures/mocks/github/user')(ctx.user);
+          ctx.copiedCv.build({json: {noCache: true}}, function(err, body) {
+            if (err) { return done(err); }
+            expect(body._id).to.not.equal(ctx.cv.attrs._id);
+            expect(body.id).to.not.equal(ctx.cv.attrs.id);
+            expect(body.containerId).to.not.equal(ctx.cv.attrs.containerId);
+            done();
+          });
+        });
 
         describe('edited infra', function() {
           beforeEach(function (done) {
@@ -244,6 +254,25 @@ function buildTheVersionTests (ctx) {
                       if (err) { return done(err); }
                       expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build);
                       expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId);
+                      expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+            it('should NOT dedupe whitespace changes when noCache: ' + fileInfo, function(done) {
+              var rootDir = ctx.cv2.rootDir;
+              rootDir.contents.fetch(function (err) {
+                if (err) { return done(err); }
+                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(err){
+                  if (err) { return done(err); }
+                  ctx.cv2.build({json: {noCache: true}}, function (err) {
+                    if (err) { return done(err); }
+                    waitForCvBuildToComplete(ctx.cv2, ctx.user2, function(err) {
+                      if (err) { return done(err); }
+                      expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build);
+                      expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId);
                       expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
                       done();
                     });
