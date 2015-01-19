@@ -1,3 +1,13 @@
+/*
+ * This script should be run whenever the database needs to be repopulated with
+ * the seed contexts
+ * `NODE_ENV=development NODE_PATH=./lib node scripts/seed-version.js`
+ *
+ * NOTE: This script will attempt to delete any existing source contexts, as well as their
+ * instances.  It should output what it's deleting, so be sure to verify nothing else was targeted
+ *
+ */
+
 'use strict';
 
 require('loadenv')();
@@ -88,6 +98,12 @@ function createBlankSourceContext (cb) {
   ], cb);
 }
 
+/**
+ * This will create everything for each source context.  It takes the list at the bottom, and
+ * generates source contexts for them, and makes the dockerfile.  Then it creates an instance
+ * for them so they can be accessed for editing by anyone logging into the HelloRunnable user.
+ * @param finalCB
+ */
 function createFirstSourceContext(finalCB) {
   var parallelFunctions = sources.map(function (model) {
     return function (thisCb) {
