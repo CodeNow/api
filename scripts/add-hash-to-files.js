@@ -52,7 +52,7 @@ function eachInfra (infras, cb) {
     // for each file
 
     async.each(infra.files, function(file, cb) {
-      if(file.isDir || file.hash) { return cb(); }
+      if(file.isDir) { return cb(); }
 
       debug('eachInfra:infra:file', infra._id, file._id);
       var filePath = file.Key.substr(file.Key.indexOf('/source')+7);
