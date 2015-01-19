@@ -7,15 +7,15 @@ var describe = Lab.experiment;
 var expect = Lab.expect;
 var it = Lab.test;
 
-var api = require('./fixtures/api-control');
-var generateKey = require('./fixtures/key-factory');
-var hooks = require('./fixtures/analyze-hooks');
-var multi = require('./fixtures/multi-factory');
+var api = require('../../fixtures/api-control');
+var generateKey = require('../../fixtures/key-factory');
+var hooks = require('../../fixtures/analyze-hooks');
+var multi = require('../../fixtures/multi-factory');
 var nock = require('nock');
 var fs = require('fs');
 
-var repoMock = require('./fixtures/mocks/github/repo');
-var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
+var repoMock = require('../../fixtures/mocks/github/repo');
+var repoContentsMock = require('../../fixtures/mocks/github/repos-contents');
 
 var javascriptNodeJS = 'nodejs';
 var python = 'python';
@@ -34,8 +34,8 @@ describe('Analyze - /actions/analyze', function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  before(require('./fixtures/mocks/api-client').setup);
-  after(require('./fixtures/mocks/api-client').clean);
+  before(require('../../fixtures/mocks/api-client').setup);
+  after(require('../../fixtures/mocks/api-client').clean);
   beforeEach(generateKey);
   beforeEach(function (done) {
     multi.createUser(function (err, user) {
@@ -44,7 +44,7 @@ describe('Analyze - /actions/analyze', function () {
       done();
     });
   });
-  afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
 
   /**
    * Testing backup method of language/dependency inferrence using GitHub Repo API
@@ -466,7 +466,7 @@ describe('Analyze - /actions/analyze', function () {
 
     it('returns 0 inferred suggestions for Ruby/RoR '+
        'repository with 0 MATCHING dependencies', function (done) {
-      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_nomatch';
+      var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_nomatch';
       var Gemfile = fs.readFileSync(filePath);
       repoContentsMock.repoContentsDirectory('ruby', {});
       repoContentsMock.repoContentsFile('ruby', {
@@ -488,7 +488,7 @@ describe('Analyze - /actions/analyze', function () {
 
     it('returns 1 inferred suggestion for Ruby/RoR '+
        'repository with 1 matching dependency', function (done) {
-      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_cassandra';
+      var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_cassandra';
       var Gemfile = fs.readFileSync(filePath);
       repoContentsMock.repoContentsDirectory('ruby', {});
       repoContentsMock.repoContentsFile('ruby', {
@@ -511,7 +511,7 @@ describe('Analyze - /actions/analyze', function () {
 
     it('returns 3 inferred suggestions for Ruby/RoR '+
        'repository with 3 matching dependency', function (done) {
-      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_3';
+      var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_3';
       var Gemfile = fs.readFileSync(filePath);
       repoContentsMock.repoContentsDirectory('ruby', {});
       repoContentsMock.repoContentsFile('ruby', {
@@ -536,7 +536,7 @@ describe('Analyze - /actions/analyze', function () {
 
     it('returns 0 inferred suggestions for Ruby/RoR '+
        'repository with dependency that is a substring of matching dependency', function (done) {
-      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_substring';
+      var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_substring';
       var Gemfile = fs.readFileSync(filePath);
       repoContentsMock.repoContentsDirectory('ruby', {});
       repoContentsMock.repoContentsFile('ruby', {
@@ -558,7 +558,7 @@ describe('Analyze - /actions/analyze', function () {
 
     it('returns 1 inferred suggestion for Ruby/RoR '+
        'repository with multiple matching known modules', function (done) {
-      var filePath = __dirname + '/fixtures/mocks/github/repos-contents/'+
+      var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/'+
         'gemfiles/sample_gemfile_match_multiple_cassandra';
       var Gemfile = fs.readFileSync(filePath);
       repoContentsMock.repoContentsDirectory('ruby', {});

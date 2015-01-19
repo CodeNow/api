@@ -7,13 +7,13 @@ var describe = Lab.experiment;
 var expect = Lab.expect;
 var it = Lab.test;
 
-var api = require('./fixtures/api-control');
-var generateKey = require('./fixtures/key-factory');
-var hooks = require('./fixtures/analyze-hooks');
-var multi = require('./fixtures/multi-factory');
+var api = require('../../fixtures/api-control');
+var generateKey = require('../../fixtures/key-factory');
+var hooks = require('../../fixtures/analyze-hooks');
+var multi = require('../../fixtures/multi-factory');
 var nock = require('nock');
 
-var repoContentsMock = require('./fixtures/mocks/github/repos-contents');
+var repoContentsMock = require('../../fixtures/mocks/github/repos-contents');
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -28,8 +28,8 @@ describe('Analyze - /actions/analyze', function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  before(require('./fixtures/mocks/api-client').setup);
-  after(require('./fixtures/mocks/api-client').clean);
+  before(require('../../fixtures/mocks/api-client').setup);
+  after(require('../../fixtures/mocks/api-client').clean);
   beforeEach(generateKey);
   beforeEach(function (done) {
     multi.createUser(function (err, user) {
@@ -38,7 +38,7 @@ describe('Analyze - /actions/analyze', function () {
       done();
     });
   });
-  afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
 
   describe('Error conditions', function () {
     it('should return 400 code without a "repo" query parameter', function (done) {
@@ -56,6 +56,7 @@ describe('Analyze - /actions/analyze', function () {
       ctx.request.get(
         hooks.getSuccess,
         function (err, res) {
+          console.log(res.body);
           expect(res.statusCode).to.equal(400);
           expect(res.body.message).to.equal('unknown language/framework type');
           done();

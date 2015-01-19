@@ -7,10 +7,10 @@ var describe = Lab.experiment;
 var expect = Lab.expect;
 var it = Lab.test;
 
-var api = require('./fixtures/api-control');
-var generateKey = require('./fixtures/key-factory');
-var hooks = require('./fixtures/analyze-info-hooks');
-var multi = require('./fixtures/multi-factory');
+var api = require('../../fixtures/api-control');
+var generateKey = require('../../fixtures/key-factory');
+var hooks = require('../../fixtures/analyze-info-hooks');
+var multi = require('../../fixtures/multi-factory');
 var nock = require('nock');
 
 /*
@@ -32,8 +32,8 @@ describe('Analyze - /actions/analyze/info', function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  before(require('./fixtures/mocks/api-client').setup);
-  after(require('./fixtures/mocks/api-client').clean);
+  before(require('../../fixtures/mocks/api-client').setup);
+  after(require('../../fixtures/mocks/api-client').clean);
   beforeEach(generateKey);
   beforeEach(function (done) {
     multi.createUser(function (err, user) {
@@ -42,7 +42,7 @@ describe('Analyze - /actions/analyze/info', function () {
       done();
     });
   });
-  afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
 
   it('returns formatted language support information', function (done) {
     ctx.request.get(
