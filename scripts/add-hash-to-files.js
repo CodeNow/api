@@ -24,7 +24,7 @@ function getAllInfra (cb) {
     'files': {
       $elemMatch: {
         isDir: false,
-        hash: { $exists: false }
+        hash: { $regex: /^\$/ } // find only bcrypt files
       }
     }
   }, cb);
