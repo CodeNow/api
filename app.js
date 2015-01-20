@@ -24,7 +24,7 @@ Api.prototype.start = function (cb) {
   // start github ssh key generator
   keyGen.start();
   // start sending socket count
-  dogstatsd.captureSocketCount();
+  dogstatsd.monitorStart();
 
   var count = createCount(callback);
   // connect to mongoose
@@ -69,6 +69,8 @@ Api.prototype.stop = function (cb) {
     var count = createCount(cb);
     // stop github ssh key generator
     keyGen.stop();
+    // stop sending socket count
+    dogstatsd.monitorStart();
     // express server
     mongooseControl.stop(count.inc().next);
     events.close(count.inc().next);
