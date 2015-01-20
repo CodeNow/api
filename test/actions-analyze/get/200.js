@@ -11,7 +11,6 @@ var api = require('../../fixtures/api-control');
 var generateKey = require('../../fixtures/key-factory');
 var hooks = require('../../fixtures/analyze-hooks');
 var multi = require('../../fixtures/multi-factory');
-var nock = require('nock');
 var fs = require('fs');
 
 var repoMock = require('../../fixtures/mocks/github/repo');
@@ -20,14 +19,6 @@ var repoContentsMock = require('../../fixtures/mocks/github/repos-contents');
 var javascriptNodeJS = 'nodejs';
 var python = 'python';
 var rubyRor = 'ruby_ror';
-
-before(function (done) {
-  nock('http://runnable.com:80')
-    .persist()
-    .get('/')
-    .reply(200);
-  done();
-});
 
 describe('Analyze - /actions/analyze', function () {
   var ctx = {};
