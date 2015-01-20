@@ -11,6 +11,7 @@ var Boom = require('dat-middleware').Boom;
 var activeApi = require('models/redis/active-api');
 var mongooseControl = require('models/mongo/mongoose-control');
 var envIs = require('101/env-is');
+var dogstatsd = require('models/datadog');
 
 if (process.env.NEWRELIC_KEY) {
   require('newrelic');
@@ -22,6 +23,9 @@ Api.prototype.start = function (cb) {
   debug('start');
   // start github ssh key generator
   keyGen.start();
+  // start sending socket count
+  dogstatsd.monitorStart();
+
   var count = createCount(callback);
   // connect to mongoose
   mongooseControl.start(count.inc.next);
@@ -65,6 +69,8 @@ Api.prototype.stop = function (cb) {
     var count = createCount(cb);
     // stop github ssh key generator
     keyGen.stop();
+    // stop sending socket count
+    dogstatsd.monitorStart();
     // express server
     mongooseControl.stop(count.inc().next);
     events.close(count.inc().next);
