@@ -59,9 +59,7 @@ describe('Github - /actions/github', function () {
     var ctx = {};
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
-      /* jshint -W069 */
-      delete process.env['ENABLE_BUILDS_ON_GIT_PUSH'];
-      /* jshint +W069 */
+      delete process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       done();
     });
     afterEach(function (done) {
