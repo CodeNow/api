@@ -121,7 +121,7 @@ function createFirstSourceContext(finalCB) {
               console.log('REMOVING INSTANCES', docs);
             }
             cb();
-          })
+          });
         },
        function newContext(cb) {
           console.log('newContext (', model.name, ')');
@@ -175,7 +175,7 @@ function createFirstSourceContext(finalCB) {
       console.log('createInstance (', model.name, ')');
       var instance = ctx.user.createInstance({
         build: build.id(),
-        name: 'TEMPLATE_' + model.name,
+        name: ((model.isTemplate) ? 'TEMPLATE_' : '') + model.name,
         owner: createdBy
       }, function (err, newInstance) {
         if (err) {
@@ -210,7 +210,8 @@ function newCV (context, icv, cb) {
   });
 }
 var sources = [{
-  name: 'TEMPLATE_NodeJs',
+  name: 'NodeJs',
+  isTemplate: true,
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
   'FROM node:<nodejs-version>\n' +
   '\n' +
@@ -230,7 +231,8 @@ var sources = [{
   '# Command to start the app\n' +
   'CMD <start-command>\n'
 }, {
-  name: 'TEMPLATE_Rails',
+  name: 'Rails',
+  isTemplate: true,
   body: 'FROM ruby:<ruby-version>\n' +
   '# Open up ports on the server\n' +
   'EXPOSE <user-specified-ports>\n' +
@@ -262,7 +264,8 @@ var sources = [{
   '# Command to start the app\n' +
   'CMD <start-command>\n'
 }, {
-  name: 'TEMPLATE_Ruby',
+  name: 'Ruby',
+  isTemplate: true,
   body: 'FROM ruby:<ruby-version>\n' +
   '# Open up ports on the server\n' +
   'EXPOSE <user-specified-ports>\n' +
@@ -290,7 +293,8 @@ var sources = [{
   '# Command to start the app\n' +
   'CMD <start-command>\n'
 }, {
-  name: 'TEMPLATE_Python',
+  name: 'Python',
+  isTemplate: true,
   body: 'FROM python:<python-version>\n' +
   '\n' +
   '# Open up ports on the server\n' +
