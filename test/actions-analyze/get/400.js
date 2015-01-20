@@ -4,15 +4,15 @@ var afterEach = Lab.afterEach;
 var before = Lab.before;
 var beforeEach = Lab.beforeEach;
 var describe = Lab.experiment;
-var expect = Lab.expect;
-var it = Lab.test;
+//var expect = Lab.expect;
+//var it = Lab.test;
 
 var api = require('../../fixtures/api-control');
 var generateKey = require('../../fixtures/key-factory');
-var hooks = require('../../fixtures/analyze-hooks');
+//var hooks = require('../../fixtures/analyze-hooks');
 var multi = require('../../fixtures/multi-factory');
 
-var repoContentsMock = require('../../fixtures/mocks/github/repos-contents');
+//var repoContentsMock = require('../../fixtures/mocks/github/repos-contents');
 
 describe('Analyze - /actions/analyze', function () {
   var ctx = {};

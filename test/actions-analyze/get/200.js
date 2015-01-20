@@ -185,7 +185,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(python);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
           done();
         }
       );
@@ -214,7 +214,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(python);
           expect(res.body.serviceDependencies).to.have.length(3);
-          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
           expect(res.body.serviceDependencies[1]).to.equal('memcached');
           expect(res.body.serviceDependencies[2]).to.equal('mongodb');
           done();
@@ -268,7 +268,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(python);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
           done();
         }
       );
@@ -448,7 +448,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
           done();
         }
       );
@@ -517,7 +517,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
+          expect(res.body.serviceDependencies[0]).to.equal('cassandra');
           done();
         }
       );
@@ -540,9 +540,9 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(3);
-          expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
-          expect(res.body.serviceDependencies[1]).to.equal('ElasticSearch');
-          expect(res.body.serviceDependencies[2]).to.equal('HBase');
+          expect(res.body.serviceDependencies[0]).to.equal('cassandra');
+          expect(res.body.serviceDependencies[1]).to.equal('elasticsearch');
+          expect(res.body.serviceDependencies[2]).to.equal('hbase');
           done();
         }
       );
@@ -588,7 +588,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
+          expect(res.body.serviceDependencies[0]).to.equal('cassandra');
           done();
         }
       );
