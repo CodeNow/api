@@ -1,6 +1,6 @@
 {
- "Cassandra": [],
- "ElasticSearch": [
+ "cassandra": [],
+ "elasticsearch": [
   "backbone-db-elasticsearch",
   "baio-es",
   "bungie",
@@ -56,8 +56,7 @@
   "winston-zeromq-elasticsearch",
   "yal-elasticsearch"
  ],
- "HBase": [],
- "Nginx": [],
+ "hbase": [],
  "memcached": [
   "catbox-memcached",
   "connect-heroku-memcached",
@@ -233,6 +232,7 @@
   "waterline-mysql",
   "winston-mysql-transport"
  ],
+ "nginx": [],
  "postgresql": [
   "FastLegS",
   "bestgres",

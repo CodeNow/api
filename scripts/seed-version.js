@@ -110,7 +110,7 @@ function createFirstSourceContext(finalCB) {
       async.waterfall([
         function (cb) {
           Instance.find({
-            'name': 'TEMPLATE_' + model.name,
+            'name': model.name,
             'owner': createdBy
           }, function (err, docs) {
             console.log('REMOVING existing instance for (', model.name, ')');
@@ -123,7 +123,7 @@ function createFirstSourceContext(finalCB) {
             cb();
           })
         },
-        function newContext(cb) {
+       function newContext(cb) {
           console.log('newContext (', model.name, ')');
           var context = new Context({
             owner: createdBy,
@@ -210,7 +210,7 @@ function newCV (context, icv, cb) {
   });
 }
 var sources = [{
-  name: 'NodeJs',
+  name: 'TEMPLATE_NodeJs',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
   'FROM node:<nodejs-version>\n' +
   '\n' +
@@ -230,7 +230,7 @@ var sources = [{
   '# Command to start the app\n' +
   'CMD <start-command>\n'
 }, {
-  name: 'Rails',
+  name: 'TEMPLATE_Rails',
   body: 'FROM ruby:<ruby-version>\n' +
   '# Open up ports on the server\n' +
   'EXPOSE <user-specified-ports>\n' +
@@ -262,7 +262,7 @@ var sources = [{
   '# Command to start the app\n' +
   'CMD <start-command>\n'
 }, {
-  name: 'Ruby',
+  name: 'TEMPLATE_Ruby',
   body: 'FROM ruby:<ruby-version>\n' +
   '# Open up ports on the server\n' +
   'EXPOSE <user-specified-ports>\n' +
@@ -290,7 +290,7 @@ var sources = [{
   '# Command to start the app\n' +
   'CMD <start-command>\n'
 }, {
-  name: 'Python',
+  name: 'TEMPLATE_Python',
   body: 'FROM python:<python-version>\n' +
   '\n' +
   '# Open up ports on the server\n' +
@@ -311,4 +311,42 @@ var sources = [{
   '\n' +
   '# Command to start the app\n' +
   'CMD <start-command>\n'
+}, {
+  name: 'PostgreSQL',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/postgres/tags/manage/\n'+
+    'FROM postgres:9.4\n'+
+    '\n'+
+    '# Set recommended environment variables\n'+
+    'ENV POSTGRES_USER postgres\n'+
+    'ENV POSTGRES_PASSWORD postgres\n'+
+    '\n'+
+    '# Open port 5432 on the server\n'+
+    'EXPOSE 5432\n'
+}, {
+  name: 'MySQL',
+  body: 'FROM tutum/mysql\n'
+}, {
+  name: 'MongoDB',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/mongo/tags/manage/\n'+
+    'FROM mongo:2.8.0\n'
+}, {
+  name: 'Redis',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/redis/tags/manage/\n'+
+    'FROM redis:2.8.9\n'
+}, {
+  name: 'ElasticSearch',
+  body: '# Full details of this base image can be found here: https://registry.hub.docker.com/u/dockerfile/elasticsearch/\n'+
+    'FROM dockerfile/elasticsearch\n'+
+    '# Add seed data (please drag and drop file into the build area’s file browser)\n'+
+    '#ADD es_seed_data.tar /data\n'
+}, {
+  name: 'Nginx',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/nginx/tags/manage/\n'+
+    'FROM nginx:1.7.9\n'+
+    '\n'+
+    'COPY <repo-name> /usr/share/nginx/html\n'
+}, {
+  name: 'RabbitMQ',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/rabbitmq/tags/manage/\n'+
+    'FROM rabbitmq:3.4.2\n'
 }];

@@ -18,9 +18,10 @@ var fs = require('fs');
   var json = require(__dirname + '/../lib/routes/actions/analyze/data/suggestable-services-'+lang);
   var fjson = {};
   Object.keys(json).sort().forEach(function (key) {
-    fjson[key] = json[key];
-    fjson[key] = fjson[key].sort();
-    fjson[key] = fjson[key].map(function (val) {
+    var lowerCaseKey = key.toLowerCase();
+    fjson[lowerCaseKey] = json[key];
+    fjson[lowerCaseKey] = fjson[lowerCaseKey].sort();
+    fjson[lowerCaseKey] = fjson[lowerCaseKey].map(function (val) {
       return val.replace(' ', '');
     });
     //
