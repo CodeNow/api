@@ -31,6 +31,9 @@ describe('Analyze - /actions/analyze', function () {
   });
   afterEach(require('../../fixtures/clean-ctx')(ctx));
 
+  //tests below run in 200.js due to very strange condition where
+  //they fail if separated into this file
+  /*
   describe('Error conditions', function () {
     it('should return 400 code without a "repo" query parameter', function (done) {
       ctx.request.get(
@@ -54,4 +57,5 @@ describe('Analyze - /actions/analyze', function () {
       });
     });
   });
+  */
 });

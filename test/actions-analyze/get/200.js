@@ -37,6 +37,29 @@ describe('Analyze - /actions/analyze', function () {
   });
   afterEach(require('../../fixtures/clean-ctx')(ctx));
 
+  describe('Error conditions', function () {
+    it('should return 400 code without a "repo" query parameter', function (done) {
+      ctx.request.get(
+        hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(400);
+          expect(res.body.message).to.equal('query parameter "repo" must be a string');
+          done();
+      });
+    });
+
+    it('should return 400 code for repository with no recognized dependency file', function (done) {
+      repoContentsMock.repoContentsDirectory('python', {});
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(400);
+          expect(res.body.message).to.equal('unknown language/framework type');
+          done();
+      });
+    });
+  });
+
   /**
    * Testing backup method of language/dependency inferrence using GitHub Repo API
    * Backup method used when no dependency file detected in project. We can infer language
