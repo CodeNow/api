@@ -244,4 +244,3 @@ function mocksForMethods (Class, mockMap) {
     });
   });
 }
-
