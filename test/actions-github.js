@@ -369,13 +369,13 @@ describe('Github - /actions/github', function () {
       var options = hooks(data).push;
       require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
       require('./fixtures/mocks/docker/container-id-attach')();
-      request.post(options, function (err, res, instances) {
+      request.post(options, function (err, res, instancesIds) {
         if (err) { return done(err); }
         expect(res.statusCode).to.equal(201);
-        expect(instances).to.be.okay;
-        expect(instances).to.be.an('array');
-        expect(instances).to.have.a.lengthOf(1);
-        expect(instances[0].shortHash).to.equal(ctx.instance.id());
+        expect(instancesIds).to.be.okay;
+        expect(instancesIds).to.be.an('array');
+        expect(instancesIds).to.have.a.lengthOf(1);
+        expect(instancesIds[0]).to.equal(ctx.instance.id());
         setTimeout(function () {
           var expected = {
             'contextVersion.build.started': exists,
@@ -415,14 +415,14 @@ describe('Github - /actions/github', function () {
         var options = hooks(data).push;
         require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
         require('./fixtures/mocks/docker/container-id-attach')();
-        request.post(options, function (err, res, instances) {
+        request.post(options, function (err, res, instancesIds) {
           if (err) { return done(err); }
           expect(res.statusCode).to.equal(201);
-          expect(instances).to.be.okay;
-          expect(instances).to.be.an('array');
-          expect(instances).to.have.a.lengthOf(2);
-          expect(instances[0].shortHash).to.equal(ctx.instance.id());
-          expect(instances[1].shortHash).to.equal(instance2.shortHash);
+          expect(instancesIds).to.be.okay;
+          expect(instancesIds).to.be.an('array');
+          expect(instancesIds).to.have.a.lengthOf(2);
+          expect(instancesIds[0].shortHash).to.equal(ctx.instance.id());
+          expect(instancesIds[1].shortHash).to.equal(instance2.shortHash);
 
           setTimeout(function () {
             var expected = {
