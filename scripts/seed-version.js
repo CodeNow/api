@@ -48,6 +48,15 @@ async.series([
       }
     });
   },
+  function (cb) {
+    User.updateByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, {
+      $set: {
+        permissionLevel: 5
+      }
+    }, function (err) {
+      cb(err);
+    });
+  },
   removeCurrentSourceTemplates,
   createFirstSourceContext,
   createBlankSourceContext
@@ -203,7 +212,7 @@ function createFirstSourceContext(finalCB) {
 
   });
 
-  async.series(parallelFunctions, finalCB);
+  async.parallel(parallelFunctions, finalCB);
 }
 
 function newCV (context, icv, cb) {
