@@ -421,8 +421,8 @@ describe('Github - /actions/github', function () {
           expect(instancesIds).to.be.okay;
           expect(instancesIds).to.be.an('array');
           expect(instancesIds).to.have.a.lengthOf(2);
-          expect(instancesIds[0].shortHash).to.equal(ctx.instance.attrs._id);
-          expect(instancesIds[1].shortHash).to.equal(instance2.attrs._id);
+          expect(instancesIds).to.equal(ctx.instance.attrs._id);
+          expect(instancesIds).to.equal(instance2.attrs._id);
 
           setTimeout(function () {
             var expected = {
