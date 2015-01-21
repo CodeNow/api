@@ -1,6 +1,6 @@
 'use strict';
 require('loadenv')();
-var bcrypt = require('bcrypt');
+var crypto = require('crypto');
 var InfraCodeVersion = require('models/mongo/infra-code-version.js');
 var debug = require('debug')('script');
 var mongoose = require('mongoose');
@@ -24,21 +24,21 @@ function getAllInfra (cb) {
     'files': {
       $elemMatch: {
         isDir: false,
-        hash: { $exists: false }
+        hash: { $regex: /^\$/ } // find only bcrypt files
       }
     }
   }, cb);
 }
 
 function hashString(data, cb) {
-  debug('hashString');
-  // salt from require('bcrypt'.enSaltSync(1);
-  var salt = '$2a$04$fLg/VU5eeDAUARmPVfyUo.';
-  bcrypt.hash(data
+  var md5 = crypto.createHash('md5');
+  data = data
     .replace(/[\s\uFEFF\xA0]+\n/g, '\n')   // trim whitespace after line
     .replace(/\n[\s\uFEFF\xA0]*\n/g, '\n') // remove blank lines
     .replace(/^[\s\uFEFF\xA0]*\n/g, '') // remove start of file blank lines
-    .replace(/[\s\uFEFF\xA0]+$/g, '\n'), salt, cb);
+    .replace(/[\s\uFEFF\xA0]+$/g, '\n');
+  var hash = md5.update(data, 'utf8').digest('hex');
+  cb(null, hash);
 }
 
 function eachInfra (infras, cb) {
@@ -52,7 +52,7 @@ function eachInfra (infras, cb) {
     // for each file
 
     async.each(infra.files, function(file, cb) {
-      if(file.isDir || file.hash) { return cb(); }
+      if(file.isDir) { return cb(); }
 
       debug('eachInfra:infra:file', infra._id, file._id);
       var filePath = file.Key.substr(file.Key.indexOf('/source')+7);

@@ -1,10 +1,11 @@
 var url = require('url');
 
-module.exports = function (cv) {
-  var fullRepo = cv ? cv.appCodeVersions[0].repo : '';
-  var owner = cv ? fullRepo.split('/')[0] : 'bkendall';
-  var repo = cv ? fullRepo.split('/')[1] : 'flaming-octo-nemesis';
-  var branch = cv ? cv.appCodeVersions[0].branch : 'master';
+module.exports = function (data) {
+  data = data || {};
+  var fullRepo = data.repo || 'podviaznikov/hellonode';
+  var owner = data.owner || 'podviaznikov';
+  var repo = data.name || 'hellonode';
+  var branch = data.branch || 'master';
   return {
     ping: {
       url: url.format({
@@ -135,6 +136,25 @@ module.exports = function (cv) {
         pusher: {
           name: owner,
           email: 'bryan.a.kendall@gmail.com'
+        },
+        sender: {
+          'login': owner,
+          'id': 160236,
+          'avatar_url': 'https://avatars.githubusercontent.com/u/160236?v=2',
+          'gravatar_id': '',
+          'url': 'https://api.github.com/users/bkendall',
+          'html_url': 'https://github.com/bkendall',
+          'followers_url': 'https://api.github.com/users/bkendall/followers',
+          'following_url': 'https://api.github.com/users/bkendall/following{/other_user}',
+          'gists_url': 'https://api.github.com/users/bkendall/gists{/gist_id}',
+          'starred_url': 'https://api.github.com/users/bkendall/starred{/owner}{/repo}',
+          'subscriptions_url': 'https://api.github.com/users/bkendall/subscriptions',
+          'organizations_url': 'https://api.github.com/users/bkendall/orgs',
+          'repos_url': 'https://api.github.com/users/bkendall/repos',
+          'events_url': 'https://api.github.com/users/bkendall/events{/privacy}',
+          'received_events_url': 'https://api.github.com/users/bkendall/received_events',
+          'type': 'User',
+          'site_admin': false
         }
       }
     },
@@ -242,7 +262,7 @@ module.exports = function (cv) {
           'organization': 'CodeNow'
         },
         'pusher': {
-          'name': 'bkendall',
+          'name': owner,
           'email': 'bryan.a.kendall@gmail.com'
         },
         'organization': {
@@ -256,7 +276,7 @@ module.exports = function (cv) {
           'avatar_url': 'https://avatars.githubusercontent.com/u/2335750?v=2'
         },
         'sender': {
-          'login': 'bkendall',
+          'login': owner,
           'id': 160236,
           'avatar_url': 'https://avatars.githubusercontent.com/u/160236?v=2',
           'gravatar_id': '',
