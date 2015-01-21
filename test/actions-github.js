@@ -348,7 +348,6 @@ describe('Github - /actions/github', function () {
       done();
     });
 
-
     beforeEach(function (done) {
       multi.createInstance(function (err, instance, build, user, modelsArr) {
         ctx.contextVersion = modelsArr[0];
