@@ -346,9 +346,7 @@ var sources = [{
 }, {
   name: 'Nginx',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/nginx/tags/manage/\n'+
-    'FROM nginx:1.7.9\n'+
-    '\n'+
-    'COPY <repo-name> /usr/share/nginx/html\n'
+    'FROM nginx:1.7.9\n'
 }, {
   name: 'RabbitMQ',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/rabbitmq/tags/manage/\n'+
