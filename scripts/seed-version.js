@@ -37,15 +37,10 @@ async.series([
     }
   },
   function (cb) {
-    var called = false;
-    ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', function () {
-      keypather.set(ctx.user, 'attrs.accounts.github.id', process.env.HELLO_RUNNABLE_GITHUB_ID);
-      if (!called) {
-        called = true;
-        cb();
-      } else {
-        console.log('WTF?');
-      }
+    User.findByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, function (err, userData) {
+      ctx.user = user.githubLogin(userData.accounts.github.accessToken, function (err) {
+        cb(err);
+      });
     });
   },
   function (cb) {
