@@ -73,6 +73,21 @@ function removeCurrentSourceTemplates(cb) {
 
 function createBlankSourceContext (cb) {
   async.waterfall([
+    function (cb) {
+      Instance.find({
+        'name': 'Blank',
+        'owner': createdBy
+      }, function (err, docs) {
+        console.log('REMOVING existing instance for (BLANK)');
+        if (!err && docs) {
+          docs.forEach(function (doc) {
+            doc.remove();
+          });
+          console.log('REMOVING INSTANCES', docs);
+        }
+        cb();
+      });
+    },
     function newContext (cb) {
       console.log('newContext (blank)');
       var context = new Context({
@@ -123,7 +138,7 @@ function createFirstSourceContext(finalCB) {
             cb();
           });
         },
-       function newContext(cb) {
+        function newContext(cb) {
           console.log('newContext (', model.name, ')');
           var context = new Context({
             owner: createdBy,
@@ -188,7 +203,7 @@ function createFirstSourceContext(finalCB) {
 
   });
 
-  async.parallel(parallelFunctions, finalCB);
+  async.series(parallelFunctions, finalCB);
 }
 
 function newCV (context, icv, cb) {
@@ -318,40 +333,35 @@ var sources = [{
 }, {
   name: 'PostgreSQL',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/postgres/tags/manage/\n'+
-    'FROM postgres:9.4\n'+
-    '\n'+
-    '# Set recommended environment variables\n'+
-    'ENV POSTGRES_USER postgres\n'+
-    'ENV POSTGRES_PASSWORD postgres\n'+
-    '\n'+
-    '# Open port 5432 on the server\n'+
-    'EXPOSE 5432\n'
+  'FROM postgres:9.4\n' +
+  '\n' +
+  '# Set recommended environment variables\n' +
+  'ENV POSTGRES_USER postgres\n' +
+  'ENV POSTGRES_PASSWORD postgres\n' +
+  '\n' +
+  '# Open port 5432 on the server\n' +
+  'EXPOSE 5432\n'
 }, {
   name: 'MySQL',
   body: 'FROM tutum/mysql\n'
 }, {
   name: 'MongoDB',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/mongo/tags/manage/\n'+
-    'FROM mongo:2.8.0\n'
+  'FROM mongo:2.8.0\n'
 }, {
   name: 'Redis',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/redis/tags/manage/\n'+
-    'FROM redis:2.8.9\n'
+  'FROM redis:2.8.9\n'
 }, {
   name: 'ElasticSearch',
   body: '# Full details of this base image can be found here: https://registry.hub.docker.com/u/dockerfile/elasticsearch/\n'+
-    'FROM dockerfile/elasticsearch\n'+
-    '# Add seed data (please drag and drop file into the build area’s file browser)\n'+
-    '#ADD es_seed_data.tar /data\n'
+  'FROM dockerfile/elasticsearch\n'
 }, {
   name: 'Nginx',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/nginx/tags/manage/\n'+
-    'FROM nginx:1.7.9\n'
+  'FROM nginx:1.7.9\n'
 }, {
   name: 'RabbitMQ',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/rabbitmq/tags/manage/\n'+
-    'FROM rabbitmq:3.4.2\n'
-}, {
-  name: 'Blank',
-  body: '# Empty Dockerfile!\n'
+  'FROM rabbitmq:3.4.2\n'
 }];
