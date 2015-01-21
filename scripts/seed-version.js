@@ -37,13 +37,6 @@ async.series([
     }
   },
   function (cb) {
-    User.findByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, function (err, userData) {
-      ctx.user = user.githubLogin(userData.accounts.github.accessToken, function (err) {
-        cb(err);
-      });
-    });
-  },
-  function (cb) {
     User.updateByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, {
       $set: {
         permissionLevel: 5
@@ -52,9 +45,16 @@ async.series([
       cb(err);
     });
   },
+  function (cb) {
+    User.findByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, function (err, userData) {
+      ctx.user = user.githubLogin(userData.accounts.github.accessToken, function (err) {
+        cb(err);
+      });
+    });
+  },
   removeCurrentSourceTemplates,
+  createBlankSourceContext,
   createFirstSourceContext,
-  createBlankSourceContext
 ], function (err) {
   console.log('done');
   if (err) { console.error(err); }
@@ -113,7 +113,11 @@ function createBlankSourceContext (cb) {
         icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: '# Empty Dockerfile!\n' })
       ], function (err) { cb(err, context, icv); });
     },
-    newCV,
+    function (context, icv, cb) {
+      ctx.blankIcv = icv;
+      cb(null, context, icv)
+    },
+    newCV
   ], cb);
 }
 
@@ -142,13 +146,30 @@ function createFirstSourceContext(finalCB) {
             cb();
           });
         },
+        function (cb) {
+          if (model.isTemplate) {
+            return cb();
+          }
+          Context.find({
+            'name': model.name,
+            'owner': createdBy
+          }, function (err, docs) {
+            console.log('REMOVING existing context for (', model.name, ')');
+            if (!err && docs) {
+              docs.forEach(function (doc) {
+                doc.remove();
+              });
+            }
+            cb();
+          });
+        },
         function newContext(cb) {
           console.log('newContext (', model.name, ')');
           var context = new Context({
             owner: createdBy,
             name: model.name,
             description: 'The most awesome dockerfile, EVER',
-            isSource: true
+            isSource: model.isTemplate
           });
           context.save(function (err, context, count) {
             cb(err, context, count);
@@ -157,7 +178,8 @@ function createFirstSourceContext(finalCB) {
         function newICV(context, count, cb) {
           console.log('newICV (', model.name, ')');
           var icv = new InfraCodeVersion({
-            context: context._id
+            context: context._id,
+            parent: ctx.blankIcv._id
           });
           async.series([
             icv.initWithDefaults.bind(icv),
@@ -207,7 +229,7 @@ function createFirstSourceContext(finalCB) {
 
   });
 
-  async.parallel(parallelFunctions, finalCB);
+  async.series(parallelFunctions, finalCB);
 }
 
 function newCV (context, icv, cb) {
@@ -216,13 +238,8 @@ function newCV (context, icv, cb) {
   var cv = new ContextVersion({
     createdBy: createdBy,
     context: context._id,
-    project: context._id,
-    environment: context._id,
-    infraCodeVersion: icv._id,
-    build: {
-      started: d,
-      completed: d
-    }
+    created: d,
+    infraCodeVersion: icv._id
   });
   cv.save(function (err, version) {
     cb(err, version);
