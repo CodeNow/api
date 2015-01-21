@@ -99,4 +99,3 @@ module.exports = function (userId, username, token) {
       'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
     });
 };
-
