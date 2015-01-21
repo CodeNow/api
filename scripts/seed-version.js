@@ -343,7 +343,14 @@ var sources = [{
   'EXPOSE 5432\n'
 }, {
   name: 'MySQL',
-  body: 'FROM tutum/mysql\n'
+  body: 'FROM mysql:5.6\n' +
+'# Set required environment variables\n' +
+'ENV MYSQL_USER root\n' +
+'ENV MYSQL_PASSWORD root\n' +
+'ENV MYSQL_ROOT_PASSWORD root\n' +
+'ENV MYSQL_DATABASE app\n\n' +
+'# Open port 3306 on the server\n' +
+'EXPOSE 3306\n' 
 }, {
   name: 'MongoDB',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/mongo/tags/manage/\n'+
