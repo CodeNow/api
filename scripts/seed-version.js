@@ -351,4 +351,7 @@ var sources = [{
   name: 'RabbitMQ',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/rabbitmq/tags/manage/\n'+
     'FROM rabbitmq:3.4.2\n'
+}, {
+  name: 'Blank',
+  body: '# Empty Dockerfile!\n'
 }];
