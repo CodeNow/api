@@ -110,7 +110,7 @@ function createFirstSourceContext(finalCB) {
       async.waterfall([
         function (cb) {
           Instance.find({
-            'name': model.name,
+            'name': ((model.isTemplate) ? 'TEMPLATE_' : '') + model.name,
             'owner': createdBy
           }, function (err, docs) {
             console.log('REMOVING existing instance for (', model.name, ')');
