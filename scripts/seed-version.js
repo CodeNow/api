@@ -37,20 +37,24 @@ async.series([
     }
   },
   function (cb) {
-    var called = false;
-    ctx.user = user.githubLogin(process.env.GH_TOKEN || 'f914c65e30f6519cfb4d10d0aa81e235dd9b3652', function () {
-      keypather.set(ctx.user, 'attrs.accounts.github.id', process.env.HELLO_RUNNABLE_GITHUB_ID);
-      if (!called) {
-        called = true;
-        cb();
-      } else {
-        console.log('WTF?');
+    User.updateByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, {
+      $set: {
+        permissionLevel: 5
       }
+    }, function (err) {
+      cb(err);
+    });
+  },
+  function (cb) {
+    User.findByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, function (err, userData) {
+      ctx.user = user.githubLogin(userData.accounts.github.accessToken, function (err) {
+        cb(err);
+      });
     });
   },
   removeCurrentSourceTemplates,
+  createBlankSourceContext,
   createFirstSourceContext,
-  createBlankSourceContext
 ], function (err) {
   console.log('done');
   if (err) { console.error(err); }
@@ -73,6 +77,21 @@ function removeCurrentSourceTemplates(cb) {
 
 function createBlankSourceContext (cb) {
   async.waterfall([
+    function (cb) {
+      Instance.find({
+        'name': 'Blank',
+        'owner': createdBy
+      }, function (err, docs) {
+        console.log('REMOVING existing instance for (BLANK)');
+        if (!err && docs) {
+          docs.forEach(function (doc) {
+            doc.remove();
+          });
+          console.log('REMOVING INSTANCES', docs);
+        }
+        cb();
+      });
+    },
     function newContext (cb) {
       console.log('newContext (blank)');
       var context = new Context({
@@ -94,7 +113,11 @@ function createBlankSourceContext (cb) {
         icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: '# Empty Dockerfile!\n' })
       ], function (err) { cb(err, context, icv); });
     },
-    newCV,
+    function (context, icv, cb) {
+      ctx.blankIcv = icv;
+      cb(null, context, icv)
+    },
+    newCV
   ], cb);
 }
 
@@ -110,7 +133,7 @@ function createFirstSourceContext(finalCB) {
       async.waterfall([
         function (cb) {
           Instance.find({
-            'name': 'TEMPLATE_' + model.name,
+            'name': ((model.isTemplate) ? 'TEMPLATE_' : '') + model.name,
             'owner': createdBy
           }, function (err, docs) {
             console.log('REMOVING existing instance for (', model.name, ')');
@@ -121,7 +144,24 @@ function createFirstSourceContext(finalCB) {
               console.log('REMOVING INSTANCES', docs);
             }
             cb();
-          })
+          });
+        },
+        function (cb) {
+          if (model.isTemplate) {
+            return cb();
+          }
+          Context.find({
+            'name': model.name,
+            'owner': createdBy
+          }, function (err, docs) {
+            console.log('REMOVING existing context for (', model.name, ')');
+            if (!err && docs) {
+              docs.forEach(function (doc) {
+                doc.remove();
+              });
+            }
+            cb();
+          });
         },
         function newContext(cb) {
           console.log('newContext (', model.name, ')');
@@ -129,7 +169,7 @@ function createFirstSourceContext(finalCB) {
             owner: createdBy,
             name: model.name,
             description: 'The most awesome dockerfile, EVER',
-            isSource: true
+            isSource: model.isTemplate
           });
           context.save(function (err, context, count) {
             cb(err, context, count);
@@ -138,7 +178,8 @@ function createFirstSourceContext(finalCB) {
         function newICV(context, count, cb) {
           console.log('newICV (', model.name, ')');
           var icv = new InfraCodeVersion({
-            context: context._id
+            context: context._id,
+            parent: ctx.blankIcv._id
           });
           async.series([
             icv.initWithDefaults.bind(icv),
@@ -175,7 +216,7 @@ function createFirstSourceContext(finalCB) {
       console.log('createInstance (', model.name, ')');
       var instance = ctx.user.createInstance({
         build: build.id(),
-        name: 'TEMPLATE_' + model.name,
+        name: ((model.isTemplate) ? 'TEMPLATE_' : '') + model.name,
         owner: createdBy
       }, function (err, newInstance) {
         if (err) {
@@ -188,7 +229,7 @@ function createFirstSourceContext(finalCB) {
 
   });
 
-  async.parallel(parallelFunctions, finalCB);
+  async.series(parallelFunctions, finalCB);
 }
 
 function newCV (context, icv, cb) {
@@ -197,13 +238,8 @@ function newCV (context, icv, cb) {
   var cv = new ContextVersion({
     createdBy: createdBy,
     context: context._id,
-    project: context._id,
-    environment: context._id,
-    infraCodeVersion: icv._id,
-    build: {
-      started: d,
-      completed: d
-    }
+    created: d,
+    infraCodeVersion: icv._id
   });
   cv.save(function (err, version) {
     cb(err, version);
@@ -211,6 +247,7 @@ function newCV (context, icv, cb) {
 }
 var sources = [{
   name: 'NodeJs',
+  isTemplate: true,
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
   'FROM node:<nodejs-version>\n' +
   '\n' +
@@ -231,6 +268,7 @@ var sources = [{
   'CMD <start-command>\n'
 }, {
   name: 'Rails',
+  isTemplate: true,
   body: 'FROM ruby:<ruby-version>\n' +
   '# Open up ports on the server\n' +
   'EXPOSE <user-specified-ports>\n' +
@@ -263,6 +301,7 @@ var sources = [{
   'CMD <start-command>\n'
 }, {
   name: 'Ruby',
+  isTemplate: true,
   body: 'FROM ruby:<ruby-version>\n' +
   '# Open up ports on the server\n' +
   'EXPOSE <user-specified-ports>\n' +
@@ -291,6 +330,7 @@ var sources = [{
   'CMD <start-command>\n'
 }, {
   name: 'Python',
+  isTemplate: true,
   body: 'FROM python:<python-version>\n' +
   '\n' +
   '# Open up ports on the server\n' +
@@ -311,4 +351,45 @@ var sources = [{
   '\n' +
   '# Command to start the app\n' +
   'CMD <start-command>\n'
+}, {
+  name: 'PostgreSQL',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/postgres/tags/manage/\n'+
+  'FROM postgres:9.4\n' +
+  '\n' +
+  '# Set recommended environment variables\n' +
+  'ENV POSTGRES_USER postgres\n' +
+  'ENV POSTGRES_PASSWORD postgres\n' +
+  '\n' +
+  '# Open port 5432 on the server\n' +
+  'EXPOSE 5432\n'
+}, {
+  name: 'MySQL',
+  body: 'FROM mysql:5.6\n' +
+'# Set required environment variables\n' +
+'ENV MYSQL_USER root\n' +
+'ENV MYSQL_PASSWORD root\n' +
+'ENV MYSQL_ROOT_PASSWORD root\n' +
+'ENV MYSQL_DATABASE app\n\n' +
+'# Open port 3306 on the server\n' +
+'EXPOSE 3306\n' 
+}, {
+  name: 'MongoDB',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/mongo/tags/manage/\n'+
+  'FROM mongo:2.8.0\n'
+}, {
+  name: 'Redis',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/redis/tags/manage/\n'+
+  'FROM redis:2.8.9\n'
+}, {
+  name: 'ElasticSearch',
+  body: '# Full details of this base image can be found here: https://registry.hub.docker.com/u/dockerfile/elasticsearch/\n'+
+  'FROM dockerfile/elasticsearch\n'
+}, {
+  name: 'Nginx',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/nginx/tags/manage/\n'+
+  'FROM nginx:1.7.9\n'
+}, {
+  name: 'RabbitMQ',
+  body: '# Full list of versions available here: https://registry.hub.docker.com/_/rabbitmq/tags/manage/\n'+
+  'FROM rabbitmq:3.4.2\n'
 }];

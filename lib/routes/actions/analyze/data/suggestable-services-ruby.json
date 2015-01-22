@@ -1,5 +1,5 @@
 {
- "Cassandra": [
+ "cassandra": [
   "activerecord-cassandra-adapter",
   "activerecord-jdbccassandra-adapter",
   "automatthew-cassandra",
@@ -31,7 +31,7 @@
   "sessionm-cassandra",
   "sessionm-cassandra_object"
  ],
- "ElasticSearch": [
+ "elasticsearch": [
   "adapter-elasticsearch",
   "bonsai-elasticsearch-rails",
   "dm-elasticsearch-adapter",
@@ -80,7 +80,7 @@
   "ohm-elasticsearch",
   "peek-elasticsearch"
  ],
- "HBase": [
+ "hbase": [
   "activerecord-hbase-adapter",
   "fluent-plugin-hbase",
   "hbase-adapter",
@@ -100,40 +100,6 @@
   "riemann-hbase",
   "ruby-hbase",
   "sishen-hbase-ruby"
- ],
- "Nginx": [
-  "blue-nginx",
-  "capistrano-nginx",
-  "capistrano-nginx-puma",
-  "capistrano-nginx-unicorn",
-  "capistrano-unicorn-nginx",
-  "capistrano3-nginx",
-  "capistrano3-nginx_unicorn",
-  "chrislloyd-nginx-config",
-  "docker_nginx_proxy",
-  "ez-nginx-proxy",
-  "fluent-plugin-nginx-status",
-  "foreman-export-nginx",
-  "gvarela-nginx-osx",
-  "itamae-plugin-recipe-nownabe_nginx",
-  "mattly-nginx_config_generator",
-  "mina-nginx",
-  "nginx",
-  "nginx-config",
-  "nginx-osx",
-  "nginx-watcher",
-  "nginx_config_generator",
-  "nginx_config_generator_kthompson",
-  "nginx_config_parser",
-  "nginx_status",
-  "nginx_stream_pusher",
-  "nginx_test_helper",
-  "nginx_utils",
-  "nginxbrew",
-  "nginxinator",
-  "nginxtra",
-  "paperclip-nginx-upload",
-  "vlad-nginx"
  ],
  "memcached": [
   "AdoccaMemcache",
@@ -339,6 +305,40 @@
   "test-mysqld",
   "trinidad_mysql_dbpool_extension",
   "zfs-mysql-backup"
+ ],
+ "nginx": [
+  "blue-nginx",
+  "capistrano-nginx",
+  "capistrano-nginx-puma",
+  "capistrano-nginx-unicorn",
+  "capistrano-unicorn-nginx",
+  "capistrano3-nginx",
+  "capistrano3-nginx_unicorn",
+  "chrislloyd-nginx-config",
+  "docker_nginx_proxy",
+  "ez-nginx-proxy",
+  "fluent-plugin-nginx-status",
+  "foreman-export-nginx",
+  "gvarela-nginx-osx",
+  "itamae-plugin-recipe-nownabe_nginx",
+  "mattly-nginx_config_generator",
+  "mina-nginx",
+  "nginx",
+  "nginx-config",
+  "nginx-osx",
+  "nginx-watcher",
+  "nginx_config_generator",
+  "nginx_config_generator_kthompson",
+  "nginx_config_parser",
+  "nginx_status",
+  "nginx_stream_pusher",
+  "nginx_test_helper",
+  "nginx_utils",
+  "nginxbrew",
+  "nginxinator",
+  "nginxtra",
+  "paperclip-nginx-upload",
+  "vlad-nginx"
  ],
  "postgresql": [
   "activerecord-jdbcpostgresql-adapter",

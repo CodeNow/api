@@ -1,6 +1,6 @@
 {
- "Cassandra": [],
- "ElasticSearch": [
+ "cassandra": [],
+ "elasticsearch": [
   "Bugzilla-ETL",
   "ESClient",
   "ESTester",
@@ -99,8 +99,8 @@
   "wallaby-backend-elasticsearch",
   "wallaby-plugin-elasticsearch"
  ],
- "HBase": [],
- "Nginx": [],
+ "hbase": [],
+ "nginx": [],
  "memcached": [
   "DistributedLock",
   "Flask-Pymemcache",

@@ -4,24 +4,15 @@ var afterEach = Lab.afterEach;
 var before = Lab.before;
 var beforeEach = Lab.beforeEach;
 var describe = Lab.experiment;
-var expect = Lab.expect;
-var it = Lab.test;
+//var expect = Lab.expect;
+//var it = Lab.test;
 
 var api = require('../../fixtures/api-control');
 var generateKey = require('../../fixtures/key-factory');
-var hooks = require('../../fixtures/analyze-hooks');
+//var hooks = require('../../fixtures/analyze-hooks');
 var multi = require('../../fixtures/multi-factory');
-var nock = require('nock');
 
-var repoContentsMock = require('../../fixtures/mocks/github/repos-contents');
-
-before(function (done) {
-  nock('http://runnable.com:80')
-    .persist()
-    .get('/')
-    .reply(200);
-  done();
-});
+//var repoContentsMock = require('../../fixtures/mocks/github/repos-contents');
 
 describe('Analyze - /actions/analyze', function () {
   var ctx = {};
@@ -40,6 +31,9 @@ describe('Analyze - /actions/analyze', function () {
   });
   afterEach(require('../../fixtures/clean-ctx')(ctx));
 
+  //tests below run in 200.js due to very strange condition where
+  //they fail if separated into this file
+  /*
   describe('Error conditions', function () {
     it('should return 400 code without a "repo" query parameter', function (done) {
       ctx.request.get(
@@ -63,4 +57,5 @@ describe('Analyze - /actions/analyze', function () {
       });
     });
   });
+  */
 });

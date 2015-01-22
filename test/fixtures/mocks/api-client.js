@@ -51,6 +51,7 @@ module.exports.setup = function (cb) {
   });
 
   // CONTEXT
+
   mocksForMethods(require('runnable/lib/models/context'), {
     create: function () {
       var opts = optsForCreateOrUpdate.apply(this, arguments);
@@ -244,4 +245,3 @@ function mocksForMethods (Class, mockMap) {
     });
   });
 }
-

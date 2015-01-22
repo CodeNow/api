@@ -11,7 +11,6 @@ var api = require('../../fixtures/api-control');
 var generateKey = require('../../fixtures/key-factory');
 var hooks = require('../../fixtures/analyze-hooks');
 var multi = require('../../fixtures/multi-factory');
-var nock = require('nock');
 var fs = require('fs');
 
 var repoMock = require('../../fixtures/mocks/github/repo');
@@ -20,14 +19,6 @@ var repoContentsMock = require('../../fixtures/mocks/github/repos-contents');
 var javascriptNodeJS = 'nodejs';
 var python = 'python';
 var rubyRor = 'ruby_ror';
-
-before(function (done) {
-  nock('http://runnable.com:80')
-    .persist()
-    .get('/')
-    .reply(200);
-  done();
-});
 
 describe('Analyze - /actions/analyze', function () {
   var ctx = {};
@@ -45,6 +36,29 @@ describe('Analyze - /actions/analyze', function () {
     });
   });
   afterEach(require('../../fixtures/clean-ctx')(ctx));
+
+  describe('Error conditions', function () {
+    it('should return 400 code without a "repo" query parameter', function (done) {
+      ctx.request.get(
+        hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(400);
+          expect(res.body.message).to.equal('query parameter "repo" must be a string');
+          done();
+      });
+    });
+
+    it('should return 400 code for repository with no recognized dependency file', function (done) {
+      repoContentsMock.repoContentsDirectory('python', {});
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(400);
+          expect(res.body.message).to.equal('unknown language/framework type');
+          done();
+      });
+    });
+  });
 
   /**
    * Testing backup method of language/dependency inferrence using GitHub Repo API
@@ -171,7 +185,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(python);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
           done();
         }
       );
@@ -200,7 +214,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(python);
           expect(res.body.serviceDependencies).to.have.length(3);
-          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
           expect(res.body.serviceDependencies[1]).to.equal('memcached');
           expect(res.body.serviceDependencies[2]).to.equal('mongodb');
           done();
@@ -254,7 +268,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(python);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
           done();
         }
       );
@@ -434,7 +448,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(javascriptNodeJS);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('ElasticSearch');
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
           done();
         }
       );
@@ -503,7 +517,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
+          expect(res.body.serviceDependencies[0]).to.equal('cassandra');
           done();
         }
       );
@@ -526,9 +540,9 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(3);
-          expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
-          expect(res.body.serviceDependencies[1]).to.equal('ElasticSearch');
-          expect(res.body.serviceDependencies[2]).to.equal('HBase');
+          expect(res.body.serviceDependencies[0]).to.equal('cassandra');
+          expect(res.body.serviceDependencies[1]).to.equal('elasticsearch');
+          expect(res.body.serviceDependencies[2]).to.equal('hbase');
           done();
         }
       );
@@ -574,7 +588,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('Cassandra');
+          expect(res.body.serviceDependencies[0]).to.equal('cassandra');
           done();
         }
       );
