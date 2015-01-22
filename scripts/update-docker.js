@@ -73,7 +73,7 @@ function saveList(cb) {
 //  stop all containers
 function stopAllContainers(cb) {
   debug('stopAllContainers');
-  async.each(thisList, function(instance, next) {
+  async.eachLimit(thisList, 10, function(instance, next) {
     stopInstance(instance.shortHash, next);
   }, cb);
 }
@@ -127,7 +127,8 @@ function getAllContainers(cb) {
 
 function startAllContainers(instances, cb) {
   debug('instances');
-  async.each(instances, function(shortHash, next) {
+  ctx.retry = [];
+  async.eachLimit(instances, 10, function(shortHash, next) {
     startInstance(shortHash, next);
   }, cb);
 }
@@ -135,6 +136,7 @@ function startAllContainers(instances, cb) {
 function startInstance (shortHash, cb) {
   var Instance = user.fetchInstance(shortHash, function(err) {
     if (err) {
+      ctx.retry.push(shortHash);
       ERRORS.push({
         func: 'startInstance:fetchInstance',
         err: err.message,
@@ -144,6 +146,7 @@ function startInstance (shortHash, cb) {
     }
     Instance.start(function(err) {
       if (err) {
+        ctx.retry.push(shortHash);
         ERRORS.push({
           func: 'startInstance:start',
           err: err.message,
@@ -155,6 +158,12 @@ function startInstance (shortHash, cb) {
       cb();
     });
   });
+}
+
+function retryStart (cb) {
+  console.error('old errors', ERRORS);
+  ERRORS = [];
+  startInstance(ctx.retry, cb);
 }
 
 //  put back into mavis
@@ -186,6 +195,7 @@ function restore(cb) {
   async.waterfall([
     getAllContainers,
     startAllContainers,
+    retryStart,
     addToMavis
   ], cb);
 }
