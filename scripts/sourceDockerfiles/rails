@@ -23,8 +23,6 @@ RUN apt-get update
 
 RUN bundle install
 
-# Setup and seed database
-RUN rake db:create db:migrate
 
 # Command to start the app
 CMD <start-command>
