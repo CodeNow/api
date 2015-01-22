@@ -196,7 +196,7 @@ function finish (err) {
 }
 
 // program
-async.waterfall([
+async.series([
   saveAndKill,
   waitForYes,
   restore
