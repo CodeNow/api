@@ -380,7 +380,7 @@ describe('Github - /actions/github', function () {
             expect(deployedInstances).to.be.okay;
             expect(deployedInstances).to.be.an('array');
             expect(deployedInstances).to.have.a.lengthOf(2);
-            var hashes = [deployedInstances[0].shortHash, deployedInstances[1].shortHash]
+            var hashes = [deployedInstances[0].shortHash, deployedInstances[1].shortHash];
             expect(hashes).to.include(ctx.instance.id());
             expect(hashes).to.include(instance2.shortHash);
             expect(githubPushInfo.commitLog).to.have.a.lengthOf(1);
