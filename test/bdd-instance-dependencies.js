@@ -15,23 +15,37 @@ var async = require('async');
 
 describe('BDD - Instance Dependencies', function () {
   var ctx = {};
-  var restartCayley = null;
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
+  beforeEach(function (done) {
+    var r = require('models/redis');
+    r.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
+      if (err) { return done(err); }
+      async.map(keys, function (key, cb) { r.del(key, cb); }, done);
+    });
+  });
+  // Uncomment if you want to clear the (graph) database every time
+  // beforeEach(function (done) {
+  //   if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
+  //     var Cypher = require('cypher-stream');
+  //     var cypher = Cypher('http://localhost:7474');
+  //     var err;
+  //     cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
+  //       .on('error', function (e) { err = e; })
+  //       .on('end', function () { done(err); })
+  //       .on('data', function () {});
+  //   } else {
+  //     done();
+  //   }
+  // });
   after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
-
-  before(function (done) {
-    // grab the ref to cayley before it vanishes
-    restartCayley = ctx.cayley;
-    done();
-  });
 
   beforeEach(function (done) {
     multi.createInstance(function (err, instance, build, user) {
@@ -97,7 +111,11 @@ describe('BDD - Instance Dependencies', function () {
         });
       });
     });
-    describe('terminating cayley early', function () {
+    describe('terminating the graph db early', function () {
+      beforeEach(function (done) {
+        var graph = require('./fixtures/graph');
+        graph.stop(done);
+      });
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'API_HOST=' +
@@ -107,18 +125,16 @@ describe('BDD - Instance Dependencies', function () {
           env: [depString]
         }, done);
       });
-      before(function (done) {
-        restartCayley.stop(done);
-      });
-      after(function (done) {
-        restartCayley.start(done);
+      afterEach(function (done) {
+        var graph = require('./fixtures/graph');
+        graph.start(done);
       });
       it('should degrade gracefully and still allow us to fetch (printed error expected)', function (done) {
         ctx.webInstance.fetch(function (err, body) {
           expect(err).to.be.not.okay;
           if (err) { return done(err); }
           expect(body).to.be.okay;
-          /* this is a fun test. we _want_ this to be undefined. if cayley was running,
+          /* this is a fun test. we _want_ this to be undefined. if the graph db was running,
            * it would return a value for dependencies, which we do not want. */
           expect(body.dependencies).to.eql({});
           done();
