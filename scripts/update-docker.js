@@ -119,23 +119,7 @@ function saveAndKill (cb) {
 ////////////////////////////////////////////////////
 // part 2 (seemless restart)
 ////////////////////////////////////////////////////
-
-//  put back into mavis
-function addToMavis (cb) {
-  debug('addToMavis');
-  request({
-    method: 'PUT',
-    url: process.env.MAVIS_HOST + '/docks',
-    qs: {
-      host: fullUrl
-    }
-  }, function(err, res) {
-    if (err) { return cb(err); }
-    if (res.statusCode !== 200) { return cb(new Error('mavis PUT failed')); }
-    cb();
-  });
-}
-
+var ctx = {numStarted: 0};
 function getAllContainers(cb) {
   debug('getAllContainers');
   redis.lrange(saveKey, 0, -1, cb);
@@ -165,9 +149,36 @@ function startInstance (shortHash, cb) {
           err: err.message,
           shortHash: shortHash
         });
+      } else {
+        ctx.numStarted++;
       }
       cb();
     });
+  });
+}
+
+//  put back into mavis
+function addToMavis (cb) {
+  debug('addToMavis');
+  mavisRequst('PUT', {host: fullUrl}, function() {
+    mavisRequst('POST', {host: fullUrl, numContainer: ctx.numStarted}, cb);
+  });
+}
+
+function mavisRequst(type, data, cb) {
+  debug('mavisRequst', type, data);
+  request({
+    method: type,
+    url: process.env.MAVIS_HOST + '/docks',
+    qs: data
+  }, function(err, res) {
+    if (err || res.statusCode !== 200) {
+      ERRORS.push({
+        func: 'addToMavis:PUT',
+        err: err && err.message || res.statusCode
+      });
+    }
+    cb();
   });
 }
 
