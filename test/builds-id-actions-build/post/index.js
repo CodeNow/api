@@ -171,7 +171,7 @@ describe('Build - /builds/:id/actions/build', function() {
         });
       });
       it('add another appcodeversion, build, remove an appcodeversion, it should not reuse cv',
-        { timeout: 500 }, function (done) {
+        { timeout: 1000 }, function (done) {
           // Add a new repo to the contextVersion
           ctx.repoName = 'Dat-middleware';
           ctx.fullRepoName = ctx.user.json().accounts.github.login + '/' + ctx.repoName;

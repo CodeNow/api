@@ -1,0 +1,4 @@
+{{user.login}}'s <a href="{{headCommit.url}}">changes</a> ({{headCommit.message}}{{{moreChangesHipchat repo commitLog}}}) to {{repo}} ({{branch}}) are deployed on servers:<br/>
+{{#each instances}}
+ <a href="http://{{../domain}}/{{this.owner.username}}/{{this.name}}">{{this.name}}</a><br/>
+{{/each}}

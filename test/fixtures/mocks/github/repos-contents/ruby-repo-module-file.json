@@ -1,0 +1,18 @@
+{
+  "name": "Gemfile",
+  "path": "Gemfile",
+  "sha": "204c4766a347274a9fcc4ec1bbd675ad2f3b2894",
+  "size": 930,
+  "url": "https://api.github.com/repos/sundippatel/rails3-mongoid-omniauth/contents/Gemfile?ref=master",
+  "html_url": "https://github.com/sundippatel/rails3-mongoid-omniauth/blob/master/Gemfile",
+  "git_url": "https://api.github.com/repos/sundippatel/rails3-mongoid-omniauth/git/blobs/204c4766a347274a9fcc4ec1bbd675ad2f3b2894",
+  "download_url": "https://raw.githubusercontent.com/sundippatel/rails3-mongoid-omniauth/master/Gemfile",
+  "type": "file",
+  "content": "c291cmNlICdodHRwczovL3J1YnlnZW1zLm9yZycKZ2VtICdyYWlscycsICcz\nLjIuMTMnCmdyb3VwIDphc3NldHMgZG8KICBnZW0gJ3Nhc3MtcmFpbHMnLCAg\nICd+PiAzLjIuMycKICBnZW0gJ2NvZmZlZS1yYWlscycsICd+PiAzLjIuMScK\nICBnZW0gJ3VnbGlmaWVyJywgJz49IDEuMC4zJwplbmQKZ2VtICdqcXVlcnkt\ncmFpbHMnCmdlbSAibW9uZ29pZCIsICI+PSAzLjEuMiIKZ2VtICJyc3BlYy1y\nYWlscyIsICI+PSAyLjEyLjIiLCA6Z3JvdXAgPT4gWzpkZXZlbG9wbWVudCwg\nOnRlc3RdCmdlbSAiZGF0YWJhc2VfY2xlYW5lciIsICI+PSAxLjAuMC5SQzEi\nLCA6Z3JvdXAgPT4gOnRlc3QKZ2VtICJtb25nb2lkLXJzcGVjIiwgIj49IDEu\nNy4wIiwgOmdyb3VwID0+IDp0ZXN0CmdlbSAiZW1haWxfc3BlYyIsICI+PSAx\nLjQuMCIsIDpncm91cCA9PiA6dGVzdApnZW0gImN1Y3VtYmVyLXJhaWxzIiwg\nIj49IDEuMy4xIiwgOmdyb3VwID0+IDp0ZXN0LCA6cmVxdWlyZSA9PiBmYWxz\nZQpnZW0gImxhdW5jaHkiLCAiPj0gMi4yLjAiLCA6Z3JvdXAgPT4gOnRlc3QK\nZ2VtICJjYXB5YmFyYSIsICI+PSAyLjAuMyIsIDpncm91cCA9PiA6dGVzdApn\nZW0gImZhY3RvcnlfZ2lybF9yYWlscyIsICI+PSA0LjIuMCIsIDpncm91cCA9\nPiBbOmRldmVsb3BtZW50LCA6dGVzdF0KZ2VtICJvbW5pYXV0aCIsICI+PSAx\nLjEuMyIKZ2VtICJvbW5pYXV0aC10d2l0dGVyIgpnZW0gInF1aWV0X2Fzc2V0\ncyIsICI+PSAxLjAuMiIsIDpncm91cCA9PiA6ZGV2ZWxvcG1lbnQKZ2VtICJm\naWdhcm8iLCAiPj0gMC42LjMiCmdlbSAiYmV0dGVyX2Vycm9ycyIsICI+PSAw\nLjcuMiIsIDpncm91cCA9PiA6ZGV2ZWxvcG1lbnQKZ2VtICJiaW5kaW5nX29m\nX2NhbGxlciIsICI+PSAwLjcuMSIsIDpncm91cCA9PiA6ZGV2ZWxvcG1lbnQs\nIDpwbGF0Zm9ybXMgPT4gWzptcmlfMTksIDpyYnhd\n",
+  "encoding": "base64",
+  "_links": {
+    "self": "https://api.github.com/repos/sundippatel/rails3-mongoid-omniauth/contents/Gemfile?ref=master",
+    "git": "https://api.github.com/repos/sundippatel/rails3-mongoid-omniauth/git/blobs/204c4766a347274a9fcc4ec1bbd675ad2f3b2894",
+    "html": "https://github.com/sundippatel/rails3-mongoid-omniauth/blob/master/Gemfile"
+  }
+}

@@ -1,5 +1,6 @@
 [![Status Badge](https://circleci.com/gh/CodeNow/api.png?circle-token=15c68bfd7d9ca99637f0c5a6e05505366f5d9fd3)](https://circleci.com/gh/CodeNow/api)
 
+
 Application Components
 ==========
 #### Express
@@ -27,13 +28,14 @@ npm test
 
 Granular:
 
-Lint: `npm run lint`
-All BDD: `npm run bdd`
-Pass additional arguments to BDD: `npm run bdd -- -d`
-BDD one file: `npm run bdd -- test/path/to/file.js`
-BDD Watch: `npm run bdd-watch`
-BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
-All Unit: `npm run unit`
+- Lint: `npm run lint`
+- All BDD: `npm run bdd`
+- Pass additional arguments to BDD: `npm run bdd -- -d`
+- BDD one file: `npm run bdd -- test/path/to/file.js`
+- BDD one test (optional file): `npm run bdd -- -i3 [test/path/to/file.js]`
+- BDD Watch: `npm run bdd-watch`
+- BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
+- All Unit: `npm run unit`
 
 Opinions
 ========

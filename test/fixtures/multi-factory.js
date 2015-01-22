@@ -9,11 +9,31 @@ var debug = require('debug')('runnable-api:multi-factory');
 var formatArgs = require('format-args');
 
 module.exports = {
+
   createUser: function (cb) {
     debug('createUser', formatArgs(arguments));
     var host = require('./host');
     var token = uuid();
     require('./mocks/github/action-auth')(token);
+    var User = require('runnable');
+    var user = new User(host);
+    user.githubLogin(token, function (err) {
+      if (err) {
+        return cb(err);
+      }
+      else {
+        user.attrs.accounts.github.accessToken = token;
+        cb(null, user);
+      }
+    });
+    return user;
+  },
+  createHelloRunnableUser: function (cb) {
+    debug('createUser', formatArgs(arguments));
+    var host = require('./host');
+    var token = uuid();
+    require('./mocks/github/action-auth')(token,
+      process.env.HELLO_RUNNABLE_GITHUB_ID);
     var User = require('runnable');
     var user = new User(host);
     user.githubLogin(token, function (err) {
@@ -84,7 +104,7 @@ module.exports = {
         require('./mocks/s3/put-object')(context.id(), '/Dockerfile');
         version.rootDir.contents.create({
           name: 'Dockerfile',
-          body: 'FROM dockerfile/nodejs\n'
+          body: 'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n'
         }, function (err) {
           cb(err, version, context, moderator);
         });
@@ -194,6 +214,7 @@ module.exports = {
       self.buildTheBuild(user, build, ownerId, function (err) {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
+        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
         contextVersion.fetch(function (err) {
           cb(err, build, user,
               [contextVersion, context, build, user],
@@ -232,6 +253,7 @@ module.exports = {
         require('./mocks/github/user')(user);
         require('./mocks/github/user')(user);
       }
+      require('./mocks/github/user')(user);
       var instance = user.createInstance(body, function (err) {
         cb(err, instance, build, user, modelsArr, srcArr);
       });

@@ -222,6 +222,19 @@ describe('GET /instances', function () {
       });
     });
 
+    describe('exceptions', function () {
+      it('should list projects belonging to HelloRunnable for any unautheticated '+
+         'or authenticated request from any user', function (done) {
+        var query = {
+          owner: {
+            github: process.env.HELLO_RUNNABLE_GITHUB_ID
+          }
+        };
+        var expected = [];
+        ctx.user.fetchInstances(query, expects.success(200, expected, done));
+      });
+    });
+
     describe('errors', function () {
       it('should not list projects for owner.github the user does not have permission for', function (done) {
         var query = {
@@ -247,7 +260,7 @@ describe('GET /instances', function () {
         };
         // Make username fetch 404
         require('../../fixtures/mocks/github/users-username')(null, null, null, true);
-        ctx.user.fetchInstances(query, expects.error(404, /failed/, done));
+        ctx.user.fetchInstances(query, expects.error(404, /Not found/, done));
       });
       it('should require owner.github', function (done) {
         var query = {};

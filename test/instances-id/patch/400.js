@@ -41,6 +41,10 @@ describe('PATCH 400 - /instances/:id', function () {
           type: 'boolean'
         },
         {
+          name: 'locked',
+          type: 'boolean'
+        },
+        {
           name: 'env',
           type: 'array',
           itemType: 'string',
