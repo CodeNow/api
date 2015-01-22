@@ -1,2 +1,2 @@
-{{user.login}}'s <a href="{{headCommit.url}}">changes</a> ({{headCommit.message}}{{{moreChangesHipchat repo commitLog}}}) to {{repo}} ({{branch}}) are ready.
+{{user.login}}'s <a href="{{wrapGitHubLink headCommit.url}}">changes</a> ({{headCommit.message}}{{{moreChangesHipchat repo commitLog}}}) to {{repo}} ({{branch}}) are ready.
 <a href="http://{{domain}}/{{owner.login}}/boxSelection/{{repoName}}/{{encode branch}}/{{encode headCommit.message}}/{{headCommit.id}}">Choose a server to run {{branch}}</a>.
