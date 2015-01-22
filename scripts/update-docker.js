@@ -101,12 +101,18 @@ function stopInstance (shortHash, cb) {
   });
 }
 
+function logErrs(cb) {
+  console.log('save errors', ERRORS);
+  cb();
+}
+
 function saveAndKill (cb) {
   async.series([
     login,
     removeFromMavis,
     saveList,
-    stopAllContainers
+    stopAllContainers,
+    logErrs
   ], cb);
 }
 
