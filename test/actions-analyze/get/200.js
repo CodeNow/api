@@ -7,6 +7,7 @@ var describe = Lab.experiment;
 var expect = Lab.expect;
 var it = Lab.test;
 
+var async = require('async');
 var api = require('../../fixtures/api-control');
 var generateKey = require('../../fixtures/key-factory');
 var hooks = require('../../fixtures/analyze-hooks');
@@ -27,6 +28,14 @@ describe('Analyze - /actions/analyze', function () {
   after(api.stop.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   after(require('../../fixtures/mocks/api-client').clean);
+  afterEach(function (done) {
+    // these tests hit redis a lot, so clear out the cache when they are run.
+    var redis = require('models/redis');
+    redis.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
+      if (err) { return done(err); }
+      async.map(keys, function (key, cb) { redis.del(key, cb); }, done);
+    });
+  });
   beforeEach(generateKey);
   beforeEach(function (done) {
     multi.createUser(function (err, user) {
