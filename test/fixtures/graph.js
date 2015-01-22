@@ -26,7 +26,12 @@ module.exports.start = function (cb) {
 
     module.exports.stop = function (cb) {
       if (module.exports.started) {
-        module.exports._graph.on('exit', function () { cb(); });
+        module.exports._graph.on('exit', function () {
+          module.exports.started = false;
+          debug('cayley exit');
+          cb();
+        });
+        debug('stopping cayley');
         module.exports._graph.kill();
       } else {
         cb();
@@ -34,11 +39,18 @@ module.exports.start = function (cb) {
     };
 
     module.exports._graph = spawn(graphExec, graphArgs, opts);
-    module.exports._graph.stdout.on('data', function () {
+    module.exports._graph.stdout.on('data', function (d) {
       if (!module.exports.started) {
+        debug('cayley start data: ' + d.toString());
         module.exports.started = true;
         cb();
       }
+    });
+    module.exports._graph.stderr.on('data', function (d) {
+      console.error(d.toString());
+    });
+    module.exports._graph.on('error', function (err) {
+      throw err;
     });
 
   } else if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
