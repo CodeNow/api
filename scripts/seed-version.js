@@ -323,9 +323,6 @@ var sources = [{
   '\n' +
   'RUN bundle install\n' +
   '\n' +
-  '# Setup and seed database\n' +
-  'RUN rake db:create db:migrate\n' +
-  '\n' +
   '# Command to start the app\n' +
   'CMD <start-command>\n'
 }, {
