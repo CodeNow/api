@@ -163,7 +163,7 @@ function startInstance (shortHash, cb) {
 function retryStart (cb) {
   console.error('old errors', ERRORS);
   ERRORS = [];
-  startInstance(ctx.retry, cb);
+  startAllContainers(ctx.retry, cb);
 }
 
 //  put back into mavis
