@@ -1,0 +1,9 @@
+# Full list of versions available here: https://registry.hub.docker.com/_/postgres/tags/manage/
+FROM postgres:9.4
+
+# Set recommended environment variables
+ENV POSTGRES_USER postgres
+ENV POSTGRES_PASSWORD postgres
+
+# Open port 5432 on the server
+EXPOSE 5432
