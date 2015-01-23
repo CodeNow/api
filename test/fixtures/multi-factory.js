@@ -28,6 +28,25 @@ module.exports = {
     });
     return user;
   },
+  createHelloRunnableUser: function (cb) {
+    debug('createUser', formatArgs(arguments));
+    var host = require('./host');
+    var token = uuid();
+    require('./mocks/github/action-auth')(token,
+      process.env.HELLO_RUNNABLE_GITHUB_ID);
+    var User = require('runnable');
+    var user = new User(host);
+    user.githubLogin(token, function (err) {
+      if (err) {
+        return cb(err);
+      }
+      else {
+        user.attrs.accounts.github.accessToken = token;
+        cb(null, user);
+      }
+    });
+    return user;
+  },
   createModerator: function (cb) {
     debug('createModerator', formatArgs(arguments));
     return this.createUser(function (err, user) {
