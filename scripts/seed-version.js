@@ -250,25 +250,25 @@ function newCV (context, icv, cb) {
 var sources = [{
   name: 'NodeJs',
   isTemplate: true,
-  body: fs.readFileSync('./scripts/sourceDockerFiles/nodejs').toString()
+  body: fs.readFileSync(__dirname + '/sourceDockerfiles/nodejs').toString()
 }, {
   name: 'Rails',
   isTemplate: true,
-  body: fs.readFileSync('./scripts/sourceDockerFiles/rails').toString()
+  body: fs.readFileSync(__dirname + '/sourceDockerfiles/rails').toString()
 }, {
   name: 'Ruby',
   isTemplate: true,
-  body: fs.readFileSync('./scripts/sourceDockerFiles/ruby').toString()
+  body: fs.readFileSync(__dirname + '/sourceDockerfiles/ruby').toString()
 }, {
   name: 'Python',
   isTemplate: true,
-  body: fs.readFileSync('./scripts/sourceDockerFiles/python').toString()
+  body: fs.readFileSync(__dirname + '/sourceDockerfiles/python').toString()
 }, {
   name: 'PostgreSQL',
-  body: fs.readFileSync('./scripts/sourceDockerFiles/postgresSql').toString()
+  body: fs.readFileSync(__dirname + '/sourceDockerfiles/postgresSql').toString()
 }, {
   name: 'MySQL',
-  body: fs.readFileSync('./scripts/sourceDockerFiles/mysql').toString()
+  body: fs.readFileSync(__dirname + '/sourceDockerfiles/mysql').toString()
 }, {
   name: 'MongoDB',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/mongo/tags/manage/\n'+
