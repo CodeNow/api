@@ -111,7 +111,7 @@ describe('Timers', function () {
       it('should send datadog a message', function (done) {
         ctx.timer.stopTimer(ctx.timerName, function (err) {
           if (err) { return done(err); }
-          var r = new RegExp('api\.timers\.'+ctx.timerName);
+          var r = new RegExp('api.timers.'+ctx.timerName);
           expect(ctx.spyCalled).to.match(r);
           done();
         });
