@@ -24,7 +24,8 @@ describe('socket-server', function () {
   describe('init test', function () {
     it('should error if no server passed in', function (done) {
       try {
-        new SocketServer();
+        var s = new SocketServer();
+        s = s; // fix lint
       } catch(err) {
         return done();
       }
@@ -33,7 +34,8 @@ describe('socket-server', function () {
     it('should load with no errors', function (done) {
       try {
         httpServer = http.createServer();
-        new SocketServer(httpServer);
+        var s = new SocketServer(httpServer);
+        s = s; // fix lint
       } catch(err) {
         return done(err);
       }
