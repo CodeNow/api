@@ -159,7 +159,7 @@ function createFirstSourceContext(finalCB) {
             console.log('REMOVING existing context for (', model.name, ')');
             if (!err && docs) {
               docs.forEach(function (doc) {
-                doc.remove();
+                doc.update({$set: {'isSource': false}}, noop);
               });
             }
             cb();
