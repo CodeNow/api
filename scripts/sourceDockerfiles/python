@@ -1,0 +1,20 @@
+FROM python:<python-version>
+
+# Open up ports on the server
+EXPOSE <user-specified-ports>
+
+# Install environmental dependencies
+RUN apt-get -y -q update && apt-get install -y -q libmysqlclient-dev postgresql-server-dev-9.1
+
+# Add the repository to the /home folder
+ADD ./<repo-name> /home/
+WORKDIR /home
+
+# Install dependencies
+RUN pip install -r /home/requirements.txt
+
+RUN apt-get update
+<add-dependencies>
+
+# Command to start the app
+CMD <start-command>

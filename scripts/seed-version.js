@@ -11,6 +11,8 @@
 'use strict';
 
 require('loadenv')();
+
+var fs = require('fs');
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
@@ -248,127 +250,25 @@ function newCV (context, icv, cb) {
 var sources = [{
   name: 'NodeJs',
   isTemplate: true,
-  body: '# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
-  'FROM node:<nodejs-version>\n' +
-  '\n' +
-  '# Open up ports on the server\n' +
-  'EXPOSE <user-specified-ports>\n' +
-  '\n' +
-  '# Add repository files to server\n' +
-  'ADD ./<repo-name> /<repo-name>\n' +
-  'WORKDIR /<repo-name>\n' +
-  '\n' +
-  '# Install dependencies\n' +
-  'RUN apt-get update \n' +
-  '<add-dependencies>\n' +
-  '\n' +
-  'RUN npm install\n' +
-  '\n' +
-  '# Command to start the app\n' +
-  'CMD <start-command>\n'
+  body: fs.readFileSync(__dirname + '/sourceDockerFiles/nodejs').toString()
 }, {
   name: 'Rails',
   isTemplate: true,
-  body: 'FROM ruby:<ruby-version>\n' +
-  '# Open up ports on the server\n' +
-  'EXPOSE <user-specified-ports>\n' +
-  '\n' +
-  '# Install Rails (and its dependencies)\n' +
-  'RUN apt-get update && apt-get install -y nodejs --no-install-recommends && rm -rf /var/lib/apt/lists/*\n' +
-  '\n' +
-  '\n' +
-  '# see http://guides.rubyonrails.org/command_line.html#rails-dbconsole\n' +
-  'RUN apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 --no-install-recommends && rm -rf /var/lib/apt/lists/*\n' +
-  '\n' +
-  '# Specify the version of Rails to install\n' +
-  'ENV RAILS_VERSION <rails-version>\n' +
-  'RUN gem install rails --version "$RAILS_VERSION"\n' +
-  '\n' +
-  '# Add repository files to server\n' +
-  'ADD ./<repo-name> /<repo-name>\n' +
-  'WORKDIR /<repo-name>\n' +
-  '\n' +
-  '# Install dependencies\n' +
-  'RUN apt-get update \n' +
-  '<add-dependencies>\n' +
-  '\n' +
-  'RUN bundle install\n' +
-  '\n' +
-  '# Setup and seed database\n' +
-  'RUN rake db:create db:migrate\n' +
-  '\n' +
-  '# Command to start the app\n' +
-  'CMD <start-command>\n'
+  body: fs.readFileSync(__dirname + '/sourceDockerFiles/rails').toString()
 }, {
   name: 'Ruby',
   isTemplate: true,
-  body: 'FROM ruby:<ruby-version>\n' +
-  '# Open up ports on the server\n' +
-  'EXPOSE <user-specified-ports>\n' +
-  '\n' +
-  '# Install Rails (and its dependencies)\n' +
-  'RUN apt-get update && apt-get install -y nodejs --no-install-recommends && rm -rf /var/lib/apt/lists/*\n' +
-  '\n' +
-  '\n' +
-  '# see http://guides.rubyonrails.org/command_line.html#rails-dbconsole\n' +
-  'RUN apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 --no-install-recommends && rm -rf /var/lib/apt/lists/*\n' +
-  '\n' +
-  '# Add repository files to server\n' +
-  'ADD ./<repo-name> /<repo-name>\n' +
-  'WORKDIR /<repo-name>\n' +
-  '\n' +
-  '# Install dependencies\n' +
-  'RUN apt-get update \n' +
-  '<add-dependencies>\n' +
-  '\n' +
-  'RUN bundle install\n' +
-  '\n' +
-  '# Command to start the app\n' +
-  'CMD <start-command>\n'
+  body: fs.readFileSync(__dirname + '/sourceDockerFiles/ruby').toString()
 }, {
   name: 'Python',
   isTemplate: true,
-  body: 'FROM python:<python-version>\n' +
-  '\n' +
-  '# Open up ports on the server\n' +
-  'EXPOSE <user-specified-ports>\n' +
-  '\n' +
-  '# Install environmental dependencies\n' +
-  'RUN apt-get -y -q update && apt-get install -y -q libmysqlclient-dev postgresql-server-dev-9.1\n' +
-  '\n' +
-  '# Add the repository to the /home folder\n' +
-  'ADD ./<repo-name> /home/\n' +
-  'WORKDIR /home\n' +
-  '\n' +
-  '# Install dependencies\n' +
-  'RUN pip install -r /home/requirements.txt\n' +
-  '\n' +
-  'RUN apt-get update \n' +
-  '<add-dependencies>\n' +
-  '\n' +
-  '# Command to start the app\n' +
-  'CMD <start-command>\n'
+  body: fs.readFileSync(__dirname + '/sourceDockerFiles/python').toString()
 }, {
   name: 'PostgreSQL',
-  body: '# Full list of versions available here: https://registry.hub.docker.com/_/postgres/tags/manage/\n'+
-  'FROM postgres:9.4\n' +
-  '\n' +
-  '# Set recommended environment variables\n' +
-  'ENV POSTGRES_USER postgres\n' +
-  'ENV POSTGRES_PASSWORD postgres\n' +
-  '\n' +
-  '# Open port 5432 on the server\n' +
-  'EXPOSE 5432\n'
+  body: fs.readFileSync(__dirname + '/sourceDockerFiles/postgresSql').toString()
 }, {
   name: 'MySQL',
-  body: 'FROM mysql:5.6\n' +
-'# Set required environment variables\n' +
-'ENV MYSQL_USER root\n' +
-'ENV MYSQL_PASSWORD root\n' +
-'ENV MYSQL_ROOT_PASSWORD root\n' +
-'ENV MYSQL_DATABASE app\n\n' +
-'# Open port 3306 on the server\n' +
-'EXPOSE 3306\n' 
+  body: fs.readFileSync(__dirname + '/sourceDockerFiles/mysql').toString()
 }, {
   name: 'MongoDB',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/mongo/tags/manage/\n'+
