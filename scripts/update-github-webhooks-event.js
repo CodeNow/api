@@ -7,7 +7,7 @@ var debug = require('debug')('script');
 var Instance = require('models/mongo/instance');
 var GitHub = require('models/apis/github');
 var ContextVersion = require('models/mongo/context-version');
-var MongoUser = require('models/mongo/user');
+var User = require('models/mongo/user');
 var mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO);
 
