@@ -1,0 +1,18 @@
+# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
+FROM node:<nodejs-version>
+
+# Open up ports on the server
+EXPOSE <user-specified-ports>
+
+# Add repository files to serv
+ADD ./<repo-name> /<repo-name>
+WORKDIR /<repo-name>
+
+# Install dependencies
+RUN apt-get update
+<add-dependencies>
+
+RUN npm install
+
+# Command to start the app
+CMD <start-command>
