@@ -6,7 +6,7 @@ var expect = Lab.expect;
 var before = Lab.before;
 var after = Lab.after;
 var uuid = require('uuid');
-var socketServer = require('../lib/socket/socket-server.js');
+var SocketServer = require('../lib/socket/socket-server.js');
 var Primus = require('primus');
 var http = require('http');
 var httpServer;
@@ -24,7 +24,7 @@ describe('socket-server', function () {
   describe('init test', function () {
     it('should error if no server passed in', function (done) {
       try {
-        socketServer.createSocketServer();
+        new SocketServer();
       } catch(err) {
         return done();
       }
@@ -33,7 +33,7 @@ describe('socket-server', function () {
     it('should load with no errors', function (done) {
       try {
         httpServer = http.createServer();
-        socketServer.createSocketServer(httpServer);
+        new SocketServer(httpServer);
       } catch(err) {
         return done(err);
       }
@@ -42,10 +42,10 @@ describe('socket-server', function () {
   });
 
   describe('functionality test', function () {
-    var primusServer;
+    var socketServer;
     before(function (done) {
       httpServer = http.createServer();
-      primusServer = socketServer.createSocketServer(httpServer);
+      socketServer = new SocketServer(httpServer);
       httpServer.listen(process.env.PORT, done);
     });
 
