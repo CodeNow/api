@@ -20,7 +20,7 @@ function findAllRepos(cb) {
 function findUsersForRepos(repos, cb) {
   debug('findUsersForRepos', 'total repos num:', repos.length);
   async.map(repos, function (repo, callback) {
-    User.findByGithubId(repo.creatos[0], function (err, user) {
+    User.findByGithubId(repo.creators[0], function (err, user) {
       if (err) { return callback(err); }
       repo.user = user;
       callback(null, repo);
@@ -32,7 +32,7 @@ function findUsersForRepos(repos, cb) {
 function updateHooksEvents(repos, cb) {
   debug('updateHooksEvents', 'total repos num:', repos.length);
   async.mapLimit(repos, function(repo, callback) {
-    var github = new GitHub(repo.user.accounts.github.accessToken);
+    var github = new GitHub({token: repo.user.accounts.github.accessToken});
     // this will actually update hook (not just create if missing)
     github.createRepoHookIfNotAlready(repo._id, callback);
   }, 10, cb);
