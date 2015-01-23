@@ -344,8 +344,7 @@ describe('Github - /actions/github', function () {
   describe('push follow branch', function () {
     var ctx = {};
 
-
-    beforeEach(function (done) {
+    before(function (done) {
       process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = 'true';
       multi.createInstance(function (err, instance, build, user, modelsArr) {
         ctx.contextVersion = modelsArr[0];
@@ -353,10 +352,23 @@ describe('Github - /actions/github', function () {
         ctx.build = build;
         ctx.user = user;
         ctx.instance = instance;
-        done(err);
+        var settings = {
+          owner: {
+            github: instance.attrs.owner.github
+          },
+          notifications: {
+            slack: {
+              webhookUrl: 'http://slack.com/some-web-hook-url'
+            },
+            hipchat: {
+              authToken: 'some-hipchat-token',
+              roomId: 123123
+            }
+          }
+        };
+        user.createSetting({json: settings}, done);
       });
     });
-
 
     it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
       ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
