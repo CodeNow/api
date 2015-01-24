@@ -37,9 +37,10 @@ describe('messenger Unit Tests', function() {
       });
       primus.on('data', function(data) {
         expect(data.id).to.equal(1);
-        expect(data.event).to.equal('ROOM_JOINED');
+        expect(data.event).to.equal('ROOM_ACTION_COMPLETE');
         expect(data.data.type).to.equal('org');
         expect(data.data.name).to.equal('test');
+        expect(data.data.action).to.equal('join');
         primus.end();
       });
       primus.on('end', done);
@@ -98,7 +99,7 @@ describe('messenger Unit Tests', function() {
         done(new Error('should not have got here'));
       });
       primus2.on('data', function(data) {
-        if (data.event !== 'ROOM_JOINED') {
+        if (data.event !== 'ROOM_ACTION_COMPLETE') {
           return done(new Error('should not have got here'));
         }
         primus1.write({
@@ -170,6 +171,30 @@ describe('messenger Unit Tests', function() {
           primus3.end();
         } else {
           sendMessageCount.next();
+        }
+      });
+    });
+    it('should join and leave room', function(done) {
+      var primus1 = new Socket('http://localhost:'+process.env.PORT);
+
+      primus1.on('end', done);
+
+      primus1.write({id:5678,event:'subscribe',data:{type:'org',name:'test',action:'join'}});
+
+      primus1.on('data', function(data) {
+        if (data.event === 'ROOM_ACTION_COMPLETE') {
+          expect(data.data.type).to.equal('org');
+          expect(data.data.name).to.equal('test');
+          if(data.data.action === 'join') {
+            messenger.messageRoom('org', 'test', {test:'1234'});
+          } else if(data.data.action === 'leave') {
+            primus1.end();
+          }
+        } else if (data.event === 'ROOM_MESSAGE') {
+          expect(data.type).to.equal('org');
+          expect(data.name).to.equal('test');
+          expect(data.data).to.deep.equal({test:'1234'});
+          primus1.write({id:2222,event:'subscribe',data:{type:'org',name:'test',action:'leave'}});
         }
       });
     });
