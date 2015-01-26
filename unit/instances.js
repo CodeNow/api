@@ -147,7 +147,7 @@ describe('Instance', function () {
     });
   });
 
-  describe('modifySetContainer', function () {
+  describe('modifyContainer', function () {
     var savedInstance = null;
     var instance = null;
     before(function (done) {
@@ -166,7 +166,7 @@ describe('Instance', function () {
       var cvId = savedInstance.contextVersion._id;
       var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
       var dockerHost = 'http://localhost:4243';
-      savedInstance.modifySetContainer(cvId, dockerContainer, dockerHost, function (err, newInst) {
+      savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err, newInst) {
         if (err) { return done(err); }
         expect(newInst.container).to.eql({
           dockerContainer: dockerContainer,
@@ -179,7 +179,7 @@ describe('Instance', function () {
       var cvId = newObjectId();
       var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
       var dockerHost = 'http://localhost:4243';
-      savedInstance.modifySetContainer(cvId, dockerContainer, dockerHost, function (err) {
+      savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err) {
         expect(err).to.be.ok;
         expect(err.output.statusCode).to.equal(409);
         done();
@@ -218,17 +218,17 @@ describe('Instance', function () {
       var docker = new Docker(dockerHost);
       async.waterfall([
         docker.createContainer.bind(docker, {}),
-        modifySetContainer,
+        modifyContainer,
         startContainer,
         stopContainer,
         inspectAndUpdate
       ], done);
 
-      function modifySetContainer (container, cb) {
+      function modifyContainer (container, cb) {
         var cvId = savedInstance.contextVersion._id;
         var dockerContainer = container.Id;
         var dockerHost = 'http://localhost:4243';
-        savedInstance.modifySetContainer(cvId, dockerContainer, dockerHost, cb);
+        savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, cb);
       }
       function startContainer (savedInstance, cb) {
         docker.startContainer(savedInstance.container, function (err) {
@@ -374,7 +374,7 @@ describe('Instance', function () {
 
 
 
-  describe('modifySetContainerInspectErr', function () {
+  describe('modifyContainerInspectErr', function () {
     var savedInstance = null;
     var instance = null;
     before(function (done) {
@@ -397,7 +397,7 @@ describe('Instance', function () {
         field: 'random field',
       };
       var dockerContainer = savedInstance.container.dockerContainer;
-      savedInstance.modifySetContainerInspectErr(dockerContainer, fakeError, function (err, newInst) {
+      savedInstance.modifyContainerInspectErr(dockerContainer, fakeError, function (err, newInst) {
         if (err) { return done(err); }
         expect(newInst.container.inspect.error.message).to.equal(fakeError.message);
         expect(newInst.container.inspect.error.data).to.equal(fakeError.data);
@@ -429,7 +429,7 @@ describe('Instance', function () {
           count.next();
         };
         var dockerContainer = 'fac985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452';
-        savedInstance.modifySetContainerInspectErr(dockerContainer, fakeError, count.next);
+        savedInstance.modifyContainerInspectErr(dockerContainer, fakeError, count.next);
       });
     });
   });
