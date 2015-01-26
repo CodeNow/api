@@ -10,6 +10,9 @@ var validation = require('./fixtures/validation');
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var Hashids = require('hashids');
 var async = require('async');
+var mongoose = require('mongoose');
+var createCount = require('callback-count');
+var error = require('error');
 
 var Instance = require('models/mongo/instance');
 var dock = require('../test/fixtures/dock');
@@ -26,6 +29,9 @@ function getNextId () {
 function getNextHash () {
   var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
   return hashids.encrypt(getNextId())[0];
+}
+function newObjectId () {
+  return new mongoose.Types.ObjectId();
 }
 
 describe('Instance', function () {
@@ -166,6 +172,16 @@ describe('Instance', function () {
           dockerContainer: dockerContainer,
           dockerHost: dockerHost
         });
+        done();
+      });
+    });
+    it('should conflict if the contextVersion has changed', function (done) {
+      var cvId = newObjectId();
+      var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
+      var dockerHost = 'http://localhost:4243';
+      savedInstance.modifySetContainer(cvId, dockerContainer, dockerHost, function (err) {
+        expect(err).to.be.ok;
+        expect(err.output.statusCode).to.equal(409);
         done();
       });
     });
@@ -328,7 +344,32 @@ describe('Instance', function () {
         done();
       });
     });
-
+    describe('conflict error', function () {
+      var origErrorLog = error.log;
+      after(function (done) {
+        error.log = origErrorLog;
+        done();
+      });
+      it('should conflict if the contextVersion has changed', function (done) {
+        var fakeError = {
+          message: 'random message',
+          data: 'random data',
+          stack: 'random stack',
+          field: 'random field',
+        };
+        var count = createCount(3, done);
+        error.log = function (err) {
+          // first call
+          if (err === fakeError) { return count.next(); }
+          // second call
+          expect(err).to.be.ok;
+          expect(err.output.statusCode).to.equal(409);
+          count.next();
+        };
+        var cvId = newObjectId();
+        savedInstance.modifyContainerCreateErr(cvId, fakeError, count.next);
+      });
+    });
   });
 
 
@@ -349,23 +390,48 @@ describe('Instance', function () {
     });
 
     it('should pick message, stack and data fields', function (done) {
-      var error = {
+      var fakeError = {
         message: 'random message',
         data: 'random data',
         stack: 'random stack',
         field: 'random field',
       };
       var dockerContainer = savedInstance.container.dockerContainer;
-      savedInstance.modifySetContainerInspectErr(dockerContainer, error, function (err, newInst) {
+      savedInstance.modifySetContainerInspectErr(dockerContainer, fakeError, function (err, newInst) {
         if (err) { return done(err); }
-        expect(newInst.container.inspect.error.message).to.equal(error.message);
-        expect(newInst.container.inspect.error.data).to.equal(error.data);
-        expect(newInst.container.inspect.error.stack).to.equal(error.stack);
+        expect(newInst.container.inspect.error.message).to.equal(fakeError.message);
+        expect(newInst.container.inspect.error.data).to.equal(fakeError.data);
+        expect(newInst.container.inspect.error.stack).to.equal(fakeError.stack);
         expect(newInst.container.inspect.error.field).to.not.exist();
         done();
       });
     });
-
+    describe('conflict error', function() {
+      var origErrorLog = error.log;
+      after(function (done) {
+        error.log = origErrorLog;
+        done();
+      });
+      it('should conflict if the container has changed', function (done) {
+        var fakeError = {
+          message: 'random message',
+          data: 'random data',
+          stack: 'random stack',
+          field: 'random field',
+        };
+        var count = createCount(3, done);
+        error.log = function (err) {
+          // first call
+          if (err === fakeError) { return count.next(); }
+          // second call
+          expect(err).to.be.ok;
+          expect(err.output.statusCode).to.equal(409);
+          count.next();
+        };
+        var dockerContainer = 'fac985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452';
+        savedInstance.modifySetContainerInspectErr(dockerContainer, fakeError, count.next);
+      });
+    });
   });
 
   describe('find instance by container id', function () {
