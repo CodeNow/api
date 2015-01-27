@@ -1,1 +1,7 @@
-Hello 2
+{{#if instances.length}}
+  {{#each instances}}
+  Render instance
+  {{/each}}
+{{else}}
+[Select Runnable server to run code from this PR](http://{{domain}}/podviaznikov/boxSelection/{{repoName}}/{{encode branch}}/commit/{{commit}})
+{{/if}}
