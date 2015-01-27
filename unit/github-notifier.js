@@ -4,7 +4,7 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
 var GitHub = require('models/notifications/github');
-var uuid = require('uuid');
+
 
 describe('GitHub Notifier',  function () {
 
@@ -26,7 +26,10 @@ describe('GitHub Notifier',  function () {
     };
 
     var message = github._renderMessage(githubPushInfo, []);
-    expect(message).to.equal('[Select Runnable server to run code from this PR](http://runnable3.net/podviaznikov/boxSelection/api/fix%252F1/commit/a240edf982d467201845b3bf10ccbe16f6049ea9)\n');
+    var msg = '[Select Runnable server to run code from this PR]';
+    msg += '(http://runnable3.net/podviaznikov/boxSelection/';
+    msg += 'api/fix%252F1/commit/a240edf982d467201845b3bf10ccbe16f6049ea9)\n';
+    expect(message).to.equal(msg);
     done();
   });
 
