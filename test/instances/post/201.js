@@ -304,6 +304,23 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, done);
   });
+  it('should create a private instance by default', function (done) {
+    var name = uuid();
+    var env = [
+      'FOO=BAR'
+    ];
+    var body = {
+      name: name,
+      build: ctx.build.id(),
+      env: env
+    };
+    ctx.expected.name = name;
+    ctx.expected.env = env;
+    assertCreate(body, function () {
+      Lab.expect(ctx.instance.attrs.public).to.equal(false);
+      done();
+    });
+  });
   describe('name generation', function () {
     // TODO
   });
