@@ -15,7 +15,7 @@ describe('GitHub Notifier',  function () {
     var githubPushInfo = {
       repo: 'CodeNow/api',
       repoName: 'api',
-      branch: 'develop',
+      branch: 'fix/1',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       user: {
         login: 'podviaznikov'
@@ -26,7 +26,7 @@ describe('GitHub Notifier',  function () {
     };
 
     var message = github._renderMessage(githubPushInfo, []);
-    expect(message).to.equal('[Select Runnable server to run code from this PR](http://runnable3.net/podviaznikov/boxSelection/api/develop/commit/a240edf982d467201845b3bf10ccbe16f6049ea9)\n');
+    expect(message).to.equal('[Select Runnable server to run code from this PR](http://runnable3.net/podviaznikov/boxSelection/api/fix%252F1/commit/a240edf982d467201845b3bf10ccbe16f6049ea9)\n');
     done();
   });
 
