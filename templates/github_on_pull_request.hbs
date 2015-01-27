@@ -1,6 +1,6 @@
 {{#if instances.length}}
   {{#each instances}}
-  Render instance
+  [Server {{this.name}}](http://{{../domain}}/{{../owner.login}}/{{this.name}})
   {{/each}}
 {{else}}
 [Select Runnable server to run code from this PR](http://{{domain}}/{{owner.login}}/boxSelection/{{repoName}}/{{encode branch}}/commit/{{commit}})
