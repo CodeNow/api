@@ -266,24 +266,22 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
       }
       else { // success
         countDown.inc();
-        if(ctx.primus) {
-            ctx.primus.once('data', function(data) {
-              if (data.event === 'ROOM_MESSAGE') {
-                try {
-                  // this is these errors will bubble up in test
-                  expect(data.type).to.equal('org');
-                  expect(data.event).to.equal('ROOM_MESSAGE');
-                  expect(data.name).to.equal(ctx.instance.attrs.owner.github);
-                  expect(data.data.event).to.equal('INSTANCE_UPDATE');
-                  expect(ctx.instance.attrs._id).to.deep.contain(data.data.data._id);
-                } catch (err) {
-                  console.error('SOCKET_EXPECT_FAILED', err);
-                  return countDown.next(err);
-                }
-                countDown.next();
-              }
-          });
-        }
+        ctx.primus.once('data', function(data) {
+          if (data.event === 'ROOM_MESSAGE') {
+            try {
+              // this is these errors will bubble up in test
+              expect(data.type).to.equal('org');
+              expect(data.event).to.equal('ROOM_MESSAGE');
+              expect(data.name).to.equal(ctx.instance.attrs.owner.github);
+              expect(data.data.event).to.equal('INSTANCE_UPDATE');
+              expect(ctx.instance.attrs._id).to.equal(data.data.data._id);
+            } catch (err) {
+              console.error('SOCKET_EXPECT_FAILED', err);
+              return countDown.next(err);
+            }
+            countDown.next();
+          }
+        });
         var assertions = ctx.expectAlreadyStarted ?
           expects.error(304, stopStartAssert) :
           expects.success(200, ctx.expected, stopStartAssert);

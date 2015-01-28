@@ -5,6 +5,7 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var expect = Lab.expect;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -21,6 +22,14 @@ var Docker = require('models/apis/docker');
 var extend = require('extend');
 var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
+var Primus = require('primus');
+var Socket = Primus.createSocket({
+  transformer: process.env.PRIMUS_TRANSFORMER,
+  plugin: {
+    'substream': require('substream')
+  },
+  parser: 'JSON'
+});
 
 describe('201 POST /instances', {timeout:500}, function () {
   var ctx = {};
@@ -28,10 +37,34 @@ describe('201 POST /instances', {timeout:500}, function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(function(done){
+    ctx.primus = new Socket('http://localhost:'+process.env.PORT);
+    done();
+  });
+  afterEach(function(done){
+    ctx.primus.end();
+    done();
+  });
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
+  var joinOrgRoom = function (orgId, cb) {
+    ctx.primus.write({
+      id: uuid(), // needed for uniqueness
+      event: 'subscribe',
+      data: {
+        action: 'join',
+        type: 'org',
+        name: orgId, // org you wish to join
+      }
+    });
+    ctx.primus.once('data', function(data) {
+      if (data.event === 'ROOM_ACTION_COMPLETE') {
+        cb();
+      }
+    });
+  };
   var stopContainerRightAfterStart = function () {
     var self = this;
     var args = Array.prototype.slice.call(arguments);
@@ -91,7 +124,7 @@ describe('201 POST /instances', {timeout:500}, function () {
       'network.networkIp': exists,
       'network.hostIp': exists
     };
-    done();
+    joinOrgRoom(ctx.user.json().accounts.github.id, done);
   }
 
   describe('for User', function () {
@@ -260,26 +293,44 @@ describe('201 POST /instances', {timeout:500}, function () {
   });
 });
 
+function expectMessage(ctx, cb) {
+  ctx.primus.once('data', function(data) {
+    if (data.event === 'ROOM_MESSAGE') {
+      expect(data.type).to.equal('org');
+      expect(data.event).to.equal('ROOM_MESSAGE');
+      expect(data.name).to.equal(ctx.instance.attrs.owner.github);
+      expect(data.data.event).to.equal('INSTANCE_UPDATE');
+      expect(ctx.instance.attrs._id).to.equal(data.data.data._id);
+      cb();
+    }
+  });
+}
+
 function createInstanceTests (ctx) {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
   it('should create an instance with build', function (done) {
+    var countDown = createCount(2, done);
     var body = {
       build: ctx.build.id()
     };
-    assertCreate(body, done);
+    expectMessage(ctx, countDown.next);
+    assertCreate(body, countDown.next);
   });
   it('should create an instance with build and name', function (done) {
+    var countDown = createCount(2, done);
     var name = 'ABCDEFGHIJKLMNOPQRSTUVWYXZ_-';
     var body = {
       name: name,
       build: ctx.build.id()
     };
     ctx.expected.name = name;
-    assertCreate(body, done);
+    expectMessage(ctx, countDown.next);
+    assertCreate(body, countDown.next);
   });
   it('should create an instance with env and build', function (done) {
+    var countDown = createCount(2, done);
     var env = [
       'FOO=BAR'
     ];
@@ -288,9 +339,11 @@ function createInstanceTests (ctx) {
       build: ctx.build.id()
     };
     ctx.expected.env = env;
-    assertCreate(body, done);
+    expectMessage(ctx, countDown.next);
+    assertCreate(body, countDown.next);
   });
   it('should create an instance with name, env and build', function (done) {
+    var countDown = createCount(2, done);
     var name = uuid();
     var env = [
       'FOO=BAR'
@@ -302,9 +355,11 @@ function createInstanceTests (ctx) {
     };
     ctx.expected.name = name;
     ctx.expected.env = env;
-    assertCreate(body, done);
+    expectMessage(ctx, countDown.next);
+    assertCreate(body, countDown.next);
   });
   it('should create a private instance by default', function (done) {
+    var countDown = createCount(2, done);
     var name = uuid();
     var env = [
       'FOO=BAR'
@@ -316,9 +371,10 @@ function createInstanceTests (ctx) {
     };
     ctx.expected.name = name;
     ctx.expected.env = env;
+    expectMessage(ctx, countDown.next);
     assertCreate(body, function () {
       Lab.expect(ctx.instance.attrs.public).to.equal(false);
-      done();
+      countDown.next();
     });
   });
   describe('name generation', function () {
