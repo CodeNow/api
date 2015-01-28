@@ -27,6 +27,9 @@ describe('User - /users/:id', function () {
       beforeEach(function (done) {
         ctx.user = multi.createUser(done);
       });
+      beforeEach(function (done) {
+        ctx.user.update({uiState: {shownCoachMarks: {stuff: true}}}, done);
+      });
 
       it('should get the user', function (done) {
         ctx.user.fetch(function (err, body, code) {
@@ -62,7 +65,7 @@ describe('User - /users/:id', function () {
 
 function expectPrivateFields (user) {
   expect(user).to.include.keys(
-    ['_id', 'email', 'gravatar', 'uiSaveState']); // TODO: ? 'imagesCount', 'taggedImagesCount'
+    ['_id', 'email', 'gravatar', 'uiState']); // TODO: ? 'imagesCount', 'taggedImagesCount'
   expect(user).to.not.include.keys(['password']);
 }
 function expectPublicFields (user) {
