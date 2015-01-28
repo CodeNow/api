@@ -5,6 +5,7 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var expect = Lab.expect;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -23,10 +24,33 @@ var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
-
+var Primus = require('primus');
+var Socket = Primus.createSocket({
+  transformer: process.env.PRIMUS_TRANSFORMER,
+  plugin: {
+    'substream': require('substream')
+  },
+  parser: 'JSON'
+});
 
 describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
   var ctx = {};
+  var joinOrgRoom = function (orgId, cb) {
+    ctx.primus.write({
+      id: uuid(), // needed for uniqueness
+      event: 'subscribe',
+      data: {
+        action: 'join',
+        type: 'org',
+        name: orgId, // org you wish to join
+      }
+    });
+    ctx.primus.once('data', function(data) {
+      if (data.event === 'ROOM_ACTION_COMPLETE') {
+        cb();
+      }
+    });
+  };
   var stopContainerRightAfterStart = function () {
     var self = this;
     var args = Array.prototype.slice.call(arguments);
@@ -66,6 +90,14 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(function(done){
+    ctx.primus = new Socket('http://localhost:'+process.env.PORT);
+    done();
+  });
+  afterEach(function(done){
+    ctx.primus.end();
+    done();
+  });
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -87,7 +119,7 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
       'build._id': ctx.build.id(),
       'contextVersions[0]._id': ctx.cv.id()
     };
-    done();
+    joinOrgRoom(ctx.user.json().accounts.github.id, done);
   }
 
   describe('for User', function () {
@@ -224,22 +256,42 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should start an instance', function (done) {
+      var countDown = createCount(1, done);
       if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
         Docker.prototype.startContainer = ctx.originalStart;
         ctx.expected['containers[0].inspect.State.Running'] = true;
       }
       if (ctx.expectNoContainerErr) {
-        ctx.instance.start(expects.error(400, /not have a container/, done));
+        ctx.instance.start(expects.error(400, /not have a container/, countDown.next));
       }
       else { // success
+        countDown.inc();
+        if(ctx.primus) {
+            ctx.primus.once('data', function(data) {
+              if (data.event === 'ROOM_MESSAGE') {
+                try {
+                  // this is these errors will bubble up in test
+                  expect(data.type).to.equal('org');
+                  expect(data.event).to.equal('ROOM_MESSAGE');
+                  expect(data.name).to.equal(ctx.instance.attrs.owner.github);
+                  expect(data.data.event).to.equal('INSTANCE_UPDATE');
+                  expect(ctx.instance.attrs._id).to.deep.contain(data.data.data._id);
+                } catch (err) {
+                  console.error('SOCKET_EXPECT_FAILED', err);
+                  return countDown.next(err);
+                }
+                countDown.next();
+              }
+          });
+        }
         var assertions = ctx.expectAlreadyStarted ?
           expects.error(304, stopStartAssert) :
           expects.success(200, ctx.expected, stopStartAssert);
         ctx.instance.start(assertions);
       }
       function stopStartAssert (err) {
-        if (err) { return done(err); }
-        var count = createCount(done);
+        if (err) { return countDown.next(err); }
+        var count = createCount(countDown.next);
         // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
         expects.updatedHosts(ctx.user, ctx.instance, count.inc().next);
         // try stop and start
