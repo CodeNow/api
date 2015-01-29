@@ -59,7 +59,7 @@ describe('JSON body parser', function () {
     });
   });
 
-  it('should fail to parse json less than 600kb', function (done) {
+  it('should fail to parse json more than 600kb', function (done) {
     var uri = url.format({
       protocol: 'http:',
       slashes: true,
