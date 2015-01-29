@@ -225,7 +225,7 @@ describe('GitHub Notifier',  function () {
         if (err) { return done(err); }
         expect(resp.length).to.equal(0);
         done();
-      })
+      });
     });
 
     it('should not update comment', function (done) {
@@ -234,7 +234,7 @@ describe('GitHub Notifier',  function () {
         if (err) { return done(err); }
         expect(resp.length).to.equal(0);
         done();
-      })
+      });
     });
 
   });
