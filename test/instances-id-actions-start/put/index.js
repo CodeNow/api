@@ -53,12 +53,12 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
       cb(createErr);
     }
   };
-  var delayContainerWaitBy = function (ms, originalContainerWait) {
+  var delayContainerLogsBy = function (ms, originalContainerLogs) {
     return function () {
       var container = this;
       var args = arguments;
       setTimeout(function () {
-        originalContainerWait.apply(container, args);
+        originalContainerLogs.apply(container, args);
       }, ms);
     };
   };
@@ -92,13 +92,13 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
 
   describe('for User', function () {
     describe('create instance with in-progress build', function () {
-      beforeEach(function (done) { // delay container wait time to make build time longer
-        ctx.originalContainerWait = Container.prototype.wait;
-        Container.prototype.wait = delayContainerWaitBy(500, ctx.originalContainerWait);
+      beforeEach(function (done) { // delay container log time to make build time longer
+        ctx.originalContainerLogs = Container.prototype.logs;
+        Container.prototype.logs = delayContainerLogsBy(500, ctx.originalContainerLogs);
         done();
       });
-      afterEach(function (done) { // restore original container wait method
-        Container.prototype.wait = ctx.originalContainerWait;
+      afterEach(function (done) { // restore original container log method
+        Container.prototype.logs = ctx.originalContainerLogs;
         done();
       });
       beforeEach(function (done) {
