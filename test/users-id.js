@@ -142,6 +142,6 @@ function expectPrivateFields (user) {
 }
 function expectPublicFields (user) {
   expect(user).to.not.include.keys(
-    ['email', 'password', 'votes']); // TODO: ? 'imagesCount', 'taggedImagesCount'
+    ['email', 'password', 'votes', 'userOptions']); // TODO: ? 'imagesCount', 'taggedImagesCount'
   expect(user).to.include.keys(['_id', 'gravatar']);
 }
