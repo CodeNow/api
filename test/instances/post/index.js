@@ -12,6 +12,7 @@ var clone = require('101/clone');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
 var exists = require('101/exists');
 var not = require('101/not');
 var equals = require('101/equals');
@@ -20,6 +21,7 @@ var createCount = require('callback-count');
 var ContextVersion = require('models/mongo/context-version');
 var Build = require('models/mongo/build');
 
+
 describe('POST /instances', function () {
   var ctx = {};
 
@@ -27,10 +29,10 @@ describe('POST /instances', function () {
   before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
+  afterEach(primus.disconnect.bind(ctx));
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
-
 
   describe('POST', {timeout: 1000}, function () {
     describe('with unbuilt build', function () {
@@ -59,6 +61,42 @@ describe('POST /instances', function () {
         });
       });
       describe('user owned', function () {
+        describe('check messenger', function() {
+          beforeEach(function(done) {
+            require('../../fixtures/mocks/docker/container-id-attach')(25);
+            require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
+            ctx.build.build({ message: uuid() }, done);
+          });
+          beforeEach(primus.connect.bind(ctx));
+          beforeEach(function(done){
+            primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
+          });
+
+          it('should emit post adn deploy event', function(done) {
+            var countDown = createCount(2, done);
+            var expected = {
+              shortHash: exists,
+              'createdBy.github': ctx.user.attrs.accounts.github.id,
+              'build._id': ctx.build.id(),
+              name: exists,
+              'owner.github': ctx.user.attrs.accounts.github.id,
+              contextVersions: exists,
+              'contextVersions[0]._id': ctx.cv.id(),
+              'contextVersions[0].appCodeVersions[0]': ctx.cv.json().appCodeVersions[0],
+              'network.networkIp': exists,
+              'network.hostIp': exists
+            };
+            primus.expectPostAndDeploy.bind(ctx)(expected, countDown.next);
+            var json = { build: ctx.build.id(), name: uuid() };
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            var instance = ctx.user.createInstance({ json: json }, function(err) {
+               if (err) { return countDown.next(err); }
+              multi.tailInstance(ctx.user, instance, countDown.next);
+            });
+          });
+        });
         it('should create a new instance', {timeout: 1500}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
