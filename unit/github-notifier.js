@@ -2,6 +2,8 @@
 var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
+var before = Lab.before;
+var after = Lab.after;
 var expect = Lab.expect;
 var GitHub = require('models/notifications/github');
 
@@ -202,5 +204,39 @@ describe('GitHub Notifier',  function () {
 
   });
 
+
+  describe('disabled PR comments', function () {
+    var ctx = {};
+
+    before(function (done) {
+      ctx.originalENABLE_GITHUB_PR_COMMENTS = process.env.ENABLE_GITHUB_PR_COMMENTS;
+      process.env.ENABLE_GITHUB_PR_COMMENTS = false;
+      done();
+    });
+
+    after(function (done) {
+      process.env.ENABLE_GITHUB_PR_COMMENTS = ctx.originalENABLE_GITHUB_PR_COMMENTS;
+      done();
+    });
+
+    it('should not add new comment', function (done) {
+      var github = new GitHub();
+      github.notifyOnPullRequest({}, [], function (err, resp) {
+        if (err) { return done(err); }
+        expect(resp.length).to.equal(0);
+        done();
+      })
+    });
+
+    it('should not update comment', function (done) {
+      var github = new GitHub();
+      github.updatePullRequestsComments({}, {}, function (err, resp) {
+        if (err) { return done(err); }
+        expect(resp.length).to.equal(0);
+        done();
+      })
+    });
+
+  });
 
 });
