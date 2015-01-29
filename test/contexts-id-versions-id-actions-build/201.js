@@ -204,44 +204,7 @@ function buildTheVersionTests (ctx) {
               waitForCvBuildToComplete(ctx.cv, ctx.user, done);
             }));
           });
-          [
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n \n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log \n\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log \n \n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log \n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n ',
-          'FROM dockerfile/nodejs \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \nCMD tail -f /var/log/dpkg.log \n',
-          'FROM dockerfile/nodejs \nCMD tail -f /var/log/dpkg.log\n ',
-          'FROM dockerfile/nodejs\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n    \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs    \n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs    \n    \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n \n\n \n\n\n \n\n\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs  \n  \n\n  \n\n\n  \n\n\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n\n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n \n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n \n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n\n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n \n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n \n \nCMD tail -f /var/log/dpkg.log\n',
-          '\nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '\n\nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '\n \nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          ' \n\nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          ' \n \nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\t\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\r',
-          ].forEach(function(fileInfo) {
+          require('../../fixtures/equivalent-dockerfiles').forEach(function(fileInfo) {
             it('should dedupe whitespace changes: ' + fileInfo, function(done) {
               var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
@@ -282,16 +245,7 @@ function buildTheVersionTests (ctx) {
             });
           });
 
-          [
-          'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log \n',
-          'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log\n ',
-          'FROM dockerfile/nodejs\n  CMD tail -f /var/log/dpkg.log\n',
-          ' FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '  FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '\tFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '\rFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          ].forEach(function(fileInfo) {
+          require('../../fixtures/different-dockerfiles').forEach(function(fileInfo) {
             it('should NOT dedupe whitespace changes: ' + fileInfo, function(done) {
                var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
