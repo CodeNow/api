@@ -52,162 +52,32 @@ describe('GitHub Notifier',  function () {
         },
         owner: {
           login: 'podviaznikov'
-        }
-      };
-      var instances = [
-        {
-          name: 'box-1'
         },
-        {
-          name: 'box-2'
-        }
-      ];
-      var message = github._renderMessage(githubPushInfo, instances);
-      var msg = '[Server box-1](http://runnable3.net/podviaznikov/box-1)\n  ';
-      msg += '[Server box-2](http://runnable3.net/podviaznikov/box-2)';
-      expect(message).to.equal(msg);
-      done();
-    });
-
-  });
-
-  describe('_newMessageForLinkedBox', function () {
-
-    it('should update replace old box selection text', function (done) {
-      var github = new GitHub();
-
-      var githubPushInfo = {
-        repo: 'CodeNow/api',
-        repoName: 'api',
-        branch: 'fix/1',
-        commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-        user: {
-          login: 'podviaznikov'
-        },
-        owner: {
-          login: 'podviaznikov'
-        }
-      };
-
-      var oldMessage = github._renderMessage(githubPushInfo, []);
-      var instance = {name: 'new-box', owner: {username: 'podviaznikov'}};
-      var newMessage = github._newMessageForLinkedBox(githubPushInfo, oldMessage, instance);
-      var expected = '[Server new-box](http://runnable3.net/podviaznikov/new-box)';
-      expect(newMessage).to.equal(expected);
-      done();
-    });
-
-    it('should update add new server box link', function (done) {
-      var github = new GitHub();
-
-      var githubPushInfo = {
-        repo: 'CodeNow/api',
-        repoName: 'api',
-        branch: 'fix/1',
-        commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-        user: {
-          login: 'podviaznikov'
-        },
-        owner: {
-          login: 'podviaznikov'
-        }
-      };
-      var instances = [
-        {
-          name: 'box-1'
-        }
-      ];
-      var oldMessage = github._renderMessage(githubPushInfo, instances);
-
-      var instance = {name: 'new-box', owner: {username: 'podviaznikov'}};
-      var newMessage = github._newMessageForLinkedBox(githubPushInfo, oldMessage, instance);
-      var expected = '[Server box-1](http://runnable3.net/podviaznikov/box-1)\n';
-      expected += '[Server new-box](http://runnable3.net/podviaznikov/new-box)';
-      expect(newMessage).to.equal(expected);
-      done();
-    });
-
-  });
-
-  describe('_newMessageForUnlinkedBox', function () {
-
-
-    it('should replace all with selection link', function (done) {
-      var github = new GitHub();
-
-      var githubPushInfo = {
-        repo: 'CodeNow/api',
-        repoName: 'api',
-        branch: 'fix/1',
-        commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-        number: 3,
-        user: {
-          login: 'podviaznikov'
-        },
-        owner: {
-          login: 'podviaznikov'
-        }
+        number: 5
       };
       var instances = [
         {
           name: 'box-1',
           owner: {
-            username: 'podviaznikov'
-          }
-        }
-      ];
-      var oldMessage = github._renderMessage(githubPushInfo, instances);
-
-      var instance = {name: 'box-1', owner: {username: 'podviaznikov'}};
-      var newMessage = github._newMessageForUnlinkedBox(githubPushInfo, oldMessage, instance);
-      var expected = '[Choose a server]';
-      expected += '(http://runnable3.net/podviaznikov/boxSelection/api/fix%252F1/';
-      expected += 'commit/a240edf982d467201845b3bf10ccbe16f6049ea9)';
-      expected += ' to run PR-3';
-      expect(newMessage).to.equal(expected);
-      done();
-    });
-
-    it('should remove server box url', function (done) {
-      var github = new GitHub();
-
-      var githubPushInfo = {
-        repo: 'CodeNow/api',
-        repoName: 'api',
-        branch: 'fix/1',
-        commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-        user: {
-          login: 'podviaznikov'
-        },
-        owner: {
-          login: 'podviaznikov'
-        }
-      };
-      var instances = [
-        {
-          name: 'box-1',
-          owner: {
-            username: 'podviaznikov'
+            login: 'podviaznikov'
           }
         },
         {
           name: 'box-2',
           owner: {
-            username: 'podviaznikov'
+            login: 'podviaznikov'
           }
         }
       ];
-      var oldMessage = github._renderMessage(githubPushInfo, instances);
-
-      var instance = {name: 'box-1', owner: {username: 'podviaznikov'}};
-      var newMessage = github._newMessageForUnlinkedBox(githubPushInfo, oldMessage, instance);
-      var expected = '[Server box-2](http://runnable3.net/podviaznikov/box-2)';
-      expect(newMessage).to.equal(expected);
+      var message = github._renderMessage(githubPushInfo, instances);
+      var msg = '[Server box-1](http://runnable3.net/podviaznikov/box-1) and ';
+      msg += '[Server box-2](http://runnable3.net/podviaznikov/box-2)';
+      msg += ' are updated with the latest changes to PR-5';
+      expect(message).to.equal(msg);
       done();
     });
 
   });
-
 
   describe('disabled PR comments', function () {
     var ctx = {};

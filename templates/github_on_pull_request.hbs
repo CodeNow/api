@@ -1,7 +1,0 @@
-{{#if instances.length}}
-  {{#each instances}}
-  [Server {{this.name}}](http://{{../domain}}/{{../owner.login}}/{{this.name}})
-  {{/each}}
-{{else}}
-[Choose a server](http://{{domain}}/{{owner.login}}/boxSelection/{{repoName}}/{{encode branch}}/commit/{{commit}}) to run PR-{{number}}
-{{/if}}
