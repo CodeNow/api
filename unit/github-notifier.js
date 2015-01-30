@@ -33,7 +33,7 @@ describe('GitHub Notifier',  function () {
       var msg = '[Choose a server]';
       msg += '(http://runnable3.net/podviaznikov/boxSelection/';
       msg += 'api/fix%252F1/commit/a240edf982d467201845b3bf10ccbe16f6049ea9)';
-      msg += ' to run PR-2';
+      msg += ' to run PR-2.';
       expect(message).to.equal(msg);
       done();
     });
@@ -72,7 +72,7 @@ describe('GitHub Notifier',  function () {
       var message = github._renderMessage(githubPushInfo, instances);
       var msg = '[Server box-1](http://runnable3.net/podviaznikov/box-1) and ';
       msg += '[Server box-2](http://runnable3.net/podviaznikov/box-2)';
-      msg += ' are updated with the latest changes to PR-5';
+      msg += ' are updated with the latest changes to PR-5.';
       expect(message).to.equal(msg);
       done();
     });
