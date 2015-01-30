@@ -9,6 +9,10 @@ var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var Hashids = require('hashids');
+var async = require('async');
+var mongoose = require('mongoose');
+var createCount = require('callback-count');
+var error = require('error');
 
 var Instance = require('models/mongo/instance');
 var dock = require('../test/fixtures/dock');
@@ -17,12 +21,17 @@ var Version = require('models/mongo/context-version');
 
 var Docker = require('models/apis/docker');
 
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min)) + min;
+var id = 0;
+function getNextId () {
+  id++;
+  return id;
 }
-function getRandomHash() {
+function getNextHash () {
   var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
-  return hashids.encrypt(getRandomInt(0, 1000))[0];
+  return hashids.encrypt(getNextId())[0];
+}
+function newObjectId () {
+  return new mongoose.Types.ObjectId();
 }
 
 describe('Instance', function () {
@@ -60,7 +69,7 @@ describe('Instance', function () {
     opts = opts || {};
     return new Instance({
       name: name || 'name',
-      shortHash: getRandomHash(),
+      shortHash: getNextHash(),
       locked: opts.locked || false,
       public: false,
       owner: { github: validation.VALID_GITHUB_ID },
@@ -138,7 +147,7 @@ describe('Instance', function () {
     });
   });
 
-  describe('modifySetContainer', function () {
+  describe('modifyContainer', function () {
     var savedInstance = null;
     var instance = null;
     before(function (done) {
@@ -153,38 +162,29 @@ describe('Instance', function () {
       });
     });
 
-    it('should work for inspect.state', function (done) {
-      var newState = {
-        'ExitCode': 0,
-        'FinishedAt': '2014-11-25T22:39:50.23925175Z',
-        'Paused': false,
-        'Pid': 0,
-        'Restarting': false,
-        'Running': false,
-        'StartedAt': '2014-11-25T22:29:50.23925175Z'
-      };
-      var containerData = {
-        Image: 'f1c42afeb4a42b67a4d469c118c402be4b2be6749375b98288cbb29b5c1d154c',
-        Path: 'nginx',
-        State: newState,
-        Id: '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1',
-        Name: '/sad_engelbart4'
-      };
-      var currentDate = Date.now();
-      savedInstance.modifySetContainer(containerData, 'http://localhost:4243', function (err, newInst) {
+    it('should update instance.container', function (done) {
+      var cvId = savedInstance.contextVersion._id;
+      var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
+      var dockerHost = 'http://localhost:4243';
+      savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err, newInst) {
         if (err) { return done(err); }
-        expect(newInst.container.inspect.State.Pid).to.equal(newState.Pid);
-        expect(newInst.container.inspect.State.ExitCode).to.equal(newState.ExitCode);
-        expect(newInst.container.inspect.State.Running).to.equal(newState.Running);
-        expect(newInst.container.inspect.State.FinishedAt).to.equal(newState.FinishedAt);
-        expect(newInst.container.inspect.Image).to.equal(containerData.Image);
-        expect(newInst.container.inspect.Path).to.equal(containerData.Path);
-        expect(newInst.container.inspect.Name).to.equal(containerData.Name);
-        expect(newInst.container.inspect._updated).to.be.least(currentDate);
+        expect(newInst.container).to.eql({
+          dockerContainer: dockerContainer,
+          dockerHost: dockerHost
+        });
         done();
       });
     });
-
+    it('should conflict if the contextVersion has changed', function (done) {
+      var cvId = newObjectId();
+      var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
+      var dockerHost = 'http://localhost:4243';
+      savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err) {
+        expect(err).to.be.ok;
+        expect(err.output.statusCode).to.equal(409);
+        done();
+      });
+    });
   });
 
 
@@ -207,38 +207,48 @@ describe('Instance', function () {
     });
 
     it('should fail if container is not found', function (done) {
-      var container = {
-        dockerContainer: '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1'
-      };
-      savedInstance.inspectAndUpdate(container, 'http://localhost:4243', function (err) {
+      savedInstance.inspectAndUpdate(function (err) {
         expect(err.output.statusCode).to.equal(404);
         done();
       });
     });
 
     it('should work for real created container', function (done) {
-      var docker = new Docker('http://localhost:4243');
-      docker.createContainer({}, function (err, cont) {
-        if (err) { return done(err); }
-        var container = {
-          dockerContainer: cont.id
-        };
-        docker.startContainer(container, function (err) {
-          if (err) { return done(err); }
-          docker.stopContainer(container, function (err) {
-            if (err) { return done(err); }
-            savedInstance.inspectAndUpdate(container, 'http://localhost:4243', function (err, saved) {
-              if (err) { return done(err); }
-              expect(saved.container.inspect.State.Running).to.equal(false);
-              expect(saved.container.inspect.State.Pid).to.equal(0);
-              done();
-            });
-          });
+      var dockerHost = 'http://localhost:4243';
+      var docker = new Docker(dockerHost);
+      async.waterfall([
+        docker.createContainer.bind(docker, {}),
+        modifyContainer,
+        startContainer,
+        stopContainer,
+        inspectAndUpdate
+      ], done);
+
+      function modifyContainer (container, cb) {
+        var cvId = savedInstance.contextVersion._id;
+        var dockerContainer = container.Id;
+        var dockerHost = 'http://localhost:4243';
+        savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, cb);
+      }
+      function startContainer (savedInstance, cb) {
+        docker.startContainer(savedInstance.container, function (err) {
+          cb(err, savedInstance);
         });
-
-      });
+      }
+      function stopContainer (savedInstance, cb) {
+        docker.stopContainer(savedInstance.container, function (err) {
+          cb(err, savedInstance);
+        });
+      }
+      function inspectAndUpdate (savedInstance, cb) {
+        savedInstance.inspectAndUpdate(function (err, saved) {
+          if (err) { return done(err); }
+          expect(saved.container.inspect.State.Running).to.equal(false);
+          expect(saved.container.inspect.State.Pid).to.equal(0);
+          cb();
+        });
+      }
     });
-
   });
 
 
@@ -324,7 +334,8 @@ describe('Instance', function () {
         stack: 'random stack',
         field: 'random field',
       };
-      savedInstance.modifyContainerCreateErr(error, function (err, newInst) {
+      var cvId = savedInstance.contextVersion._id;
+      savedInstance.modifyContainerCreateErr(cvId, error, function (err, newInst) {
         if (err) { return done(err); }
         expect(newInst.container.error.message).to.equal(error.message);
         expect(newInst.container.error.data).to.equal(error.data);
@@ -333,12 +344,37 @@ describe('Instance', function () {
         done();
       });
     });
-
+    describe('conflict error', function () {
+      var origErrorLog = error.log;
+      after(function (done) {
+        error.log = origErrorLog;
+        done();
+      });
+      it('should conflict if the contextVersion has changed', function (done) {
+        var fakeError = {
+          message: 'random message',
+          data: 'random data',
+          stack: 'random stack',
+          field: 'random field',
+        };
+        var count = createCount(3, done);
+        error.log = function (err) {
+          // first call
+          if (err === fakeError) { return count.next(); }
+          // second call
+          expect(err).to.be.ok;
+          expect(err.output.statusCode).to.equal(409);
+          count.next();
+        };
+        var cvId = newObjectId();
+        savedInstance.modifyContainerCreateErr(cvId, fakeError, count.next);
+      });
+    });
   });
 
 
 
-  describe('modifySetContainerInspectErr', function () {
+  describe('modifyContainerInspectErr', function () {
     var savedInstance = null;
     var instance = null;
     before(function (done) {
@@ -354,56 +390,48 @@ describe('Instance', function () {
     });
 
     it('should pick message, stack and data fields', function (done) {
-      var error = {
+      var fakeError = {
         message: 'random message',
         data: 'random data',
         stack: 'random stack',
         field: 'random field',
       };
-      savedInstance.modifySetContainerInspectErr(error, function (err, newInst) {
+      var dockerContainer = savedInstance.container.dockerContainer;
+      savedInstance.modifyContainerInspectErr(dockerContainer, fakeError, function (err, newInst) {
         if (err) { return done(err); }
-        expect(newInst.container.inspect.error.message).to.equal(error.message);
-        expect(newInst.container.inspect.error.data).to.equal(error.data);
-        expect(newInst.container.inspect.error.stack).to.equal(error.stack);
+        expect(newInst.container.inspect.error.message).to.equal(fakeError.message);
+        expect(newInst.container.inspect.error.data).to.equal(fakeError.data);
+        expect(newInst.container.inspect.error.stack).to.equal(fakeError.stack);
         expect(newInst.container.inspect.error.field).to.not.exist();
         done();
       });
     });
-
-  });
-
-
-
-
-
-  describe('setContainerFinishedState', function () {
-    var savedInstance = null;
-    var instance = null;
-    before(function (done) {
-      instance = createNewInstance();
-      instance.save(function (err, instance) {
-        if (err) { done(err); }
-        else {
-          expect(instance).to.be.okay;
-          savedInstance = instance;
-          done();
-        }
-      });
-    });
-
-    it('should work for inspect.state', function (done) {
-      savedInstance.setContainerFinishedState('2014-11-25T22:40:50.23925175Z', -1, function (err, newInst) {
-        if (err) { return done(err); }
-        expect(newInst.container.inspect.State.Pid).to.equal(0);
-        expect(newInst.container.inspect.State.ExitCode).to.equal(-1);
-        expect(newInst.container.inspect.State.StartedAt).to.equal(instance.container.inspect.State.StartedAt);
-        expect(newInst.container.inspect.State.Running).to.equal(false);
-        expect(newInst.container.inspect.State.FinishedAt).to.equal('2014-11-25T22:40:50.23925175Z');
-        expect(newInst.container.inspect.State.ExitCode).to.equal(-1);
+    describe('conflict error', function() {
+      var origErrorLog = error.log;
+      after(function (done) {
+        error.log = origErrorLog;
         done();
       });
+      it('should conflict if the container has changed', function (done) {
+        var fakeError = {
+          message: 'random message',
+          data: 'random data',
+          stack: 'random stack',
+          field: 'random field',
+        };
+        var count = createCount(3, done);
+        error.log = function (err) {
+          // first call
+          if (err === fakeError) { return count.next(); }
+          // second call
+          expect(err).to.be.ok;
+          expect(err.output.statusCode).to.equal(409);
+          count.next();
+        };
+        var dockerContainer = 'fac985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452';
+        savedInstance.modifyContainerInspectErr(dockerContainer, fakeError, count.next);
+      });
     });
-
   });
 
   describe('find instance by container id', function () {

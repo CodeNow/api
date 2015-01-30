@@ -1,5 +1,6 @@
 test/actions-github.js
 test/actions-kill.js
+test/actions-redirect.js
 test/bdd-context-version-deduping.js
 test/bdd-deploy-instance.js
 test/bdd-instance-dependencies.js
@@ -45,6 +46,7 @@ test/instances/get/index.js
 test/instances/post/201.js
 test/instances/post/400.js
 test/instances/post/index.js
+test/json-body-parser.js
 test/settings/post/201.js
 test/settings/post/400.js
 test/settings/get/index.js

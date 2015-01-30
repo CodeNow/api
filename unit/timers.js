@@ -8,6 +8,7 @@ var afterEach = Lab.afterEach;
 var Timers = require('models/apis/timers');
 var uuid = require('uuid');
 var createCount = require('callback-count');
+var spyOnMethod = require('function-proxy').spyOnMethod;
 
 var ctx = {};
 
@@ -74,6 +75,11 @@ describe('Timers', function () {
     describe('stopping timers', function () {
       beforeEach(function (done) {
         ctx.timerName = uuid();
+        ctx.spyCalled = false;
+        spyOnMethod(require('models/datadog'), 'timing',
+          function (name) {
+            ctx.spyCalled = name;
+          });
         ctx.timer.startTimer(ctx.timerName, done);
       });
       it('should stop a timer', function (done) {
@@ -99,6 +105,14 @@ describe('Timers', function () {
         ctx.timer.stopTimer(uuid(), function (err) {
           expect(err).to.be.okay;
           expect(err.message).to.match(/does not exist/);
+          done();
+        });
+      });
+      it('should send datadog a message', function (done) {
+        ctx.timer.stopTimer(ctx.timerName, function (err) {
+          if (err) { return done(err); }
+          var r = new RegExp('api.timers.'+ctx.timerName);
+          expect(ctx.spyCalled).to.match(r);
           done();
         });
       });

@@ -44,7 +44,7 @@ describe('Notifier',  function () {
     var slack = new Slack({});
     slack.send = function (text, cb) {
       var message = 'podviaznikov\'s ';
-      message += '<' + headCommit.url + '|changes>';
+      message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       message += ' (init &amp; commit &amp; push) to CodeNow/api (develop) are ready.\n';
       message += '<http://runnable3.net/';
       message += 'podviaznikov/boxSelection/api/develop/init%2520%2526%2520commit%2520%2526%2520push';
@@ -81,7 +81,7 @@ describe('Notifier',  function () {
     var slack = new Slack({});
     slack.send = function (text, cb) {
       var message = 'podviaznikov\'s ';
-      message += '<' + headCommit.url + '|changes>';
+      message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       message += ' (init &amp; commit &amp; push) to CodeNow/api (feature-1/fix) are ready.\n';
       message += '<http://runnable3.net/';
       message += 'podviaznikov/boxSelection/api/feature-1%252Ffix/init%2520%2526%2520commit%2520%2526%2520push';
@@ -116,11 +116,12 @@ describe('Notifier',  function () {
 
   it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
+    var changesUrl = 'https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4';
     slack.send = function (message, cb) {
       var text = 'tjmehta\'s ';
-      text += '<' + headCommit.url + '|changes>';
+      text += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       text += ' (init &amp; commit &lt;p&gt;Hello&lt;/p&gt; and  ';
-      text += '<https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4|1 more>)';
+      text += '<' + wrapGitHubLink(changesUrl) +'|1 more>)';
       text += ' to CodeNow/api (feature-1/fix) are deployed on servers:';
       expect(text).to.equal(message.text);
       expect(message.attachments.length).to.equal(1);
@@ -167,7 +168,7 @@ describe('Notifier',  function () {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s ';
-      message += '<a href="' + headCommit.url + '">changes</a>';
+      message += '<a href="' + wrapGitHubLink(headCommit.url) + '">changes</a>';
       message += ' (hey there) to Runnable/api (feature-1/fix) are ready.\n';
       message += '<a href="http://runnable3.net/podviaznikov/boxSelection/api/feature-1%252Ffix';
       message += '/hey%2520there/a240edf982d467201845b3bf10ccbe16f6049ea9">Choose a server to run feature-1/fix</a>.';
@@ -200,7 +201,7 @@ describe('Notifier',  function () {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s ';
-      message += '<a href="' + headCommit.url + '">changes</a>';
+      message += '<a href="' + wrapGitHubLink(headCommit.url) + '">changes</a>';
       message += ' (init) to CodeNow/api (feature-1/fix) are deployed on servers:<br/>\n ';
       message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a><br/>\n ';
       message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a><br/>\n';
@@ -293,3 +294,8 @@ describe('Notifier',  function () {
     });
   });
 });
+
+
+function wrapGitHubLink (url) {
+  return process.env.FULL_API_DOMAIN + '/actions/redirect?url=' + encodeURIComponent(url);
+}

@@ -1,0 +1,10 @@
+FROM mysql:5.6
+
+# Set required environment variables
+ENV MYSQL_USER root
+ENV MYSQL_PASSWORD root
+ENV MYSQL_ROOT_PASSWORD root
+ENV MYSQL_DATABASE app
+
+# Open port 3306 on the server
+EXPOSE 3306

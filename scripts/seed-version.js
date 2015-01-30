@@ -11,17 +11,17 @@
 'use strict';
 
 require('loadenv')();
+
+var fs = require('fs');
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
 var Instance = require('models/mongo/instance');
-var Build = require('models/mongo/build');
 var User = require('models/mongo/user');
 var async = require('async');
 var Runnable = require('runnable');
 var user = new Runnable(process.env.FULL_API_DOMAIN);
 var mongoose = require('mongoose');
-var keypather = require('keypather')();
 
 
 var ctx = {};
@@ -67,11 +67,12 @@ var createdBy = {
 
 function removeCurrentSourceTemplates(cb) {
   Context.find({'isSource': true}, function (err, docs) {
-    docs.forEach(function (doc) {
-      doc.remove();
-    });
-    console.log(docs);
-    cb();
+    if (err) { return cb(err); }
+    async.each(docs, function (doc, cb) {
+      // we don't ever want to delete old contexts, once the are in use by users
+      console.log('UN-SOURCING OLD SOURCES');
+      doc.update({ $set: { isSource:false, oldSource:Date.now() }}, cb);
+    }, cb);
   });
 }
 
@@ -79,17 +80,15 @@ function createBlankSourceContext (cb) {
   async.waterfall([
     function (cb) {
       Instance.find({
-        'name': 'Blank',
+        'lowerName': ('Blank').toLowerCase(),
         'owner': createdBy
       }, function (err, docs) {
         console.log('REMOVING existing instance for (BLANK)');
-        if (!err && docs) {
-          docs.forEach(function (doc) {
-            doc.remove();
-          });
+        if (err) { return cb(err); }
+        async.each(docs, function (doc, cb) {
           console.log('REMOVING INSTANCES', docs);
-        }
-        cb();
+          doc.remove(cb);
+        }, cb);
       });
     },
     function newContext (cb) {
@@ -115,7 +114,7 @@ function createBlankSourceContext (cb) {
     },
     function (context, icv, cb) {
       ctx.blankIcv = icv;
-      cb(null, context, icv)
+      cb(null, context, icv);
     },
     newCV
   ], cb);
@@ -133,17 +132,15 @@ function createFirstSourceContext(finalCB) {
       async.waterfall([
         function (cb) {
           Instance.find({
-            'name': ((model.isTemplate) ? 'TEMPLATE_' : '') + model.name,
+            'lowerName': (((model.isTemplate) ? 'TEMPLATE_' : '') + model.name).toLowerCase(),
             'owner': createdBy
           }, function (err, docs) {
             console.log('REMOVING existing instance for (', model.name, ')');
-            if (!err && docs) {
-              docs.forEach(function (doc) {
-                doc.remove();
-              });
+            if (err) { return cb(err); }
+            async.each(docs, function (doc, cb) {
               console.log('REMOVING INSTANCES', docs);
-            }
-            cb();
+              doc.remove(cb);
+            }, cb);
           });
         },
         function (cb) {
@@ -151,16 +148,14 @@ function createFirstSourceContext(finalCB) {
             return cb();
           }
           Context.find({
-            'name': model.name,
+            'lowerName': (model.name).toLowerCase(),
             'owner': createdBy
           }, function (err, docs) {
             console.log('REMOVING existing context for (', model.name, ')');
-            if (!err && docs) {
-              docs.forEach(function (doc) {
-                doc.remove();
-              });
-            }
-            cb();
+            if (err) { return cb(err); }
+            async.each(docs, function (doc, cb) {
+              doc.remove(cb);
+            }, cb);
           });
         },
         function newContext(cb) {
@@ -214,11 +209,11 @@ function createFirstSourceContext(finalCB) {
 
     function createInstance(build, cb) {
       console.log('createInstance (', model.name, ')');
-      var instance = ctx.user.createInstance({
+      ctx.user.createInstance({
         build: build.id(),
         name: ((model.isTemplate) ? 'TEMPLATE_' : '') + model.name,
         owner: createdBy
-      }, function (err, newInstance) {
+      }, function (err) {
         if (err) {
           throw err;
         }
@@ -248,127 +243,25 @@ function newCV (context, icv, cb) {
 var sources = [{
   name: 'NodeJs',
   isTemplate: true,
-  body: '# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
-  'FROM node:<nodejs-version>\n' +
-  '\n' +
-  '# Open up ports on the server\n' +
-  'EXPOSE <user-specified-ports>\n' +
-  '\n' +
-  '# Add repository files to server\n' +
-  'ADD ./<repo-name> /<repo-name>\n' +
-  'WORKDIR /<repo-name>\n' +
-  '\n' +
-  '# Install dependencies\n' +
-  'RUN apt-get update \n' +
-  '<add-dependencies>\n' +
-  '\n' +
-  'RUN npm install\n' +
-  '\n' +
-  '# Command to start the app\n' +
-  'CMD <start-command>\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/nodejs').toString()
 }, {
   name: 'Rails',
   isTemplate: true,
-  body: 'FROM ruby:<ruby-version>\n' +
-  '# Open up ports on the server\n' +
-  'EXPOSE <user-specified-ports>\n' +
-  '\n' +
-  '# Install Rails (and its dependencies)\n' +
-  'RUN apt-get update && apt-get install -y nodejs --no-install-recommends && rm -rf /var/lib/apt/lists/*\n' +
-  '\n' +
-  '\n' +
-  '# see http://guides.rubyonrails.org/command_line.html#rails-dbconsole\n' +
-  'RUN apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 --no-install-recommends && rm -rf /var/lib/apt/lists/*\n' +
-  '\n' +
-  '# Specify the version of Rails to install\n' +
-  'ENV RAILS_VERSION <rails-version>\n' +
-  'RUN gem install rails --version "$RAILS_VERSION"\n' +
-  '\n' +
-  '# Add repository files to server\n' +
-  'ADD ./<repo-name> /<repo-name>\n' +
-  'WORKDIR /<repo-name>\n' +
-  '\n' +
-  '# Install dependencies\n' +
-  'RUN apt-get update \n' +
-  '<add-dependencies>\n' +
-  '\n' +
-  'RUN bundle install\n' +
-  '\n' +
-  '# Setup and seed database\n' +
-  'RUN rake db:create db:migrate\n' +
-  '\n' +
-  '# Command to start the app\n' +
-  'CMD <start-command>\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/rails').toString()
 }, {
   name: 'Ruby',
   isTemplate: true,
-  body: 'FROM ruby:<ruby-version>\n' +
-  '# Open up ports on the server\n' +
-  'EXPOSE <user-specified-ports>\n' +
-  '\n' +
-  '# Install Rails (and its dependencies)\n' +
-  'RUN apt-get update && apt-get install -y nodejs --no-install-recommends && rm -rf /var/lib/apt/lists/*\n' +
-  '\n' +
-  '\n' +
-  '# see http://guides.rubyonrails.org/command_line.html#rails-dbconsole\n' +
-  'RUN apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 --no-install-recommends && rm -rf /var/lib/apt/lists/*\n' +
-  '\n' +
-  '# Add repository files to server\n' +
-  'ADD ./<repo-name> /<repo-name>\n' +
-  'WORKDIR /<repo-name>\n' +
-  '\n' +
-  '# Install dependencies\n' +
-  'RUN apt-get update \n' +
-  '<add-dependencies>\n' +
-  '\n' +
-  'RUN bundle install\n' +
-  '\n' +
-  '# Command to start the app\n' +
-  'CMD <start-command>\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/ruby').toString()
 }, {
   name: 'Python',
   isTemplate: true,
-  body: 'FROM python:<python-version>\n' +
-  '\n' +
-  '# Open up ports on the server\n' +
-  'EXPOSE <user-specified-ports>\n' +
-  '\n' +
-  '# Install environmental dependencies\n' +
-  'RUN apt-get -y -q update && apt-get install -y -q libmysqlclient-dev postgresql-server-dev-9.1\n' +
-  '\n' +
-  '# Add the repository to the /home folder\n' +
-  'ADD ./<repo-name> /home/\n' +
-  'WORKDIR /home\n' +
-  '\n' +
-  '# Install dependencies\n' +
-  'RUN pip install -r /home/requirements.txt\n' +
-  '\n' +
-  'RUN apt-get update \n' +
-  '<add-dependencies>\n' +
-  '\n' +
-  '# Command to start the app\n' +
-  'CMD <start-command>\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/python').toString()
 }, {
   name: 'PostgreSQL',
-  body: '# Full list of versions available here: https://registry.hub.docker.com/_/postgres/tags/manage/\n'+
-  'FROM postgres:9.4\n' +
-  '\n' +
-  '# Set recommended environment variables\n' +
-  'ENV POSTGRES_USER postgres\n' +
-  'ENV POSTGRES_PASSWORD postgres\n' +
-  '\n' +
-  '# Open port 5432 on the server\n' +
-  'EXPOSE 5432\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/postgresSql').toString()
 }, {
   name: 'MySQL',
-  body: 'FROM mysql:5.6\n' +
-'# Set required environment variables\n' +
-'ENV MYSQL_USER root\n' +
-'ENV MYSQL_PASSWORD root\n' +
-'ENV MYSQL_ROOT_PASSWORD root\n' +
-'ENV MYSQL_DATABASE app\n\n' +
-'# Open port 3306 on the server\n' +
-'EXPOSE 3306\n' 
+  body: fs.readFileSync('./scripts/sourceDockerfiles/mysql').toString()
 }, {
   name: 'MongoDB',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/mongo/tags/manage/\n'+
