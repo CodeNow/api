@@ -23,7 +23,7 @@ describe('Hasher',  function () {
   describe('stream', function () {
     it('should hash a stream', function (done) {
       var fileStream = fs.createReadStream(__filename);
-      hasher(fileStream, function (err, data) {
+      hasher(fileStream, true, function (err, data) {
         if (err) { return done(err); }
         expect(data).to.be.ok;
         done();
@@ -45,7 +45,7 @@ describe('Hasher',  function () {
           var count = createCount(2, compareHashes);
           // hash file stream
           var fileStream = fs.createReadStream(filepath);
-          hasher(fileStream, function (err, data) {
+          hasher(fileStream, true, function (err, data) {
             if (err) { return count.next(err); }
             expect(data).to.be.ok;
             streamHash = data;
@@ -53,7 +53,7 @@ describe('Hasher',  function () {
           });
           // hash file string
           var fileData = fs.readFileSync(filepath).toString();
-          hasher(fileData, function (err, data) {
+          hasher(fileData, true, function (err, data) {
             if (err) { return count.next(err); }
             expect(data).to.be.ok;
             stringHash = data;
@@ -71,7 +71,7 @@ describe('Hasher',  function () {
   describe('string', function () {
     it('should hash a string', function (done) {
       var fileData = fs.readFileSync(__filename).toString();
-      hasher(fileData, function (err, data) {
+      hasher(fileData, true, function (err, data) {
         if (err) { return done(err); }
         expect(data).to.be.ok;
         done();
@@ -97,8 +97,8 @@ describe('Hasher',  function () {
         describe('remove whitespace', function () {
           it('should get the same hashes for whitespace-equivalent files', function (done) {
             var fileDatas = equivalentDockerfiles;
-            async.map(fileDatas, function (fileDate, cb) {
-              hasher(fileDate, true, cb);
+            async.map(fileDatas, function (fileData, cb) {
+              hasher(fileData, cb);
             }, compareHashes);
             function compareHashes (err, hashes) {
               if (err) { return done(err); }
@@ -125,8 +125,8 @@ describe('Hasher',  function () {
         describe('remove whitespace', function () {
           it('should get different hashes for different files', function (done) {
             var fileDatas = differentDockerfiles;
-            async.map(fileDatas, function (fileDate, cb) {
-              hasher(fileDate, true, cb);
+            async.map(fileDatas, function (fileData, cb) {
+              hasher(fileData, cb);
             }, compareHashes);
             function compareHashes (err, hashes) {
               if (err) { return done(err); }

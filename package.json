@@ -38,6 +38,7 @@
     "fn-object": "~0.2.2",
     "github": "^0.2.1",
     "handlebars": "^2.0.0",
+    "hash-stream": "^1.1.0",
     "hashids": "^0.3.3",
     "hipchat-client": "^1.0.2",
     "http-proxy": "^1.5.3",
