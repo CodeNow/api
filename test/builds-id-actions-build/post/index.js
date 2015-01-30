@@ -16,6 +16,7 @@ var createCount = require('callback-count');
 var exists = require('101/exists');
 var equals = require('101/equals');
 var uuid = require('uuid');
+var Container = require('dockerode/lib/container');
 
 describe('Build - /builds/:id/actions/build', function() {
   var ctx = {};
@@ -30,6 +31,15 @@ describe('Build - /builds/:id/actions/build', function() {
   afterEach(require('./../../fixtures/clean-ctx')(ctx));
   afterEach(require('./../../fixtures/clean-nock'));
 
+  var delayContainerLogsBy = function (ms, originalContainerLogs) {
+    return function () {
+      var container = this;
+      var args = arguments;
+      setTimeout(function () {
+        originalContainerLogs.apply(container, args);
+      }, ms);
+    };
+  };
   describe('POST', function () {
     describe('unbuilt build', function () {
       beforeEach(function (done) {
@@ -235,10 +245,14 @@ describe('Build - /builds/:id/actions/build', function() {
           });
         });
       describe('errors', function() {
-        it('should error if the build is already in progress', function (done) {
+        it('should error if the build is already in progress', {setTimeout: 5000}, function (done) {
           require('./../../fixtures/mocks/docker/container-id-attach')();
           require('./../../fixtures/mocks/github/user')(ctx.user);
+
+          ctx.originalContainerLogs = Container.prototype.logs;
+          Container.prototype.logs = delayContainerLogsBy(1000, ctx.originalContainerLogs);
           ctx.build.build({message:'hello!'}, function (err, baseBody) {
+            Container.prototype.logs = ctx.originalContainerLogs;
             if (err) { return done(err); }
             ctx.build.build({message:'hello!'}, function(err, body, code) {
               expects.error(409, /Build is already in progress/, function() {

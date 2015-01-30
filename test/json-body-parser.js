@@ -37,7 +37,7 @@ describe('JSON body parser', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 
-  it('should be able to parse json less than 600kb', function (done) {
+  it('should be able to parse json less than '+process.env.BODY_PARSER_SIZE_LIMIT, function (done) {
     var uri = url.format({
       protocol: 'http:',
       slashes: true,
@@ -59,7 +59,7 @@ describe('JSON body parser', function () {
     });
   });
 
-  it('should fail to parse json more than 600kb', function (done) {
+  it('should fail to parse json more than '+process.env.BODY_PARSER_SIZE_LIMIT, function (done) {
     var uri = url.format({
       protocol: 'http:',
       slashes: true,

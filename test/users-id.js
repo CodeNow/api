@@ -7,6 +7,7 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var expects = require('./fixtures/expects');
 var createCount = require('callback-count');
 var api = require('./fixtures/api-control');
 var multi = require('./fixtures/multi-factory');
@@ -26,6 +27,11 @@ describe('User - /users/:id', function () {
     describe('registered', function () {
       beforeEach(function (done) {
         ctx.user = multi.createUser(done);
+      });
+      beforeEach(function (done) {
+        ctx.user.update({
+          'userOptions.uiState.shownCoachMarks.editButton': true
+        }, done);
       });
 
       it('should get the user', function (done) {
@@ -58,15 +64,84 @@ describe('User - /users/:id', function () {
       });
     });
   });
+  describe('PATCH', function () {
+    describe('registered', function () {
+      beforeEach(function (done) {
+        ctx.user = multi.createUser(done);
+      });
+
+      it('should update the user with the new option', function (done) {
+        ctx.user.update({
+          'userOptions.uiState.shownCoachMarks.editButton': true
+        }, function (err, body, code) {
+          if (err) {
+            return done(err);
+          }
+
+          expect(code).to.equal(200);
+          expect(body.userOptions).to.deep.equal({
+            uiState: {
+              shownCoachMarks: {
+                editButton: true
+              }
+            }
+          });
+          done();
+        });
+      });
+
+      it('should error when data isn\'t correct', function (done) {
+        ctx.user.update({
+          'userOptions.uiState.shownCoachMarks.editButton': {awesome: true}
+        }, expects.error(400, /must be a boolean/, done));
+      });
+
+      it('should be able to update consecutively without losing data ', function (done) {
+        ctx.user.update({
+          'userOptions.uiState.shownCoachMarks.editButton': true
+        }, function (err, body, code) {
+          if (err) {
+            return done(err);
+          }
+
+          expect(code).to.equal(200);
+          expect(body.userOptions).to.deep.equal({
+            uiState: {
+              shownCoachMarks: {
+                editButton: true
+              }
+            }
+          });
+          ctx.user.update({
+            'userOptions.uiState.shownCoachMarks.repoList': true
+          }, function (err, body, code) {
+            if (err) {
+              return done(err);
+            }
+            expect(code).to.equal(200);
+            expect(body.userOptions).to.deep.equal({
+              uiState: {
+                shownCoachMarks: {
+                  editButton: true,
+                  repoList: true
+                }
+              }
+            });
+            done();
+          });
+        });
+      });
+    });
+  });
 });
 
 function expectPrivateFields (user) {
   expect(user).to.include.keys(
-    ['_id', 'email', 'gravatar']); // TODO: ? 'imagesCount', 'taggedImagesCount'
+    ['_id', 'email', 'gravatar', 'userOptions']); // TODO: ? 'imagesCount', 'taggedImagesCount'
   expect(user).to.not.include.keys(['password']);
 }
 function expectPublicFields (user) {
   expect(user).to.not.include.keys(
-    ['email', 'password', 'votes']); // TODO: ? 'imagesCount', 'taggedImagesCount'
+    ['email', 'password', 'votes', 'userOptions']); // TODO: ? 'imagesCount', 'taggedImagesCount'
   expect(user).to.include.keys(['_id', 'gravatar']);
 }
