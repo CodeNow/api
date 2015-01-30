@@ -269,13 +269,27 @@ function itShouldBuildTheBuild (ctx) {
             var docker = new Docker(cv.dockerHost);
             docker.docker.getContainer(cv.containerId).inspect(function (err, data) {
               if (err) { return done(err); }
-              expect(data.Binds).to.have.length(2);
-              expect(data.Binds[0]).to.match(new RegExp(process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw'));
-              expect(data.Binds[1]).to.match(
-                new RegExp(process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'));
-              expect(Object.keys(data.Volumes)).to.have.length(2);
-              expect(data.Volumes['/cache']).to.eql({});
-              expect(data.Volumes['/layer-cache']).to.eql({});
+              var expectedBindsAndVolumesLength = 0;
+              var expectedBindsValues = [];
+              var expectedVolumesKeys = [];
+              if (process.env.DOCKER_IMAGE_BUILDER_CACHE) {
+                expectedBindsAndVolumesLength++;
+                expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw'));
+                expectedVolumesKeys.push('/cache');
+              }
+              if (process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE) {
+                expectedBindsAndVolumesLength++;
+                expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'));
+                expectedVolumesKeys.push('/layer-cache');
+              }
+              expect(data.Binds).to.have.length(expectedBindsAndVolumesLength);
+              expectedBindsValues.forEach(function (r, i) {
+                expect(data.Binds[i]).to.match(r);
+              });
+              expect(Object.keys(data.Volumes)).to.have.length(expectedBindsAndVolumesLength);
+              expectedVolumesKeys.forEach(function (k) {
+                expect(data.Volumes[k]).to.eql({});
+              });
               count.next(err);
             });
           }));
