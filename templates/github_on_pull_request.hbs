@@ -3,5 +3,5 @@
   [Server {{this.name}}](http://{{../domain}}/{{../owner.login}}/{{this.name}})
   {{/each}}
 {{else}}
-[Select Runnable server to run code from this PR](http://{{domain}}/{{owner.login}}/boxSelection/{{repoName}}/{{encode branch}}/commit/{{commit}})
+[Choose a server](http://{{domain}}/{{owner.login}}/boxSelection/{{repoName}}/{{encode branch}}/commit/{{commit}}) to run PR-{{number}}
 {{/if}}

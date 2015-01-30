@@ -18,6 +18,7 @@ describe('GitHub Notifier',  function () {
       var githubPushInfo = {
         repo: 'CodeNow/api',
         repoName: 'api',
+        number: 2,
         branch: 'fix/1',
         commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
         user: {
@@ -29,9 +30,10 @@ describe('GitHub Notifier',  function () {
       };
 
       var message = github._renderMessage(githubPushInfo, []);
-      var msg = '[Select Runnable server to run code from this PR]';
+      var msg = '[Choose a server]';
       msg += '(http://runnable3.net/podviaznikov/boxSelection/';
       msg += 'api/fix%252F1/commit/a240edf982d467201845b3bf10ccbe16f6049ea9)';
+      msg += ' to run PR-2';
       expect(message).to.equal(msg);
       done();
     });
@@ -138,6 +140,7 @@ describe('GitHub Notifier',  function () {
         repoName: 'api',
         branch: 'fix/1',
         commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+        number: 3,
         user: {
           login: 'podviaznikov'
         },
@@ -157,9 +160,10 @@ describe('GitHub Notifier',  function () {
 
       var instance = {name: 'box-1', owner: {username: 'podviaznikov'}};
       var newMessage = github._newMessageForUnlinkedBox(githubPushInfo, oldMessage, instance);
-      var expected = '[Select Runnable server to run code from this PR]';
+      var expected = '[Choose a server]';
       expected += '(http://runnable3.net/podviaznikov/boxSelection/api/fix%252F1/';
       expected += 'commit/a240edf982d467201845b3bf10ccbe16f6049ea9)';
+      expected += ' to run PR-3';
       expect(newMessage).to.equal(expected);
       done();
     });
