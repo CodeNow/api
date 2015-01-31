@@ -72,7 +72,7 @@ describe('POST /instances', function () {
             primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
           });
 
-          it('should emit deploy event', function(done) {
+          it('should emit post event', function(done) {
             var countDown = createCount(2, done);
             var expected = {
               shortHash: exists,
