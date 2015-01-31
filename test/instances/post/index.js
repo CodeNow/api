@@ -77,16 +77,15 @@ describe('POST /instances', function () {
             var expected = {
               shortHash: exists,
               'createdBy.github': ctx.user.attrs.accounts.github.id,
-              'build._id': ctx.build.id(),
+              'build': ctx.build.id(),
               name: exists,
               'owner.github': ctx.user.attrs.accounts.github.id,
               contextVersions: exists,
-              'contextVersions[0]._id': ctx.cv.id(),
-              'contextVersions[0].appCodeVersions[0]': ctx.cv.json().appCodeVersions[0],
               'network.networkIp': exists,
               'network.hostIp': exists
             };
-            primus.expectDeploy.bind(ctx)(expected, countDown.next);
+
+            primus.expectAction.bind(ctx)('post', expected, countDown.next);
             var json = { build: ctx.build.id(), name: uuid() };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);

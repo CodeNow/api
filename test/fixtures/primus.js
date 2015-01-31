@@ -40,35 +40,15 @@ module.exports = {
     ctx.primus.once('end', done);
     ctx.primus.end();
   },
-  expectDeploy: function(expected, done) {
-    ctx.primus.on('data', function(data) {
-      if (data.event === 'ROOM_MESSAGE') {
-        // this is these errors will bubble up in test
+  expectAction: function(action, expected, done) {
+    ctx.primus.on('data', function check (data) {
+      if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
         expect(data.type).to.equal('org');
         expect(data.event).to.equal('ROOM_MESSAGE');
         expect(data.data.event).to.equal('INSTANCE_UPDATE');
         expects.expectKeypaths(data.data.data, expected);
-        expect(data.data.action).to.equal('deploy');
+        ctx.primus.removeListener('data', check);
         done();
-      }
-    });
-  },
-  expectDeployAndStart: function(expected, done) {
-    var state = 0;
-    ctx.primus.on('data', function(data) {
-      if (data.event === 'ROOM_MESSAGE') {
-        // this is these errors will bubble up in test
-        expect(data.type).to.equal('org');
-        expect(data.event).to.equal('ROOM_MESSAGE');
-        expect(data.data.event).to.equal('INSTANCE_UPDATE');
-        expects.expectKeypaths(data.data.data, expected);
-        if(state === 0) {
-          expect(data.data.action).to.equal('deploy');
-          state = 1;
-        } else if (state === 1) {
-          expect(data.data.action).to.equal('start');
-          done();
-        }
       }
     });
   }

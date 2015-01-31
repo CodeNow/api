@@ -189,7 +189,7 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
           afterEach(require('../../fixtures/clean-mongo').removeEverything);
           it('should send message on simple start', function(done) {
             var countDown = createCount(2, done);
-            primus.expectDeployAndStart.bind(ctx)(ctx.expected, countDown.next);
+            primus.expectAction.bind(ctx)('start', ctx.expected, countDown.next);
             ctx.instance.start(countDown.next);
           });
         });
