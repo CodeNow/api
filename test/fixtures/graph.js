@@ -24,9 +24,14 @@ module.exports.start = function (cb) {
     graphArgs.push('--config=cayley.cfg');
     opts.detached = true;
 
+    var earlyClose = function (code) {
+      throw new Error('cayley closed early w/ code ' + code);
+    };
+
     module.exports.stop = function (cb) {
       if (module.exports.started) {
-        module.exports._graph.on('exit', function () {
+        module.exports._graph.removeListener('close', earlyClose);
+        module.exports._graph.on('close', function () {
           module.exports.started = false;
           debug('cayley exit');
           cb();
@@ -52,11 +57,11 @@ module.exports.start = function (cb) {
     module.exports._graph.on('error', function (err) {
       throw err;
     });
+    module.exports._graph.on('close', earlyClose);
 
   } else if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
     graphExec = './bin/neo4j';
     opts.cwd = join(__dirname, 'graphs', 'neo4j');
-    opts.detached = true;
 
     module.exports.stop = function (cb) {
       if (module.exports.started) {

@@ -29,19 +29,19 @@ describe('BDD - Instance Dependencies', function () {
     });
   });
   // Uncomment if you want to clear the (graph) database every time
-  // beforeEach(function (done) {
-  //   if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
-  //     var Cypher = require('cypher-stream');
-  //     var cypher = Cypher('http://localhost:7474');
-  //     var err;
-  //     cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
-  //       .on('error', function (e) { err = e; })
-  //       .on('end', function () { done(err); })
-  //       .on('data', function () {});
-  //   } else {
-  //     done();
-  //   }
-  // });
+  beforeEach(function (done) {
+    if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
+      var Cypher = require('cypher-stream');
+      var cypher = Cypher('http://localhost:7474');
+      var err;
+      cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
+        .on('error', function (e) { err = e; })
+        .on('end', function () { done(err); })
+        .on('data', function () {});
+    } else {
+      done();
+    }
+  });
   after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
@@ -111,10 +111,12 @@ describe('BDD - Instance Dependencies', function () {
         });
       });
     });
-    describe('terminating the graph db early', function () {
+    describe('if the graph db is unavailable', function () {
+      var type = process.env.GRAPH_DATABASE_TYPE.toUpperCase();
+      var host = process.env[type];
       beforeEach(function (done) {
-        var graph = require('./fixtures/graph');
-        graph.stop(done);
+        process.env[type] = 'http://localhost:78534';
+        done();
       });
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
@@ -126,8 +128,8 @@ describe('BDD - Instance Dependencies', function () {
         }, done);
       });
       afterEach(function (done) {
-        var graph = require('./fixtures/graph');
-        graph.start(done);
+        process.env[type] = host;
+        done();
       });
       it('should degrade gracefully and still allow us to fetch (printed error expected)', function (done) {
         ctx.webInstance.fetch(function (err, body) {
@@ -185,7 +187,7 @@ describe('BDD - Instance Dependencies', function () {
             ], done);
           });
           beforeEach(function (done) {
-            async.parallel([
+            async.series([
               forkWeb,
               forkApi
             ], done);
@@ -300,7 +302,7 @@ describe('BDD - Instance Dependencies', function () {
       });
       describe('and forking it a (the first one) (the shorter way)', function () {
         beforeEach(function (done) {
-          async.parallel([
+          async.series([
             forkWeb,
             forkApi
           ], done);
@@ -364,7 +366,7 @@ describe('BDD - Instance Dependencies', function () {
       });
       describe('and forking it a (the first one)', function () {
         beforeEach(function (done) {
-          async.parallel([
+          async.series([
             forkWeb,
             forkApi
           ], done);
@@ -518,7 +520,7 @@ describe('BDD - Instance Dependencies', function () {
       });
       describe('and forking it', function () {
         beforeEach(function (done) {
-          async.parallel([
+          async.series([
             forkWeb,
             forkApi
           ], done);
