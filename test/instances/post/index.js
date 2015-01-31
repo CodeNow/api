@@ -72,7 +72,7 @@ describe('POST /instances', function () {
             primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
           });
 
-          it('should emit post adn deploy event', function(done) {
+          it('should emit deploy event', function(done) {
             var countDown = createCount(2, done);
             var expected = {
               shortHash: exists,
@@ -86,7 +86,7 @@ describe('POST /instances', function () {
               'network.networkIp': exists,
               'network.hostIp': exists
             };
-            primus.expectPostAndDeploy.bind(ctx)(expected, countDown.next);
+            primus.expectDeploy.bind(ctx)(expected, countDown.next);
             var json = { build: ctx.build.id(), name: uuid() };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);

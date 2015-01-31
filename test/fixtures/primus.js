@@ -40,27 +40,16 @@ module.exports = {
     ctx.primus.once('end', done);
     ctx.primus.end();
   },
-  expectPostAndDeploy: function(expected, done) {
-    var state = 0;
+  expectDeploy: function(expected, done) {
     ctx.primus.on('data', function(data) {
       if (data.event === 'ROOM_MESSAGE') {
         // this is these errors will bubble up in test
-        if(state === 0) {
-          expect(data.type).to.equal('org');
-          expect(data.event).to.equal('ROOM_MESSAGE');
-          expect(data.data.event).to.equal('INSTANCE_UPDATE');
-          expect(data.data.action).to.equal('post');
-          expects.expectKeypaths(data.data.data, expected);
-          state = 1;
-        } else if (state === 1) {
-          expect(data.type).to.equal('org');
-          expect(data.event).to.equal('ROOM_MESSAGE');
-          // expect(data.name).to.equal(ctx.instance.attrs.owner.github);
-          expect(data.data.event).to.equal('INSTANCE_UPDATE');
-          expect(data.data.action).to.equal('deploy');
-          expects.expectKeypaths(data.data.data, expected);
-          done();
-        }
+        expect(data.type).to.equal('org');
+        expect(data.event).to.equal('ROOM_MESSAGE');
+        expect(data.data.event).to.equal('INSTANCE_UPDATE');
+        expects.expectKeypaths(data.data.data, expected);
+        expect(data.data.action).to.equal('deploy');
+        done();
       }
     });
   },
@@ -69,20 +58,15 @@ module.exports = {
     ctx.primus.on('data', function(data) {
       if (data.event === 'ROOM_MESSAGE') {
         // this is these errors will bubble up in test
+        expect(data.type).to.equal('org');
+        expect(data.event).to.equal('ROOM_MESSAGE');
+        expect(data.data.event).to.equal('INSTANCE_UPDATE');
+        expects.expectKeypaths(data.data.data, expected);
         if(state === 0) {
-          expect(data.type).to.equal('org');
-          expect(data.event).to.equal('ROOM_MESSAGE');
-          expect(data.data.event).to.equal('INSTANCE_UPDATE');
           expect(data.data.action).to.equal('deploy');
-          expects.expectKeypaths(data.data.data, expected);
           state = 1;
         } else if (state === 1) {
-          expect(data.type).to.equal('org');
-          expect(data.event).to.equal('ROOM_MESSAGE');
-          // expect(data.name).to.equal(ctx.instance.attrs.owner.github);
-          expect(data.data.event).to.equal('INSTANCE_UPDATE');
           expect(data.data.action).to.equal('start');
-          expects.expectKeypaths(data.data.data, expected);
           done();
         }
       }
