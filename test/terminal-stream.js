@@ -138,7 +138,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
             if(data.error) {
               return done();
             }
-            done();
+            done(new Error('should have error if invalid param sent'));
           }
         });
       });

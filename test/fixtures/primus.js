@@ -31,7 +31,7 @@ module.exports = {
   },
   connect: function (done) {
     ctx = this;
-    ctx.primus = new Socket('http://localhost:'+process.env.PORT);
+    ctx.primus = new Socket('http://'+process.env.ROOT_DOMAIN);
     ctx.primus.once('open', done);
   },
   disconnect: function (done) {
