@@ -17,13 +17,11 @@ var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
 var Instance = require('models/mongo/instance');
-var Build = require('models/mongo/build');
 var User = require('models/mongo/user');
 var async = require('async');
 var Runnable = require('runnable');
 var user = new Runnable(process.env.FULL_API_DOMAIN);
 var mongoose = require('mongoose');
-var keypather = require('keypather')();
 
 
 var ctx = {};
@@ -69,11 +67,12 @@ var createdBy = {
 
 function removeCurrentSourceTemplates(cb) {
   Context.find({'isSource': true}, function (err, docs) {
-    docs.forEach(function (doc) {
-      doc.remove();
-    });
-    console.log(docs);
-    cb();
+    if (err) { return cb(err); }
+    async.each(docs, function (doc, cb) {
+      // we don't ever want to delete old contexts, once the are in use by users
+      console.log('UN-SOURCING OLD SOURCES');
+      doc.update({ $set: { isSource:false, oldSource:Date.now() }}, cb);
+    }, cb);
   });
 }
 
@@ -81,17 +80,15 @@ function createBlankSourceContext (cb) {
   async.waterfall([
     function (cb) {
       Instance.find({
-        'name': 'Blank',
+        'lowerName': ('Blank').toLowerCase(),
         'owner': createdBy
       }, function (err, docs) {
         console.log('REMOVING existing instance for (BLANK)');
-        if (!err && docs) {
-          docs.forEach(function (doc) {
-            doc.remove();
-          });
+        if (err) { return cb(err); }
+        async.each(docs, function (doc, cb) {
           console.log('REMOVING INSTANCES', docs);
-        }
-        cb();
+          doc.remove(cb);
+        }, cb);
       });
     },
     function newContext (cb) {
@@ -117,7 +114,7 @@ function createBlankSourceContext (cb) {
     },
     function (context, icv, cb) {
       ctx.blankIcv = icv;
-      cb(null, context, icv)
+      cb(null, context, icv);
     },
     newCV
   ], cb);
@@ -135,17 +132,15 @@ function createFirstSourceContext(finalCB) {
       async.waterfall([
         function (cb) {
           Instance.find({
-            'name': ((model.isTemplate) ? 'TEMPLATE_' : '') + model.name,
+            'lowerName': (((model.isTemplate) ? 'TEMPLATE_' : '') + model.name).toLowerCase(),
             'owner': createdBy
           }, function (err, docs) {
             console.log('REMOVING existing instance for (', model.name, ')');
-            if (!err && docs) {
-              docs.forEach(function (doc) {
-                doc.remove();
-              });
+            if (err) { return cb(err); }
+            async.each(docs, function (doc, cb) {
               console.log('REMOVING INSTANCES', docs);
-            }
-            cb();
+              doc.remove(cb);
+            }, cb);
           });
         },
         function (cb) {
@@ -153,16 +148,14 @@ function createFirstSourceContext(finalCB) {
             return cb();
           }
           Context.find({
-            'name': model.name,
+            'lowerName': (model.name).toLowerCase(),
             'owner': createdBy
           }, function (err, docs) {
             console.log('REMOVING existing context for (', model.name, ')');
-            if (!err && docs) {
-              docs.forEach(function (doc) {
-                doc.remove();
-              });
-            }
-            cb();
+            if (err) { return cb(err); }
+            async.each(docs, function (doc, cb) {
+              doc.remove(cb);
+            }, cb);
           });
         },
         function newContext(cb) {
@@ -216,11 +209,11 @@ function createFirstSourceContext(finalCB) {
 
     function createInstance(build, cb) {
       console.log('createInstance (', model.name, ')');
-      var instance = ctx.user.createInstance({
+      ctx.user.createInstance({
         build: build.id(),
         name: ((model.isTemplate) ? 'TEMPLATE_' : '') + model.name,
         owner: createdBy
-      }, function (err, newInstance) {
+      }, function (err) {
         if (err) {
           throw err;
         }
@@ -250,25 +243,25 @@ function newCV (context, icv, cb) {
 var sources = [{
   name: 'NodeJs',
   isTemplate: true,
-  body: fs.readFileSync('./scripts/sourceDockerFiles/nodejs').toString()
+  body: fs.readFileSync('./scripts/sourceDockerfiles/nodejs').toString()
 }, {
   name: 'Rails',
   isTemplate: true,
-  body: fs.readFileSync('./scripts/sourceDockerFiles/rails').toString()
+  body: fs.readFileSync('./scripts/sourceDockerfiles/rails').toString()
 }, {
   name: 'Ruby',
   isTemplate: true,
-  body: fs.readFileSync('./scripts/sourceDockerFiles/ruby').toString()
+  body: fs.readFileSync('./scripts/sourceDockerfiles/ruby').toString()
 }, {
   name: 'Python',
   isTemplate: true,
-  body: fs.readFileSync('./scripts/sourceDockerFiles/python').toString()
+  body: fs.readFileSync('./scripts/sourceDockerfiles/python').toString()
 }, {
   name: 'PostgreSQL',
-  body: fs.readFileSync('./scripts/sourceDockerFiles/postgresSql').toString()
+  body: fs.readFileSync('./scripts/sourceDockerfiles/postgresSql').toString()
 }, {
   name: 'MySQL',
-  body: fs.readFileSync('./scripts/sourceDockerFiles/mysql').toString()
+  body: fs.readFileSync('./scripts/sourceDockerfiles/mysql').toString()
 }, {
   name: 'MongoDB',
   body: '# Full list of versions available here: https://registry.hub.docker.com/_/mongo/tags/manage/\n'+
