@@ -245,16 +245,16 @@ describe('Build - /builds/:id/actions/build', function() {
           });
         });
       describe('errors', function() {
-        it('should error if the build is already in progress', {setTimeout: 5000}, function (done) {
+        it('should error if the build is already in progress', {timeout: 5000}, function (done) {
           require('./../../fixtures/mocks/docker/container-id-attach')();
           require('./../../fixtures/mocks/github/user')(ctx.user);
 
           ctx.originalContainerLogs = Container.prototype.logs;
           Container.prototype.logs = delayContainerLogsBy(1000, ctx.originalContainerLogs);
           ctx.build.build({message:'hello!'}, function (err, baseBody) {
-            Container.prototype.logs = ctx.originalContainerLogs;
-            if (err) { return done(err); }
+            if (err) { Container.prototype.logs = ctx.originalContainerLogs; return done(err); }
             ctx.build.build({message:'hello!'}, function(err, body, code) {
+              Container.prototype.logs = ctx.originalContainerLogs;
               expects.error(409, /Build is already in progress/, function() {
                 tailBuildStream(baseBody.contextVersions[0], done);
               })(err, body, code);
