@@ -77,7 +77,8 @@ describe('POST /instances', function () {
             var expected = {
               shortHash: exists,
               'createdBy.github': ctx.user.attrs.accounts.github.id,
-              'build': ctx.build.id(),
+              build: exists,
+              'build._id': ctx.build.id(),
               name: exists,
               'owner.github': ctx.user.attrs.accounts.github.id,
               contextVersions: exists,
