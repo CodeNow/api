@@ -6,7 +6,6 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var after = Lab.after;
 var api = require('./fixtures/api-control');
-var createCount = require('callback-count');
 
 var Primus = require('primus');
 var Socket = Primus.createSocket({
