@@ -26,13 +26,18 @@ describe('GitHub Notifier',  function () {
         },
         owner: {
           login: 'podviaznikov'
+        },
+        headCommit: {
+          id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+          message: 'hey there',
+          url: 'https://github.com/Runnable/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
         }
       };
 
       var message = github._renderMessage(githubPushInfo, []);
       var msg = '[Choose a server]';
       msg += '(http://runnable3.net/podviaznikov/boxSelection/';
-      msg += 'api/fix%252F1/commit/a240edf982d467201845b3bf10ccbe16f6049ea9)';
+      msg += 'api/fix%252F1/hey%2520there/a240edf982d467201845b3bf10ccbe16f6049ea9)';
       msg += ' to run PR-2.';
       expect(message).to.equal(msg);
       done();
