@@ -70,8 +70,8 @@ describe('GitHub Notifier',  function () {
         }
       ];
       var message = github._renderMessage(githubPushInfo, instances);
-      var msg = '[Server box-1](http://runnable3.net/podviaznikov/box-1) and ';
-      msg += '[Server box-2](http://runnable3.net/podviaznikov/box-2)';
+      var msg = '[box-1](http://runnable3.net/podviaznikov/box-1) and ';
+      msg += '[box-2](http://runnable3.net/podviaznikov/box-2)';
       msg += ' are updated with the latest changes to PR-5.';
       expect(message).to.equal(msg);
       done();
