@@ -123,6 +123,7 @@ describe('BDD - Instance Dependencies', function () {
         var depString = 'API_HOST=' +
           ctx.apiInstance.attrs.lowerName + '.' +
           ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+        console.log('error below expected');
         ctx.webInstance.update({
           env: [depString]
         }, done);
@@ -140,6 +141,35 @@ describe('BDD - Instance Dependencies', function () {
            * it would return a value for dependencies, which we do not want. */
           expect(body.dependencies).to.eql({});
           done();
+        });
+      });
+      describe('recovery with the regraph endpoint', function () {
+        beforeEach(function (done) {
+          process.env[type] = host;
+          ctx.webInstance.fetch(function (err, body) {
+            expect(err).to.be.not.okay;
+            if (err) { return done(err); }
+            expect(body.dependencies).to.eql({});
+            ctx.webInstance.regraph(function (err) {
+              expect(err).to.be.not.okay;
+              if (err) { return done(err); }
+              done();
+            });
+          });
+        });
+        it('should update the web dependencies (should print an error above)', function (done) {
+          var apiId = ctx.apiInstance.attrs._id.toString();
+          ctx.webInstance.fetch(function (err, instance) {
+            expect(err).to.be.not.okay;
+            if (err) { return done(err); }
+            expect(instance.dependencies).to.be.an('object');
+            expect(Object.keys(instance.dependencies).length).to.equal(1);
+            expect(instance.dependencies[apiId]).to.be.okay;
+            expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
+            expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
+            expect(instance.dependencies[apiId].dependencies).to.equal(undefined);
+            done();
+          });
         });
       });
     });
