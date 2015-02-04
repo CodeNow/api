@@ -102,7 +102,7 @@ describe('GitHub Notifier',  function () {
       var github = new GitHub();
       github.notifyOnPullRequest({}, [], function (err, resp) {
         if (err) { return done(err); }
-        expect(resp.length).to.equal(0);
+        expect(resp).to.be.undefined();
         done();
       });
     });
@@ -111,7 +111,16 @@ describe('GitHub Notifier',  function () {
       var github = new GitHub();
       github.updatePullRequestsComments({}, {}, function (err, resp) {
         if (err) { return done(err); }
-        expect(resp.length).to.equal(0);
+        expect(resp).to.be.undefined();
+        done();
+      });
+    });
+
+    it('should not delete comment', function (done) {
+      var github = new GitHub();
+      github.deletePullRequestComment({}, function (err, resp) {
+        if (err) { return done(err); }
+        expect(resp).to.be.undefined();
         done();
       });
     });
