@@ -29,7 +29,7 @@ describe('Hasher',  function () {
         done();
       });
     });
-    describe('compare stream hash to string hash', function () {
+    describe('compare stream hash to string hash', {timeout:10000}, function () {
       var filepaths = [];
       before(function (done) {
         equivalentDockerfiles.forEach(function (fileData) {
@@ -42,21 +42,24 @@ describe('Hasher',  function () {
       it('should result in the same hashes', function (done) {
         async.each(filepaths, function (filepath, cb) {
           var streamHash, stringHash;
+          var streamData, stringData;
           var count = createCount(2, compareHashes);
           // hash file stream
           var fileStream = fs.createReadStream(filepath);
-          hasher(fileStream, true, function (err, data) {
+          hasher(fileStream, function (err, hash, data) {
             if (err) { return count.next(err); }
-            expect(data).to.be.ok;
-            streamHash = data;
+            expect(hash).to.be.ok;
+            streamHash = hash;
+            streamData = data;
             count.next();
           });
           // hash file string
           var fileData = fs.readFileSync(filepath).toString();
-          hasher(fileData, true, function (err, data) {
+          hasher(fileData, function (err, hash, data) {
             if (err) { return count.next(err); }
-            expect(data).to.be.ok;
-            stringHash = data;
+            expect(hash).to.be.ok;
+            stringHash = hash;
+            stringData = data;
             count.next();
           });
           function compareHashes (err) {
@@ -71,7 +74,7 @@ describe('Hasher',  function () {
   describe('string', function () {
     it('should hash a string', function (done) {
       var fileData = fs.readFileSync(__filename).toString();
-      hasher(fileData, true, function (err, data) {
+      hasher(fileData, function (err, data) {
         if (err) { return done(err); }
         expect(data).to.be.ok;
         done();
@@ -82,7 +85,9 @@ describe('Hasher',  function () {
         describe('keep whitespace', function () {
           it('should get different hashes for whitespace-equivalent files', function (done) {
             var fileDatas = equivalentDockerfiles;
-            async.map(fileDatas, hasher, compareHashes);
+            async.map(fileDatas, function (fileData, cb) {
+              hasher(fileData, true, cb);
+            }, compareHashes);
             function compareHashes (err, hashes) {
               if (err) { return done(err); }
               var allHashesNotEqual = hashes.every(function (hash, i) {
@@ -97,9 +102,7 @@ describe('Hasher',  function () {
         describe('remove whitespace', function () {
           it('should get the same hashes for whitespace-equivalent files', function (done) {
             var fileDatas = equivalentDockerfiles;
-            async.map(fileDatas, function (fileData, cb) {
-              hasher(fileData, cb);
-            }, compareHashes);
+            async.map(fileDatas, hasher, compareHashes);
             function compareHashes (err, hashes) {
               if (err) { return done(err); }
               var allHashesEqual = hashes.slice(1).every(equals(hashes[0]));
@@ -113,7 +116,9 @@ describe('Hasher',  function () {
         describe('keep whitespace', function () {
           it('should get different hashes for whitespace-equivalent files', function (done) {
             var fileDatas = differentDockerfiles;
-            async.map(fileDatas, hasher, compareHashes);
+            async.map(fileDatas, function (fileData, cb) {
+              hasher(fileData, true, cb);
+            }, compareHashes);
             function compareHashes (err, hashes) {
               if (err) { return done(err); }
               var allHashesNotEqual = hashes.slice(1).every(notEquals(hashes[0]));
@@ -125,9 +130,7 @@ describe('Hasher',  function () {
         describe('remove whitespace', function () {
           it('should get different hashes for different files', function (done) {
             var fileDatas = differentDockerfiles;
-            async.map(fileDatas, function (fileData, cb) {
-              hasher(fileData, cb);
-            }, compareHashes);
+            async.map(fileDatas, hasher, compareHashes);
             function compareHashes (err, hashes) {
               if (err) { return done(err); }
               var allHashesNotEqual = hashes.slice(1).every(notEquals(hashes[0]));
