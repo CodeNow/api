@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.4.16",
+  "version": "0.4.17",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -46,6 +46,7 @@
     "json-stable-stringify": "^1.0.0",
     "keypather": "^1.8.1",
     "middleware-flow": "^0.6.1",
+    "middlewarize": "git+ssh://git@github.com:tjmehta/middlewarize#v0.0.1",
     "mongoose": "^3.8.13",
     "mongoose-validator": "^1.0.0",
     "morgan": "^1.1.1",
