@@ -6,7 +6,6 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var after = Lab.after;
 var api = require('./fixtures/api-control');
-var createCount = require('callback-count');
 
 var Primus = require('primus');
 var Socket = Primus.createSocket({
@@ -108,6 +107,7 @@ describe('Socket Server', { timeout: 5000 }, function () {
     var primus;
     var requiredParams = ['dockHost', 'type', 'containerId',
       'terminalStreamId', 'eventStreamId'];
+    var pass;
     beforeEach(function (done) {
       pass = false;
       primus = new Socket('http://localhost:'+process.env.PORT);
@@ -117,30 +117,28 @@ describe('Socket Server', { timeout: 5000 }, function () {
       primus.on('end', done);
       primus.end();
     });
-    it('should error if not all params sent', function (done) {
-      var doneCount = createCount(done);
-      var allParams = {
-        dockHost: 'http://localhost:'+process.env.FILIBUSTER_PORT,
-        type: 'filibuster',
-        containerId: 'containerId',
-        terminalStreamId: 'terminalStream',
-        eventStreamId: 'eventStream'
-      };
-      requiredParams.forEach(function(param, i) {
-        doneCount.inc();
+    requiredParams.forEach(function(param, i) {
+      it('should error if '+param+' not sent', function (done) {
+        var allParams = {
+          dockHost: 'http://localhost:'+process.env.FILIBUSTER_PORT,
+          type: 'filibuster',
+          containerId: 'containerId',
+          terminalStreamId: 'terminalStream',
+          eventStreamId: 'eventStream'
+        };
         var testParams = JSON.parse(JSON.stringify(allParams));
         delete testParams[param];
         primus.write({
-          id: i,
+          id: i+1,
           event: 'terminal-stream',
           data: testParams
         });
         primus.on('data', function(data) {
-          if(data.id === i) {
-            if(!data.error) {
-              done(data.error);
+          if(data.id === (i+1)) {
+            if(data.error) {
+              return done();
             }
-            doneCount.next();
+            done(new Error('should have error if invalid param sent'));
           }
         });
       });

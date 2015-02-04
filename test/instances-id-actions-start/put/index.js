@@ -14,6 +14,7 @@ var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
 var tailBuildStream = require('../../fixtures/tail-build-stream');
+var primus = require('../../fixtures/primus');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
@@ -24,9 +25,9 @@ var Dockerode = require('dockerode');
 var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 
-
 describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
   var ctx = {};
+
   var stopContainerRightAfterStart = function () {
     var self = this;
     var args = Array.prototype.slice.call(arguments);
@@ -53,12 +54,12 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
       cb(createErr);
     }
   };
-  var delayContainerWaitBy = function (ms, originalContainerWait) {
+  var delayContainerLogsBy = function (ms, originalContainerLogs) {
     return function () {
       var container = this;
       var args = arguments;
       setTimeout(function () {
-        originalContainerWait.apply(container, args);
+        originalContainerLogs.apply(container, args);
       }, ms);
     };
   };
@@ -66,6 +67,7 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  afterEach(primus.disconnect.bind(ctx));
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -92,13 +94,13 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
 
   describe('for User', function () {
     describe('create instance with in-progress build', function () {
-      beforeEach(function (done) { // delay container wait time to make build time longer
-        ctx.originalContainerWait = Container.prototype.wait;
-        Container.prototype.wait = delayContainerWaitBy(500, ctx.originalContainerWait);
+      beforeEach(function (done) { // delay container log time to make build time longer
+        ctx.originalContainerLogs = Container.prototype.logs;
+        Container.prototype.logs = delayContainerLogsBy(500, ctx.originalContainerLogs);
         done();
       });
-      afterEach(function (done) { // restore original container wait method
-        Container.prototype.wait = ctx.originalContainerWait;
+      afterEach(function (done) { // restore original container log method
+        Container.prototype.logs = ctx.originalContainerLogs;
         done();
       });
       beforeEach(function (done) {
@@ -123,6 +125,7 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
           done();
         });
       });
+
       createInstanceAndRunTests(ctx);
     });
     describe('create instance with built build', function () {
@@ -170,7 +173,26 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
           Docker.prototype.startContainer = ctx.originalStart;
           done();
         });
-
+        describe('messenger test', function() {
+          beforeEach(primus.connect.bind(ctx));
+          beforeEach(function(done){
+            primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
+          });
+          beforeEach(function (done) {
+            var body = {
+              build: ctx.build.id()
+            };
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+          });
+          afterEach(require('../../fixtures/clean-ctx')(ctx));
+          afterEach(require('../../fixtures/clean-nock'));
+          afterEach(require('../../fixtures/clean-mongo').removeEverything);
+          it('should send message on simple start', function(done) {
+            var countDown = createCount(2, done);
+            primus.expectAction.bind(ctx)('start', ctx.expected, countDown.next);
+            ctx.instance.start(countDown.next);
+          });
+        });
         createInstanceAndRunTests(ctx);
       });
       describe('Container create error (Invalid dockerfile CMD)', function() {

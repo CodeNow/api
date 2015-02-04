@@ -56,12 +56,12 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       cb(createErr);
     }
   };
-  var delayContainerWaitBy = function (ms, originalContainerWait) {
+  var delayContainerLogsBy = function (ms, originalContainerLogs) {
     return function () {
       var container = this;
       var args = arguments;
       setTimeout(function () {
-        originalContainerWait.apply(container, args);
+        originalContainerLogs.apply(container, args);
       }, ms);
     };
   };
@@ -109,13 +109,13 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
 
   describe('for User', function () {
     describe('create instance with in-progress build', function () {
-      beforeEach(function (done) { // delay container wait time to make build time longer
-        ctx.originalContainerWait = Container.prototype.wait;
-        Container.prototype.wait = delayContainerWaitBy(500, ctx.originalContainerWait);
+      beforeEach(function (done) { // delay container log time to make build time longer
+        ctx.originalContainerLogs = Container.prototype.logs;
+        Container.prototype.logs = delayContainerLogsBy(500, ctx.originalContainerLogs);
         done();
       });
-      afterEach(function (done) { // restore original container wait method
-        Container.prototype.wait = ctx.originalContainerWait;
+      afterEach(function (done) { // restore original container log method
+        Container.prototype.logs = ctx.originalContainerLogs;
         done();
       });
       beforeEach(function (done) {
@@ -133,7 +133,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
         ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
         ctx.afterPatchAsserts.push(function (done) {
           if (ctx.instance.build.id() === firstBuildId) {
-            // instance was NOT patched with a new build, make sure to wait until
+            // instance was NOT patched with a new build, make sure to log until
             // redeploy route completes (after build completes) before moving on to next test.
             multi.tailInstance(ctx.user, ctx.instance, done);
           }
@@ -331,18 +331,18 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       beforeEach(function (done) {
         if (ctx.originalStart) { Docker.prototype.startContainer = ctx.originalStart; }
         if (ctx.originalCreateContainer) { Dockerode.prototype.createContainer = ctx.originalCreateContainer; }
-        if (ctx.originalContainerWait) { Container.prototype.wait = ctx.originalContainerWait; }
+        if (ctx.originalContainerLogs) { Container.prototype.logs = ctx.originalContainerLogs; }
         done();
       });
 
       describe('in-progress build,', function () {
-        beforeEach(function (done) { // delay container wait time to make build time longer
-          ctx.originalContainerWait = Container.prototype.wait;
-          Container.prototype.wait = delayContainerWaitBy(300, ctx.originalContainerWait);
+        beforeEach(function (done) { // delay container log time to make build time longer
+          ctx.originalContainerLogs = Container.prototype.logs;
+          Container.prototype.logs = delayContainerLogsBy(300, ctx.originalContainerLogs);
           done();
         });
-        afterEach(function (done) { // restore original container wait method
-          Container.prototype.wait = ctx.originalContainerWait;
+        afterEach(function (done) { // restore original container log method
+          Container.prototype.logs = ctx.originalContainerLogs;
           done();
         });
         beforeEach(function (done) {
