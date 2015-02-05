@@ -2,8 +2,8 @@ var url = require('url');
 
 module.exports = function (data) {
   data = data || {};
-  var fullRepo = data.repo || '' + fullRepo + '';
-  var owner = data.owner || '' + owner + '';
+  var fullRepo = data.repo || 'podviaznikov/hellonode';
+  var owner = data.owner || 'podviaznikov';
   var repo = data.name || 'hellonode';
   var branch = data.branch || 'master';
   return {
