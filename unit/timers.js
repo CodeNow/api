@@ -76,9 +76,11 @@ describe('Timers', function () {
       beforeEach(function (done) {
         ctx.timerName = uuid();
         ctx.spyCalled = false;
+        ctx.spyTags = null;
         spyOnMethod(require('models/datadog'), 'timing',
-          function (name) {
+          function (name, value, tags) {
             ctx.spyCalled = name;
+            ctx.spyTags = tags;
           });
         ctx.timer.startTimer(ctx.timerName, done);
       });
@@ -113,6 +115,16 @@ describe('Timers', function () {
           if (err) { return done(err); }
           var r = new RegExp('api.timers.'+ctx.timerName);
           expect(ctx.spyCalled).to.match(r);
+          done();
+        });
+      });
+      it('should send additional tags to datadog', function (done) {
+        ctx.timer.stopTimer(ctx.timerName, ['value:1'], function (err) {
+          if (err) { return done(err); }
+          var r = new RegExp('api.timers.'+ctx.timerName);
+          expect(ctx.spyCalled).to.match(r);
+          expect(ctx.spyTags.length).to.equal(1);
+          expect(ctx.spyTags[0]).to.equal('value:1');
           done();
         });
       });
