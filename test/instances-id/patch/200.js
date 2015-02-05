@@ -65,6 +65,37 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       }, ms);
     };
   };
+  var setContainerFinishedState = function (instanceId, finishedTime, exitCode, cb) {
+    // TODO we might revisit setting `Restarting` to false.
+    // we don't care about that field for now
+    var updateFields = {
+      'container.inspect.State.Pid': 0,
+      'container.inspect.State.Running': false,
+      'container.inspect.State.Restarting': false,
+      'container.inspect.State.Paused': false,
+      'container.inspect.State.FinishedAt': finishedTime,
+      'container.inspect.State.ExitCode': exitCode
+    };
+    // shouldn't not touch ports
+    var query = {
+      _id: instanceId,
+      'container.inspect.State.Running': true
+    };
+    Instance.findOneAndUpdate(query, {
+      $set: updateFields
+    }, function (err, instance) {
+      if (err) {
+        cb(err);
+      }
+      else if (!instance) { // instance was not in running state
+        Instance.findById(instanceId, cb);
+      }
+      else {
+        cb(null, instance); // update success
+      }
+    });
+  };
+
   beforeEach(function (done) {
     Docker.prototype._origionalPushImageToRegistry = Docker.prototype.pushImageToRegistry;
     Docker.prototype.pushImageToRegistry = function () {
@@ -249,7 +280,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
               ctx.expected['containers[0].inspect.State.Running'] = false;
               Instance.findById(ctx.instance.attrs._id, function (err, instance) {
                 if (err) { return done(err); }
-                instance.setContainerFinishedState(new Date().toISOString(), 0, done);
+                setContainerFinishedState(ctx.instance.attrs._id, new Date().toISOString(), 0, done);
               });
 
             });
