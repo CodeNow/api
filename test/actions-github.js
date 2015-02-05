@@ -56,7 +56,7 @@ describe('Github - /actions/github', function () {
 
 
   describe('disabled hooks', function () {
-    var ctx = {};
+
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       delete process.env.ENABLE_BUILDS_ON_GIT_PUSH;
@@ -86,7 +86,13 @@ describe('Github - /actions/github', function () {
   describe('not supported event type', function () {
 
     beforeEach(function (done) {
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
+      done();
+    });
+
+    afterEach(function (done) {
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
       done();
     });
 
@@ -105,7 +111,13 @@ describe('Github - /actions/github', function () {
   describe('not supported action for pull_request event', function () {
 
     beforeEach(function (done) {
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
+      done();
+    });
+
+    afterEach(function (done) {
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
       done();
     });
 
