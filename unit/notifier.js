@@ -164,39 +164,6 @@ describe('Notifier',  function () {
     slack.notifyOnInstances(githubPushInfo, instances, done);
   });
 
-  // it('should render proper text on hipchat.notifyOnBuild call', function (done) {
-  //   var hipchat = new HipChat({});
-  //   hipchat.send = function (text, cb) {
-  //     var message = 'podviaznikov\'s ';
-  //     message += '<a href="' + wrapGitHubLink(headCommit.url) + '">changes</a>';
-  //     message += ' (hey there) to Runnable/api (feature-1/fix) are ready.\n';
-  //     message += '<a href="http://runnable3.net/podviaznikov/boxSelection/api/feature-1%252Ffix';
-  //     message += '/hey%2520there/a240edf982d467201845b3bf10ccbe16f6049ea9">Choose a server to run feature-1/fix</a>.';
-  //     expect(text).to.equal(message);
-  //     cb();
-  //   };
-  //   var headCommit = {
-  //     id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-  //     message: 'hey there',
-  //     url: 'https://github.com/Runnable/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
-  //   };
-  //   var githubPushInfo = {
-  //     commitLog: [headCommit],
-  //     repo: 'Runnable/api',
-  //     repoName: 'api',
-  //     branch: 'feature-1/fix',
-  //     commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-  //     headCommit: headCommit,
-  //     user: {
-  //       login: 'podviaznikov'
-  //     },
-  //     owner: {
-  //       login: 'podviaznikov'
-  //     }
-  //   };
-  //   hipchat.notifyOnBuild(githubPushInfo, done);
-  // });
-
   it('should render proper text on hipchat.notifyOnInstances call', function (done) {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
