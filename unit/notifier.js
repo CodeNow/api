@@ -40,79 +40,6 @@ describe('Notifier',  function () {
     }
   });
 
-  // it('should render proper text on slack.notifyOnBuild call', function (done) {
-  //   var slack = new Slack({});
-  //   slack.send = function (text, cb) {
-  //     var message = 'podviaznikov\'s ';
-  //     message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
-  //     message += ' (init &amp; commit &amp; push) to CodeNow/api (develop) are ready.\n';
-  //     message += '<http://runnable3.net/';
-  //     message += 'podviaznikov/boxSelection/api/develop/init%2520%2526%2520commit%2520%2526%2520push';
-  //     message += '/a240edf982d467201845b3bf10ccbe16f6049ea9';
-  //     message += '|Choose a server to run develop>.';
-  //     expect(text).to.equal(message);
-  //     cb();
-  //   };
-
-  //   var headCommit = {
-  //     id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-  //     message: 'init & commit & push',
-  //     url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
-  //   };
-  //   var githubPushInfo = {
-  //     commitLog: [headCommit],
-  //     repo: 'CodeNow/api',
-  //     repoName: 'api',
-  //     branch: 'develop',
-  //     commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-  //     headCommit: headCommit,
-  //     user: {
-  //       login: 'podviaznikov'
-  //     },
-  //     owner: {
-  //       login: 'podviaznikov'
-  //     }
-  //   };
-
-  //   slack.notifyOnBuild(githubPushInfo, done);
-  // });
-
-  // it('should render proper escaped branch name and commit message on slack.notifyOnBuild call', function (done) {
-  //   var slack = new Slack({});
-  //   slack.send = function (text, cb) {
-  //     var message = 'podviaznikov\'s ';
-  //     message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
-  //     message += ' (init &amp; commit &amp; push) to CodeNow/api (feature-1/fix) are ready.\n';
-  //     message += '<http://runnable3.net/';
-  //     message += 'podviaznikov/boxSelection/api/feature-1%252Ffix/init%2520%2526%2520commit%2520%2526%2520push';
-  //     message += '/a240edf982d467201845b3bf10ccbe16f6049ea9';
-  //     message += '|Choose a server to run feature-1/fix>.';
-  //     expect(text).to.equal(message);
-  //     cb();
-  //   };
-
-  //   var headCommit = {
-  //     id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-  //     message: 'init & commit & push',
-  //     url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
-  //   };
-  //   var githubPushInfo = {
-  //     commitLog: [headCommit],
-  //     repo: 'CodeNow/api',
-  //     repoName: 'api',
-  //     branch: 'feature-1/fix',
-  //     commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-  //     headCommit: headCommit,
-  //     user: {
-  //       login: 'podviaznikov'
-  //     },
-  //     owner: {
-  //       login: 'podviaznikov'
-  //     }
-  //   };
-
-  //   slack.notifyOnBuild(githubPushInfo, done);
-  // });
 
   it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
@@ -163,6 +90,7 @@ describe('Notifier',  function () {
     };
     slack.notifyOnInstances(githubPushInfo, instances, done);
   });
+
 
   it('should render proper text on hipchat.notifyOnInstances call', function (done) {
     var hipchat = new HipChat({});
