@@ -2,11 +2,13 @@
 
 var MongoUser = require('models/mongo/user');
 var uuid = require('uuid');
-var tailBuildStream = require('./tail-build-stream');
 var generateKey = require('./key-factory');
 var EventEmitter = require('events').EventEmitter;
 var debug = require('debug')('runnable-api:multi-factory');
 var formatArgs = require('format-args');
+var primus = require('./primus');
+var dockerMockEvents = require('./docker-mock-events');
+var createCount = require('callback-count');
 
 module.exports = {
 
@@ -291,21 +293,20 @@ module.exports = {
       if (err) { return cb(err); }
       build.contextVersions.models[0].fetch(function (err, cv) {
         if (err) { return cb(err); }
-        require('./mocks/docker/container-id-attach')(100);
+        require('./mocks/docker/container-id-attach')(0);
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);
           if (err) { return cb(err); }
-          require('./mocks/github/user')(user);
-          build.contextVersions.models[0].fetch(function (err) {
-            if (err) { return cb(err); }
-            tailBuildStream(build.contextVersions.models[0].id(), function (err) { // FIXME: maybe
-              if (err) { return cb(err); }
+          primus.joinOrgRoom(user.json().accounts.github.id, function() {
+            primus.waitForBuildComplete(function() {
               require('./mocks/github/user')(user);
-              build.fetch(function (err) {
-                cb(err);
-              }); // get completed build
+              var count = createCount(2, cb);
+              build.contextVersions.models[0].fetch(count.next);
+              require('./mocks/github/user')(user);
+              build.fetch(count.next);
             });
+            dockerMockEvents.emitBuildComplete(build.contextVersions.models[0]);      
           });
         });
       });
@@ -314,7 +315,6 @@ module.exports = {
   },
 
   tailInstance: function (user, instance, ownerId, cb) {
-    debug('tailInstance', formatArgs(arguments));
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;

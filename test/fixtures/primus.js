@@ -11,9 +11,10 @@ var Socket = Primus.createSocket({
   parser: 'JSON'
 });
 
+var ctx = {};
+
 module.exports = {
   joinOrgRoom: function (orgId, cb) {
-    ctx = this;
     ctx.primus.write({
       id: uuid(), // needed for uniqueness
       event: 'subscribe',
@@ -29,26 +30,39 @@ module.exports = {
       }
     });
   },
-  connect: function (done) {
-    ctx = this;
+  connect: function (cb) {
     ctx.primus = new Socket('http://'+process.env.ROOT_DOMAIN);
-    ctx.primus.once('open', done);
+    ctx.primus.once('open', cb);
   },
-  disconnect: function (done) {
-    ctx = this;
-    if (!ctx.primus) { return done(); }
-    ctx.primus.once('end', done);
+  disconnect: function (cb) {
+    if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
+    ctx.primus.once('end', cb);
     ctx.primus.end();
   },
-  expectAction: function(action, expected, done) {
+  expectAction: function(action, expected, cb) {
+    if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
     ctx.primus.on('data', function check (data) {
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
         expect(data.type).to.equal('org');
         expect(data.event).to.equal('ROOM_MESSAGE');
         expect(data.data.event).to.equal('INSTANCE_UPDATE');
-        expects.expectKeypaths(data.data.data, expected);
+        if (expected) {
+          expects.expectKeypaths(data.data.data, expected);
+        }
         ctx.primus.removeListener('data', check);
-        done();
+        cb(null, data);
+      }
+    });
+  },
+  waitForBuildComplete: function(cb) {
+    if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
+    ctx.primus.on('data', function check (data) {
+      if (data.event === 'ROOM_MESSAGE' && data.data.action === 'build_complete') {
+        expect(data.type).to.equal('org');
+        expect(data.event).to.equal('ROOM_MESSAGE');
+        expect(data.data.event).to.equal('CONTEXTVERSION_UPDATE');
+        ctx.primus.removeListener('data', check);
+        cb(null, data);
       }
     });
   }
