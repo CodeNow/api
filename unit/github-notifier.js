@@ -7,6 +7,13 @@ var after = Lab.after;
 var expect = Lab.expect;
 var GitHub = require('models/notifications/github');
 
+var repoMock = require('../test/fixtures/mocks/github/repo');
+var isCollaboratorMock =
+  require('../test/fixtures/mocks/github/repos-username-repo-collaborators-collaborator');
+
+var userMembershipMock =
+  require('../test/fixtures/mocks/github/user-memberships-org');
+
 
 describe('GitHub Notifier',  function () {
 
@@ -122,6 +129,84 @@ describe('GitHub Notifier',  function () {
     it('should not delete comment', function (done) {
       var github = new GitHub();
       github.deletePullRequestComment({}, function (err, resp) {
+        if (err) { return done(err); }
+        expect(resp).to.be.undefined();
+        done();
+      });
+    });
+
+  });
+
+  describe('_ensurePermissions', function () {
+
+    it('should be success for user\s public repo', function (done) {
+      var github = new GitHub();
+      repoMock.standardRepo({});
+      github._ensurePermissions('cflynn07/clubbingowl_brochure', null, function (err, resp) {
+        if (err) { return done(err); }
+        expect(resp).to.be.undefined();
+        done();
+      });
+    });
+
+    it('should be success for org public repo', function (done) {
+      var github = new GitHub();
+      repoMock.standardRepo({});
+      github._ensurePermissions('cflynn07/clubbingowl_brochure', 'cflynn07', function (err, resp) {
+        if (err) { return done(err); }
+        expect(resp).to.be.undefined();
+        done();
+      });
+    });
+
+    it('should fail for for user\s private repo without configured collaborator', function (done) {
+      var github = new GitHub();
+      repoMock.privateRepo({});
+      isCollaboratorMock.notCollaborator('cflynn07', 'private_clubbingowl_brochure', 'runnabot');
+      github._ensurePermissions('cflynn07/private_clubbingowl_brochure', null, function (err) {
+        expect(err.output.statusCode).to.equal(403);
+        expect(err.output.payload.message)
+          .to.equal('Runnabot is not collaborator on a private repo: cflynn07/private_clubbingowl_brochure');
+        done();
+      });
+    });
+
+    it('should success for for user\s private repo with configured collaborator', function (done) {
+      var github = new GitHub();
+      repoMock.privateRepo({});
+      isCollaboratorMock.isCollaborator('cflynn07', 'private_clubbingowl_brochure', 'runnabot');
+      github._ensurePermissions('cflynn07/private_clubbingowl_brochure', null, function (err, resp) {
+        if (err) { return done(err); }
+        expect(resp).to.be.undefined();
+        done();
+      });
+    });
+
+    it('should try to accept membership for org private repo', function (done) {
+      var github = new GitHub();
+      repoMock.privateRepo({});
+      userMembershipMock.pendingMember(11, 'runnabot', 'cflynn07');
+      github._ensurePermissions('cflynn07/private_clubbingowl_brochure', 'cflynn07', function (err) {
+        expect(err.message).to.match(/No match for request patch/);
+        done();
+      });
+    });
+
+    it('should try to accept membership for org private repo', function (done) {
+      var github = new GitHub();
+      repoMock.privateRepo({});
+      userMembershipMock.notMember(11, 'runnabot', 'cflynn07');
+      github._ensurePermissions('cflynn07/private_clubbingowl_brochure', 'cflynn07', function (err) {
+        expect(err.message).to.match(/No match for request patch/);
+        done();
+      });
+    });
+
+    it('should work for org repo where runnabot is member', function (done) {
+      var github = new GitHub();
+      repoMock.privateRepo({});
+      userMembershipMock.isMember(11, 'runnabot', 'cflynn07');
+      github._ensurePermissions('cflynn07/private_clubbingowl_brochure', 'cflynn07', function (err, resp) {
         if (err) { return done(err); }
         expect(resp).to.be.undefined();
         done();
