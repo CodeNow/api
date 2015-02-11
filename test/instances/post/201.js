@@ -10,6 +10,8 @@ var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var exists = require('101/exists');
 var not = require('101/not');
 var last = require('101/last');
@@ -28,6 +30,9 @@ describe('201 POST /instances', {timeout:500}, function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -114,6 +119,7 @@ describe('201 POST /instances', {timeout:500}, function () {
         ctx.afterPostAsserts = ctx.afterPostAsserts || [];
         ctx.afterPostAsserts.push(function (done) {
           var instance = ctx.instance;
+          dockerMockEvents.emitBuildComplete(ctx.cv);
           multi.tailInstance(ctx.user, instance, function (err) {
             if (err) { return done(err); }
             try {
