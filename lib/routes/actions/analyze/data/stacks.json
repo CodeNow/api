@@ -211,5 +211,15 @@
     "startCommand": "//Do some stuff",
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']"
+  },
+  "php": {
+    "name": "PHP",
+    "versions": [
+    ],
+    "defaultVersion": "",
+    "ports": "3000",
+    "startCommand": "//Do some stuff",
+    "preEnvMarker": "",
+    "postEnvMarker": ""
   }
 }
