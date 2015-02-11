@@ -14,10 +14,7 @@ module.exports.emitBuildComplete = function (cv) {
       JSON.stringify({
         status: 'die',
         from: process.env.DOCKER_IMAGE_BUILDER_NAME,
-        id: cv.containerId,
-        containerInspect: {
-          name: cv.build._id
-        }
+        id: cv.containerId
       }));
   });
 };
