@@ -36,8 +36,8 @@ describe('Building - Context Version Deduping', function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);
-  beforeEach(primus.connect);
   beforeEach(require('./fixtures/clean-nock'));
+  beforeEach(primus.connect);
 
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
