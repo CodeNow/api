@@ -67,14 +67,8 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
             ctx.build.build({ message: uuid() }, done);
           });
-          beforeEach(primus.connect.bind(ctx));
-          beforeEach(function(done){
-            primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
-          });
-
-          it('should emit post event', function(done) {
-            var countDown = createCount(2, done);
-            var expected = {
+          beforeEach(function(done) {
+            ctx.expected = {
               shortHash: exists,
               'createdBy.github': ctx.user.attrs.accounts.github.id,
               build: exists,
@@ -84,8 +78,43 @@ describe('POST /instances', function () {
               'network.networkIp': exists,
               'network.hostIp': exists
             };
+            done();
+          });
+          beforeEach(primus.connect.bind(ctx));
+          beforeEach(function(done){
+            primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
+          });
 
-            primus.expectAction.bind(ctx)('post', expected, countDown.next);
+          it('should emit container_inspect event', function(done) {
+            var countDown = createCount(2, done);
+
+            primus.expectAction.bind(ctx)('container_inspect', ctx.expected, countDown.next);
+            var json = { build: ctx.build.id(), name: uuid() };
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            var instance = ctx.user.createInstance({ json: json }, function(err) {
+               if (err) { return countDown.next(err); }
+              multi.tailInstance(ctx.user, instance, countDown.next);
+            });
+          });
+          it('should emit deploy event', function(done) {
+            var countDown = createCount(2, done);
+
+            primus.expectAction.bind(ctx)('deploy', ctx.expected, countDown.next);
+            var json = { build: ctx.build.id(), name: uuid() };
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            var instance = ctx.user.createInstance({ json: json }, function(err) {
+               if (err) { return countDown.next(err); }
+              multi.tailInstance(ctx.user, instance, countDown.next);
+            });
+          });
+          it('should emit post event', function(done) {
+            var countDown = createCount(2, done);
+
+            primus.expectAction.bind(ctx)('post', ctx.expected, countDown.next);
             var json = { build: ctx.build.id(), name: uuid() };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
