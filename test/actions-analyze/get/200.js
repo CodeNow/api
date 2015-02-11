@@ -333,8 +333,8 @@ describe('Analyze - /actions/analyze', function () {
         );
       });
 
-      it('returns 1 inferred suggestions for python '+
-         'repository with 1 matching dependency', function (done) {
+      it('returns 2 inferred suggestions for python '+
+         'repository with 2 matching dependency', function (done) {
         repoContentsMock.repoContentsDirectory('python-setup.py', {});
         repoContentsMock.repoContentsFile('python-setup.py', {
           name: 'setup.py',
@@ -348,8 +348,9 @@ describe('Analyze - /actions/analyze', function () {
             expect(res.statusCode).to.equal(200);
             expect(res.body).to.be.an('object');
             expect(res.body.languageFramework).to.equal(python);
-            expect(res.body.serviceDependencies).to.have.length(1);
-            expect(res.body.serviceDependencies[0]).to.equal('redis');
+            expect(res.body.serviceDependencies).to.have.length(2);
+            expect(res.body.serviceDependencies[0]).to.equal('postgresql');
+            expect(res.body.serviceDependencies[1]).to.equal('redis');
             done();
           }
         );
