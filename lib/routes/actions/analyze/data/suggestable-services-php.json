@@ -1,0 +1,12 @@
+{
+ "cassandra": [],
+ "elasticsearch": [],
+ "hbase": [],
+ "memcached": [],
+ "mongodb": [],
+ "mysql": [],
+ "nginx": [],
+ "postgresql": [],
+ "rabbitmq": [],
+ "redis": []
+}
