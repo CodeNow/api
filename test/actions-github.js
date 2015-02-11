@@ -10,12 +10,10 @@ var expect = Lab.expect;
 var request = require('request');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
-var ContextVersion = require('models/mongo/context-version');
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
-var tailBuildStream = require('./fixtures/tail-build-stream');
 
 var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
