@@ -226,7 +226,7 @@ describe('Github - /actions/github', function () {
     describe('enabled auto builds', function () {
 
       before(function (done) {
-        process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = 'true';
+        process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'true';
         done();
       });
 
@@ -397,7 +397,6 @@ describe('Github - /actions/github', function () {
     var ctx = {};
 
     before(function (done) {
-      process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = 'true';
       multi.createInstance(function (err, instance, build, user, modelsArr) {
         ctx.contextVersion = modelsArr[0];
         ctx.context = modelsArr[1];
