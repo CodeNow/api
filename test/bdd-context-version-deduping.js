@@ -5,13 +5,16 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
+var beforeEach = Lab.beforeEach;
+var afterEach = Lab.afterEach;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var uuid = require('uuid');
 var createCount = require('callback-count');
-var tailBuildStream = require('./fixtures/tail-build-stream');
+var dockerMockEvents = require('./fixtures/docker-mock-events');
+var primus = require('./fixtures/primus');
 
 /**
  * This tests many of the different possibilities that can happen during build, namely when deduping
@@ -33,6 +36,10 @@ describe('Building - Context Version Deduping', function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+  beforeEach(require('./fixtures/clean-nock'));
+
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('./fixtures/mocks/api-client').clean);
@@ -41,87 +48,87 @@ describe('Building - Context Version Deduping', function () {
   describe('In-progress build', function () {
     beforeEach(function (done) {
       multi.createContextVersion(function (err, contextVersion, context, build, user) {
+        if (err) { return done(err); }
         ctx.build = build;
         ctx.user = user;
         ctx.cv = contextVersion;
         done();
       });
     });
+    beforeEach(function (done) {
+      primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+    });
+    // start build here, send  dockerMockEvents.emitBuildComplete to end
+    beforeEach(function(done) {
+      ctx.build.build({ message: uuid() }, done);
+    });
     it('should fork the instance, and both should be deployed when the build is finished',
-        { timeout: 1000 }, function (done) {
-      // start the build
-      ctx.build.build({ message: uuid() }, function (err) {
+      { timeout: 1000 }, function (done) {
+      // Add it to an instance
+      var json = { build: ctx.build.id(), name: uuid() };
+      var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
-        // Add it to an instance
-        var json = { build: ctx.build.id(), name: uuid() };
-        var instance = ctx.user.createInstance({ json: json }, function (err) {
+        // Now fork that instance
+        var forkedInstance = instance.copy(function (err) {
           if (err) { return done(err); }
-          // Now fork that instance
-          var forkedInstance = instance.copy(function (err) {
-            if (err) { return done(err); }
-            // Now tail both and make sure they both start
-            var count = createCount(2, done);
-            multi.tailInstance(ctx.user, instance, next);
-            multi.tailInstance(ctx.user, forkedInstance, next);
-            function next (err, instance) {
-              if (err) { return count.next(err); }
-              expect(instance.attrs.containers[0].inspect.State.Running).to.be.okay;
-              count.next();
-            }
-          });
+          // Now tail both and make sure they both start
+          var count = createCount(2, done);
+          dockerMockEvents.emitBuildComplete(ctx.cv);
+          multi.tailInstance(ctx.user, instance, next);
+          multi.tailInstance(ctx.user, forkedInstance, next);
+          function next (err, instance) {
+            if (err) { return count.next(err); }
+            expect(instance.attrs.containers[0].inspect.State.Running).to.be.okay;
+            count.next();
+          }
         });
       });
     });
     it('should fork the instance, and but not deploy since the build will fail', { timeout: 1000 }, function (done) {
-      // start the build
-      ctx.build.build({ message: uuid() }, function (err) {
+      // Add it to an instance
+      var json = { build: ctx.build.id(), name: uuid() };
+      var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
-        // Add it to an instance
-        var json = { build: ctx.build.id(), name: uuid() };
-        var instance = ctx.user.createInstance({ json: json }, function (err) {
+        // Now fork that instance
+        var forkedInstance = instance.copy(function (err) {
           if (err) { return done(err); }
-          // Now fork that instance
+          // Now tail the buildstream so we can check if the instances do not deploy
+          primus.waitForBuildError(function() {
+            instance.fetch(next);
+            forkedInstance.fetch(next);
+          });
+          dockerMockEvents.emitBuildComplete(ctx.cv, true);
+          var count = createCount(2, done);
+          function next (err, instance) {
+            if (err) { return count.next(err); }
+            expect(instance.containers.length).to.not.be.okay;
+            count.next();
+          }
+        });
+      });
+    });
+    it('should fork after failure, so the instance should not deploy', { timeout: 1000 }, function (done) {
+      // Add it to an instance
+      var json = { build: ctx.build.id(), name: uuid() };
+      var instance = ctx.user.createInstance({ json: json }, function (err) {
+        if (err) { return done(err); }
+        // finish the build
+        dockerMockEvents.emitBuildComplete(ctx.cv, true);
+
+        // Now wait for the finished build
+        primus.waitForBuildError(function() {
           var forkedInstance = instance.copy(function (err) {
             if (err) { return done(err); }
-            // Now tail the buildstream so we can check if the instances do not deploy
-            tailBuildStream(ctx.cv.id(), 'Failure', function (err) {
-              if (err) { return done(err); }
-              checkInstance(ctx.user, instance, next);
-              checkInstance(ctx.user, forkedInstance, next);
-            });
             var count = createCount(2, done);
+
+            instance.fetch(next);
+            forkedInstance.fetch(next);
+
             function next (err, instance) {
               if (err) { return count.next(err); }
               expect(instance.containers.length).to.not.be.okay;
               count.next();
             }
-          });
-        });
-      });
-    });
-    it('should fork after failure, so the instance should not deploy', { timeout: 1000 }, function (done) {
-      // start the build
-     require('./fixtures/mocks/docker/container-id-attach')(0, 'Failure');
-      ctx.build.build({ message: uuid() }, function (err) {
-        if (err) { return done(err); }
-        // Add it to an instance
-        var json = { build: ctx.build.id(), name: uuid() };
-        var instance = ctx.user.createInstance({ json: json }, function (err) {
-          if (err) { return done(err); }
-          // Now wait for the finished build
-          tailBuildStream(ctx.cv.id(), 'Failure', function (err) {
-            if (err) { return done(err); }
-            // require('./fixtures/mocks/github/user')(ctx.user);
-            var forkedInstance = instance.copy(function (err) {
-              if (err) { return done(err); }
-
-              checkInstance(ctx.user, forkedInstance, function (err, instance) {
-                if (err) { return done(err); }
-
-                expect(instance.containers.length).to.not.be.okay;
-                done();
-              });
-            });
           });
         });
       });
@@ -138,17 +145,13 @@ describe('Building - Context Version Deduping', function () {
     });
     it('should deploy right after', { timeout: 1000 }, function (done) {
       // start the build
-      // require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
-      // require('./fixtures/mocks/github/user')(ctx.user);
-      // require('./fixtures/mocks/github/user')(ctx.user);
       // Add it to an instance
       var json = { build: ctx.build.id(), name: uuid() };
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) {
           return done(err);
         }
-        // Now fork that instance
-        // require('./fixtures/mocks/github/user')(ctx.user);
+
         var forkedInstance = instance.copy(function (err) {
           if (err) {
             return done(err);
@@ -169,13 +172,3 @@ describe('Building - Context Version Deduping', function () {
     });
   });
 });
-
-function checkInstance(user, instance, ownerId, cb) {
-  if (typeof ownerId === 'function') {
-    cb = ownerId;
-    ownerId = null;
-  }
-  setTimeout(function () {
-    instance = user.fetchInstance(instance.id(), cb);
-  }, 100);
-}

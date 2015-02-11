@@ -66,5 +66,17 @@ module.exports = {
         cb(null, data);
       }
     });
+  },
+   waitForBuildError: function(cb) {
+    if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
+    ctx.primus.on('data', function check (data) {
+      if (data.event === 'ROOM_MESSAGE' && data.data.action === 'build_complete_err') {
+        expect(data.type).to.equal('org');
+        expect(data.event).to.equal('ROOM_MESSAGE');
+        expect(data.data.event).to.equal('CONTEXTVERSION_UPDATE');
+        ctx.primus.removeListener('data', check);
+        cb(null, data);
+      }
+    });
   }
 };

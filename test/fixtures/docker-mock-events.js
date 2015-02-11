@@ -2,7 +2,7 @@
 
 var dockerMock = require('docker-mock');
 
-module.exports.emitBuildComplete = function (cv) {
+module.exports.emitBuildComplete = function (cv, failure) {
   if (!cv.fetch) {
     throw new Error('cv needs to be a model');
   }
@@ -10,7 +10,7 @@ module.exports.emitBuildComplete = function (cv) {
     if (!cv.containerId || !cv.build._id) {
       throw new Error('cv is missing containerId id or build._id');
     }
-    require('./mocks/docker/build-logs.js')();
+    require('./mocks/docker/build-logs.js')(failure);
     dockerMock.events.stream.emit('data',
       JSON.stringify({
         status: 'die',
@@ -19,5 +19,3 @@ module.exports.emitBuildComplete = function (cv) {
       }));
   });
 };
-
-
