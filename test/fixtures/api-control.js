@@ -31,7 +31,10 @@ function ensureIndexes (cb) {
   async.each(scripts, ensureIndex, cb);
 }
 
+var started = false;
 function startApi (done) {
+  if(started) { return done(); }
+  started = true;
   var ctx = this;
   ctx.cayley = cayley;
   route53.start(); // must be before api require, and here
@@ -47,6 +50,8 @@ function startApi (done) {
 }
 
 function stopApi (done) {
+  if(!started) { return done(); }
+  started = false;
   route53.stop();
   api.stop(function (err) {
     if (err) { return done(err); }

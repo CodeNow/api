@@ -4,6 +4,7 @@ var redis = require('models/redis');
 var mavisApp = require('mavis');
 var sauron = require('sauron');
 var dockerModuleMock = require('./mocks/docker-model');
+process.env.AUTO_RECONNECT = false; // needed for test
 var dockerListener = require('docker-listener');
 
 var url = require('url');
@@ -13,7 +14,11 @@ module.exports = {
 };
 var ctx = {};
 var testDockHost = 'http://localhost:4243';
+var started = false;
+
 function startDock (done) {
+  if(started) { return done(); }
+  started = true;
   var count = createCount(done);
   ctx.mavis = mavisApp.listen(url.parse(process.env.MAVIS_HOST).port);
   ctx.mavis.on('listening', count.inc().next);
@@ -32,6 +37,8 @@ function startDock (done) {
   });
 }
 function stopDock (done) {
+  if(!started) { return done(); }
+  started = false;
   var count = createCount(done);
   ctx.mavis.close(count.inc().next);
   ctx.sauron.close(count.inc().next);

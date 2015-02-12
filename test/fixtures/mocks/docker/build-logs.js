@@ -22,4 +22,13 @@ module.exports = function (failure) {
       'failfailfail failf failfailfailfailfailfailfailfailfailfailfailfailfailfailfailfail' :
       buffer.toString() +
       'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c048080d32980521e743');
+
+  nock('http://localhost:4243', { allowUnmocked: true })
+    .filteringPath(/\/images\/.+\/push/, '/images/repo/push')
+    .post('/images/repo/push')
+    .reply(200);
+
+  nock('http://localhost:4243', { allowUnmocked: true })
+    .post('/images/push')
+    .reply(200);
 };

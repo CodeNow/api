@@ -293,7 +293,6 @@ module.exports = {
       if (err) { return cb(err); }
       build.contextVersions.models[0].fetch(function (err, cv) {
         if (err) { return cb(err); }
-        require('./mocks/docker/container-id-attach')(0);
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);
