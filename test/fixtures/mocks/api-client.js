@@ -44,7 +44,6 @@ module.exports.setup = function (cb) {
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
       require('../../fixtures/mocks/github/user')(this.opts.user);
-      require('../../fixtures/mocks/docker/container-id-attach')(100);
       require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(
         this.contextVersions.models[0]);
     }
@@ -110,7 +109,6 @@ module.exports.setup = function (cb) {
       //   context.attrs.owner.github === this.opts.user.attrs.accounts.github.id) {
       //   require('../../fixtures/mocks/github/user')(user);
       // }
-      require('../../fixtures/mocks/docker/container-id-attach')(100);
     }
   });
 

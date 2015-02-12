@@ -112,7 +112,7 @@ describe('Build Stream', function() {
         }
       });
     });
-    // TODO: THE EXPECTED VALUE IS WRONG.
+
     it('should get logs from build stream', function (done) {
       ctx.build.build(ctx.buildId, {message: 'hello!'}, function (err, body, code) {
         if (err) {

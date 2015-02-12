@@ -156,7 +156,6 @@ describe('Github - /actions/github', function () {
         };
         var options = hooks(data).push;
         require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        require('./fixtures/mocks/docker/container-id-attach')();
           (options.json.repository.owner.name, options.json.repository.name, options.json.head_commit.id);
         request.post(options, function (err, res) {
           if (err) {
@@ -196,7 +195,6 @@ describe('Github - /actions/github', function () {
         };
         var options = hooks(data).push;
         require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        require('./fixtures/mocks/docker/container-id-attach')();
         request.post(options, function (err, res) {
           if (err) { return done(err); }
           expect(res.statusCode).to.equal(202);
@@ -215,7 +213,6 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).push;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
           request.post(options, function (err, res, cvs) {
             if (err) { return done(err); }
             expect(res.statusCode).to.equal(201);
@@ -280,7 +277,6 @@ describe('Github - /actions/github', function () {
         };
         var options = hooks(data).push;
         require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        require('./fixtures/mocks/docker/container-id-attach')();
         request.post(options, function (err, res, cvs) {
           if (err) { return done(err); }
           expect(res.statusCode).to.equal(201);
@@ -419,7 +415,6 @@ describe('Github - /actions/github', function () {
         };
         var options = hooks(data).push;
         require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        require('./fixtures/mocks/docker/container-id-attach')();
         request.post(options, function (err, res, instancesIds) {
           if (err) { return done(err); }
           expect(res.statusCode).to.equal(201);

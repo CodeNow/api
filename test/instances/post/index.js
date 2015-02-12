@@ -68,7 +68,6 @@ describe('POST /instances', function () {
       describe('user owned', function () {
         describe('check messenger', function() {
           beforeEach(function(done) {
-            require('../../fixtures/mocks/docker/container-id-attach')(25);
             require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
             ctx.build.build({ message: uuid() }, done);
           });
@@ -114,7 +113,6 @@ describe('POST /instances', function () {
             'network.networkIp': exists,
             'network.hostIp': exists
           };
-          require('../../fixtures/mocks/docker/container-id-attach')(0);
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
@@ -137,7 +135,6 @@ describe('POST /instances', function () {
 
         it('should deploy the instance after the build finishes', {timeout: 2000}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
-          require('../../fixtures/mocks/docker/container-id-attach')(25);
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
@@ -228,7 +225,6 @@ describe('POST /instances', function () {
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user')(ctx.user);
-          require('../../fixtures/mocks/docker/container-id-attach')(25);
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) {

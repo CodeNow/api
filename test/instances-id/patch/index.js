@@ -172,7 +172,6 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
           });
           describe('WITH changes in appcodeversion', function () {
             beforeEach(function (done) {
-              require('../../fixtures/mocks/docker/container-id-attach')();
               var tailBuildStream = require('../../fixtures/tail-build-stream');
               ctx.newCV = ctx.user
                 .newContext(ctx.newBuild.contexts.models[0].id())
@@ -210,7 +209,6 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
             beforeEach(function (done) {
               require('../../fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
               require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
-              require('../../fixtures/mocks/docker/container-id-attach')();
               var tailBuildStream = require('../../fixtures/tail-build-stream');
               ctx.newCV = ctx.user
                 .newContext(ctx.newBuild.contexts.models[0].id())
@@ -243,7 +241,6 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
             beforeEach(function (done) {
               require('../../fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
               require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
-              require('../../fixtures/mocks/docker/container-id-attach')();
               var tailBuildStream = require('../../fixtures/tail-build-stream');
               ctx.newCV = ctx.user
                 .newContext(ctx.newBuild.contexts.models[0].id())
