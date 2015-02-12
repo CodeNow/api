@@ -24,6 +24,7 @@ var pythonSetupPyFileMatching =
 var javascriptNodeJS = 'nodejs';
 var python = 'python';
 var rubyRor = 'ruby_ror';
+var php = 'php';
 
 describe('Analyze - /actions/analyze', function () {
   var ctx = {};
@@ -131,6 +132,10 @@ describe('Analyze - /actions/analyze', function () {
     });
   });
 
+  /**
+   * Python
+   * -------------------------------------------------
+   */
   describe('Success conditions - python', function () {
     describe('matching against requirements.txt', function () {
       it('returns 0 inferred suggestions for python '+
@@ -358,6 +363,10 @@ describe('Analyze - /actions/analyze', function () {
     });
   });
 
+  /**
+   * JavaScript
+   * -------------------------------------------------
+   */
   describe('Success conditions - javascript', function () {
     it('returns 0 inferred suggestions for JavaScript/NodeJS '+
        'repository with 0 dependencies', function (done) {
@@ -538,6 +547,10 @@ describe('Analyze - /actions/analyze', function () {
     });
   });
 
+  /**
+   * Ruby
+   * -------------------------------------------------
+   */
   describe('Success conditions - ruby', function () {
     it('returns 0 inferred suggestions for Ruby/RoR '+
        'repository with 0 dependencies', function (done) {
@@ -672,6 +685,177 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body.languageFramework).to.equal(rubyRor);
           expect(res.body.serviceDependencies).to.have.length(1);
           expect(res.body.serviceDependencies[0]).to.equal('cassandra');
+          done();
+        }
+      );
+    });
+  });
+
+  /**
+   * PHP
+   * -------------------------------------------------
+   */
+  describe('Success conditions - PHP', function () {
+    it('returns 0 inferred suggestions for php '+
+       'repository with 0 dependencies', function (done) {
+      var composerFile = {
+        require: []
+      };
+      repoContentsMock.repoContentsDirectory('php', {});
+      repoContentsMock.repoContentsFile('php', {
+        name: 'composer.json',
+        path: 'composer.json',
+        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(php);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('returns 0 inferred suggestions for php '+
+       'repository with 0 MATCHING dependencies', function (done) {
+      var composerFile = {
+        require: ['some-module1', 'some-other-module']
+      };
+      repoContentsMock.repoContentsDirectory('php', {});
+      repoContentsMock.repoContentsFile('php', {
+        name: 'composer.json',
+        path: 'composer.json',
+        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(php);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('returns 1 inferred suggestions for python '+
+       'repository with 1 matching dependency', function (done) {
+      var composerFile = {
+        require: [
+          'some-module1',
+          'some-other-module',
+          '' // TODO: insert passing dep here
+        ]
+      };
+      repoContentsMock.repoContentsDirectory('php', {});
+      repoContentsMock.repoContentsFile('php', {
+        name: 'composer.json',
+        path: 'composer.json',
+        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(php);
+          expect(res.body.serviceDependencies).to.have.length(1);
+          // expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
+          done();
+        }
+      );
+    });
+
+    it('returns 3 inferred suggestions for php '+
+       'repository with 3 matching dependency', function (done) {
+      var composerFile = {
+        require: [
+          'some-module1',
+          'some-other-module',
+          '' // TODO: insert passing dep here
+        ]
+      };
+      repoContentsMock.repoContentsDirectory('php', {});
+      repoContentsMock.repoContentsFile('php', {
+        name: 'composer.json',
+        path: 'composer.json',
+        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        //hooks.getErrorNoQueryParam,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(php);
+          /*
+          expect(res.body.serviceDependencies).to.have.length(3);
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
+          expect(res.body.serviceDependencies[1]).to.equal('memcached');
+          expect(res.body.serviceDependencies[2]).to.equal('mongodb');
+          */
+          done();
+        }
+      );
+    });
+
+    it('returns 0 inferred suggestions for php '+
+       'repository with dependency that is a substring of matching dependency', function (done) {
+      var composerFile = {
+        require: [
+          'some-module1',
+          'some-other-module',
+          '' // TODO: insert passing dep here
+        ]
+      };
+      repoContentsMock.repoContentsDirectory('php', {});
+      repoContentsMock.repoContentsFile('php', {
+        name: 'composer.json',
+        path: 'composer.json',
+        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(php);
+          expect(res.body.serviceDependencies).to.have.length(0);
+          done();
+        }
+      );
+    });
+
+    it('returns 1 inferred suggestions for php '+
+       'repository with multiple matching known modules', function (done) {
+      var composerFile = {
+        require: [
+          'some-module1',
+          'some-other-module',
+          '' // TODO: insert passing dep here
+        ]
+      };
+      repoContentsMock.repoContentsDirectory('php', {});
+      repoContentsMock.repoContentsFile('php', {
+        name: 'composer.json',
+        path: 'composer.json',
+        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+      });
+      ctx.request.get(
+        hooks.getSuccess,
+        function (err, res) {
+          expect(res.statusCode).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body.languageFramework).to.equal(php);
+          expect(res.body.serviceDependencies).to.have.length(1);
+          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
           done();
         }
       );
