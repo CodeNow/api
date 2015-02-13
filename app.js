@@ -70,7 +70,7 @@ Api.prototype.stop = function (cb) {
     // stop github ssh key generator
     keyGen.stop();
     // stop sending socket count
-    dogstatsd.monitorStart();
+    dogstatsd.monitorStop();
     // express server
     mongooseControl.stop(count.inc().next);
     events.close(count.inc().next);
