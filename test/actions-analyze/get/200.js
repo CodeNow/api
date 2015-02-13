@@ -784,7 +784,7 @@ describe('Analyze - /actions/analyze', function () {
           'some-other-module': '0.0',
           'simplon/redis': '0.0',        //redis
           'aequasi/cache-bundle': '0.0', //memcached
-          'anorgan/qutee': '0.0'         //mysql
+          'brightflair/php.gt': '0.0'         //mysql
         }
       };
       repoContentsMock.repoContentsDirectory('php', {});
@@ -815,7 +815,7 @@ describe('Analyze - /actions/analyze', function () {
         require: {
           'some-module1': '0',
           'some-other-module': '0',
-          'anorgan/qute': '0' //<-- substring
+          'brightflair/ph': '0' //<-- substring
         }
       };
       repoContentsMock.repoContentsDirectory('php', {});
