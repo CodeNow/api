@@ -487,6 +487,7 @@
   "redisk",
   "redismodel",
   "redistat",
+  "resque",
   "ruby-redis",
   "ruote-redis",
   "sinatra-redis",
