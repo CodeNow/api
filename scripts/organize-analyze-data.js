@@ -11,7 +11,8 @@ var fs = require('fs');
 [
  'nodejs',
  'python',
- 'ruby'
+ 'ruby',
+ 'php'
 ].forEach(function (lang) {
   console.log('lang', lang);
   console.log(__dirname);
