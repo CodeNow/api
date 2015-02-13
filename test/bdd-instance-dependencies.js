@@ -15,23 +15,37 @@ var async = require('async');
 
 describe('BDD - Instance Dependencies', function () {
   var ctx = {};
-  var restartCayley = null;
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
+  beforeEach(function (done) {
+    var r = require('models/redis');
+    r.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
+      if (err) { return done(err); }
+      async.map(keys, function (key, cb) { r.del(key, cb); }, done);
+    });
+  });
+  // Uncomment if you want to clear the (graph) database every time
+  beforeEach(function (done) {
+    if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
+      var Cypher = require('cypher-stream');
+      var cypher = Cypher('http://localhost:7474');
+      var err;
+      cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
+        .on('error', function (e) { err = e; })
+        .on('end', function () { done(err); })
+        .on('data', function () {});
+    } else {
+      done();
+    }
+  });
   after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
-
-  before(function (done) {
-    // grab the ref to cayley before it vanishes
-    restartCayley = ctx.cayley;
-    done();
-  });
 
   beforeEach(function (done) {
     multi.createInstance(function (err, instance, build, user) {
@@ -97,31 +111,65 @@ describe('BDD - Instance Dependencies', function () {
         });
       });
     });
-    describe('terminating cayley early', function () {
+    describe('if the graph db is unavailable', function () {
+      var type = process.env.GRAPH_DATABASE_TYPE.toUpperCase();
+      var host = process.env[type];
+      beforeEach(function (done) {
+        process.env[type] = 'http://localhost:78534';
+        done();
+      });
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'API_HOST=' +
           ctx.apiInstance.attrs.lowerName + '.' +
           ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+        console.log('error below expected');
         ctx.webInstance.update({
           env: [depString]
         }, done);
       });
-      before(function (done) {
-        restartCayley.stop(done);
-      });
-      after(function (done) {
-        restartCayley.start(done);
+      afterEach(function (done) {
+        process.env[type] = host;
+        done();
       });
       it('should degrade gracefully and still allow us to fetch (printed error expected)', function (done) {
         ctx.webInstance.fetch(function (err, body) {
           expect(err).to.be.not.okay;
           if (err) { return done(err); }
           expect(body).to.be.okay;
-          /* this is a fun test. we _want_ this to be undefined. if cayley was running,
+          /* this is a fun test. we _want_ this to be undefined. if the graph db was running,
            * it would return a value for dependencies, which we do not want. */
           expect(body.dependencies).to.eql({});
           done();
+        });
+      });
+      describe('recovery with the regraph endpoint', function () {
+        beforeEach(function (done) {
+          process.env[type] = host;
+          ctx.webInstance.fetch(function (err, body) {
+            expect(err).to.be.not.okay;
+            if (err) { return done(err); }
+            expect(body.dependencies).to.eql({});
+            ctx.webInstance.regraph(function (err) {
+              expect(err).to.be.not.okay;
+              if (err) { return done(err); }
+              done();
+            });
+          });
+        });
+        it('should update the web dependencies (should print an error above)', function (done) {
+          var apiId = ctx.apiInstance.attrs._id.toString();
+          ctx.webInstance.fetch(function (err, instance) {
+            expect(err).to.be.not.okay;
+            if (err) { return done(err); }
+            expect(instance.dependencies).to.be.an('object');
+            expect(Object.keys(instance.dependencies).length).to.equal(1);
+            expect(instance.dependencies[apiId]).to.be.okay;
+            expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
+            expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
+            expect(instance.dependencies[apiId].dependencies).to.equal(undefined);
+            done();
+          });
         });
       });
     });
@@ -169,7 +217,7 @@ describe('BDD - Instance Dependencies', function () {
             ], done);
           });
           beforeEach(function (done) {
-            async.parallel([
+            async.series([
               forkWeb,
               forkApi
             ], done);
@@ -284,7 +332,7 @@ describe('BDD - Instance Dependencies', function () {
       });
       describe('and forking it a (the first one) (the shorter way)', function () {
         beforeEach(function (done) {
-          async.parallel([
+          async.series([
             forkWeb,
             forkApi
           ], done);
@@ -348,7 +396,7 @@ describe('BDD - Instance Dependencies', function () {
       });
       describe('and forking it a (the first one)', function () {
         beforeEach(function (done) {
-          async.parallel([
+          async.series([
             forkWeb,
             forkApi
           ], done);
@@ -502,7 +550,7 @@ describe('BDD - Instance Dependencies', function () {
       });
       describe('and forking it', function () {
         beforeEach(function (done) {
-          async.parallel([
+          async.series([
             forkWeb,
             forkApi
           ], done);
