@@ -241,6 +241,10 @@ function newCV (context, icv, cb) {
   });
 }
 var sources = [{
+  name: 'PHP',
+  isTemplate: true,
+  body: fs.readFileSync('./scripts/sourceDockerfiles/php').toString()
+}, {
   name: 'NodeJs',
   isTemplate: true,
   body: fs.readFileSync('./scripts/sourceDockerfiles/nodejs').toString()
