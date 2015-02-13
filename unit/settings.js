@@ -67,7 +67,7 @@ describe('Settings',  function () {
         if (err) { return done(err); }
         expect(saved.owner.github).to.equal(data.owner.github);
         expect(saved.notifications.slack.apiToken).to.equal(data.notifications.slack.apiToken);
-        expect(settings.notifications.slack.channel).to.equal(savedSettings.notifications.slack.channel);
+        expect(saved.notifications.slack.channel).to.equal(data.notifications.slack.channel);
         done();
       });
     });
@@ -100,7 +100,7 @@ describe('Settings',  function () {
         if (err) { return done(err); }
         expect(saved.owner.github).to.equal(data1.owner.github);
         expect(saved.notifications.slack.apiToken).to.equal(data1.notifications.slack.apiToken);
-        expect(settings.notifications.slack.channel).to.equal(savedSettings.notifications.slack.channel);
+        expect(saved.notifications.slack.channel).to.equal(data1.notifications.slack.channel);
         var settings2 = new Settings(data2);
         settings2.save(function (err) {
           expect(err.name).to.equal('MongoError');
@@ -140,7 +140,7 @@ describe('Settings',  function () {
         if (err) { return done(err); }
         expect(saved.owner.github).to.equal(data1.owner.github);
         expect(saved.notifications.slack.apiToken).to.equal(data1.notifications.slack.apiToken);
-        expect(settings.notifications.slack.channel).to.equal(savedSettings.notifications.slack.channel);
+        expect(saved.notifications.slack.channel).to.equal(data1.notifications.slack.channel);
         var settings2 = new Settings(data2);
         settings2.save(function (err) {
           expect(err.name).to.equal('MongoError');
