@@ -17,6 +17,10 @@ var fs = require('fs');
 var repoMock = require('../../fixtures/mocks/github/repo');
 var repoContentsMock = require('../../fixtures/mocks/github/repos-contents');
 
+var pythonSetupPyFile = require('../../fixtures/mocks/github/repos-contents/python-setup.py-repo-module-file');
+var pythonSetupPyFileMatching =
+  require('../../fixtures/mocks/github/repos-contents/python-setup.py-matching-repo-module-file');
+
 var javascriptNodeJS = 'nodejs';
 var python = 'python';
 var rubyRor = 'ruby_ror';
@@ -128,159 +132,229 @@ describe('Analyze - /actions/analyze', function () {
   });
 
   describe('Success conditions - python', function () {
-    it('returns 0 inferred suggestions for python '+
-       'repository with 0 dependencies', function (done) {
-      var requirements = '';
-      repoContentsMock.repoContentsDirectory('python', {});
-      repoContentsMock.repoContentsFile('python', {
-        name: 'requirements.txt',
-        path: 'requirements.txt',
-        content: (new Buffer(requirements, 'utf8').toString('base64'))
+    describe('matching against requirements.txt', function () {
+      it('returns 0 inferred suggestions for python '+
+         'repository with 0 dependencies', function (done) {
+        var requirements = '';
+        repoContentsMock.repoContentsDirectory('python', {});
+        repoContentsMock.repoContentsFile('python', {
+          name: 'requirements.txt',
+          path: 'requirements.txt',
+          content: (new Buffer(requirements, 'utf8').toString('base64'))
+        });
+        ctx.request.get(
+          hooks.getSuccess,
+          //hooks.getErrorNoQueryParam,
+          function (err, res) {
+            expect(res.statusCode).to.equal(200);
+            expect(res.body).to.be.an('object');
+            expect(res.body.languageFramework).to.equal(python);
+            expect(res.body.serviceDependencies).to.have.length(0);
+            done();
+          }
+        );
       });
-      ctx.request.get(
-        hooks.getSuccess,
-        //hooks.getErrorNoQueryParam,
-        function (err, res) {
-          expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(python);
-          expect(res.body.serviceDependencies).to.have.length(0);
-          done();
-        }
-      );
+
+     it('returns 0 inferred suggestions for python '+
+         'repository with 0 MATCHING dependencies', function (done) {
+        var requirements = 'Django==1.3\n'+
+          'stripe\n'+
+          'py-bcrypt';
+        repoContentsMock.repoContentsDirectory('python', {});
+        repoContentsMock.repoContentsFile('python', {
+          name: 'requirements.txt',
+          path: 'requirements.txt',
+          content: (new Buffer(requirements, 'utf8').toString('base64'))
+        });
+        ctx.request.get(
+          hooks.getSuccess,
+          //hooks.getErrorNoQueryParam,
+          function (err, res) {
+            expect(res.statusCode).to.equal(200);
+            expect(res.body).to.be.an('object');
+            expect(res.body.languageFramework).to.equal(python);
+            expect(res.body.serviceDependencies).to.have.length(0);
+            done();
+          }
+        );
+      });
+
+      it('returns 1 inferred suggestions for python '+
+         'repository with 1 matching dependency', function (done) {
+        var requirements = 'Django==1.3\n'+
+          'stripe\n'+
+          'Eve-Elastic\n'+ //matching dependency
+          'py-bcrypt';
+        repoContentsMock.repoContentsDirectory('python', {});
+        repoContentsMock.repoContentsFile('python', {
+          name: 'requirements.txt',
+          path: 'requirements.txt',
+          content: (new Buffer(requirements, 'utf8').toString('base64'))
+        });
+        ctx.request.get(
+          hooks.getSuccess,
+          //hooks.getErrorNoQueryParam,
+          function (err, res) {
+            expect(res.statusCode).to.equal(200);
+            expect(res.body).to.be.an('object');
+            expect(res.body.languageFramework).to.equal(python);
+            expect(res.body.serviceDependencies).to.have.length(1);
+            expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
+            done();
+          }
+        );
+      });
+
+      it('returns 3 inferred suggestions for python '+
+         'repository with 3 matching dependency', function (done) {
+        var requirements = 'Django==1.3\n'+
+          'stripe\n'+
+          'Eve-Elastic==0.10.0\n'+ //matching dependency (ElasticSearch)
+          'fooddep\n'+
+          'casscache\n'+ //matching (memcached)
+          'Djamo\n'+ //matching (mongodb)
+          'py-bcrypt';
+        repoContentsMock.repoContentsDirectory('python', {});
+        repoContentsMock.repoContentsFile('python', {
+          name: 'requirements.txt',
+          path: 'requirements.txt',
+          content: (new Buffer(requirements, 'utf8').toString('base64'))
+        });
+        ctx.request.get(
+          hooks.getSuccess,
+          //hooks.getErrorNoQueryParam,
+          function (err, res) {
+            expect(res.statusCode).to.equal(200);
+            expect(res.body).to.be.an('object');
+            expect(res.body.languageFramework).to.equal(python);
+            expect(res.body.serviceDependencies).to.have.length(3);
+            expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
+            expect(res.body.serviceDependencies[1]).to.equal('memcached');
+            expect(res.body.serviceDependencies[2]).to.equal('mongodb');
+            done();
+          }
+        );
+      });
+
+      it('returns 0 inferred suggestions for python '+
+         'repository with dependency that is a substring of matching dependency', function (done) {
+        var requirements = 'Django==1.3\n'+
+          'stripe\n'+
+          'Eve-Ela==0.10.0\n'+ //matching dependency SUBSTRING (ElasticSearch)
+          'fooddep\n'+
+          'cassc\n'+ //matching SUBSTRING (memcached)
+          'Dj\n'+ //matching SUBSTRING (mongodb)
+          'py-bcrypt';
+        repoContentsMock.repoContentsDirectory('python', {});
+        repoContentsMock.repoContentsFile('python', {
+          name: 'requirements.txt',
+          path: 'requirements.txt',
+          content: (new Buffer(requirements, 'utf8').toString('base64'))
+        });
+        ctx.request.get(
+          hooks.getSuccess,
+          function (err, res) {
+            expect(res.statusCode).to.equal(200);
+            expect(res.body).to.be.an('object');
+            expect(res.body.languageFramework).to.equal(python);
+            expect(res.body.serviceDependencies).to.have.length(0);
+            done();
+          }
+        );
+      });
+
+      it('returns 1 inferred suggestions for python '+
+         'repository with multiple matching known modules', function (done) {
+        // 3 matching known dependencies
+        var requirements = 'elasticstack\n'+
+          'elasticsearch\n'+
+          'elong';
+        repoContentsMock.repoContentsDirectory('python', {});
+        repoContentsMock.repoContentsFile('python', {
+          name: 'requirements.txt',
+          path: 'requirements.txt',
+          content: (new Buffer(requirements, 'utf8').toString('base64'))
+        });
+        ctx.request.get(
+          hooks.getSuccess,
+          function (err, res) {
+            expect(res.statusCode).to.equal(200);
+            expect(res.body).to.be.an('object');
+            expect(res.body.languageFramework).to.equal(python);
+            expect(res.body.serviceDependencies).to.have.length(1);
+            expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
+            done();
+          }
+        );
+      });
     });
 
-   it('returns 0 inferred suggestions for python '+
-       'repository with 0 MATCHING dependencies', function (done) {
-      var requirements = 'Django==1.3\n'+
-        'stripe\n'+
-        'py-bcrypt';
-      repoContentsMock.repoContentsDirectory('python', {});
-      repoContentsMock.repoContentsFile('python', {
-        name: 'requirements.txt',
-        path: 'requirements.txt',
-        content: (new Buffer(requirements, 'utf8').toString('base64'))
+    describe('matching against setup.py', function () {
+      it('returns 0 inferred suggestions for python '+
+         'repository with 0 dependencies', function (done) {
+        var requirements = '';
+        repoContentsMock.repoContentsDirectory('python-setup.py', {});
+        repoContentsMock.repoContentsFile('python-setup.py', {
+          name: 'setup.py',
+          path: 'setup.py',
+          content: (new Buffer(requirements, 'utf8').toString('base64'))
+        });
+        ctx.request.get(
+          hooks.getSuccess,
+          //hooks.getErrorNoQueryParam,
+          function (err, res) {
+            expect(res.statusCode).to.equal(200);
+            expect(res.body).to.be.an('object');
+            expect(res.body.languageFramework).to.equal(python);
+            expect(res.body.serviceDependencies).to.have.length(0);
+            done();
+          }
+        );
       });
-      ctx.request.get(
-        hooks.getSuccess,
-        //hooks.getErrorNoQueryParam,
-        function (err, res) {
-          expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(python);
-          expect(res.body.serviceDependencies).to.have.length(0);
-          done();
-        }
-      );
-    });
 
-    it('returns 1 inferred suggestions for python '+
-       'repository with 1 matching dependency', function (done) {
-      var requirements = 'Django==1.3\n'+
-        'stripe\n'+
-        'Eve-Elastic\n'+ //matching dependency
-        'py-bcrypt';
-      repoContentsMock.repoContentsDirectory('python', {});
-      repoContentsMock.repoContentsFile('python', {
-        name: 'requirements.txt',
-        path: 'requirements.txt',
-        content: (new Buffer(requirements, 'utf8').toString('base64'))
+     it('returns 0 inferred suggestions for python '+
+         'repository with 0 MATCHING dependencies', function (done) {
+        repoContentsMock.repoContentsDirectory('python-setup.py', {});
+        repoContentsMock.repoContentsFile('python-setup.py', {
+          name: 'setup.py',
+          path: 'setup.py',
+          content: pythonSetupPyFile.content
+        });
+        ctx.request.get(
+          hooks.getSuccess,
+          //hooks.getErrorNoQueryParam,
+          function (err, res) {
+            expect(res.statusCode).to.equal(200);
+            expect(res.body).to.be.an('object');
+            expect(res.body.languageFramework).to.equal(python);
+            expect(res.body.serviceDependencies).to.have.length(0);
+            done();
+          }
+        );
       });
-      ctx.request.get(
-        hooks.getSuccess,
-        //hooks.getErrorNoQueryParam,
-        function (err, res) {
-          expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(python);
-          expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
-          done();
-        }
-      );
-    });
 
-    it('returns 3 inferred suggestions for python '+
-       'repository with 3 matching dependency', function (done) {
-      var requirements = 'Django==1.3\n'+
-        'stripe\n'+
-        'Eve-Elastic==0.10.0\n'+ //matching dependency (ElasticSearch)
-        'fooddep\n'+
-        'casscache\n'+ //matching (memcached)
-        'Djamo\n'+ //matching (mongodb)
-        'py-bcrypt';
-      repoContentsMock.repoContentsDirectory('python', {});
-      repoContentsMock.repoContentsFile('python', {
-        name: 'requirements.txt',
-        path: 'requirements.txt',
-        content: (new Buffer(requirements, 'utf8').toString('base64'))
+      it('returns 2 inferred suggestions for python '+
+         'repository with 2 matching dependency', function (done) {
+        repoContentsMock.repoContentsDirectory('python-setup.py', {});
+        repoContentsMock.repoContentsFile('python-setup.py', {
+          name: 'setup.py',
+          path: 'setup.py',
+          content: pythonSetupPyFileMatching.content
+        });
+        ctx.request.get(
+          hooks.getSuccess,
+          //hooks.getErrorNoQueryParam,
+          function (err, res) {
+            expect(res.statusCode).to.equal(200);
+            expect(res.body).to.be.an('object');
+            expect(res.body.languageFramework).to.equal(python);
+            expect(res.body.serviceDependencies).to.have.length(2);
+            expect(res.body.serviceDependencies[0]).to.equal('postgresql');
+            expect(res.body.serviceDependencies[1]).to.equal('redis');
+            done();
+          }
+        );
       });
-      ctx.request.get(
-        hooks.getSuccess,
-        //hooks.getErrorNoQueryParam,
-        function (err, res) {
-          expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(python);
-          expect(res.body.serviceDependencies).to.have.length(3);
-          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
-          expect(res.body.serviceDependencies[1]).to.equal('memcached');
-          expect(res.body.serviceDependencies[2]).to.equal('mongodb');
-          done();
-        }
-      );
-    });
-
-    it('returns 0 inferred suggestions for python '+
-       'repository with dependency that is a substring of matching dependency', function (done) {
-      var requirements = 'Django==1.3\n'+
-        'stripe\n'+
-        'Eve-Ela==0.10.0\n'+ //matching dependency SUBSTRING (ElasticSearch)
-        'fooddep\n'+
-        'cassc\n'+ //matching SUBSTRING (memcached)
-        'Dj\n'+ //matching SUBSTRING (mongodb)
-        'py-bcrypt';
-      repoContentsMock.repoContentsDirectory('python', {});
-      repoContentsMock.repoContentsFile('python', {
-        name: 'requirements.txt',
-        path: 'requirements.txt',
-        content: (new Buffer(requirements, 'utf8').toString('base64'))
-      });
-      ctx.request.get(
-        hooks.getSuccess,
-        function (err, res) {
-          expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(python);
-          expect(res.body.serviceDependencies).to.have.length(0);
-          done();
-        }
-      );
-    });
-
-    it('returns 1 inferred suggestions for python '+
-       'repository with multiple matching known modules', function (done) {
-      // 3 matching known dependencies
-      var requirements = 'elasticstack\n'+
-        'elasticsearch\n'+
-        'elong';
-      repoContentsMock.repoContentsDirectory('python', {});
-      repoContentsMock.repoContentsFile('python', {
-        name: 'requirements.txt',
-        path: 'requirements.txt',
-        content: (new Buffer(requirements, 'utf8').toString('base64'))
-      });
-      ctx.request.get(
-        hooks.getSuccess,
-        function (err, res) {
-          expect(res.statusCode).to.equal(200);
-          expect(res.body).to.be.an('object');
-          expect(res.body.languageFramework).to.equal(python);
-          expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
-          done();
-        }
-      );
     });
   });
 
