@@ -377,7 +377,7 @@ describe('Analyze - /actions/analyze', function () {
       repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
-        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+        content: (new Buffer(JSON.stringify(packageFile), 'utf8')).toString('base64')
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -404,7 +404,7 @@ describe('Analyze - /actions/analyze', function () {
       repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
-        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+        content: (new Buffer(JSON.stringify(packageFile), 'utf8')).toString('base64')
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -429,7 +429,7 @@ describe('Analyze - /actions/analyze', function () {
       repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
-        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+        content: (new Buffer(JSON.stringify(packageFile), 'utf8')).toString('base64')
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -457,7 +457,7 @@ describe('Analyze - /actions/analyze', function () {
       repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
-        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+        content: (new Buffer(JSON.stringify(packageFile), 'utf8')).toString('base64')
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -482,7 +482,7 @@ describe('Analyze - /actions/analyze', function () {
       repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
-        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+        content: (new Buffer(JSON.stringify(packageFile), 'utf8')).toString('base64')
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -503,7 +503,7 @@ describe('Analyze - /actions/analyze', function () {
       repoContentsMock.repoContentsFile('nodejs', {
         name: 'package.json',
         path: 'package.json',
-        content: (new Buffer(JSON.stringify(packageFile, 'utf8')).toString('base64'))
+        content: (new Buffer(JSON.stringify(packageFile), 'utf8')).toString('base64')
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -699,13 +699,13 @@ describe('Analyze - /actions/analyze', function () {
     it('returns 0 inferred suggestions for php '+
        'repository with 0 dependencies', function (done) {
       var composerFile = {
-        require: []
+        require: {}
       };
       repoContentsMock.repoContentsDirectory('php', {});
       repoContentsMock.repoContentsFile('php', {
         name: 'composer.json',
         path: 'composer.json',
-        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+        content: (new Buffer(JSON.stringify(composerFile), 'utf8').toString('base64'))
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -723,13 +723,16 @@ describe('Analyze - /actions/analyze', function () {
     it('returns 0 inferred suggestions for php '+
        'repository with 0 MATCHING dependencies', function (done) {
       var composerFile = {
-        require: ['some-module1', 'some-other-module']
+        require: {
+          'some-module1': '0.0',
+          'some-other-module': '0.0'
+        }
       };
       repoContentsMock.repoContentsDirectory('php', {});
       repoContentsMock.repoContentsFile('php', {
         name: 'composer.json',
         path: 'composer.json',
-        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+        content: new Buffer(JSON.stringify(composerFile), 'utf8').toString('base64')
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -744,20 +747,20 @@ describe('Analyze - /actions/analyze', function () {
       );
     });
 
-    it('returns 1 inferred suggestions for python '+
+    it('returns 1 inferred suggestions for php '+
        'repository with 1 matching dependency', function (done) {
       var composerFile = {
-        require: [
-          'some-module1',
-          'some-other-module',
-          '' // TODO: insert passing dep here
-        ]
+        require: {
+          'some-module1': '1.2.0',
+          'some-other-module': '1.2.0',
+          'simplon/redis': '13.9'
+        }
       };
       repoContentsMock.repoContentsDirectory('php', {});
       repoContentsMock.repoContentsFile('php', {
         name: 'composer.json',
         path: 'composer.json',
-        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+        content: new Buffer(JSON.stringify(composerFile), 'utf8').toString('base64')
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -767,7 +770,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(php);
           expect(res.body.serviceDependencies).to.have.length(1);
-          // expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
+          expect(res.body.serviceDependencies).to.contain('redis');
           done();
         }
       );
@@ -776,17 +779,19 @@ describe('Analyze - /actions/analyze', function () {
     it('returns 3 inferred suggestions for php '+
        'repository with 3 matching dependency', function (done) {
       var composerFile = {
-        require: [
-          'some-module1',
-          'some-other-module',
-          '' // TODO: insert passing dep here
-        ]
+        require: {
+          'some-module1': '0.0',
+          'some-other-module': '0.0',
+          'simplon/redis': '0.0',        //redis
+          'aequasi/cache-bundle': '0.0', //memcached
+          'anorgan/qutee': '0.0'         //mysql
+        }
       };
       repoContentsMock.repoContentsDirectory('php', {});
       repoContentsMock.repoContentsFile('php', {
         name: 'composer.json',
         path: 'composer.json',
-        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+        content: new Buffer(JSON.stringify(composerFile), 'utf8').toString('base64')
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -795,12 +800,10 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.statusCode).to.equal(200);
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(php);
-          /*
           expect(res.body.serviceDependencies).to.have.length(3);
-          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
-          expect(res.body.serviceDependencies[1]).to.equal('memcached');
-          expect(res.body.serviceDependencies[2]).to.equal('mongodb');
-          */
+          expect(res.body.serviceDependencies).to.contain('redis');
+          expect(res.body.serviceDependencies).to.contain('memcached');
+          expect(res.body.serviceDependencies).to.contain('mysql');
           done();
         }
       );
@@ -809,17 +812,17 @@ describe('Analyze - /actions/analyze', function () {
     it('returns 0 inferred suggestions for php '+
        'repository with dependency that is a substring of matching dependency', function (done) {
       var composerFile = {
-        require: [
-          'some-module1',
-          'some-other-module',
-          '' // TODO: insert passing dep here
-        ]
+        require: {
+          'some-module1': '0',
+          'some-other-module': '0',
+          'anorgan/qute': '0' //<-- substring
+        }
       };
       repoContentsMock.repoContentsDirectory('php', {});
       repoContentsMock.repoContentsFile('php', {
         name: 'composer.json',
         path: 'composer.json',
-        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+        content: (new Buffer(JSON.stringify(composerFile), 'utf8').toString('base64'))
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -835,18 +838,19 @@ describe('Analyze - /actions/analyze', function () {
 
     it('returns 1 inferred suggestions for php '+
        'repository with multiple matching known modules', function (done) {
+      // 3 mysql dependencies
       var composerFile = {
-        require: [
-          'some-module1',
-          'some-other-module',
-          '' // TODO: insert passing dep here
-        ]
+        require: {
+          'azema/phigrate': '0.0',
+          'aol/transformers': '0.0',
+          'andyfleming/handy': '0.0'
+        }
       };
       repoContentsMock.repoContentsDirectory('php', {});
       repoContentsMock.repoContentsFile('php', {
         name: 'composer.json',
         path: 'composer.json',
-        content: (new Buffer(composerFile, 'utf8').toString('base64'))
+        content: (new Buffer(JSON.stringify(composerFile), 'utf8').toString('base64'))
       });
       ctx.request.get(
         hooks.getSuccess,
@@ -855,7 +859,7 @@ describe('Analyze - /actions/analyze', function () {
           expect(res.body).to.be.an('object');
           expect(res.body.languageFramework).to.equal(php);
           expect(res.body.serviceDependencies).to.have.length(1);
-          expect(res.body.serviceDependencies[0]).to.equal('elasticsearch');
+          expect(res.body.serviceDependencies).to.contain('mysql');
           done();
         }
       );
