@@ -378,7 +378,7 @@ function expectHipacheHostsForContainers (instance, cb) {
         allUrls.push([portNumber, '.',
           instanceName, '.',
           ownerUsername, '.',
-          process.env.DOMAIN].join('').toLowerCase());
+          process.env.DOMAIN_HOST].join('').toLowerCase());
       });
     } else {
       fail = true;

@@ -3,6 +3,9 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var afterEach = Lab.afterEach;
 var beforeEach = Lab.beforeEach;
+var after = Lab.after;
+var before = Lab.before;
+
 
 require('loadenv')();
 
@@ -74,9 +77,21 @@ describe('Route53 Unit Tests', function () {
     });
   });
 
-  process.env.DOMAIN = 'runnable3.net';
+
   describe('UPSERT', function () {
     var ctx = {};
+    before(function (done) {
+      ctx.originalDomain = process.env.DOMAIN;
+      ctx.originalDomainHost = process.env.DOMAIN_HOST;
+      process.env.DOMAIN = 'http://runnable3.net';
+      process.env.DOMAIN_HOST = 'runnable3.net';
+      done();
+    });
+    after(function (done) {
+      process.env.DOMAIN = ctx.originalDomain;
+      process.env.DOMAIN_HOST = ctx.originalDomainHost;
+      done();
+    });
     afterEach(function (done) {
       var params = createParams('DELETE', ctx.url, ctx.ip);
       var route53 = new AWS.Route53();
