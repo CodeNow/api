@@ -26,7 +26,8 @@ describe('GET /settings', {timeout:500}, function () {
       owner: {},
       notifications: {
         slack: {
-          webhookUrl: 'http://slack.com/some-web-hook-url'
+          apiToken: 'xoxo-dasjdkasjdk243248392482394',
+          channel: 'general'
         },
         hipchat: {
           authToken: 'some-hipchat-token',
@@ -76,7 +77,8 @@ describe('GET /settings', {timeout:500}, function () {
           var settings = body[0];
           expect(settings._id).to.exist();
           expect(settings.owner.github).to.equal(settings.owner.github);
-          expect(settings.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+          expect(settings.notifications.slack.apiToken).to.equal(settings.notifications.slack.apiToken);
+          expect(settings.notifications.slack.channel).to.equal(settings.notifications.slack.channel);
           expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
           expect(settings.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
           done();
@@ -95,7 +97,8 @@ describe('GET /settings', {timeout:500}, function () {
           var settings = body[0];
           expect(settings._id).to.exist();
           expect(settings.owner.github).to.equal(settings.owner.github);
-          expect(settings.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+          expect(settings.notifications.slack.apiToken).to.equal(settings.notifications.slack.apiToken);
+          expect(settings.notifications.slack.channel).to.equal(settings.notifications.slack.channel);
           expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
           expect(settings.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
           done();
@@ -135,7 +138,8 @@ describe('GET /settings', {timeout:500}, function () {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(settings.owner.github);
-          expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+          expect(body.notifications.slack.apiToken).to.equal(settings.notifications.slack.apiToken);
+          expect(settings.notifications.slack.channel).to.equal(settings.notifications.slack.channel);
           expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
           expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
           done();

@@ -214,7 +214,8 @@ describe('Github - /actions/github', function () {
           },
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
+              apiToken: 'xoxo-dasjdkasjdk243248392482394',
+              channel: 'general'
             },
             hipchat: {
               authToken: 'some-hipchat-token',
