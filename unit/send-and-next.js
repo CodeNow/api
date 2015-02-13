@@ -3,13 +3,9 @@ var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
 var expect = Lab.expect;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
 var resSendAndNext = require('middlewares/send-and-next');
 var createCount = require('callback-count');
 
-
-var ctx = {};
 
 describe('send-and-next', function () {
 
