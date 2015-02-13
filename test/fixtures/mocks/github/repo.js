@@ -356,12 +356,111 @@ var repo_cflynn07_clubbingowl_brochure_standard = {
   "subscribers_count": 2
 };
 
+var private_repo_cflynn07_clubbingowl_brochure_standard = {
+  "id": 7745678,
+  "name": "private_clubbingowl_brochure",
+  "full_name": "cflynn07/private_clubbingowl_brochure",
+  "owner": {
+      "login": "cflynn07",
+      "id": 467885,
+      "avatar_url": "https://avatars.githubusercontent.com/u/467885?v=3",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/cflynn07",
+      "html_url": "https://github.com/cflynn07",
+      "followers_url": "https://api.github.com/users/cflynn07/followers",
+      "following_url": "https://api.github.com/users/cflynn07/following{/other_user}",
+      "gists_url": "https://api.github.com/users/cflynn07/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/cflynn07/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/cflynn07/subscriptions",
+      "organizations_url": "https://api.github.com/users/cflynn07/orgs",
+      "repos_url": "https://api.github.com/users/cflynn07/repos",
+      "events_url": "https://api.github.com/users/cflynn07/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/cflynn07/received_events",
+      "type": "User",
+      "site_admin": false
+    },
+  "private": true,
+  "html_url": "https://github.com/cflynn07/private_clubbingowl_brochure",
+  "description": "Brochure website for clubbingowl",
+  "fork": false,
+  "url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure",
+  "forks_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/forks",
+  "keys_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/keys{/key_id}",
+  "collaborators_url":
+    "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/collaborators{/collaborator}",
+  "teams_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/teams",
+  "hooks_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/hooks",
+  "issue_events_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/issues/events{/number}",
+  "events_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/events",
+  "assignees_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/assignees{/user}",
+  "branches_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/branches{/branch}",
+  "tags_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/tags",
+  "blobs_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/git/blobs{/sha}",
+  "git_tags_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/git/tags{/sha}",
+  "git_refs_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/git/refs{/sha}",
+  "trees_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/git/trees{/sha}",
+  "statuses_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/statuses/{sha}",
+  "languages_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/languages",
+  "stargazers_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/stargazers",
+  "contributors_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/contributors",
+  "subscribers_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/subscribers",
+  "subscription_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/subscription",
+  "commits_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/commits{/sha}",
+  "git_commits_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/git/commits{/sha}",
+  "comments_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/comments{/number}",
+  "issue_comment_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/issues/comments/{number}",
+  "contents_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/contents/{+path}",
+  "compare_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/compare/{base}...{head}",
+  "merges_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/merges",
+  "archive_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/{archive_format}{/ref}",
+  "downloads_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/downloads",
+  "issues_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/issues{/number}",
+  "pulls_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/pulls{/number}",
+  "milestones_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/milestones{/number}",
+  "labels_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/labels{/name}",
+  "releases_url": "https://api.github.com/repos/cflynn07/private_clubbingowl_brochure/releases{/id}",
+  "created_at": "2013-01-22T03:55:40Z",
+  "updated_at": "2014-01-17T15:58:51Z",
+  "pushed_at": "2013-02-28T04:30:28Z",
+  "git_url": "git://github.com/cflynn07/private_clubbingowl_brochure.git",
+  "ssh_url": "git@github.com:cflynn07/private_clubbingowl_brochure.git",
+  "clone_url": "https://github.com/cflynn07/private_clubbingowl_brochure.git",
+  "svn_url": "https://github.com/cflynn07/private_clubbingowl_brochure",
+  "homepage": null,
+  "size": 14638,
+  "stargazers_count": 0,
+  "watchers_count": 0,
+  "language": "JavaScript",
+  "has_issues": true,
+  "has_downloads": true,
+  "has_wiki": true,
+  "has_pages": false,
+  "forks_count": 0,
+  "mirror_url": null,
+  "open_issues_count": 0,
+  "forks": 0,
+  "open_issues": 0,
+  "watchers": 0,
+  "default_branch": "master",
+  "permissions": {
+      "admin": true,
+      "push": true,
+      "pull": true
+    },
+  "network_count": 0,
+  "subscribers_count": 2
+};
+
 module.exports.forkedRepo = function (opts) {
   setupMock(repo_cflynn07_101_fork, opts);
 };
 
 module.exports.standardRepo = function (opts) {
   setupMock(repo_cflynn07_clubbingowl_brochure_standard, opts);
+};
+
+module.exports.privateRepo = function (opts) {
+  setupMock(private_repo_cflynn07_clubbingowl_brochure_standard, opts);
 };
 
 function setupMock (repoData, opts) {

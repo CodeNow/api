@@ -46,7 +46,7 @@ describe('Notifier',  function () {
       var message = 'podviaznikov\'s ';
       message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       message += ' (init &amp; commit &amp; push long test   next line   3d...) to CodeNow/api (develop) are ready.\n';
-      message += '<http://runnable3.net/';
+      message += '<http://runnable.io/';
       message += 'podviaznikov/boxSelection/api/develop/init%2520%2526%2520commit%2520%2526%2520';
       message += 'push%2520long%2520test%2520%250A%2520next%2520line%2520%250A%25203d%2520line';
       message += '/a240edf982d467201845b3bf10ccbe16f6049ea9';
@@ -84,7 +84,7 @@ describe('Notifier',  function () {
       var message = 'podviaznikov\'s ';
       message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       message += ' (init &amp; commit &amp; push) to CodeNow/api (feature-1/fix) are ready.\n';
-      message += '<http://runnable3.net/';
+      message += '<http://runnable.io/';
       message += 'podviaznikov/boxSelection/api/feature-1%252Ffix/init%2520%2526%2520commit%2520%2526%2520push';
       message += '/a240edf982d467201845b3bf10ccbe16f6049ea9';
       message += '|Choose a server to run feature-1/fix>.';
@@ -127,9 +127,9 @@ describe('Notifier',  function () {
       expect(text).to.equal(message.text);
       expect(message.attachments.length).to.equal(1);
       var attachment = message.attachments[0];
-      expect(attachment.fallback).equal('<http://runnable3.net/podviaznikov/instance1|instance1>');
+      expect(attachment.fallback).equal('<http://runnable.io/podviaznikov/instance1|instance1>');
       expect(attachment.color).equal('#5b3777');
-      expect(attachment.fields[0].value).equal('<http://runnable3.net/podviaznikov/instance1|instance1>');
+      expect(attachment.fields[0].value).equal('<http://runnable.io/podviaznikov/instance1|instance1>');
       cb();
     };
     var instances = [
@@ -171,7 +171,7 @@ describe('Notifier',  function () {
       var message = 'podviaznikov\'s ';
       message += '<a href="' + wrapGitHubLink(headCommit.url) + '">changes</a>';
       message += ' (hey there second line third line some random...) to Runnable/api (feature-1/fix) are ready.\n';
-      message += '<a href=\"http://runnable3.net/podviaznikov/boxSelection/api/feature-1%252Ffix/%2520hey%2520there';
+      message += '<a href=\"http://runnable.io/podviaznikov/boxSelection/api/feature-1%252Ffix/%2520hey%2520there';
       message += '%250Asecond%2520line%250Athird%2520line%250Asome%2520random%2520mesage/';
       message += 'a240edf982d467201845b3bf10ccbe16f6049ea9\">Choose a server to run feature-1/fix</a>.';
       expect(text).to.equal(message);
@@ -205,8 +205,8 @@ describe('Notifier',  function () {
       var message = 'podviaznikov\'s ';
       message += '<a href="' + wrapGitHubLink(headCommit.url) + '">changes</a>';
       message += ' (init) to CodeNow/api (feature-1/fix) are deployed on servers:<br/>\n ';
-      message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a><br/>\n ';
-      message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a><br/>\n';
+      message += '<a href="http://runnable.io/podviaznikov/instance1">instance1</a><br/>\n ';
+      message += '<a href="http://runnable.io/podviaznikov/instance2">instance2</a><br/>\n';
 
       expect(text).to.equal(message);
       cb();

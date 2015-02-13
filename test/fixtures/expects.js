@@ -248,7 +248,7 @@ expects.deletedHipacheEntries = function (user, instanceName, container, cb) {
 };
 function toDnsUrl (user, instanceName) {
   var ownerUsername = user.attrs.accounts.github.login;
-  return [instanceName, '.', ownerUsername, '.', process.env.DOMAIN].join('');
+  return [instanceName, '.', ownerUsername, '.', process.env.DOMAIN_HOST].join('');
 }
 
 /**
@@ -274,7 +274,7 @@ expects.deletedContainer = function (container, cb) {
 function toHipacheEntryKey (containerPort, instanceName, user) {
   containerPort = containerPort.split('/')[0];
   var ownerUsername = user.attrs.accounts.github.login;
-  var key = [containerPort, '.', instanceName, '.', ownerUsername, '.', process.env.DOMAIN];
+  var key = [containerPort, '.', instanceName, '.', ownerUsername, '.', process.env.DOMAIN_HOST];
   return ['frontend:'].concat(key).join('').toLowerCase();
 }
 function toHipacheEntryVal (containerPort, container, instanceName) {
