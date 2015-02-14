@@ -46,6 +46,7 @@ async.series([
               envs = envs.map(function (e) {
                 var match = hostRegex.exec(e);
                 if (match && match[1]) {
+                  update = true;
                   console.log('matched', match[0]);
                   var replace = match[1].replace('.', '-');
                   return replace + '.' + process.env.TARGET_DOMAIN;
