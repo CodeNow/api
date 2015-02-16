@@ -134,6 +134,54 @@ describe('GitHub Notifier',  function () {
 
   });
 
+
+  describe('_updatePullRequestsComments', function () {
+
+    it('should do nothing if instance is null', function (done) {
+      var github = new GitHub();
+      github._updatePullRequestsComments(null, function (err) {
+        expect(err).to.be.null();
+        done();
+      });
+    });
+
+    it('should do nothing if instance.contextVersion is null', function (done) {
+      var github = new GitHub();
+      github._updatePullRequestsComments({name: 'a1'}, function (err) {
+        expect(err).to.be.null();
+        done();
+      });
+    });
+
+    it('should do nothing if appCodeVersions is null', function (done) {
+      var github = new GitHub();
+      var instance = {
+        contextVersion: {
+          appCodeVersions: null
+        }
+      };
+      github._updatePullRequestsComments(instance, function (err) {
+        expect(err).to.be.null();
+        done();
+      });
+    });
+
+    it('should do nothing if appCodeVersions is []', function (done) {
+      var github = new GitHub();
+      var instance = {
+        contextVersion: {
+          appCodeVersions: []
+        }
+      };
+      github._updatePullRequestsComments(instance, function (err) {
+        expect(err).to.be.null();
+        done();
+      });
+    });
+
+
+  });
+
   describe('_ensurePermissions', function () {
 
     it('should be success for user\s public repo', function (done) {
