@@ -48,8 +48,10 @@ async.series([
                 if (match && match[1]) {
                   update = true;
                   console.log('matched', match[0]);
-                  var replace = match[1].replace('.', '-');
-                  return replace + '.' + process.env.TARGET_DOMAIN;
+                  var replaceName = match[1].replace('.', '-');
+                  e = e.replace(match[1], replaceName);
+                  e = e.replace(process.env.CURRENT_DOMAIN, process.env.TARGET_DOMAIN);
+                  return e;
                 } else {
                   return e;
                 }
