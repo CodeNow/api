@@ -82,7 +82,9 @@ function updateHooksEvents(repos, cb) {
           callback(err);
         }
       }
-      callback(null);
+      else {
+        callback(null);
+      }
     });
   }, cb);
 }
