@@ -13,6 +13,7 @@
 require('loadenv')();
 
 var fs = require('fs');
+var Build = require('models/mongo/build');
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
@@ -52,9 +53,8 @@ async.series([
       });
     });
   },
-  removeCurrentSourceTemplates,
   createBlankSourceContext,
-  createFirstSourceContext,
+  createFirstSourceContext
 ], function (err) {
   console.log('done');
   if (err) { console.error(err); }
@@ -65,14 +65,23 @@ var createdBy = {
   github: process.env.HELLO_RUNNABLE_GITHUB_ID
 };
 
-function removeCurrentSourceTemplates(cb) {
-  Context.find({'isSource': true}, function (err, docs) {
+function removeCurrentSourceTemplates(name, cb) {
+  Context.find({'name': name, 'isSource': true}, function (err, docs) {
     if (err) { return cb(err); }
     async.each(docs, function (doc, cb) {
       // we don't ever want to delete old contexts, once the are in use by users
       console.log('UN-SOURCING OLD SOURCES');
-      doc.update({ $set: { isSource:false, oldSource:Date.now() }}, cb);
-    }, cb);
+      doc.update({
+        $set: {
+          name: doc.name + Date.now(),
+          lowerName: doc.lowerName + Date.now(),
+          isSource: false,
+          oldSource: Date.now()
+        }
+      }, cb);
+    }, function () {
+      cb();
+    });
   });
 }
 
@@ -88,9 +97,12 @@ function createBlankSourceContext (cb) {
         async.each(docs, function (doc, cb) {
           console.log('REMOVING INSTANCES', docs);
           doc.remove(cb);
-        }, cb);
+        }, function () {
+          cb(null, 'Blank');
+        });
       });
     },
+    removeCurrentSourceTemplates,
     function newContext (cb) {
       console.log('newContext (blank)');
       var context = new Context({
@@ -135,14 +147,21 @@ function createFirstSourceContext(finalCB) {
             'lowerName': (((model.isTemplate) ? 'TEMPLATE_' : '') + model.name).toLowerCase(),
             'owner': createdBy
           }, function (err, docs) {
+            if (docs && docs.length) {
+              // If it already exists, just skip them
+              return thisCb();
+            }
             console.log('REMOVING existing instance for (', model.name, ')');
             if (err) { return cb(err); }
             async.each(docs, function (doc, cb) {
               console.log('REMOVING INSTANCES', docs);
               doc.remove(cb);
-            }, cb);
+            }, function () {
+              cb(null, model.name);
+            });
           });
         },
+        removeCurrentSourceTemplates,
         function (cb) {
           if (model.isTemplate) {
             return cb();
@@ -202,9 +221,11 @@ function createFirstSourceContext(finalCB) {
 
     function buildBuild(build, cb) {
       console.log('buildBuild (', model.name, ')');
-      build.build({message: 'seed instance script'}, function (err) {
-        cb(err, build);
-      });
+      build.build({message: 'seed instance script', noCache: true}, function (err, buildDoc) {
+        setTimeout(function () {
+          cb(err, build);
+        }, 500)
+      })
     }
 
     function createInstance(build, cb) {
