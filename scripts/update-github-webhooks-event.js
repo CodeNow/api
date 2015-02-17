@@ -26,8 +26,8 @@ function findUser (users, cb) {
   async.whilst(
     function () { return count < users.length; },
     function (callback) {
-      var u = users[count];
-      User.findByGithubId(user, function (err, gitHubUser) {
+      var userId = users[count];
+      User.findByGithubId(userId, function (err, gitHubUser) {
         count++;
         if (gitHubUser) {
           // force finish
