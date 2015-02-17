@@ -34,7 +34,12 @@ function updateHooksEvents(repos, cb) {
   async.mapLimit(repos, function(repo, callback) {
     var github = new GitHub({token: repo.user.accounts.github.accessToken});
     // this will actually update hook (not just create if missing)
-    github.createRepoHookIfNotAlready(repo._id, callback);
+    github.createRepoHookIfNotAlready(repo._id, function (err, result) {
+      if (err) {
+        console.log('failed to update webhook for:', repo, '; error: ', err);
+      }
+      callback(null, result);
+    });
   }, 10, cb);
 }
 
