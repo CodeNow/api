@@ -24,13 +24,15 @@ function findUser (users, cb) {
   var user;
   var count = 0;
   async.whilst(
-    function () { return !user || count < users.length; },
+    function () { return count < users.length; },
     function (callback) {
       var u = users[count];
-      count++;
       User.findByGithubId(user, function (err, gitHubUser) {
+        count++;
         if (gitHubUser) {
+          // force finish
           user = gitHubUser;
+          count = users.length;
         }
         callback();
       });
