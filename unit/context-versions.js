@@ -6,6 +6,7 @@ var it = Lab.test;
 var expect = Lab.expect;
 var before = Lab.before;
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
+var ContextVersion = require('models/mongo/context-version');
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
 
@@ -15,10 +16,10 @@ describe('Versions', function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/fixtures/clean-mongo').removeEverything);
 
-  function createNewVersion() {
+  function createNewVersion(acv) {
+    acv = acv || {};
     return new Version({
       message: "test",
-      owner: { github: validation.VALID_GITHUB_ID },
       createdBy: { github: validation.VALID_GITHUB_ID },
       config: validation.VALID_OBJECT_ID,
       created: Date.now(),
@@ -33,8 +34,8 @@ describe('Versions', function () {
         dockerTag: "adsgasdfgasdf"
       },
       appCodeVersions: [{
-        repo: 'bkendall/flaming-octo-nemisis._',
-        lowerRepo: 'bkendall/flaming-octo-nemisis._',
+        repo: acv.repo || 'bkendall/flaming-octo-nemisis._',
+        lowerRepo: acv.lowerRepo || 'bkendall/flaming-octo-nemisis._',
         branch: 'master',
         commit: 'deadbeef'
       }]
@@ -157,4 +158,33 @@ describe('Versions', function () {
       validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.commit');
     });
   });
+
+  describe('findAllRepos', function () {
+
+    it('should return two repos', function (done) {
+      var version = createNewVersion();
+      version.save(function (err) {
+        if (err) { return done(err); }
+        var version2 = createNewVersion({
+          repo: 'podviaznikov/hellonode',
+          lowerRepo: 'podviaznikov/hellonode'
+        });
+        version2.save(function (err) {
+          if (err) { return done(err); }
+          ContextVersion.findAllRepos(function(err, repos) {
+            if (err) { return done(err); }
+            var names = ['podviaznikov/hellonode', 'bkendall/flaming-octo-nemisis._'];
+            expect(repos.length).to.equal(2);
+            expect(names).to.include(repos[0]._id);
+            expect(names).to.include(repos[1]._id);
+            expect(repos[0].creators[0]).to.equal(validation.VALID_GITHUB_ID);
+            expect(repos[1].creators[0]).to.equal(validation.VALID_GITHUB_ID);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+
 });
