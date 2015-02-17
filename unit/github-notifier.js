@@ -42,10 +42,11 @@ describe('GitHub Notifier',  function () {
       };
 
       var message = github._renderMessage(githubPushInfo, []);
-      var msg = '[Choose a server]';
-      msg += '(http://runnable3.net/podviaznikov/boxSelection/';
-      msg += 'api/fix%252F1/hey%2520there/a240edf982d467201845b3bf10ccbe16f6049ea9)';
-      msg += ' to run PR-2.';
+      var msg = '<a href=\"';
+      msg += 'http://runnable3.net/podviaznikov/boxSelection/';
+      msg += 'api/fix%252F1/hey%2520there/a240edf982d467201845b3bf10ccbe16f6049ea9';
+      msg += '\" target=\"_blank\">';
+      msg += 'Choose a server</a> to run PR-2.';
       expect(message).to.equal(msg);
       done();
     });
@@ -82,8 +83,10 @@ describe('GitHub Notifier',  function () {
         }
       ];
       var message = github._renderMessage(githubPushInfo, instances);
-      var msg = '[box-1](http://runnable3.net/podviaznikov/box-1) and ';
-      msg += '[box-2](http://runnable3.net/podviaznikov/box-2)';
+      var msg = '<a href="http://runnable3.net/podviaznikov/box-1" target="_blank">';
+      msg += 'box-1</a> and ';
+      msg += '<a href="http://runnable3.net/podviaznikov/box-2" target="_blank">';
+      msg += 'box-2</a>';
       msg += ' are updated with the latest changes to PR-5.';
       expect(message).to.equal(msg);
       done();

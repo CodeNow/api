@@ -26,7 +26,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       owner: {},
       notifications: {
         slack: {
-          webhookUrl: 'http://slack.com/some-web-hook-url'
+          apiToken: 'xoxo-dasjdkasjdk243248392482394',
+          channel: 'general'
         },
         hipchat: {
           authToken: 'some-hipchat-token',
@@ -63,7 +64,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
-        expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+        expect(body.notifications.slack.apiToken).to.equal(settings.notifications.slack.apiToken);
+        expect(body.notifications.slack.channel).to.equal(settings.notifications.slack.channel);
         expect(body.notifications.hipchat.authToken).to.equal(newSettings.notifications.hipchat.authToken);
         expect(body.notifications.hipchat.roomId).to.equal(newSettings.notifications.hipchat.roomId);
         done();
@@ -74,7 +76,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       var newSettings = {
         notifications: {
           slack: {
-            webhookUrl: 'http://slack.com/new-web-hook-url'
+            apiToken: 'xoxo-dasjdkasjdk243248392482394',
+            channel: 'general'
           },
           hipchat: {
             authToken: 'new-hipchat-token',
@@ -86,7 +89,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
-        expect(body.notifications.slack.webhookUrl).to.equal(newSettings.notifications.slack.webhookUrl);
+        expect(body.notifications.slack.apiToken).to.equal(newSettings.notifications.slack.apiToken);
+        expect(body.notifications.slack.channel).to.equal(newSettings.notifications.slack.channel);
         expect(body.notifications.hipchat.authToken).to.equal(newSettings.notifications.hipchat.authToken);
         expect(body.notifications.hipchat.roomId).to.equal(newSettings.notifications.hipchat.roomId);
         done();
@@ -97,7 +101,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       var newSettings = {
         notifications: {
           slack: {
-            webhookUrl: ''
+            apiToken: '',
+            channel: ''
           },
           hipchat: {
             authToken: 'new-hipchat-token',
@@ -109,7 +114,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
-        expect(body.notifications.slack.webhookUrl).to.equal(newSettings.notifications.slack.webhookUrl);
+        expect(body.notifications.slack.apiToken).to.equal(newSettings.notifications.slack.apiToken);
+        expect(body.notifications.slack.channel).to.equal(newSettings.notifications.slack.channel);
         expect(body.notifications.hipchat.authToken).to.equal(newSettings.notifications.hipchat.authToken);
         expect(body.notifications.hipchat.roomId).to.equal(newSettings.notifications.hipchat.roomId);
         done();
@@ -124,7 +130,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         var newSettings = {
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/new-web-hook-url'
+              apiToken: 'xoxo-dasjdkasjdk243248392482394',
+              channel: 'general'
             },
             hipchat: {
               authToken: 'new-hipchat-token',
