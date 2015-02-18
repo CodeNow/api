@@ -91,7 +91,7 @@ function updateHooksEvents(repos, cb) {
   }, cb);
 }
 
-function finish (err, results) {
+function finish (err) {
   console.log('DONE: err?', err);
   console.log('all errors', allErrors);
   process.exit();
