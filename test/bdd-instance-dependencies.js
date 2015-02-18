@@ -323,7 +323,7 @@ describe('BDD - Instance Dependencies', function () {
         require('./fixtures/mocks/github/user')(ctx.user);
         var apiId = ctx.apiInstance.attrs._id.toString();
         ctx.webInstance.fetch(function (err, instance) {
-          if (err) { return cb(err); }
+          if (err) { return done(err); }
           expect(instance.dependencies).to.be.an.object();
           expect(Object.keys(instance.dependencies).length).to.equal(1);
           expect(instance.dependencies[apiId]).to.be.okay;
