@@ -1,10 +1,14 @@
 'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var after = lab.after;
+var Code = require('code');
+var expect = Code.expect;
+
 var GitHub = require('models/notifications/github');
 
 var repoMock = require('../test/fixtures/mocks/github/repo');

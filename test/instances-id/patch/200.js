@@ -1,11 +1,13 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var keypather = require('keypather')();
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -25,7 +27,7 @@ var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
-
+var keypather = require('keypather')();
 
 describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   var ctx = {};

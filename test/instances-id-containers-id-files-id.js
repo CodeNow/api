@@ -1,11 +1,16 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+
 var krain = require('krain');
 var rimraf = require('rimraf');
 var api = require('./fixtures/api-control');
@@ -36,10 +41,12 @@ function createFile (ctx, fileName, filePath, fileContent, done) {
       return done(err);
     }
     expect(code).to.equal(201);
-    expect(body).to.have.property('name', fileName);
-    expect(body).to.have.property('path', filePath);
-    expect(body).to.have.property('isDir', false);
-    expect(body).to.have.property('body', fileContent);
+    expect(body).to.deep.contain({
+      name: fileName,
+      path: filePath,
+      isDir: false,
+      body: fileContent
+    });
     var content = fs.readFileSync(
       path.join(containerRoot(ctx), filePath, fileName), {
         encoding: 'utf8'
@@ -128,10 +135,12 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           if (err) { return done(err); }
 
           expect(code).to.equal(200);
-          expect(body).to.have.property('name', fileName);
-          expect(body).to.have.property('path', filePath);
-          expect(body).to.have.property('isDir', false);
-          expect(body).to.have.property('body', fileContent);
+          expect(body).to.deep.contain({
+            name: fileName,
+            path: filePath,
+            isDir: false,
+            body: fileContent
+          });
           done();
         });
       });
@@ -159,10 +168,12 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
 
             expect(code).to.equal(200);
 
-            expect(body).to.have.property('name', fileName);
-            expect(body).to.have.property('path', filePath);
-            expect(body).to.have.property('isDir', false);
-            expect(body).to.have.property('body', newFileContent);
+            expect(body).to.deep.contain({
+              name: fileName,
+              path: filePath,
+              isDir: false,
+              body: newFileContent
+            });
             var fd = path.join(containerRoot(ctx), filePath, fileName);
             var content = fs.readFileSync(fd, {
                 encoding: 'utf8'
@@ -186,9 +197,11 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
 
             expect(code).to.equal(200);
 
-            expect(body).to.have.property('name', newName);
-            expect(body).to.have.property('path', filePath);
-            expect(body).to.have.property('isDir', false);
+            expect(body).to.deep.contain({
+              name: newName,
+              path: filePath,
+              isDir: false
+            });
             var fd = path.join(containerRoot(ctx), filePath, newName);
             var oldFile = path.join(containerRoot(ctx), filePath, fileName);
 
@@ -200,7 +213,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             try {
               fs.statSync(oldFile);
             } catch (err) {
-              done();
+              return done();
             }
             done(new Error('old file still exists'));
           });
@@ -246,10 +259,12 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             }
 
             expect(code).to.equal(200);
-            expect(body).to.have.property('name', fileName);
-            expect(body).to.have.property('path', filePath);
-            expect(body).to.have.property('isDir', false);
-            expect(body).to.have.property('body', newFileContent);
+            expect(body).to.deep.contain({
+              name: fileName,
+              path: filePath,
+              isDir: false,
+              body: newFileContent
+            });
             var fd = path.join(ctx.containerRoot, filePath, fileName);
             var content = fs.readFileSync(fd, {
               encoding: 'utf8'
@@ -279,10 +294,12 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           }
 
           expect(code).to.equal(201);
-          expect(body).to.have.property('name', fileName);
-          expect(body).to.have.property('path', filePath);
-          expect(body).to.have.property('isDir', false);
-          expect(body).to.have.property('body', fileContent);
+            expect(body).to.deep.contain({
+              name: fileName,
+              path: filePath,
+              isDir: false,
+              body: fileContent
+            });
           var content = fs.readFileSync(
             path.join(ctx.containerRoot, filePath, fileName), {
               encoding: 'utf8'
@@ -325,10 +342,12 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           }
 
           expect(code).to.equal(201);
-          expect(body).to.have.property('name', fileName);
-          expect(body).to.have.property('path', filePath);
-          expect(body).to.have.property('isDir', false);
-          expect(body).to.have.property('body', fileContent);
+            expect(body).to.deep.contain({
+              name: fileName,
+              path: filePath,
+              isDir: false,
+              body: fileContent
+            });
 
           var content = fs.readFileSync(
             path.join(ctx.containerRoot, filePath, fileName), {

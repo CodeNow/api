@@ -1,11 +1,13 @@
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var expects = require('./fixtures/expects');
 var createCount = require('callback-count');
@@ -136,12 +138,12 @@ describe('User - /users/:id', function () {
 });
 
 function expectPrivateFields (user) {
-  expect(user).to.include.keys(
+  expect(user).to.include(
     ['_id', 'email', 'gravatar', 'userOptions']); // TODO: ? 'imagesCount', 'taggedImagesCount'
-  expect(user).to.not.include.keys(['password']);
+  expect(user).to.not.include(['password']);
 }
 function expectPublicFields (user) {
-  expect(user).to.not.include.keys(
+  expect(user).to.not.include(
     ['email', 'password', 'votes', 'userOptions']); // TODO: ? 'imagesCount', 'taggedImagesCount'
-  expect(user).to.include.keys(['_id', 'gravatar']);
+  expect(user).to.include(['_id', 'gravatar']);
 }

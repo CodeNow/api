@@ -1,13 +1,13 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
 
 var api = require('./../../fixtures/api-control');
-var dock = require('./../../fixtures/dock');
 var multi = require('./../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 
@@ -15,10 +15,8 @@ describe('400 POST /builds/:id/actions/build', function() {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
-  before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
+  before(require('../../fixtures/mocks/api-client').setup);
   after(require('../../fixtures/mocks/api-client').clean);
 
   describe('invalid types', function () {
@@ -41,10 +39,10 @@ describe('400 POST /builds/:id/actions/build', function() {
       ],
     };
 
-    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
+    typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
       ctx.build.build(body, cb);
     });
-    
+
   });
 
 });

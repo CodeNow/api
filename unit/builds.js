@@ -1,11 +1,16 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var expect = Lab.expect;
-var before = Lab.before;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var validation = require('./fixtures/validation');
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+
+var validation = require('./fixtures/validation')(lab);
 
 var Build = require('models/mongo/build');
 

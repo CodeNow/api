@@ -12,8 +12,7 @@ test:
     - ulimit -n 10240
   override:
     - npm run lint
-    - ./scripts/npm-bdd-split-files.sh:
-        parallel: true
+    - ./scripts/npm-bdd-split-files.sh
     - npm run bdd -- test/bdd-instance-dependencies.js:
         environment:
           GRAPH_DATABASE_TYPE: neo4j

@@ -1,11 +1,15 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var expects = require('../../fixtures/expects');
 var clone = require('101/clone');
@@ -167,13 +171,15 @@ describe('POST /instances', function () {
       });
       describe('that has failed', function () {
         beforeEach(function (done) {
-          var count = createCount(2, done);
           Build.findById(ctx.build.id(), function(err, build) {
-            build.setInProgress(ctx.user, count.next);
-            ContextVersion.update({_id: ctx.cv.id()}, {$set: {'build.started': Date.now()}},
-              function (err) {
-                if (err) { return count.next(err); }
-                build.pushErroredContextVersion(ctx.cv.id(), count.next);
+            build.setInProgress(ctx.user, function (err, build) {
+              if (err) { return done(err); }
+              ContextVersion.update({_id: ctx.cv.id()}, {$set: {'build.started': Date.now()}},
+                function (err) {
+                  if (err) { return done(err); }
+                  build.modifyErrored(ctx.cv.id(), done);
+                }
+              );
             });
           });
         });

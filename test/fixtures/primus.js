@@ -1,5 +1,8 @@
-var Lab = require('lab');
-var expect = Lab.expect;
+'use strict';
+
+var Code = require('code');
+var expect = Code.expect;
+
 var uuid = require('uuid');
 var expects = require('./expects');
 var Primus = require('primus');
@@ -10,6 +13,8 @@ var Socket = Primus.createSocket({
   },
   parser: 'JSON'
 });
+
+var ctx;
 
 module.exports = {
   joinOrgRoom: function (orgId, cb) {
@@ -41,6 +46,7 @@ module.exports = {
     ctx.primus.end();
   },
   expectAction: function(action, expected, done) {
+    ctx = this;
     ctx.primus.on('data', function check (data) {
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
         expect(data.type).to.equal('org');
