@@ -1,10 +1,15 @@
-require('loadenv')();
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var expect = Lab.expect;
-var before = Lab.before;
-var after = Lab.after;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var after = lab.after;
+var Code = require('code');
+var expect = Code.expect;
+
+require('loadenv')();
 var uuid = require('uuid');
 var SocketServer = require('../lib/socket/socket-server.js');
 var Primus = require('primus');
