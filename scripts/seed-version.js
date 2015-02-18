@@ -13,7 +13,6 @@
 require('loadenv')();
 
 var fs = require('fs');
-var Build = require('models/mongo/build');
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
@@ -65,55 +64,32 @@ var createdBy = {
   github: process.env.HELLO_RUNNABLE_GITHUB_ID
 };
 
-function removeCurrentSourceTemplates(name, cb) {
-  Context.find({'name': name, 'isSource': true}, function (err, docs) {
-    if (err) { return cb(err); }
-    async.each(docs, function (doc, cb) {
-      // we don't ever want to delete old contexts, once the are in use by users
-      console.log('UN-SOURCING OLD SOURCES');
-      doc.update({
-        $set: {
-          name: doc.name + Date.now(),
-          lowerName: doc.lowerName + Date.now(),
-          isSource: false,
-          oldSource: Date.now()
-        }
-      }, cb);
-    }, function () {
-      cb();
-    });
-  });
-}
 
-function createBlankSourceContext (cb) {
+function createBlankSourceContext (thisCb) {
   async.waterfall([
     function (cb) {
-      Instance.find({
-        'lowerName': ('Blank').toLowerCase(),
-        'owner': createdBy
-      }, function (err, docs) {
-        console.log('REMOVING existing instance for (BLANK)');
+      Context.findOne({'name': 'Blank', 'isSource': true}, function (err, doc) {
         if (err) { return cb(err); }
-        async.each(docs, function (doc, cb) {
-          console.log('REMOVING INSTANCES', docs);
-          doc.remove(cb);
-        }, function () {
-          cb(null, 'Blank');
-        });
+        if (doc) {
+          console.log('Context (blank)');
+          ctx.blankIcv = doc.infraCodeVersion;
+          thisCb();
+        }
+        else {
+          console.log('newContext (blank)');
+          var context = new Context({
+            owner: createdBy,
+            name: 'Blank',
+            description: 'An empty template!',
+            isSource: true
+          });
+          context.save(function (err, doc) {
+            cb(err, doc);
+          });
+        }
       });
     },
-    removeCurrentSourceTemplates,
-    function newContext (cb) {
-      console.log('newContext (blank)');
-      var context = new Context({
-        owner: createdBy,
-        name: 'Blank',
-        description: 'An empty template!',
-        isSource: true
-      });
-      context.save(cb);
-    },
-    function newICV (context, count, cb) {
+    function newICV (context, cb) {
       console.log('newICV (blank)');
       var icv = new InfraCodeVersion({
         context: context._id
@@ -125,11 +101,11 @@ function createBlankSourceContext (cb) {
       ], function (err) { cb(err, context, icv); });
     },
     function (context, icv, cb) {
-      ctx.blankIcv = icv;
+      ctx.blankIcv = icv._id;
       cb(null, context, icv);
     },
     newCV
-  ], cb);
+  ], thisCb);
 }
 
 /**
@@ -155,13 +131,13 @@ function createFirstSourceContext(finalCB) {
             if (err) { return cb(err); }
             async.each(docs, function (doc, cb) {
               console.log('REMOVING INSTANCES', docs);
-              doc.remove(cb);
-            }, function () {
-              cb(null, model.name);
-            });
+              doc.remove(next);
+            }, next);
           });
+          function next (err) {
+            cb(err);
+          }
         },
-        removeCurrentSourceTemplates,
         function (cb) {
           if (model.isTemplate) {
             return cb();
@@ -193,7 +169,7 @@ function createFirstSourceContext(finalCB) {
           console.log('newICV (', model.name, ')');
           var icv = new InfraCodeVersion({
             context: context._id,
-            parent: ctx.blankIcv._id
+            parent: ctx.blankIcv
           });
           async.series([
             icv.initWithDefaults.bind(icv),
@@ -221,11 +197,11 @@ function createFirstSourceContext(finalCB) {
 
     function buildBuild(build, cb) {
       console.log('buildBuild (', model.name, ')');
-      build.build({message: 'seed instance script', noCache: true}, function (err, buildDoc) {
+      build.build({message: 'seed instance script', noCache: true}, function (err) {
         setTimeout(function () {
           cb(err, build);
-        }, 500)
-      })
+        }, 500);
+      });
     }
 
     function createInstance(build, cb) {
