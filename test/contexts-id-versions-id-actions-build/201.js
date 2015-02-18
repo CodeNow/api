@@ -1,10 +1,15 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var api = require('../fixtures/api-control');
 var dock = require('../fixtures/dock');
@@ -13,7 +18,7 @@ var expects = require('../fixtures/expects');
 var exists = require('101/exists');
 var multi = require('../fixtures/multi-factory');
 var keypather = require('keypather')();
-var expect = require('lab').expect;
+var blacklight = require('blacklight');
 
 describe('201 POST /contexts/:id/versions/:id/actions/build', {timeout: 2000}, function() {
   var ctx = {};
@@ -242,7 +247,7 @@ function buildTheVersionTests (ctx) {
           'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\t\n',
           'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\r',
           ].forEach(function(fileInfo) {
-            it('should dedupe whitespace changes: ' + fileInfo, function(done) {
+            it('should dedupe whitespace changes: ' + blacklight(fileInfo), function(done) {
               var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }
@@ -261,7 +266,7 @@ function buildTheVersionTests (ctx) {
                 });
               });
             });
-            it('should NOT dedupe whitespace changes when noCache: ' + fileInfo, function(done) {
+            it('should NOT dedupe whitespace changes when noCache: ' + blacklight(fileInfo), function(done) {
               var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }
@@ -292,7 +297,7 @@ function buildTheVersionTests (ctx) {
           '\tFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
           '\rFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
           ].forEach(function(fileInfo) {
-            it('should NOT dedupe whitespace changes: ' + fileInfo, function(done) {
+            it('should NOT dedupe whitespace changes: ' + blacklight(fileInfo), function(done) {
                var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }

@@ -1,11 +1,15 @@
+'use strict';
+
 var Lab = require('lab');
-var after = Lab.after;
-var afterEach = Lab.afterEach;
-var before = Lab.before;
-var beforeEach = Lab.beforeEach;
-var describe = Lab.experiment;
-var expect = Lab.expect;
-var it = Lab.test;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var api = require('../../fixtures/api-control');
 var generateKey = require('../../fixtures/key-factory');
@@ -34,7 +38,7 @@ describe('Analyze - /actions/analyze/info', function () {
       hooks.getSuccess,
       function (err, res) {
         expect(res.statusCode).to.equal(200);
-        expect(res.body).to.be.an('object');
+        expect(res.body).to.be.an.object();
         done();
       }
     );

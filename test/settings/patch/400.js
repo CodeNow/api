@@ -1,14 +1,18 @@
 'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var Code = require('code');
+var expect = Code.expect;
+
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
-
 
 describe('400 PATCH /settings/:id', {timeout:500}, function () {
   var ctx = {};
@@ -19,7 +23,6 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
-
 
   describe('update settings', function () {
 
@@ -40,7 +43,9 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
 
     var settingsId = null;
 
-    before(function (done) {
+    beforeEach(function (done) {
+      // NOTE(anton): is this correct?
+      require('../../fixtures/mocks/github/user-orgs')(13, 'some-org');
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
 

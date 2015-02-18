@@ -1,10 +1,14 @@
 'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var after = lab.after;
+var Code = require('code');
+var expect = Code.expect;
+
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
@@ -99,7 +103,7 @@ describe('400 POST /settings', {timeout: 700}, function () {
         ]
       };
 
-      typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+      typesTests.makeTestFromDef(def, ctx, lab, function(body, cb) {
         multi.createUser(function (err, runnable) {
           if (err) { return cb(err); }
           runnable.createSetting({json: body}, cb);

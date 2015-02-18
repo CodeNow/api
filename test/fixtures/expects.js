@@ -1,7 +1,11 @@
+'use strict';
+
+var Code = require('code');
+var expect = Code.expect;
+
 var isFunction = require('101/is-function');
 var isString = require('101/is-string');
 var isObject = require('101/is-object');
-var expect = require('lab').expect;
 var keypather = require('keypather')();
 var debug = require('debug')('runnable-api:testing:fixtures:expects');
 var exists = require('101/exists');
@@ -90,14 +94,14 @@ expects.updateSuccess = function (json, done) {
     if (err) { return done(err); }
     expect(code).to.equal(200);
     Object.keys(json).forEach(function (key) {
-      expect(body).to.have.property(key, json[key]);
+      expect(body[key]).to.equal(json[key]);
     });
     done();
   };
 };
 expects.convertObjectId = function(expected) {
   return function (val) {
-    expect(val.toString()).to.eql(expected);
+    expect(val.toString()).to.equal(expected);
     return true;
   };
 };
@@ -123,10 +127,14 @@ function expectKeypaths (body, expectedKeypaths) {
         keypather.set(expected, keypath, expectedVal);
       }
     });
-    // bc chai is not asserting eql for nested objects if the key order is diff...
-    extracted = sortKeys(extracted);
-    expected = sortKeys(expected);
-    expect(extracted).to.eql(expected);
+    if (Object.keys(expected).length > 0) {
+      // bc chai is not asserting eql for nested objects if the key order is diff...
+      extracted = sortKeys(extracted);
+      expected = sortKeys(expected);
+      // console.log(extracted);
+      // console.log(expected);
+      expect(extracted).to.deep.contain(expected);
+    }
   }
 }
 
@@ -186,7 +194,7 @@ expects.updatedHipacheEntries = function (user, instanceName, container, cb) {
         var val = toHipacheEntryVal(containerPort, container, instanceName);
         expectedRedisData[key] = val;
       });
-      expect(redisData).to.eql(expectedRedisData);
+      expect(redisData).to.deep.equal(expectedRedisData);
       cb();
     });
 };
@@ -242,7 +250,7 @@ expects.deletedHipacheEntries = function (user, instanceName, container, cb) {
         var key = toHipacheEntryKey(containerPort, instanceName, user);
         expectedRedisData[key] = [];
       });
-      expect(redisData).to.eql(expectedRedisData);
+      expect(redisData).to.deep.equal(expectedRedisData);
       cb();
     });
 };
