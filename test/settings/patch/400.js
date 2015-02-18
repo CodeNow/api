@@ -29,7 +29,8 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
       },
       notifications: {
         slack: {
-          webhookUrl: 'http://slack.com/some-web-hook-url'
+          apiToken: 'xoxo-dasjdkasjdk243248392482394',
+          channel: 'general'
         },
         hipchat: {
           authToken: 'some-hipchat-token',
@@ -59,7 +60,8 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
         var settings = {
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
+              apiToken: 'xoxo-dasjdkasjdk243248392482394',
+              channel: 'general'
             },
             hipchat: {
               authToken: 'some-hipchat-token',
