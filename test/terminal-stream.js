@@ -1,10 +1,12 @@
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var after = Lab.after;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+
 var api = require('./fixtures/api-control');
 
 var Primus = require('primus');

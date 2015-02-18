@@ -1,9 +1,11 @@
-var Lab = require('lab');
-var describe = Lab.experiment;
+'use strict';
 
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
+var Lab = require('lab');
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
 
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
@@ -72,7 +74,7 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
 
 
 
-    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
+    typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
       require('../../fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
       require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt');

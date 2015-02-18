@@ -1,11 +1,15 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -75,7 +79,7 @@ describe('Build Stream', function() {
           if(msg.event === 'BUILD_STREAM_ENDED' &&
             msg.data.id === body.contextVersions[0]) {
             client.end();
-            Lab.expect(msg.data.log).to.equal(
+            expect(msg.data.log).to.equal(
               'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c048080d32980521e743');
             done();
           }
@@ -145,7 +149,7 @@ describe('Build Stream', function() {
       client.on('data', function(msg) {
         if (msg.error) {
           client.end();
-          Lab.expect(msg.error).to.contain('could not find build in database');
+          expect(msg.error).to.contain('could not find build in database');
           done();
         }
       });
@@ -171,7 +175,7 @@ describe('Build Stream', function() {
             if(msg.event === 'BUILD_STREAM_ENDED' &&
               msg.data.id === body.contextVersions[0]) {
               client.end();
-              Lab.expect(msg.data.log).to.equal(
+              expect(msg.data.log).to.equal(
                 'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c048080d32980521e743');
               count.next();
             }

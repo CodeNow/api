@@ -1,8 +1,11 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -78,7 +81,7 @@ describe('400 POST /instances', {timeout:500}, function () {
       ]
     };
 
-    typesTests.makeTestFromDef(def, ctx, function(body, cb) {
+    typesTests.makeTestFromDef(def, ctx, lab, function(body, cb) {
       ctx.user.createInstance(body, cb);
     });
   });

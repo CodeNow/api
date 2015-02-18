@@ -1,12 +1,16 @@
-var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
+'use strict';
 
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var Lab = require('lab');
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+
 var api = require('../fixtures/api-control');
 var dock = require('../fixtures/dock');
 var multi = require('../fixtures/multi-factory');
