@@ -64,7 +64,13 @@ describe('User', function () {
         if (err) { done(err); }
         else {
           expect(usr).to.be.okay;
-          User.addSlackAccount(usr._id, 123123, 123, function (err, rows) {
+          var account = {
+            githubId: 123123,
+            slackId: 123,
+            name: 'Anton',
+            email: 'anton@runnable.com'
+          };
+          User.addSlackAccount(usr._id, account, function (err, rows) {
             if (err) { return done(err); }
             expect(rows).to.equal(1);
             User.findById(usr._id, function (err, model) {
@@ -72,6 +78,8 @@ describe('User', function () {
               expect(model.accounts.slack.orgs.length).to.equal(1);
               expect(model.accounts.slack.orgs[0].githubId).to.equal(123123);
               expect(model.accounts.slack.orgs[0].slackId).to.equal(123);
+              expect(model.accounts.slack.orgs[0].name).to.equal('Anton');
+              expect(model.accounts.slack.orgs[0].email).to.equal('anton@runnable.com');
               done();
             });
           });
@@ -84,7 +92,13 @@ describe('User', function () {
         if (err) { done(err); }
         else {
           expect(usr).to.be.okay;
-          User.addSlackAccount(usr._id, 123123, 123, function (err, rows) {
+          var account = {
+            githubId: 123123,
+            slackId: 123,
+            name: 'Anton',
+            email: 'anton@runnable.com'
+          };
+          User.addSlackAccount(usr._id, account, function (err, rows) {
             if (err) { return done(err); }
             expect(rows).to.equal(1);
             User.findById(usr._id, function (err, model) {
@@ -92,7 +106,11 @@ describe('User', function () {
               expect(model.accounts.slack.orgs.length).to.equal(1);
               expect(model.accounts.slack.orgs[0].githubId).to.equal(123123);
               expect(model.accounts.slack.orgs[0].slackId).to.equal(123);
-              User.addSlackAccount(usr._id, 123123, 124, function (err, rows) {
+              var account2 = {
+                githubId: 123123,
+                slackId: 124
+              };
+              User.addSlackAccount(usr._id, account2, function (err, rows) {
                 if (err) { return done(err); }
                 expect(rows).to.equal(0);
                 done();
