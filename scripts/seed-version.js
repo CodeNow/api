@@ -164,7 +164,7 @@ function createBlankSource (done) {
     doneIfExistingContextFound(blankData, done),
     createContext(blankData),
     createICV,
-    function (context, icv, cb) {
+    function (blankData, context, icv, cb) {
       ctx.blankIcv = icv._id;
       cb(null, blankData, context, icv);
     },
