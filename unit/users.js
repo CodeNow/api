@@ -67,7 +67,8 @@ describe('User', function () {
           var account = {
             githubId: 123123,
             slackId: 123,
-            name: 'Anton',
+            name: 'anton',
+            displayName: 'Anton Podviaznikov',
             email: 'anton@runnable.com'
           };
           User.addSlackAccount(usr._id, account, function (err, rows) {
@@ -78,7 +79,8 @@ describe('User', function () {
               expect(model.accounts.slack.orgs.length).to.equal(1);
               expect(model.accounts.slack.orgs[0].githubId).to.equal(123123);
               expect(model.accounts.slack.orgs[0].slackId).to.equal(123);
-              expect(model.accounts.slack.orgs[0].name).to.equal('Anton');
+              expect(model.accounts.slack.orgs[0].name).to.equal('anton');
+              expect(model.accounts.slack.orgs[0].displayName).to.equal('Anton Podviaznikov');
               expect(model.accounts.slack.orgs[0].email).to.equal('anton@runnable.com');
               done();
             });
@@ -95,7 +97,8 @@ describe('User', function () {
           var account = {
             githubId: 123123,
             slackId: 123,
-            name: 'Anton',
+            name: 'anton',
+            displayName: 'Anton Podviaznikov',
             email: 'anton@runnable.com'
           };
           User.addSlackAccount(usr._id, account, function (err, rows) {
