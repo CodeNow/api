@@ -169,7 +169,7 @@ function createBlankSource (done) {
     createContext(blankData),
     createICV,
     function (blankData, context, icv, cb) {
-      ctx.blankIcv = icv._id;
+      ctx.blankIcvId = icv._id;
       cb(null, blankData, context, icv);
     },
     createCV
@@ -211,7 +211,11 @@ function doneIfExistingContextFound (data, done) {
       if (err) { return cb(err); }
       if (context) {
         console.log('Existing "'+data.name+'" context found');
-        return done(); // Source already exists. Just call done.
+        // Source already exists. Just call done.
+        if (data.name.toLowerCase() === 'blank') {
+          ctx.blankIcvId = context.infraCodeVersion;
+        }
+        return done();
       }
       cb(); // continue
     });
@@ -234,7 +238,8 @@ function createContext (data) {
 function createICV (data, context, cb) {
   console.log('createICV "'+data.name+'"');
   var icv = new InfraCodeVersion({
-    context: context._id
+    context: context._id,
+    parent : ctx.blankIcvId
   });
   async.series([
     icv.initWithDefaults.bind(icv),
@@ -256,25 +261,28 @@ function createCV (data, context, icv, cb) {
     cb(err, data, version);
   });
 }
-function createBuild(data, version, cb) {
+function createBuild (data, version, cb) {
   console.log('createBuild (', data.name, ')');
   var build = ctx.user.createBuild({
     contextVersions: [version._id],
     createdBy: createdBy,
     owner    : createdBy // same on purpose
   }, function (err) {
-    cb(err, data, build);
+    cb(err, data, build, version);
   });
 }
-function buildBuild(data, build, cb) {
+function buildBuild (data, build, version, cb) {
   console.log('buildBuild (', data.name, ')');
   build.build({message: 'seed instance script', noCache: true}, function (err) {
     setTimeout(function () {
-      cb(err, data, build);
-    }, 500);
+      ContextVersion.find(version._id, function () {
+        console.log(version.toJSON());
+        cb(err, data, build);
+      });
+    }, 1000);
   });
 }
-function createInstance(data, build, cb) {
+function createInstance (data, build, cb) {
   console.log('createInstance (', data.name, ')');
   ctx.user.createInstance({
     build: build.id(),
