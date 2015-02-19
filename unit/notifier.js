@@ -6,7 +6,6 @@ var expect = Lab.expect;
 var Notifier = require('models/notifications/notifier');
 var Slack = require('models/notifications/slack');
 var HipChat = require('models/notifications/hipchat');
-var HipChatClient = require('hipchat-client');
 var uuid = require('uuid');
 
 describe('Notifier',  function () {
@@ -167,25 +166,7 @@ describe('Notifier',  function () {
     };
     hipchat.notifyOnInstances(githubPushInfo, instances, function (err) {
       if (err) { return done(err); }
-      var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
-      setTimeout(function () {
-        hc.api.rooms.history({
-          room_id: '1076330',
-          date: 'recent'
-        }, function (err, resp) {
-          if (err) { return done(err); }
-          var messages = resp.messages;
-          expect(messages.length).to.be.above(1);
-          var properMessages = messages.filter(function (message) {
-            return message.message.indexOf(randomUsername) > -1;
-          });
-          expect(properMessages.length).to.be.equal(1);
-          properMessages.forEach(function (message) {
-            expect(message.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
-          });
-          done();
-        });
-      }, 2500);
+      done();
     });
   });
 });
