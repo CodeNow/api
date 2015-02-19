@@ -159,7 +159,11 @@ function createAllSources () {
 }
 function createBlankSource (done) {
   console.log('createBlankSourceContext');
-  var blankData = { 'name': 'Blank', 'isSource': true };
+  var blankData = {
+    name: 'Blank',
+    isSource: true,
+    body: '# Empty Dockerfile!\n'
+  };
   async.waterfall([
     doneIfExistingContextFound(blankData, done),
     createContext(blankData),
@@ -235,7 +239,7 @@ function createICV (data, context, cb) {
   async.series([
     icv.initWithDefaults.bind(icv),
     icv.save.bind(icv),
-    icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: data.body })
+    icv.createFs.bind(icv, {body:{ name: 'Dockerfile', path: '/', body: data.body }})
   ], function (err) {
     cb(err, data, context, icv);
   });
