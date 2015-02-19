@@ -210,15 +210,27 @@ function doneIfExistingContextFound (data, done) {
     console.log('findOrCreateContext');
     Context.findOne({ 'name': data.name, 'isSource': data.isSource }, function (err, context) {
       if (err) { return cb(err); }
-      if (context) {
+      if (!context) {
+        return cb();
+      }
+      else {
         console.log('Existing "'+data.name+'" context found');
         // Source already exists. Just call done.
         if (data.name.toLowerCase() === 'blank') {
-          ctx.blankIcvId = context.infraCodeVersion;
+          InfraCodeVersion.findOne({ context: context.id }, function (err, icv) {
+            if (err || !icv) {
+              // throw!!! bc rest of script cannot run w/out this.
+              throw new Error('Blank Icv not found! err:'+err);
+            }
+            console.log('Blank icv found (to be parent of others): '+icv._id);
+            ctx.blankIcvId = icv._id;
+            done();
+          });
         }
-        return done();
+        else {
+          done();
+        }
       }
-      cb(); // continue
     });
   };
 }
