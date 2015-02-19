@@ -198,6 +198,7 @@ function doneIfExistingInstanceFound (data, done) {
     }, function (err, docs) {
       if (err) { return cb(err); }
       if (docs && docs.length) {
+        console.log('Existing "'+data.name+'" instance found');
         return done(); // if exists.. done. don't continue
       }
       cb();
@@ -250,7 +251,7 @@ function createICV (data, context, cb) {
   });
 }
 function createCV (data, context, icv, cb) {
-  console.log('newCV');
+  console.log('createCV');
   var cv = new ContextVersion({
     createdBy: createdBy,
     context  : context._id,
@@ -275,10 +276,7 @@ function buildBuild (data, build, version, cb) {
   console.log('buildBuild (', data.name, ')');
   build.build({message: 'seed instance script', noCache: true}, function (err) {
     setTimeout(function () {
-      ContextVersion.find(version._id, function () {
-        console.log(version.toJSON());
-        cb(err, data, build);
-      });
+      cb(err, data, build);
     }, 1000);
   });
 }
