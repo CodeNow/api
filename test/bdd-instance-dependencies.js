@@ -481,7 +481,7 @@ describe('BDD - Instance Dependencies', function () {
           function addApiToWeb (cb) {
             require('./fixtures/mocks/github/user')(ctx.user);
             var depString = 'API_HOST=' +
-              ctx.apiInstance.attrs.lowerName + '.' +
+              ctx.apiInstance.attrs.lowerName + '-' +
               ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
             ctx.webInstance.update({
               env: [depString]
@@ -827,7 +827,7 @@ describe('BDD - Instance Dependencies', function () {
         });
 
         function createRedis (cb) {
-          var env = ['SOMETHING=' + ctx.mongoInstance.attrs.lowerName + '.' +
+          var env = ['SOMETHING=' + ctx.mongoInstance.attrs.lowerName + '-' +
               ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN];
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
