@@ -239,7 +239,7 @@ function createICV (data, context, cb) {
   async.series([
     icv.initWithDefaults.bind(icv),
     icv.save.bind(icv),
-    icv.createFs.bind(icv, {body:{ name: 'Dockerfile', path: '/', body: data.body }})
+    icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: data.body })
   ], function (err) {
     cb(err, data, context, icv);
   });
