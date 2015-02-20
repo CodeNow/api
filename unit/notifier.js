@@ -49,7 +49,7 @@ describe('Notifier',  function () {
       text += ' (init &amp; commit &lt;p&gt;Hello&lt;/p&gt; and  ';
       text += '<' + wrapGitHubLink(changesUrl) +'|1 more>)';
       text += ' to CodeNow/api (feature-1/fix) are deployed on servers: ';
-      text += '<http://runnable3.net/podviaznikov/instance1|instance1>'
+      text += '<http://runnable3.net/podviaznikov/instance1|instance1>';
       expect(text).to.equal(message.text);
       expect(message.attachments.length).to.equal(1);
       var attachment = message.attachments[0];
