@@ -48,7 +48,7 @@ describe('Notifier',  function () {
       text += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       text += ' (init &amp; commit &lt;p&gt;Hello&lt;/p&gt; and  ';
       text += '<' + wrapGitHubLink(changesUrl) +'|1 more>)';
-      text += ' to CodeNow/api (feature-1/fix) are deployed on servers: ';
+      text += ' to CodeNow/api (master) are deployed on servers: ';
       text += '<http://runnable3.net/podviaznikov/instance1|instance1>';
       expect(text).to.equal(message.text);
       expect(message.attachments.length).to.equal(1);
@@ -69,7 +69,17 @@ describe('Notifier',  function () {
     var headCommit = {
       id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
       message: 'init & commit <p>Hello</p>',
-      url: 'https://github.com/CodeNow/api/commit/b240edf982d467201845b3bf10bbbe16f6049eb1'
+      url: 'https://github.com/CodeNow/api/commit/b240edf982d467201845b3bf10bbbe16f6049eb1',
+      author: {
+        name: "Anton Podviaznikov",
+        email: "podviaznikov@gmail.com",
+        username: "podviaznikov"
+      },
+      committer: {
+        name: "Anton Podviaznikov",
+        email: "podviaznikov@gmail.com",
+        username: "podviaznikov"
+      }
     };
     var githubPushInfo = {
       commitLog: [headCommit,
@@ -81,7 +91,7 @@ describe('Notifier',  function () {
         }],
       repo: 'CodeNow/api',
       repoName: 'api',
-      branch: 'feature-1/fix',
+      branch: 'master',
       commit: 'a240edf982d46720,1845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
       user: {
@@ -91,13 +101,12 @@ describe('Notifier',  function () {
     slack.notifyOnInstances(githubPushInfo, instances, done);
   });
 
-
   it('should render proper text on hipchat.notifyOnInstances call', function (done) {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s ';
       message += '<a href="' + wrapGitHubLink(headCommit.url) + '">changes</a>';
-      message += ' (init) to CodeNow/api (feature-1/fix) are deployed on servers:<br/>\n ';
+      message += ' (init) to CodeNow/api (master) are deployed on servers:<br/>\n ';
       message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a><br/>\n ';
       message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a><br/>\n';
 
@@ -113,7 +122,7 @@ describe('Notifier',  function () {
       commitLog: [headCommit],
       repo: 'CodeNow/api',
       repoName: 'api',
-      branch: 'feature-1/fix',
+      branch: 'master',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
       user: {
@@ -158,7 +167,7 @@ describe('Notifier',  function () {
       commitLog: [headCommit],
       repo: 'CodeNow/api',
       repoName: 'api',
-      branch: 'develop',
+      branch: 'master',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
       user: {
