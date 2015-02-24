@@ -133,7 +133,8 @@ module.exports = function (data) {
             'created_at': '2015-01-27T21:06:49Z',
             'updated_at': '2015-01-27T21:06:49Z',
             'body': '[Select Runnable server to run code from this PR](http://runnable3.net/' + owner +
-              '/serverSelection/hellonode?branch=feature-1&message=commit&commit=73033125786a9897dc92659245598be520a2d71d)'
+              '/serverSelection/hellonode?branch=feature-1' +
+              '&message=commit&commit=73033125786a9897dc92659245598be520a2d71d)'
           },
           'repository': {
             'id': 28254077,
