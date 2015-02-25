@@ -43,7 +43,7 @@ describe('Notifier',  function () {
   it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
     var changesUrl = 'https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4';
-    slack.send = function (message, cb) {
+    slack.sendDirectMessage = function (gitUser, message, cb) {
       var text = 'tjmehta\'s ';
       text += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       text += ' (init &amp; commit &lt;p&gt;Hello&lt;/p&gt; and  ';
