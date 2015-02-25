@@ -47,9 +47,9 @@ describe('Notifier',  function () {
       message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       message += ' (init &amp; commit &amp; push long test   next line   3d...) to CodeNow/api (develop) are ready.\n';
       message += '<http://runnable3.net/';
-      message += 'podviaznikov/boxSelection/api/develop/init%2520%2526%2520commit%2520%2526%2520';
+      message += 'podviaznikov/serverSelection/api?branch=develop&message=init%2520%2526%2520commit%2520%2526%2520';
       message += 'push%2520long%2520test%2520%250A%2520next%2520line%2520%250A%25203d%2520line';
-      message += '/a240edf982d467201845b3bf10ccbe16f6049ea9';
+      message += '&commit=a240edf982d467201845b3bf10ccbe16f6049ea9';
       message += '|Choose a server to run develop>.';
       expect(text).to.equal(message);
       cb();
@@ -85,8 +85,9 @@ describe('Notifier',  function () {
       message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       message += ' (init &amp; commit &amp; push) to CodeNow/api (feature-1/fix) are ready.\n';
       message += '<http://runnable3.net/';
-      message += 'podviaznikov/boxSelection/api/feature-1%252Ffix/init%2520%2526%2520commit%2520%2526%2520push';
-      message += '/a240edf982d467201845b3bf10ccbe16f6049ea9';
+      message += 'podviaznikov/serverSelection/api?';
+      message += 'branch=feature-1%252Ffix&message=init%2520%2526%2520commit%2520%2526%2520push';
+      message += '&commit=a240edf982d467201845b3bf10ccbe16f6049ea9';
       message += '|Choose a server to run feature-1/fix>.';
       expect(text).to.equal(message);
       cb();
@@ -171,8 +172,9 @@ describe('Notifier',  function () {
       var message = 'podviaznikov\'s ';
       message += '<a href="' + wrapGitHubLink(headCommit.url) + '">changes</a>';
       message += ' (hey there second line third line some random...) to Runnable/api (feature-1/fix) are ready.\n';
-      message += '<a href=\"http://runnable3.net/podviaznikov/boxSelection/api/feature-1%252Ffix/%2520hey%2520there';
-      message += '%250Asecond%2520line%250Athird%2520line%250Asome%2520random%2520mesage/';
+      message += '<a href=\"http://runnable3.net/podviaznikov/serverSelection/api';
+      message += '?branch=feature-1%252Ffix&message=%2520hey%2520there';
+      message += '%250Asecond%2520line%250Athird%2520line%250Asome%2520random%2520mesage&commit=';
       message += 'a240edf982d467201845b3bf10ccbe16f6049ea9\">Choose a server to run feature-1/fix</a>.';
       expect(text).to.equal(message);
       cb();
