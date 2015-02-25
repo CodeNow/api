@@ -174,10 +174,7 @@ describe('Notifier',  function () {
         login: randomUsername
       }
     };
-    hipchat.notifyOnInstances(githubPushInfo, instances, function (err) {
-      if (err) { return done(err); }
-      done();
-    });
+    hipchat.notifyOnInstances(githubPushInfo, instances, done);
   });
 });
 
