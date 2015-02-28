@@ -21,19 +21,20 @@ var differentDockerfiles  = require('../test/fixtures/different-dockerfiles');
 
 describe('Hasher',  function () {
   describe('stream', function () {
-    // it('should hash a stream', function (done) {
-    //   var fileStream = fs.createReadStream(__filename);
-    //   hasher(fileStream, true, function (err, data) {
-    //     if (err) { return done(err); }
-    //     expect(data).to.be.ok;
-    //     done();
-    //   });
-    // });
+    it('should hash a stream', function (done) {
+      var fileStream = fs.createReadStream(__filename);
+      hasher(fileStream, true, function (err, data) {
+        if (err) { return done(err); }
+        expect(data).to.be.ok;
+        done();
+      });
+    });
     describe('all combinations of chunks', function () {
       var ctx;
       beforeEach(function (done) {
         ctx = {};
-        var dockerfile = new Buffer(" \t\r\n \t\r\n \t\r\n \t\r\nFROM dockerfile/nodejs \t\r\n \t\r\n \t\r\n \t\r\nCMD tail -f /var/log/dpkg.log \t\r\n \t\r\n \t\r\n \t\r\n");
+        var dockerfile = new Buffer(" \t\r\n \t\r\n \t\r\n \t\r\nFROM "+
+                                    "dockerfile/nodejs \t\r\n \t\r\n \t\r\n \t\r\nCMD tail -f /var/log/dpkg.log \t\r\n \t\r\n \t\r\n \t\r\n");
         var chunkSets = ctx.chunkSets =  [];
 
         for (var i = 0; i+8 < dockerfile.length; i++) {
@@ -42,6 +43,14 @@ describe('Hasher',  function () {
           chunks.push(dockerfile.slice(i, i+8));
           chunks.push(dockerfile.slice(i+8, dockerfile.length));
         }
+
+        function toString(arr) {
+          return arr.map(function (item) {
+            return item.toString();
+          });
+        }
+
+        console.log(chunkSets.map(toString));
 
         done();
       });
@@ -68,116 +77,116 @@ describe('Hasher',  function () {
         }, done);
       });
     });
-    // describe('compare stream hash to string hash', function () {
-    //   it('should result in the same hashes', function (done) {
-    //     var i = -1;
-    //     async.each(equivalentDockerfiles, function (dockerfile, cb) {
-    //       i++;
-    //       var j = i;
-    //       var streamHash, stringHash;
-    //       var streamData, stringData;
-    //       var count = createCount(2, compareHashes);
-    //       // hash file stream
-    //       var fileStream = through(function (data) {this.queue(data);});
-    //       hasher(fileStream, function (err, hash, data) {
-    //         if (err) { return count.next(err); }
-    //         expect(hash).to.be.ok;
-    //         streamHash = hash;
-    //         streamData = data;
-    //         count.next();
-    //       });
-    //       dockerfile.split('').forEach(function (chunk) {
-    //         fileStream.write(chunk);
-    //       });
-    //       fileStream.end();
-    //       // hash file string
-    //       hasher(dockerfile, function (err, hash, data) {
-    //         if (err) { return count.next(err); }
-    //         expect(hash).to.be.ok;
-    //         stringHash = hash;
-    //         stringData = data;
-    //         count.next();
-    //       });
-    //       function compareHashes (err) {
-    //         if (err) { return cb(err); }
-    //         expect(streamHash).to.equal(stringHash);
-    //         cb();
-    //       }
-    //     }, function (err) {
-    //       done(err);
-    //     });
-    //   });
-    // });
+    describe('compare stream hash to string hash', function () {
+      it('should result in the same hashes', function (done) {
+        var i = -1;
+        async.each(equivalentDockerfiles, function (dockerfile, cb) {
+          i++;
+          var j = i;
+          var streamHash, stringHash;
+          var streamData, stringData;
+          var count = createCount(2, compareHashes);
+          // hash file stream
+          var fileStream = through(function (data) {this.queue(data);});
+          hasher(fileStream, function (err, hash, data) {
+            if (err) { return count.next(err); }
+            expect(hash).to.be.ok;
+            streamHash = hash;
+            streamData = data;
+            count.next();
+          });
+          dockerfile.split('').forEach(function (chunk) {
+            fileStream.write(chunk);
+          });
+          fileStream.end();
+          // hash file string
+          hasher(dockerfile, function (err, hash, data) {
+            if (err) { return count.next(err); }
+            expect(hash).to.be.ok;
+            stringHash = hash;
+            stringData = data;
+            count.next();
+          });
+          function compareHashes (err) {
+            if (err) { return cb(err); }
+            expect(streamHash).to.equal(stringHash);
+            cb();
+          }
+        }, function (err) {
+          done(err);
+        });
+      });
+    });
   });
-  // describe('string', function () {
-  //   it('should hash a string', function (done) {
-  //     var fileData = fs.readFileSync(__filename).toString();
-  //     hasher(fileData, function (err, data) {
-  //       if (err) { return done(err); }
-  //       expect(data).to.be.ok;
-  //       done();
-  //     });
-  //   });
-  //   describe('whitespace comparisons', function () {
-  //     describe('whitespace equivalent dockerfiles', function () {
-  //       describe('keep whitespace', function () {
-  //         it('should get different hashes for whitespace-equivalent files', function (done) {
-  //           var fileDatas = equivalentDockerfiles;
-  //           async.map(fileDatas, function (fileData, cb) {
-  //             hasher(fileData, true, cb);
-  //           }, compareHashes);
-  //           function compareHashes (err, hashes) {
-  //             if (err) { return done(err); }
-  //             var allHashesNotEqual = hashes.every(function (hash, i) {
-  //               hashes.splice(i, 1);
-  //               return hashes.every(notEquals(hash));
-  //             });
-  //             expect(allHashesNotEqual).to.equal(true);
-  //             done();
-  //           }
-  //         });
-  //       });
-  //       describe('remove whitespace', function () {
-  //         it('should get the same hashes for whitespace-equivalent files', function (done) {
-  //           var fileDatas = equivalentDockerfiles;
-  //           async.map(fileDatas, hasher, compareHashes);
-  //           function compareHashes (err, hashes) {
-  //             if (err) { return done(err); }
-  //             var allHashesEqual = hashes.slice(1).every(equals(hashes[0]));
-  //             expect(allHashesEqual).to.equal(true);
-  //             done();
-  //           }
-  //         });
-  //       });
-  //     });
-  //     describe('different dockerfiles (not whitespace equivalent)', function () {
-  //       describe('keep whitespace', function () {
-  //         it('should get different hashes for whitespace-equivalent files', function (done) {
-  //           var fileDatas = differentDockerfiles;
-  //           async.map(fileDatas, function (fileData, cb) {
-  //             hasher(fileData, true, cb);
-  //           }, compareHashes);
-  //           function compareHashes (err, hashes) {
-  //             if (err) { return done(err); }
-  //             var allHashesNotEqual = hashes.slice(1).every(notEquals(hashes[0]));
-  //             expect(allHashesNotEqual).to.equal(true);
-  //             done();
-  //           }
-  //         });
-  //       });
-  //       describe('remove whitespace', function () {
-  //         it('should get different hashes for different files', function (done) {
-  //           var fileDatas = differentDockerfiles;
-  //           async.map(fileDatas, hasher, compareHashes);
-  //           function compareHashes (err, hashes) {
-  //             if (err) { return done(err); }
-  //             var allHashesNotEqual = hashes.slice(1).every(notEquals(hashes[0]));
-  //             expect(allHashesNotEqual).to.equal(true);
-  //             done();
-  //           }
-  //         });
-  //       });
-  //     });
-  //   });
-  // });
+  describe('string', function () {
+    it('should hash a string', function (done) {
+      var fileData = fs.readFileSync(__filename).toString();
+      hasher(fileData, function (err, data) {
+        if (err) { return done(err); }
+        expect(data).to.be.ok;
+        done();
+      });
+    });
+    describe('whitespace comparisons', function () {
+      describe('whitespace equivalent dockerfiles', function () {
+        describe('keep whitespace', function () {
+          it('should get different hashes for whitespace-equivalent files', function (done) {
+            var fileDatas = equivalentDockerfiles;
+            async.map(fileDatas, function (fileData, cb) {
+              hasher(fileData, true, cb);
+            }, compareHashes);
+            function compareHashes (err, hashes) {
+              if (err) { return done(err); }
+              var allHashesNotEqual = hashes.every(function (hash, i) {
+                hashes.splice(i, 1);
+                return hashes.every(notEquals(hash));
+              });
+              expect(allHashesNotEqual).to.equal(true);
+              done();
+            }
+          });
+        });
+        describe('remove whitespace', function () {
+          it('should get the same hashes for whitespace-equivalent files', function (done) {
+            var fileDatas = equivalentDockerfiles;
+            async.map(fileDatas, hasher, compareHashes);
+            function compareHashes (err, hashes) {
+              if (err) { return done(err); }
+              var allHashesEqual = hashes.slice(1).every(equals(hashes[0]));
+              expect(allHashesEqual).to.equal(true);
+              done();
+            }
+          });
+        });
+      });
+      describe('different dockerfiles (not whitespace equivalent)', function () {
+        describe('keep whitespace', function () {
+          it('should get different hashes for whitespace-equivalent files', function (done) {
+            var fileDatas = differentDockerfiles;
+            async.map(fileDatas, function (fileData, cb) {
+              hasher(fileData, true, cb);
+            }, compareHashes);
+            function compareHashes (err, hashes) {
+              if (err) { return done(err); }
+              var allHashesNotEqual = hashes.slice(1).every(notEquals(hashes[0]));
+              expect(allHashesNotEqual).to.equal(true);
+              done();
+            }
+          });
+        });
+        describe('remove whitespace', function () {
+          it('should get different hashes for different files', function (done) {
+            var fileDatas = differentDockerfiles;
+            async.map(fileDatas, hasher, compareHashes);
+            function compareHashes (err, hashes) {
+              if (err) { return done(err); }
+              var allHashesNotEqual = hashes.slice(1).every(notEquals(hashes[0]));
+              expect(allHashesNotEqual).to.equal(true);
+              done();
+            }
+          });
+        });
+      });
+    });
+  });
 });
