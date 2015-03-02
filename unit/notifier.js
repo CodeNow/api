@@ -10,7 +10,6 @@ var expect = Code.expect;
 var Notifier = require('models/notifications/notifier');
 var Slack = require('models/notifications/slack');
 var HipChat = require('models/notifications/hipchat');
-var uuid = require('uuid');
 
 describe('Notifier',  function () {
 
