@@ -16,6 +16,7 @@ var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
 var tailBuildStream = require('./fixtures/tail-build-stream');
+var cbCount = require('callback-count');
 
 var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
@@ -427,42 +428,44 @@ describe('Github - /actions/github', function () {
         if (err) { return done(err); }
 
         var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
-        spyOnClassMethod(require('models/notifications/index'), 'notifyOnInstances',
-          function (githubPushInfo, deployedInstances) {
-            expect(deployedInstances).to.be.okay;
-            expect(deployedInstances).to.be.an('array');
-            expect(deployedInstances).to.have.a.lengthOf(2);
-            var hashes = [deployedInstances[0].shortHash, deployedInstances[1].shortHash];
-            expect(hashes).to.include(ctx.instance.id());
-            expect(hashes).to.include(instance2.shortHash);
-            expect(githubPushInfo.commitLog).to.have.a.lengthOf(1);
-            var expected = {
-              'contextVersion.build.started': exists,
-              'contextVersion.build.completed': exists,
-              'contextVersion.build.duration': exists,
-              'contextVersion.build.triggeredBy.github': exists,
-              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
-              'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
-              'contextVersion.appCodeVersions[0].branch': data.branch,
-              'contextVersion.build.triggeredAction.manual': false,
-              'contextVersion.build.triggeredAction.appCodeVersion.repo':
-                options.json.repository.full_name,
-              'contextVersion.build.triggeredAction.appCodeVersion.commit':
-                options.json.head_commit.id,
-              'contextVersion.build.triggeredAction.appCodeVersion.commitLog':
-                function (commitLog) {
-                  expect(commitLog).to.be.an('array');
-                  expect(commitLog).to.have.lengthOf(1);
-                  expect(commitLog[0].id).to.equal(options.json.head_commit.id);
-                  return true;
-                }
-            };
-            ctx.instance.fetch(expects.success(200, expected, function (err) {
-              if (err) { return done(err); }
-              ctx.user.newInstance(instance2.shortHash).fetch(expects.success(200, expected, done));
-            }));
-          });
-
+        var baseDeploymentId = 1234567;
+        spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment', function (repo, commit, payload, cb) {
+          baseDeploymentId++;
+          cb(null, {id: baseDeploymentId});
+        });
+        var count = cbCount(2, function () {
+          var expected = {
+            'contextVersion.build.started': exists,
+            'contextVersion.build.completed': exists,
+            'contextVersion.build.duration': exists,
+            'contextVersion.build.triggeredBy.github': exists,
+            'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
+            'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
+            'contextVersion.appCodeVersions[0].branch': data.branch,
+            'contextVersion.build.triggeredAction.manual': false,
+            'contextVersion.build.triggeredAction.appCodeVersion.repo':
+              options.json.repository.full_name,
+            'contextVersion.build.triggeredAction.appCodeVersion.commit':
+              options.json.head_commit.id,
+            'contextVersion.build.triggeredAction.appCodeVersion.commitLog':
+              function (commitLog) {
+                expect(commitLog).to.be.an('array');
+                expect(commitLog).to.have.lengthOf(1);
+                expect(commitLog[0].id).to.equal(options.json.head_commit.id);
+                return true;
+              }
+          };
+          ctx.instance.fetch(expects.success(200, expected, function (err) {
+            if (err) { return done(err); }
+            ctx.user.newInstance(instance2.shortHash).fetch(expects.success(200, expected, done));
+          }));
+        });
+        spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentSucceed', function (repo, deploymentId, targetUrl) {
+          expect(repo).to.exist();
+          expect([1234568, 1234569]).to.contain(deploymentId);
+          expect(targetUrl).to.include('http://runnable.io/');
+          count.next();
+        });
 
         var acv = ctx.contextVersion.attrs.appCodeVersions[0];
         var data = {
