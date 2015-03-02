@@ -24,28 +24,15 @@ var tailBuildStream = require('./fixtures/tail-build-stream');
 var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
 
-before(function (done) {
-  nock('http://runnable.com:80')
-    .persist()
-    .get('/')
-    .reply(200);
-  done();
-});
-
 describe('Github - /actions/github', function () {
   var ctx = {};
 
-  before(api.start.bind(ctx));
-  after(api.stop.bind(ctx));
-  before(dock.start.bind(ctx));
-  after(dock.stop.bind(ctx));
-  before(require('./fixtures/mocks/api-client').setup);
-  after(require('./fixtures/mocks/api-client').clean);
-  beforeEach(generateKey);
-  afterEach(require('./fixtures/clean-mongo').removeEverything);
-  afterEach(require('./fixtures/clean-ctx')(ctx));
-
   describe('ping', function () {
+    before(api.start.bind(ctx));
+    after(api.stop.bind(ctx));
+    afterEach(require('./fixtures/clean-mongo').removeEverything);
+    afterEach(require('./fixtures/clean-ctx')(ctx));
+
     it('should return OKAY', function (done) {
       var options = hooks().ping;
       request.post(options, function (err, res, body) {
@@ -58,18 +45,21 @@ describe('Github - /actions/github', function () {
     });
   });
 
-
   describe('disabled hooks', function () {
-
-    beforeEach(function (done) {
+    before(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       delete process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       done();
     });
-    afterEach(function (done) {
+    after(function (done) {
       process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
       done();
     });
+    before(api.start.bind(ctx));
+    after(api.stop.bind(ctx));
+    afterEach(require('./fixtures/clean-mongo').removeEverything);
+    afterEach(require('./fixtures/clean-ctx')(ctx));
+
     it('should send response immediately if hooks are disabled', function (done) {
       var options = hooks().push;
       options.json.ref = 'refs/heads/someotherbranch';
@@ -88,17 +78,19 @@ describe('Github - /actions/github', function () {
   });
 
   describe('not supported event type', function () {
-
-    beforeEach(function (done) {
+    before(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
       done();
     });
-
-    afterEach(function (done) {
+    after(function (done) {
       process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
       done();
     });
+    before(api.start.bind(ctx));
+    after(api.stop.bind(ctx));
+    afterEach(require('./fixtures/clean-mongo').removeEverything);
+    afterEach(require('./fixtures/clean-ctx')(ctx));
 
     it('should return OKAY', function (done) {
       var options = hooks().issue_comment;
@@ -113,17 +105,19 @@ describe('Github - /actions/github', function () {
   });
 
   describe('not supported action for pull_request event', function () {
-
-    beforeEach(function (done) {
+    before(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
       done();
     });
-
-    afterEach(function (done) {
+    after(function (done) {
       process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
       done();
     });
+    before(api.start.bind(ctx));
+    after(api.stop.bind(ctx));
+    afterEach(require('./fixtures/clean-mongo').removeEverything);
+    afterEach(require('./fixtures/clean-ctx')(ctx));
 
     it('should return OKAY', function (done) {
       var options = hooks().pull_request;
@@ -140,11 +134,19 @@ describe('Github - /actions/github', function () {
 
 
   describe('when a branch was deleted', function () {
-
-    beforeEach(function (done) {
+    before(function (done) {
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
       done();
     });
+    after(function (done) {
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
+      done();
+    });
+    before(api.start.bind(ctx));
+    after(api.stop.bind(ctx));
+    afterEach(require('./fixtures/clean-mongo').removeEverything);
+    afterEach(require('./fixtures/clean-ctx')(ctx));
 
     it('should return 202 with thing to do', function (done) {
       var options = hooks().push_delete;
@@ -163,10 +165,19 @@ describe('Github - /actions/github', function () {
   });
 
   describe('ignore hooks without commits data', function () {
-    beforeEach(function (done) {
+    before(function (done) {
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
       done();
     });
+    after(function (done) {
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
+      done();
+    });
+    before(api.start.bind(ctx));
+    after(api.stop.bind(ctx));
+    afterEach(require('./fixtures/clean-mongo').removeEverything);
+    afterEach(require('./fixtures/clean-ctx')(ctx));
 
     it('should send response immediately there are no commits data ([]) in the payload ', function (done) {
       var options = hooks().push;
@@ -204,8 +215,21 @@ describe('Github - /actions/github', function () {
   });
 
   describe('push new branch', function () {
-    var ctx = {};
     describe('disabled by default', function () {
+      before(function (done) {
+        ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
+        process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
+        done();
+      });
+      after(function (done) {
+        process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
+        done();
+      });
+      before(api.start.bind(ctx));
+      after(api.stop.bind(ctx));
+      afterEach(require('./fixtures/clean-mongo').removeEverything);
+      afterEach(require('./fixtures/clean-ctx')(ctx));
+
       it('should return 202 which means processing of new branches is disabled', function (done) {
         var data = {
           branch: 'feature-1'
@@ -228,11 +252,27 @@ describe('Github - /actions/github', function () {
     });
 
     describe('enabled auto builds', function () {
-
       before(function (done) {
+        ctx.origionalNewBranchBuildsOnGitPush = process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH;
         process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = 'true';
+        ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
+        process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
         done();
       });
+      after(function (done) {
+        process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = ctx.origionalNewBranchBuildsOnGitPush;
+        process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
+        done();
+      });
+      before(api.start.bind(ctx));
+      after(api.stop.bind(ctx));
+      afterEach(require('./fixtures/clean-mongo').removeEverything);
+      afterEach(require('./fixtures/clean-ctx')(ctx));
+      before(dock.start.bind(ctx));
+      after(dock.stop.bind(ctx));
+      before(require('./fixtures/mocks/api-client').setup);
+      after(require('./fixtures/mocks/api-client').clean);
+      beforeEach(generateKey);
 
       beforeEach(function (done) {
         multi.createInstance(function (err, instance, build, user, modelsArr) {
@@ -300,7 +340,7 @@ describe('Github - /actions/github', function () {
                 .to.equal(options.json.head_commit.id);
               // wait until cv is build.
               tailBuildStream(cvId, function (err) {
-                 if (err) { return done(err); }
+                if (err) { return done(err); }
                 ContextVersion.findById(cvId, function (err, contextVersion) {
                   if (err) { return done(err); }
                   expect(contextVersion.build.started).to.exist();
@@ -391,14 +431,32 @@ describe('Github - /actions/github', function () {
           });
         });
       });
-
     });
-
   });
 
 
   describe('push follow branch', function () {
-    var ctx = {};
+    before(function (done) {
+      ctx.origionalNewBranchBuildsOnGitPush = process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH;
+      process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = 'true';
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
+      done();
+    });
+    after(function (done) {
+      process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = ctx.origionalNewBranchBuildsOnGitPush;
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
+      done();
+    });
+    before(api.start.bind(ctx));
+    after(api.stop.bind(ctx));
+    afterEach(require('./fixtures/clean-mongo').removeEverything);
+    afterEach(require('./fixtures/clean-ctx')(ctx));
+    before(dock.start.bind(ctx));
+    after(dock.stop.bind(ctx));
+    before(require('./fixtures/mocks/api-client').setup);
+    after(require('./fixtures/mocks/api-client').clean);
+    beforeEach(generateKey);
 
     before(function (done) {
       process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = 'true';
@@ -487,7 +545,5 @@ describe('Github - /actions/github', function () {
         });
       });
     });
-
   });
-
 });

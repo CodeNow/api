@@ -11,7 +11,6 @@ var afterEach = lab.afterEach;
 
 var uuid = require('uuid');
 var api = require('./fixtures/api-control');
-var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
@@ -20,9 +19,7 @@ describe('Context - /contexts', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));

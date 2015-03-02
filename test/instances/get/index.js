@@ -25,6 +25,7 @@ describe('GET /instances', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+
   describe('GET', function() {
     beforeEach(function (done) {
       multi.createInstance(function (err, instance, build, user) {

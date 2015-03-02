@@ -15,7 +15,6 @@ var request = require('request');
 var api = require('./fixtures/api-control');
 var normalJsonPaylod = require('./fixtures/json-515kb');
 var bigJsonPaylod = require('./fixtures/json-645kb');
-var dock = require('./fixtures/dock');
 var url = require('url');
 var generateKey = require('./fixtures/key-factory');
 
@@ -24,8 +23,6 @@ describe('JSON body parser', function () {
 
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  before(dock.start.bind(ctx));
-  after(dock.stop.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);
   after(require('./fixtures/mocks/api-client').clean);
   beforeEach(generateKey);

@@ -12,7 +12,6 @@ var Code = require('code');
 var expect = Code.expect;
 
 var api = require('./fixtures/api-control');
-var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var equals = require('101/equals');
@@ -35,9 +34,7 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
   });
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));

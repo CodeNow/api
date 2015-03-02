@@ -10,7 +10,6 @@ var Code = require('code');
 var expect = Code.expect;
 
 var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 
@@ -18,10 +17,8 @@ describe('400 POST /settings', {timeout: 700}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
 
