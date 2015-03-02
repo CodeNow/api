@@ -50,8 +50,6 @@ describe('Hasher',  function () {
           });
         }
 
-        console.log(chunkSets.map(toString));
-
         done();
       });
       it('should result in the correct hash', function (done) {
