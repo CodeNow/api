@@ -4,9 +4,9 @@ module.exports.started = false;
 module.exports.start = function (port, cb) {
   if (typeof port === 'function') {
     cb = port;
-    port = 4243;
+    port = 4242;
   }
-  port = port || 4243;
+  port = port || 4242;
   var self = this;
   this.server = app.listen(port, function (err) {
     if (err) { throw err; }

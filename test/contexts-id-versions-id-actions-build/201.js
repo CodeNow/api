@@ -81,7 +81,7 @@ function buildTheVersionTests (ctx) {
     beforeEach(function (done) {
       ctx.expected = ctx.cv.toJSON();
       delete ctx.expected.build;
-      ctx.expected.dockerHost = 'http://localhost:4243';
+      ctx.expected.dockerHost = 'http://localhost:4242';
       ctx.expected['build._id'] = exists;
       ctx.expected['build.started'] = exists;
       ctx.expected['build.triggeredBy.github'] = ctx.user.attrs.accounts.github.id;
@@ -143,7 +143,7 @@ function buildTheVersionTests (ctx) {
           beforeEach(function (done) {
             ctx.expected = ctx.copiedCv.toJSON();
             delete ctx.expected.build;
-            ctx.expected.dockerHost = 'http://localhost:4243';
+            ctx.expected.dockerHost = 'http://localhost:4242';
             ctx.expected['build._id'] = exists;
             ctx.expected['build.started'] = exists;
             ctx.expected['build.triggeredBy.github'] = ctx.user.attrs.accounts.github.id;

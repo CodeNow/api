@@ -13,7 +13,7 @@ module.exports = {
   stop: stopDock
 };
 var ctx = {};
-var testDockHost = 'http://localhost:4243';
+var testDockHost = 'http://localhost:4242';
 function startDock (done) {
   var count = createCount(done);
   ctx.mavis = mavisApp.listen(url.parse(process.env.MAVIS_HOST).port);
