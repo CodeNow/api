@@ -96,7 +96,7 @@
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
     "rimraf": "^2.2.8",
-    "sauron": "git+ssh://git@github.com:codenow/sauron#bc98aad053e71b52247ba5d4745111be37ed5b41",
+    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.11",
     "server-destroy": "^1.0.0"
   },
   "engineStrict": true,
