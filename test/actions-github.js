@@ -10,12 +10,11 @@ var expect = Lab.expect;
 var request = require('request');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
-var ContextVersion = require('models/mongo/context-version');
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
-var tailBuildStream = require('./fixtures/tail-build-stream');
+
 var cbCount = require('callback-count');
 
 var nock = require('nock');
@@ -200,272 +199,40 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  describe('push new branch', function () {
-    var ctx = {};
-    describe('disabled by default', function () {
-      it('should return 202 which means processing of new branches is disabled', function (done) {
-        var data = {
-          branch: 'feature-1'
-        };
-        var options = hooks(data).push;
-        require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        require('./fixtures/mocks/docker/container-id-attach')();
-          (options.json.repository.owner.name, options.json.repository.name, options.json.head_commit.id);
-        request.post(options, function (err, res) {
-          if (err) {
-            done(err);
-          }
-          else {
-            expect(res.statusCode).to.equal(202);
-            expect(res.body).to.equal('New branch builds are disabled for now');
-            done();
-          }
-        });
-      });
-    });
-
-    describe('enabled auto builds', function () {
-
-      before(function (done) {
-        process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = 'true';
-        done();
-      });
-
-      beforeEach(function (done) {
-        multi.createInstance(function (err, instance, build, user, modelsArr) {
-          ctx.contextVersion = modelsArr[0];
-          ctx.context = modelsArr[1];
-          ctx.build = build;
-          ctx.user = user;
-          ctx.instance = instance;
-          done(err);
-        });
-      });
-
-      it('should do nothing if there were no context versions found', function (done) {
-        var data = {
-          branch: 'feature-1',
-          repo: 'some-user/some-repo'
-        };
-        var options = hooks(data).push;
-        require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        require('./fixtures/mocks/docker/container-id-attach')();
-        request.post(options, function (err, res) {
-          if (err) { return done(err); }
-          expect(res.statusCode).to.equal(202);
-          expect(res.body).to.equal('No appropriate work to be done; finishing.');
-          done();
-        });
-      });
-
-      it('should create a build for an existing branch if instance is locked', {timeout: 500}, function (done) {
-        ctx.instance.update({locked: true}, function (err) {
-          if (err) { return done(err); }
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'master',
-            repo: acv.repo
-          };
-          var options = hooks(data).push;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
-          request.post(options, function (err, res, cvs) {
-            if (err) { return done(err); }
-            expect(res.statusCode).to.equal(201);
-            expect(cvs).to.be.okay;
-            expect(cvs).to.be.an('array');
-            expect(cvs).to.have.a.lengthOf(1);
-            var cvId = cvs[0];
-            // immediately returned context version with started build
-            ContextVersion.findById(cvId, function (err, contextVersion) {
-              if (err) { return done(err); }
-              expect(contextVersion.build.started).to.exist();
-              expect(contextVersion.build.completed).to.not.exist();
-              expect(contextVersion.build.duration).to.not.exist();
-              expect(contextVersion.build.triggeredBy.github).to.exist();
-              expect(contextVersion.build.triggeredAction.manual).to.equal(false);
-              expect(contextVersion.appCodeVersions[0].lowerRepo).to.equal(options.json.repository.full_name);
-              expect(contextVersion.appCodeVersions[0].commit).to.equal(options.json.head_commit.id);
-              expect(contextVersion.appCodeVersions[0].branch).to.equal(data.branch);
-              expect(contextVersion.build.triggeredAction.appCodeVersion.repo)
-                .to.equal(options.json.repository.full_name);
-              expect(contextVersion.build.triggeredAction.appCodeVersion.commit)
-                .to.equal(options.json.head_commit.id);
-              expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog)
-                .to.have.lengthOf(1);
-              expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog[0].id)
-                .to.equal(options.json.head_commit.id);
-              // wait until cv is build.
-              tailBuildStream(cvId, function (err) {
-                 if (err) { return done(err); }
-                ContextVersion.findById(cvId, function (err, contextVersion) {
-                  if (err) { return done(err); }
-                  expect(contextVersion.build.started).to.exist();
-                  expect(contextVersion.build.completed).to.exist();
-                  expect(contextVersion.build.duration).to.exist();
-                  expect(contextVersion.build.triggeredBy.github).to.exist();
-                  expect(contextVersion.build.triggeredAction.manual).to.equal(false);
-                  expect(contextVersion.appCodeVersions[0].lowerRepo).to.equal(options.json.repository.full_name);
-                  expect(contextVersion.appCodeVersions[0].commit).to.equal(options.json.head_commit.id);
-                  expect(contextVersion.appCodeVersions[0].branch).to.equal(data.branch);
-                  expect(contextVersion.build.triggeredAction.appCodeVersion.repo)
-                    .to.equal(options.json.repository.full_name);
-                  expect(contextVersion.build.triggeredAction.appCodeVersion.commit)
-                    .to.equal(options.json.head_commit.id);
-                  expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog)
-                    .to.have.lengthOf(1);
-                  expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog[0].id)
-                    .to.equal(options.json.head_commit.id);
-                  done();
-                });
-              });
-
-            });
-          });
-        });
-      });
-
-      it('should create a build for push on new branch', {timeout: 3000}, function (done) {
-        var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-        var data = {
-          branch: 'feature-1',
-          repo: acv.repo
-        };
-        var options = hooks(data).push;
-        require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        require('./fixtures/mocks/docker/container-id-attach')();
-        request.post(options, function (err, res, cvs) {
-          if (err) { return done(err); }
-          expect(res.statusCode).to.equal(201);
-          expect(cvs).to.be.okay;
-          expect(cvs).to.be.an('array');
-          expect(cvs).to.have.a.lengthOf(1);
-          var cvId = cvs[0];
-          // immediately returned context version with started build
-          ContextVersion.findById(cvId, function (err, contextVersion) {
-            if (err) { return done(err); }
-            expect(contextVersion.build.started).to.exist();
-            expect(contextVersion.build.completed).to.not.exist();
-            expect(contextVersion.build.duration).to.not.exist();
-            expect(contextVersion.build.triggeredBy.github).to.exist();
-            expect(contextVersion.build.triggeredAction.manual).to.equal(false);
-            expect(contextVersion.appCodeVersions[0].lowerRepo).to.equal(options.json.repository.full_name);
-            expect(contextVersion.appCodeVersions[0].commit).to.equal(options.json.head_commit.id);
-            expect(contextVersion.appCodeVersions[0].branch).to.equal(data.branch);
-            expect(contextVersion.build.triggeredAction.appCodeVersion.repo)
-              .to.equal(options.json.repository.full_name);
-            expect(contextVersion.build.triggeredAction.appCodeVersion.commit)
-              .to.equal(options.json.head_commit.id);
-            expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog)
-              .to.have.lengthOf(1);
-            expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog[0].id)
-              .to.equal(options.json.head_commit.id);
-            // wait until cv is build.
-            tailBuildStream(cvId, function (err) {
-               if (err) { return done(err); }
-              ContextVersion.findById(cvId, function (err, contextVersion) {
-                if (err) { return done(err); }
-                expect(contextVersion.build.started).to.exist();
-                expect(contextVersion.build.completed).to.exist();
-                expect(contextVersion.build.duration).to.exist();
-                expect(contextVersion.build.triggeredBy.github).to.exist();
-                expect(contextVersion.build.triggeredAction.manual).to.equal(false);
-                expect(contextVersion.appCodeVersions[0].lowerRepo).to.equal(options.json.repository.full_name);
-                expect(contextVersion.appCodeVersions[0].commit).to.equal(options.json.head_commit.id);
-                expect(contextVersion.appCodeVersions[0].branch).to.equal(data.branch);
-                expect(contextVersion.build.triggeredAction.appCodeVersion.repo)
-                  .to.equal(options.json.repository.full_name);
-                expect(contextVersion.build.triggeredAction.appCodeVersion.commit)
-                  .to.equal(options.json.head_commit.id);
-                expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog)
-                  .to.have.lengthOf(1);
-                expect(contextVersion.build.triggeredAction.appCodeVersion.commitLog[0].id)
-                  .to.equal(options.json.head_commit.id);
-                done();
-              });
-            });
-
-          });
-        });
-      });
-
-    });
-
-  });
-
 
   describe('push follow branch', function () {
     var ctx = {};
 
-    before(function (done) {
-      process.env.ENABLE_NEW_BRANCH_BUILDS_ON_GIT_PUSH = 'true';
+    beforeEach(function (done) {
       multi.createInstance(function (err, instance, build, user, modelsArr) {
         ctx.contextVersion = modelsArr[0];
         ctx.context = modelsArr[1];
         ctx.build = build;
         ctx.user = user;
         ctx.instance = instance;
-        var settings = {
-          owner: {
-            github: instance.attrs.owner.github
-          },
-          notifications: {
-            slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
-            },
-            hipchat: {
-              authToken: 'some-hipchat-token',
-              roomId: 123123
-            }
-          }
-        };
-        user.createSetting({json: settings}, done);
+        done();
       });
     });
 
-    it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
-      ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
-        if (err) { return done(err); }
-
+    describe('errored cases', function () {
+      it('should set deployment status to error if error happened during instance update', function (done) {
         var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
         var baseDeploymentId = 1234567;
         spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment', function (repo, commit, payload, cb) {
-          baseDeploymentId++;
           cb(null, {id: baseDeploymentId});
         });
-        var count = cbCount(2, function () {
-          var expected = {
-            'contextVersion.build.started': exists,
-            'contextVersion.build.completed': exists,
-            'contextVersion.build.duration': exists,
-            'contextVersion.build.triggeredBy.github': exists,
-            'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
-            'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
-            'contextVersion.appCodeVersions[0].branch': data.branch,
-            'contextVersion.build.triggeredAction.manual': false,
-            'contextVersion.build.triggeredAction.appCodeVersion.repo':
-              options.json.repository.full_name,
-            'contextVersion.build.triggeredAction.appCodeVersion.commit':
-              options.json.head_commit.id,
-            'contextVersion.build.triggeredAction.appCodeVersion.commitLog':
-              function (commitLog) {
-                expect(commitLog).to.be.an('array');
-                expect(commitLog).to.have.lengthOf(1);
-                expect(commitLog[0].id).to.equal(options.json.head_commit.id);
-                return true;
-              }
-          };
-          ctx.instance.fetch(expects.success(200, expected, function (err) {
-            if (err) { return done(err); }
-            ctx.user.newInstance(instance2.shortHash).fetch(expects.success(200, expected, done));
-          }));
+
+        spyOnClassMethod(require('models/apis/runnable'), 'waitForInstanceDeployed', function (instanceShortHash, cb) {
+          cb(new Error('Instance deploy failed'));
         });
-        spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentSucceed', function (repo, deploymentId, targetUrl) {
-          expect(repo).to.exist();
-          expect([1234568, 1234569]).to.contain(deploymentId);
-          expect(targetUrl).to.include('http://runnable.io/');
-          count.next();
-        });
+
+        spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentErrored',
+          function (repo, deploymentId, targetUrl) {
+            expect(deploymentId).to.equal(baseDeploymentId);
+            expect(repo).to.exist();
+            expect(targetUrl).to.include('http://runnable.io/');
+            done();
+          });
 
         var acv = ctx.contextVersion.attrs.appCodeVersions[0];
         var data = {
@@ -480,11 +247,80 @@ describe('Github - /actions/github', function () {
           expect(res.statusCode).to.equal(201);
           expect(instancesIds).to.be.okay;
           expect(instancesIds).to.be.an('array');
-          expect(instancesIds).to.have.a.lengthOf(2);
+          expect(instancesIds).to.have.a.lengthOf(1);
           expect(instancesIds).to.include(ctx.instance.attrs._id);
-          expect(instancesIds).to.include(instance2._id);
         });
       });
+    });
+
+    describe('success cases', function () {
+      it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
+        ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
+          if (err) { return done(err); }
+
+          var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
+          var baseDeploymentId = 1234567;
+          spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment',
+            function (repo, commit, payload, cb) {
+              baseDeploymentId++;
+              cb(null, {id: baseDeploymentId});
+            });
+          var count = cbCount(2, function () {
+            var expected = {
+              'contextVersion.build.started': exists,
+              'contextVersion.build.completed': exists,
+              'contextVersion.build.duration': exists,
+              'contextVersion.build.triggeredBy.github': exists,
+              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
+              'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
+              'contextVersion.appCodeVersions[0].branch': data.branch,
+              'contextVersion.build.triggeredAction.manual': false,
+              'contextVersion.build.triggeredAction.appCodeVersion.repo':
+                options.json.repository.full_name,
+              'contextVersion.build.triggeredAction.appCodeVersion.commit':
+                options.json.head_commit.id,
+              'contextVersion.build.triggeredAction.appCodeVersion.commitLog':
+                function (commitLog) {
+                  expect(commitLog).to.be.an('array');
+                  expect(commitLog).to.have.lengthOf(1);
+                  expect(commitLog[0].id).to.equal(options.json.head_commit.id);
+                  return true;
+                }
+            };
+            ctx.instance.fetch(expects.success(200, expected, function (err) {
+              if (err) { return done(err); }
+              ctx.user.newInstance(instance2.shortHash).fetch(expects.success(200, expected, done));
+            }));
+          });
+          spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentSucceed',
+            function (repo, deploymentId, targetUrl) {
+              expect(repo).to.exist();
+              expect([1234568, 1234569]).to.contain(deploymentId);
+              expect(targetUrl).to.include('http://runnable.io/');
+              count.next();
+            });
+
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var data = {
+            branch: 'master',
+            repo: acv.repo
+          };
+          var options = hooks(data).push;
+          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, instancesIds) {
+            if (err) { return done(err); }
+            expect(res.statusCode).to.equal(201);
+            expect(instancesIds).to.be.okay;
+            expect(instancesIds).to.be.an('array');
+            expect(instancesIds).to.have.a.lengthOf(2);
+            expect(instancesIds).to.include(ctx.instance.attrs._id);
+            expect(instancesIds).to.include(instance2._id);
+          });
+        });
+      });
+
+
     });
 
   });
