@@ -21,7 +21,6 @@ var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
 var tailBuildStream = require('./fixtures/tail-build-stream');
 
-var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
 
 describe('Github - /actions/github', function () {

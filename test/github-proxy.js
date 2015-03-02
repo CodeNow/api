@@ -12,7 +12,6 @@ var Code = require('code');
 var expect = Code.expect;
 
 var api = require('./fixtures/api-control');
-var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var generateKey = require('./fixtures/key-factory');
 var createCount = require('callback-count');
