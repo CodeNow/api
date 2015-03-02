@@ -84,7 +84,7 @@ describe('Instance', function () {
       contextVersion: createNewVersion(opts),
       container: {
         dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
-        dockerHost: opts.dockerHost || 'http://localhost:4243',
+        dockerHost: opts.dockerHost || 'http://localhost:4242',
         inspect: {
           State: {
             'ExitCode': 0,
@@ -170,7 +170,7 @@ describe('Instance', function () {
     it('should update instance.container', function (done) {
       var cvId = savedInstance.contextVersion._id;
       var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
-      var dockerHost = 'http://localhost:4243';
+      var dockerHost = 'http://localhost:4242';
       savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err, newInst) {
         if (err) { return done(err); }
         expect(newInst.container).to.deep.equal({
@@ -183,7 +183,7 @@ describe('Instance', function () {
     it('should conflict if the contextVersion has changed', function (done) {
       var cvId = newObjectId();
       var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
-      var dockerHost = 'http://localhost:4243';
+      var dockerHost = 'http://localhost:4242';
       savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err) {
         expect(err).to.be.ok;
         expect(err.output.statusCode).to.equal(409);
@@ -219,7 +219,7 @@ describe('Instance', function () {
     });
 
     it('should work for real created container', function (done) {
-      var dockerHost = 'http://localhost:4243';
+      var dockerHost = 'http://localhost:4242';
       var docker = new Docker(dockerHost);
       async.waterfall([
         docker.createContainer.bind(docker, {}),
@@ -232,7 +232,7 @@ describe('Instance', function () {
       function modifyContainer (container, cb) {
         var cvId = savedInstance.contextVersion._id;
         var dockerContainer = container.Id;
-        var dockerHost = 'http://localhost:4243';
+        var dockerHost = 'http://localhost:4242';
         savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, cb);
       }
       function startContainer (savedInstance, cb) {
@@ -284,14 +284,14 @@ describe('Instance', function () {
     });
 
     it('should work for real created container', function (done) {
-      var docker = new Docker('http://localhost:4243');
+      var docker = new Docker('http://localhost:4242');
       docker.createContainer({}, function (err, cont) {
         if (err) { return done(err); }
         var container = {
           dockerContainer: cont.id
         };
         var opts = {
-          dockerHost: 'http://localhost:4243',
+          dockerHost: 'http://localhost:4242',
           containerId: cont.id
         };
         var instance = createNewInstance('new-inst', opts);

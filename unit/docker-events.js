@@ -51,7 +51,7 @@ describe('Docker Events', function () {
         expect(err.output.payload.message).to.equal('Invalid data: uuid is missing');
         done();
       };
-      dockerEvents.handleDie({host: 'http://localhost:4243'});
+      dockerEvents.handleDie({host: 'http://localhost:4242'});
     });
 
     it('should fail if event data has no id', function (done) {
@@ -83,7 +83,7 @@ describe('Docker Events', function () {
         uuid: 'some-uuid',
         id: 'some-id',
         time: new Date().getTime(),
-        host: 'http://localhost:4243',
+        host: 'http://localhost:4242',
         from: process.env.IMAGE_BUILDER
       });
       expect(out.skip).to.exist();
@@ -281,7 +281,7 @@ describe('Docker Events', function () {
           uuid: uuid(),
           id: 'some-id',
           time: new Date().getTime(),
-          host: 'http://localhost:4243',
+          host: 'http://localhost:4242',
           from: 'container/name'
         };
         dockerEvents.handleDie(payload);
