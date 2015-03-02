@@ -215,42 +215,45 @@ describe('Github - /actions/github', function () {
     });
 
     describe('errored cases', function () {
-      it('should set deployment status to error if error happened during instance update', function (done) {
-        var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
-        var baseDeploymentId = 1234567;
-        spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment', function (repo, commit, payload, cb) {
-          cb(null, {id: baseDeploymentId});
-        });
+      it('should set deployment status to error if error happened during instance update', {timeout: 6000},
+        function (done) {
+          var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
+          var baseDeploymentId = 1234567;
+          spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment',
+            function (repo, commit, payload, cb) {
+              cb(null, {id: baseDeploymentId});
+            });
 
-        spyOnClassMethod(require('models/apis/runnable'), 'waitForInstanceDeployed', function (instanceShortHash, cb) {
-          cb(new Error('Instance deploy failed'));
-        });
+          spyOnClassMethod(require('models/apis/runnable'), 'waitForInstanceDeployed',
+            function (instanceShortHash, cb) {
+              cb(new Error('Instance deploy failed'));
+            });
 
-        spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentErrored',
-          function (repo, deploymentId, targetUrl) {
-            expect(deploymentId).to.equal(baseDeploymentId);
-            expect(repo).to.exist();
-            expect(targetUrl).to.include('http://runnable.io/');
-            done();
+          spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentErrored',
+            function (repo, deploymentId, targetUrl) {
+              expect(deploymentId).to.equal(baseDeploymentId);
+              expect(repo).to.exist();
+              expect(targetUrl).to.include('http://runnable.io/');
+              done();
+            });
+
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var data = {
+            branch: 'master',
+            repo: acv.repo
+          };
+          var options = hooks(data).push;
+          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, instancesIds) {
+            if (err) { return done(err); }
+            expect(res.statusCode).to.equal(201);
+            expect(instancesIds).to.be.okay;
+            expect(instancesIds).to.be.an('array');
+            expect(instancesIds).to.have.a.lengthOf(1);
+            expect(instancesIds).to.include(ctx.instance.attrs._id);
           });
-
-        var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-        var data = {
-          branch: 'master',
-          repo: acv.repo
-        };
-        var options = hooks(data).push;
-        require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        require('./fixtures/mocks/docker/container-id-attach')();
-        request.post(options, function (err, res, instancesIds) {
-          if (err) { return done(err); }
-          expect(res.statusCode).to.equal(201);
-          expect(instancesIds).to.be.okay;
-          expect(instancesIds).to.be.an('array');
-          expect(instancesIds).to.have.a.lengthOf(1);
-          expect(instancesIds).to.include(ctx.instance.attrs._id);
         });
-      });
     });
 
     describe('success cases', function () {
