@@ -108,6 +108,8 @@ describe('BDD - Instance Dependencies', function () {
           expect(instance.dependencies[apiId]).to.be.okay;
           expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
           expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
+          expect(instance.dependencies[apiId].owner.github).to.equal(ctx.user.attrs.accounts.github.id);
+          expect(instance.dependencies[apiId].createdBy.github).to.equal(ctx.user.attrs.accounts.github.id);
           expect(instance.dependencies[apiId].dependencies).to.equal(undefined);
           done();
         });
