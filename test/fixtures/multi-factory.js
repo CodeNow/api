@@ -9,6 +9,7 @@ var formatArgs = require('format-args');
 var primus = require('./primus');
 var dockerMockEvents = require('./docker-mock-events');
 var createCount = require('callback-count');
+var waitForCv = require('./wait-for-cv');
 
 module.exports = {
 
@@ -297,15 +298,15 @@ module.exports = {
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);
           if (err) { return cb(err); }
-          primus.joinOrgRoom(user.json().accounts.github.id, function() {
-            primus.waitForBuildComplete(function() {
+          primus.joinOrgRoom(ownerId || user.json().accounts.github.id, function() {
+            waitForCv.complete(cv, function() {
               require('./mocks/github/user')(user);
               var count = createCount(2, cb);
               build.contextVersions.models[0].fetch(count.next);
               require('./mocks/github/user')(user);
               build.fetch(count.next);
             });
-            dockerMockEvents.emitBuildComplete(build.contextVersions.models[0]);      
+            dockerMockEvents.emitBuildComplete(cv);      
           });
         });
       });

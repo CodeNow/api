@@ -1,21 +1,27 @@
 'use strict';
 
+var ContextVersion = require('models/mongo/context-version');
 var dockerMock = require('docker-mock');
 
-module.exports.emitBuildComplete = function (cv, failure) {
-  if (!cv.fetch) {
-    throw new Error('cv needs to be a model');
+module.exports.emitBuildComplete = emitBuildComplete;
+
+function emitBuildComplete (cv, failure) {
+  if (cv.toJSON) {
+    cv = cv.toJSON();
   }
-  cv.fetch(function(err, cv) {
-    if (!cv.containerId || !cv.build._id) {
-      throw new Error('cv is missing containerId id or build._id');
-    }
-    require('./mocks/docker/build-logs.js')(failure);
-    dockerMock.events.stream.emit('data',
-      JSON.stringify({
-        status: 'die',
-        from: process.env.DOCKER_IMAGE_BUILDER_NAME,
-        id: cv.containerId
-      }));
-  });
-};
+  var containerId = cv.build.dockerContainer;
+  if (!containerId) {
+    ContextVersion.findById(cv._id, function (err, cv) {
+      if (err) { throw err; }
+      emitBuildComplete(cv, failure);
+    });
+    return;
+  }
+  require('./mocks/docker/build-logs.js')(failure);
+  dockerMock.events.stream.emit('data',
+    JSON.stringify({
+      status: 'die',
+      from: process.env.DOCKER_IMAGE_BUILDER_NAME,
+      id: containerId
+    }));
+}

@@ -10,6 +10,7 @@ var Socket = Primus.createSocket({
   },
   parser: 'JSON'
 });
+var debug = require('debug')('runnable_api:fixtures:primus');
 
 var ctx = {};
 
@@ -25,8 +26,9 @@ module.exports = {
         name: orgId, // org you wish to join
       }
     });
-    ctx.primus.once('data', function(data) {
+    ctx.primus.on('data', function onData (data) {
       if (data.event === 'ROOM_ACTION_COMPLETE') {
+        ctx.primus.removeListener('data', onData);
         cb();
       }
     });
@@ -39,6 +41,20 @@ module.exports = {
     if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
     ctx.primus.once('end', cb);
     ctx.primus.end();
+  },
+  onceRoomMessage: function (event, action, cb) {
+    if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
+    ctx.primus.on('data', function handler (data) {
+      debug(data.event === 'ROOM_MESSAGE',
+        data.data.event, data.data.action,
+        event, action);
+      if (data.event === 'ROOM_MESSAGE' &&
+          data.data.event === event &&
+          data.data.action === action) {
+        ctx.primus.removeListener('data', handler);
+        cb(data);
+      }
+    });
   },
   expectAction: function(action, expected, cb) {
     if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
@@ -55,27 +71,20 @@ module.exports = {
       }
     });
   },
-  waitForBuildComplete: function(cb) {
-    if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
-    ctx.primus.on('data', function check (data) {
-      if (data.event === 'ROOM_MESSAGE' && data.data.action === 'build_complete') {
-        expect(data.type).to.equal('org');
-        expect(data.event).to.equal('ROOM_MESSAGE');
-        expect(data.data.event).to.equal('CONTEXTVERSION_UPDATE');
-        ctx.primus.removeListener('data', check);
-        cb(null, data);
+  onceInstanceUpdate: function (action, instanceId, cb) {
+    if (typeof instanceId === 'function') {
+      cb = instanceId;
+      instanceId = null;
+    }
+    else {
+      instanceId = instanceId.toString();
+    }
+    this.onceRoomMessage('INSTANCE_UPDATE', action, function (data) {
+      if (!instanceId) {
+        cb(data);
       }
-    });
-  },
-   waitForBuildError: function(cb) {
-    if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
-    ctx.primus.on('data', function check (data) {
-      if (data.event === 'ROOM_MESSAGE' && data.data.action === 'build_complete_err') {
-        expect(data.type).to.equal('org');
-        expect(data.event).to.equal('ROOM_MESSAGE');
-        expect(data.data.event).to.equal('CONTEXTVERSION_UPDATE');
-        ctx.primus.removeListener('data', check);
-        cb(null, data);
+      else if (data.data.data._id.toString() === instanceId) {
+        cb(data);
       }
     });
   }
