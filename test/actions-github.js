@@ -8,13 +8,15 @@ var afterEach = Lab.afterEach;
 var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
 var request = require('request');
+var Boom = require('dat-middleware').Boom;
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
-
+var Runnable = require('models/apis/runnable');
+var PullRequest = require('models/apis/pullrequest');
 var cbCount = require('callback-count');
 
 var nock = require('nock');
@@ -140,12 +142,26 @@ describe('Github - /actions/github', function () {
 
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
+      ctx.originaUpdateInstance = Runnable.prototype.updateInstance;
+      ctx.originaCreateBuild = Runnable.prototype.createBuild;
+      ctx.originalWaitForInstanceDeployed = Runnable.prototype.waitForInstanceDeployed;
+      ctx.originalBuildErrored = PullRequest.prototype.buildErrored;
+      ctx.originalDeploymentErrored = PullRequest.prototype.deploymentErrored;
+      ctx.originalDeploymentSucceed = PullRequest.prototype.deploymentSucceed;
+      ctx.originalCreateDeployment = PullRequest.prototype.createDeployment;
       process.env.ENABLE_GITHUB_HOOKS = 'true';
       done();
     });
 
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+      Runnable.prototype.updateInstance = ctx.originaUpdateInstance;
+      Runnable.prototype.createBuild = ctx.originaCreateBuild;
+      Runnable.prototype.waitForInstanceDeployed = ctx.originalWaitForInstanceDeployed;
+      PullRequest.prototype.buildErrored = ctx.originalBuildErrored;
+      PullRequest.prototype.deploymentErrored = ctx.originalDeploymentErrored;
+      PullRequest.prototype.deploymentSucceed = ctx.originalDeploymentSucceed;
+      PullRequest.prototype.createDeployment = ctx.originalCreateDeployment;
       done();
     });
 
@@ -164,26 +180,24 @@ describe('Github - /actions/github', function () {
       });
 
 
+
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
         function (done) {
-          var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
           var baseDeploymentId = 100000;
-          spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment',
-            function (repo, commit, payload, cb) {
-              cb(null, {id: baseDeploymentId});
-            });
+          PullRequest.createDeployment = function (repo, commit, payload, cb) {
+            cb(null, {id: baseDeploymentId});
+          };
 
-          spyOnClassMethod(require('models/apis/runnable'), 'updateInstance',
-            function (instanceShortHash, opts, cb) {
-              cb(new Error('Instance update failed'));
-            });
 
-          spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentErrored',
-            function (repo, deploymentId, targetUrl) {
-              expect(repo).to.exist();
-              expect(targetUrl).to.include('https://runnable.io/');
-              done();
-            });
+          Runnable.prototype.updateInstance = function (id, opts, cb) {
+            cb(Boom.notFound('Instance update failed'));
+          };
+
+          PullRequest.prototype.deploymentErrored = function (repo, deploymentId, targetUrl) {
+            expect(repo).to.exist();
+            expect(targetUrl).to.include('https://runnable.io/');
+            done();
+          };
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
@@ -206,24 +220,21 @@ describe('Github - /actions/github', function () {
 
       it('should set deployment status to error if error happened during instance deployment', {timeout: 6000},
         function (done) {
-          var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
           var baseDeploymentId = 100000;
-          spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment',
-            function (repo, commit, payload, cb) {
-              cb(null, {id: baseDeploymentId});
-            });
+          PullRequest.createDeployment = function (repo, commit, payload, cb) {
+            cb(null, {id: baseDeploymentId});
+          };
 
-          spyOnClassMethod(require('models/apis/runnable'), 'waitForInstanceDeployed',
-            function (instanceShortHash, cb) {
-              cb(new Error('Instance deploy failed'));
-            });
 
-          spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentErrored',
-            function (repo, deploymentId, targetUrl) {
-              expect(repo).to.exist();
-              expect(targetUrl).to.include('https://runnable.io/');
-              done();
-            });
+          Runnable.prototype.waitForInstanceDeployed = function (id, cb) {
+            cb(Boom.notFound('Instance deploy failed'));
+          };
+
+          PullRequest.prototype.deploymentErrored = function (repo, deploymentId, targetUrl) {
+            expect(repo).to.exist();
+            expect(targetUrl).to.include('https://runnable.io/');
+            done();
+          };
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {

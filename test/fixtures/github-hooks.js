@@ -6,6 +6,7 @@ module.exports = function (data) {
   var owner = data.owner || 'podviaznikov';
   var repo = data.name || 'hellonode';
   var branch = data.branch || 'master';
+  var ownerId = data.ownerId || 429706;
   return {
     ping: {
       url: url.format({
@@ -70,7 +71,7 @@ module.exports = function (data) {
             'title': 'Feature 1 - progress',
             'user': {
               'login': owner,
-              'id': 429706,
+              'id': ownerId,
               'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
               'gravatar_id': '',
               'url': 'https://api.github.com/users/' + owner,
@@ -113,7 +114,7 @@ module.exports = function (data) {
             'id': 71727909,
             'user': {
               'login': owner,
-              'id': 429706,
+              'id': ownerId,
               'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
               'gravatar_id': '',
               'url': 'https://api.github.com/users/' + owner,
@@ -707,7 +708,7 @@ module.exports = function (data) {
           'title': 'Feature 2',
           'user': {
             'login': owner,
-            'id': 429706,
+            'id': ownerId,
             'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
             'gravatar_id': '',
             'url': 'https://api.github.com/users/' + owner,
@@ -744,7 +745,7 @@ module.exports = function (data) {
             'sha': '023a0cba6759ed69cbcb91e4a7f61aa3b8ca6fd3',
             'user': {
               'login': owner,
-              'id': 429706,
+              'id': ownerId,
               'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
               'gravatar_id': '',
               'url': 'https://api.github.com/users/' + owner,
@@ -767,7 +768,7 @@ module.exports = function (data) {
               'full_name': fullRepo ,
               'owner': {
                 'login': owner,
-                'id': 429706,
+                'id': ownerId,
                 'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
                 'gravatar_id': '',
                 'url': 'https://api.github.com/users/' + owner,
@@ -856,7 +857,7 @@ module.exports = function (data) {
             'sha': '3c8e16a66aca7a98dd93bde0840f2aa6f0da427b',
             'user': {
               'login': owner,
-              'id': 429706,
+              'id': ownerId,
               'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
               'gravatar_id': '',
               'url': 'https://api.github.com/users/' + owner,
@@ -1005,7 +1006,7 @@ module.exports = function (data) {
           'full_name': fullRepo,
           'owner': {
             'login': owner,
-            'id': 429706,
+            'id': ownerId,
             'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
             'gravatar_id': '',
             'url': 'https://api.github.com/users/' + owner,
@@ -1088,7 +1089,7 @@ module.exports = function (data) {
         },
         'sender': {
           'login': owner,
-          'id': 429706,
+          'id': ownerId,
           'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
           'gravatar_id': '',
           'url': 'https://api.github.com/users/' + owner,
