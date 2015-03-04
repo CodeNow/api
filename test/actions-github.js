@@ -136,6 +136,7 @@ describe('Github - /actions/github', function () {
 
 
   describe('pull_request synchronize', function () {
+    var ctx = {};
 
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
@@ -148,21 +149,62 @@ describe('Github - /actions/github', function () {
       done();
     });
 
-    var ctx = {};
-
-    beforeEach(function (done) {
-      multi.createInstance(function (err, instance, build, user, modelsArr) {
-        ctx.contextVersion = modelsArr[0];
-        ctx.context = modelsArr[1];
-        ctx.build = build;
-        ctx.user = user;
-        ctx.instance = instance;
-        done();
-      });
-    });
 
     describe('errored cases', function () {
+
+      beforeEach(function (done) {
+        multi.createInstance(function (err, instance, build, user, modelsArr) {
+          ctx.contextVersion = modelsArr[0];
+          ctx.context = modelsArr[1];
+          ctx.build = build;
+          ctx.user = user;
+          ctx.instance = instance;
+          done();
+        });
+      });
+
+
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
+        function (done) {
+          var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
+          var baseDeploymentId = 100000;
+          spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment',
+            function (repo, commit, payload, cb) {
+              cb(null, {id: baseDeploymentId});
+            });
+
+          spyOnClassMethod(require('models/apis/runnable'), 'updateInstance',
+            function (instanceShortHash, opts, cb) {
+              cb(new Error('Instance update failed'));
+            });
+
+          spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentErrored',
+            function (repo, deploymentId, targetUrl) {
+              expect(repo).to.exist();
+              expect(targetUrl).to.include('https://runnable.io/');
+              done();
+            });
+
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var data = {
+            branch: 'master',
+            repo: acv.repo
+          };
+          var options = hooks(data).pull_request_sync;
+          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, instancesIds) {
+            if (err) { return done(err); }
+            expect(res.statusCode).to.equal(201);
+            expect(instancesIds).to.be.okay;
+            expect(instancesIds).to.be.an('array');
+            expect(instancesIds).to.have.a.lengthOf(1);
+            expect(instancesIds).to.include(ctx.instance.attrs._id);
+          });
+        });
+
+
+      it('should set deployment status to error if error happened during instance deployment', {timeout: 6000},
         function (done) {
           var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
           var baseDeploymentId = 100000;
@@ -203,6 +245,19 @@ describe('Github - /actions/github', function () {
     });
 
     describe('success cases', function () {
+
+
+      beforeEach(function (done) {
+        multi.createInstance(function (err, instance, build, user, modelsArr) {
+          ctx.contextVersion = modelsArr[0];
+          ctx.context = modelsArr[1];
+          ctx.build = build;
+          ctx.user = user;
+          ctx.instance = instance;
+          done();
+        });
+      });
+
       it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
         ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
           if (err) { return done(err); }
