@@ -147,7 +147,7 @@ describe('Github - /actions/github', function () {
       ctx.originalWaitForInstanceDeployed = Runnable.prototype.waitForInstanceDeployed;
       ctx.originalBuildErrored = PullRequest.prototype.buildErrored;
       ctx.originalDeploymentErrored = PullRequest.prototype.deploymentErrored;
-      ctx.originalDeploymentSucceed = PullRequest.prototype.deploymentSucceed;
+      ctx.originalDeploymentSucceeded = PullRequest.prototype.deploymentSucceeded;
       ctx.originalCreateDeployment = PullRequest.prototype.createDeployment;
       process.env.ENABLE_GITHUB_HOOKS = 'true';
       done();
@@ -160,7 +160,7 @@ describe('Github - /actions/github', function () {
       Runnable.prototype.waitForInstanceDeployed = ctx.originalWaitForInstanceDeployed;
       PullRequest.prototype.buildErrored = ctx.originalBuildErrored;
       PullRequest.prototype.deploymentErrored = ctx.originalDeploymentErrored;
-      PullRequest.prototype.deploymentSucceed = ctx.originalDeploymentSucceed;
+      PullRequest.prototype.deploymentSucceeded = ctx.originalDeploymentSucceeded;
       PullRequest.prototype.createDeployment = ctx.originalCreateDeployment;
       done();
     });
@@ -300,7 +300,7 @@ describe('Github - /actions/github', function () {
               ctx.user.newInstance(instance2.shortHash).fetch(expects.success(200, expected, done));
             }));
           });
-          spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentSucceed',
+          spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentSucceeded',
             function (repo, deploymentId, targetUrl) {
               expect(repo).to.exist();
               expect([1234568, 1234569]).to.contain(deploymentId);
