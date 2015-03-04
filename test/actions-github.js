@@ -179,7 +179,7 @@ describe('Github - /actions/github', function () {
           spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentErrored',
             function (repo, deploymentId, targetUrl) {
               expect(repo).to.exist();
-              expect(targetUrl).to.include('http://runnable.io/');
+              expect(targetUrl).to.include('https://runnable.io/');
               done();
             });
 
@@ -238,7 +238,7 @@ describe('Github - /actions/github', function () {
             function (repo, deploymentId, targetUrl) {
               expect(repo).to.exist();
               expect([1234568, 1234569]).to.contain(deploymentId);
-              expect(targetUrl).to.include('http://runnable.io/');
+              expect(targetUrl).to.include('https://runnable.io/');
               count.next();
             });
 
