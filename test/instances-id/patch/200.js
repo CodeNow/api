@@ -92,11 +92,14 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       _id: exists,
       shortHash: exists,
       'createdBy.github': ctx.user.attrs.accounts.github.id,
+      'createdBy.username': ctx.user.attrs.accounts.github.username,
+      'createdBy.gravatar': ctx.user.attrs.accounts.github.avatar_url,
       name: exists,
       env: [],
       owner: {
         username: ctx.user.json().accounts.github.login,
-        github: ctx.user.json().accounts.github.id
+        github: ctx.user.json().accounts.github.id,
+        gravatar: ctx.user.json().accounts.github.avatar_url
       },
       contextVersions: exists,
       'network.networkIp': exists,

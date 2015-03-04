@@ -56,7 +56,7 @@ describe('Github - /actions/github', function () {
 
 
   describe('disabled hooks', function () {
-    var ctx = {};
+
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
       delete process.env.ENABLE_BUILDS_ON_GIT_PUSH;
@@ -82,6 +82,58 @@ describe('Github - /actions/github', function () {
       });
     });
   });
+
+  describe('not supported event type', function () {
+
+    beforeEach(function (done) {
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
+      done();
+    });
+
+    afterEach(function (done) {
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
+      done();
+    });
+
+    it('should return OKAY', function (done) {
+      var options = hooks().issue_comment;
+      request.post(options, function (err, res, body) {
+        if (err) { return done(err); }
+
+        expect(res.statusCode).to.equal(202);
+        expect(body).to.equal('No action set up for that payload.');
+        done();
+      });
+    });
+  });
+
+  describe('not supported action for pull_request event', function () {
+
+    beforeEach(function (done) {
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_BUILDS_ON_GIT_PUSH;
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = 'true';
+      done();
+    });
+
+    afterEach(function (done) {
+      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
+      done();
+    });
+
+    it('should return OKAY', function (done) {
+      var options = hooks().pull_request;
+      options.action = 'delete';
+      request.post(options, function (err, res, body) {
+        if (err) { return done(err); }
+
+        expect(res.statusCode).to.equal(202);
+        expect(body).to.equal('No appropriate work to be done; finishing.');
+        done();
+      });
+    });
+  });
+
 
   describe('when a branch was deleted', function () {
 

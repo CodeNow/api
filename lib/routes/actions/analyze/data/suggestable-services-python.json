@@ -100,7 +100,6 @@
   "wallaby-plugin-elasticsearch"
  ],
  "hbase": [],
- "nginx": [],
  "memcached": [
   "DistributedLock",
   "Flask-Pymemcache",
@@ -543,10 +542,12 @@
   "versioning",
   "zest.recipe.mysql"
  ],
+ "nginx": [],
  "postgresql": [
   "Elephantoplasty",
   "PgStructure",
   "PyGreSQL",
+  "SQLAlchemy",
   "anybox.pg.odoo",
   "coinbridge",
   "createdb",
