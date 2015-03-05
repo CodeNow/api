@@ -144,6 +144,7 @@ describe('Github - /actions/github', function () {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
       ctx.originaUpdateInstance = Runnable.prototype.updateInstance;
       ctx.originaCreateBuild = Runnable.prototype.createBuild;
+      ctx.originaBuildBuild = Runnable.prototype.buildBuild;
       ctx.originalWaitForInstanceDeployed = Runnable.prototype.waitForInstanceDeployed;
       ctx.originalBuildErrored = PullRequest.prototype.buildErrored;
       ctx.originalDeploymentErrored = PullRequest.prototype.deploymentErrored;
@@ -157,6 +158,7 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       Runnable.prototype.updateInstance = ctx.originaUpdateInstance;
       Runnable.prototype.createBuild = ctx.originaCreateBuild;
+      Runnable.prototype.buildBuild = ctx.originaBuildBuild;
       Runnable.prototype.waitForInstanceDeployed = ctx.originalWaitForInstanceDeployed;
       PullRequest.prototype.buildErrored = ctx.originalBuildErrored;
       PullRequest.prototype.deploymentErrored = ctx.originalDeploymentErrored;
@@ -179,6 +181,36 @@ describe('Github - /actions/github', function () {
         });
       });
 
+
+      it('should set build status to error if error happened build create', {timeout: 6000},
+        function (done) {
+
+
+          Runnable.prototype.createBuild = function (opts, cb) {
+            cb(Boom.notFound('Build create failed'));
+          };
+
+          PullRequest.prototype.buildErrored = function (pullRequest, targetUrl, cb) {
+            expect(pullRequest).to.exist();
+            expect(targetUrl).to.include('https://runnable.io/');
+            cb();
+            done();
+          };
+
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var data = {
+            branch: 'master',
+            repo: acv.repo,
+            ownerId: 2
+          };
+          var options = hooks(data).pull_request_sync;
+          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, instancesIds) {
+            if (err) { return done(err); }
+            expect(instancesIds.length).to.equal(0);
+          });
+        });
 
 
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
