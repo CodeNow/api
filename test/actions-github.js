@@ -125,13 +125,12 @@ describe('Github - /actions/github', function () {
     });
 
     it('should return OKAY', function (done) {
-      var options = hooks().pull_request;
-      options.action = 'delete';
+      var options = hooks().pull_request_closed;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
 
         expect(res.statusCode).to.equal(202);
-        expect(body).to.equal('Do not handle pull request with actions not equal synchronize.');
+        expect(body).to.equal('Do not handle pull request with actions not equal synchronize or opened.');
         done();
       });
     });
@@ -312,40 +311,77 @@ describe('Github - /actions/github', function () {
         done();
       });
 
-      it('should set server selection status for the branch without instance', {timeout: 6000}, function (done) {
+      it('should set server selection status for the branch without instance - pull_request:synchronize',
+        {timeout: 6000}, function (done) {
 
-        Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
-          cb(null, {commit: {
-            message: 'hello'
-          }});
-        };
+          Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
+            cb(null, {commit: {
+              message: 'hello'
+            }});
+          };
 
-        PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
-          expect(pullRequest.number).to.equal(2);
-          expect(pullRequest.headCommit.message).to.equal('hello');
-          expect(pullRequest).to.exist();
-          expect(targetUrl).to.include('https://runnable.io/');
-          expect(targetUrl).to.include('/serverSelection/');
-          cb();
-          done();
-        };
+          PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
+            expect(pullRequest.number).to.equal(2);
+            expect(pullRequest.headCommit.message).to.equal('hello');
+            expect(pullRequest).to.exist();
+            expect(targetUrl).to.include('https://runnable.io/');
+            expect(targetUrl).to.include('/serverSelection/');
+            cb();
+            done();
+          };
 
-        var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-        var data = {
-          branch: 'feature-1',
-          repo: acv.repo
-        };
-        var options = hooks(data).pull_request_sync;
-        require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        require('./fixtures/mocks/docker/container-id-attach')();
-        request.post(options, function (err, res, contextVersionIds) {
-          if (err) { return done(err); }
-          expect(res.statusCode).to.equal(201);
-          expect(contextVersionIds).to.be.okay;
-          expect(contextVersionIds).to.be.an('array');
-          expect(contextVersionIds).to.have.a.lengthOf(1);
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var data = {
+            branch: 'feature-1',
+            repo: acv.repo
+          };
+          var options = hooks(data).pull_request_sync;
+          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, contextVersionIds) {
+            if (err) { return done(err); }
+            expect(res.statusCode).to.equal(201);
+            expect(contextVersionIds).to.be.okay;
+            expect(contextVersionIds).to.be.an('array');
+            expect(contextVersionIds).to.have.a.lengthOf(1);
+          });
         });
-      });
+
+      it('should set server selection status for the branch without instance - pull_request:opened',
+        {timeout: 6000}, function (done) {
+
+          Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
+            cb(null, {commit: {
+              message: 'hello'
+            }});
+          };
+
+          PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
+            expect(pullRequest.number).to.equal(2);
+            expect(pullRequest.headCommit.message).to.equal('hello');
+            expect(pullRequest).to.exist();
+            expect(targetUrl).to.include('https://runnable.io/');
+            expect(targetUrl).to.include('/serverSelection/');
+            cb();
+            done();
+          };
+
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var data = {
+            branch: 'feature-1',
+            repo: acv.repo
+          };
+          var options = hooks(data).pull_request_opened;
+          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, contextVersionIds) {
+            if (err) { return done(err); }
+            expect(res.statusCode).to.equal(201);
+            expect(contextVersionIds).to.be.okay;
+            expect(contextVersionIds).to.be.an('array');
+            expect(contextVersionIds).to.have.a.lengthOf(1);
+          });
+        });
 
       it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
         ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
