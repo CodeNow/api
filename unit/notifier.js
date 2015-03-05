@@ -6,7 +6,6 @@ var expect = Lab.expect;
 var Notifier = require('models/notifications/notifier');
 var Slack = require('models/notifications/slack');
 var HipChat = require('models/notifications/hipchat');
-var HipChatClient = require('hipchat-client');
 var uuid = require('uuid');
 
 describe('Notifier',  function () {
@@ -14,7 +13,7 @@ describe('Notifier',  function () {
   it('should throw an error name was not provided', function (done) {
     try {
       var slack = new Notifier();
-      slack.notifyOnBuild();
+      slack.notifyOnNewBranch();
       done(new Error('should throw an error'));
     } catch (e) {
       expect(e.message).to.equal('Please provide name for the notifier');
@@ -32,7 +31,7 @@ describe('Notifier',  function () {
   it('should throw an error if tpls were not found', function (done) {
     try {
       var facebook = new Notifier('facebook', {});
-      facebook.notifyOnBuild([]);
+      facebook.notifyOnBranch([]);
       done(new Error('should throw an error'));
     } catch (e) {
       expect(e.message).to.contain(['ENOENT, no such file or directory']);
@@ -40,91 +39,17 @@ describe('Notifier',  function () {
     }
   });
 
-  it('should render proper text on slack.notifyOnBuild call', function (done) {
-    var slack = new Slack({});
-    slack.send = function (text, cb) {
-      var message = 'podviaznikov\'s ';
-      message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
-      message += ' (init &amp; commit &amp; push long test   next line   3d...) to CodeNow/api (develop) are ready.\n';
-      message += '<http://runnable3.net/';
-      message += 'podviaznikov/serverSelection/api?branch=develop&message=init%2520%2526%2520commit%2520%2526%2520';
-      message += 'push%2520long%2520test%2520%250A%2520next%2520line%2520%250A%25203d%2520line';
-      message += '&commit=a240edf982d467201845b3bf10ccbe16f6049ea9';
-      message += '|Choose a server to run develop>.';
-      expect(text).to.equal(message);
-      cb();
-    };
-
-    var headCommit = {
-      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      message: 'init & commit & push long test \n next line \n 3d line',
-      url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
-    };
-    var githubPushInfo = {
-      commitLog: [headCommit],
-      repo: 'CodeNow/api',
-      repoName: 'api',
-      branch: 'develop',
-      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      headCommit: headCommit,
-      user: {
-        login: 'podviaznikov'
-      },
-      owner: {
-        login: 'podviaznikov'
-      }
-    };
-
-    slack.notifyOnBuild(githubPushInfo, done);
-  });
-
-  it('should render proper escaped branch name and commit message on slack.notifyOnBuild call', function (done) {
-    var slack = new Slack({});
-    slack.send = function (text, cb) {
-      var message = 'podviaznikov\'s ';
-      message += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
-      message += ' (init &amp; commit &amp; push) to CodeNow/api (feature-1/fix) are ready.\n';
-      message += '<http://runnable3.net/';
-      message += 'podviaznikov/serverSelection/api?';
-      message += 'branch=feature-1%252Ffix&message=init%2520%2526%2520commit%2520%2526%2520push';
-      message += '&commit=a240edf982d467201845b3bf10ccbe16f6049ea9';
-      message += '|Choose a server to run feature-1/fix>.';
-      expect(text).to.equal(message);
-      cb();
-    };
-
-    var headCommit = {
-      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      message: 'init & commit & push',
-      url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
-    };
-    var githubPushInfo = {
-      commitLog: [headCommit],
-      repo: 'CodeNow/api',
-      repoName: 'api',
-      branch: 'feature-1/fix',
-      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      headCommit: headCommit,
-      user: {
-        login: 'podviaznikov'
-      },
-      owner: {
-        login: 'podviaznikov'
-      }
-    };
-
-    slack.notifyOnBuild(githubPushInfo, done);
-  });
 
   it('should render proper text on slack.notifyOnInstances call', function (done) {
     var slack = new Slack({});
     var changesUrl = 'https://github.com/CodeNow/api/compare/b240edf982d4...a240edf982d4';
-    slack.send = function (message, cb) {
+    slack.sendDirectMessage = function (gitUser, message, cb) {
       var text = 'tjmehta\'s ';
       text += '<' + wrapGitHubLink(headCommit.url) + '|changes>';
       text += ' (init &amp; commit &lt;p&gt;Hello&lt;/p&gt; and  ';
       text += '<' + wrapGitHubLink(changesUrl) +'|1 more>)';
-      text += ' to CodeNow/api (feature-1/fix) are deployed on servers:';
+      text += ' to CodeNow/api (master) are deployed on servers: ';
+      text += '<http://runnable3.net/podviaznikov/instance1|instance1>';
       expect(text).to.equal(message.text);
       expect(message.attachments.length).to.equal(1);
       var attachment = message.attachments[0];
@@ -144,7 +69,17 @@ describe('Notifier',  function () {
     var headCommit = {
       id: 'b240edf982d467201845b3bf10bbbe16f6049eb1',
       message: 'init & commit <p>Hello</p>',
-      url: 'https://github.com/CodeNow/api/commit/b240edf982d467201845b3bf10bbbe16f6049eb1'
+      url: 'https://github.com/CodeNow/api/commit/b240edf982d467201845b3bf10bbbe16f6049eb1',
+      author: {
+        name: "Anton Podviaznikov",
+        email: "podviaznikov@gmail.com",
+        username: "podviaznikov"
+      },
+      committer: {
+        name: "Anton Podviaznikov",
+        email: "podviaznikov@gmail.com",
+        username: "podviaznikov"
+      }
     };
     var githubPushInfo = {
       commitLog: [headCommit,
@@ -156,7 +91,7 @@ describe('Notifier',  function () {
         }],
       repo: 'CodeNow/api',
       repoName: 'api',
-      branch: 'feature-1/fix',
+      branch: 'master',
       commit: 'a240edf982d46720,1845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
       user: {
@@ -166,47 +101,12 @@ describe('Notifier',  function () {
     slack.notifyOnInstances(githubPushInfo, instances, done);
   });
 
-  it('should render proper text on hipchat.notifyOnBuild call', function (done) {
-    var hipchat = new HipChat({});
-    hipchat.send = function (text, cb) {
-      var message = 'podviaznikov\'s ';
-      message += '<a href="' + wrapGitHubLink(headCommit.url) + '">changes</a>';
-      message += ' (hey there second line third line some random...) to Runnable/api (feature-1/fix) are ready.\n';
-      message += '<a href=\"http://runnable3.net/podviaznikov/serverSelection/api';
-      message += '?branch=feature-1%252Ffix&message=%2520hey%2520there';
-      message += '%250Asecond%2520line%250Athird%2520line%250Asome%2520random%2520mesage&commit=';
-      message += 'a240edf982d467201845b3bf10ccbe16f6049ea9\">Choose a server to run feature-1/fix</a>.';
-      expect(text).to.equal(message);
-      cb();
-    };
-    var headCommit = {
-      id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      message: ' hey there\nsecond line\nthird line\nsome random mesage',
-      url: 'https://github.com/Runnable/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
-    };
-    var githubPushInfo = {
-      commitLog: [headCommit],
-      repo: 'Runnable/api',
-      repoName: 'api',
-      branch: 'feature-1/fix',
-      commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-      headCommit: headCommit,
-      user: {
-        login: 'podviaznikov'
-      },
-      owner: {
-        login: 'podviaznikov'
-      }
-    };
-    hipchat.notifyOnBuild(githubPushInfo, done);
-  });
-
   it('should render proper text on hipchat.notifyOnInstances call', function (done) {
     var hipchat = new HipChat({});
     hipchat.send = function (text, cb) {
       var message = 'podviaznikov\'s ';
       message += '<a href="' + wrapGitHubLink(headCommit.url) + '">changes</a>';
-      message += ' (init) to CodeNow/api (feature-1/fix) are deployed on servers:<br/>\n ';
+      message += ' (init) to CodeNow/api (master) are deployed on servers:<br/>\n ';
       message += '<a href="http://runnable3.net/podviaznikov/instance1">instance1</a><br/>\n ';
       message += '<a href="http://runnable3.net/podviaznikov/instance2">instance2</a><br/>\n';
 
@@ -222,7 +122,7 @@ describe('Notifier',  function () {
       commitLog: [headCommit],
       repo: 'CodeNow/api',
       repoName: 'api',
-      branch: 'feature-1/fix',
+      branch: 'master',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
       user: {
@@ -267,35 +167,14 @@ describe('Notifier',  function () {
       commitLog: [headCommit],
       repo: 'CodeNow/api',
       repoName: 'api',
-      branch: 'develop',
+      branch: 'master',
       commit: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
       headCommit: headCommit,
       user: {
         login: randomUsername
       }
     };
-    hipchat.notifyOnInstances(githubPushInfo, instances, function (err) {
-      if (err) { return done(err); }
-      var hc = new HipChatClient('388add7b19c83cc9f970d6b97a5642');
-      setTimeout(function () {
-        hc.api.rooms.history({
-          room_id: '1076330',
-          date: 'recent'
-        }, function (err, resp) {
-          if (err) { return done(err); }
-          var messages = resp.messages;
-          expect(messages.length).to.be.above(1);
-          var properMessages = messages.filter(function (message) {
-            return message.message.indexOf(randomUsername) > -1;
-          });
-          expect(properMessages.length).to.be.equal(1);
-          properMessages.forEach(function (message) {
-            expect(message.from.name).to.equal(process.env.HIPCHAT_BOT_USERNAME);
-          });
-          done();
-        });
-      }, 2500);
-    });
+    hipchat.notifyOnInstances(githubPushInfo, instances, done);
   });
 });
 

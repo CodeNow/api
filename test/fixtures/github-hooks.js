@@ -792,6 +792,157 @@ module.exports = function (data) {
         }
       }
     },
+    push_create : {
+      url: url.format({
+        protocol: 'http:',
+        slashes: true,
+        host: process.env.ROOT_DOMAIN,
+        pathname: 'actions/github'
+      }),
+      headers: {
+        host: process.env.ROOT_DOMAIN,
+        accept: '*/*',
+        'user-agent': 'GitHub Hookshot 2636b5a',
+        'x-github-event': 'push',
+        'x-github-delivery': '763c374e-fbc8-11e3-9918-1e687924f7ff',
+        'content-type': 'application/json'
+      },
+      json: {
+        "ref": "refs/heads/new-b",
+        "before": "0000000000000000000000000000000000000000",
+        "after": "edcbc4ef95925701a717ef8e54ce70e94ddad6ab",
+        "created": true,
+        "deleted": false,
+        "forced": true,
+        "base_ref": "refs/heads/master",
+        "compare": "https://github.com/" + fullRepo + "/compare/new-b",
+        "commits": [
+        ],
+        "head_commit": {
+          "id": "edcbc4ef95925701a717ef8e54ce70e94ddad6ab",
+          "distinct": true,
+          "message": "Update server.js",
+          "timestamp": "2015-02-05T13:01:02-08:00",
+          "url": "https://github.com/" + fullRepo + "/commit/edcbc4ef95925701a717ef8e54ce70e94ddad6ab",
+          "author": {
+            "name": "Anton Podviaznikov",
+            "email": "podviaznikov@gmail.com",
+            "username": owner
+          },
+          "committer": {
+            "name": "Anton Podviaznikov",
+            "email": "podviaznikov@gmail.com",
+            "username": owner
+          },
+          "added": [
+
+          ],
+          "removed": [
+
+          ],
+          "modified": [
+            "server.js"
+          ]
+        },
+        "repository": {
+          "id": 28254077,
+          "name": repo,
+          "full_name": fullRepo,
+          "owner": {
+            "name": "podviaznikov",
+            "email": "podviaznikov@gmail.com"
+          },
+          "private": false,
+          "html_url": "https://github.com/" + fullRepo,
+          "description": "",
+          "fork": false,
+          "url": "https://github.com/" + fullRepo,
+          "forks_url": "https://api.github.com/repos/" + fullRepo + "/forks",
+          "keys_url": "https://api.github.com/repos/" + fullRepo + "/keys{/key_id}",
+          "collaborators_url": "https://api.github.com/repos/" + fullRepo + "/collaborators{/collaborator}",
+          "teams_url": "https://api.github.com/repos/" + fullRepo + "/teams",
+          "hooks_url": "https://api.github.com/repos/" + fullRepo + "/hooks",
+          "issue_events_url": "https://api.github.com/repos/" + fullRepo + "/issues/events{/number}",
+          "events_url": "https://api.github.com/repos/" + fullRepo + "/events",
+          "assignees_url": "https://api.github.com/repos/" + fullRepo + "/assignees{/user}",
+          "branches_url": "https://api.github.com/repos/" + fullRepo + "/branches{/branch}",
+          "tags_url": "https://api.github.com/repos/" + fullRepo + "/tags",
+          "blobs_url": "https://api.github.com/repos/" + fullRepo + "/git/blobs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/" + fullRepo + "/git/tags{/sha}",
+          "git_refs_url": "https://api.github.com/repos/" + fullRepo + "/git/refs{/sha}",
+          "trees_url": "https://api.github.com/repos/" + fullRepo + "/git/trees{/sha}",
+          "statuses_url": "https://api.github.com/repos/" + fullRepo + "/statuses/{sha}",
+          "languages_url": "https://api.github.com/repos/" + fullRepo + "/languages",
+          "stargazers_url": "https://api.github.com/repos/" + fullRepo + "/stargazers",
+          "contributors_url": "https://api.github.com/repos/" + fullRepo + "/contributors",
+          "subscribers_url": "https://api.github.com/repos/" + fullRepo + "/subscribers",
+          "subscription_url": "https://api.github.com/repos/" + fullRepo + "/subscription",
+          "commits_url": "https://api.github.com/repos/" + fullRepo + "/commits{/sha}",
+          "git_commits_url": "https://api.github.com/repos/" + fullRepo + "/git/commits{/sha}",
+          "comments_url": "https://api.github.com/repos/" + fullRepo + "/comments{/number}",
+          "issue_comment_url": "https://api.github.com/repos/" + fullRepo + "/issues/comments/{number}",
+          "contents_url": "https://api.github.com/repos/" + fullRepo + "/contents/{+path}",
+          "compare_url": "https://api.github.com/repos/" + fullRepo + "/compare/{base}...{head}",
+          "merges_url": "https://api.github.com/repos/" + fullRepo + "/merges",
+          "archive_url": "https://api.github.com/repos/" + fullRepo + "/{archive_format}{/ref}",
+          "downloads_url": "https://api.github.com/repos/" + fullRepo + "/downloads",
+          "issues_url": "https://api.github.com/repos/" + fullRepo + "/issues{/number}",
+          "pulls_url": "https://api.github.com/repos/" + fullRepo + "/pulls{/number}",
+          "milestones_url": "https://api.github.com/repos/" + fullRepo + "/milestones{/number}",
+          "notifications_url": "https://api.github.com/repos/" + fullRepo + "/notifications{?since,all,participating}",
+          "labels_url": "https://api.github.com/repos/" + fullRepo + "/labels{/name}",
+          "releases_url": "https://api.github.com/repos/" + fullRepo + "/releases{/id}",
+          "created_at": 1419042149,
+          "updated_at": "2015-02-05T21:01:03Z",
+          "pushed_at": 1423172438,
+          "git_url": "git://github.com/" + fullRepo + ".git",
+          "ssh_url": "git@github.com:" + fullRepo + ".git",
+          "clone_url": "https://github.com/" + fullRepo + ".git",
+          "svn_url": "https://github.com/" + fullRepo,
+          "homepage": null,
+          "size": 1959,
+          "stargazers_count": 0,
+          "watchers_count": 0,
+          "language": "JavaScript",
+          "has_issues": true,
+          "has_downloads": true,
+          "has_wiki": true,
+          "has_pages": false,
+          "forks_count": 1,
+          "mirror_url": null,
+          "open_issues_count": 3,
+          "forks": 1,
+          "open_issues": 3,
+          "watchers": 0,
+          "default_branch": "master",
+          "stargazers": 0,
+          "master_branch": "master"
+        },
+        "pusher": {
+          "name": owner,
+          "email": "podviaznikov@gmail.com"
+        },
+        "sender": {
+          "login": owner,
+          "id": 429706,
+          "avatar_url": "https://avatars.githubusercontent.com/u/429706?v=3",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/" + owner,
+          "html_url": "https://github.com/" + owner,
+          "followers_url": "https://api.github.com/users/" + owner + "/followers",
+          "following_url": "https://api.github.com/users/" + owner + "/following{/other_user}",
+          "gists_url": "https://api.github.com/users/" + owner + "/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/" + owner + "/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/" + owner + "/subscriptions",
+          "organizations_url": "https://api.github.com/users/" + owner + "/orgs",
+          "repos_url": "https://api.github.com/users/" + owner + "/repos",
+          "events_url": "https://api.github.com/users/" + owner + "/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/" + owner + "/received_events",
+          "type": "User",
+          "site_admin": false
+        }
+      }
+    },
     push_delete: {
       url: url.format({
         protocol: 'http:',

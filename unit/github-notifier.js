@@ -42,10 +42,16 @@ describe('GitHub Notifier',  function () {
       };
 
       var message = github._renderMessage(githubPushInfo, []);
+      var msg = '<a href=\"';
+      msg += 'http://runnable3.net/podviaznikov/boxSelection/';
+      msg += 'api/fix%252F1/hey%2520there/a240edf982d467201845b3bf10ccbe16f6049ea9';
+      msg += '\" target=\"_blank\">';
+      msg += 'Choose a server</a> to run PR-2.';
       var msg = '[Choose a server]';
       msg += '(http://runnable3.net/podviaznikov/serverSelection/api?branch=';
       msg += 'fix%252F1&message=hey%2520there&commit=a240edf982d467201845b3bf10ccbe16f6049ea9&source=pr)';
       msg += ' to run PR-2.';
+
       expect(message).to.equal(msg);
       done();
     });

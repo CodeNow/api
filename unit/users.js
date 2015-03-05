@@ -47,12 +47,87 @@ describe('User', function () {
 
   it('should be able to save a user!', function (done) {
     var user = createNewUser();
-    user.save(function (err, instance) {
+    user.save(function (err, usr) {
       if (err) { done(err); }
       else {
-        expect(instance).to.be.okay;
+        expect(usr).to.be.okay;
         done();
       }
+    });
+  });
+
+  describe('account.slack', function () {
+
+    it('should be able to save a user with slack data accounts', function (done) {
+      var user = createNewUser();
+      user.save(function (err, usr) {
+        if (err) { done(err); }
+        else {
+          expect(usr).to.be.okay;
+          var account = {
+            githubId: 123123,
+            slackId: 123,
+            name: 'anton',
+            displayName: 'Anton Podviaznikov',
+            email: 'anton@runnable.com'
+          };
+          User.addOrUpdateSlackAccount(usr._id, account, function (err, rows) {
+            if (err) { return done(err); }
+            expect(rows).to.equal(1);
+            User.findById(usr._id, function (err, model) {
+              if (err) { return done(err); }
+              expect(model.accounts.slack.orgs.length).to.equal(1);
+              expect(model.accounts.slack.orgs[0].githubId).to.equal(123123);
+              expect(model.accounts.slack.orgs[0].slackId).to.equal(123);
+              expect(model.accounts.slack.orgs[0].name).to.equal('anton');
+              expect(model.accounts.slack.orgs[0].displayName).to.equal('Anton Podviaznikov');
+              expect(model.accounts.slack.orgs[0].email).to.equal('anton@runnable.com');
+              done();
+            });
+          });
+        }
+      });
+    });
+    it('should fail to save 2 slack accounts with same githubId', function (done) {
+      var user = createNewUser();
+      user.save(function (err, usr) {
+        if (err) { done(err); }
+        else {
+          expect(usr).to.be.okay;
+          var account = {
+            githubId: 123123,
+            slackId: 123,
+            name: 'anton',
+            displayName: 'Anton Podviaznikov',
+            email: 'anton@runnable.com'
+          };
+          User.addOrUpdateSlackAccount(usr._id, account, function (err, rows) {
+            if (err) { return done(err); }
+            expect(rows).to.equal(1);
+            User.findById(usr._id, function (err, model) {
+              if (err) { return done(err); }
+              expect(model.accounts.slack.orgs.length).to.equal(1);
+              expect(model.accounts.slack.orgs[0].githubId).to.equal(123123);
+              expect(model.accounts.slack.orgs[0].slackId).to.equal(123);
+              var account2 = {
+                githubId: 123123,
+                slackId: 124
+              };
+              User.addOrUpdateSlackAccount(usr._id, account2, function (err, rows) {
+                if (err) { return done(err); }
+                expect(rows).to.equal(1);
+                User.findById(usr._id, function (err, model) {
+                  if (err) { return done(err); }
+                  expect(model.accounts.slack.orgs.length).to.equal(1);
+                  expect(model.accounts.slack.orgs[0].githubId).to.equal(123123);
+                  expect(model.accounts.slack.orgs[0].slackId).to.equal(124);
+                  done();
+                });
+              });
+            });
+          });
+        }
+      });
     });
   });
 
