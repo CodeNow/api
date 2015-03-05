@@ -9,7 +9,7 @@ function emitBuildComplete (cv, failure) {
   if (cv.toJSON) {
     cv = cv.toJSON();
   }
-  var containerId = cv.build.dockerContainer;
+  var containerId = cv.build && cv.build.dockerContainer;
   if (!containerId) {
     ContextVersion.findById(cv._id, function (err, cv) {
       if (err) { throw err; }

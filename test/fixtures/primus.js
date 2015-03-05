@@ -45,7 +45,7 @@ module.exports = {
   onceRoomMessage: function (event, action, cb) {
     if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
     ctx.primus.on('data', function handler (data) {
-      console.log(data.event === 'ROOM_MESSAGE',
+      debug(data.event === 'ROOM_MESSAGE',
         data.data.event, data.data.action,
         event, action);
       if (data.event === 'ROOM_MESSAGE' &&

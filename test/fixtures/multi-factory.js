@@ -297,15 +297,21 @@ module.exports = {
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);
           if (err) { return cb(err); }
-          primus.joinOrgRoom(ownerId || user.json().accounts.github.id, function() {
-            primus.onceVersionComplete(cv._id, function() {
-              require('./mocks/github/user')(user);
-              var count = createCount(2, cb);
-              build.contextVersions.models[0].fetch(count.next);
-              require('./mocks/github/user')(user);
-              build.fetch(count.next);
+          cv = build.contextVersions.models[0]; // cv may have been deduped
+          cv.fetch(function (err) {
+            if (err) { return cb(err); }
+            cv = cv.toJSON();
+            if (cv.build.completed) { return cb(); }
+            primus.joinOrgRoom(ownerId || user.json().accounts.github.id, function() {
+              primus.onceVersionComplete(cv._id, function() {
+                require('./mocks/github/user')(user);
+                var count = createCount(2, cb);
+                build.contextVersions.models[0].fetch(count.next);
+                require('./mocks/github/user')(user);
+                build.fetch(count.next);
+              });
+              dockerMockEvents.emitBuildComplete(cv);      
             });
-            dockerMockEvents.emitBuildComplete(cv);      
           });
         });
       });
