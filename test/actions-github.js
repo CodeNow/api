@@ -184,7 +184,7 @@ describe('Github - /actions/github', function () {
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
         function (done) {
           var baseDeploymentId = 100000;
-          PullRequest.createDeployment = function (repo, commit, payload, cb) {
+          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
             cb(null, {id: baseDeploymentId});
           };
 
@@ -193,8 +193,9 @@ describe('Github - /actions/github', function () {
             cb(Boom.notFound('Instance update failed'));
           };
 
-          PullRequest.prototype.deploymentErrored = function (repo, deploymentId, targetUrl) {
-            expect(repo).to.exist();
+          PullRequest.prototype.deploymentErrored = function (pullRequest, deploymentId, serverName, targetUrl) {
+            expect(pullRequest).to.exist();
+            expect(serverName).to.exist();
             expect(targetUrl).to.include('https://runnable.io/');
             done();
           };
@@ -221,7 +222,7 @@ describe('Github - /actions/github', function () {
       it('should set deployment status to error if error happened during instance deployment', {timeout: 6000},
         function (done) {
           var baseDeploymentId = 100000;
-          PullRequest.createDeployment = function (repo, commit, payload, cb) {
+          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
             cb(null, {id: baseDeploymentId});
           };
 
@@ -230,8 +231,9 @@ describe('Github - /actions/github', function () {
             cb(Boom.notFound('Instance deploy failed'));
           };
 
-          PullRequest.prototype.deploymentErrored = function (repo, deploymentId, targetUrl) {
-            expect(repo).to.exist();
+          PullRequest.prototype.deploymentErrored = function (pullRequest, deploymentId, serverName, targetUrl) {
+            expect(pullRequest).to.exist();
+            expect(serverName).to.exist();
             expect(targetUrl).to.include('https://runnable.io/');
             done();
           };
@@ -276,7 +278,7 @@ describe('Github - /actions/github', function () {
           var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
           var baseDeploymentId = 1234567;
           spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment',
-            function (repo, commit, payload, cb) {
+            function (pullRequest, serverName, payload, cb) {
               baseDeploymentId++;
               cb(null, {id: baseDeploymentId});
             });
@@ -301,8 +303,9 @@ describe('Github - /actions/github', function () {
             }));
           });
           spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentSucceeded',
-            function (repo, deploymentId, targetUrl) {
-              expect(repo).to.exist();
+            function (pullRequest, deploymentId, serverName, targetUrl) {
+              expect(pullRequest).to.exist();
+              expect(serverName).to.exist();
               expect([1234568, 1234569]).to.contain(deploymentId);
               expect(targetUrl).to.include('https://runnable.io/');
               count.next();
