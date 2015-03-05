@@ -9,7 +9,6 @@ var formatArgs = require('format-args');
 var primus = require('./primus');
 var dockerMockEvents = require('./docker-mock-events');
 var createCount = require('callback-count');
-var waitForCv = require('./wait-for-cv');
 
 module.exports = {
 
@@ -299,7 +298,7 @@ module.exports = {
           dispatch.emit('started', err);
           if (err) { return cb(err); }
           primus.joinOrgRoom(ownerId || user.json().accounts.github.id, function() {
-            waitForCv.complete(cv, function() {
+            primus.onceVersionComplete(cv._id, function() {
               require('./mocks/github/user')(user);
               var count = createCount(2, cb);
               build.contextVersions.models[0].fetch(count.next);

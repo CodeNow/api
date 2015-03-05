@@ -17,7 +17,6 @@ var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
 var primus = require('./fixtures/primus');
 var dockerMockEvents = require('./fixtures/docker-mock-events');
-var waitForCv = require('./fixtures/wait-for-cv');
 var createCount = require('callback-count');
 // require('console-trace')({always:true, right:true});
 
@@ -247,8 +246,8 @@ describe('Github - /actions/github', function () {
                 .to.equal(options.json.head_commit.id);
               // wait until cv is build.
               dockerMockEvents.emitBuildComplete(contextVersion);
-              waitForCv.complete(contextVersion._id, function (err, contextVersion) {
-                if (err) { return done(err); }
+              primus.onceVersionComplete(contextVersion._id, function (socketData) {
+                var contextVersion = socketData.data.data;
                 expect(contextVersion.build.started).to.exist();
                 expect(contextVersion.build.completed).to.exist();
                 expect(contextVersion.build.duration).to.exist();
@@ -308,8 +307,8 @@ describe('Github - /actions/github', function () {
               .to.equal(options.json.head_commit.id);
             // wait until cv is build.
             dockerMockEvents.emitBuildComplete(contextVersion);
-            waitForCv.complete(contextVersion._id, function (err, contextVersion) {
-              if (err) { return done(err); }
+            primus.onceVersionComplete(contextVersion._id, function (socketData) {
+              var contextVersion = socketData.data.data;
               expect(contextVersion.build.started).to.exist();
               expect(contextVersion.build.completed).to.exist();
               expect(contextVersion.build.duration).to.exist();
@@ -414,8 +413,8 @@ describe('Github - /actions/github', function () {
               dockerMockEvents.emitBuildComplete(version);
             });
           var count = createCount(finalAssertions);
-          primus.onceInstanceUpdate('patch', instanceIds[0], count.inc().next);
-          primus.onceInstanceUpdate('patch', instanceIds[1], count.inc().next);
+          primus.onceInstanceUpdate(instanceIds[0], 'patch', count.inc().next);
+          primus.onceInstanceUpdate(instanceIds[1], 'patch', count.inc().next);
             // dockerMockEvents.emitBuildComplete(contextVersion);
           function finalAssertions () {
             var expected = {
