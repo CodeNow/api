@@ -7,11 +7,14 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 
+var error = require('error');
+var noop = require('101/noop');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var async = require('async');
+var primus = require('./fixtures/primus');
 
 describe('BDD - Instance Dependencies', function () {
   var ctx = {};
@@ -20,6 +23,8 @@ describe('BDD - Instance Dependencies', function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('./fixtures/mocks/api-client').setup);
+  before(primus.connect);
+  after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('./fixtures/mocks/api-client').clean);
@@ -98,6 +103,7 @@ describe('BDD - Instance Dependencies', function () {
       });
     });
     describe('terminating cayley early', function () {
+      var origErrorLog = error.log;
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'API_HOST=' +
@@ -108,9 +114,11 @@ describe('BDD - Instance Dependencies', function () {
         }, done);
       });
       before(function (done) {
+        error.log = noop; // hide errors
         restartCayley.stop(done);
       });
       after(function (done) {
+        error.log = origErrorLog; // restore
         restartCayley.start(done);
       });
       it('should degrade gracefully and still allow us to fetch (printed error expected)', function (done) {
