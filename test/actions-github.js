@@ -17,6 +17,7 @@ var multi = require('./fixtures/multi-factory');
 var dock = require('./fixtures/dock');
 var Runnable = require('models/apis/runnable');
 var PullRequest = require('models/apis/pullrequest');
+var Github = require('models/apis/github');
 var cbCount = require('callback-count');
 
 var nock = require('nock');
@@ -293,6 +294,8 @@ describe('Github - /actions/github', function () {
 
 
       beforeEach(function (done) {
+        ctx.originalServerSelectionStatus = PullRequest.prototype.serverSelectionStatus;
+        ctx.originalGetPullRequestHeadCommit = Github.prototype.getPullRequestHeadCommit;
         multi.createInstance(function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
@@ -300,6 +303,47 @@ describe('Github - /actions/github', function () {
           ctx.user = user;
           ctx.instance = instance;
           done();
+        });
+      });
+
+      afterEach(function (done) {
+        PullRequest.prototype.serverSelectionStatus = ctx.originalServerSelectionStatus;
+        Github.prototype.getPullRequestHeadCommit = ctx.originalGetPullRequestHeadCommit;
+        done();
+      });
+
+      it('should set server selection status for the branch without instance', {timeout: 6000}, function (done) {
+
+        Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
+          cb(null, {commit: {
+            message: 'hello'
+          }});
+        };
+
+        PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
+          expect(pullRequest.number).to.equal(2);
+          expect(pullRequest.headCommit.message).to.equal('hello');
+          expect(pullRequest).to.exist();
+          expect(targetUrl).to.include('https://runnable.io/');
+          expect(targetUrl).to.include('/serverSelection/');
+          cb();
+          done();
+        };
+
+        var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+        var data = {
+          branch: 'feature-1',
+          repo: acv.repo
+        };
+        var options = hooks(data).pull_request_sync;
+        require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+        require('./fixtures/mocks/docker/container-id-attach')();
+        request.post(options, function (err, res, contextVersionIds) {
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(201);
+          expect(contextVersionIds).to.be.okay;
+          expect(contextVersionIds).to.be.an('array');
+          expect(contextVersionIds).to.have.a.lengthOf(1);
         });
       });
 
