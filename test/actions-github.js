@@ -194,7 +194,6 @@ describe('Github - /actions/github', function () {
             expect(pullRequest).to.exist();
             expect(targetUrl).to.include('https://runnable.io/');
             cb();
-            done();
           };
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
@@ -209,6 +208,37 @@ describe('Github - /actions/github', function () {
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
             expect(instancesIds.length).to.equal(0);
+            done();
+          });
+        });
+
+      it('should set build status to error if error happened build build', {timeout: 6000},
+        function (done) {
+
+
+          Runnable.prototype.buildBuild = function (build, opts, cb) {
+            cb(Boom.notFound('Build build failed'));
+          };
+
+          PullRequest.prototype.buildErrored = function (pullRequest, targetUrl, cb) {
+            expect(pullRequest).to.exist();
+            expect(targetUrl).to.include('https://runnable.io/');
+            cb();
+          };
+
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var data = {
+            branch: 'master',
+            repo: acv.repo,
+            ownerId: 2
+          };
+          var options = hooks(data).pull_request_sync;
+          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          require('./fixtures/mocks/docker/container-id-attach')();
+          request.post(options, function (err, res, instancesIds) {
+            if (err) { return done(err); }
+            expect(instancesIds.length).to.equal(0);
+            done();
           });
         });
 
