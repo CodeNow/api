@@ -182,35 +182,35 @@ describe('Github - /actions/github', function () {
       });
 
 
-      it('should set build status to error if error happened build create', {timeout: 6000},
-        function (done) {
+      // it('should set build status to error if error happened build create', {timeout: 6000},
+      //   function (done) {
 
 
-          Runnable.prototype.createBuild = function (opts, cb) {
-            cb(Boom.notFound('Build create failed'));
-          };
+      //     Runnable.prototype.createBuild = function (opts, cb) {
+      //       cb(Boom.notFound('Build create failed'));
+      //     };
 
-          PullRequest.prototype.buildErrored = function (pullRequest, targetUrl, cb) {
-            expect(pullRequest).to.exist();
-            expect(targetUrl).to.include('https://runnable.io/');
-            cb();
-            done();
-          };
+      //     PullRequest.prototype.buildErrored = function (pullRequest, targetUrl, cb) {
+      //       expect(pullRequest).to.exist();
+      //       expect(targetUrl).to.include('https://runnable.io/');
+      //       cb();
+      //       done();
+      //     };
 
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'master',
-            repo: acv.repo,
-            ownerId: 2
-          };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
-          request.post(options, function (err, res, instancesIds) {
-            if (err) { return done(err); }
-            expect(instancesIds.length).to.equal(0);
-          });
-        });
+      //     var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+      //     var data = {
+      //       branch: 'master',
+      //       repo: acv.repo,
+      //       ownerId: 2
+      //     };
+      //     var options = hooks(data).pull_request_sync;
+      //     require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+      //     require('./fixtures/mocks/docker/container-id-attach')();
+      //     request.post(options, function (err, res, instancesIds) {
+      //       if (err) { return done(err); }
+      //       expect(instancesIds.length).to.equal(0);
+      //     });
+      //   });
 
 
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
