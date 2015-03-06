@@ -43,7 +43,7 @@ module.exports = {
     ctx.primus.end();
   },
   onceRoomMessage: function (event, action, cb) {
-    if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
+    if (!ctx.primus) { return cb(new Error('can not primus.onceRoomMessage if not connected')); }
     ctx.primus.on('data', function handler (data) {
       debug(data.event === 'ROOM_MESSAGE',
         data.data.event, data.data.action,
@@ -57,7 +57,7 @@ module.exports = {
     });
   },
   expectAction: function(action, expected, cb) {
-    if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
+    if (!ctx.primus) { return cb(new Error('can not primus.expectAction if not connected')); }
     ctx.primus.on('data', function check (data) {
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
         expect(data.type).to.equal('org');

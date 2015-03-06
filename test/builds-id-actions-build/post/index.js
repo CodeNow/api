@@ -18,7 +18,7 @@ var exists = require('101/exists');
 var equals = require('101/equals');
 var uuid = require('uuid');
 
-describe('Build - /builds/:id/actions/build', function() {
+describe('Build - /builds/:id/actions/build', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -34,7 +34,7 @@ describe('Build - /builds/:id/actions/build', function() {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
 
-  describe('POST', function () {
+  describe('POST', {timeout:500}, function () {
     describe('unbuilt build', function () {
       beforeEach(function (done) {
         multi.createContextVersion(function (err, cv, context, build, user) {
@@ -57,7 +57,7 @@ describe('Build - /builds/:id/actions/build', function() {
           expect(code).to.equal(201);
           expect(body).to.be.ok;
           dockerMockEvents.emitBuildComplete(ctx.cv);
-          primus.waitForBuildComplete(function(err, data) {
+          primus.onceVersionComplete(ctx.cv.id(), function (data) {
             expect(data.data.data.build.log).to.contain('Successfully built');
 
             var count = createCount(2, done);
@@ -103,7 +103,7 @@ describe('Build - /builds/:id/actions/build', function() {
 
               dockerMockEvents.emitBuildComplete(ctx.cv);
 
-              primus.waitForBuildComplete(function(err, data) {
+              primus.onceVersionComplete(ctx.cv.id(), function (data) {
                 if (err) { return done(err); }
                 expect(data.data.data.build.log).to.contain('Successfully built');
                 var buildExpected = {
@@ -157,7 +157,7 @@ describe('Build - /builds/:id/actions/build', function() {
 
               dockerMockEvents.emitBuildComplete(ctx.cv, true);
 
-              primus.waitForBuildError(function() {
+              primus.onceVersionComplete(ctx.cv.id(), function () {
                 var buildExpected = {
                   duration: exists,
                   failed: exists
@@ -188,43 +188,31 @@ describe('Build - /builds/:id/actions/build', function() {
         var username = ctx.user.attrs.accounts.github.login;
         require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
         ctx.appCodeVersion = ctx.cv.addGithubRepo(body, function (err) {
-          if (err) {
-            return done(err);
-          }
+          if (err) { return done(err); }
           // Build the build
           ctx.buildCopy = ctx.build.deepCopy(function (err) {
-            if (err) {
-              return done(err);
-            }
+            if (err) { return done(err); }
             multi.buildTheBuild(ctx.user, ctx.build, function (err) {
-              if (err) {
-                return done(err);
-              }
+              if (err) { return done(err); }
               dockerMockEvents.emitBuildComplete(ctx.cv);
               // Now make a copy
-              function newCv() {
-                return ctx.user.newContext(ctx.context.id())
-                  .newVersion(ctx.buildCopy.attrs.contextVersions[0]);
-              }
-              newCv().fetch(function (err, othercv) {
-                if (err) {
-                  return done(err);
-                }
+              var newCv = ctx.user
+                .newContext(ctx.context.id())
+                .newVersion(ctx.buildCopy.attrs.contextVersions[0]);
+
+              newCv.fetch(function (err, othercv) {
+                if (err) { return done(err); }
                 ctx.otherCv = othercv;
                 // Now remove the repo
-                newCv().destroyAppCodeVersion(ctx.appCodeVersion.id(), function () {
-                  if (err) {
-                    return done(err);
-                  }
+                newCv.destroyAppCodeVersion(ctx.appCodeVersion.id(), function () {
+                  if (err) { return done(err); }
                   // Build the build
                   require('./../../fixtures/mocks/github/user')(ctx.user);
                   ctx.buildCopy.build({message: 'hello!'}, function (err) {
-                    if (err) {
-                      return done(err);
-                    }
-                    dockerMockEvents.emitBuildComplete(newCv());
+                    if (err) { return done(err); }
+                    dockerMockEvents.emitBuildComplete(newCv);
 
-                    primus.waitForBuildComplete(function() {
+                    primus.onceVersionComplete(newCv.id(), function () {
                       // Now refetch the build, and make sure the cv is different from the
                       // original ctx.build it was cloned from
                       ctx.buildCopy.fetch(function (err, build) {
@@ -239,15 +227,15 @@ describe('Build - /builds/:id/actions/build', function() {
           });
         });
       });
-      describe('errors', function() {
+      describe('errors', function () {
         it('should error if the build is already in progress', function (done) {
           require('./../../fixtures/mocks/github/user')(ctx.user);
           ctx.build.build({message:'hello!'}, function (err) {
             if (err) { return done(err); }
-            ctx.build.build({message:'hello!'}, function(err, body, code) {
+            ctx.build.build({message:'hello!'}, function (err, body, code) {
               dockerMockEvents.emitBuildComplete(ctx.cv);
 
-              primus.waitForBuildComplete(function(){
+              primus.onceVersionComplete(ctx.cv.id(), function () {
                 expects.error(409, /Build is already in progress/, done)(err, body, code);
               });
             });
@@ -263,7 +251,7 @@ describe('Build - /builds/:id/actions/build', function() {
           done(err);
         });
       });
-      it('should error if the build is already built', function(done) {
+      it('should error if the build is already built', function (done) {
         ctx.build.build({ message: 'hello!' },
           expects.error(409, /Build is already built/, done));
       });
