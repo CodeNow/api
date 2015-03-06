@@ -38,7 +38,6 @@
     "extend": "^1.3.0",
     "fn-object": "~0.2.2",
     "github": "git://github.com/podviaznikov/node-github#3cc3eaaf0777732060d3125e9b782015df07fafb",
-    "handlebars": "^2.0.0",
     "hashids": "^0.3.3",
     "http-proxy": "^1.5.3",
     "i": "^0.3.2",
