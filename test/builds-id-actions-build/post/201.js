@@ -62,7 +62,8 @@ describe('201 POST /builds/:id/actions/build', {timeout: 500}, function() {
       require('../../fixtures/mocks/github/user-orgs')(ctx.bodyOwner.github, 'Runnable');
       // build build -> cv build
       require('../../fixtures/mocks/github/user-orgs')(ctx.bodyOwner.github, 'Runnable');
-      done();
+
+      primus.joinOrgRoom(ctx.bodyOwner.github, done);
     });
 
     buildTheBuildTests(ctx);
@@ -269,7 +270,7 @@ function itShouldBuildTheBuild (ctx) {
 
         dockerMockEvents.emitBuildComplete(ctx.cv);
 
-        primus.waitForBuildComplete(function() {
+        primus.onceVersionComplete(ctx.cv.id(), function() {
           var count = createCount(done);
           ctx.build.fetch(expects.success(200, ctx.expectBuilt, count.inc().next));
           count.inc();
