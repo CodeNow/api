@@ -1,5 +1,4 @@
 var nock = require('nock');
-var ip = require('ip');
 
 var buffer = new Buffer(8);
 buffer[0] = 0x01;
@@ -16,7 +15,7 @@ buffer[7] = 0x53;
 // for an image builder container. The docker host information is
 // used from the docker die event data.
 // Docker listener uses emits data with docker's external host
-var dockerHost = 'http://' + ip.address() + ':4243';
+var dockerHost = 'http://localhost:4243';
 
 module.exports = function (failure) {
   nock(dockerHost, { allowUnmocked: true })
