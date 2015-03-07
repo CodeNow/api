@@ -6,7 +6,6 @@ var before = Lab.before;
 var after = Lab.after;
 var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 
 
@@ -14,10 +13,8 @@ describe('GET /settings', {timeout:500}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
 
@@ -26,7 +23,7 @@ describe('GET /settings', {timeout:500}, function () {
       owner: {},
       notifications: {
         slack: {
-          webhookUrl: 'http://slack.com/some-web-hook-url'
+          apiToken: 'xoxo-dasjdkasjdk243248392482394'
         },
         hipchat: {
           authToken: 'some-hipchat-token',
@@ -50,7 +47,7 @@ describe('GET /settings', {timeout:500}, function () {
       });
     });
 
-    describe('get by owner', function () {
+    describe('by owner', function () {
 
       it('should create settings if they are not exist', function (done) {
         multi.createUser(function (err, runnable) {
@@ -76,31 +73,31 @@ describe('GET /settings', {timeout:500}, function () {
           var settings = body[0];
           expect(settings._id).to.exist();
           expect(settings.owner.github).to.equal(settings.owner.github);
-          expect(settings.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+          expect(settings.notifications.slack.apiToken).to.equal(settings.notifications.slack.apiToken);
           expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
           expect(settings.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
           done();
         });
       });
 
-      it('should be possible to fetch settings by githubUsername', function (done) {
-        require('../../fixtures/mocks/github/user-orgs')(ctx.user);
-        require('../../fixtures/mocks/github/users-username')(ctx.user.attrs.accounts.github.id,
-          ctx.user.json().accounts.github.username);
-        var query = {
-          githubUsername: ctx.user.json().accounts.github.username
-        };
-        ctx.user.fetchSettings(query, function (err, body) {
-          if (err) { return done(err); }
-          var settings = body[0];
-          expect(settings._id).to.exist();
-          expect(settings.owner.github).to.equal(settings.owner.github);
-          expect(settings.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-          expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
-          expect(settings.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
-          done();
-        });
-      });
+      // it('should be possible to fetch settings by githubUsername', function (done) {
+      //   require('../../fixtures/mocks/github/user-orgs')(ctx.user);
+      //   require('../../fixtures/mocks/github/users-username')(ctx.user.attrs.accounts.github.id,
+      //     ctx.user.attrs.accounts.github.username);
+      //   var query = {
+      //     githubUsername: ctx.user.attrs.accounts.github.username
+      //   };
+      //   ctx.user.fetchSettings(query, function (err, body) {
+      //     if (err) { return done(err); }
+      //     var settings = body[0];
+      //     expect(settings._id).to.exist();
+      //     expect(settings.owner.github).to.equal(settings.owner.github);
+      //     expect(settings.notifications.slack.apiToken).to.equal(settings.notifications.slack.apiToken);
+      //     expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
+      //     expect(settings.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+      //     done();
+      //   });
+      // });
 
       it('should fail if owner id is not matching', function (done) {
         require('../../fixtures/mocks/github/user-orgs')(ctx.user);
@@ -128,14 +125,14 @@ describe('GET /settings', {timeout:500}, function () {
     });
 
 
-    describe('get by id', function () {
+    describe('by id', function () {
 
       it('should be possible to fetch settings that were just created', function (done) {
         ctx.user.fetchSetting(settingsId, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(settings.owner.github);
-          expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+          expect(body.notifications.slack.apiToken).to.equal(settings.notifications.slack.apiToken);
           expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
           expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
           done();

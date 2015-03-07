@@ -67,6 +67,7 @@
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.38.22",
     "s3-stream-upload": "0.0.6",
     "simple-api-client": "^0.5.9",
+    "slack-client": "^1.4.0",
     "substream": "0.1.1",
     "underscore.string": "^3.0.2",
     "uuid": "~1.4.1",
