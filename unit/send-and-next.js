@@ -8,13 +8,8 @@ var createCount = require('callback-count');
 
 
 describe('send-and-next', function () {
-
-
   it('should call next and send response with status code', function (done) {
     var count = createCount(2, done);
-    var next = function () {
-      count.next();
-    };
     var req = {};
     var res = {
       sendStatus: function (statusCode) {
@@ -22,14 +17,11 @@ describe('send-and-next', function () {
         count.next();
       }
     };
-    resSendAndNext(201)(req, res, next);
+    resSendAndNext(201)(req, res, count.next);
   });
 
   it('should call next and send response with status code and body', function (done) {
     var count = createCount(2, done);
-    var next = function () {
-      count.next();
-    };
     var req = {
       user: {
         name: 'anton'
@@ -42,7 +34,6 @@ describe('send-and-next', function () {
         count.next();
       }
     };
-    resSendAndNext(201, 'user')(req, res, next);
+    resSendAndNext(201, 'user')(req, res, count.next);
   });
-
 });
