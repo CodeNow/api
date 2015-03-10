@@ -29,7 +29,8 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
       },
       notifications: {
         slack: {
-          webhookUrl: 'http://slack.com/some-web-hook-url'
+          authToken: 'some-slack-token',
+          usernameToSlackNameMap: {}
         },
         hipchat: {
           authToken: 'some-hipchat-token',
@@ -59,7 +60,8 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
         var settings = {
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
+              authToken: 'http://slack.com/some-web-hook-url',
+              usernameToSlackNameMap: {}
             },
             hipchat: {
               authToken: 'some-hipchat-token',
@@ -67,6 +69,10 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
             }
           }
         };
+
+        require('../../fixtures/mocks/github/user-orgs')(runnable);
+        require('../../fixtures/mocks/github/users-username')(runnable.attrs.accounts.github.id,
+          runnable.attrs.accounts.github.username);
         runnable.newSetting('507f1f77bcf86cd799439011').update({json: settings}, function (err) {
           expect(err.data.statusCode).to.equal(404);
           expect(err.data.message).to.equal('Setting not found');

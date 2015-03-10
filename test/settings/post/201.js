@@ -32,7 +32,10 @@ describe('201 POST /settings', {timeout:500}, function () {
           },
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
+              authToken: 'some-slack-token',
+              usernameToSlackNameMap: {
+                'cheese': 'danish'
+              }
             },
             hipchat: {
               authToken: 'some-hipchat-token',
@@ -44,9 +47,18 @@ describe('201 POST /settings', {timeout:500}, function () {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
-          expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-          expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
-          expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+          expect(body.notifications.slack.authToken).to.equal(
+            settings.notifications.slack.authToken
+          );
+          expect(body.notifications.slack.usernameToSlackNameMap).to.deep.equal(
+            settings.notifications.slack.usernameToSlackNameMap
+          );
+          expect(body.notifications.hipchat.authToken).to.equal(
+            settings.notifications.hipchat.authToken
+          );
+          expect(body.notifications.hipchat.roomId).to.equal(
+            settings.notifications.hipchat.roomId
+          );
           done();
         });
       });

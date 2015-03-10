@@ -29,7 +29,10 @@ describe('400 POST /settings', {timeout: 700}, function () {
         var settings = {
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
+              authToken: 'some-slack-token',
+              usernameToSlackNameMap: {
+                'cheese': 'danish'
+              }
             },
             hipchat: {
               authToken: 'some-hipchat-token',
@@ -55,7 +58,10 @@ describe('400 POST /settings', {timeout: 700}, function () {
           },
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
+              authToken: 'some-slack-token',
+              usernameToSlackNameMap: {
+                'cheese': 'danish'
+              }
             },
             hipchat: {
               authToken: 'some-hipchat-token',
@@ -67,9 +73,18 @@ describe('400 POST /settings', {timeout: 700}, function () {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
-          expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-          expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
-          expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+          expect(body.notifications.slack.authToken).to.equal(
+            settings.notifications.slack.authToken
+          );
+          expect(body.notifications.slack.usernameToSlackNameMap).to.deep.equal(
+            settings.notifications.slack.usernameToSlackNameMap
+          );
+          expect(body.notifications.hipchat.authToken).to.equal(
+            settings.notifications.hipchat.authToken
+          );
+          expect(body.notifications.hipchat.roomId).to.equal(
+            settings.notifications.hipchat.roomId
+          );
           runnable.createSetting({json: settings}, function (err) {
             expect(err.data.statusCode).to.equal(409);
             expect(err.data.error).to.equal('Conflict');

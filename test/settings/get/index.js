@@ -26,7 +26,10 @@ describe('GET /settings', {timeout:500}, function () {
       owner: {},
       notifications: {
         slack: {
-          webhookUrl: 'http://slack.com/some-web-hook-url'
+          authToken: 'some-slack-token',
+          usernameToSlackNameMap: {
+            'cheese': 'danish'
+          }
         },
         hipchat: {
           authToken: 'some-hipchat-token',
@@ -73,12 +76,21 @@ describe('GET /settings', {timeout:500}, function () {
         var st = ctx.user.newSettings([], {qs: {owner: {github: settings.owner.github}}});
         st.fetch(function (err, body) {
           if (err) { return done(err); }
-          var settings = body[0];
-          expect(settings._id).to.exist();
-          expect(settings.owner.github).to.equal(settings.owner.github);
-          expect(settings.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-          expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
-          expect(settings.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+          var returnedSettings = body[0];
+          expect(returnedSettings._id).to.exist();
+          expect(returnedSettings.owner.github).to.equal(settings.owner.github);
+          expect(returnedSettings.notifications.slack.authToken).to.equal(
+            settings.notifications.slack.authToken
+          );
+          expect(returnedSettings.notifications.slack.usernameToSlackNameMap).to.deep.equal(
+            settings.notifications.slack.usernameToSlackNameMap
+          );
+          expect(returnedSettings.notifications.hipchat.authToken).to.equal(
+            settings.notifications.hipchat.authToken
+          );
+          expect(returnedSettings.notifications.hipchat.roomId).to.equal(
+            settings.notifications.hipchat.roomId
+          );
           done();
         });
       });
@@ -95,9 +107,18 @@ describe('GET /settings', {timeout:500}, function () {
           var settings = body[0];
           expect(settings._id).to.exist();
           expect(settings.owner.github).to.equal(settings.owner.github);
-          expect(settings.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-          expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
-          expect(settings.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+          expect(settings.notifications.slack.authToken).to.equal(
+            settings.notifications.slack.authToken
+          );
+          expect(settings.notifications.slack.usernameToSlackNameMap).to.deep.equal(
+            settings.notifications.slack.usernameToSlackNameMap
+          );
+          expect(settings.notifications.hipchat.authToken).to.equal(
+            settings.notifications.hipchat.authToken
+          );
+          expect(settings.notifications.hipchat.roomId).to.equal(
+            settings.notifications.hipchat.roomId
+          );
           done();
         });
       });
@@ -135,9 +156,18 @@ describe('GET /settings', {timeout:500}, function () {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(settings.owner.github);
-          expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-          expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
-          expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+          expect(body.notifications.slack.usernameToSlackNameMap).to.deep.equal(
+            settings.notifications.slack.usernameToSlackNameMap
+          );
+          expect(body.notifications.slack.authToken).to.equal(
+            settings.notifications.slack.authToken
+          );
+          expect(body.notifications.hipchat.authToken).to.equal(
+            settings.notifications.hipchat.authToken
+          );
+          expect(body.notifications.hipchat.roomId).to.equal(
+            settings.notifications.hipchat.roomId
+          );
           done();
         });
       });
