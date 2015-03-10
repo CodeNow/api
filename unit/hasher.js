@@ -34,7 +34,9 @@ describe('Hasher',  function () {
       beforeEach(function (done) {
         ctx = {};
         var dockerfile = new Buffer(" \t\r\n \t\r\n \t\r\n \t\r\nFROM "+
-                                    "dockerfile/nodejs \t\r\n \t\r\n \t\r\n \t\r\nCMD tail -f /var/log/dpkg.log \t\r\n \t\r\n \t\r\n \t\r\n");
+                                    "dockerfile/nodejs \t\r\n \t\r\n "+
+                                    "\t\r\n \t\r\nCMD tail -f /var/log/dpkg.log "+
+                                    "\t\r\n \t\r\n \t\r\n \t\r\n");
         var chunkSets = ctx.chunkSets =  [];
 
         for (var i = 0; i+8 < dockerfile.length; i++) {
@@ -43,20 +45,10 @@ describe('Hasher',  function () {
           chunks.push(dockerfile.slice(i, i+8));
           chunks.push(dockerfile.slice(i+8, dockerfile.length));
         }
-
-        function toString(arr) {
-          return arr.map(function (item) {
-            return item.toString();
-          });
-        }
-
         done();
       });
       it('should result in the correct hash', function (done) {
-        var i = 0;
         async.each(ctx.chunkSets, function (chunks, cb) {
-          i++;
-          var j = i;
           var fileStream = through(function (data) {this.queue(data);});
           hasher(fileStream, function (err, hash) {
             if (err) { return cb(err); }
@@ -77,10 +69,7 @@ describe('Hasher',  function () {
     });
     describe('compare stream hash to string hash', function () {
       it('should result in the same hashes', function (done) {
-        var i = -1;
         async.each(equivalentDockerfiles, function (dockerfile, cb) {
-          i++;
-          var j = i;
           var streamHash, stringHash;
           var streamData, stringData;
           var count = createCount(2, compareHashes);
