@@ -319,6 +319,7 @@ describe('POST /instances', function () {
               env: json.env,
               owner: {
                 github: ctx.user.json().accounts.github.id,
+                gravatar: ctx.user.json().accounts.github.avatar_url,
                 username: ctx.user.json().accounts.github.login
               },
               public: false,
@@ -355,6 +356,7 @@ describe('POST /instances', function () {
               env: ['ONE=1'],
               owner: {
                 github: ctx.user.json().accounts.github.id,
+                gravatar: ctx.user.json().accounts.github.avatar_url,
                 username: ctx.user.json().accounts.github.login
               },
               public: false,
@@ -398,6 +400,7 @@ describe('POST /instances', function () {
               name: 'Instance1',
               owner: {
                 github: ctx.user.json().accounts.github.id,
+                gravatar: ctx.user.json().accounts.github.avatar_url,
                 username: ctx.user.json().accounts.github.login
               },
               public: false,
@@ -423,6 +426,7 @@ describe('POST /instances', function () {
                   name: 'Instance1',
                   owner: {
                     github: ctx.user2.json().accounts.github.id,
+                    gravatar: ctx.user2.json().accounts.github.avatar_url,
                     username: ctx.user2.json().accounts.github.login
                   },
                   public: false,
@@ -462,6 +466,7 @@ describe('POST /instances', function () {
             build: ctx.build2.id(),
             owner: {
               github: ctx.user.attrs.accounts.github.id,
+              gravatar: ctx.user.json().accounts.github.avatar_url,
               username: ctx.user.attrs.accounts.github.login
             }
           };
@@ -494,6 +499,7 @@ describe('POST /instances', function () {
           name: 'Instance1', // uuid is used in multi.createInstance
           owner: {
             github: ctx.user.json().accounts.github.id,
+            gravatar: ctx.user.json().accounts.github.avatar_url,
             username: ctx.user.json().accounts.github.login
           },
           public: false,

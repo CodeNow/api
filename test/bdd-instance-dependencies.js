@@ -1,3 +1,5 @@
+'use strict';
+
 var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
@@ -18,7 +20,6 @@ var primus = require('./fixtures/primus');
 
 describe('BDD - Instance Dependencies', function () {
   var ctx = {};
-  var restartCayley = null;
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -27,16 +28,31 @@ describe('BDD - Instance Dependencies', function () {
   after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
+  beforeEach(function (done) {
+    var r = require('models/redis');
+    r.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
+      if (err) { return done(err); }
+      async.map(keys, function (key, cb) { r.del(key, cb); }, done);
+    });
+  });
+  // Uncomment if you want to clear the (graph) database every time
+  beforeEach(function (done) {
+    if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
+      var Cypher = require('cypher-stream');
+      var cypher = Cypher('http://localhost:7474');
+      var err;
+      cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
+        .on('error', function (e) { err = e; })
+        .on('end', function () { done(err); })
+        .on('data', function () {});
+    } else {
+      done();
+    }
+  });
   after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
-
-  before(function (done) {
-    // grab the ref to cayley before it vanishes
-    restartCayley = ctx.cayley;
-    done();
-  });
 
   beforeEach(function (done) {
     multi.createInstance(function (err, instance, build, user) {
@@ -62,8 +78,8 @@ describe('BDD - Instance Dependencies', function () {
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'API_HOST=' +
-          ctx.webInstance.attrs.lowerName + '.' +
-          ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+          ctx.webInstance.attrs.lowerName + '-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
         ctx.webInstance.update({
           env: [depString]
         }, done);
@@ -81,8 +97,8 @@ describe('BDD - Instance Dependencies', function () {
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'API_HOST=' +
-          ctx.apiInstance.attrs.lowerName + '.' +
-          ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+          ctx.apiInstance.attrs.lowerName + '-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
         ctx.webInstance.update({
           env: [depString]
         }, done);
@@ -97,39 +113,72 @@ describe('BDD - Instance Dependencies', function () {
           expect(instance.dependencies[apiId]).to.be.okay;
           expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
           expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
+          expect(instance.dependencies[apiId].owner.github).to.equal(ctx.user.attrs.accounts.github.id);
+          expect(instance.dependencies[apiId].createdBy.github).to.equal(ctx.user.attrs.accounts.github.id);
           expect(instance.dependencies[apiId].dependencies).to.equal(undefined);
           done();
         });
       });
     });
-    describe('terminating cayley early', function () {
-      var origErrorLog = error.log;
+    describe('if the graph db is unavailable', function () {
+      var type = process.env.GRAPH_DATABASE_TYPE.toUpperCase();
+      var host = process.env[type];
+      beforeEach(function (done) {
+        process.env[type] = 'http://localhost:78534';
+        done();
+      });
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'API_HOST=' +
-          ctx.apiInstance.attrs.lowerName + '.' +
-          ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+          ctx.apiInstance.attrs.lowerName + '-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
+        console.log('error below expected');
         ctx.webInstance.update({
           env: [depString]
         }, done);
       });
-      before(function (done) {
-        error.log = noop; // hide errors
-        restartCayley.stop(done);
-      });
-      after(function (done) {
-        error.log = origErrorLog; // restore
-        restartCayley.start(done);
+      afterEach(function (done) {
+        process.env[type] = host;
+        done();
       });
       it('should degrade gracefully and still allow us to fetch (printed error expected)', function (done) {
         ctx.webInstance.fetch(function (err, body) {
           expect(err).to.be.not.okay;
           if (err) { return done(err); }
           expect(body).to.be.okay;
-          /* this is a fun test. we _want_ this to be undefined. if cayley was running,
+          /* this is a fun test. we _want_ this to be undefined. if the graph db was running,
            * it would return a value for dependencies, which we do not want. */
           expect(body.dependencies).to.eql({});
           done();
+        });
+      });
+      describe('recovery with the regraph endpoint', function () {
+        beforeEach(function (done) {
+          process.env[type] = host;
+          ctx.webInstance.fetch(function (err, body) {
+            expect(err).to.be.not.okay;
+            if (err) { return done(err); }
+            expect(body.dependencies).to.eql({});
+            ctx.webInstance.regraph(function (err) {
+              expect(err).to.be.not.okay;
+              if (err) { return done(err); }
+              done();
+            });
+          });
+        });
+        it('should update the web dependencies (should print an error above)', function (done) {
+          var apiId = ctx.apiInstance.attrs._id.toString();
+          ctx.webInstance.fetch(function (err, instance) {
+            expect(err).to.be.not.okay;
+            if (err) { return done(err); }
+            expect(instance.dependencies).to.be.an('object');
+            expect(Object.keys(instance.dependencies).length).to.equal(1);
+            expect(instance.dependencies[apiId]).to.be.okay;
+            expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
+            expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
+            expect(instance.dependencies[apiId].dependencies).to.equal(undefined);
+            done();
+          });
         });
       });
     });
@@ -138,8 +187,8 @@ describe('BDD - Instance Dependencies', function () {
         // define web as dependent on api
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'API_HOST=' +
-          ctx.apiInstance.attrs.lowerName + '.' +
-          ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+          ctx.apiInstance.attrs.lowerName + '-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
         ctx.webInstance.update({
           env: [depString]
         }, done);
@@ -177,7 +226,7 @@ describe('BDD - Instance Dependencies', function () {
             ], done);
           });
           beforeEach(function (done) {
-            async.parallel([
+            async.series([
               forkWeb,
               forkApi
             ], done);
@@ -186,9 +235,9 @@ describe('BDD - Instance Dependencies', function () {
               var data = {
                 name: ctx.webInstance.attrs.lowerName + '-copy',
                 env: ['API_HOST=' +
-                  ctx.apiInstance.attrs.lowerName + '-copy.' +
+                  ctx.apiInstance.attrs.lowerName + '-copy-' +
                   ctx.user.attrs.accounts.github.username + '.' +
-                  process.env.DOMAIN]
+                  process.env.USER_CONTENT_DOMAIN]
               };
               ctx.web2 = ctx.webInstance.copy(data, cb);
             }
@@ -196,9 +245,9 @@ describe('BDD - Instance Dependencies', function () {
               var data = {
                 name: ctx.apiInstance.attrs.lowerName + '-copy',
                 env: ['WEB_HOST=' +
-                  ctx.webInstance.attrs.lowerName + '-copy.' +
+                  ctx.webInstance.attrs.lowerName + '-copy-' +
                   ctx.user.attrs.accounts.github.username + '.' +
-                  process.env.DOMAIN]
+                  process.env.USER_CONTENT_DOMAIN]
               };
               ctx.api2 = ctx.apiInstance.copy(data, cb);
             }
@@ -260,8 +309,8 @@ describe('BDD - Instance Dependencies', function () {
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'API_HOST=' +
-          ctx.apiInstance.attrs.lowerName + '.' +
-          ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+          ctx.apiInstance.attrs.lowerName + '-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
         ctx.webInstance.update({
           env: [depString]
         }, done);
@@ -269,8 +318,8 @@ describe('BDD - Instance Dependencies', function () {
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'WEB_HOST=' +
-          ctx.webInstance.attrs.lowerName + '.' +
-          ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+          ctx.webInstance.attrs.lowerName + '-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
         ctx.apiInstance.update({
           env: [depString]
         }, done);
@@ -279,7 +328,7 @@ describe('BDD - Instance Dependencies', function () {
         require('./fixtures/mocks/github/user')(ctx.user);
         var apiId = ctx.apiInstance.attrs._id.toString();
         ctx.webInstance.fetch(function (err, instance) {
-          if (err) { return cb(err); }
+          if (err) { return done(err); }
           expect(instance.dependencies).to.be.an('object');
           expect(Object.keys(instance.dependencies).length).to.equal(1);
           expect(instance.dependencies[apiId]).to.be.okay;
@@ -292,7 +341,7 @@ describe('BDD - Instance Dependencies', function () {
       });
       describe('and forking it a (the first one) (the shorter way)', function () {
         beforeEach(function (done) {
-          async.parallel([
+          async.series([
             forkWeb,
             forkApi
           ], done);
@@ -301,9 +350,9 @@ describe('BDD - Instance Dependencies', function () {
             var data = {
               name: ctx.webInstance.attrs.lowerName + '-copy',
               env: ['API_HOST=' +
-                ctx.apiInstance.attrs.lowerName + '-copy.' +
+                ctx.apiInstance.attrs.lowerName + '-copy-' +
                 ctx.user.attrs.accounts.github.username + '.' +
-                process.env.DOMAIN]
+                process.env.USER_CONTENT_DOMAIN]
             };
             ctx.web2 = ctx.webInstance.copy(data, cb);
           }
@@ -311,9 +360,9 @@ describe('BDD - Instance Dependencies', function () {
             var data = {
               name: ctx.apiInstance.attrs.lowerName + '-copy',
               env: ['WEB_HOST=' +
-                ctx.webInstance.attrs.lowerName + '-copy.' +
+                ctx.webInstance.attrs.lowerName + '-copy-' +
                 ctx.user.attrs.accounts.github.username + '.' +
-                process.env.DOMAIN]
+                process.env.USER_CONTENT_DOMAIN]
             };
             ctx.api2 = ctx.apiInstance.copy(data, cb);
           }
@@ -356,7 +405,7 @@ describe('BDD - Instance Dependencies', function () {
       });
       describe('and forking it a (the first one)', function () {
         beforeEach(function (done) {
-          async.parallel([
+          async.series([
             forkWeb,
             forkApi
           ], done);
@@ -370,9 +419,9 @@ describe('BDD - Instance Dependencies', function () {
                 var data = {
                   name: ctx.webInstance.attrs.lowerName + '-copy',
                   env: ['API_HOST=' +
-                    ctx.apiInstance.attrs.lowerName + '-copy.' +
+                    ctx.apiInstance.attrs.lowerName + '-copy-' +
                     ctx.user.attrs.accounts.github.username + '.' +
-                    process.env.DOMAIN]
+                    process.env.USER_CONTENT_DOMAIN]
                 };
                 ctx.web2.update(data, cb);
               }
@@ -387,9 +436,9 @@ describe('BDD - Instance Dependencies', function () {
                 var data = {
                   name: ctx.apiInstance.attrs.lowerName + '-copy',
                   env: ['WEB_HOST=' +
-                    ctx.webInstance.attrs.lowerName + '-copy.' +
+                    ctx.webInstance.attrs.lowerName + '-copy-' +
                     ctx.user.attrs.accounts.github.username + '.' +
-                    process.env.DOMAIN]
+                    process.env.USER_CONTENT_DOMAIN]
                 };
                 ctx.api2.update(data, cb);
               }
@@ -439,8 +488,8 @@ describe('BDD - Instance Dependencies', function () {
           function addApiToWeb (cb) {
             require('./fixtures/mocks/github/user')(ctx.user);
             var depString = 'API_HOST=' +
-              ctx.apiInstance.attrs.lowerName + '.' +
-              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+              ctx.apiInstance.attrs.lowerName + '-' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
             ctx.webInstance.update({
               env: [depString]
             }, cb);
@@ -459,8 +508,8 @@ describe('BDD - Instance Dependencies', function () {
       beforeEach(function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         var depString = 'MONGO_HOST=' +
-          ctx.mongoInstance.attrs.lowerName + '.' +
-          ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+          ctx.mongoInstance.attrs.lowerName + '-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
         ctx.webInstance.update({
           env: ctx.webInstance.attrs.env.concat([depString])
         }, done);
@@ -491,8 +540,8 @@ describe('BDD - Instance Dependencies', function () {
           function addApiToWeb (cb) {
             require('./fixtures/mocks/github/user')(ctx.user);
             var depString = 'API_HOST=' +
-              ctx.apiInstance.attrs.lowerName + '.' +
-              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+              ctx.apiInstance.attrs.lowerName + '-' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
             ctx.webInstance.update({
               env: [depString]
             }, cb);
@@ -510,7 +559,7 @@ describe('BDD - Instance Dependencies', function () {
       });
       describe('and forking it', function () {
         beforeEach(function (done) {
-          async.parallel([
+          async.series([
             forkWeb,
             forkApi
           ], done);
@@ -524,9 +573,9 @@ describe('BDD - Instance Dependencies', function () {
                 var data = {
                   name: ctx.webInstance.attrs.lowerName + '-copy',
                   env: ['API_HOST=' +
-                    ctx.apiInstance.attrs.lowerName + '-copy.' +
+                    ctx.apiInstance.attrs.lowerName + '-copy-' +
                     ctx.user.attrs.accounts.github.username + '.' +
-                    process.env.DOMAIN]
+                    process.env.USER_CONTENT_DOMAIN]
                 };
                 ctx.web2.update(data, cb);
               }
@@ -580,8 +629,8 @@ describe('BDD - Instance Dependencies', function () {
         beforeEach(function (done) {
           require('./fixtures/mocks/github/user')(ctx.user);
           var depString = 'API_HOST=' +
-            ctx.mongoInstance.attrs.lowerName + '.' +
-            ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+            ctx.mongoInstance.attrs.lowerName + '-' +
+            ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
           ctx.apiInstance.update({
             env: ctx.apiInstance.attrs.env.concat([depString])
           }, done);
@@ -636,8 +685,8 @@ describe('BDD - Instance Dependencies', function () {
           function addApiToWeb (cb) {
             require('./fixtures/mocks/github/user')(ctx.user);
             var depString = 'API_HOST=' +
-              ctx.apiInstance.attrs.lowerName + '.' +
-              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+              ctx.apiInstance.attrs.lowerName + '-' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
             ctx.webInstance.update({
               env: [depString]
             }, cb);
@@ -654,8 +703,8 @@ describe('BDD - Instance Dependencies', function () {
           function updateApiInstance (cb) {
             require('./fixtures/mocks/github/user')(ctx.user);
             var depString = 'API_HOST=' +
-              ctx.mongoInstance.attrs.lowerName + '.' +
-              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN;
+              ctx.mongoInstance.attrs.lowerName + '-' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
             ctx.apiInstance.update({
               env: ctx.apiInstance.attrs.env.concat([depString])
             }, cb);
@@ -701,8 +750,8 @@ describe('BDD - Instance Dependencies', function () {
           ctx.apiInstance.update(body, expects.updateSuccess(body, done));
         });
         beforeEach(function (done) {
-          var env = ['SOMETHING=' + ctx.mongoInstance.attrs.lowerName + '.' +
-              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN];
+          var env = ['SOMETHING=' + ctx.mongoInstance.attrs.lowerName + '-' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN];
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
@@ -785,8 +834,8 @@ describe('BDD - Instance Dependencies', function () {
         });
 
         function createRedis (cb) {
-          var env = ['SOMETHING=' + ctx.mongoInstance.attrs.lowerName + '.' +
-              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN];
+          var env = ['SOMETHING=' + ctx.mongoInstance.attrs.lowerName + '-' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN];
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
@@ -798,8 +847,8 @@ describe('BDD - Instance Dependencies', function () {
         }
         function updateWeb (cb) {
           var body = {
-            env: ['SOMETHING=' + 'redis-instance' + '.' +
-              ctx.user.attrs.accounts.github.username + '.' + process.env.DOMAIN]
+            env: ['SOMETHING=' + 'redis-instance' + '-' +
+              ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN]
           };
           ctx.webInstance.update(body, cb);
         }

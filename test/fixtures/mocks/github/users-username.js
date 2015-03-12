@@ -9,7 +9,7 @@ module.exports = function (userId, username, isActuallyAnOrg, fail) {
       'login': username,
       'id': userId,
       'avatar_url': 'https://avatars.githubusercontent.com/u/'+userId+'?',
-      'gravatar_id': 'wrong',
+      'gravatar_id': '',
       'url': 'https://api.github.com/users/'+username,
       'html_url': 'https://github.com/'+username,
       'followers_url': 'https://api.github.com/users/'+username+'/followers',

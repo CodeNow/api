@@ -95,6 +95,7 @@ describe('201 POST /instances', {timeout:500}, function () {
       env: [],
       owner: {
         username: ctx.user.json().accounts.github.login,
+        gravatar: ctx.user.json().accounts.github.avatar_url,
         github: ctx.user.json().accounts.github.id
       },
       contextVersions: exists,

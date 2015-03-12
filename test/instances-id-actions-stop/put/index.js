@@ -92,6 +92,7 @@ describe('PUT /instances/:id/actions/stop', {timeout:1000}, function () {
       env: [],
       owner: {
         username: ctx.user.json().accounts.github.login,
+        gravatar: ctx.user.json().gravatar,
         github: ctx.user.json().accounts.github.id
       },
       contextVersions: exists,

@@ -81,10 +81,9 @@ describe('204 DELETE /instances/:id', {timeout:10000}, function () {
       'createdBy.github': ctx.user.attrs.accounts.github.id,
       name: exists,
       env: [],
-      owner: {
-        username: ctx.user.json().accounts.github.login,
-        github: ctx.user.json().accounts.github.id
-      },
+      'owner.username': ctx.user.json().accounts.github.login,
+      'owner.gravatar': ctx.user.json().accounts.github.avatar_url,
+      'owner.github': ctx.user.json().accounts.github.id,
       contextVersions: exists,
       'network.networkIp': exists,
       'network.hostIp': exists,
