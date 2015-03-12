@@ -15,6 +15,9 @@ var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var async = require('async');
 var primus = require('./fixtures/primus');
+var error = require('error');
+var noop = require('101/noop');
+var errorLog = error.log;
 
 describe('BDD - Instance Dependencies', function () {
   var ctx = {};
@@ -130,16 +133,17 @@ describe('BDD - Instance Dependencies', function () {
         var depString = 'API_HOST=' +
           ctx.apiInstance.attrs.lowerName + '-' +
           ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN;
-        console.log('error below expected');
         ctx.webInstance.update({
           env: [depString]
         }, done);
       });
       afterEach(function (done) {
+        error.log = errorLog;
         process.env[type] = host;
         done();
       });
       it('should degrade gracefully and still allow us to fetch (printed error expected)', function (done) {
+        error.log = noop; // to hide errors
         ctx.webInstance.fetch(function (err, body) {
           expect(err).to.be.not.okay;
           if (err) { return done(err); }
@@ -165,6 +169,7 @@ describe('BDD - Instance Dependencies', function () {
           });
         });
         it('should update the web dependencies (should print an error above)', function (done) {
+          error.log = noop; // to hide errors
           var apiId = ctx.apiInstance.attrs._id.toString();
           ctx.webInstance.fetch(function (err, instance) {
             expect(err).to.be.not.okay;

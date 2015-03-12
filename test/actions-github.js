@@ -14,6 +14,7 @@ var exists = require('101/exists');
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
+var primus = require('./fixtures/primus');
 var dock = require('./fixtures/dock');
 var Runnable = require('models/apis/runnable');
 var PullRequest = require('models/apis/pullrequest');
@@ -38,6 +39,8 @@ describe('Github - /actions/github', function () {
   after(api.stop.bind(ctx));
   before(dock.start.bind(ctx));
   after(dock.stop.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   before(require('./fixtures/mocks/api-client').setup);
   after(require('./fixtures/mocks/api-client').clean);
   beforeEach(generateKey);
