@@ -12,7 +12,7 @@ var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 var uuid = require('uuid');
 var primus = require('../../fixtures/primus');
-require('console-trace')({always:true, right:true});
+
 describe('400 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function () {
   var ctx = {};
 

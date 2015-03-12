@@ -17,7 +17,6 @@ var noop = require('101/noop');
 var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
 var error = require('error');
-require('console-trace')({always:true, right:true});
 
 before(function (done) {
   nock('http://runnable.com:80')
