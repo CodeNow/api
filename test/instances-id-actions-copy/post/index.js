@@ -10,6 +10,7 @@ var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
+var primus = require('../../fixtures/primus');
 var exists = require('101/exists');
 
 describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
@@ -17,6 +18,8 @@ describe('POST /instances/:id/actions/copy', { timeout: 500 }, function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('../../fixtures/clean-mongo').removeEverything);

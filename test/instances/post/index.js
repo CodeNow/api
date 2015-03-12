@@ -19,7 +19,6 @@ var not = require('101/not');
 var equals = require('101/equals');
 var uuid = require('uuid');
 var createCount = require('callback-count');
-var ContextVersion = require('models/mongo/context-version');
 var Build = require('models/mongo/build');
 
 describe('POST /instances', function () {
@@ -28,13 +27,12 @@ describe('POST /instances', function () {
   before(dock.start.bind(ctx));
   before(api.start.bind(ctx));
   beforeEach(primus.connect);
-
   afterEach(primus.disconnect);
+  after(api.stop.bind(ctx));
+  after(dock.stop.bind(ctx));
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
-  after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
 
   describe('POST', {timeout: 1000}, function () {
     describe('with unbuilt build', function () {
@@ -72,7 +70,7 @@ describe('POST /instances', function () {
             ctx.build.build({ message: uuid() }, done);
           });
 
-          it('should emit post event', {timeout: 5000}, function(done) {
+          it('should emit post and deploy events', {timeout: 5000}, function(done) {
             var countDown = createCount(3, done);
             var expected = {
               shortHash: exists,
@@ -94,7 +92,9 @@ describe('POST /instances', function () {
             primus.expectAction('deploy', expected, countDown.next);
             ctx.user.createInstance({ json: json }, function(err) {
               if (err) { return countDown.next(err); }
-              primus.waitForBuildComplete(countDown.next);
+              primus.onceVersionComplete(ctx.cv.id(), function (/*data*/) {
+                countDown.next();
+              });
               dockerMockEvents.emitBuildComplete(ctx.cv);
             });
           });
@@ -119,15 +119,9 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
-            var instance = ctx.user.createInstance({ json: json }, function(err) {
+            ctx.user.createInstance({ json: json }, function(err) {
               if (err) { return done(err); }
-              primus.waitForBuildComplete(function() {
-                instance.fetch(function(err, i) {
-                  if (err) { return done(err); }
-                  expects.check(expected, i);
-                  done();
-                });
-              });
+              primus.expectAction('deploy', expected, done);
               dockerMockEvents.emitBuildComplete(ctx.cv);
             });
           });
@@ -157,49 +151,23 @@ describe('POST /instances', function () {
             });
           });
         });
-      });
-
-      describe('without a started context version', function () {
-        beforeEach(function (done) {
-          var count = createCount(2, done);
-          Build.findById(ctx.build.id(), function(err, build) {
-            build.setInProgress(ctx.user, count.next);
-            build.update({contextVersion: ctx.cv.id()}, count.next);
-          });
-        });
-        it('should not create a new instance', function(done) {
-          var json = { build: ctx.build.id(), name: uuid() };
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.user.createInstance({ json: json }, expects.error(400, done));
-        });
-      });
-      describe('that has failed', function () {
-        beforeEach(function (done) {
-          var count = createCount(2, done);
-          Build.findById(ctx.build.id(), function(err, build) {
-            build.setInProgress(ctx.user, count.next);
-            ContextVersion.update({_id: ctx.cv.id()}, {$set: {'build.started': Date.now()}},
-              function (err) {
-                if (err) { return count.next(err); }
-                build.pushErroredContextVersion(ctx.cv.id(), count.next);
+        describe('without a started context version', function () {
+          beforeEach(function (done) {
+            var count = createCount(2, done);
+            Build.findById(ctx.build.id(), function(err, build) {
+              build.setInProgress(ctx.user, count.next);
+              build.update({contextVersion: ctx.cv.id()}, count.next);
             });
           });
-        });
-        it('should create a new instance', function(done) {
-          var json = { build: ctx.build.id(), name: uuid() };
-          var expected = {
-            shortHash: exists,
-            'createdBy.github': ctx.user.attrs.accounts.github.id,
-            'build._id': ctx.build.id(),
-            name: exists,
-            'owner.github': ctx.user.attrs.accounts.github.id
-          };
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.user.createInstance({ json: json }, expects.success(201, expected, done));
+          it('should not create a new instance', function(done) {
+            var json = { build: ctx.build.id(), name: uuid() };
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            ctx.user.createInstance({ json: json }, expects.error(400, done));
+          });
         });
       });
+
       describe('org owned', function () {
         beforeEach(function (done) {
           ctx.orgId = 1001;

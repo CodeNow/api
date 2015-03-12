@@ -15,7 +15,8 @@ var exists = require('101/exists');
 var last = require('101/last');
 var not = require('101/not');
 var isFunction = require('101/is-function');
-var tailBuildStream = require('../../fixtures/tail-build-stream');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+var primus = require('../../fixtures/primus');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
@@ -25,9 +26,9 @@ var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
+var dockerEvents = require('models/events/docker');
 
-
-describe('200 PATCH /instances/:id', {timeout:1000}, function () {
+describe('200 PATCH /instances/:id', {timeout:5000}, function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;
@@ -56,6 +57,16 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       cb(createErr);
     }
   };
+  var dontReportCreateError = function () {
+    // for cleaner test logs
+    var args = Array.prototype.slice.call(arguments);
+    var cb = args.pop();
+    args.push(function (err) {
+      if (err) { err.data.report = false; }
+      cb.apply(this, arguments);
+    });
+    ctx.originalDockerCreateContainer.apply(this, args);
+  };
   var delayContainerLogsBy = function (ms, originalContainerLogs) {
     return function () {
       var container = this;
@@ -83,6 +94,8 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -109,15 +122,6 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
 
   describe('for User', function () {
     describe('create instance with in-progress build', function () {
-      beforeEach(function (done) { // delay container log time to make build time longer
-        ctx.originalContainerLogs = Container.prototype.logs;
-        Container.prototype.logs = delayContainerLogsBy(500, ctx.originalContainerLogs);
-        done();
-      });
-      afterEach(function (done) { // restore original container log method
-        Container.prototype.logs = ctx.originalContainerLogs;
-        done();
-      });
       beforeEach(function (done) {
         multi.createContextVersion(function (err, contextVersion, context, build, user) {
           if (err) { return done(err); }
@@ -138,8 +142,13 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
             multi.tailInstance(ctx.user, ctx.instance, done);
           }
           else { // instance has been patched with a new build
-            tailBuildStream(ctx.cv.id(), done);
+            primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, function () {
+              primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+                done();
+              });
+            });
           }
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
         done();
       });
@@ -198,12 +207,15 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
           Dockerode.prototype.createContainer = forceCreateContainerErr;
+          Docker.prototype.createContainer = dontReportCreateError;
           done();
         });
         afterEach(function (done) {
-          // restore dockerODE.createContainer` back to normal
+          // restore dockerode.createContainer back to normal
           Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
           done();
         });
 
@@ -251,7 +263,6 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
                 if (err) { return done(err); }
                 instance.setContainerFinishedState(new Date().toISOString(), 0, done);
               });
-
             });
         }
         else {
@@ -310,7 +321,9 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
           }
           var count = createCount(ctx.afterPatchAsserts.length, done);
           ctx.afterPatchAsserts.forEach(function (assert) {
-            assert(count.next);
+            assert(function (err) {
+              count.next(err);
+            });
           });
         };
       }
@@ -331,6 +344,7 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       beforeEach(function (done) {
         if (ctx.originalStart) { Docker.prototype.startContainer = ctx.originalStart; }
         if (ctx.originalCreateContainer) { Dockerode.prototype.createContainer = ctx.originalCreateContainer; }
+        if (ctx.originalDockerCreateContainer) { Docker.prototype.createContainer = ctx.originalDockerCreateContainer; }
         if (ctx.originalContainerLogs) { Container.prototype.logs = ctx.originalContainerLogs; }
         done();
       });
@@ -388,6 +402,8 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
                 done(e);
               }
             });
+            var patchCv = ctx.patchBuild.contextVersions.models[0];
+            dockerMockEvents.emitBuildComplete(patchCv);
           });
           done();
         });
@@ -476,7 +492,9 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
             ctx.expected['containers[0].error.message'] = exists;
             ctx.expected['containers[0].error.stack'] = exists;
             ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+            ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
             Dockerode.prototype.createContainer = forceCreateContainerErr;
+            Docker.prototype.createContainer = dontReportCreateError;
             done();
           });
           beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
@@ -495,8 +513,9 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
             done();
           });
           afterEach(function (done) {
-            // restore dockerODE.createContainer` back to normal
+            // restore dockerode.createContainer back to normal
             Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+            Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
             done();
           });
 
@@ -506,38 +525,43 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
     });
     // patch helpers
     function afterEachAssertDeletedOldHostsAndNetwork (done) {
-      var oldInstanceName = ctx.instance.attrs.name;
+      var oldInstanceBuildBuilt = ctx.instance.attrs.build && ctx.instance.attrs.build.completed;
       var oldInstanceBuildId = ctx.instance.attrs.build && ctx.instance.attrs.build._id;
+      var oldInstanceName = ctx.instance.attrs.name;
       var oldContainer = keypather.get(ctx.instance, 'containers.models[0]');
       ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
       ctx.afterPatchAsserts.push(function (done) {
-        try {
-          if (oldContainer && oldContainer.attrs.dockerContainer) {
+        var oldContainerExists = oldContainer && oldContainer.dockerContainer; // not an error
+        if (oldInstanceBuildBuilt && oldContainerExists) {
+          dockerEvents.once('destroy', function () {
+            checkOldContainerDeleted(done);
+          });
+        }
+        else {
+          done();
+        }
+        function checkOldContainerDeleted (done) {
+          try {
             var count = createCount(done);
             // NOTE!: timeout is required for the following tests, bc container deletion occurs in bg
             // User create instance with built build Long running container and env.
             // Patch with build: in-progress build, should update an instance ______.
-            setTimeout(function () {
-              if (ctx.instance.attrs.name !== oldInstanceName) {
-                // if name changed
-                expects.deletedHosts(
-                  ctx.user, oldInstanceName, oldContainer, count.inc().next);
-              } // else assert updated values for same entries next beforeEach
-              var newInstanceBuildId = ctx.instance.attrs.build && ctx.instance.attrs.build._id;
-              if (newInstanceBuildId !== oldInstanceBuildId) {
-                expects.deletedWeaveHost(
-                  oldContainer, count.inc().next);
-                expects.deletedContainer(
-                  oldContainer.json(), count.inc().next);
-              }
-            }, 18); // 18ms seems to work... :-P
+            if (ctx.instance.attrs.name !== oldInstanceName) {
+              // if name changed
+              expects.deletedHosts(
+                ctx.user, oldInstanceName, oldContainer, count.inc().next);
+            } // else assert updated values for same entries next beforeEach
+            var newInstanceBuildId = ctx.instance.attrs.build && ctx.instance.attrs.build._id;
+            if (newInstanceBuildId !== oldInstanceBuildId) {
+              expects.deletedWeaveHost(
+                oldContainer, count.inc().next);
+              expects.deletedContainer(
+                oldContainer.json(), count.inc().next);
+            }
           }
-          else {
-            done();
+          catch (e) {
+            done(e);
           }
-        }
-        catch (e) {
-          done(e);
         }
       });
       done();
@@ -616,7 +640,9 @@ describe('200 PATCH /instances/:id', {timeout:1000}, function () {
       }
       var count = createCount(ctx.afterPatchAsserts.length, done);
       ctx.afterPatchAsserts.forEach(function (assert) {
-        assert(count.next);
+        assert(function () {
+          count.next();
+        });
       });
     }));
   }

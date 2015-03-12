@@ -12,10 +12,13 @@ test/builds-id-actions-copy.js
 test/builds-id.js
 test/builds.js
 test/builds/post/400.js
+test/contexts-id-versions-id-appcodeversions-id/patch/200.js
 test/contexts-id-versions-id-appcodeversions-id/patch/400.js
 test/contexts-id-versions-id-appcodeversions.js
+test/contexts-id-versions-id-appcodeversions/post/index.js
 test/contexts-id-versions-id-appcodeversions/post/400.js
 test/contexts-id-versions-id-files-id.js
+test/contexts-id-versions-id-files-id/delete/index.js
 test/contexts-id-versions-id-files-id/patch/400.js
 test/contexts-id-versions-id-files.js
 test/contexts-id-versions-id-files/post/400.js

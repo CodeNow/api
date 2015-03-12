@@ -16,6 +16,7 @@ var ctx = {};
 
 module.exports = {
   joinOrgRoom: function (orgId, cb) {
+    debug('joinOrgRoom');
     if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
     ctx.primus.write({
       id: uuid(), // needed for uniqueness
@@ -34,15 +35,26 @@ module.exports = {
     });
   },
   connect: function (cb) {
+    debug('connect');
     ctx.primus = new Socket('http://'+process.env.ROOT_DOMAIN);
+    ctx.primus.on('error', function (err) {
+      console.error(
+        'PRIMUS CONNECTION ERROR', process.env.ROOT_DOMAIN, err);
+    });
+    ctx.primus.on('reconnect', function () {
+      console.error(
+        'PRIMUS RECONNECT ATTEMPT', process.env.ROOT_DOMAIN, arguments);
+    });
     ctx.primus.once('open', cb);
   },
   disconnect: function (cb) {
+    debug('disconnect');
     if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
     ctx.primus.once('end', cb);
     ctx.primus.end();
   },
   onceRoomMessage: function (event, action, cb) {
+    debug('onceRoomMessage');
     if (!ctx.primus) { return cb(new Error('can not primus.onceRoomMessage if not connected')); }
     ctx.primus.on('data', function handler (data) {
       debug(data.event === 'ROOM_MESSAGE',
@@ -57,6 +69,7 @@ module.exports = {
     });
   },
   expectAction: function(action, expected, cb) {
+    debug('expectAction');
     if (!ctx.primus) { return cb(new Error('can not primus.expectAction if not connected')); }
     ctx.primus.on('data', function check (data) {
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
@@ -72,6 +85,7 @@ module.exports = {
     });
   },
   onceInstanceUpdate: function (instanceId, action, cb) {
+    debug('onceInstanceUpdate');
     var self = this;
     if (typeof instanceId === 'function') {
       cb = instanceId;
@@ -94,6 +108,7 @@ module.exports = {
     }
   },
   onceVersionComplete: function (versionId, cb) {
+    debug('onceVersionComplete');
     var self = this;
     if (typeof versionId === 'function') {
       cb = versionId;
@@ -104,6 +119,9 @@ module.exports = {
     }
     this.onceRoomMessage('CONTEXTVERSION_UPDATE', 'build_completed', handler);
     function handler (data) {
+      if (data instanceof Error) {
+        throw data;
+      }
       if (!versionId) {
         cb(data);
       }

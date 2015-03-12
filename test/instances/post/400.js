@@ -5,7 +5,6 @@ var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 
-var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
@@ -45,9 +44,10 @@ describe('400 POST /instances', {timeout:500}, function () {
       primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
     });
     beforeEach(function(done) {
-      ctx.build.build({ message: uuid() }, function(err, res, statusCode, body){
-        primus.waitForBuildComplete(function() {
-          expects.success(201, done)(err, res, statusCode, body);
+      ctx.build.build({ message: uuid() }, function(err){
+        if (err) { return done(err); }
+        primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+          done();
         });
         dockerMockEvents.emitBuildComplete(ctx.cv);
       });
@@ -103,4 +103,3 @@ describe('400 POST /instances', {timeout:500}, function () {
     });
   });
 });
-

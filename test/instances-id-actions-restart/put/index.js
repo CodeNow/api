@@ -10,6 +10,7 @@ var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
@@ -52,6 +53,16 @@ describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
       cb(createErr);
     }
   };
+  var dontReportCreateError = function () {
+    // for cleaner test logs
+    var args = Array.prototype.slice.call(arguments);
+    var cb = args.pop();
+    args.push(function (err) {
+      if (err) { err.data.report = false; }
+      cb.apply(this, arguments);
+    });
+    ctx.originalDockerCreateContainer.apply(this, args);
+  };
   var delayContainerLogsBy = function (ms, originalContainerLogs) {
     return function () {
       var container = this;
@@ -65,6 +76,8 @@ describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -178,11 +191,14 @@ describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
           ctx.expected['containers[0].error.stack'] = exists;
           ctx.expectNoContainerErr = true;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
           Dockerode.prototype.createContainer = forceCreateContainerErr;
+          Docker.prototype.createContainer = dontReportCreateError;
           done();
         });
         afterEach(function (done) {
           // restore dockerODE.createContainer` back to normal
+          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
           Dockerode.prototype.createContainer = ctx.originalCreateContainer;
           done();
         });

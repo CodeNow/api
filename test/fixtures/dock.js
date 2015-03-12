@@ -29,6 +29,7 @@ function startDock (done) {
   count.inc();
   ctx.docker = docker.start(function (err) {
     if (err) { return count.next(err); }
+    console.log('docker started');
     dockerListener.start(
       process.env.DOCKER_LISTENER_PORT, function(err) {
         if (err) { return count.next(err); }

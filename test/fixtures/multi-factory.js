@@ -211,12 +211,15 @@ module.exports = {
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
     var self = this;
+    debug('this.createContextVersion', ownerId);
     this.createContextVersion(ownerId, function (err, contextVersion, context, build, user, srcArray) {
       if (err) { return cb(err); }
+      debug('self.buildTheBuild', user.id(), build.id(), ownerId);
       self.buildTheBuild(user, build, ownerId, function (err) {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+        debug('contextVersion.fetch', contextVersion.id());
         contextVersion.fetch(function (err) {
           cb(err, build, user,
               [contextVersion, context, build, user],
@@ -289,21 +292,28 @@ module.exports = {
       // build fetch
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
+    debug('build.fetch', build.id());
     build.fetch(function (err) {
       if (err) { return cb(err); }
+      debug('build.contextVersions.models[0].fetch');
       build.contextVersions.models[0].fetch(function (err, cv) {
         if (err) { return cb(err); }
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
+        debug('build.build', build.id());
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);
           if (err) { return cb(err); }
           cv = build.contextVersions.models[0]; // cv may have been deduped
+          debug('cv.fetch', cv.id());
           cv.fetch(function (err) {
             if (err) { return cb(err); }
             cv = cv.toJSON();
             if (cv.build.completed) { return cb(); }
+            debug('primus.joinOrgRoom', ownerId || user.json().accounts.github.id);
             primus.joinOrgRoom(ownerId || user.json().accounts.github.id, function() {
+              debug('primus.onceVersionComplete', cv._id);
               primus.onceVersionComplete(cv._id, function() {
+                debug('version complete', cv._id);
                 require('./mocks/github/user')(user);
                 var count = createCount(2, cb);
                 build.contextVersions.models[0].fetch(count.next);
