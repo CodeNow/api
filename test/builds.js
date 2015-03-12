@@ -107,6 +107,7 @@ describe('Builds - /builds', function () {
   describe('GET', function () {
     beforeEach(function (done) {
       multi.createBuild(function (err, build, context, user) {
+        if (err) { return done(err); }
         ctx.build = build;
         ctx.context = context;
         ctx.user = user;

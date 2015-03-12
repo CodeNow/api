@@ -63,20 +63,27 @@ describe('201 POST /instances', {timeout:500}, function () {
       cb(createErr);
     }
   };
-  var forceImageNotFoundOnCreateErrOnce = function(oldFn) {
-    return function () {
-      var cb = last(arguments);
-      var createErr = new Error("image not found");
-      extend(createErr, {
-        statusCode : 404,
-        reason     : "no such container",
-        json       : "no such container\n"
-      });
-      if (isFunction(cb)) {
-        cb(createErr);
-      }
-      Dockerode.prototype.createContainer = oldFn;
-    };
+  var dontReportCreateError = function () {
+    // for cleaner test logs
+    var args = Array.prototype.slice.call(arguments);
+    var cb = args.pop();
+    args.push(function (err) {
+      if (err) { err.data.report = false; }
+      cb.apply(this, arguments);
+    });
+    ctx.originalDockerCreateContainer.apply(this, args);
+  };
+  var forceImageNotFoundOnCreateErrOnce = function () {
+    var cb = last(arguments);
+    var createErr = new Error("image not found");
+    extend(createErr, {
+      statusCode : 404,
+      reason     : "no such container",
+      json       : "no such container\n"
+    });
+    if (isFunction(cb)) {
+      cb(createErr);
+    }
   };
   function initExpected (done) {
     ctx.expected = {
@@ -234,12 +241,15 @@ describe('201 POST /instances', {timeout:500}, function () {
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
           Dockerode.prototype.createContainer = forceCreateContainerErr;
+          Docker.prototype.createContainer = dontReportCreateError;
           done();
         });
         afterEach(function (done) {
           // restore dockerODE.createContainer` back to normal
           Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
           done();
         });
         createInstanceTests(ctx);
@@ -252,7 +262,16 @@ describe('201 POST /instances', {timeout:500}, function () {
             'containers[0].error.stack': exists,
             'containers[0].error.imageIsPulling': true
           });
-          Dockerode.prototype.createContainer = forceImageNotFoundOnCreateErrOnce(Dockerode.prototype.createContainer);
+          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
+          Dockerode.prototype.createContainer = forceImageNotFoundOnCreateErrOnce;
+          Docker.prototype.createContainer = dontReportCreateError;
+          done();
+        });
+        afterEach(function (done) {
+          // restore dockerODE.createContainer` back to normal
+          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
           done();
         });
 
