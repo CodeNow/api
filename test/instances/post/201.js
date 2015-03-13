@@ -24,7 +24,7 @@ var extend = require('extend');
 var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
 
-describe('201 POST /instances', {timeout:500}, function () {
+describe('201 POST /instances', {timeout:1000}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
