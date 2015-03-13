@@ -24,7 +24,7 @@ var extend = require('extend');
 var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
 
-describe('201 POST /instances', {timeout:1000}, function () {
+describe('201 POST /instances', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -290,13 +290,13 @@ function createInstanceTests (ctx) {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
-  it('should create an instance with build', function (done) {
+  it('should create an instance with build', {timeout:1000}, function (done) {
     var body = {
       build: ctx.build.id()
     };
     assertCreate(body, done);
   });
-  it('should create an instance with build and name', function (done) {
+  it('should create an instance with build and name', {timeout:1000}, function (done) {
     var name = 'ABCDEFGHIJKLMNOPQRSTUVWYXZ_-';
     var body = {
       name: name,
@@ -305,7 +305,7 @@ function createInstanceTests (ctx) {
     ctx.expected.name = name;
     assertCreate(body, done);
   });
-  it('should create an instance with env and build', function (done) {
+  it('should create an instance with env and build', {timeout:1000}, function (done) {
     var env = [
       'FOO=BAR'
     ];
@@ -316,7 +316,7 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, done);
   });
-  it('should create an instance with name, env and build', function (done) {
+  it('should create an instance with name, env and build', {timeout:1000}, function (done) {
     var name = uuid();
     var env = [
       'FOO=BAR'
@@ -330,7 +330,7 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, done);
   });
-  it('should create a private instance by default', function (done) {
+  it('should create a private instance by default', {timeout:1000}, function (done) {
     var name = uuid();
     var env = [
       'FOO=BAR'

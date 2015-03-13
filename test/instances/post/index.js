@@ -34,7 +34,7 @@ describe('POST /instances', function () {
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
 
-  describe('POST', {timeout: 1000}, function () {
+  describe('POST', function () {
     describe('with unbuilt build', function () {
       beforeEach(function (done) {
         multi.createContextVersion(function (err, contextVersion, context, build, user) {
@@ -43,7 +43,7 @@ describe('POST /instances', function () {
           done(err);
         });
       });
-      it('should error if the build has unbuilt versions', function(done) {
+      it('should error if the build has unbuilt versions', {timeout:2000}, function(done) {
         var json = { build: ctx.build.id(), name: uuid() };
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/user')(ctx.user);
@@ -70,7 +70,7 @@ describe('POST /instances', function () {
             ctx.build.build({ message: uuid() }, done);
           });
 
-          it('should emit post and deploy events', {timeout: 5000}, function(done) {
+          it('should emit post and deploy events', {timeout:2000}, function(done) {
             var countDown = createCount(3, done);
             var expected = {
               shortHash: exists,
@@ -99,7 +99,7 @@ describe('POST /instances', function () {
             });
           });
         });
-        it('should create a new instance', {timeout: 1500}, function(done) {
+        it('should create a new instance', {timeout:2000}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
@@ -127,7 +127,7 @@ describe('POST /instances', function () {
           });
         });
 
-        it('should deploy the instance after the build finishes', {timeout: 2000}, function(done) {
+        it('should deploy the instance after the build finishes', {timeout:2000}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           require('../../fixtures/mocks/github/user')(ctx.user);
@@ -159,7 +159,7 @@ describe('POST /instances', function () {
               build.update({contextVersion: ctx.cv.id()}, count.next);
             });
           });
-          it('should not create a new instance', function(done) {
+          it('should not create a new instance', {timeout:2000}, function(done) {
             var json = { build: ctx.build.id(), name: uuid() };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
@@ -180,7 +180,7 @@ describe('POST /instances', function () {
               done(err);
             });
         });
-        it('should create a new instance', function(done) {
+        it('should create a new instance', {timeout:2000}, function(done) {
           var json = { build: ctx.build.id(), name: uuid() };
           var expected = {
             shortHash: exists,
@@ -216,7 +216,7 @@ describe('POST /instances', function () {
       });
     });
 
-    describe('from built build',  {timeout: 5000}, function () {
+    describe('from built build',  function () {
       beforeEach(function (done) {
         multi.createBuiltBuild(function (err, build, user) {
           ctx.build = build;
@@ -237,7 +237,7 @@ describe('POST /instances', function () {
       });
 
       requiredProjectKeys.forEach(function (missingBodyKey) {
-        it('should error if missing ' + missingBodyKey, function (done) {
+        it('should error if missing ' + missingBodyKey, {timeout:2000}, function (done) {
           var json = {
             name: uuid(),
             build: ctx.build.id()
@@ -250,7 +250,7 @@ describe('POST /instances', function () {
         });
       });
       describe('with built versions', function () {
-        it('should default the name to a short hash', function (done) {
+        it('should default the name to a short hash', {timeout:2000}, function (done) {
           var json = {
             build: ctx.build.id()
           };
@@ -270,7 +270,7 @@ describe('POST /instances', function () {
               done();
             }));
         });
-        it('should create an instance, and start it', {timeout:5000}, function (done) {
+        it('should create an instance, and start it', {timeout:2000}, function (done) {
           var json = {
             name: uuid(),
             build: ctx.build.id()
@@ -304,7 +304,7 @@ describe('POST /instances', function () {
             }));
         });
         describe('body.env', function() {
-          it('should create an instance, with ENV', function (done) {
+          it('should create an instance, with ENV', {timeout:2000}, function (done) {
             var json = {
               name: uuid(),
               build: ctx.build.id(),
@@ -331,7 +331,7 @@ describe('POST /instances', function () {
             ctx.user.createInstance(json,
               expects.success(201, expected, done));
           });
-          it('should error if body.env is not an array of strings', function(done) {
+          it('should error if body.env is not an array of strings', {timeout:2000}, function(done) {
             var json = {
               name: uuid(),
               build: ctx.build.id(),
@@ -342,7 +342,7 @@ describe('POST /instances', function () {
             ctx.user.createInstance(json,
               expects.errorStatus(400, /"env" should match/, done));
           });
-          it('should filter empty/whitespace-only strings from env array', {timeout: 500}, function (done) {
+          it('should filter empty/whitespace-only strings from env array', {timeout:2000}, function (done) {
             var json = {
               name: uuid(),
               build: ctx.build.id(),
@@ -368,7 +368,7 @@ describe('POST /instances', function () {
             ctx.user.createInstance(json,
               expects.success(201, expected, done));
           });
-          it('should error if body.env contains an invalid variable', function (done) {
+          it('should error if body.env contains an invalid variable', {timeout:2000}, function (done) {
             var json = {
               name: uuid(),
               build: ctx.build.id(),
@@ -391,7 +391,7 @@ describe('POST /instances', function () {
               done(err);
             });
           });
-          it('should generate unique names (by owner) and hashes an instance', function (done) {
+          it('should generate unique names (by owner) and hashes an instance', {timeout:2000}, function (done) {
             var json = {
               build: ctx.build.id()
             };
@@ -461,7 +461,7 @@ describe('POST /instances', function () {
             done(err);
           });
         });
-        it('should default the name to a short hash', function (done) {
+        it('should default the name to a short hash', {timeout:2000}, function (done) {
           var json = {
             build: ctx.build2.id(),
             owner: {
@@ -489,7 +489,7 @@ describe('POST /instances', function () {
           done(err);
         });
       });
-      it('should have the parent instance set in the new one', function (done) {
+      it('should have the parent instance set in the new one', {timeout:2000}, function (done) {
         var json = {
           build: ctx.build.id(),
           parent: ctx.instance.id()
