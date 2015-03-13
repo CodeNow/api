@@ -237,23 +237,27 @@ describe('204 DELETE /instances/:id', {timeout:10000}, function () {
     it('should delete an instance', function (done) {
       var instanceName = ctx.instance.attrs.name;
       var container = ctx.instance.containers.models[0];
-
-      ctx.instance.destroy(expects.success(204, assertEverythingCleaned));
-
-      function assertEverythingCleaned (err) {
-        if (err) { return done(err); }
-        if (ctx.waitForDestroy) {
-          dockerEvents.once('destroy', check);
-        } else {
-          check();
-        }
-        function check() {
-          var count = createCount(done);
-          expects.deletedHosts(ctx.user, instanceName, container, count.inc().next);
-          if (container && container.attrs.dockerContainer) {
-            expects.deletedWeaveHost(container, count.inc().next);
-            expects.deletedContainer(container, count.inc().next);
-          }
+      if (ctx.waitForDestroy) {
+        dockerEvents.once('destroy', function () {
+          check(done); // if waiting for destroy, done get's called here
+        });
+        ctx.instance.destroy(expects.success(204, function (err) {
+          if (err) { return done(err); }
+        }));
+      }
+      else {
+        // don't wait for destroy
+        ctx.instance.destroy(expects.success(204, function (err) {
+          if (err) { return done(err); }
+          check(done); // if NOT waiting for destroy, done get's called here
+        }));
+      }
+      function check(cb) {
+        var count = createCount(cb);
+        expects.deletedHosts(ctx.user, instanceName, container, count.inc().next);
+        if (container && container.attrs.dockerContainer) {
+          expects.deletedWeaveHost(container, count.inc().next);
+          expects.deletedContainer(container, count.inc().next);
         }
       }
     });
