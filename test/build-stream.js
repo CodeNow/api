@@ -142,7 +142,7 @@ describe('Build Stream', function() {
 
         function assert (cleanLog) {
           client.end();
-          Lab.expect(cleanLog.toString()).to.equal(
+          expect(cleanLog.toString()).to.equal(
             'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c048080d32980521e743');
           count.next();
         }
