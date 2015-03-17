@@ -28,7 +28,7 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
           notifications: {
             slack: {
               apiToken: 'xoxo-dasjdkasjdk243248392482394',
-              usernameToSlackNameMap: {}
+              githubUsernameToSlackIdMap: {}
             },
             hipchat: {
               authToken: 'some-hipchat-token',

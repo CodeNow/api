@@ -27,8 +27,8 @@ describe('400 POST /settings', {timeout: 700}, function () {
           notifications: {
             slack: {
               apiToken: 'xoxo-dasjdkasjdk243248392482394',
-              usernameToSlackNameMap: {
-                'cheese': 'danish'
+              githubUsernameToSlackIdMap: {
+                'cheese': 'U023BECGF'
               }
             },
             hipchat: {
@@ -56,8 +56,8 @@ describe('400 POST /settings', {timeout: 700}, function () {
           notifications: {
             slack: {
               apiToken: 'xoxo-dasjdkasjdk243248392482394',
-              usernameToSlackNameMap: {
-                'cheese': 'danish'
+              githubUsernameToSlackIdMap: {
+                'cheese': 'U023BECGF'
               }
             },
             hipchat: {
@@ -73,8 +73,8 @@ describe('400 POST /settings', {timeout: 700}, function () {
           expect(body.notifications.slack.apiToken).to.equal(
             settings.notifications.slack.apiToken
           );
-          expect(body.notifications.slack.usernameToSlackNameMap).to.deep.equal(
-            settings.notifications.slack.usernameToSlackNameMap
+          expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+            settings.notifications.slack.githubUsernameToSlackIdMap
           );
           expect(body.notifications.hipchat.authToken).to.equal(
             settings.notifications.hipchat.authToken

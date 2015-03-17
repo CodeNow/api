@@ -24,8 +24,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       notifications: {
         slack: {
           apiToken: 'xoxo-dasjdkasjdk243248392482394',
-          usernameToSlackNameMap: {
-            'cheese': 'danish'
+          githubUsernameToSlackIdMap: {
+            'cheese': 'U023BECGF'
           }
         },
         hipchat: {
@@ -55,9 +55,9 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         notifications: {
           slack: {
             apiToken: 'slack-token-2',
-            usernameToSlackNameMap: {
-              'cheese': 'danish',
-              'hello': 'operator'
+            githubUsernameToSlackIdMap: {
+              'cheese': 'U023BECGG',
+              'hello': 'U123BECGX'
             }
           }
         }
@@ -69,8 +69,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         expect(body.notifications.slack.apiToken).to.equal(
           newSettings.notifications.slack.apiToken
         );
-        expect(body.notifications.slack.usernameToSlackNameMap).to.deep.equal(
-          newSettings.notifications.slack.usernameToSlackNameMap
+        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+          newSettings.notifications.slack.githubUsernameToSlackIdMap
         );
         expect(body.notifications.hipchat.authToken).to.equal(
           settings.notifications.hipchat.authToken
@@ -87,7 +87,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         notifications: {
           slack: {
             apiToken: 'xoxo-dasjdkasjdk243248392482394',
-            usernameToSlackNameMap: {
+            githubUsernameToSlackIdMap: {
               'hello': 'operator'
             }
           },
@@ -105,8 +105,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         expect(body.notifications.slack.apiToken).to.equal(
           newSettings.notifications.slack.apiToken
         );
-        expect(body.notifications.slack.usernameToSlackNameMap).to.deep.equal(
-          newSettings.notifications.slack.usernameToSlackNameMap
+        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+          newSettings.notifications.slack.githubUsernameToSlackIdMap
         );
         expect(body.notifications.hipchat.authToken).to.equal(
           newSettings.notifications.hipchat.authToken
@@ -123,7 +123,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         notifications: {
           slack: {
             apiToken: '',
-            usernameToSlackNameMap: {}
+            githubUsernameToSlackIdMap: {}
 
           },
           hipchat: {
@@ -140,7 +140,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         expect(body.notifications.slack.apiToken).to.equal(
           newSettings.notifications.slack.apiToken
         );
-        expect(body.notifications.slack.usernameToSlackNameMap).to.be.undefined;
+        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.be.undefined;
         expect(body.notifications.hipchat.authToken).to.equal(
           newSettings.notifications.hipchat.authToken
         );
