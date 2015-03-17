@@ -6,7 +6,6 @@ var before = Lab.before;
 var after = Lab.after;
 var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 
 
@@ -14,10 +13,8 @@ describe('GET /settings', {timeout:500}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
 
@@ -26,7 +23,7 @@ describe('GET /settings', {timeout:500}, function () {
       owner: {},
       notifications: {
         slack: {
-          authToken: 'some-slack-token',
+          apiToken: 'xoxo-dasjdkasjdk243248392482394',
           usernameToSlackNameMap: {
             'cheese': 'danish'
           }
@@ -53,7 +50,7 @@ describe('GET /settings', {timeout:500}, function () {
       });
     });
 
-    describe('get by owner', function () {
+    describe('by owner', function () {
 
       it('should create settings if they are not exist', function (done) {
         multi.createUser(function (err, runnable) {
@@ -79,8 +76,8 @@ describe('GET /settings', {timeout:500}, function () {
           var returnedSettings = body[0];
           expect(returnedSettings._id).to.exist();
           expect(returnedSettings.owner.github).to.equal(settings.owner.github);
-          expect(returnedSettings.notifications.slack.authToken).to.equal(
-            settings.notifications.slack.authToken
+          expect(returnedSettings.notifications.slack.apiToken).to.equal(
+            settings.notifications.slack.apiToken
           );
           expect(returnedSettings.notifications.slack.usernameToSlackNameMap).to.deep.equal(
             settings.notifications.slack.usernameToSlackNameMap
@@ -107,8 +104,8 @@ describe('GET /settings', {timeout:500}, function () {
           var settings = body[0];
           expect(settings._id).to.exist();
           expect(settings.owner.github).to.equal(settings.owner.github);
-          expect(settings.notifications.slack.authToken).to.equal(
-            settings.notifications.slack.authToken
+          expect(settings.notifications.slack.apiToken).to.equal(
+            settings.notifications.slack.apiToken
           );
           expect(settings.notifications.slack.usernameToSlackNameMap).to.deep.equal(
             settings.notifications.slack.usernameToSlackNameMap
@@ -122,6 +119,7 @@ describe('GET /settings', {timeout:500}, function () {
           done();
         });
       });
+
 
       it('should fail if owner id is not matching', function (done) {
         require('../../fixtures/mocks/github/user-orgs')(ctx.user);
@@ -149,7 +147,7 @@ describe('GET /settings', {timeout:500}, function () {
     });
 
 
-    describe('get by id', function () {
+    describe('by id', function () {
 
       it('should be possible to fetch settings that were just created', function (done) {
         ctx.user.fetchSetting(settingsId, function (err, body) {

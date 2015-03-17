@@ -6,7 +6,6 @@ var before = Lab.before;
 var after = Lab.after;
 var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 
 
@@ -14,10 +13,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
 
@@ -26,7 +23,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       owner: {},
       notifications: {
         slack: {
-          authToken: 'some-slack-token',
+          apiToken: 'xoxo-dasjdkasjdk243248392482394',
           usernameToSlackNameMap: {
             'cheese': 'danish'
           }
@@ -57,7 +54,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       var newSettings = {
         notifications: {
           slack: {
-            authToken: 'slack-token-2',
+            apiToken: 'slack-token-2',
             usernameToSlackNameMap: {
               'cheese': 'danish',
               'hello': 'operator'
@@ -69,8 +66,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
-        expect(body.notifications.slack.authToken).to.equal(
-          newSettings.notifications.slack.authToken
+        expect(body.notifications.slack.apiToken).to.equal(
+          newSettings.notifications.slack.apiToken
         );
         expect(body.notifications.slack.usernameToSlackNameMap).to.deep.equal(
           newSettings.notifications.slack.usernameToSlackNameMap
@@ -89,7 +86,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       var newSettings = {
         notifications: {
           slack: {
-            authToken: 'slack-token-2',
+            apiToken: 'xoxo-dasjdkasjdk243248392482394',
             usernameToSlackNameMap: {
               'hello': 'operator'
             }
@@ -104,8 +101,9 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
-        expect(body.notifications.slack.authToken).to.equal(
-          newSettings.notifications.slack.authToken
+
+        expect(body.notifications.slack.apiToken).to.equal(
+          newSettings.notifications.slack.apiToken
         );
         expect(body.notifications.slack.usernameToSlackNameMap).to.deep.equal(
           newSettings.notifications.slack.usernameToSlackNameMap
@@ -124,8 +122,9 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       var newSettings = {
         notifications: {
           slack: {
-            authToken: '',
+            apiToken: '',
             usernameToSlackNameMap: {}
+
           },
           hipchat: {
             authToken: 'new-hipchat-token',
@@ -137,8 +136,9 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
-        expect(body.notifications.slack.authToken).to.equal(
-          newSettings.notifications.slack.authToken
+
+        expect(body.notifications.slack.apiToken).to.equal(
+          newSettings.notifications.slack.apiToken
         );
         expect(body.notifications.slack.usernameToSlackNameMap).to.be.undefined;
         expect(body.notifications.hipchat.authToken).to.equal(
@@ -159,7 +159,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         var newSettings = {
           notifications: {
             slack: {
-              authToken: 'ADSFADSFASDF'
+              apiToken: 'xoxo-dasjdkasjdk243248392482394'
             },
             hipchat: {
               authToken: 'new-hipchat-token',

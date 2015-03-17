@@ -6,7 +6,6 @@ var before = Lab.before;
 var after = Lab.after;
 var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 
@@ -14,10 +13,8 @@ describe('400 POST /settings', {timeout: 700}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
 
@@ -29,7 +26,7 @@ describe('400 POST /settings', {timeout: 700}, function () {
         var settings = {
           notifications: {
             slack: {
-              authToken: 'some-slack-token',
+              apiToken: 'xoxo-dasjdkasjdk243248392482394',
               usernameToSlackNameMap: {
                 'cheese': 'danish'
               }
@@ -58,7 +55,7 @@ describe('400 POST /settings', {timeout: 700}, function () {
           },
           notifications: {
             slack: {
-              authToken: 'some-slack-token',
+              apiToken: 'xoxo-dasjdkasjdk243248392482394',
               usernameToSlackNameMap: {
                 'cheese': 'danish'
               }
@@ -73,8 +70,8 @@ describe('400 POST /settings', {timeout: 700}, function () {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
-          expect(body.notifications.slack.authToken).to.equal(
-            settings.notifications.slack.authToken
+          expect(body.notifications.slack.apiToken).to.equal(
+            settings.notifications.slack.apiToken
           );
           expect(body.notifications.slack.usernameToSlackNameMap).to.deep.equal(
             settings.notifications.slack.usernameToSlackNameMap
