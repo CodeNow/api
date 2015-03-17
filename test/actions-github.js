@@ -13,8 +13,8 @@ var expect = Code.expect;
 
 var request = require('request');
 var Boom = require('dat-middleware').Boom;
-var expects = require('./fixtures/expects');
-var exists = require('101/exists');
+// var expects = require('./fixtures/expects');
+// var exists = require('101/exists');
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
@@ -25,7 +25,7 @@ var ContextVersion = require('models/mongo/context-version');
 var Runnable = require('models/apis/runnable');
 var PullRequest = require('models/apis/pullrequest');
 var Github = require('models/apis/github');
-var cbCount = require('callback-count');
+// var cbCount = require('callback-count');
 
 var generateKey = require('./fixtures/key-factory');
 
@@ -397,6 +397,7 @@ describe('Github - /actions/github', function () {
           });
         });
 
+      // TODO(anton): please fix this test. it's very flakey
       // it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
       //   ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
       //     if (err) { return done(err); }

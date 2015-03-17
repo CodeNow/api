@@ -12,9 +12,7 @@ var Code = require('code');
 var expect = Code.expect;
 
 var api = require('./fixtures/api-control');
-var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
-var generateKey = require('./fixtures/key-factory');
 var createCount = require('callback-count');
 var concat = require('concat-stream');
 var zlib = require('zlib');
@@ -27,7 +25,6 @@ describe('Github Proxy', function () {
   var ctx = {};
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  beforeEach(generateKey);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
 

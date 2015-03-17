@@ -13,9 +13,6 @@ var expect = Code.expect;
 var request = require('request');
 var api = require('./fixtures/api-control');
 
-var nock = require('nock');
-var generateKey = require('./fixtures/key-factory');
-
 describe('Actions - /actions/redirect', function () {
   var ctx = {};
 
