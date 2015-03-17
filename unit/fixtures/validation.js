@@ -1,8 +1,9 @@
-var Lab = require('lab');
+'use strict';
+
+var Code = require('code');
+var expect = Code.expect;
+
 var Faker = require('faker');
-var it = Lab.test;
-var expect = Lab.expect;
-var describe = Lab.experiment;
 var schemaValidators = require('../../lib/models/mongo/schemas/schema-validators');
 var keypath = require('keypather')();
 
@@ -39,12 +40,19 @@ var NOT_ALPHA_NUM_W_SPACE_SAFE = [
 var URLS = [Faker.Image.imageUrl(), 'http://www.google.com',
   'http://my_bucket.s3.amazonaws.com/homepage.html'];
 
-var githubUserRefValidationChecking = function(createModelFunction, property, isList) {
-  describe('Github User Ref Validation', function () {
-    var word = makeStringOfLength(50);
-    it('should fail validation for an invalid Github User Id (' + word + ')', function (done) {
+var Validator = function (lab) {
+  this.lab = lab;
+};
+
+module.exports = function (lab) { return new Validator(lab); };
+
+Validator.prototype.githubUserRefValidationChecking = function(createModelFunction, property, isList) {
+  var self = this;
+  self.lab.describe('Github User Ref Validation', function () {
+    var word = self.makeStringOfLength(50);
+    self.lab.it('should fail validation for an invalid Github User Id (' + word + ')', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, word);
+      self.fixArrayKeypathSet(myObject, property, word);
       myObject.save(function (err) {
         expect(err).to.be.ok;
         expect(err.name).to.be.ok;
@@ -52,20 +60,21 @@ var githubUserRefValidationChecking = function(createModelFunction, property, is
         done();
       });
     });
-    it(property + ' should succeed validation for a valid Github User Id', function (done) {
+    self.lab.it(property + ' should succeed validation for a valid Github User Id', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, isList ? [GITHUB_ID] : GITHUB_ID);
-      successCheck(myObject, done, property);
+      self.fixArrayKeypathSet(myObject, property, isList ? [GITHUB_ID] : GITHUB_ID);
+      self.successCheck(myObject, done, property);
     });
   });
 };
 
-var tokenValidationChecking = function(createModelFunction, property, isList) {
-  describe('ObjectId Validation', function () {
-    var word = makeStringOfLength(101);
-    it('should fail validation for an invalid Token (' + word + ')', function (done) {
+Validator.prototype.tokenValidationChecking = function(createModelFunction, property, isList) {
+  var self = this;
+  self.lab.describe('ObjectId Validation', function () {
+    var word = self.makeStringOfLength(101);
+    self.lab.it('should fail validation for an invalid Token (' + word + ')', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, isList ? [word] : word);
+      self.fixArrayKeypathSet(myObject, property, isList ? [word] : word);
       myObject.save(function (err) {
         expect(err).to.be.ok;
         expect(err.name).to.be.ok;
@@ -73,38 +82,40 @@ var tokenValidationChecking = function(createModelFunction, property, isList) {
         done();
       });
     });
-    it(property + ' should succeed validation for a valid Token', function (done) {
+    self.lab.it(property + ' should succeed validation for a valid Token', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, isList ? [OBJECT_ID] : OBJECT_ID);
-      successCheck(myObject, done, property);
+      self.fixArrayKeypathSet(myObject, property, isList ? [OBJECT_ID] : OBJECT_ID);
+      self.successCheck(myObject, done, property);
     });
   });
 };
 
-var emailValidationChecking = function(createModelFunction, property, isList) {
-  describe('Email Validation', function () {
+Validator.prototype.emailValidationChecking = function(createModelFunction, property, isList) {
+  var self = this;
+  self.lab.describe('Email Validation', function () {
     ALPHA_NUM_SAFE.forEach(function (string) {
-      it('should fail validation for ' + string, function (done) {
+      self.lab.it('should fail validation for ' + string, function (done) {
         var myObject = createModelFunction();
-        fixArrayKeypathSet(myObject, property, isList ? [string] : string);
-        errorCheck(myObject, done, property, schemaValidators.validationMessages.email);
+        self.fixArrayKeypathSet(myObject, property, isList ? [string] : string);
+        self.errorCheck(myObject, done, property, schemaValidators.validationMessages.email);
       });
     });
     var validEmail = Faker.Internet.email();
-    it('should pass validation for a valid email (' + validEmail + ')', function (done) {
+    self.lab.it('should pass validation for a valid email (' + validEmail + ')', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, isList ? [validEmail] : validEmail);
-      successCheck(myObject, done, property);
+      self.fixArrayKeypathSet(myObject, property, isList ? [validEmail] : validEmail);
+      self.successCheck(myObject, done, property);
     });
   });
 };
 
-var objectIdValidationChecking = function(createModelFunction, property, isList) {
-  describe('ObjectId Validation', function () {
-    var word = makeStringOfLength(50);
-    it('should fail validation for an invalid ObjectId (' + word + ')', function (done) {
+Validator.prototype.objectIdValidationChecking = function(createModelFunction, property, isList) {
+  var self = this;
+  self.lab.describe('ObjectId Validation', function () {
+    var word = self.makeStringOfLength(50);
+    self.lab.it('should fail validation for an invalid ObjectId (' + word + ')', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, isList ? [word] : word);
+      self.fixArrayKeypathSet(myObject, property, isList ? [word] : word);
       myObject.save(function (err) {
         expect(err).to.be.ok;
         expect(err.name).to.be.ok;
@@ -112,20 +123,21 @@ var objectIdValidationChecking = function(createModelFunction, property, isList)
         done();
       });
     });
-    it(property + ' should succeed validation for a valid ObjectId', function (done) {
+    self.lab.it(property + ' should succeed validation for a valid ObjectId', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, isList ? [OBJECT_ID] : OBJECT_ID);
-      successCheck(myObject, done, property);
+      self.fixArrayKeypathSet(myObject, property, isList ? [OBJECT_ID] : OBJECT_ID);
+      self.successCheck(myObject, done, property);
     });
   });
 };
 
-var dockerIdValidationChecking = function(createModelFunction, property, isList) {
-  describe('Docker Id Validation', function () {
-    var word = makeStringOfLength(200);
-    it('should fail validation for an invalid Docker Id (' + word + ')', function (done) {
+Validator.prototype.dockerIdValidationChecking = function(createModelFunction, property, isList) {
+  var self = this;
+  self.lab.describe('Docker Id Validation', function () {
+    var word = self.makeStringOfLength(200);
+    self.lab.it('should fail validation for an invalid Docker Id (' + word + ')', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, isList ? [word] : word);
+      self.fixArrayKeypathSet(myObject, property, isList ? [word] : word);
       myObject.save(function (err) {
         expect(err).to.be.ok;
         expect(err.name).to.be.ok;
@@ -133,192 +145,196 @@ var dockerIdValidationChecking = function(createModelFunction, property, isList)
         done();
       });
     });
-    it('should succeed validation for a valid Docker Id', function (done) {
+    self.lab.it('should succeed validation for a valid Docker Id', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, isList ? [OBJECT_ID] : OBJECT_ID);
-      successCheck(myObject, done, property);
+      self.fixArrayKeypathSet(myObject, property, isList ? [OBJECT_ID] : OBJECT_ID);
+      self.successCheck(myObject, done, property);
     });
   });
 };
 
-var stringLengthValidationChecking = function(createModelFunction, property, maxLength) {
-  var word = makeStringOfLength(maxLength);
-  describe('Length Validation', function () {
-    it('should succeed length validation for a string of length ' + maxLength, function (done) {
+Validator.prototype.stringLengthValidationChecking = function(createModelFunction, property, maxLength) {
+  var self = this;
+  var word = self.makeStringOfLength(maxLength);
+  self.lab.describe('Length Validation', function () {
+    self.lab.it('should succeed length validation for a string of length ' + maxLength, function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, word);
-      successCheck(myObject, done, property);
+      self.fixArrayKeypathSet(myObject, property, word);
+      self.successCheck(myObject, done, property);
     });
-    it('should fail length validation for a string of length ' + (maxLength + 1), function (done) {
+    self.lab.it('should fail length validation for a string of length ' + (maxLength + 1), function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathSet(myObject, property, word + 'a');
-      errorCheck(myObject, done, property,
+      self.fixArrayKeypathSet(myObject, property, word + 'a');
+      self.errorCheck(myObject, done, property,
         schemaValidators.validationMessages.stringLength(maxLength));
     });
   });
 };
 
-var urlValidationChecking = function(createModelFunction, property, validationMessage) {
-  describe('URL Validation', function () {
+Validator.prototype.urlValidationChecking = function(createModelFunction, property, validationMessage) {
+  var self = this;
+  self.lab.describe('URL Validation', function () {
     ALPHA_NUM_SAFE.forEach(function (string) {
-      it('should fail validation for ' + string, function (done) {
+      self.lab.it('should fail validation for ' + string, function (done) {
         var container = createModelFunction();
-        fixArrayKeypathSet(container, property, string);
-        errorCheck(container, done, property, validationMessage);
+        self.fixArrayKeypathSet(container, property, string);
+        self.errorCheck(container, done, property, validationMessage);
       });
     });
     URLS.forEach(function (string) {
-      it('should succeed validation for ' + string, function (done) {
+      self.lab.it('should succeed validation for ' + string, function (done) {
         var container = createModelFunction();
-        fixArrayKeypathSet(container, property, string);
-        successCheck(container, done, property);
+        self.fixArrayKeypathSet(container, property, string);
+        self.successCheck(container, done, property);
       });
     });
   });
 };
 
-var urlSafeNameValidationChecking = function(createModelFunction, property, validationMessage) {
-  describe('Url-Safe Validation', function () {
+Validator.prototype.urlSafeNameValidationChecking = function(createModelFunction, property, validationMessage) {
+  var self = this;
+  self.lab.describe('Url-Safe Validation', function () {
     NOT_URL_SAFE.forEach(function (string) {
-      it('should fail validation for ' + string, function (done) {
+      self.lab.it('should fail validation for ' + string, function (done) {
         var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        errorCheck(model, done, property, validationMessage);
+        self.fixArrayKeypathSet(model, property, string);
+        self.errorCheck(model, done, property, validationMessage);
       });
     });
     URL_SAFE.forEach(function (string) {
-      it('should succeed validation for ' + string, function (done) {
+      self.lab.it('should succeed validation for ' + string, function (done) {
         var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        successCheck(model, done, property);
+        self.fixArrayKeypathSet(model, property, string);
+        self.successCheck(model, done, property);
       });
     });
   });
 };
 
-var alphaNumNameValidationChecking = function(createModelFunction, property) {
-  describe('Alphanumic Validation', function () {
+Validator.prototype.alphaNumNameValidationChecking = function(createModelFunction, property) {
+  var self = this;
+  self.lab.describe('Alphanumic Validation', function () {
     NOT_ALPHA_NUM_SAFE.forEach(function (string) {
-      it('should fail validation for ' + string, function (done) {
+      self.lab.it('should fail validation for ' + string, function (done) {
         var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        errorCheck(model, done, property, schemaValidators.validationMessages.characters);
+        self.fixArrayKeypathSet(model, property, string);
+        self.errorCheck(model, done, property, schemaValidators.validationMessages.characters);
       });
     });
     ALPHA_NUM_SAFE.forEach(function (string) {
-      it('should succeed validation for ' + string, function (done) {
+      self.lab.it('should succeed validation for ' + string, function (done) {
         var model = createModelFunction();
-        fixArrayKeypathSet(model, property, string);
-        successCheck(model, done, property);
+        self.fixArrayKeypathSet(model, property, string);
+        self.successCheck(model, done, property);
       });
     });
 
-    stringLengthValidationChecking(createModelFunction, property, 100);
+    self.stringLengthValidationChecking(createModelFunction, property, 100);
   });
 };
 
-var nameValidationChecking = function(createModelFunction, property) {
-  describe('Name Validation', function () {
-    stringLengthValidationChecking(createModelFunction, property, 100);
+Validator.prototype.nameValidationChecking = function(createModelFunction, property) {
+  var self = this;
+  self.lab.describe('Name Validation', function () {
+    self.stringLengthValidationChecking(createModelFunction, property, 100);
   });
 };
 
-var requiredValidationChecking = function(createModelFunction, property) {
-  describe(property + ' Required Validation', function () {
-    it(property + ' should fail validation because it is required', function (done) {
+Validator.prototype.requiredValidationChecking = function(createModelFunction, property) {
+  var self = this;
+  self.lab.describe(property + ' Required Validation', function () {
+    self.lab.it(property + ' should fail validation because it is required', function (done) {
       var myObject = createModelFunction();
-      fixArrayKeypathDel(myObject, property);
-      requiredCheck(myObject, done, property);
+      self.fixArrayKeypathDel(myObject, property);
+      self.requiredCheck(myObject, done, property);
     });
   });
 };
 
-var fixArrayKeypathSet = function(myObject, property, value) {
-  if (property.indexOf('.') < 0) {
-    myObject[property] = value;
-  } else if (property.match(/\.\d+\./)) {
-    var paths = property.split('.');
-    var finalPath = myObject;
-    for (var i = 0; i < paths.length - 1; i ++ ) {
-      paths[i] = isNaN(paths[i]) ? paths[i] : parseInt(paths[i]);
-      finalPath = finalPath[paths[i]];
-    }
-    finalPath[paths[paths.length - 1]] = value;
-  } else {
-    property = property.replace(/\.(\d+)\./g, '[$1]');
-    keypath.set(myObject, property, value);
-  }
-};
-
-var fixArrayKeypathDel = function(myObject, property, value) {
-  if (property.indexOf('.') < 0) {
-    myObject[property] = value;
-  } else if (property.match(/\.\d+\./)) {
-    var paths = property.split('.');
-    var finalPath = myObject;
-    for (var i = 0; i < paths.length - 1; i ++ ) {
-      paths[i] = isNaN(paths[i]) ? paths[i] : parseInt(paths[i]);
-      finalPath = finalPath[paths[i]];
-    }
-    finalPath[paths[paths.length - 1]] = value;
-  } else {
-    keypath.del(myObject, property);
-  }
-};
-
-var errorCheck = function (modelObject, done, property, validationString) {
-  modelObject.save(function (err, model) {
-    expect(model).to.not.be.ok;
-    expect(err).to.be.ok;
-    expect(err.name).to.be.ok;
-    expect(err.name).to.equal(VALIDATOR_ERROR);
-    expect(err.errors).to.be.ok;
-    if (err.errors.hasOwnProperty(property)) {
-      var errorValue = err.errors[property];
-      expect(errorValue.value).to.be.ok;
-      expect(errorValue.value).to.equal(keypath.get(modelObject,property));
-      Lab.assert('The error received isn\'t the correct error',
-          errorValue.message.indexOf(validationString) !== -1);
+Validator.prototype.fixArrayKeypathSet = function(myObject, property, value) {
+    if (property.indexOf('.') < 0) {
+      myObject[property] = value;
+    } else if (property.match(/\.\d+\./)) {
+      var paths = property.split('.');
+      var finalPath = myObject;
+      for (var i = 0; i < paths.length - 1; i ++ ) {
+        paths[i] = isNaN(paths[i]) ? paths[i] : parseInt(paths[i]);
+        finalPath = finalPath[paths[i]];
+      }
+      finalPath[paths[paths.length - 1]] = value;
     } else {
-      done(new Error('The ' + (typeof modelObject) + ' failed to catch a ' + property +
-        ' validation'));
+      property = property.replace(/\.(\d+)\./g, '[$1]');
+      keypath.set(myObject, property, value);
     }
-    done();
-  });
-};
+  };
 
-var requiredCheck = function (modelObject, done, property) {
-  modelObject.save(function (err) {
-    expect(err).to.be.ok;
-    expect(err.name).to.be.ok;
-    expect(err.name).to.equal(VALIDATOR_ERROR);
-    expect(err.errors).to.be.ok;
-    if (err.errors.hasOwnProperty(property)) {
-      var errorValue = err.errors[property];
-      Lab.assert('The error received isn\'t the correct error',
-          errorValue.message.indexOf('required') !== -1);
+Validator.prototype.fixArrayKeypathDel = function(myObject, property, value) {
+    if (property.indexOf('.') < 0) {
+      myObject[property] = value;
+    } else if (property.match(/\.\d+\./)) {
+      var paths = property.split('.');
+      var finalPath = myObject;
+      for (var i = 0; i < paths.length - 1; i ++ ) {
+        paths[i] = isNaN(paths[i]) ? paths[i] : parseInt(paths[i]);
+        finalPath = finalPath[paths[i]];
+      }
+      finalPath[paths[paths.length - 1]] = value;
     } else {
-      done(new Error('The ' + (typeof modelObject) + ' failed to catch a ' + property +
-        ' validation'));
+      keypath.del(myObject, property);
     }
-    done();
-  });
-};
+  };
 
-var successCheck = function (modelObject, done, property) {
-  modelObject.save(function (err, savedModel) {
-    if (err) {
-      return done(err);
-    }
-    expect(err).to.not.be.ok;
-    expect(savedModel).to.be.ok;
-    expect(keypath.get(savedModel, property)).to.be.ok;
-    expect(keypath.get(savedModel, property)).to.equal(keypath.get(modelObject, property));
-    done();
-  });
-};
+Validator.prototype.errorCheck = function (modelObject, done, property, validationString) {
+    modelObject.save(function (err, model) {
+      expect(model).to.not.be.ok;
+      expect(err).to.be.ok;
+      expect(err.name).to.be.ok;
+      expect(err.name).to.equal(VALIDATOR_ERROR);
+      expect(err.errors).to.be.ok;
+      if (err.errors.hasOwnProperty(property)) {
+        var errorValue = err.errors[property];
+        expect(errorValue.value).to.be.ok;
+        expect(errorValue.value).to.equal(keypath.get(modelObject,property));
+        expect(errorValue.message).to.contain(validationString);
+      } else {
+        done(new Error('The ' + (typeof modelObject) + ' failed to catch a ' + property +
+          ' validation'));
+      }
+      done();
+    });
+  };
 
-var makeStringOfLength = function(length) {
+Validator.prototype.requiredCheck = function (modelObject, done, property) {
+    modelObject.save(function (err) {
+      expect(err).to.be.ok;
+      expect(err.name).to.be.ok;
+      expect(err.name).to.equal(VALIDATOR_ERROR);
+      expect(err.errors).to.be.ok;
+      if (err.errors.hasOwnProperty(property)) {
+        var errorValue = err.errors[property];
+        expect(errorValue.message).to.contain('require');
+      } else {
+        done(new Error('The ' + (typeof modelObject) + ' failed to catch a ' + property +
+          ' validation'));
+      }
+      done();
+    });
+  };
+
+Validator.prototype.successCheck = function (modelObject, done, property) {
+    modelObject.save(function (err, savedModel) {
+      if (err) {
+        return done(err);
+      }
+      expect(err).to.not.be.ok;
+      expect(savedModel).to.be.ok;
+      expect(keypath.get(savedModel, property)).to.be.ok;
+      expect(keypath.get(savedModel, property)).to.equal(keypath.get(modelObject, property));
+      done();
+    });
+  };
+
+Validator.prototype.makeStringOfLength = function (length) {
   var returnValue = '';
   for(var x = 0; x < length; x++) {
     returnValue += 'a';
@@ -326,28 +342,12 @@ var makeStringOfLength = function(length) {
   return returnValue;
 };
 
-module.exports.makeStringOfLength = makeStringOfLength;
-module.exports.successCheck = successCheck;
-module.exports.errorCheck = errorCheck;
-module.exports.githubUserRefValidationChecking = githubUserRefValidationChecking;
-module.exports.objectIdValidationChecking = objectIdValidationChecking;
-module.exports.stringLengthValidationChecking = stringLengthValidationChecking;
-module.exports.requiredValidationChecking = requiredValidationChecking;
-module.exports.urlValidationChecking = urlValidationChecking;
-module.exports.urlSafeNameValidationChecking = urlSafeNameValidationChecking;
-module.exports.emailValidationChecking = emailValidationChecking;
-module.exports.dockerIdValidationChecking = dockerIdValidationChecking;
-module.exports.alphaNumNameValidationChecking = alphaNumNameValidationChecking;
-module.exports.tokenValidationChecking = tokenValidationChecking;
-module.exports.nameValidationChecking = nameValidationChecking;
-module.exports.fixArrayKeypathSet = fixArrayKeypathSet;
-module.exports.fixArrayKeypathDel = fixArrayKeypathDel;
-module.exports.VALID_OBJECT_ID = OBJECT_ID;
-module.exports.VALID_GITHUB_ID = GITHUB_ID;
-module.exports.NOT_URL_SAFE = NOT_URL_SAFE;
-module.exports.NOT_ALPHA_NUM_W_SPACE_SAFE = NOT_ALPHA_NUM_W_SPACE_SAFE;
-module.exports.ALPHA_NUM_W_SPACE_SAFE = ALPHA_NUM_W_SPACE_SAFE;
-module.exports.URL_SAFE = URL_SAFE;
-module.exports.ALPHA_NUM_SAFE = ALPHA_NUM_SAFE;
-module.exports.NOT_ALPHA_NUM_SAFE = NOT_ALPHA_NUM_SAFE;
-module.exports.URLS = URLS;
+Validator.prototype.VALID_OBJECT_ID = OBJECT_ID;
+Validator.prototype.VALID_GITHUB_ID = GITHUB_ID;
+Validator.prototype.NOT_URL_SAFE = NOT_URL_SAFE;
+Validator.prototype.NOT_ALPHA_NUM_W_SPACE_SAFE = NOT_ALPHA_NUM_W_SPACE_SAFE;
+Validator.prototype.ALPHA_NUM_W_SPACE_SAFE = ALPHA_NUM_W_SPACE_SAFE;
+Validator.prototype.URL_SAFE = URL_SAFE;
+Validator.prototype.ALPHA_NUM_SAFE = ALPHA_NUM_SAFE;
+Validator.prototype.NOT_ALPHA_NUM_SAFE = NOT_ALPHA_NUM_SAFE;
+Validator.prototype.URLS = URLS;

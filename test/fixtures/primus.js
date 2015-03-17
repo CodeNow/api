@@ -1,5 +1,8 @@
-var Lab = require('lab');
-var expect = Lab.expect;
+'use strict';
+
+var Code = require('code');
+var expect = Code.expect;
+
 var uuid = require('uuid');
 var expects = require('./expects');
 var Primus = require('primus');
@@ -13,6 +16,8 @@ var Socket = Primus.createSocket({
 var debug = require('debug')('runnable_api:fixtures:primus');
 
 var ctx = {};
+
+var ctx;
 
 module.exports = {
   joinOrgRoom: function (orgId, cb) {

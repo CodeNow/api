@@ -1,8 +1,33 @@
-var Lab = require('lab');
-var it = Lab.test;
+'use strict';
 
 var expects = require('./expects');
 
+/**
+ * Make type check tests automatically based on `def`
+ * @def - has `action` and arrays of `requiredParams` and `optionalParams`. See actual test for examples
+ * @ctx - test content object
+ * @handler - handler that would be called on test end. Accepts generated `body` and `cb`
+ */
+exports.makeTestFromDef = function (def, ctx, lab, handler) {
+  exports.lab = lab;
+  // TODO (anton) null and undefined values are breaking code now. Investigate it
+  var types = ['string', 'number', 'boolean', 'object', 'array'];//, 'null', 'undefined'];
+
+  if (def.requiredParams) {
+    def.requiredParams.forEach(function (param, index) {
+      setupTests(ctx, handler, def, types, param, buildBodyForRequiredParams, index);
+      // more things should be checked for arrays. We should go and check each item
+      setupArrayParamsTests(ctx, handler, def, types, param, buildBodyForRequiredParams);
+    });
+  }
+  if (def.optionalParams) {
+    def.optionalParams.forEach(function (param, index) {
+      setupTests(ctx, handler, def, types, param, buildBodyWithRequiredParams, index);
+      // more things should be checked for arrays. We should go and check each item
+      setupArrayParamsTests(ctx, handler, def, types, param, buildBodyWithRequiredParams, index);
+    });
+  }
+};
 
 function typeValue (ctx, type) {
   var values = {
@@ -99,7 +124,7 @@ function excludeParam (types, excluded) {
 function setupTests (ctx, handler, def, types, param, buildBodyFunction, index) {
   var paramTypes = excludeParam(types, param.type);
   paramTypes.forEach(function (type) {
-    it('should not ' + def.action + ' when `' + param.name + '` param is ' + type, function (done) {
+    exports.lab.it('should not ' + def.action + ' when `' + param.name + '` param is ' + type, function (done) {
       var body = buildBodyFunction(ctx, def.requiredParams, param, type, index);
       var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, type));
       var cb = expects.error(400, message, done);
@@ -110,7 +135,7 @@ function setupTests (ctx, handler, def, types, param, buildBodyFunction, index) 
     param.invalidValues.forEach(function (invalidValue) {
       var testName = 'should not ' + def.action + ' when `' + param.name +
       '` param has invalid value such as ' + invalidValue;
-      it(testName, function (done) {
+      exports.lab.it(testName, function (done) {
         var body = buildBodyFunction(ctx, def.requiredParams);
         body[param.name] = invalidValue;
         // e.g. "env" should match
@@ -127,7 +152,7 @@ function setupTests (ctx, handler, def, types, param, buildBodyFunction, index) 
       objectKeyParamTypes.forEach(function (type) {
         var testName = 'should not ' + def.action + ' when `' + param.name + '` param has key `' + keyParam.name +
         '` with type ' + type;
-        it(testName, function (done) {
+        exports.lab.it(testName, function (done) {
           var body = buildBodyFunction(ctx, def.requiredParams, param, type, index);
           body[param.name] = {};
           body[param.name][keyParam.name] = typeValue(ctx, type);
@@ -150,7 +175,7 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
     arrayItemTypes.forEach(function(arrayItemType) {
       var testName = 'should not ' + def.action + ' when `' + param.name +
       '` param has ' + arrayItemType + ' items in the array';
-      it(testName, function (done) {
+      exports.lab.it(testName, function (done) {
         var body = buildBodyFunction(ctx, def.requiredParams);
         body[param.name] = [];
         body[param.name].push(typeValue(ctx, arrayItemType));
@@ -166,7 +191,7 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
       param.invalidValues.forEach(function (invalidValue) {
         var testName = 'should not ' + def.action + ' when `' + param.name +
         '` param has invalid item value such as ' + invalidValue;
-        it(testName, function (done) {
+        exports.lab.it(testName, function (done) {
           var body = buildBodyFunction(ctx, def.requiredParams);
           body[param.name] = [invalidValue];
           // e.g. "env" should match
@@ -178,30 +203,3 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
     }
   }
 }
-
-/**
- * Make type check tests automatically based on `def`
- * @def - has `action` and arrays of `requiredParams` and `optionalParams`. See actual test for examples
- * @ctx - test content object
- * @handler - handler that would be called on test end. Accepts generated `body` and `cb`
- */
-exports.makeTestFromDef = function (def, ctx, handler) {
-  // TODO (anton) null and undefined values are breaking code now. Investigate it
-  var types = ['string', 'number', 'boolean', 'object', 'array'];//, 'null', 'undefined'];
-
-
-  if (def.requiredParams) {
-    def.requiredParams.forEach(function (param, index) {
-      setupTests(ctx, handler, def, types, param, buildBodyForRequiredParams, index);
-      // more things should be checked for arrays. We should go and check each item
-      setupArrayParamsTests(ctx, handler, def, types, param, buildBodyForRequiredParams);
-    });
-  }
-  if (def.optionalParams) {
-    def.optionalParams.forEach(function (param, index) {
-      setupTests(ctx, handler, def, types, param, buildBodyWithRequiredParams, index);
-      // more things should be checked for arrays. We should go and check each item
-      setupArrayParamsTests(ctx, handler, def, types, param, buildBodyWithRequiredParams, index);
-    });
-  }
-};

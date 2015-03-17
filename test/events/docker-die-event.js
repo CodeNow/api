@@ -1,12 +1,16 @@
-var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
+'use strict';
 
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var Lab = require('lab');
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+
 var api = require('../fixtures/api-control');
 var dock = require('../fixtures/dock');
 var multi = require('../fixtures/multi-factory');
@@ -24,8 +28,8 @@ describe('EVENT runnable:docker:events:die', function () {
   before(require('../fixtures/mocks/api-client').setup);
   beforeEach(primus.connect);
   afterEach(primus.disconnect);
-  after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
+  after(api.stop.bind(ctx));
   after(require('../fixtures/mocks/api-client').clean);
 
   describe('container dies naturally', function() {
@@ -48,7 +52,7 @@ describe('EVENT runnable:docker:events:die', function () {
       afterEach(function (done) {
         dockerEvents.events.die = ctx.origHandleDie;
         UserStoppedContainer.prototype.unlock = ctx.originalUserStoppedContainerUnLock;
-        done();
+        dockerEvents.close(done);
       });
       // afterEach(dockerEvents.close.bind(dockerEvents));
       it('should receive the docker die event', function (done) {
@@ -58,6 +62,7 @@ describe('EVENT runnable:docker:events:die', function () {
             expect(data.status).to.equal('die');
             expect(data.from).to.equal('ubuntu:latest');
             expect(data.id).to.equal(ctx.instance.attrs.container.inspect.Id);
+            console.trace();
             count.next();
           }
         };

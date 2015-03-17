@@ -36,19 +36,25 @@ then
   exit $?
 fi
 
-numTests=$(npm run _bdd -- -d ${all_files[@]} | grep -E '[0-9]+ tests complete' | awk '{split($0,r," "); print r[1];}')
+numTests=$(npm run _bdd -- --dry ${all_files[@]} | tail -6 | perl -n -e '/- (\d+)\)/ && print $1')
 echo $numTests to run
 
 if [[ $indexes == "" ]]
 then
   indexes=()
-  for i in $(seq 1 $numTests)
-  do
-    if [[ $(($i % $CIRCLE_NODE_TOTAL)) -eq $CIRCLE_NODE_INDEX ]]
-    then
-      indexes+=" -i $i"
-    fi
-  done
+  if [[ $CIRCLE_NODE_TOTAL -eq 1 ]]
+  then
+    echo "local testing"
+  else
+    indexes=()
+    for i in $(seq 1 $numTests)
+    do
+      if [[ $(($i % $CIRCLE_NODE_TOTAL)) -eq $CIRCLE_NODE_INDEX ]]
+      then
+        indexes+=" -i $i"
+      fi
+    done
+  fi
 fi
 
 npm run _bdd -- ${extra_args[@]} ${indexes[@]} ${all_files[@]}
