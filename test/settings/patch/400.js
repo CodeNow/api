@@ -20,13 +20,15 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
 
   describe('update settings', function () {
 
+
     it('should fail updating non-existing setting', function (done) {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
         var settings = {
           notifications: {
             slack: {
-              apiToken: 'xoxo-dasjdkasjdk243248392482394'
+              apiToken: 'xoxo-dasjdkasjdk243248392482394',
+              usernameToSlackNameMap: {}
             },
             hipchat: {
               authToken: 'some-hipchat-token',
@@ -34,7 +36,13 @@ describe('400 PATCH /settings/:id', {timeout:500}, function () {
             }
           }
         };
-        runnable.newSetting('000000000000000000000000').update({json: settings}, function (err) {
+
+        require('../../fixtures/mocks/github/user-orgs')(runnable);
+        require('../../fixtures/mocks/github/users-username')(runnable.attrs.accounts.github.id,
+          runnable.attrs.accounts.github.username);
+
+          runnable.newSetting('000000000000000000000000').update({json: settings}, function (err) {
+
           expect(err.data.statusCode).to.equal(404);
           expect(err.data.message).to.equal('Setting not found');
           done();
