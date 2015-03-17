@@ -32,7 +32,7 @@ do
 done
 if [[ ${#files[@]} -ne 0 ]]
 then
-  npm run _bdd -- ${indexes[@]} ${extra_args[@]} ${files[@]}
+  npm run _bdd -- $indexes ${extra_args[@]} ${files[@]}
   exit $?
 fi
 
@@ -41,21 +41,23 @@ echo $numTests to run
 
 if [[ $indexes == "" ]]
 then
-  indexes=()
+  indexes=""
   if [[ $CIRCLE_NODE_TOTAL -eq 1 ]]
   then
     echo "local testing"
   else
-    indexes=()
-    for i in $(seq 1 $numTests)
-    do
-      if [[ $(($i % $CIRCLE_NODE_TOTAL)) -eq $CIRCLE_NODE_INDEX ]]
-      then
-        indexes+=" -i $i"
-      fi
-    done
+    len=$(expr $numTests / $CIRCLE_NODE_TOTAL)
+    s=$(expr $len \* $CIRCLE_NODE_INDEX + 1)
+    n=$(expr $CIRCLE_NODE_INDEX + 1)
+    e=$(expr $len \* $n)
+    if [[ $CIRCLE_NODE_TOTAL -eq $n ]]
+    then
+      e=$numTests
+    fi
+    indexes="-i $s-$e"
+    echo "indexes $indexes"
   fi
 fi
 
-npm run _bdd -- ${extra_args[@]} ${indexes[@]} ${all_files[@]}
+npm run _bdd -- ${extra_args[@]} $indexes ${all_files[@]}
 exit $?
