@@ -2,9 +2,7 @@
 
 var Lab = require('lab');
 var describe = Lab.experiment;
-var it = Lab.test;
 var Faker = require('faker');
-var expect = Lab.expect;
 var before = Lab.before;
 var afterEach = Lab.afterEach;
 var validation = require('./fixtures/validation');
