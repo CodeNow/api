@@ -71,7 +71,7 @@ describe('Pods', function () {
         var cb = args.pop();
         cb(null, this);
       });
-      pod.getInstances(function (err, pod) {
+      pod.populateInstances(function (err, pod) {
         expect(err).to.equal(null);
         expect(pod.instances).to.have.length(2);
         expect(pod.populate.calledOnce).to.equal(true);
