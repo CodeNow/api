@@ -10,11 +10,15 @@ dependencies:
 test:
   pre:
     - ulimit -n 10240
+    - ./cayley_linux http --config=cayley.cfg:
+        background: true
+        pwd: $HOME/api/test/fixtures/graphs/cayley
+    - ./test/fixtures/graphs/neo4j/bin/neo4j start
   override:
     - npm run lint
+    - npm run unit
     - ./scripts/npm-bdd-split-files.sh:
         parallel: true
     - npm run bdd -- test/bdd-instance-dependencies.js:
         environment:
           GRAPH_DATABASE_TYPE: neo4j
-    - npm run unit
