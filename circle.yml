@@ -13,7 +13,9 @@ test:
     - ./cayley_linux http --config=cayley.cfg:
         background: true
         pwd: test/fixtures/graphs/cayley
-    - ./test/fixtures/graphs/neo4j/bin/neo4j start
+    - ./bin/neo4j console:
+        background: true
+        pwd: test/fixtures/graphs/neo4j
   override:
     - npm run lint
     - npm run unit
