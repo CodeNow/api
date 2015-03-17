@@ -191,7 +191,7 @@ describe('GET /instances', function () {
         'container.dockerContainer': dockerContainer
       };
 
-      ctx.user.fetchInstances(query, expects.success(200, function(err, body, code, res) {
+      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
         if (err) { return done(err); }
         expect(body.length).to.equal(1);
         expect(body[0].container.dockerContainer).to.equal(dockerContainer);
@@ -209,7 +209,7 @@ describe('GET /instances', function () {
         'container.dockerContainer': 'invalid'
       };
 
-      ctx.user.fetchInstances(query, expects.success(200, function(err, body, code, res) {
+      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
         if (err) { return done(err); }
         expect(body.length).to.equal(0);
         done();
