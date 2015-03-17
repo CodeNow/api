@@ -1,9 +1,10 @@
+'use strict'; 
+
 var async = require('async');
 var route53 = require('./route53');
 route53.start(); // must be before api require
 var api = require('../../app');
 var cleanMongo = require('./clean-mongo');
-var graph = require('./graph');
 var exec = require('child_process').exec;
 
 module.exports = {
@@ -35,17 +36,12 @@ var started = false;
 function startApi (done) {
   if(started) { return done(); }
   started = true;
-  var ctx = this;
-  ctx.graph = graph;
   route53.start(); // must be before api require, and here
   api.start(function (err) {
     if (err) { return done(err); }
-    graph.start(function (err) {
+    cleanMongo.removeEverything(function (err) {
       if (err) { return done(err); }
-      cleanMongo.removeEverything(function (err) {
-        if (err) { return done(err); }
-        ensureIndexes(done);
-      });
+      ensureIndexes(done);
     });
   });
 }
@@ -56,7 +52,7 @@ function stopApi (done) {
   route53.stop();
   api.stop(function (err) {
     if (err) { return done(err); }
-    graph.stop(done);
+    done();
     // cleanMongo.dropDatabase(done);
   });
 }
