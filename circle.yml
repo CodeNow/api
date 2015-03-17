@@ -12,7 +12,7 @@ test:
     - ulimit -n 10240
     - ./cayley_linux http --config=cayley.cfg:
         background: true
-        pwd: $HOME/api/test/fixtures/graphs/cayley
+        pwd: test/fixtures/graphs/cayley
     - ./test/fixtures/graphs/neo4j/bin/neo4j start
   override:
     - npm run lint
