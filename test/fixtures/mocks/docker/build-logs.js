@@ -11,22 +11,30 @@ buffer[5] = 0;
 buffer[6] = 0;
 buffer[7] = 0x53;
 
-module.exports = function (delay, failure) {
-  nock('http://localhost:4243', { allowUnmocked: true })
+// This mock is currently used with docker container die event
+// for an image builder container. The docker host information is
+// used from the docker die event data.
+// Docker listener uses emits data with docker's external host
+var dockerHost = 'http://localhost:4243';
+
+module.exports = function (failure) {
+  nock(dockerHost, { allowUnmocked: true })
     .filteringPath(/\/containers\/[0-9a-f]+\/logs\?.+/,
       '/containers/284912fa2cf26d40cc262798ecbb483b58f222d42ab1551e818afe35744688f7/logs')
     .get('/containers/284912fa2cf26d40cc262798ecbb483b58f222d42ab1551e818afe35744688f7/logs')
-    .delayConnection(delay || 0)
-    .reply((failure) ? 500 : 200,
-      failure || buffer.toString() +
+    .reply(200,
+      failure ?
+      buffer.toString() +
+      'failfailfail failf failfailfailfailfailfailfailfailfailfailfailfailfailfailfailfail' :
+      buffer.toString() +
       'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c048080d32980521e743');
 
-  nock('http://localhost:4243', { allowUnmocked: true })
+  nock(dockerHost, { allowUnmocked: true })
     .filteringPath(/\/images\/.+\/push/, '/images/repo/push')
     .post('/images/repo/push')
     .reply(200);
 
-  nock('http://localhost:4243', { allowUnmocked: true })
+  nock(dockerHost, { allowUnmocked: true })
     .post('/images/push')
     .reply(200);
 };

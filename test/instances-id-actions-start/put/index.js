@@ -54,6 +54,16 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
       cb(createErr);
     }
   };
+  var dontReportCreateError = function () {
+    // for cleaner test logs
+    var args = Array.prototype.slice.call(arguments);
+    var cb = args.pop();
+    args.push(function (err) {
+      if (err) { err.data.report = false; }
+      cb.apply(this, arguments);
+    });
+    ctx.originalDockerCreateContainer.apply(this, args);
+  };
   var delayContainerLogsBy = function (ms, originalContainerLogs) {
     return function () {
       var container = this;
@@ -67,7 +77,8 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
-  afterEach(primus.disconnect.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -175,7 +186,6 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
           done();
         });
         describe('messenger test', function() {
-          beforeEach(primus.connect.bind(ctx));
           beforeEach(function(done){
             primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
           });
@@ -202,12 +212,15 @@ describe('PUT /instances/:id/actions/start', { timeout: 500 }, function () {
           ctx.expected['containers[0].error.stack'] = exists;
           ctx.expectNoContainerErr = true;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
           Dockerode.prototype.createContainer = forceCreateContainerErr;
+          Docker.prototype.createContainer = dontReportCreateError;
           done();
         });
         afterEach(function (done) {
           // restore dockerODE.createContainer` back to normal
           Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
           done();
         });
         createInstanceAndRunTests(ctx);

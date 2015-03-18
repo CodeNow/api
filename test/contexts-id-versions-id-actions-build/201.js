@@ -12,8 +12,10 @@ var multi = require('../fixtures/multi-factory');
 var expects = require('../fixtures/expects');
 var exists = require('101/exists');
 var multi = require('../fixtures/multi-factory');
-var keypather = require('keypather')();
+var primus = require('../fixtures/primus');
+var dockerMockEvents = require('../fixtures/docker-mock-events');
 var expect = require('lab').expect;
+var Context = require('models/mongo/context');
 
 describe('201 POST /contexts/:id/versions/:id/actions/build', {timeout: 2000}, function() {
   var ctx = {};
@@ -25,6 +27,8 @@ describe('201 POST /contexts/:id/versions/:id/actions/build', {timeout: 2000}, f
   before(api.start.bind(ctx));
   before(require('../fixtures/mocks/api-client').setup);
   before(dock.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(require('../fixtures/mocks/api-client').clean);
   after(dock.stop.bind(ctx));
@@ -96,7 +100,7 @@ function buildTheVersionTests (ctx) {
         require('../fixtures/mocks/github/user')(ctx.user);
         ctx.cv.build(expects.success(201, ctx.expected, function (err) {
           if (err) { return done(err); }
-          waitForCvBuildToComplete(ctx.copiedCv, ctx.user, done);
+          waitForCvBuildToComplete(ctx.cv, done);
         }));
       });
 
@@ -106,7 +110,7 @@ function buildTheVersionTests (ctx) {
           require('../fixtures/mocks/github/user')(ctx.user);
           ctx.cv.build(expects.success(201, ctx.expected, function (err) {
             if (err) { return done(err); }
-            waitForCvBuildToComplete(ctx.cv, ctx.user, done);
+            waitForCvBuildToComplete(ctx.cv, done);
           }));
         });
         beforeEach(function (done) {
@@ -157,7 +161,7 @@ function buildTheVersionTests (ctx) {
             require('../fixtures/mocks/github/user')(ctx.user);
             ctx.copiedCv.build(expects.success(201, ctx.expected, function (err) {
               if (err) { return done(err); }
-              waitForCvBuildToComplete(ctx.copiedCv, ctx.user, done);
+              waitForCvBuildToComplete(ctx.copiedCv, done);
             }));
           });
         });
@@ -172,7 +176,7 @@ function buildTheVersionTests (ctx) {
         require('../fixtures/mocks/github/user')(ctx.user);
         ctx.cv.build(expects.success(201, ctx.expected, function (err) {
           if (err) { return done(err); }
-          waitForCvBuildToComplete(ctx.copiedCv, ctx.user, done);
+          waitForCvBuildToComplete(ctx.cv, done);
         }));
       });
       // uncomment when we can build context versions with a specific owner
@@ -201,47 +205,10 @@ function buildTheVersionTests (ctx) {
             require('../fixtures/mocks/github/user')(ctx.user);
             ctx.cv.build(expects.success(201, ctx.expected, function (err) {
               if (err) { return done(err); }
-              waitForCvBuildToComplete(ctx.cv, ctx.user, done);
+              waitForCvBuildToComplete(ctx.cv, done);
             }));
           });
-          [
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n \n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log \n\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log \n \n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log \n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n ',
-          'FROM dockerfile/nodejs \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \nCMD tail -f /var/log/dpkg.log \n',
-          'FROM dockerfile/nodejs \nCMD tail -f /var/log/dpkg.log\n ',
-          'FROM dockerfile/nodejs\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n    \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs    \n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs    \n    \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n \n\n \n\n\n \n\n\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs  \n  \n\n  \n\n\n  \n\n\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n\n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n \n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n \n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n\n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n\n \nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n \n\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs \n \n \nCMD tail -f /var/log/dpkg.log\n',
-          '\nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '\n\nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '\n \nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          ' \n\nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          ' \n \nFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\t\n',
-          'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n\r',
-          ].forEach(function(fileInfo) {
+          require('../fixtures/equivalent-dockerfiles').forEach(function(fileInfo) {
             it('should dedupe whitespace changes: ' + fileInfo, function(done) {
               var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
@@ -250,7 +217,7 @@ function buildTheVersionTests (ctx) {
                   if (err) { return done(err); }
                   ctx.cv2.build(function (err) {
                     if (err) { return done(err); }
-                    waitForCvBuildToComplete(ctx.cv2, ctx.user2, function(err) {
+                    waitForCvBuildToComplete(ctx.cv2, function(err) {
                       if (err) { return done(err); }
                       expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build);
                       expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId);
@@ -269,7 +236,7 @@ function buildTheVersionTests (ctx) {
                   if (err) { return done(err); }
                   ctx.cv2.build({json: {noCache: true}}, function (err) {
                     if (err) { return done(err); }
-                    waitForCvBuildToComplete(ctx.cv2, ctx.user2, function(err) {
+                    waitForCvBuildToComplete(ctx.cv2, function(err) {
                       if (err) { return done(err); }
                       expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build);
                       expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId);
@@ -282,16 +249,7 @@ function buildTheVersionTests (ctx) {
             });
           });
 
-          [
-          'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log\n',
-          'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log \n',
-          'FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log\n ',
-          'FROM dockerfile/nodejs\n  CMD tail -f /var/log/dpkg.log\n',
-          ' FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '  FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '\tFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          '\rFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n',
-          ].forEach(function(fileInfo) {
+          require('../fixtures/different-dockerfiles').forEach(function(fileInfo) {
             it('should NOT dedupe whitespace changes: ' + fileInfo, function(done) {
                var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
@@ -300,7 +258,7 @@ function buildTheVersionTests (ctx) {
                   if (err) { return done(err); }
                   ctx.cv2.build(function (err) {
                     if (err) { return done(err); }
-                    waitForCvBuildToComplete(ctx.cv2, ctx.user2, function(err) {
+                    waitForCvBuildToComplete(ctx.cv2, function(err) {
                       if (err) { return done(err); }
                       expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build);
                       expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId);
@@ -333,9 +291,9 @@ function buildTheVersionTests (ctx) {
                 if (err) { return done(err); }
                 ctx.cv3.build(function (err) {
                   if (err) { return done(err); }
-                  waitForCvBuildToComplete(ctx.cv2, ctx.user, function(err){
+                  waitForCvBuildToComplete(ctx.cv2, function(err){
                     if (err) { return done(err); }
-                    waitForCvBuildToComplete(ctx.cv3, ctx.user, function(err) {
+                    waitForCvBuildToComplete(ctx.cv3, function(err) {
                       if (err) { return done(err); }
                       expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build);
                       expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv3.attrs.build);
@@ -358,9 +316,9 @@ function buildTheVersionTests (ctx) {
               if (err) { return done(err); }
               ctx.cv2.build(function (err) {
                 if (err) { return done(err); }
-                waitForCvBuildToComplete(ctx.cv, ctx.user, function(){
+                waitForCvBuildToComplete(ctx.cv, function(){
                   if (err) { return done(err); }
-                  waitForCvBuildToComplete(ctx.cv2, ctx.user, function(err) {
+                  waitForCvBuildToComplete(ctx.cv2, function(err) {
                     if (err) { return done(err); }
                     expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build);
                     expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId);
@@ -376,20 +334,21 @@ function buildTheVersionTests (ctx) {
     } // dedupeFirstBuildCompletedTest
   });
 
-  function waitForCvBuildToComplete (cv, user, done) {
-    checkCvBuildCompleted();
-    function checkCvBuildCompleted () {
-      if (!cv) { return done(); }
-      require('../fixtures/mocks/github/user')(user);
-      cv.fetch(function (err, body) {
-        if (err) { return done(err); }
-        var buildCompleted = keypather.get(cv, 'attrs.build.completed');
-        if (buildCompleted) {
-          return done(null, body);
-        }
-        // cv build not completed, check again
-        setTimeout(checkCvBuildCompleted, 10);
+  function waitForCvBuildToComplete (cvModel, done) {
+    cvModel.fetch(function (err) {
+      if (err) { return done(err);}
+      var cv = cvModel.toJSON();
+      if (cv.build.completed) { return done(); }
+      Context.findById(cv.context, {owner:1}, function (err, context) {
+        if (err) { return done(err);}
+        var ownerGithubId = context.owner.github;
+        primus.joinOrgRoom(ownerGithubId, function (/*data*/) {
+          primus.onceVersionComplete(cv._id, function (/*data*/) {
+            cvModel.fetch(done);
+          });
+          dockerMockEvents.emitBuildComplete(cv);
+        });
       });
-    }
+    });
   }
 }
