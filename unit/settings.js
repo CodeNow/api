@@ -20,6 +20,7 @@ describe('Settings',  function () {
       notifications: {
         slack: {
           apiToken: 'xoxo-dasjdkasjdk243248392482394',
+          enabled: true
         }
       }
     };
@@ -29,6 +30,7 @@ describe('Settings',  function () {
         if (err) { return done(err); }
         expect(saved.owner.github).to.equal(data.owner.github);
         expect(saved.notifications.slack.apiToken).to.equal(data.notifications.slack.apiToken);
+        expect(saved.notifications.slack.enabled).to.equal(true);
         savedSettings = saved;
         done();
       });
@@ -55,7 +57,8 @@ describe('Settings',  function () {
         },
         notifications: {
           slack: {
-            apiToken: 'xoxo-dasjdkasjdk243248392482394'
+            apiToken: 'xoxo-dasjdkasjdk243248392482394',
+            enabled: false
           }
         }
       };
@@ -64,6 +67,7 @@ describe('Settings',  function () {
         if (err) { return done(err); }
         expect(saved.owner.github).to.equal(data.owner.github);
         expect(saved.notifications.slack.apiToken).to.equal(data.notifications.slack.apiToken);
+        expect(saved.notifications.slack.enabled).to.equal(false);
         done();
       });
     });
