@@ -11,6 +11,7 @@ var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
 var createCount = require('callback-count');
 
 describe('GET /instances', function () {
@@ -18,6 +19,8 @@ describe('GET /instances', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('../../fixtures/clean-mongo').removeEverything);

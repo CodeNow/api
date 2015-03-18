@@ -10,11 +10,11 @@ var expect = Lab.expect;
 var api = require('../fixtures/api-control');
 var dock = require('../fixtures/dock');
 var multi = require('../fixtures/multi-factory');
+var primus = require('../fixtures/primus');
 var dockerEvents = require('models/events/docker');
 var Docker = require('models/apis/docker');
 var createCount = require('callback-count');
 var UserStoppedContainer = require('models/redis/user-stopped-container');
-
 
 describe('EVENT runnable:docker:events:die', function () {
   var ctx = {};
@@ -22,6 +22,8 @@ describe('EVENT runnable:docker:events:die', function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../fixtures/mocks/api-client').clean);
@@ -48,14 +50,16 @@ describe('EVENT runnable:docker:events:die', function () {
         UserStoppedContainer.prototype.unlock = ctx.originalUserStoppedContainerUnLock;
         done();
       });
-      afterEach(dockerEvents.close.bind(dockerEvents));
+      // afterEach(dockerEvents.close.bind(dockerEvents));
       it('should receive the docker die event', function (done) {
         var count = createCount(3, done);
         dockerEvents.events.die = function (data) {
-          expect(data.id).to.equal(ctx.instance.attrs.container.inspect.Id);
-          expect(data.status).to.equal('die');
-          expect(data.from).to.equal('ubuntu:latest');
-          count.next();
+          if (data.from === 'ubuntu:latest') { // ignore image-builder dies
+            expect(data.status).to.equal('die');
+            expect(data.from).to.equal('ubuntu:latest');
+            expect(data.id).to.equal(ctx.instance.attrs.container.inspect.Id);
+            count.next();
+          }
         };
         dockerEvents.listen(count.next);
         var docker = new Docker(ctx.instance.attrs.container.dockerHost);
@@ -96,15 +100,17 @@ describe('EVENT runnable:docker:events:die', function () {
         UserStoppedContainer.prototype.lock = ctx.originalUserStoppedContainerLock;
         done();
       });
-      afterEach(dockerEvents.close.bind(dockerEvents));
+      // afterEach(dockerEvents.close.bind(dockerEvents));
 
       it('should receive the docker die event', function (done) {
         var count = createCount(3, done);
         dockerEvents.events.die = function (data) {
-          expect(data.id).to.equal(ctx.instance.attrs.container.inspect.Id);
-          expect(data.status).to.equal('die');
-          expect(data.from).to.equal('ubuntu:latest');
-          count.next();
+          if (data.from === 'ubuntu:latest') { // ignore image-builder dies
+            expect(data.id).to.equal(ctx.instance.attrs.container.inspect.Id);
+            expect(data.status).to.equal('die');
+            expect(data.from).to.equal('ubuntu:latest');
+            count.next();
+          }
         };
         dockerEvents.listen(count.next);
         ctx.instance.stop(count.next);

@@ -11,6 +11,8 @@ var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
+var primus = require('../../fixtures/primus');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var uuid = require('uuid');
 var async = require('async');
 var exists = require('101/exists');
@@ -27,6 +29,8 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
@@ -172,8 +176,6 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
           });
           describe('WITH changes in appcodeversion', function () {
             beforeEach(function (done) {
-              require('../../fixtures/mocks/docker/container-id-attach')();
-              var tailBuildStream = require('../../fixtures/tail-build-stream');
               ctx.newCV = ctx.user
                 .newContext(ctx.newBuild.contexts.models[0].id())
                 .newVersion(ctx.newBuild.contextVersions.models[0].id());
@@ -186,7 +188,7 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
                   }, done);
                 },
                 ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
-                tailBuildStream.bind(null, ctx.newBuild.contextVersions.models[0].id())
+                waitForVersionComplete(ctx.user, ctx.newBuild.contextVersions.models[0])
               ], done);
             });
             it('should deploy the copied (and modified) build', function (done) {
@@ -210,8 +212,6 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
             beforeEach(function (done) {
               require('../../fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
               require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
-              require('../../fixtures/mocks/docker/container-id-attach')();
-              var tailBuildStream = require('../../fixtures/tail-build-stream');
               ctx.newCV = ctx.user
                 .newContext(ctx.newBuild.contexts.models[0].id())
                 .newVersion(ctx.newBuild.contextVersions.models[0].id());
@@ -219,7 +219,7 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
                 ctx.newCV.fetch.bind(ctx.newCV),
                 ctx.newCV.rootDir.contents.createFile.bind(ctx.newCV.rootDir.contents, 'file.txt'),
                 ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
-                tailBuildStream.bind(null, ctx.newBuild.contextVersions.models[0].id())
+                waitForVersionComplete(ctx.user, ctx.newBuild.contextVersions.models[0])
               ], done);
             });
             it('should deploy the copied (and modified) build', function (done) {
@@ -243,8 +243,6 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
             beforeEach(function (done) {
               require('../../fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
               require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
-              require('../../fixtures/mocks/docker/container-id-attach')();
-              var tailBuildStream = require('../../fixtures/tail-build-stream');
               ctx.newCV = ctx.user
                 .newContext(ctx.newBuild.contexts.models[0].id())
                 .newVersion(ctx.newBuild.contextVersions.models[0].id());
@@ -258,7 +256,7 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
                 },
                 ctx.newCV.rootDir.contents.createFile.bind(ctx.newCV.rootDir.contents, 'file.txt'),
                 ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
-                tailBuildStream.bind(null, ctx.newBuild.contextVersions.models[0].id())
+                waitForVersionComplete(ctx.user, ctx.newBuild.contextVersions.models[0])
               ], done);
             });
             it('should deploy the copied (and modified) build', function (done) {
@@ -598,3 +596,14 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
     });
   });
 });
+
+function waitForVersionComplete (user, cv) {
+  return function (cb) {
+    primus.joinOrgRoom(user.attrs.accounts.github.id, function () {
+      primus.onceVersionComplete(cv.id(), function (/* data */) {
+        cb();
+      });
+      dockerMockEvents.emitBuildComplete(cv);
+    });
+  };
+}

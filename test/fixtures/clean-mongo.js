@@ -26,6 +26,7 @@ var cleanMongo = module.exports = {
     });
   },
   removeEverything: function (cb) {
+    // console.log('  clean mongo');
     // FIXME: stores: uncomment if we start using stores in tests as we should
     // reset model-store and collection-store here
     var self = cleanMongo;

@@ -71,14 +71,13 @@ describe('Docker Events', function () {
     });
 
     it('should return if image builder image', function (done) {
-      var out = dockerEvents.handleDie({
+      dockerEvents.handleDie({
         uuid: 'some-uuid',
         id: 'some-id',
         time: new Date().getTime(),
         host: 'http://localhost:4243',
         from: process.env.IMAGE_BUILDER
       });
-      expect(out).to.have.property('skip');
       done();
     });
 

@@ -9,6 +9,7 @@ var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
+var primus = require('./fixtures/primus');
 var uuid = require('uuid');
 
 describe('Version - /contexts/:contextId/versions/:id', function () {
@@ -16,6 +17,8 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
