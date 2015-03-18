@@ -260,14 +260,13 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_sync;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          request.post(options, function (err, res, instancesIds) {
+          request.post(options, function (err, res, cvsIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(201);
-            expect(instancesIds).to.be.okay;
-            expect(instancesIds).to.be.an('array');
-            expect(instancesIds).to.have.a.lengthOf(1);
-            expect(instancesIds).to.include(ctx.instance.attrs._id);
+            expect(cvsIds).to.be.okay;
+            expect(cvsIds).to.be.an('array');
+            expect(cvsIds).to.have.a.lengthOf(1);
           });
         });
 
@@ -295,14 +294,13 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_sync;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          request.post(options, function (err, res, instancesIds) {
+          request.post(options, function (err, res, cvsIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(201);
-            expect(instancesIds).to.be.okay;
-            expect(instancesIds).to.be.an('array');
-            expect(instancesIds).to.have.a.lengthOf(1);
-            expect(instancesIds).to.include(ctx.instance.attrs._id);
+            expect(cvsIds).to.be.okay;
+            expect(cvsIds).to.be.an('array');
+            expect(cvsIds).to.have.a.lengthOf(1);
           });
         });
     });
@@ -444,15 +442,13 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_sync;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          request.post(options, function (err, res, instancesIds) {
+          request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(201);
-            expect(instancesIds).to.be.okay;
-            expect(instancesIds).to.be.an('array');
-            expect(instancesIds).to.have.a.lengthOf(2);
-            expect(instancesIds).to.include(ctx.instance.attrs._id);
-            expect(instancesIds).to.include(instance2._id);
+            expect(cvIds).to.be.okay;
+            expect(cvIds).to.be.an('array');
+            expect(cvIds).to.have.a.lengthOf(2);
           });
         });
       });
