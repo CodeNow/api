@@ -144,6 +144,9 @@ describe('Github - /actions/github', function () {
 
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
+      process.env.ENABLE_GITHUB_HOOKS = 'true';
+      ctx.originalStatusesForUnlinked = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
+      process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'true';
       ctx.originaUpdateInstance = Runnable.prototype.updateInstance;
       ctx.originaCreateBuild = Runnable.prototype.createBuild;
       ctx.originaBuildBuild = Runnable.prototype.buildBuild;
@@ -152,12 +155,13 @@ describe('Github - /actions/github', function () {
       ctx.originalDeploymentErrored = PullRequest.prototype.deploymentErrored;
       ctx.originalDeploymentSucceeded = PullRequest.prototype.deploymentSucceeded;
       ctx.originalCreateDeployment = PullRequest.prototype.createDeployment;
-      process.env.ENABLE_GITHUB_HOOKS = 'true';
+
       done();
     });
 
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+      process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalStatusesForUnlinked;
       Runnable.prototype.updateInstance = ctx.originaUpdateInstance;
       Runnable.prototype.createBuild = ctx.originaCreateBuild;
       Runnable.prototype.buildBuild = ctx.originaBuildBuild;
@@ -326,6 +330,25 @@ describe('Github - /actions/github', function () {
         Github.prototype.getPullRequestHeadCommit = ctx.originalGetPullRequestHeadCommit;
         done();
       });
+
+      it('should return 202 if ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES=false', {timeout: 6000},
+        function (done) {
+          process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'false';
+
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var data = {
+            branch: 'feature-1',
+            repo: acv.repo
+          };
+          var options = hooks(data).pull_request_sync;
+          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          request.post(options, function (err, res) {
+            if (err) { return done(err); }
+            expect(res.statusCode).to.equal(202);
+            expect(res.body).to.equals('We ignore PRs if branch has no linked server');
+            done();
+          });
+        });
 
       it('should set server selection status for the branch without instance - pull_request:synchronize',
         {timeout: 6000}, function (done) {
