@@ -15,15 +15,16 @@ var Url = require('url');
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
 var RedisList = require('redis-types').List;
-
+var primus = require('./fixtures/primus');
 var createCount = require('callback-count');
 var pick = require('101/pick');
 
 describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {};
-
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  before(primus.connect);
+  after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -43,7 +44,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
     });
   });
   describe('duplicate build', function() {
-    it('should deploy an instance deduped context versions', { timeout: 5000 }, function (done) {
+    it('should deploy an instance deduped context versions', { timeout: 10000 }, function (done) {
       async.waterfall([
         createVersion,
         addAppCodeVersions,

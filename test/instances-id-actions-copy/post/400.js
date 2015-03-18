@@ -3,11 +3,13 @@ var describe = Lab.experiment;
 var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
+var afterEach = Lab.afterEach;
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
+var primus = require('../../fixtures/primus');
 
 describe('400  POST /instances/:id/actions/copy', function () {
   var ctx = {};
@@ -15,6 +17,8 @@ describe('400  POST /instances/:id/actions/copy', function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);

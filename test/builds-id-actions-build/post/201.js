@@ -11,13 +11,14 @@ var api = require('./../../fixtures/api-control');
 var dock = require('./../../fixtures/dock');
 var multi = require('./../../fixtures/multi-factory');
 var expects = require('./../../fixtures/expects');
-var tailBuildStream = require('./../../fixtures/tail-build-stream');
 var createCount = require('callback-count');
 var uuid = require('uuid');
 var exists = require('101/exists');
 var not = require('101/not');
 var extend = require('extend');
 var Docker = require('models/apis/docker');
+var dockerMockEvents = require('./../../fixtures/docker-mock-events');
+var primus = require('./../../fixtures/primus');
 
 describe('201 POST /builds/:id/actions/build', {timeout: 500}, function() {
   var ctx = {};
@@ -25,15 +26,21 @@ describe('201 POST /builds/:id/actions/build', {timeout: 500}, function() {
   before(api.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   before(dock.start.bind(ctx));
-  after(api.stop.bind(ctx));
-  after(require('../../fixtures/mocks/api-client').clean);
-  after(dock.stop.bind(ctx));
+  beforeEach(primus.connect);
+
+  afterEach(primus.disconnect);
   afterEach(require('./../../fixtures/clean-mongo').removeEverything);
   afterEach(require('./../../fixtures/clean-ctx')(ctx));
   afterEach(require('./../../fixtures/clean-nock'));
+  after(api.stop.bind(ctx));
+  after(require('../../fixtures/mocks/api-client').clean);
+  after(dock.stop.bind(ctx));
 
   beforeEach(function (done) {
     ctx.user = multi.createUser(done);
+  });
+  beforeEach(function (done) {
+    primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
   });
 
   describe('for User', function () {
@@ -55,7 +62,8 @@ describe('201 POST /builds/:id/actions/build', {timeout: 500}, function() {
       require('../../fixtures/mocks/github/user-orgs')(ctx.bodyOwner.github, 'Runnable');
       // build build -> cv build
       require('../../fixtures/mocks/github/user-orgs')(ctx.bodyOwner.github, 'Runnable');
-      done();
+
+      primus.joinOrgRoom(ctx.bodyOwner.github, done);
     });
 
     buildTheBuildTests(ctx);
@@ -259,8 +267,10 @@ function itShouldBuildTheBuild (ctx) {
     ctx.build.build(ctx.body,
       expects.success(201, ctx.expectStarted, function (err) {
         if (err) { return done(err); }
-        tailBuildStream(ctx.cv.id(), function (err) {
-          if (err) { return done(err); }
+
+        dockerMockEvents.emitBuildComplete(ctx.cv);
+
+        primus.onceVersionComplete(ctx.cv.id(), function() {
           var count = createCount(done);
           ctx.build.fetch(expects.success(200, ctx.expectBuilt, count.inc().next));
           count.inc();

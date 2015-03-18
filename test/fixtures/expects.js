@@ -25,45 +25,50 @@ expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done)
   return function (err, body, code, res) {
     if (err) { return done(err); }
     expect(statusCode).to.equal(code);
-    if (expectedKeypaths) {
-      expect(body).to.be.ok;
-      if (Array.isArray(expectedKeypaths) && expectedKeypaths.length) {
-        // don't allow us to have more than we expect
-        expect(body).to.have.length(expectedKeypaths.length);
-        var expectedNotFound = [];
-        var allItemsFoundInBody = expectedKeypaths.every(function (expectedItem) {
-          var found = body.some(function (bodyItem) {
-            try {
-              expectKeypaths(bodyItem, expectedItem);
-              return true;
-            } catch(err) {
-              return false;
-            }
-          });
-          if (!found) {
-            expectedNotFound.push(expectedItem);
-          }
-          return found;
-        });
-        if (!allItemsFoundInBody) {
-          throw new Error([
-            'Body does not contain:', JSON.stringify(expectedNotFound),
-            'Body:', JSON.stringify(body)
-          ].join(' '));
-        }
-      } else if (Array.isArray(expectedKeypaths)) {
-        expect(body).to.have.length(expectedKeypaths.length);
-      } else {
-        expectKeypaths(body, expectedKeypaths);
-      }
-    }
     if (expectedHeaders) {
       expect(res.headers).to.be.okay;
       expectKeypaths(res.headers, expectedHeaders);
     }
+    expects.check(expectedKeypaths, body);
     done(null, body, code, res);
   };
 };
+
+expects.check = function (expected, object) {
+  if (expected) {
+    expect(object).to.be.ok;
+    if (Array.isArray(expected) && expected.length) {
+      // don't allow us to have more than we expect
+      expect(object).to.have.length(expected.length);
+      var expectedNotFound = [];
+      var allItemsFoundInBody = expected.every(function (expectedItem) {
+        var found = object.some(function (bodyItem) {
+          try {
+            expectKeypaths(bodyItem, expectedItem);
+            return true;
+          } catch(err) {
+            return false;
+          }
+        });
+        if (!found) {
+          expectedNotFound.push(expectedItem);
+        }
+        return found;
+      });
+      if (!allItemsFoundInBody) {
+        throw new Error([
+          'Body does not contain:', JSON.stringify(expectedNotFound),
+          'Body:', JSON.stringify(object)
+        ].join(' '));
+      }
+    } else if (Array.isArray(expected)) {
+      expect(object).to.have.length(expected.length);
+    } else {
+      expectKeypaths(object, expected);
+    }
+  }
+};
+
 /*jshint maxdepth:2 */
 expects.errorStatus = function (code, messageMatch, done) {
   if (isFunction(messageMatch)) {

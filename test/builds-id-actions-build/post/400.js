@@ -44,7 +44,7 @@ describe('400 POST /builds/:id/actions/build', function() {
     typesTests.makeTestFromDef(def, ctx, function (body, cb) {
       ctx.build.build(body, cb);
     });
-    
+
   });
 
 });
