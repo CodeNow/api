@@ -138,6 +138,92 @@ describe('Github - /actions/github', function () {
     });
   });
 
+  // describe('disabled slack private messaging', function () {
+  //   beforeEach(function (done) {
+  //     ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
+  //     process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'true';
+  //     ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
+  //     process.env.ENABLE_GITHUB_HOOKS = 'true';
+  //     done();
+  //   });
+
+  //   afterEach(function (done) {
+  //     process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
+  //     process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+  //     done();
+  //   });
+
+  //   it('should return OKAY', function (done) {
+  //     var options = hooks().push_new_branch;
+  //     request.post(options, function (err, res, body) {
+  //       if (err) { return done(err); }
+
+  //       expect(res.statusCode).to.equal(202);
+  //       expect(body).to.equal('New branch private notifications are disabled for now');
+  //       done();
+  //     });
+  //   });
+  // });
+
+
+  // describe('push new branch slack notifications', function () {
+  //   describe('success cases', function () {
+  //     beforeEach(function (done) {
+  //       ctx.originalBuildsOnPushSetting = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
+  //       multi.createInstance(function (err, instance, build, user, modelsArr) {
+  //         ctx.contextVersion = modelsArr[0];
+  //         ctx.context = modelsArr[1];
+  //         ctx.build = build;
+  //         ctx.user = user;
+  //         ctx.instance = instance;
+  //         done();
+  //       });
+  //     });
+
+  //     afterEach(function (done) {
+  //       process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalBuildsOnPushSetting;
+  //       done();
+  //     });
+
+  // });
+
+
+  //     it('should set server selection status for the branch without instance - pull_request:synchronize',
+  //       {timeout: 6000}, function (done) {
+  //         Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
+  //           cb(null, {commit: {
+  //             message: 'hello'
+  //           }});
+  //         };
+  //         PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
+  //           expect(pullRequest.number).to.equal(2);
+  //           expect(pullRequest.headCommit.message).to.equal('hello');
+  //           expect(pullRequest).to.exist();
+  //           expect(targetUrl).to.include('https://runnable.io/');
+  //           expect(targetUrl).to.include('/serverSelection/');
+  //           cb();
+  //           done();
+  //         };
+
+  //         var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+  //         var data = {
+  //           branch: 'feature-1',
+  //           repo: acv.repo
+  //         };
+  //         var options = hooks(data).pull_request_sync;
+  //         require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+  //         request.post(options, function (err, res, contextVersionIds) {
+  //           if (err) { return done(err); }
+  //           finishAllIncompleteVersions();
+  //           expect(res.statusCode).to.equal(201);
+  //           expect(contextVersionIds).to.be.okay;
+  //           expect(contextVersionIds).to.be.an('array');
+  //           expect(contextVersionIds).to.have.a.lengthOf(1);
+  //         });
+  //       });
+  // });
+
+
 
   describe('pull_request synchronize', function () {
     var ctx = {};
