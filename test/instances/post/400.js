@@ -3,11 +3,14 @@ var describe = Lab.experiment;
 var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
+var afterEach = Lab.afterEach;
 
-var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+
 var typesTests = require('../../fixtures/types-test-util');
 var uuid = require('uuid');
 
@@ -18,6 +21,9 @@ describe('400 POST /instances', {timeout:500}, function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -26,13 +32,27 @@ describe('400 POST /instances', {timeout:500}, function () {
   describe('invalid types', function () {
     beforeEach(function (done) {
       multi.createContextVersion(function (err, contextVersion, context, build, user) {
+        if (err) { return done(err); }
         ctx.build = build;
         ctx.user = user;
         ctx.cv = contextVersion;
         // mocks for build
-        ctx.build.build({ message: uuid() }, expects.success(201, done));
+        done();
       });
     });
+    beforeEach(function(done){
+      primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+    });
+    beforeEach(function(done) {
+      ctx.build.build({ message: uuid() }, function(err){
+        if (err) { return done(err); }
+        primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+          done();
+        });
+        dockerMockEvents.emitBuildComplete(ctx.cv);
+      });
+    });
+
     var def = {
       action: 'create an instance',
       requiredParams: [
@@ -83,4 +103,3 @@ describe('400 POST /instances', {timeout:500}, function () {
     });
   });
 });
-

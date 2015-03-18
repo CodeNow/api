@@ -3,12 +3,14 @@ var describe = Lab.experiment;
 var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
+var afterEach = Lab.afterEach;
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
-
+var primus = require('../../fixtures/primus');
+var noop = require('101/noop');
 
 describe('PATCH 400 - /instances/:id', function () {
   var ctx = {};
@@ -16,6 +18,8 @@ describe('PATCH 400 - /instances/:id', function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -67,6 +71,7 @@ describe('PATCH 400 - /instances/:id', function () {
     };
 
     typesTests.makeTestFromDef(def, ctx, function (body, cb) {
+      ctx.instance.setupChildren = noop; // setup children causes model id warning spam
       ctx.instance.update(body, cb);
     });
 

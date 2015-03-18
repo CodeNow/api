@@ -451,7 +451,7 @@ describe('Instance', function () {
     });
 
     it('should find an instance', function (done) {
-      Instance.findByContainerId(savedInstance.container.dockerContainer, function (err, fetchedInstance) {
+      Instance.findOneByContainerId(savedInstance.container.dockerContainer, function (err, fetchedInstance) {
         if (err) { return done(err); }
         expect(String(fetchedInstance._id)).to.equal(String(instance._id));
         expect(fetchedInstance.name).to.equal(instance.name);

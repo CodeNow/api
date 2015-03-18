@@ -14,12 +14,15 @@ var createCount = require('callback-count');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
 var hasProps = require('101/has-properties');
 var find = require('101/find');
+var primus = require('./fixtures/primus');
 
 describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/copy', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   // afterEach(require('./fixtures/clean-mongo').removeEverything);
