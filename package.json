@@ -17,7 +17,7 @@
     "callback-count": "~0.1.0",
     "cayley": "^0.2.0",
     "compression": "^1.0.11",
-    "concat-stream": "^1.4.6",
+    "concat-stream": "^1.4.7",
     "connect-datadog": "0.0.5",
     "connect-redis": "^2.0.0",
     "cors": "^2.4.1",
@@ -32,6 +32,7 @@
     "dogstatsyware": "0.0.1",
     "dotenv": "^0.4.0",
     "eson": "^0.5.0",
+    "event-stream": "^3.2.2",
     "exec-sync": "^0.1.6",
     "express": "^4.8.3",
     "express-request": "0.1.0",
@@ -68,6 +69,7 @@
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.38.27",
     "s3-stream-upload": "0.0.6",
     "simple-api-client": "^0.5.9",
+    "strim": "^0.2.2",
     "substream": "0.1.3",
     "substream-pump": "^1.0.1",
     "underscore.string": "^3.0.2",
@@ -94,7 +96,7 @@
     "require-inject": "^1.1.0",
     "rimraf": "^2.2.8",
     "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.8",
-    "server-destroy": "^1.0.0"
+    "through": "^2.3.6"
   },
   "engineStrict": true,
   "engine": {
@@ -120,6 +122,7 @@
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
     "unit": "npm run clear; NODE_PATH=./lib lab -l -e test -vG unit/",
     "unit-watch": "killall node; nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
+    "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "clean": "rm -rf docs coverage.html node_modules",
     "lint": "jshint ."
   }

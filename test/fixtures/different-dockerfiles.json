@@ -1,0 +1,18 @@
+[
+  "FROM dockerfile/nodejs\n CMD tail -f /var/log/dpkg.log\n",
+  "FROM dockerfile/nodejs\n  CMD tail -f /var/log/dpkg.log\n",
+  " FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n",
+  "  FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n",
+  "\tFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n",
+  "\rFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n",
+  "FROM dockerfile/nodejs\n\tCMD tail -f /var/log/dpkg.log\n",
+  "FROM dockerfile/nodejs\n\rCMD tail -f /var/log/dpkg.log\n",
+  "\t FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n",
+  "\r FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n",
+  "FROM dockerfile/nodejs\n\t CMD tail -f /var/log/dpkg.log\n",
+  "FROM dockerfile/nodejs\n\r CMD tail -f /var/log/dpkg.log\n",
+  " \tFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n",
+  " \rFROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n",
+  "FROM dockerfile/nodejs\n \tCMD tail -f /var/log/dpkg.log\n",
+  "FROM dockerfile/nodejs\n \rCMD tail -f /var/log/dpkg.log\n"
+]
