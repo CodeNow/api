@@ -4,6 +4,8 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var before = Lab.before;
 var after = Lab.after;
+var beforeEach = Lab.beforeEach;
+var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -19,7 +21,9 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
-
+  afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-nock'));
 
   describe('create and get', function () {
     var settings = {
@@ -36,7 +40,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
     };
 
     var settingsId = null;
-    before(function (done) {
+    beforeEach(function (done) {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
         ctx.user = runnable;

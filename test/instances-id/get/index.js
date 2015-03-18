@@ -10,6 +10,7 @@ var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
+var primus = require('../../fixtures/primus');
 var exists = require('101/exists');
 
 describe('Instance - /instances/:id', function () {
@@ -18,6 +19,8 @@ describe('Instance - /instances/:id', function () {
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(dock.stop.bind(ctx));
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));

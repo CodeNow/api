@@ -5,23 +5,20 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-// var expect = Lab.expect;
-// var async = require('async');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
-// var not = require('101/not');
 var exists = require('101/exists');
-// var tailBuildStream = require('./fixtures/tail-build-stream');
-// var equals = require('101/equals');
-// var uuid = require('uuid');
+var primus = require('./fixtures/primus');
 
 describe('Builds - /builds', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -110,6 +107,7 @@ describe('Builds - /builds', function () {
   describe('GET', function () {
     beforeEach(function (done) {
       multi.createBuild(function (err, build, context, user) {
+        if (err) { return done(err); }
         ctx.build = build;
         ctx.context = context;
         ctx.user = user;

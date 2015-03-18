@@ -10,6 +10,9 @@ var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+var primus = require('../../fixtures/primus');
+
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
@@ -18,13 +21,12 @@ var uuid = require('uuid');
 var createCount = require('callback-count');
 var uuid = require('uuid');
 var Docker = require('models/apis/docker');
-var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
+var dockerEvents = require('models/events/docker');
 
-
-describe('204 DELETE /instances/:id', {timeout:1000}, function () {
+describe('204 DELETE /instances/:id', {timeout:10000}, function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;
@@ -52,19 +54,22 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
       cb(createErr);
     }
   };
-  var delayContainerLogsBy = function (ms, originalContainerLogs) {
-    return function () {
-      var container = this;
-      var args = arguments;
-      setTimeout(function () {
-        originalContainerLogs.apply(container, args);
-      }, ms);
-    };
+  var dontReportCreateError = function () {
+    // for cleaner test logs
+    var args = Array.prototype.slice.call(arguments);
+    var cb = args.pop();
+    args.push(function (err) {
+      if (err) { err.data.report = false; }
+      cb.apply(this, arguments);
+    });
+    ctx.originalDockerCreateContainer.apply(this, args);
   };
-  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -90,23 +95,19 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
 
   describe('for User', function () {
     describe('create instance with in-progress build', function () {
-      beforeEach(function (done) { // delay container log time to make build time longer
-        ctx.originalContainerLogs = Container.prototype.logs;
-        Container.prototype.logs = delayContainerLogsBy(500, ctx.originalContainerLogs);
-        done();
-      });
-      afterEach(function (done) { // restore original container log method
-        Container.prototype.logs = ctx.originalContainerLogs;
-        done();
-      });
+      var carry;
       beforeEach(function (done) {
         multi.createContextVersion(function (err, contextVersion, context, build, user) {
           if (err) { return done(err); }
           ctx.build = build;
           ctx.user = user;
           ctx.cv = contextVersion;
+          carry = contextVersion;
           ctx.build.build({ message: uuid() }, expects.success(201, done));
         });
+      });
+      beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
       });
       beforeEach(function (done) {
         initExpected(function () {
@@ -114,6 +115,19 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
           done();
         });
       });
+      afterEach(function (done) {
+        // primus was disconnected (in above afterEach), reconnect here
+        primus.connect(function (){
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function () {
+            var cvId = ctx.build.json().contextVersions[0];
+            primus.onceVersionComplete(cvId, function () {
+              primus.disconnect(done);
+            });
+            dockerMockEvents.emitBuildComplete(carry);
+          });
+        });
+      });
+
       createInstanceAndRunTests(ctx);
     });
     describe('create instance with built build', function () {
@@ -127,7 +141,7 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
         });
       });
       beforeEach(initExpected);
-      describe('Long running container', function() {
+      describe('Long running container', function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
@@ -137,12 +151,13 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
             'containers[0].dockerContainer': exists,
             'containers[0].inspect.State.Running': true
           });
+          ctx.waitForDestroy = true;
           done();
         });
 
         createInstanceAndRunTests(ctx);
       });
-      describe('Immediately exiting container (first time only)', function() {
+      describe('Immediately exiting container (first time only)', function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
@@ -154,6 +169,7 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
           ctx.expectAlreadyStopped = true;
           ctx.originalStart = Docker.prototype.startContainer;
           Docker.prototype.startContainer = stopContainerRightAfterStart;
+          ctx.waitForDestroy = true;
           done();
         });
         afterEach(function (done) {
@@ -164,18 +180,21 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
 
         createInstanceAndRunTests(ctx);
       });
-      describe('Container create error (Invalid dockerfile CMD)', function() {
+      describe('Container create error (Invalid dockerfile CMD)', function () {
         beforeEach(function (done) {
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
           ctx.expectNoContainerErr = true;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
           Dockerode.prototype.createContainer = forceCreateContainerErr;
+          Docker.prototype.createContainer = dontReportCreateError;
           done();
         });
         afterEach(function (done) {
-          // restore dockerODE.createContainer` back to normal
+          // restore dockerode.createContainer back to normal
           Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
           done();
         });
 
@@ -187,7 +206,7 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
     // TODO
   // });
   function createInstanceAndRunTests (ctx) {
-    describe('and env.', function() {
+    describe('and env.', function () {
       beforeEach(function (done) {
         var body = {
           env: ['ENV=OLD'],
@@ -199,7 +218,7 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
       });
       deleteInstanceTests(ctx);
     });
-    describe('and no env.', function() {
+    describe('and no env.', function () {
       beforeEach(function (done) {
         var body = {
           build: ctx.build.id()
@@ -218,17 +237,28 @@ describe('204 DELETE /instances/:id', {timeout:1000}, function () {
     it('should delete an instance', function (done) {
       var instanceName = ctx.instance.attrs.name;
       var container = ctx.instance.containers.models[0];
-      ctx.instance.destroy(expects.success(204, assertEverythingCleaned));
-      function assertEverythingCleaned (err) {
-        if (err) { return done(err); }
-        var count = createCount(done);
-        setTimeout(function () {
-          expects.deletedHosts(ctx.user, instanceName, container, count.inc().next);
-          if (container && container.attrs.dockerContainer) {
-            expects.deletedWeaveHost(container, count.inc().next);
-            expects.deletedContainer(container, count.inc().next);
-          }
-        }, 50); // deletions in route are backgrounded.. so 18ms is enough time..
+      if (ctx.waitForDestroy) {
+        dockerEvents.once('destroy', function () {
+          check(done); // if waiting for destroy, done get's called here
+        });
+        ctx.instance.destroy(expects.success(204, function (err) {
+          if (err) { return done(err); }
+        }));
+      }
+      else {
+        // don't wait for destroy
+        ctx.instance.destroy(expects.success(204, function (err) {
+          if (err) { return done(err); }
+          check(done); // if NOT waiting for destroy, done get's called here
+        }));
+      }
+      function check(cb) {
+        var count = createCount(cb);
+        expects.deletedHosts(ctx.user, instanceName, container, count.inc().next);
+        if (container && container.attrs.dockerContainer) {
+          expects.deletedWeaveHost(container, count.inc().next);
+          expects.deletedContainer(container, count.inc().next);
+        }
       }
     });
   }

@@ -4,6 +4,8 @@ var describe = Lab.experiment;
 var it = Lab.test;
 var before = Lab.before;
 var after = Lab.after;
+var beforeEach = Lab.beforeEach;
+var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -19,7 +21,9 @@ describe('GET /settings', {timeout:500}, function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
-
+  afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-nock'));
 
   describe('create and get', function () {
     var settings = {
@@ -36,7 +40,7 @@ describe('GET /settings', {timeout:500}, function () {
     };
 
     var settingsId = null;
-    before(function (done) {
+    beforeEach(function (done) {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
         ctx.user = runnable;
@@ -51,7 +55,6 @@ describe('GET /settings', {timeout:500}, function () {
     });
 
     describe('get by owner', function () {
-
       it('should create settings if they are not exist', function (done) {
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
@@ -66,9 +69,6 @@ describe('GET /settings', {timeout:500}, function () {
           });
         });
       });
-
-
-
       it('should be possible to fetch settings that were just created by owner', function (done) {
         var st = ctx.user.newSettings([], {qs: {owner: {github: settings.owner.github}}});
         st.fetch(function (err, body) {
@@ -82,7 +82,6 @@ describe('GET /settings', {timeout:500}, function () {
           done();
         });
       });
-
       it('should be possible to fetch settings by githubUsername', function (done) {
         require('../../fixtures/mocks/github/user-orgs')(ctx.user);
         require('../../fixtures/mocks/github/users-username')(ctx.user.attrs.accounts.github.id,
@@ -96,6 +95,7 @@ describe('GET /settings', {timeout:500}, function () {
           expect(settings._id).to.exist();
           expect(settings.owner.github).to.equal(settings.owner.github);
           expect(settings.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
+          expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
           expect(settings.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
           expect(settings.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
           done();
@@ -124,12 +124,9 @@ describe('GET /settings', {timeout:500}, function () {
           });
         });
       });
-
     });
 
-
     describe('get by id', function () {
-
       it('should be possible to fetch settings that were just created', function (done) {
         ctx.user.fetchSetting(settingsId, function (err, body) {
           if (err) { return done(err); }
@@ -141,7 +138,6 @@ describe('GET /settings', {timeout:500}, function () {
           done();
         });
       });
-
       it('should fail if another user wanted to fetch settings without permissions', function (done) {
         require('../../fixtures/mocks/github/user-orgs')(ctx.user);
         multi.createUser(function (err, runnable) {
@@ -153,7 +149,6 @@ describe('GET /settings', {timeout:500}, function () {
           });
         });
       });
-
       it('should return 404 for fake settings-id', function (done) {
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
@@ -164,7 +159,6 @@ describe('GET /settings', {timeout:500}, function () {
           });
         });
       });
-
       it('should return 400 for non-objectId settings-id', function (done) {
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
@@ -176,9 +170,6 @@ describe('GET /settings', {timeout:500}, function () {
           });
         });
       });
-
     });
-
   });
-
 });
