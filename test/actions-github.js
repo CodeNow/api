@@ -20,6 +20,7 @@ var dock = require('./fixtures/dock');
 var ContextVersion = require('models/mongo/context-version');
 var Runnable = require('models/apis/runnable');
 var PullRequest = require('models/apis/pullrequest');
+var Slack = require('notifications/slack');
 var Github = require('models/apis/github');
 var cbCount = require('callback-count');
 
@@ -138,90 +139,101 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  // describe('disabled slack private messaging', function () {
-  //   beforeEach(function (done) {
-  //     ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
-  //     process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'true';
-  //     ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
-  //     process.env.ENABLE_GITHUB_HOOKS = 'true';
-  //     done();
-  //   });
+  describe('disabled slack private messaging', function () {
+    beforeEach(function (done) {
+      ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
+      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'false';
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
+      process.env.ENABLE_GITHUB_HOOKS = 'true';
+      done();
+    });
 
-  //   afterEach(function (done) {
-  //     process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
-  //     process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
-  //     done();
-  //   });
+    afterEach(function (done) {
+      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
+      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+      done();
+    });
 
-  //   it('should return OKAY', function (done) {
-  //     var options = hooks().push_new_branch;
-  //     request.post(options, function (err, res, body) {
-  //       if (err) { return done(err); }
+    it('should return OKAY', function (done) {
+      var options = hooks().push_new_branch;
+      request.post(options, function (err, res, body) {
+        if (err) { return done(err); }
 
-  //       expect(res.statusCode).to.equal(202);
-  //       expect(body).to.equal('New branch private notifications are disabled for now');
-  //       done();
-  //     });
-  //   });
-  // });
-
-
-  // describe('push new branch slack notifications', function () {
-  //   describe('success cases', function () {
-  //     beforeEach(function (done) {
-  //       ctx.originalBuildsOnPushSetting = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
-  //       multi.createInstance(function (err, instance, build, user, modelsArr) {
-  //         ctx.contextVersion = modelsArr[0];
-  //         ctx.context = modelsArr[1];
-  //         ctx.build = build;
-  //         ctx.user = user;
-  //         ctx.instance = instance;
-  //         done();
-  //       });
-  //     });
-
-  //     afterEach(function (done) {
-  //       process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalBuildsOnPushSetting;
-  //       done();
-  //     });
-
-  // });
+        expect(res.statusCode).to.equal(202);
+        expect(body).to.equal('New branch private notifications are disabled for now');
+        done();
+      });
+    });
+  });
 
 
-  //     it('should set server selection status for the branch without instance - pull_request:synchronize',
-  //       {timeout: 6000}, function (done) {
-  //         Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
-  //           cb(null, {commit: {
-  //             message: 'hello'
-  //           }});
-  //         };
-  //         PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
-  //           expect(pullRequest.number).to.equal(2);
-  //           expect(pullRequest.headCommit.message).to.equal('hello');
-  //           expect(pullRequest).to.exist();
-  //           expect(targetUrl).to.include('https://runnable.io/');
-  //           expect(targetUrl).to.include('/serverSelection/');
-  //           cb();
-  //           done();
-  //         };
+  describe('push new branch slack notifications', function () {
 
-  //         var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-  //         var data = {
-  //           branch: 'feature-1',
-  //           repo: acv.repo
-  //         };
-  //         var options = hooks(data).pull_request_sync;
-  //         require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-  //         request.post(options, function (err, res, contextVersionIds) {
-  //           if (err) { return done(err); }
-  //           finishAllIncompleteVersions();
-  //           expect(res.statusCode).to.equal(201);
-  //           expect(contextVersionIds).to.be.okay;
-  //           expect(contextVersionIds).to.be.an('array');
-  //           expect(contextVersionIds).to.have.a.lengthOf(1);
-  //         });
-  //       });
-  // });
+    beforeEach(function (done) {
+      ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
+      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'true';
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
+      process.env.ENABLE_GITHUB_HOOKS = 'true';
+      multi.createInstance(function (err, instance, build, user, modelsArr) {
+        ctx.contextVersion = modelsArr[0];
+        ctx.context = modelsArr[1];
+        ctx.build = build;
+        ctx.user = user;
+        ctx.instance = instance;
+        var settings = {
+          owner: {
+            github: user.attrs.accounts.github.id
+          },
+          notifications: {
+            slack: {
+              apiToken: 'xoxo-dasjdkasjdk243248392482394',
+              githubUsernameToSlackIdMap: {
+                'cheese': 'U023BECGF'
+              }
+            }
+          }
+        };
+
+        ctx.user.createSetting({json: settings}, done);
+      });
+    });
+
+    afterEach(function (done) {
+      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
+      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+      done();
+    });
+
+    it('should set server selection status for the branch without instance - pull_request:synchronize',
+      {timeout: 6000}, function (done) {
+
+        var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+        Slack.prototype.notifyOnNewBranch = function (gitInfo, cb) {
+          expect(gitInfo.repo).to.equal(acv.repo);
+          expect(gitInfo.user.login).to.equal('podviaznikov');
+          expect(gitInfo.headCommit.committer.username).to.equal('podviaznikov');
+          cb();
+          done();
+        };
+
+        var data = {
+          branch: 'feature-1',
+          repo: acv.repo
+        };
+        var options = hooks(data).push_new_branch;
+
+        require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+        request.post(options, function (err, res, contextVersionIds) {
+          if (err) { return done(err); }
+          finishAllIncompleteVersions();
+          expect(res.statusCode).to.equal(201);
+          expect(contextVersionIds).to.be.okay;
+          expect(contextVersionIds).to.be.an('array');
+          expect(contextVersionIds).to.have.a.lengthOf(1);
+        });
+      });
+
+  });
 
 
 
@@ -482,7 +494,7 @@ describe('Github - /actions/github', function () {
         });
 
       it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
-        ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
+        ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
           if (err) { return done(err); }
 
           var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
