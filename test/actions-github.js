@@ -315,7 +315,6 @@ describe('Github - /actions/github', function () {
       beforeEach(function (done) {
         ctx.originalServerSelectionStatus = PullRequest.prototype.serverSelectionStatus;
         ctx.originalGetPullRequestHeadCommit = Github.prototype.getPullRequestHeadCommit;
-        ctx.originalGitHubPRCallToAction = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
 
         multi.createInstance(function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
@@ -334,23 +333,38 @@ describe('Github - /actions/github', function () {
         done();
       });
 
-      it('should return 202 if ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES=false', {timeout: 6000},
-        function (done) {
+      describe('PR call to action statuses disabled', function () {
+
+        beforeEach(function (done) {
+          ctx.originalGitHubPRCallToAction = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
           process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'false';
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'feature-1',
-            repo: acv.repo
-          };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          request.post(options, function (err, res) {
-            if (err) { return done(err); }
-            expect(res.statusCode).to.equal(202);
-            expect(res.body).to.equals('We ignore PRs if branch has no linked server');
-            done();
-          });
+          done();
         });
+
+
+        afterEach(function (done) {
+          process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
+          done();
+        });
+
+        it('should return 202', {timeout: 6000},
+          function (done) {
+            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+            var data = {
+              branch: 'feature-1',
+              repo: acv.repo
+            };
+            var options = hooks(data).pull_request_sync;
+            require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+            request.post(options, function (err, res) {
+              if (err) { return done(err); }
+              expect(res.statusCode).to.equal(202);
+              expect(res.body).to.equals('We ignore PRs if branch has no linked server');
+              done();
+            });
+          });
+      });
+
 
       it('should set server selection status for the branch without instance - pull_request:synchronize',
         {timeout: 6000}, function (done) {
