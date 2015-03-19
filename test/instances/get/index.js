@@ -5,6 +5,7 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
+var expect = Lab.expect;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -25,6 +26,7 @@ describe('GET /instances', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+
   describe('GET', function() {
     beforeEach(function (done) {
       multi.createInstance(function (err, instance, build, user) {
@@ -180,6 +182,43 @@ describe('GET /instances', function () {
       // FIXME: chai is messing up with eql check:
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
+
+    it('should get instance by container.dockerContainer', function (done) {
+      require('../../fixtures/mocks/github/user')(ctx.user);
+
+      var dockerContainer = ctx.instance.attrs.container.dockerContainer;
+      var query = {
+        owner: {
+          github: ctx.user.attrs.accounts.github.id
+        },
+        'container.dockerContainer': dockerContainer
+      };
+
+      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+        if (err) { return done(err); }
+        expect(body.length).to.equal(1);
+        expect(body[0].container.dockerContainer).to.equal(dockerContainer);
+        done();
+      }));
+    });
+
+    it('should return an empty set given an invalid container.dockerContainer', function (done) {
+      require('../../fixtures/mocks/github/user')(ctx.user);
+
+      var query = {
+        owner: {
+          github: ctx.user.attrs.accounts.github.id
+        },
+        'container.dockerContainer': 'invalid'
+      };
+
+      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+        if (err) { return done(err); }
+        expect(body.length).to.equal(0);
+        done();
+      }));
+    });
+
     describe('name and owner', function () {
       beforeEach(function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
