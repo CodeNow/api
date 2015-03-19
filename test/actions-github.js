@@ -315,6 +315,8 @@ describe('Github - /actions/github', function () {
       beforeEach(function (done) {
         ctx.originalServerSelectionStatus = PullRequest.prototype.serverSelectionStatus;
         ctx.originalGetPullRequestHeadCommit = Github.prototype.getPullRequestHeadCommit;
+        ctx.originalGitHubPRCallToAction = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
+
         multi.createInstance(function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
@@ -326,6 +328,7 @@ describe('Github - /actions/github', function () {
       });
 
       afterEach(function (done) {
+        process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
         PullRequest.prototype.serverSelectionStatus = ctx.originalServerSelectionStatus;
         Github.prototype.getPullRequestHeadCommit = ctx.originalGetPullRequestHeadCommit;
         done();
@@ -334,7 +337,6 @@ describe('Github - /actions/github', function () {
       it('should return 202 if ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES=false', {timeout: 6000},
         function (done) {
           process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'false';
-
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
             branch: 'feature-1',
