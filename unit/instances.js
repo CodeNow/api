@@ -206,9 +206,10 @@ describe('Instance', function () {
       });
     });
 
-    it('should fail if container is not found', function (done) {
+    // changed behavior in SAN-1089 to prevent GET /instances 404 response
+    it('should not return error even if container not found', function (done) {
       savedInstance.inspectAndUpdate(function (err) {
-        expect(err.output.statusCode).to.equal(404);
+        expect(err).to.equal(null);
         done();
       });
     });
