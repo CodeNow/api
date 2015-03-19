@@ -174,6 +174,7 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'true';
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
       process.env.ENABLE_GITHUB_HOOKS = 'true';
+      ctx.originalNotifyOnNewBranch = Slack.prototype.notifyOnNewBranch;
       multi.createInstance(function (err, instance, build, user, modelsArr) {
         ctx.contextVersion = modelsArr[0];
         ctx.context = modelsArr[1];
@@ -201,37 +202,36 @@ describe('Github - /actions/github', function () {
     afterEach(function (done) {
       process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+      Slack.prototype.notifyOnNewBranch = ctx.originalNotifyOnNewBranch;
       done();
     });
 
-    it('should set server selection status for the branch without instance - pull_request:synchronize',
-      {timeout: 6000}, function (done) {
+    it('should call Slack#notifyOnNewBranch', {timeout: 6000}, function (done) {
 
-        var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-        Slack.prototype.notifyOnNewBranch = function (gitInfo, cb) {
-          expect(gitInfo.repo).to.equal(acv.repo);
-          expect(gitInfo.user.login).to.equal('podviaznikov');
-          expect(gitInfo.headCommit.committer.username).to.equal('podviaznikov');
-          cb();
-          done();
-        };
+      var acv = ctx.contextVersion.attrs.appCodeVersions[0];
 
-        var data = {
-          branch: 'feature-1',
-          repo: acv.repo
-        };
-        var options = hooks(data).push_new_branch;
+      Slack.prototype.notifyOnNewBranch = function (gitInfo, cb) {
+        expect(gitInfo.repo).to.equal(acv.repo);
+        expect(gitInfo.user.login).to.equal('podviaznikov');
+        expect(gitInfo.headCommit.committer.username).to.equal('podviaznikov');
+        cb();
+        done();
+      };
+      var data = {
+        branch: 'feature-1',
+        repo: acv.repo
+      };
+      var options = hooks(data).push_new_branch;
+      require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+      request.post(options, function (err, res, contextVersionIds) {
+        if (err) { return done(err); }
+        expect(res.statusCode).to.equal(201);
+        expect(contextVersionIds).to.be.okay;
+        expect(contextVersionIds).to.be.an('array');
+        expect(contextVersionIds).to.have.a.lengthOf(1);
 
-        require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-        request.post(options, function (err, res, contextVersionIds) {
-          if (err) { return done(err); }
-          finishAllIncompleteVersions();
-          expect(res.statusCode).to.equal(201);
-          expect(contextVersionIds).to.be.okay;
-          expect(contextVersionIds).to.be.an('array');
-          expect(contextVersionIds).to.have.a.lengthOf(1);
-        });
       });
+    });
 
   });
 
