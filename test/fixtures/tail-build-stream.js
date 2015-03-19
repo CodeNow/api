@@ -10,6 +10,7 @@ var primusClient = Primus.createSocket({
 module.exports = tailBuildStream;
 
 function tailBuildStream (contextVersionId, failure, cb) {
+  console.log('XXXXX REMOVE ME NOW!!!!!');
   if (typeof failure === 'function') {
     cb = failure;
     failure = null;

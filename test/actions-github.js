@@ -14,7 +14,10 @@ var exists = require('101/exists');
 var api = require('./fixtures/api-control');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
+var primus = require('./fixtures/primus');
+var dockerMockEvents = require('./fixtures/docker-mock-events');
 var dock = require('./fixtures/dock');
+var ContextVersion = require('models/mongo/context-version');
 var Runnable = require('models/apis/runnable');
 var PullRequest = require('models/apis/pullrequest');
 var Github = require('models/apis/github');
@@ -38,6 +41,8 @@ describe('Github - /actions/github', function () {
   after(api.stop.bind(ctx));
   before(dock.start.bind(ctx));
   after(dock.stop.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   before(require('./fixtures/mocks/api-client').setup);
   after(require('./fixtures/mocks/api-client').clean);
   beforeEach(generateKey);
@@ -49,7 +54,6 @@ describe('Github - /actions/github', function () {
       var options = hooks().ping;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
-
         expect(res.statusCode).to.equal(202);
         expect(body).to.equal('Hello, Github Ping!');
         done();
@@ -57,9 +61,7 @@ describe('Github - /actions/github', function () {
     });
   });
 
-
   describe('disabled hooks', function () {
-
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
       delete process.env.ENABLE_GITHUB_HOOKS;
@@ -142,6 +144,9 @@ describe('Github - /actions/github', function () {
 
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
+      process.env.ENABLE_GITHUB_HOOKS = 'true';
+      ctx.originalStatusesForUnlinked = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
+      process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'true';
       ctx.originaUpdateInstance = Runnable.prototype.updateInstance;
       ctx.originaCreateBuild = Runnable.prototype.createBuild;
       ctx.originaBuildBuild = Runnable.prototype.buildBuild;
@@ -150,12 +155,13 @@ describe('Github - /actions/github', function () {
       ctx.originalDeploymentErrored = PullRequest.prototype.deploymentErrored;
       ctx.originalDeploymentSucceeded = PullRequest.prototype.deploymentSucceeded;
       ctx.originalCreateDeployment = PullRequest.prototype.createDeployment;
-      process.env.ENABLE_GITHUB_HOOKS = 'true';
+
       done();
     });
 
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+      process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalStatusesForUnlinked;
       Runnable.prototype.updateInstance = ctx.originaUpdateInstance;
       Runnable.prototype.createBuild = ctx.originaCreateBuild;
       Runnable.prototype.buildBuild = ctx.originaBuildBuild;
@@ -169,7 +175,6 @@ describe('Github - /actions/github', function () {
 
 
     describe('errored cases', function () {
-
       beforeEach(function (done) {
         multi.createInstance(function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
@@ -181,15 +186,11 @@ describe('Github - /actions/github', function () {
         });
       });
 
-
       it('should set build status to error if error happened build create', {timeout: 6000},
         function (done) {
-
-
           Runnable.prototype.createBuild = function (opts, cb) {
             cb(Boom.notFound('Build create failed'));
           };
-
           PullRequest.prototype.buildErrored = function (pullRequest, targetUrl, cb) {
             expect(pullRequest).to.exist();
             expect(targetUrl).to.include('https://runnable.io/');
@@ -204,9 +205,9 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_sync;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
+            finishAllIncompleteVersions();
             expect(instancesIds.length).to.equal(0);
             done();
           });
@@ -214,12 +215,9 @@ describe('Github - /actions/github', function () {
 
       it('should set build status to error if error happened build build', {timeout: 6000},
         function (done) {
-
-
           Runnable.prototype.buildBuild = function (build, opts, cb) {
             cb(Boom.notFound('Build build failed'));
           };
-
           PullRequest.prototype.buildErrored = function (pullRequest, targetUrl, cb) {
             expect(pullRequest).to.exist();
             expect(targetUrl).to.include('https://runnable.io/');
@@ -234,9 +232,9 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_sync;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
+            finishAllIncompleteVersions();
             expect(instancesIds.length).to.equal(0);
             done();
           });
@@ -246,15 +244,12 @@ describe('Github - /actions/github', function () {
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
         function (done) {
           var baseDeploymentId = 100000;
-          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
-            cb(null, {id: baseDeploymentId});
-          };
-
-
           Runnable.prototype.updateInstance = function (id, opts, cb) {
             cb(Boom.notFound('Instance update failed'));
           };
-
+          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
+            cb(null, {id: baseDeploymentId});
+          };
           PullRequest.prototype.deploymentErrored = function (pullRequest, deploymentId, serverName, targetUrl) {
             expect(pullRequest).to.exist();
             expect(serverName).to.exist();
@@ -269,9 +264,9 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_sync;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
+            finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(201);
             expect(instancesIds).to.be.okay;
             expect(instancesIds).to.be.an('array');
@@ -284,15 +279,12 @@ describe('Github - /actions/github', function () {
       it('should set deployment status to error if error happened during instance deployment', {timeout: 6000},
         function (done) {
           var baseDeploymentId = 100000;
-          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
-            cb(null, {id: baseDeploymentId});
-          };
-
-
           Runnable.prototype.waitForInstanceDeployed = function (id, cb) {
             cb(Boom.notFound('Instance deploy failed'));
           };
-
+          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
+            cb(null, {id: baseDeploymentId});
+          };
           PullRequest.prototype.deploymentErrored = function (pullRequest, deploymentId, serverName, targetUrl) {
             expect(pullRequest).to.exist();
             expect(serverName).to.exist();
@@ -307,9 +299,9 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_sync;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
+            finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(201);
             expect(instancesIds).to.be.okay;
             expect(instancesIds).to.be.an('array');
@@ -320,11 +312,10 @@ describe('Github - /actions/github', function () {
     });
 
     describe('success cases', function () {
-
-
       beforeEach(function (done) {
         ctx.originalServerSelectionStatus = PullRequest.prototype.serverSelectionStatus;
         ctx.originalGetPullRequestHeadCommit = Github.prototype.getPullRequestHeadCommit;
+
         multi.createInstance(function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
@@ -336,20 +327,52 @@ describe('Github - /actions/github', function () {
       });
 
       afterEach(function (done) {
+        process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
         PullRequest.prototype.serverSelectionStatus = ctx.originalServerSelectionStatus;
         Github.prototype.getPullRequestHeadCommit = ctx.originalGetPullRequestHeadCommit;
         done();
       });
 
+      describe('PR call to action statuses disabled', function () {
+
+        beforeEach(function (done) {
+          ctx.originalGitHubPRCallToAction = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
+          process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'false';
+          done();
+        });
+
+
+        afterEach(function (done) {
+          process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
+          done();
+        });
+
+        it('should return 202', {timeout: 6000},
+          function (done) {
+            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+            var data = {
+              branch: 'feature-1',
+              repo: acv.repo
+            };
+            var options = hooks(data).pull_request_sync;
+            require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+            request.post(options, function (err, res) {
+              if (err) { return done(err); }
+              expect(res.statusCode).to.equal(202);
+              expect(res.body).to.equals('We ignore PRs if branch has no linked server');
+              done();
+            });
+          });
+      });
+
+
       it('should set server selection status for the branch without instance - pull_request:synchronize',
         {timeout: 6000}, function (done) {
-
           Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
             cb(null, {commit: {
               message: 'hello'
             }});
           };
-
           PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
             expect(pullRequest.number).to.equal(2);
             expect(pullRequest.headCommit.message).to.equal('hello');
@@ -367,9 +390,9 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_sync;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
           request.post(options, function (err, res, contextVersionIds) {
             if (err) { return done(err); }
+            finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(201);
             expect(contextVersionIds).to.be.okay;
             expect(contextVersionIds).to.be.an('array');
@@ -403,9 +426,9 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_opened;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
           request.post(options, function (err, res, contextVersionIds) {
             if (err) { return done(err); }
+            finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(201);
             expect(contextVersionIds).to.be.okay;
             expect(contextVersionIds).to.be.an('array');
@@ -414,7 +437,7 @@ describe('Github - /actions/github', function () {
         });
 
       it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
-        ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
+        ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err, instance2) {
           if (err) { return done(err); }
 
           var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
@@ -441,7 +464,7 @@ describe('Github - /actions/github', function () {
             };
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err); }
-              ctx.user.newInstance(instance2.shortHash).fetch(expects.success(200, expected, done));
+             ctx.instance2.fetch(expects.success(200, expected, done));
             }));
           });
           spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentSucceeded',
@@ -460,9 +483,9 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).pull_request_sync;
           require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          require('./fixtures/mocks/docker/container-id-attach')();
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
+            finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(201);
             expect(instancesIds).to.be.okay;
             expect(instancesIds).to.be.an('array');
@@ -472,10 +495,32 @@ describe('Github - /actions/github', function () {
           });
         });
       });
-
-
     });
-
   });
-
 });
+
+function finishAllIncompleteVersions () {
+  var incompleteBuildsQuery = {
+    'build.started'  : { $exists: true },
+    'build.completed': { $exists: false }
+  };
+  var fields = null; // all fields
+  var opts = { sort: ['build.started'] };
+  ContextVersion.find(incompleteBuildsQuery, fields, opts, function (err, versions) {
+    var buildIds = [];
+    versions
+      .filter(function (version) {
+        // filter versions by unique build ids
+        // a non unique build id would indicate a deduped build
+        var buildId = version.build._id.toString();
+        if (!~buildIds.indexOf(buildId)) {
+          buildIds.push(buildId);
+          return true;
+        }
+      })
+      .forEach(function (version) {
+        // emit build complete events for each unique build
+        dockerMockEvents.emitBuildComplete(version);
+      });
+  });
+}

@@ -14,6 +14,7 @@ var multi = require('./fixtures/multi-factory');
 var exists = require('101/exists');
 var ContextVersions = require('models/mongo/context-version');
 var generateKey = require('./fixtures/key-factory');
+var primus = require('./fixtures/primus');
 var async = require('async');
 var not = require('101/not');
 var equals = require('101/equals');
@@ -23,6 +24,8 @@ describe('Versions - /contexts/:contextid/versions', function () {
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);

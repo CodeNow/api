@@ -10,6 +10,8 @@ var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var exists = require('101/exists');
 var not = require('101/not');
 var last = require('101/last');
@@ -22,12 +24,15 @@ var extend = require('extend');
 var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
 
-describe('201 POST /instances', {timeout:500}, function () {
+describe('201 POST /instances', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
@@ -58,20 +63,27 @@ describe('201 POST /instances', {timeout:500}, function () {
       cb(createErr);
     }
   };
-  var forceImageNotFoundOnCreateErrOnce = function(oldFn) {
-    return function () {
-      var cb = last(arguments);
-      var createErr = new Error("image not found");
-      extend(createErr, {
-        statusCode : 404,
-        reason     : "no such container",
-        json       : "no such container\n"
-      });
-      if (isFunction(cb)) {
-        cb(createErr);
-      }
-      Dockerode.prototype.createContainer = oldFn;
-    };
+  var dontReportCreateError = function () {
+    // for cleaner test logs
+    var args = Array.prototype.slice.call(arguments);
+    var cb = args.pop();
+    args.push(function (err) {
+      if (err) { err.data.report = false; }
+      cb.apply(this, arguments);
+    });
+    ctx.originalDockerCreateContainer.apply(this, args);
+  };
+  var forceImageNotFoundOnCreateErrOnce = function () {
+    var cb = last(arguments);
+    var createErr = new Error("image not found");
+    extend(createErr, {
+      statusCode : 404,
+      reason     : "no such container",
+      json       : "no such container\n"
+    });
+    if (isFunction(cb)) {
+      cb(createErr);
+    }
   };
   function initExpected (done) {
     ctx.expected = {
@@ -115,6 +127,7 @@ describe('201 POST /instances', {timeout:500}, function () {
         ctx.afterPostAsserts = ctx.afterPostAsserts || [];
         ctx.afterPostAsserts.push(function (done) {
           var instance = ctx.instance;
+          dockerMockEvents.emitBuildComplete(ctx.cv);
           multi.tailInstance(ctx.user, instance, function (err) {
             if (err) { return done(err); }
             try {
@@ -229,12 +242,15 @@ describe('201 POST /instances', {timeout:500}, function () {
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
           Dockerode.prototype.createContainer = forceCreateContainerErr;
+          Docker.prototype.createContainer = dontReportCreateError;
           done();
         });
         afterEach(function (done) {
           // restore dockerODE.createContainer` back to normal
           Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
           done();
         });
         createInstanceTests(ctx);
@@ -247,7 +263,16 @@ describe('201 POST /instances', {timeout:500}, function () {
             'containers[0].error.stack': exists,
             'containers[0].error.imageIsPulling': true
           });
-          Dockerode.prototype.createContainer = forceImageNotFoundOnCreateErrOnce(Dockerode.prototype.createContainer);
+          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
+          Dockerode.prototype.createContainer = forceImageNotFoundOnCreateErrOnce;
+          Docker.prototype.createContainer = dontReportCreateError;
+          done();
+        });
+        afterEach(function (done) {
+          // restore dockerODE.createContainer` back to normal
+          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
           done();
         });
 
@@ -265,13 +290,13 @@ function createInstanceTests (ctx) {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
-  it('should create an instance with build', function (done) {
+  it('should create an instance with build', {timeout:1000}, function (done) {
     var body = {
       build: ctx.build.id()
     };
     assertCreate(body, done);
   });
-  it('should create an instance with build and name', function (done) {
+  it('should create an instance with build and name', {timeout:1000}, function (done) {
     var name = 'ABCDEFGHIJKLMNOPQRSTUVWYXZ_-';
     var body = {
       name: name,
@@ -280,7 +305,7 @@ function createInstanceTests (ctx) {
     ctx.expected.name = name;
     assertCreate(body, done);
   });
-  it('should create an instance with env and build', function (done) {
+  it('should create an instance with env and build', {timeout:1000}, function (done) {
     var env = [
       'FOO=BAR'
     ];
@@ -291,7 +316,7 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, done);
   });
-  it('should create an instance with name, env and build', function (done) {
+  it('should create an instance with name, env and build', {timeout:1000}, function (done) {
     var name = uuid();
     var env = [
       'FOO=BAR'
@@ -305,7 +330,7 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, done);
   });
-  it('should create a private instance by default', function (done) {
+  it('should create a private instance by default', {timeout:1000}, function (done) {
     var name = uuid();
     var env = [
       'FOO=BAR'

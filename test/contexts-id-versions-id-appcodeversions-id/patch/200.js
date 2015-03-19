@@ -5,32 +5,31 @@ var before = Lab.before;
 var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
-var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
+var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
-var typesTests = require('../../fixtures/types-test-util');
 var uuid = require('uuid');
 var primus = require('../../fixtures/primus');
 
-describe('400 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function () {
+describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
-  before(require('../../fixtures/mocks/api-client').setup);
   beforeEach(primus.connect);
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  after(require('../../fixtures/mocks/api-client').clean);
+  afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-nock'));
 
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, user) {
       ctx.contextVersion = contextVersion;
       ctx.context = context;
       ctx.user = user;
-      ctx.build = build;
       ctx.repoName = 'Dat-middleware';
       ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
       require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
@@ -45,37 +44,32 @@ describe('400 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
       ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
     });
   });
-
-  describe('invalid types', function () {
-    var def = {
-      action: 'update an appversion',
-      requiredParams: [
-        {
-          name: 'branch',
-          type: 'string',
-        },
-        {
-          name: 'commit',
-          type: 'string',
-        }
-      ],
+  it('it should update an appCodeVersion\'s branch', function (done) {
+    var body = {
+      branch: 'feature1'
     };
-    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
-      ctx.appCodeVersion.update(body, cb);
-    });
+    var expected = ctx.appCodeVersion.json();
+    expected.branch = body.branch;
+    expected.lowerBranch = body.branch.toLowerCase();
+    ctx.appCodeVersion.update(body, expects.success(200, expected, done));
   });
-
-  describe('built version', function () {
-    beforeEach(function (done) {
-      multi.buildTheBuild(ctx.user, ctx.build, done);
-    });
-    it('should not add the repo', function (done) {
-      var data = {
-        repo: 'tjmehta/101',
-        branch: 'master',
-        commit: uuid()
-      };
-      ctx.contextVersion.addGithubRepo(data, expects.error(400, /Cannot/, done));
-    });
+  it('it should update an appCodeVersion\'s commit', function (done) {
+    var body = {
+      commit: 'abcdef'
+    };
+    var expected = ctx.appCodeVersion.json();
+    expected.commit = body.commit;
+    ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+  });
+  it('it should update an appCodeVersion\'s commit and branch', function (done) {
+    var body = {
+      branch: 'other-feature',
+      commit: 'abcdef'
+    };
+    var expected = ctx.appCodeVersion.json();
+    expected.commit = body.commit;
+    expected.branch = body.branch;
+    expected.lowerBranch = body.branch.toLowerCase();
+    ctx.appCodeVersion.update(body, expects.success(200, expected, done));
   });
 });

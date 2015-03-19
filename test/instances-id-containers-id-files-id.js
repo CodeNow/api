@@ -6,11 +6,11 @@ var after = Lab.after;
 var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
-var krain = require('krain');
 var rimraf = require('rimraf');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
+var primus = require('./fixtures/primus');
 var fs = require('fs');
 var expects = require('./fixtures/expects');
 var path = require('path');
@@ -98,9 +98,10 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
     rimraf.sync(containerRoot(ctx));
     ctx.krain.close(done);
   });
-
-  before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
+  before(api.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
@@ -114,6 +115,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
       ctx.instanceId = instance.id();
       // create test folder
       fs.mkdirSync(containerRoot(ctx));
+      var krain = require('krain');
       ctx.krain = krain.listen(process.env.KRAIN_PORT, done);
     });
   });
