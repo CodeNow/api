@@ -3,6 +3,7 @@
 var Lab = require('lab');
 var describe = Lab.experiment;
 var it = Lab.test;
+var beforeEach = Lab.beforeEach;
 var expect = Lab.expect;
 
 var sinon = require('sinon');
@@ -12,70 +13,39 @@ var Pod = require('models/mongo/pod');
 var Instance = require('models/mongo/instance');
 
 describe('Pods', function () {
-  // before(require('./fixtures/mongo').connect);
 
-  it('should know it defaults to not a master', function (done) {
-    var p = new Pod();
-    p.isMaster(function (err, master) {
-      expect(err).to.equal(null);
-      expect(master).to.equal(false);
+  describe('with graph', function () {
+    var pod;
+    var instances;
+    beforeEach(function (done) {
+      instances = [new Instance(), new Instance(), new Instance(), new Instance()];
+      var i3 = instances[3].toJSON();
+      i3.dependencies = {};
+      var i2 = instances[2].toJSON();
+      i2.dependencies = {};
+      i2.dependencies[i3._id] = i3;
+      var i1 = instances[1].toJSON();
+      i1.dependencies = {};
+      var i0 = instances[0].toJSON();
+      i0.dependencies = {};
+      i0.dependencies[i1._id] = i1;
+      i0.dependencies[i2._id] = i2;
+      sinon.stub(instances[0], 'populateDeps').yields(null, i0);
+      pod = new Pod({ instances: instances });
       done();
     });
-  });
-
-  it('should be able to be master', function (done) {
-    var p = new Pod({ master: true });
-    p.isMaster(function (err, master) {
-      expect(err).to.equal(null);
-      expect(master).to.equal(true);
-      done();
-    });
-  });
-
-  describe('with instances', function () {
-    it('should be able to add first instance', function (done) {
-      var instances = [new Instance()];
-      var pod = new Pod();
-      expect(pod.instances).to.have.length(0);
-      pod.addInstance(instances[0]._id, function (err, pod) {
+    
+    it('should return a graph representation of the instances', function (done) {
+      Pod.getPodWithInstance(instances[0], function (err, pod) {
         expect(err).to.equal(null);
-        expect(pod.instances).to.have.length(1);
-        done();
-      });
-    });
-
-    it('should be able to add a second instance', function (done) {
-      var instances = [new Instance(), new Instance()];
-      var pod = new Pod({ instances: [instances[0]] });
-      pod.addInstance(instances[1]._id, function (err, pod) {
-        expect(pod.instances).to.have.length(2);
-        done();
-      });
-    });
-
-    it('should remove an instance', function (done) {
-      var instances = [new Instance(), new Instance()];
-      var pod = new Pod({ instances: instances });
-      pod.removeInstance(instances[0]._id, function (err, pod) {
-        expect(pod.instances).to.have.length(1);
-        done();
-      });
-    });
-
-    it('should populate the instances', function (done) {
-      var instances = [new Instance(), new Instance()];
-      var pod = new Pod({ instances: instances });
-      sinon.stub(pod, 'populate', function () {
-        // this == pod
-        var args = Array.prototype.slice.call(arguments);
-        var cb = args.pop();
-        cb(null, this);
-      });
-      pod.populateInstances(function (err, pod) {
-        expect(err).to.equal(null);
-        expect(pod.instances).to.have.length(2);
-        expect(pod.populate.calledOnce).to.equal(true);
-        pod.populate.restore();
+        expect(pod.graph).to.be.an('object');
+        expect(Object.keys(pod.graph)).to.have.length(4); // number of nodes
+        expect(pod.graph[instances[0]._id].length).to.equal(2);
+        expect(pod.graph[instances[1]._id].length).to.equal(0);
+        expect(pod.graph[instances[2]._id].length).to.equal(1);
+        expect(pod.graph[instances[3]._id].length).to.equal(0);
+        expect(instances[0].populateDeps.calledOnce).to.be.true();
+        instances[0].populateDeps.restore();
         done();
       });
     });
