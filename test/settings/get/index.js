@@ -65,7 +65,7 @@ describe('GET /settings', {timeout:500}, function () {
             var settings = body[0];
             expect(settings._id).to.exist();
             expect(settings.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
-            expect(settings.notifications).to.not.exist();
+            expect(settings.notifications.slack.enabled).to.equal(true);
             done();
           });
         });
