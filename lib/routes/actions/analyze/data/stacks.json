@@ -179,7 +179,7 @@
     ],
     "defaultVersion": "3.4.2",
     "ports": "80",
-    "startCommand": "python3 main.py",
+    "startCommand": "python main.py",
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']"
   },
