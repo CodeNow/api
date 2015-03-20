@@ -8,7 +8,6 @@ var beforeEach = Lab.beforeEach;
 var afterEach = Lab.afterEach;
 var expect = Lab.expect;
 var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 
 
@@ -16,10 +15,8 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
@@ -30,7 +27,10 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       owner: {},
       notifications: {
         slack: {
-          webhookUrl: 'http://slack.com/some-web-hook-url'
+          apiToken: 'xoxo-dasjdkasjdk243248392482394',
+          githubUsernameToSlackIdMap: {
+            'cheese': 'U023BECGF'
+          }
         },
         hipchat: {
           authToken: 'some-hipchat-token',
@@ -57,9 +57,12 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
     it('should be possible to update just part of notifications settings', function (done) {
       var newSettings = {
         notifications: {
-          hipchat: {
-            authToken: 'hipchat-token-2',
-            roomId: 123123
+          slack: {
+            apiToken: 'slack-token-2',
+            githubUsernameToSlackIdMap: {
+              'cheese': 'U023BECGG',
+              'hello': 'U123BECGX'
+            }
           }
         }
       };
@@ -67,9 +70,18 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
-        expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-        expect(body.notifications.hipchat.authToken).to.equal(newSettings.notifications.hipchat.authToken);
-        expect(body.notifications.hipchat.roomId).to.equal(newSettings.notifications.hipchat.roomId);
+        expect(body.notifications.slack.apiToken).to.equal(
+          newSettings.notifications.slack.apiToken
+        );
+        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+          newSettings.notifications.slack.githubUsernameToSlackIdMap
+        );
+        expect(body.notifications.hipchat.authToken).to.equal(
+          settings.notifications.hipchat.authToken
+        );
+        expect(body.notifications.hipchat.roomId).to.equal(
+          settings.notifications.hipchat.roomId
+        );
         done();
       });
     });
@@ -78,7 +90,10 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       var newSettings = {
         notifications: {
           slack: {
-            webhookUrl: 'http://slack.com/new-web-hook-url'
+            apiToken: 'xoxo-dasjdkasjdk243248392482394',
+            githubUsernameToSlackIdMap: {
+              'hello': 'operator'
+            }
           },
           hipchat: {
             authToken: 'new-hipchat-token',
@@ -90,9 +105,19 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
-        expect(body.notifications.slack.webhookUrl).to.equal(newSettings.notifications.slack.webhookUrl);
-        expect(body.notifications.hipchat.authToken).to.equal(newSettings.notifications.hipchat.authToken);
-        expect(body.notifications.hipchat.roomId).to.equal(newSettings.notifications.hipchat.roomId);
+
+        expect(body.notifications.slack.apiToken).to.equal(
+          newSettings.notifications.slack.apiToken
+        );
+        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+          newSettings.notifications.slack.githubUsernameToSlackIdMap
+        );
+        expect(body.notifications.hipchat.authToken).to.equal(
+          newSettings.notifications.hipchat.authToken
+        );
+        expect(body.notifications.hipchat.roomId).to.equal(
+          newSettings.notifications.hipchat.roomId
+        );
         done();
       });
     });
@@ -101,7 +126,9 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
       var newSettings = {
         notifications: {
           slack: {
-            webhookUrl: ''
+            apiToken: '',
+            githubUsernameToSlackIdMap: {}
+
           },
           hipchat: {
             authToken: 'new-hipchat-token',
@@ -113,9 +140,17 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
-        expect(body.notifications.slack.webhookUrl).to.equal(newSettings.notifications.slack.webhookUrl);
-        expect(body.notifications.hipchat.authToken).to.equal(newSettings.notifications.hipchat.authToken);
-        expect(body.notifications.hipchat.roomId).to.equal(newSettings.notifications.hipchat.roomId);
+
+        expect(body.notifications.slack.apiToken).to.equal(
+          newSettings.notifications.slack.apiToken
+        );
+        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.be.undefined;
+        expect(body.notifications.hipchat.authToken).to.equal(
+          newSettings.notifications.hipchat.authToken
+        );
+        expect(body.notifications.hipchat.roomId).to.equal(
+          newSettings.notifications.hipchat.roomId
+        );
         done();
       });
     });
@@ -128,7 +163,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         var newSettings = {
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/new-web-hook-url'
+              apiToken: 'xoxo-dasjdkasjdk243248392482394'
             },
             hipchat: {
               authToken: 'new-hipchat-token',
