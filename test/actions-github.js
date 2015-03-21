@@ -114,7 +114,7 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  describe('not supported action for pull_request event', function () {
+  describe('deleted branch', function () {
 
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
@@ -128,12 +128,13 @@ describe('Github - /actions/github', function () {
     });
 
     it('should return OKAY', function (done) {
-      var options = hooks().pull_request_closed;
+      var options = hooks().push;
+      options.json.deleted = true;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
 
         expect(res.statusCode).to.equal(202);
-        expect(body).to.equal('Do not handle pull request with actions not equal synchronize or opened.');
+        expect(body).to.equal('Deleted the branch; no work to be done.');
         done();
       });
     });
@@ -167,7 +168,7 @@ describe('Github - /actions/github', function () {
   });
 
 
-  describe('push new branch slack notifications', function () {
+  describe('slack notifications for non-deployed branch', function () {
 
     beforeEach(function (done) {
       ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
@@ -221,7 +222,7 @@ describe('Github - /actions/github', function () {
         branch: 'feature-1',
         repo: acv.repo
       };
-      var options = hooks(data).push_new_branch;
+      var options = hooks(data).push;
       require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
       request.post(options, function (err, res, contextVersionIds) {
         if (err) { return done(err); }
@@ -229,7 +230,6 @@ describe('Github - /actions/github', function () {
         expect(contextVersionIds).to.be.okay;
         expect(contextVersionIds).to.be.an('array');
         expect(contextVersionIds).to.have.a.lengthOf(1);
-
       });
     });
 
@@ -237,7 +237,7 @@ describe('Github - /actions/github', function () {
 
 
 
-  describe('pull_request synchronize', function () {
+  describe('push event', function () {
     var ctx = {};
 
     beforeEach(function (done) {
@@ -301,8 +301,11 @@ describe('Github - /actions/github', function () {
             repo: acv.repo,
             ownerId: 2
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          var options = hooks(data).push;
+          var username = acv.repo.split('/')[0];
+          var repoName = acv.repo.split('/')[1];
+          require('./fixtures/mocks/github/users-username')(101, username);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(username, repoName, 'master');
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -328,8 +331,11 @@ describe('Github - /actions/github', function () {
             repo: acv.repo,
             ownerId: 2
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          var options = hooks(data).push;
+          var username = acv.repo.split('/')[0];
+          var repoName = acv.repo.split('/')[1];
+          require('./fixtures/mocks/github/users-username')(101, username);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(username, repoName, 'master');
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -360,8 +366,11 @@ describe('Github - /actions/github', function () {
             branch: 'master',
             repo: acv.repo
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          var options = hooks(data).push;
+          var username = acv.repo.split('/')[0];
+          var repoName = acv.repo.split('/')[1];
+          require('./fixtures/mocks/github/users-username')(101, username);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(username, repoName, 'master');
           request.post(options, function (err, res, cvsIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -394,8 +403,11 @@ describe('Github - /actions/github', function () {
             branch: 'master',
             repo: acv.repo
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          var options = hooks(data).push;
+          var username = acv.repo.split('/')[0];
+          var repoName = acv.repo.split('/')[1];
+          require('./fixtures/mocks/github/users-username')(101, username);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(username, repoName, 'master');
           request.post(options, function (err, res, cvsIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -429,108 +441,6 @@ describe('Github - /actions/github', function () {
         done();
       });
 
-      describe('PR call to action statuses disabled', function () {
-
-        beforeEach(function (done) {
-          ctx.originalGitHubPRCallToAction = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
-          process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'false';
-          done();
-        });
-
-
-        afterEach(function (done) {
-          process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
-          done();
-        });
-
-        it('should return 202', {timeout: 6000},
-          function (done) {
-            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-            var data = {
-              branch: 'feature-1',
-              repo: acv.repo
-            };
-            var options = hooks(data).pull_request_sync;
-            require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-            request.post(options, function (err, res) {
-              if (err) { return done(err); }
-              expect(res.statusCode).to.equal(202);
-              expect(res.body).to.equals('We ignore PRs if branch has no linked server');
-              done();
-            });
-          });
-      });
-
-
-      it('should set server selection status for the branch without instance - pull_request:synchronize',
-        {timeout: 6000}, function (done) {
-          Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
-            cb(null, {commit: {
-              message: 'hello'
-            }});
-          };
-          PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
-            expect(pullRequest.number).to.equal(2);
-            expect(pullRequest.headCommit.message).to.equal('hello');
-            expect(pullRequest).to.exist();
-            expect(targetUrl).to.include('https://runnable.io/');
-            expect(targetUrl).to.include('/serverSelection/');
-            cb();
-            done();
-          };
-
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'feature-1',
-            repo: acv.repo
-          };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          request.post(options, function (err, res, contextVersionIds) {
-            if (err) { return done(err); }
-            finishAllIncompleteVersions();
-            expect(res.statusCode).to.equal(201);
-            expect(contextVersionIds).to.be.okay;
-            expect(contextVersionIds).to.be.an('array');
-            expect(contextVersionIds).to.have.a.lengthOf(1);
-          });
-        });
-
-      it('should set server selection status for the branch without instance - pull_request:opened',
-        {timeout: 6000}, function (done) {
-
-          Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
-            cb(null, {commit: {
-              message: 'hello'
-            }});
-          };
-
-          PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
-            expect(pullRequest.number).to.equal(2);
-            expect(pullRequest.headCommit.message).to.equal('hello');
-            expect(pullRequest).to.exist();
-            expect(targetUrl).to.include('https://runnable.io/');
-            expect(targetUrl).to.include('/serverSelection/');
-            cb();
-            done();
-          };
-
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'feature-1',
-            repo: acv.repo
-          };
-          var options = hooks(data).pull_request_opened;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          request.post(options, function (err, res, contextVersionIds) {
-            if (err) { return done(err); }
-            finishAllIncompleteVersions();
-            expect(res.statusCode).to.equal(201);
-            expect(contextVersionIds).to.be.okay;
-            expect(contextVersionIds).to.be.an('array');
-            expect(contextVersionIds).to.have.a.lengthOf(1);
-          });
-        });
 
       it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
@@ -549,14 +459,14 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.completed': exists,
               'contextVersion.build.duration': exists,
               'contextVersion.build.triggeredBy.github': exists,
-              'contextVersion.appCodeVersions[0].lowerRepo': options.json.pull_request.head.repo.full_name,
-              'contextVersion.appCodeVersions[0].commit': options.json.pull_request.head.sha,
+              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
+              'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
               'contextVersion.appCodeVersions[0].branch': data.branch,
               'contextVersion.build.triggeredAction.manual': false,
               'contextVersion.build.triggeredAction.appCodeVersion.repo':
-                options.json.pull_request.head.repo.full_name,
+                options.json.repository.full_name,
               'contextVersion.build.triggeredAction.appCodeVersion.commit':
-                options.json.pull_request.head.sha
+                options.json.head_commit.id
             };
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err); }
@@ -577,8 +487,11 @@ describe('Github - /actions/github', function () {
             branch: 'master',
             repo: acv.repo
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          var options = hooks(data).push;
+          var username = acv.repo.split('/')[0];
+          var repoName = acv.repo.split('/')[1];
+          require('./fixtures/mocks/github/users-username')(101, username);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(username, repoName, 'master');
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
