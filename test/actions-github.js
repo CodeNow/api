@@ -21,7 +21,6 @@ var ContextVersion = require('models/mongo/context-version');
 var Runnable = require('models/apis/runnable');
 var PullRequest = require('models/apis/pullrequest');
 var Slack = require('notifications/slack');
-var Github = require('models/apis/github');
 var cbCount = require('callback-count');
 
 var nock = require('nock');
@@ -252,6 +251,7 @@ describe('Github - /actions/github', function () {
       ctx.originalBuildErrored = PullRequest.prototype.buildErrored;
       ctx.originalDeploymentErrored = PullRequest.prototype.deploymentErrored;
       ctx.originalDeploymentSucceeded = PullRequest.prototype.deploymentSucceeded;
+      ctx.originalDeploymentStarted = PullRequest.prototype.deploymentStarted;
       ctx.originalCreateDeployment = PullRequest.prototype.createDeployment;
 
       done();
@@ -267,6 +267,7 @@ describe('Github - /actions/github', function () {
       PullRequest.prototype.buildErrored = ctx.originalBuildErrored;
       PullRequest.prototype.deploymentErrored = ctx.originalDeploymentErrored;
       PullRequest.prototype.deploymentSucceeded = ctx.originalDeploymentSucceeded;
+      PullRequest.prototype.deploymentStarted = ctx.originalDeploymentStarted;
       PullRequest.prototype.createDeployment = ctx.originalCreateDeployment;
       done();
     });
@@ -347,18 +348,27 @@ describe('Github - /actions/github', function () {
 
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
         function (done) {
+          var count = cbCount(2, done);
           var baseDeploymentId = 100000;
           Runnable.prototype.updateInstance = function (id, opts, cb) {
             cb(Boom.notFound('Instance update failed'));
           };
-          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
+          PullRequest.prototype.createDeployment = function (pullRequest, serverName, payload, cb) {
             cb(null, {id: baseDeploymentId});
+          };
+          PullRequest.prototype.deploymentStarted = function(pullRequest, deploymentId, serverName, targetUrl, cb) {
+            expect(deploymentId).to.equal(baseDeploymentId);
+            expect(pullRequest).to.exist();
+            expect(serverName).to.exist();
+            expect(targetUrl).to.include('https://runnable.io/');
+            count.next();
+            cb();
           };
           PullRequest.prototype.deploymentErrored = function (pullRequest, deploymentId, serverName, targetUrl) {
             expect(pullRequest).to.exist();
             expect(serverName).to.exist();
             expect(targetUrl).to.include('https://runnable.io/');
-            done();
+            count.next();
           };
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
@@ -384,18 +394,27 @@ describe('Github - /actions/github', function () {
 
       it('should set deployment status to error if error happened during instance deployment', {timeout: 6000},
         function (done) {
+          var count = cbCount(2, done);
           var baseDeploymentId = 100000;
           Runnable.prototype.waitForInstanceDeployed = function (id, cb) {
             cb(Boom.notFound('Instance deploy failed'));
           };
-          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
+          PullRequest.prototype.createDeployment = function (pullRequest, serverName, payload, cb) {
             cb(null, {id: baseDeploymentId});
+          };
+          PullRequest.prototype.deploymentStarted = function(pullRequest, deploymentId, serverName, targetUrl, cb) {
+            expect(deploymentId).to.equal(baseDeploymentId);
+            expect(pullRequest).to.exist();
+            expect(serverName).to.exist();
+            expect(targetUrl).to.include('https://runnable.io/');
+            count.next();
+            cb();
           };
           PullRequest.prototype.deploymentErrored = function (pullRequest, deploymentId, serverName, targetUrl) {
             expect(pullRequest).to.exist();
             expect(serverName).to.exist();
             expect(targetUrl).to.include('https://runnable.io/');
-            done();
+            count.next();
           };
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
@@ -421,8 +440,6 @@ describe('Github - /actions/github', function () {
 
     describe('success cases', function () {
       beforeEach(function (done) {
-        ctx.originalServerSelectionStatus = PullRequest.prototype.serverSelectionStatus;
-        ctx.originalGetPullRequestHeadCommit = Github.prototype.getPullRequestHeadCommit;
 
         multi.createInstance(function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
@@ -436,8 +453,6 @@ describe('Github - /actions/github', function () {
 
       afterEach(function (done) {
         process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
-        PullRequest.prototype.serverSelectionStatus = ctx.originalServerSelectionStatus;
-        Github.prototype.getPullRequestHeadCommit = ctx.originalGetPullRequestHeadCommit;
         done();
       });
 
@@ -445,15 +460,20 @@ describe('Github - /actions/github', function () {
       it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
           if (err) { return done(err); }
-
-          var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
           var baseDeploymentId = 1234567;
-          spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment',
-            function (pullRequest, serverName, payload, cb) {
-              baseDeploymentId++;
-              cb(null, {id: baseDeploymentId});
-            });
-          var count = cbCount(2, function () {
+          PullRequest.prototype.createDeployment = function (pullRequest, serverName, payload, cb) {
+            var newDeploymentId = baseDeploymentId + 1;
+            cb(null, {id: newDeploymentId});
+          };
+          PullRequest.prototype.deploymentStarted =
+          function(pullRequest, deploymentId, serverName, targetUrl, cb) {
+            expect(pullRequest).to.exist();
+            expect(serverName).to.exist();
+            expect(targetUrl).to.include('https://runnable.io/');
+            count.next();
+            cb();
+          };
+          var count = cbCount(4, function () {
             var expected = {
               'contextVersion.build.started': exists,
               'contextVersion.build.completed': exists,
@@ -473,14 +493,14 @@ describe('Github - /actions/github', function () {
              ctx.instance2.fetch(expects.success(200, expected, done));
             }));
           });
-          spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentSucceeded',
-            function (pullRequest, deploymentId, serverName, targetUrl) {
-              expect(pullRequest).to.exist();
-              expect(serverName).to.exist();
-              expect([1234568, 1234569]).to.contain(deploymentId);
-              expect(targetUrl).to.include('https://runnable.io/');
-              count.next();
-            });
+          PullRequest.prototype.deploymentSucceeded =
+          function (pullRequest, deploymentId, serverName, targetUrl) {
+            expect(pullRequest).to.exist();
+            expect(serverName).to.exist();
+            expect([1234568, 1234569]).to.contain(deploymentId);
+            expect(targetUrl).to.include('https://runnable.io/');
+            count.next();
+          };
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
