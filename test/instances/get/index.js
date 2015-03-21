@@ -183,40 +183,42 @@ describe('GET /instances', function () {
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
 
-    it('should get instance by container.dockerContainer', function (done) {
-      require('../../fixtures/mocks/github/user')(ctx.user);
+    describe('request from moderator', function() {
+      var moderator;
+      var containerId;
 
-      var dockerContainer = ctx.instance.attrs.container.dockerContainer;
-      var query = {
-        owner: {
-          github: ctx.user.attrs.accounts.github.id
-        },
-        'container.dockerContainer': dockerContainer
-      };
+      beforeEach(function(done) {
+        multi.createInstance(function (err, instance, build, user) {
+          if (err) { return done(err); }
+          containerId = instance.attrs.container.dockerContainer;
+          multi.createModerator(function (err, user) {
+            if (err) { return done(err); }
+            moderator = user;
+            done();
+          });
+        });
+      });
 
-      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
-        if (err) { return done(err); }
-        expect(body.length).to.equal(1);
-        expect(body[0].container.dockerContainer).to.equal(dockerContainer);
-        done();
-      }));
-    });
+      it('should get instance by container.dockerContainer', function (done) {
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        var query = { 'container.dockerContainer': containerId };
+        moderator.fetchInstances(query, expects.success(200, function(err, body) {
+          if (err) { return done(err); }
+          expect(body.length).to.equal(1);
+          expect(body[0].container.dockerContainer).to.equal(containerId);
+          done();
+        }));
+      });
 
-    it('should return an empty set given an invalid container.dockerContainer', function (done) {
-      require('../../fixtures/mocks/github/user')(ctx.user);
-
-      var query = {
-        owner: {
-          github: ctx.user.attrs.accounts.github.id
-        },
-        'container.dockerContainer': 'invalid'
-      };
-
-      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
-        if (err) { return done(err); }
-        expect(body.length).to.equal(0);
-        done();
-      }));
+      it('should return an empty set given an invalid container.dockerContainer', function (done) {
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        var query = { 'container.dockerContainer': 'invalid' };
+        moderator.fetchInstances(query, expects.success(200, function(err, body) {
+          if (err) { return done(err); }
+          expect(body.length).to.equal(0);
+          done();
+        }));
+      });
     });
 
     describe('name and owner', function () {
