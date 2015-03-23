@@ -1,3 +1,5 @@
+'use strict';
+
 var async = require('async');
 var route53 = require('./route53');
 route53.start(); // must be before api require
