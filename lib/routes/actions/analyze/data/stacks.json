@@ -183,7 +183,7 @@
       "3.4.3",
       "3.4.3-wheezy"
     ],
-    "defaultVersion": "3.4.2",
+    "defaultVersion": "3.4.3",
     "ports": "80",
     "startCommand": "python main.py",
     "preEnvMarker": "os.environ['",
@@ -213,12 +213,12 @@
       "2.1.5",
       "2.2",
       "2.2.0",
-      "2.2.0-rc1"
+      "2.2.0-rc1",
       "2.2.1"
     ],
-    "defaultVersion": "2.2.0",
+    "defaultVersion": "2.2.1",
     "ports": "3000, 80",
-    "startCommand": "//Do some stuff",
+    "startCommand": "ruby main.rb",
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']"
   },
@@ -333,7 +333,7 @@
       "5.6.7-cli",
       "5.6.7-fpm"
     ],
-    "defaultVersion": "5.6.5-apache",
+    "defaultVersion": "5.6.7-apache",
     "ports": "80, 8080, 8000",
     "startCommand": "apache2 -DFOREGROUND",
     "preEnvMarker": "",
