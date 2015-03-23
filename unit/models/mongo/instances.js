@@ -608,23 +608,23 @@ describe('Instance', function () {
         });
       });
 
-      it('should allow us to remove the dependency', function (done) {
-        var i = instances[0];
-        var d = instances[1];
-        i.removeDependency(d, function (err) {
-          expect(err).to.be.null();
-          i.getDependencies(function (err, deps) {
-            expect(err).to.be.null();
-            expect(deps).to.be.an('array');
-            expect(deps).to.have.lengthOf(0);
-            done();
-          });
-        });
-      });
-
-      describe('adding actional instances', function () {
+      describe('with a dependency attached', function () {
         beforeEach(function (done) {
           instances[0].addDependency(instances[1], done);
+        });
+
+        it('should allow us to remove the dependency', function (done) {
+          var i = instances[0];
+          var d = instances[1];
+          i.removeDependency(d, function (err) {
+            expect(err).to.be.null();
+            i.getDependencies(function (err, deps) {
+              expect(err).to.be.null();
+              expect(deps).to.be.an('array');
+              expect(deps).to.have.lengthOf(0);
+              done();
+            });
+          });
         });
 
         it('should be able to add a second dependency', function (done) {
