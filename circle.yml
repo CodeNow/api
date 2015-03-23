@@ -18,11 +18,11 @@ database:
 test:
   pre:
     - ulimit -n 10240
+    - ./bin/neo4j console:
+        background: true
+        pwd: test/fixtures/graphs/neo4j
   override:
     - npm run lint
+    - npm run unit
     - ./scripts/npm-bdd-split-files.sh:
         parallel: true
-    - npm run bdd -- test/bdd-instance-dependencies.js:
-        environment:
-          GRAPH_DATABASE_TYPE: neo4j
-    - npm run unit
