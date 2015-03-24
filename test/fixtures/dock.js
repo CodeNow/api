@@ -13,7 +13,6 @@ module.exports = {
   stop: stopDock
 };
 var ctx = {};
-var testDockHost = 'http://localhost:4243';
 var started = false;
 
 function startDock (done) {
@@ -22,7 +21,6 @@ function startDock (done) {
   var count = createCount(done);
   ctx.mavis = mavisApp.listen(url.parse(process.env.MAVIS_HOST).port);
   ctx.mavis.on('listening', count.inc().next);
-  require('mavis/lib/models/dockData').addHost(testDockHost, count.inc().next); // init mavis docks data
   ctx.sauron = sauron.listen(process.env.SAURON_PORT);
   ctx.sauron.on('listening', count.inc().next);
   dockerModuleMock.setup(count.inc().next);
@@ -43,7 +41,6 @@ function stopDock (done) {
   ctx.mavis.close(count.inc().next);
   ctx.sauron.close(count.inc().next);
   redis.del(process.env.REDIS_HOST_KEYS, count.inc().next);
-  redis.del(testDockHost, count.inc().next);
   dockerModuleMock.clean(count.inc().next);
   count.inc();
   dockerListener.stop(function(err) {
