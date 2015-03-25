@@ -291,20 +291,21 @@ describe('Github - /actions/github', function () {
             owner: user.login
           };
           var options = hooks(data).push;
-          var username = acv.repo.split('/')[0];
           var repoName = acv.repo.split('/')[1];
 
           console.log('asdasdasd', user, ctx.instance.attrs);
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
-          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(user.login, user.id, repoName, 'master');
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            user.login, user.id, repoName, 'master');
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(instancesIds.length).to.equal(0);
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            stub.restore()
+            expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/)))
+              .to.equal(true);
+            stub.restore();
             Runnable.prototype.createBuild.restore();
             done();
           });
@@ -333,12 +334,12 @@ describe('Github - /actions/github', function () {
             owner: user.login
           };
           var options = hooks(data).push;
-          var username = acv.repo.split('/')[0];
           var repoName = acv.repo.split('/')[1];
 
           console.log('asdasdasd', user, ctx.instance.attrs);
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
-          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(user.login, user.id, repoName, 'master');
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            user.login, user.id, repoName, 'master');
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -346,7 +347,7 @@ describe('Github - /actions/github', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
             expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            stub.restore()
+            stub.restore();
             Runnable.prototype.buildBuild.restore();
             done();
           });
@@ -363,11 +364,13 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createDeployment.restore();
             var startStub = PullRequest.prototype.deploymentStarted;
             expect(startStub.calledOnce).to.equal(true);
-            expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             startStub.restore();
             var errorStub = PullRequest.prototype.deploymentErrored;
             expect(errorStub.calledOnce).to.equal(true);
-            expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             errorStub.restore();
 
             Runnable.prototype.updateInstance.restore();
@@ -401,7 +404,8 @@ describe('Github - /actions/github', function () {
           var username = acv.repo.split('/')[0];
           var repoName = acv.repo.split('/')[1];
           require('./fixtures/mocks/github/users-username')(101, username);
-          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(user.login, user.id, repoName, 'master');
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            user.login, user.id, repoName, 'master');
           request.post(options, function (err, res, cvsIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -423,11 +427,13 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createDeployment.restore();
             var startStub = PullRequest.prototype.deploymentStarted;
             expect(startStub.calledOnce).to.equal(true);
-            expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             startStub.restore();
             var errorStub = PullRequest.prototype.deploymentErrored;
             expect(errorStub.calledOnce).to.equal(true);
-            expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             errorStub.restore();
 
             Runnable.prototype.waitForInstanceDeployed.restore();
@@ -463,7 +469,8 @@ describe('Github - /actions/github', function () {
           var username = acv.repo.split('/')[0];
           var repoName = acv.repo.split('/')[1];
           require('./fixtures/mocks/github/users-username')(101, username);
-          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(username, user.id, repoName, 'master');
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            username, user.id, repoName, 'master');
           request.post(options, function (err, res, cvsIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -529,14 +536,17 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createDeployment.restore();
             var startStub = PullRequest.prototype.deploymentStarted;
             expect(startStub.calledTwice).to.equal(true);
-            expect(startStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(startStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             startStub.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
             console.log(successStub.getCall(0).args);
             console.log(successStub.getCall(1).args);
             expect(successStub.calledTwice).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             successStub.restore();
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err); }
@@ -560,7 +570,8 @@ describe('Github - /actions/github', function () {
           var username = user.login;
           var repoName = acv.repo.split('/')[1];
           require('./fixtures/mocks/github/users-username')(101, username);
-          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(username, user.id, repoName, 'master');
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            username, user.id, repoName, 'master');
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
