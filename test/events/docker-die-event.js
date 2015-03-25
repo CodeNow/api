@@ -60,7 +60,7 @@ describe('EVENT runnable:docker:events:die', function () {
             dockerEvents.removeListener('die', handler);
             count.next();
           }
-        };
+        }
         dockerEvents.on('die', handler);
         var docker = new Docker(ctx.instance.attrs.container.dockerHost);
         docker.stopContainer(ctx.instance.attrs.container, count.next);
