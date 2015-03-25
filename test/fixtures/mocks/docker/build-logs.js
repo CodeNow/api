@@ -1,4 +1,5 @@
 var nock = require('nock');
+var dockerHost = require('../../docker-host');
 
 var buffer = new Buffer(8);
 buffer[0] = 0x01;
@@ -16,8 +17,6 @@ buffer[7] = 0x53;
 // The docker host information is used from the instance doccument mongo (mavis).
 // Mavis get's it's docker host info from docker listener.
 // Docker listener uses emits data with docker's external host
-var ip = require('ip');
-var dockerHost = 'http://'+ip.address()+':4243';
 
 module.exports = function (failure) {
   nock(dockerHost, { allowUnmocked: true })
