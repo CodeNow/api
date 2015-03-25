@@ -49,9 +49,5 @@ function stopApi (done) {
   if(!started) { return done(); }
   started = false;
   route53.stop();
-  api.stop(function (err) {
-    if (err) { return done(err); }
-    done();
-    // cleanMongo.dropDatabase(done);
-  });
+  api.stop(done);
 }
