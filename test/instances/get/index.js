@@ -201,6 +201,32 @@ describe('GET /instances', function () {
         done();
       }));
     });
+    describe('update name to be short (so url length is not exceeded)', function() {
+      // bc subdomains can only be 63 chars
+      beforeEach(function (done) {
+        ctx.instance.update({name:'1'}, done);
+      });
+      it('should get instance by url and name', function (done) {
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        require('../../fixtures/mocks/github/users-username')(
+          ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
+        var url = [
+          'http://',
+          ctx.instance.attrs.name, '-', ctx.user.attrs.accounts.github.username, '.',
+          process.env.USER_CONTENT_DOMAIN
+        ].join('');
+        var query = {
+          url: url,
+          name: ctx.instance.attrs.name
+        };
+        ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+          if (err) { return done(err); }
+          expect(body.length).to.equal(1);
+          expect(body[0].shortHash).to.equal(ctx.instance.id());
+          done();
+        }));
+      });
+    });
 
     it('should return an empty set given an invalid container.dockerContainer', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user);
