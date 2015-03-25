@@ -8,6 +8,8 @@ var before = lab.before;
 var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -184,6 +186,69 @@ describe('GET /instances', function () {
       // FIXME: chai is messing up with eql check:
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
+
+    it('should get instance by container.dockerContainer', function (done) {
+      require('../../fixtures/mocks/github/user')(ctx.user);
+
+      var dockerContainer = ctx.instance.attrs.container.dockerContainer;
+      var query = {
+        owner: {
+          github: ctx.user.attrs.accounts.github.id
+        },
+        'container.dockerContainer': dockerContainer
+      };
+
+      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+        if (err) { return done(err); }
+        expect(body.length).to.equal(1);
+        expect(body[0].container.dockerContainer).to.equal(dockerContainer);
+        done();
+      }));
+    });
+    describe('update name to be short (so url length is not exceeded)', function() {
+      // bc subdomains can only be 63 chars
+      beforeEach(function (done) {
+        ctx.instance.update({name:'1'}, done);
+      });
+      it('should get instance by url and name', function (done) {
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        require('../../fixtures/mocks/github/users-username')(
+          ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
+        var url = [
+          'http://',
+          ctx.instance.attrs.name, '-', ctx.user.attrs.accounts.github.username, '.',
+          process.env.USER_CONTENT_DOMAIN
+        ].join('');
+        var query = {
+          url: url,
+          name: ctx.instance.attrs.name
+        };
+        ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+          if (err) { return done(err); }
+          expect(body.length).to.equal(1);
+          expect(body[0].shortHash).to.equal(ctx.instance.id());
+          done();
+        }));
+      });
+    });
+
+    it('should return an empty set given an invalid container.dockerContainer', function (done) {
+      require('../../fixtures/mocks/github/user')(ctx.user);
+
+      var query = {
+        owner: {
+          github: ctx.user.attrs.accounts.github.id
+        },
+        'container.dockerContainer': 'invalid'
+      };
+
+      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+        if (err) { return done(err); }
+        expect(body.length).to.equal(0);
+        done();
+      }));
+    });
+
     describe('name and owner', function () {
       beforeEach(function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);

@@ -21,7 +21,7 @@ function emitBuildComplete (cv, failure) {
   dockerMock.events.stream.emit('data',
     JSON.stringify({
       status: 'die',
-      from: process.env.DOCKER_IMAGE_BUILDER_NAME,
+      from: process.env.DOCKER_IMAGE_BUILDER_NAME+':'+process.env.DOCKER_IMAGE_BUILDER_VERSION,
       id: containerId
     }));
 }

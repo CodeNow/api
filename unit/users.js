@@ -3,11 +3,8 @@
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
-var it = lab.it;
 var before = lab.before;
 var afterEach = lab.afterEach;
-var Code = require('code');
-var expect = Code.expect;
 
 var Faker = require('faker');
 var validation = require('./fixtures/validation')(lab);
@@ -47,17 +44,6 @@ describe('User', function () {
       }
     });
   }
-
-  it('should be able to save a user!', function (done) {
-    var user = createNewUser();
-    user.save(function (err, instance) {
-      if (err) { done(err); }
-      else {
-        expect(instance).to.be.okay;
-        done();
-      }
-    });
-  });
 
   describe('Email Validation', function () {
     validation.emailValidationChecking(createNewUser, 'email');

@@ -12,9 +12,6 @@ var afterEach = lab.afterEach;
 var api = require('./fixtures/api-control');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
-// var exists = require('101/exists');
-// var tailBuildStream = require('./fixtures/tail-build-stream');
-// var createCount = require('callback-count');
 
 var ctx = {};
 

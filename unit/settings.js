@@ -23,7 +23,8 @@ describe('Settings',  function () {
       },
       notifications: {
         slack: {
-          webhookUrl: 'https://hooks.slack.com/services/some-token-1/some-token-2/some-token3'
+          apiToken: 'xoxo-dasjdkasjdk243248392482394',
+          enabled: true
         }
       }
     };
@@ -32,7 +33,8 @@ describe('Settings',  function () {
       settings.save(function (err, saved) {
         if (err) { return done(err); }
         expect(saved.owner.github).to.equal(data.owner.github);
-        expect(saved.notifications.slack.webhookUrl).to.equal(data.notifications.slack.webhookUrl);
+        expect(saved.notifications.slack.apiToken).to.equal(data.notifications.slack.apiToken);
+        expect(saved.notifications.slack.enabled).to.equal(true);
         savedSettings = saved;
         done();
       });
@@ -43,7 +45,7 @@ describe('Settings',  function () {
         if (err) { return done(err); }
         expect(String(settings._id)).to.equal(String(savedSettings._id));
         expect(settings.owner.github).to.equal(savedSettings.owner.github);
-        expect(settings.notifications.slack.webhookUrl).to.equal(savedSettings.notifications.slack.webhookUrl);
+        expect(settings.notifications.slack.apiToken).to.equal(savedSettings.notifications.slack.apiToken);
         done();
       });
     });
@@ -59,7 +61,8 @@ describe('Settings',  function () {
         },
         notifications: {
           slack: {
-            webhookUrl: 'https://hooks.slack.com/services/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'
+            apiToken: 'xoxo-dasjdkasjdk243248392482394',
+            enabled: false
           }
         }
       };
@@ -67,7 +70,8 @@ describe('Settings',  function () {
       settings.save(function (err, saved) {
         if (err) { return done(err); }
         expect(saved.owner.github).to.equal(data.owner.github);
-        expect(saved.notifications.slack.webhookUrl).to.equal(data.notifications.slack.webhookUrl);
+        expect(saved.notifications.slack.apiToken).to.equal(data.notifications.slack.apiToken);
+        expect(saved.notifications.slack.enabled).to.equal(false);
         done();
       });
     });
@@ -79,7 +83,7 @@ describe('Settings',  function () {
         },
         notifications: {
           slack: {
-            webhookUrl: 'https://hooks.slack.com/services/some-token-1/some-token-2/some-token3'
+            apiToken: 'xoxo-dasjdkasjdk243248392482394'
           }
         }
       };
@@ -89,7 +93,7 @@ describe('Settings',  function () {
         },
         notifications: {
           slack: {
-            webhookUrl: 'https://hooks.slack.com/services/some-token-4/some-token-5/some-token6'
+            apiToken: 'xoxo-dasjdkasjdk243248392482394'
           }
         }
       };
@@ -97,7 +101,7 @@ describe('Settings',  function () {
       settings1.save(function (err, saved) {
         if (err) { return done(err); }
         expect(saved.owner.github).to.equal(data1.owner.github);
-        expect(saved.notifications.slack.webhookUrl).to.equal(data1.notifications.slack.webhookUrl);
+        expect(saved.notifications.slack.apiToken).to.equal(data1.notifications.slack.apiToken);
         var settings2 = new Settings(data2);
         settings2.save(function (err) {
           expect(err.name).to.equal('MongoError');
@@ -115,7 +119,7 @@ describe('Settings',  function () {
         },
         notifications: {
           slack: {
-            webhookUrl: 'https://hooks.slack.com/services/some-token-1/some-token-2/some-token3'
+            apiToken: 'xoxo-dasjdkasjdk243248392482394'
           }
         }
       };
@@ -126,7 +130,7 @@ describe('Settings',  function () {
         },
         notifications: {
           slack: {
-            webhookUrl: 'https://hooks.slack.com/services/some-token-4/some-token-5/some-token6'
+            apiToken: 'xoxo-dasjdkasjdk243248392482394'
           }
         }
       };
@@ -134,7 +138,7 @@ describe('Settings',  function () {
       settings1.save(function (err, saved) {
         if (err) { return done(err); }
         expect(saved.owner.github).to.equal(data1.owner.github);
-        expect(saved.notifications.slack.webhookUrl).to.equal(data1.notifications.slack.webhookUrl);
+        expect(saved.notifications.slack.apiToken).to.equal(data1.notifications.slack.apiToken);
         var settings2 = new Settings(data2);
         settings2.save(function (err) {
           expect(err.name).to.equal('MongoError');

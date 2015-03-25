@@ -30,7 +30,10 @@ describe('400 POST /settings', {timeout: 700}, function () {
         var settings = {
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
+              apiToken: 'xoxo-dasjdkasjdk243248392482394',
+              githubUsernameToSlackIdMap: {
+                'cheese': 'U023BECGF'
+              }
             },
             hipchat: {
               authToken: 'some-hipchat-token',
@@ -56,7 +59,10 @@ describe('400 POST /settings', {timeout: 700}, function () {
           },
           notifications: {
             slack: {
-              webhookUrl: 'http://slack.com/some-web-hook-url'
+              apiToken: 'xoxo-dasjdkasjdk243248392482394',
+              githubUsernameToSlackIdMap: {
+                'cheese': 'U023BECGF'
+              }
             },
             hipchat: {
               authToken: 'some-hipchat-token',
@@ -68,9 +74,18 @@ describe('400 POST /settings', {timeout: 700}, function () {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           expect(body.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
-          expect(body.notifications.slack.webhookUrl).to.equal(settings.notifications.slack.webhookUrl);
-          expect(body.notifications.hipchat.authToken).to.equal(settings.notifications.hipchat.authToken);
-          expect(body.notifications.hipchat.roomId).to.equal(settings.notifications.hipchat.roomId);
+          expect(body.notifications.slack.apiToken).to.equal(
+            settings.notifications.slack.apiToken
+          );
+          expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+            settings.notifications.slack.githubUsernameToSlackIdMap
+          );
+          expect(body.notifications.hipchat.authToken).to.equal(
+            settings.notifications.hipchat.authToken
+          );
+          expect(body.notifications.hipchat.roomId).to.equal(
+            settings.notifications.hipchat.roomId
+          );
           runnable.createSetting({json: settings}, function (err) {
             expect(err.data.statusCode).to.equal(409);
             expect(err.data.error).to.equal('Conflict');

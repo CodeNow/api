@@ -34,7 +34,7 @@ function ensureIndexes (cb) {
 
 var started = false;
 function startApi (done) {
-  if(started) { return done(); }
+  if (started) { return done(); }
   started = true;
   route53.start(); // must be before api require, and here
   api.start(function (err) {
@@ -47,12 +47,8 @@ function startApi (done) {
 }
 
 function stopApi (done) {
-  if(!started) { return done(); }
+  if (!started) { return done(); }
   started = false;
   route53.stop();
-  api.stop(function (err) {
-    if (err) { return done(err); }
-    done();
-    // cleanMongo.dropDatabase(done);
-  });
+  api.stop(done);
 }
