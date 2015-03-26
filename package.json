@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.7.0",
+  "version": "0.7.3",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -48,7 +48,7 @@
     "keypather": "^1.8.1",
     "middleware-flow": "^0.6.1",
     "middlewarize": "git+ssh://git@github.com:tjmehta/middlewarize#v0.0.1",
-    "mongoose": "^3.8.24",
+    "mongoose": "~3.8.24",
     "mongoose-validator": "^1.0.0",
     "morgan": "^1.1.1",
     "multiparty": "^3.3.2",
@@ -86,11 +86,12 @@
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
     "function-proxy": "^0.5.2",
+    "ip": "^0.3.2",
     "jsdoc": "^3.2.2",
     "jshint": "2.6.0",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "^3.2.1",
-    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.3",
+    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.8",
     "multiline": "^0.3.4",
     "nock": "^0.51.0",
     "nodemon": "^1.2.1",
@@ -110,9 +111,9 @@
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
     "_bdd": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test",
     "bdd": "CIRCLE_NODE_TOTAL=1 CIRCLE_NODE_INDEX=0 ./scripts/npm-bdd-split-files.sh",
-    "bdd-watch": "killall node; killall cayley_osx; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd-whitelist",
+    "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd-whitelist",
     "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -v -l -m 36000 -e test `cat test/whitelist.txt`",
-    "bdd-whitelist": "killall cayley_osx; npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test `cat test/whitelist.txt`",
+    "bdd-whitelist": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab -v -l -m 200 -e test `cat test/whitelist.txt`",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",
     "docs": "jsdoc -r -d docs lib/ && if [ $CIRCLE_ARTIFACTS ]; then cp -r docs $CIRCLE_ARTIFACTS; fi",
@@ -127,6 +128,7 @@
     "unit-watch": "killall node; nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "clean": "rm -rf docs coverage.html node_modules",
-    "lint": "jshint ."
+    "lint": "jshint .",
+    "cayley": "./test/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/fixtures/graphs/cayley/local.cfg --assets=./test/fixtures/graphs/cayley"
   }
 }

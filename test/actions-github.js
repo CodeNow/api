@@ -293,7 +293,6 @@ describe('Github - /actions/github', function () {
           var options = hooks(data).push;
           var repoName = acv.repo.split('/')[1];
 
-          console.log('asdasdasd', user, ctx.instance.attrs);
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
@@ -336,7 +335,6 @@ describe('Github - /actions/github', function () {
           var options = hooks(data).push;
           var repoName = acv.repo.split('/')[1];
 
-          console.log('asdasdasd', user, ctx.instance.attrs);
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
@@ -491,7 +489,17 @@ describe('Github - /actions/github', function () {
           ctx.build = build;
           ctx.user = user;
           ctx.instance = instance;
-          done();
+          var settings = {
+            owner: {
+              github: user.attrs.accounts.github.id
+            }
+          };
+          user.createSetting({json: settings}, function (err, body) {
+            if (err) { return done(err); }
+            expect(body._id).to.exist();
+            ctx.settingsId = body._id;
+            done();
+          });
         });
       });
 
@@ -516,7 +524,7 @@ describe('Github - /actions/github', function () {
             cb();
             count.next();
           };
-          var count = cbCount(4, function () {
+          var count = cbCount(5, function () {
             var expected = {
               'contextVersion.build.started': exists,
               'contextVersion.build.completed': exists,
@@ -540,21 +548,29 @@ describe('Github - /actions/github', function () {
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             startStub.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
-            console.log(successStub.getCall(0).args);
-            console.log(successStub.getCall(1).args);
+
             expect(successStub.calledTwice).to.equal(true);
             expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             successStub.restore();
+
+            var slackStub = Slack.prototype.notifyOnAutoUpdate;
+            expect(slackStub.calledOnce).to.equal(true);
+            expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
+            slackStub.restore();
+
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err); }
               ctx.instance2.fetch(expects.success(200, expected, done));
             }));
+
+
           });
           sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
+          sinon.stub(Slack.prototype, 'notifyOnAutoUpdate', countOnCallback);
 
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
