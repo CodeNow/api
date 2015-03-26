@@ -8,7 +8,6 @@ var before = lab.before;
 var afterEach = lab.afterEach;
 
 var validation = require('../../../fixtures/validation')(lab);
-console.log(validation);
 var schemaValidators = require('models/mongo/schemas/schema-validators');
 var Hashids = require('hashids');
 

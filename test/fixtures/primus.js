@@ -17,8 +17,6 @@ var debug = require('debug')('runnable_api:fixtures:primus');
 
 var ctx = {};
 
-var ctx;
-
 module.exports = {
   joinOrgRoom: function (orgId, cb) {
     debug('joinOrgRoom');

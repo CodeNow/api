@@ -20,11 +20,10 @@ var Socket = Primus.createSocket({
   parser: 'JSON'
 });
 
-var ctx = {};
-before(api.start.bind(ctx));
-after(api.stop.bind(ctx));
-
 describe('messenger Unit Tests', function() {
+  var ctx = {};
+  before(api.start.bind(ctx));
+  after(api.stop.bind(ctx));
 
   describe('send message to room', function () {
     it('should get joined room message', function(done) {
