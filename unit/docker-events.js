@@ -1,17 +1,21 @@
 'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var after = Lab.after;
-var before = Lab.before;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+
 var redis = require('models/redis');
 var pubsub = require('models/redis/pubsub');
 var error = require('error');
 var dockerEvents = require('models/events/docker');
 var events = require('models/events/index');
-var expect = Lab.expect;
 var createCount = require('callback-count');
 var uuid = require('uuid');
 var activeApi = require('models/redis/active-api');
@@ -22,8 +26,12 @@ describe('Docker Events', function () {
   var ctx = {};
 
   describe('handleDie', function () {
-    before(redis.flushdb.bind(redis));
-    after(redis.flushdb.bind(redis));
+    before(function (done) {
+      redis.flushdb(done);
+    });
+    after(function (done) {
+      redis.flushdb(done);
+    });
     afterEach(function (done) {
       dockerEvents.close(done);
     });
@@ -158,9 +166,15 @@ describe('Docker Events', function () {
   describe('events wrapper', function () {
 
     describe('listen', function () {
-      before(redis.flushdb.bind(redis));
-      after(redis.flushdb.bind(redis));
-      afterEach(events.close.bind(events));
+      before(function (done) {
+        redis.flushdb(done);
+      });
+      after(function (done) {
+        redis.flushdb(done);
+      });
+      afterEach(function (done) {
+        events.close(done);
+      });
 
       it('should start listening and callback', function (done) {
         events.listen(done);
@@ -194,9 +208,15 @@ describe('Docker Events', function () {
 
 
   describe('listen', function () {
-    before(redis.flushdb.bind(redis));
-    after(redis.flushdb.bind(redis));
-    afterEach(dockerEvents.close.bind(dockerEvents));
+      before(function (done) {
+        redis.flushdb(done);
+      });
+      after(function (done) {
+        redis.flushdb(done);
+      });
+    afterEach(function (done) {
+      dockerEvents.close(done);
+    });
 
 
     describe('while closing', function () {
@@ -220,8 +240,12 @@ describe('Docker Events', function () {
   });
 
   describe('event lock', function () {
-    before(redis.flushdb.bind(redis).bind(redis));
-    after(redis.flushdb.bind(redis));
+    before(function (done) {
+      redis.flushdb(done);
+    });
+    after(function (done) {
+      redis.flushdb(done);
+    });
     before(function (done) {
       ctx.origHandleDieGetEventLock = dockerEvents.getEventLock;
       done();

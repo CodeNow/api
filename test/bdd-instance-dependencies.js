@@ -1,13 +1,15 @@
 'use strict';
 
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -19,7 +21,7 @@ var error = require('error');
 var noop = require('101/noop');
 var errorLog = error.log;
 
-describe('BDD - Instance Dependencies', function () {
+describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -29,7 +31,7 @@ describe('BDD - Instance Dependencies', function () {
   after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  beforeEach(function (done) {
+  beforeEach({ timeout: 7000 }, function (done) {
     var r = require('models/redis');
     r.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
       if (err) { return done(err); }
@@ -37,7 +39,7 @@ describe('BDD - Instance Dependencies', function () {
     });
   });
   // Uncomment if you want to clear the (graph) database every time
-  beforeEach(function (done) {
+  beforeEach({ timeout: 7000 }, function (done) {
     if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
       var Cypher = require('cypher-stream');
       var cypher = Cypher('http://localhost:7474');
@@ -55,7 +57,7 @@ describe('BDD - Instance Dependencies', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
-  beforeEach(function (done) {
+  beforeEach({ timeout: 5000 }, function (done) {
     multi.createInstance(function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.webInstance = instance;
@@ -89,7 +91,7 @@ describe('BDD - Instance Dependencies', function () {
         require('./fixtures/mocks/github/user')(ctx.user);
         ctx.webInstance.fetch(function (err, instance) {
           if (err) { return done(err); }
-          expect(instance.dependencies).to.eql({});
+          expect(instance.dependencies).to.deep.equal({});
           done();
         });
       });
@@ -109,7 +111,7 @@ describe('BDD - Instance Dependencies', function () {
         var apiId = ctx.apiInstance.attrs._id.toString();
         ctx.webInstance.fetch(function (err, instance) {
           if (err) { return done(err); }
-          expect(instance.dependencies).to.be.an('object');
+          expect(instance.dependencies).to.be.an.object();
           expect(Object.keys(instance.dependencies).length).to.equal(1);
           expect(instance.dependencies[apiId]).to.be.okay;
           expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
@@ -150,7 +152,7 @@ describe('BDD - Instance Dependencies', function () {
           expect(body).to.be.okay;
           /* this is a fun test. we _want_ this to be undefined. if the graph db was running,
            * it would return a value for dependencies, which we do not want. */
-          expect(body.dependencies).to.eql({});
+          expect(body.dependencies).to.deep.equal({});
           done();
         });
       });
@@ -160,7 +162,7 @@ describe('BDD - Instance Dependencies', function () {
           ctx.webInstance.fetch(function (err, body) {
             expect(err).to.be.not.okay;
             if (err) { return done(err); }
-            expect(body.dependencies).to.eql({});
+            expect(body.dependencies).to.deep.equal({});
             ctx.webInstance.regraph(function (err) {
               expect(err).to.be.not.okay;
               if (err) { return done(err); }
@@ -174,7 +176,7 @@ describe('BDD - Instance Dependencies', function () {
           ctx.webInstance.fetch(function (err, instance) {
             expect(err).to.be.not.okay;
             if (err) { return done(err); }
-            expect(instance.dependencies).to.be.an('object');
+            expect(instance.dependencies).to.be.an.object();
             expect(Object.keys(instance.dependencies).length).to.equal(1);
             expect(instance.dependencies[apiId]).to.be.okay;
             expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
@@ -208,7 +210,7 @@ describe('BDD - Instance Dependencies', function () {
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return done(err); }
-            expect(instance.dependencies).to.eql({});
+            expect(instance.dependencies).to.deep.equal({});
             done();
           });
         });
@@ -266,7 +268,7 @@ describe('BDD - Instance Dependencies', function () {
               require('./fixtures/mocks/github/user')(ctx.user);
               ctx.web2.fetch(function (err, instance) {
                 if (err) { return cb(err); }
-                expect(instance.dependencies).to.be.an('object');
+                expect(instance.dependencies).to.be.an.object();
                 expect(Object.keys(instance.dependencies).length).to.equal(1);
                 expect(instance.dependencies[api2Id]).to.be.okay;
                 expect(instance.dependencies[api2Id].shortHash).to.equal(ctx.api2.attrs.shortHash);
@@ -280,7 +282,7 @@ describe('BDD - Instance Dependencies', function () {
               var web2Id = ctx.web2.attrs._id.toString();
               ctx.api2.fetch(function (err, instance) {
                 if (err) { return cb(err); }
-                expect(instance.dependencies).to.be.an('object');
+                expect(instance.dependencies).to.be.an.object();
                 expect(Object.keys(instance.dependencies).length).to.equal(1);
                 expect(instance.dependencies[web2Id]).to.be.okay;
                 expect(instance.dependencies[web2Id].shortHash).to.equal(ctx.web2.attrs.shortHash);
@@ -302,7 +304,7 @@ describe('BDD - Instance Dependencies', function () {
         it('should not be a dependent of any instance (removed from other instance dependencies)', function (done) {
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return done(err); }
-            expect(instance.dependencies).to.eql({});
+            expect(instance.dependencies).to.deep.equal({});
             done();
           });
         });
@@ -332,7 +334,7 @@ describe('BDD - Instance Dependencies', function () {
         var apiId = ctx.apiInstance.attrs._id.toString();
         ctx.webInstance.fetch(function (err, instance) {
           if (err) { return done(err); }
-          expect(instance.dependencies).to.be.an('object');
+          expect(instance.dependencies).to.be.an.object();
           expect(Object.keys(instance.dependencies).length).to.equal(1);
           expect(instance.dependencies[apiId]).to.be.okay;
           expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
@@ -381,7 +383,7 @@ describe('BDD - Instance Dependencies', function () {
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.web2.fetch(function (err, instance) {
               if (err) { return cb(err); }
-              expect(instance.dependencies).to.be.an('object');
+              expect(instance.dependencies).to.be.an.object();
               expect(Object.keys(instance.dependencies).length).to.equal(1);
               expect(instance.dependencies[api2Id]).to.be.okay;
               expect(instance.dependencies[api2Id].shortHash).to.equal(ctx.api2.attrs.shortHash);
@@ -395,7 +397,7 @@ describe('BDD - Instance Dependencies', function () {
             var web2Id = ctx.web2.attrs._id.toString();
             ctx.api2.fetch(function (err, instance) {
               if (err) { return cb(err); }
-              expect(instance.dependencies).to.be.an('object');
+              expect(instance.dependencies).to.be.an.object();
               expect(Object.keys(instance.dependencies).length).to.equal(1);
               expect(instance.dependencies[web2Id]).to.be.okay;
               expect(instance.dependencies[web2Id].shortHash).to.equal(ctx.web2.attrs.shortHash);
@@ -459,7 +461,7 @@ describe('BDD - Instance Dependencies', function () {
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.web2.fetch(function (err, instance) {
               if (err) { return cb(err); }
-              expect(instance.dependencies).to.be.an('object');
+              expect(instance.dependencies).to.be.an.object();
               expect(Object.keys(instance.dependencies).length).to.equal(1);
               expect(instance.dependencies[api2Id]).to.be.okay;
               expect(instance.dependencies[api2Id].shortHash).to.equal(ctx.api2.attrs.shortHash);
@@ -473,7 +475,7 @@ describe('BDD - Instance Dependencies', function () {
             var web2Id = ctx.web2.attrs._id.toString();
             ctx.api2.fetch(function (err, instance) {
               if (err) { return cb(err); }
-              expect(instance.dependencies).to.be.an('object');
+              expect(instance.dependencies).to.be.an.object();
               expect(Object.keys(instance.dependencies).length).to.equal(1);
               expect(instance.dependencies[web2Id]).to.be.okay;
               expect(instance.dependencies[web2Id].shortHash).to.equal(ctx.web2.attrs.shortHash);
@@ -523,7 +525,7 @@ describe('BDD - Instance Dependencies', function () {
         var mongoId = ctx.mongoInstance.attrs._id.toString();
         ctx.webInstance.fetch(function (err, instance) {
           if (err) { return done(err); }
-          expect(instance.dependencies).to.be.an('object');
+          expect(instance.dependencies).to.be.an.object();
           expect(Object.keys(instance.dependencies).length).to.equal(2);
           expect(instance.dependencies[apiId]).to.be.okay;
           expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
@@ -609,7 +611,7 @@ describe('BDD - Instance Dependencies', function () {
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.web2.fetch(function (err, instance) {
               if (err) { return cb(err); }
-              expect(instance.dependencies).to.be.an('object');
+              expect(instance.dependencies).to.be.an.object();
               expect(Object.keys(instance.dependencies).length).to.equal(1);
               expect(instance.dependencies[api2Id]).to.be.okay;
               expect(instance.dependencies[api2Id].shortHash).to.equal(ctx.api2.attrs.shortHash);
@@ -622,7 +624,7 @@ describe('BDD - Instance Dependencies', function () {
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.api2.fetch(function (err, instance) {
               if (err) { return cb(err); }
-              expect(instance.dependencies).to.be.eql({});
+              expect(instance.dependencies).to.be.deep.equal({});
               cb();
             });
           }
@@ -650,12 +652,12 @@ describe('BDD - Instance Dependencies', function () {
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.webInstance.fetch(function (err, instance) {
               if (err) { return cb(err); }
-              expect(instance.dependencies).to.be.an('object');
+              expect(instance.dependencies).to.be.an.object();
               expect(Object.keys(instance.dependencies).length).to.equal(1);
               expect(instance.dependencies[apiId]).to.be.okay;
               expect(instance.dependencies[apiId].shortHash).to.equal(ctx.apiInstance.attrs.shortHash);
               expect(instance.dependencies[apiId].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
-              expect(instance.dependencies[apiId].dependencies).to.be.an('object');
+              expect(instance.dependencies[apiId].dependencies).to.be.an.object();
               expect(instance.dependencies[apiId].dependencies[mongoId]).to.be.okay;
               expect(instance.dependencies[apiId].dependencies[mongoId].shortHash)
                 .to.equal(ctx.mongoInstance.attrs.shortHash);
@@ -670,7 +672,7 @@ describe('BDD - Instance Dependencies', function () {
             var mongoId = ctx.mongoInstance.attrs._id.toString();
             ctx.apiInstance.fetch(function (err, instance) {
               if (err) { return cb(err); }
-              expect(instance.dependencies).to.be.an('object');
+              expect(instance.dependencies).to.be.an.object();
               expect(Object.keys(instance.dependencies).length).to.equal(1);
               expect(instance.dependencies[mongoId]).to.be.okay;
               expect(instance.dependencies[mongoId].shortHash).to.equal(ctx.mongoInstance.attrs.shortHash);
@@ -729,7 +731,7 @@ describe('BDD - Instance Dependencies', function () {
         function checkWebInstance (cb) {
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
-            expect(instance.dependencies).to.eql({});
+            expect(instance.dependencies).to.deep.equal({});
             cb();
           });
         }
@@ -737,7 +739,7 @@ describe('BDD - Instance Dependencies', function () {
           ctx.apiInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
             var mongoId = ctx.mongoInstance.attrs._id.toString();
-            expect(instance.dependencies).to.be.an('object');
+            expect(instance.dependencies).to.be.an.object();
             expect(Object.keys(instance.dependencies).length).to.equal(1);
             expect(instance.dependencies[mongoId]).to.be.okay;
             expect(instance.dependencies[mongoId].shortHash).to.equal(ctx.mongoInstance.attrs.shortHash);
@@ -783,12 +785,12 @@ describe('BDD - Instance Dependencies', function () {
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
-            expect(instance.dependencies).to.be.an('object');
+            expect(instance.dependencies).to.be.an.object();
             expect(Object.keys(instance.dependencies).length).to.equal(1);
             expect(instance.dependencies[newApiId]).to.be.okay;
             expect(instance.dependencies[newApiId].shortHash).to.equal(ctx.newApiInstance.attrs.shortHash);
             expect(instance.dependencies[newApiId].lowerName).to.equal(ctx.newApiInstance.attrs.lowerName);
-            expect(instance.dependencies[newApiId].dependencies).to.be.an('object');
+            expect(instance.dependencies[newApiId].dependencies).to.be.an.object();
             expect(instance.dependencies[newApiId].dependencies[mongoId]).to.be.okay;
             expect(instance.dependencies[newApiId].dependencies[mongoId].shortHash)
               .to.equal(ctx.mongoInstance.attrs.shortHash);
@@ -802,7 +804,7 @@ describe('BDD - Instance Dependencies', function () {
           ctx.newApiInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
             var mongoId = ctx.mongoInstance.attrs._id.toString();
-            expect(instance.dependencies).to.be.an('object');
+            expect(instance.dependencies).to.be.an.object();
             expect(Object.keys(instance.dependencies).length).to.equal(1);
             expect(instance.dependencies[mongoId]).to.be.okay;
             expect(instance.dependencies[mongoId].shortHash).to.equal(ctx.mongoInstance.attrs.shortHash);
@@ -869,12 +871,12 @@ describe('BDD - Instance Dependencies', function () {
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
-            expect(instance.dependencies).to.be.an('object');
+            expect(instance.dependencies).to.be.an.object();
             expect(Object.keys(instance.dependencies).length).to.equal(1);
             expect(instance.dependencies[redisId]).to.be.okay;
             expect(instance.dependencies[redisId].shortHash).to.equal(ctx.redisInstance.attrs.shortHash);
             expect(instance.dependencies[redisId].lowerName).to.equal(ctx.redisInstance.attrs.lowerName);
-            expect(instance.dependencies[redisId].dependencies).to.be.an('object');
+            expect(instance.dependencies[redisId].dependencies).to.be.an.object();
             expect(instance.dependencies[redisId].dependencies[mongoId]).to.be.okay;
             expect(instance.dependencies[redisId].dependencies[mongoId].shortHash)
               .to.equal(ctx.mongoInstance.attrs.shortHash);
@@ -888,7 +890,7 @@ describe('BDD - Instance Dependencies', function () {
           ctx.redisInstance.fetch(function (err, instance) {
             if (err) { return cb(err); }
             var mongoId = ctx.mongoInstance.attrs._id.toString();
-            expect(instance.dependencies).to.be.an('object');
+            expect(instance.dependencies).to.be.an.object();
             expect(Object.keys(instance.dependencies).length).to.equal(1);
             expect(instance.dependencies[mongoId]).to.be.okay;
             expect(instance.dependencies[mongoId].shortHash).to.equal(ctx.mongoInstance.attrs.shortHash);

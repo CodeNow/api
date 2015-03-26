@@ -1,14 +1,17 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var api = require('./fixtures/api-control');
-var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var equals = require('101/equals');
@@ -19,7 +22,7 @@ var createCount = require('callback-count');
 
 
 describe('Build Copy - /builds/:id/actions/copy', function () {
-  ctx = {};
+  var ctx = {};
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, user) {
       ctx.contextVersion = contextVersion;
@@ -31,9 +34,7 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
   });
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
