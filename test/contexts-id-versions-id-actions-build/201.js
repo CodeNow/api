@@ -21,6 +21,7 @@ var primus = require('../fixtures/primus');
 var dockerMockEvents = require('../fixtures/docker-mock-events');
 var Context = require('models/mongo/context');
 var blacklight = require('blacklight');
+var dockerHost = require('../fixtures/docker-host');
 
 describe('201 POST /contexts/:id/versions/:id/actions/build', {timeout: 2000}, function() {
   var ctx = {};
@@ -85,7 +86,7 @@ function buildTheVersionTests (ctx) {
     beforeEach(function (done) {
       ctx.expected = ctx.cv.toJSON();
       delete ctx.expected.build;
-      ctx.expected.dockerHost = 'http://localhost:4243';
+      ctx.expected.dockerHost = dockerHost;
       ctx.expected['build._id'] = exists;
       ctx.expected['build.started'] = exists;
       ctx.expected['build.triggeredBy.github'] = ctx.user.attrs.accounts.github.id;
@@ -147,7 +148,7 @@ function buildTheVersionTests (ctx) {
           beforeEach(function (done) {
             ctx.expected = ctx.copiedCv.toJSON();
             delete ctx.expected.build;
-            ctx.expected.dockerHost = 'http://localhost:4243';
+            ctx.expected.dockerHost = dockerHost;
             ctx.expected['build._id'] = exists;
             ctx.expected['build.started'] = exists;
             ctx.expected['build.triggeredBy.github'] = ctx.user.attrs.accounts.github.id;

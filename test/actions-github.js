@@ -25,9 +25,8 @@ var ContextVersion = require('models/mongo/context-version');
 var Runnable = require('models/apis/runnable');
 var PullRequest = require('models/apis/pullrequest');
 var Slack = require('notifications/slack');
-var Github = require('models/apis/github');
 var cbCount = require('callback-count');
-
+var sinon = require('sinon');
 var generateKey = require('./fixtures/key-factory');
 
 describe('Github - /actions/github', function () {
@@ -110,7 +109,7 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  describe('not supported action for pull_request event', function () {
+  describe('deleted branch', function () {
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
       process.env.ENABLE_GITHUB_HOOKS = 'true';
@@ -123,12 +122,13 @@ describe('Github - /actions/github', function () {
     });
 
     it('should return OKAY', function (done) {
-      var options = hooks().pull_request_closed;
+      var options = hooks().push;
+      options.json.deleted = true;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
 
         expect(res.statusCode).to.equal(202);
-        expect(body).to.equal('Do not handle pull request with actions not equal synchronize or opened.');
+        expect(body).to.equal('Deleted the branch; no work to be done.');
         done();
       });
     });
@@ -162,7 +162,7 @@ describe('Github - /actions/github', function () {
   });
 
 
-  describe('push new branch slack notifications', function () {
+  describe('slack notifications for non-deployed branch', function () {
 
     beforeEach(function (done) {
       ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
@@ -205,18 +205,21 @@ describe('Github - /actions/github', function () {
 
       var acv = ctx.contextVersion.attrs.appCodeVersions[0];
 
-      Slack.prototype.notifyOnNewBranch = function (gitInfo, cb) {
+
+      sinon.stub(Slack.prototype, 'notifyOnNewBranch', function (gitInfo, cb) {
         expect(gitInfo.repo).to.equal(acv.repo);
         expect(gitInfo.user.login).to.equal('podviaznikov');
         expect(gitInfo.headCommit.committer.username).to.equal('podviaznikov');
         cb();
+        Slack.prototype.notifyOnNewBranch.restore();
         done();
-      };
+      });
+
       var data = {
         branch: 'feature-1',
         repo: acv.repo
       };
-      var options = hooks(data).push_new_branch;
+      var options = hooks(data).push;
       require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
       request.post(options, function (err, res, contextVersionIds) {
         if (err) { return done(err); }
@@ -224,13 +227,12 @@ describe('Github - /actions/github', function () {
         expect(contextVersionIds).to.be.okay;
         expect(contextVersionIds).to.be.an.array();
         expect(contextVersionIds).to.have.length(1);
-
       });
     });
 
   });
 
-  describe('pull_request synchronize', function () {
+  describe('push event', function () {
     var ctx = {};
 
     beforeEach(function (done) {
@@ -238,37 +240,11 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = 'true';
       ctx.originalStatusesForUnlinked = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
       process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'true';
-      ctx.originaUpdateInstance = Runnable.prototype.updateInstance;
-      ctx.originaCreateBuild = Runnable.prototype.createBuild;
-      ctx.originaBuildBuild = Runnable.prototype.buildBuild;
-      ctx.originalWaitForInstanceDeployed = Runnable.prototype.waitForInstanceDeployed;
-      ctx.originalBuildErrored = PullRequest.prototype.buildErrored;
-      ctx.originalDeploymentErrored = PullRequest.prototype.deploymentErrored;
-      ctx.originalDeploymentSucceeded = PullRequest.prototype.deploymentSucceeded;
-      ctx.originalCreateDeployment = PullRequest.prototype.createDeployment;
-
       done();
     });
-    after(function (done) {
-      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
-      done();
-    });
-
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalStatusesForUnlinked;
-      Runnable.prototype.updateInstance = ctx.originaUpdateInstance;
-      Runnable.prototype.createBuild = ctx.originaCreateBuild;
-      Runnable.prototype.buildBuild = ctx.originaBuildBuild;
-      Runnable.prototype.waitForInstanceDeployed = ctx.originalWaitForInstanceDeployed;
-      PullRequest.prototype.buildErrored = ctx.originalBuildErrored;
-      PullRequest.prototype.deploymentErrored = ctx.originalDeploymentErrored;
-      PullRequest.prototype.deploymentSucceeded = ctx.originalDeploymentSucceeded;
-      PullRequest.prototype.createDeployment = ctx.originalCreateDeployment;
-      done();
-    });
-    after(function (done) {
-      process.env.ENABLE_BUILDS_ON_GIT_PUSH = ctx.originalBuildsOnPushSetting;
       done();
     });
 
@@ -286,54 +262,82 @@ describe('Github - /actions/github', function () {
 
       it('should set build status to error if error happened build create', {timeout: 6000},
         function (done) {
-          Runnable.prototype.createBuild = function (opts, cb) {
+
+          sinon.stub(Runnable.prototype, 'createBuild', function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
             cb(Boom.notFound('Build create failed'));
-          };
-          PullRequest.prototype.buildErrored = function (pullRequest, targetUrl, cb) {
-            expect(pullRequest).to.exist();
-            expect(targetUrl).to.include('https://runnable.io/');
+          });
+
+          sinon.stub(PullRequest.prototype, 'buildErrored', function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
             cb();
-          };
+          });
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var user = ctx.user.attrs.accounts.github;
           var data = {
             branch: 'master',
             repo: acv.repo,
-            ownerId: 2
+            ownerId: user.id,
+            owner: user.login
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          var options = hooks(data).push;
+          var repoName = acv.repo.split('/')[1];
+
+          require('./fixtures/mocks/github/users-username')(user.id, user.login);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            user.login, user.id, repoName, 'master');
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(instancesIds.length).to.equal(0);
+            var stub = PullRequest.prototype.buildErrored;
+            expect(stub.calledOnce).to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/)))
+              .to.equal(true);
+            stub.restore();
+            Runnable.prototype.createBuild.restore();
             done();
           });
+
         });
 
       it('should set build status to error if error happened build build', {timeout: 6000},
         function (done) {
-          Runnable.prototype.buildBuild = function (build, opts, cb) {
+
+          sinon.stub(Runnable.prototype, 'buildBuild', function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
             cb(Boom.notFound('Build build failed'));
-          };
-          PullRequest.prototype.buildErrored = function (pullRequest, targetUrl, cb) {
-            expect(pullRequest).to.exist();
-            expect(targetUrl).to.include('https://runnable.io/');
+          });
+
+          sinon.stub(PullRequest.prototype, 'buildErrored', function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
             cb();
-          };
+          });
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var user = ctx.user.attrs.accounts.github;
           var data = {
             branch: 'master',
             repo: acv.repo,
-            ownerId: 2
+            ownerId: user.id,
+            owner: user.login
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          var options = hooks(data).push;
+          var repoName = acv.repo.split('/')[1];
+
+          require('./fixtures/mocks/github/users-username')(user.id, user.login);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            user.login, user.id, repoName, 'master');
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(instancesIds.length).to.equal(0);
+            var stub = PullRequest.prototype.buildErrored;
+            expect(stub.calledOnce).to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            stub.restore();
+            Runnable.prototype.buildBuild.restore();
             done();
           });
         });
@@ -341,26 +345,55 @@ describe('Github - /actions/github', function () {
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
         function (done) {
           var baseDeploymentId = 100000;
-          Runnable.prototype.updateInstance = function (id, opts, cb) {
-            cb(Boom.notFound('Instance update failed'));
-          };
-          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
-            cb(null, {id: baseDeploymentId});
-          };
-          PullRequest.prototype.deploymentErrored = function (pullRequest, deploymentId, serverName, targetUrl) {
-            expect(pullRequest).to.exist();
-            expect(serverName).to.exist();
-            expect(targetUrl).to.include('https://runnable.io/');
+
+          var count = cbCount(2, function () {
+            // restore what we stubbed
+            expect(PullRequest.prototype.createDeployment.calledOnce).to.equal(true);
+            PullRequest.prototype.createDeployment.restore();
+            var startStub = PullRequest.prototype.deploymentStarted;
+            expect(startStub.calledOnce).to.equal(true);
+            expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            startStub.restore();
+            var errorStub = PullRequest.prototype.deploymentErrored;
+            expect(errorStub.calledOnce).to.equal(true);
+            expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            errorStub.restore();
+
+            Runnable.prototype.updateInstance.restore();
             done();
+          });
+
+          sinon.stub(Runnable.prototype, 'updateInstance', function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
+            cb(Boom.notFound('Instance update failed'));
+          });
+
+          sinon.stub(PullRequest.prototype, 'createDeployment', function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
+            cb(null, {id: baseDeploymentId});
+          });
+          var countOnCallback = function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
+            cb();
+            count.next();
           };
+          sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
+          sinon.stub(PullRequest.prototype, 'deploymentErrored', countOnCallback);
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
             branch: 'master',
             repo: acv.repo
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          var user = ctx.user.attrs.accounts.github;
+          var options = hooks(data).push;
+          var username = acv.repo.split('/')[0];
+          var repoName = acv.repo.split('/')[1];
+          require('./fixtures/mocks/github/users-username')(101, username);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            user.login, user.id, repoName, 'master');
           request.post(options, function (err, res, cvsIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -375,26 +408,57 @@ describe('Github - /actions/github', function () {
       it('should set deployment status to error if error happened during instance deployment', {timeout: 6000},
         function (done) {
           var baseDeploymentId = 100000;
-          Runnable.prototype.waitForInstanceDeployed = function (id, cb) {
-            cb(Boom.notFound('Instance deploy failed'));
-          };
-          PullRequest.createDeployment = function (pullRequest, serverName, payload, cb) {
-            cb(null, {id: baseDeploymentId});
-          };
-          PullRequest.prototype.deploymentErrored = function (pullRequest, deploymentId, serverName, targetUrl) {
-            expect(pullRequest).to.exist();
-            expect(serverName).to.exist();
-            expect(targetUrl).to.include('https://runnable.io/');
+
+          var count = cbCount(2, function () {
+            // restore what we stubbed
+            expect(PullRequest.prototype.createDeployment.calledOnce).to.equal(true);
+            PullRequest.prototype.createDeployment.restore();
+            var startStub = PullRequest.prototype.deploymentStarted;
+            expect(startStub.calledOnce).to.equal(true);
+            expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            startStub.restore();
+            var errorStub = PullRequest.prototype.deploymentErrored;
+            expect(errorStub.calledOnce).to.equal(true);
+            expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            errorStub.restore();
+
+            Runnable.prototype.waitForInstanceDeployed.restore();
             done();
+          });
+
+
+          sinon.stub(Runnable.prototype, 'waitForInstanceDeployed', function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
+            cb(Boom.notFound('Instance deploy failed'));
+          });
+
+          sinon.stub(PullRequest.prototype, 'createDeployment', function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
+            cb(null, {id: baseDeploymentId});
+          });
+          var countOnCallback = function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
+            cb();
+            count.next();
           };
+          sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
+          sinon.stub(PullRequest.prototype, 'deploymentErrored', countOnCallback);
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+
           var data = {
             branch: 'master',
             repo: acv.repo
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+          var user = ctx.user.attrs.accounts.github;
+          var options = hooks(data).push;
+          var username = acv.repo.split('/')[0];
+          var repoName = acv.repo.split('/')[1];
+          require('./fixtures/mocks/github/users-username')(101, username);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            username, user.id, repoName, 'master');
           request.post(options, function (err, res, cvsIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -408,8 +472,6 @@ describe('Github - /actions/github', function () {
 
     describe('success cases', function () {
       beforeEach(function (done) {
-        ctx.originalServerSelectionStatus = PullRequest.prototype.serverSelectionStatus;
-        ctx.originalGetPullRequestHeadCommit = Github.prototype.getPullRequestHeadCommit;
 
         multi.createInstance(function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
@@ -423,161 +485,79 @@ describe('Github - /actions/github', function () {
 
       afterEach(function (done) {
         process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
-        PullRequest.prototype.serverSelectionStatus = ctx.originalServerSelectionStatus;
-        Github.prototype.getPullRequestHeadCommit = ctx.originalGetPullRequestHeadCommit;
         done();
       });
 
-      describe('PR call to action statuses disabled', function () {
-
-        beforeEach(function (done) {
-          ctx.originalGitHubPRCallToAction = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
-          process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'false';
-          done();
-        });
-
-
-        afterEach(function (done) {
-          process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
-          done();
-        });
-
-        it('should return 202', {timeout: 6000},
-          function (done) {
-            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-            var data = {
-              branch: 'feature-1',
-              repo: acv.repo
-            };
-            var options = hooks(data).pull_request_sync;
-            require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-            request.post(options, function (err, res) {
-              if (err) { return done(err); }
-              expect(res.statusCode).to.equal(202);
-              expect(res.body).to.equals('We ignore PRs if branch has no linked server');
-              done();
-            });
-          });
-      });
-
-
-      it('should set server selection status for the branch without instance - pull_request:synchronize',
-        {timeout: 6000}, function (done) {
-          Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
-            cb(null, {commit: {
-              message: 'hello'
-            }});
-          };
-          PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
-            expect(pullRequest.number).to.equal(2);
-            expect(pullRequest.headCommit.message).to.equal('hello');
-            expect(pullRequest).to.exist();
-            expect(targetUrl).to.include('https://runnable.io/');
-            expect(targetUrl).to.include('/serverSelection/');
-            cb();
-            done();
-          };
-
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'feature-1',
-            repo: acv.repo
-          };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          request.post(options, function (err, res, contextVersionIds) {
-            if (err) { return done(err); }
-            finishAllIncompleteVersions();
-            expect(res.statusCode).to.equal(201);
-            expect(contextVersionIds).to.be.okay;
-            expect(contextVersionIds).to.be.an.array();
-            expect(contextVersionIds).to.have.length(1);
-          });
-        });
-
-      it('should set server selection status for the branch without instance - pull_request:opened',
-        {timeout: 6000}, function (done) {
-
-          Github.prototype.getPullRequestHeadCommit = function (repo, number, cb) {
-            cb(null, {commit: {
-              message: 'hello'
-            }});
-          };
-
-          PullRequest.prototype.serverSelectionStatus = function (pullRequest, targetUrl, cb) {
-            expect(pullRequest.number).to.equal(2);
-            expect(pullRequest.headCommit.message).to.equal('hello');
-            expect(pullRequest).to.exist();
-            expect(targetUrl).to.include('https://runnable.io/');
-            expect(targetUrl).to.include('/serverSelection/');
-            cb();
-            done();
-          };
-
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'feature-1',
-            repo: acv.repo
-          };
-          var options = hooks(data).pull_request_opened;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-          request.post(options, function (err, res, contextVersionIds) {
-            if (err) { return done(err); }
-            finishAllIncompleteVersions();
-            expect(res.statusCode).to.equal(201);
-            expect(contextVersionIds).to.be.okay;
-            expect(contextVersionIds).to.be.an.array();
-            expect(contextVersionIds).to.have.length(1);
-          });
-        });
-
-      it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
+      it('should redeploy two instances with new build', { timeout: 6000 }, function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
           if (err) { return done(err); }
-
-          var spyOnClassMethod = require('function-proxy').spyOnClassMethod;
           var baseDeploymentId = 1234567;
-          spyOnClassMethod(require('models/apis/pullrequest'), 'createDeployment',
-            function (pullRequest, serverName, payload, cb) {
-              baseDeploymentId++;
-              cb(null, {id: baseDeploymentId});
-            });
-          var count = cbCount(2, function () {
+          sinon.stub(PullRequest.prototype, 'createDeployment', function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
+            baseDeploymentId++;
+            var newDeploymentId = baseDeploymentId;
+            cb(null, {id: newDeploymentId});
+          });
+          var countOnCallback = function () {
+            var cb = Array.prototype.slice.apply(arguments).pop();
+            cb();
+            count.next();
+          };
+          var count = cbCount(4, function () {
             var expected = {
               'contextVersion.build.started': exists,
               'contextVersion.build.completed': exists,
               'contextVersion.build.duration': exists,
               'contextVersion.build.triggeredBy.github': exists,
-              'contextVersion.appCodeVersions[0].lowerRepo': options.json.pull_request.head.repo.full_name,
-              'contextVersion.appCodeVersions[0].commit': options.json.pull_request.head.sha,
+              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
+              'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
               'contextVersion.appCodeVersions[0].branch': data.branch,
               'contextVersion.build.triggeredAction.manual': false,
               'contextVersion.build.triggeredAction.appCodeVersion.repo':
-                options.json.pull_request.head.repo.full_name,
+                options.json.repository.full_name,
               'contextVersion.build.triggeredAction.appCodeVersion.commit':
-                options.json.pull_request.head.sha
+                options.json.head_commit.id
             };
+            // restore what we stubbed
+            expect(PullRequest.prototype.createDeployment.calledTwice).to.equal(true);
+            PullRequest.prototype.createDeployment.restore();
+            var startStub = PullRequest.prototype.deploymentStarted;
+            expect(startStub.calledTwice).to.equal(true);
+            expect(startStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            startStub.restore();
+            var successStub = PullRequest.prototype.deploymentSucceeded;
+
+            expect(successStub.calledTwice).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            successStub.restore();
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err); }
-             ctx.instance2.fetch(expects.success(200, expected, done));
+              ctx.instance2.fetch(expects.success(200, expected, done));
             }));
           });
-          spyOnClassMethod(require('models/apis/pullrequest'), 'deploymentSucceeded',
-            function (pullRequest, deploymentId, serverName, targetUrl) {
-              expect(pullRequest).to.exist();
-              expect(serverName).to.exist();
-              expect([1234568, 1234569]).to.contain(deploymentId);
-              expect(targetUrl).to.include('https://runnable.io/');
-              count.next();
-            });
+          sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
+          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
+
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var user = ctx.user.attrs.accounts.github;
           var data = {
             branch: 'master',
-            repo: acv.repo
+            repo: acv.repo,
+            ownerId: user.id,
+            owner: user.login
           };
-          var options = hooks(data).pull_request_sync;
-          require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+
+          var options = hooks(data).push;
+          var username = user.login;
+          var repoName = acv.repo.split('/')[1];
+          require('./fixtures/mocks/github/users-username')(101, username);
+          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+            username, user.id, repoName, 'master');
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
