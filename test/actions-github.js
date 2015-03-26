@@ -27,7 +27,16 @@ var PullRequest = require('models/apis/pullrequest');
 var Slack = require('notifications/slack');
 var cbCount = require('callback-count');
 var sinon = require('sinon');
+var nock = require('nock');
 var generateKey = require('./fixtures/key-factory');
+
+before(function (done) {
+  nock('http://runnable.com:80')
+    .persist()
+    .get('/')
+    .reply(200);
+  done();
+});
 
 describe('Github - /actions/github', function () {
   var ctx = {};
