@@ -126,6 +126,7 @@
     "unit-watch": "killall node; nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "clean": "rm -rf docs coverage.html node_modules",
-    "lint": "jshint ."
+    "lint": "jshint .",
+    "cayley": "./test/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/fixtures/graphs/cayley/local.cfg --assets=./test/fixtures/graphs/cayley"
   }
 }
