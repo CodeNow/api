@@ -1,11 +1,16 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+
 var rimraf = require('rimraf');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -71,9 +76,9 @@ describe('File System - /instances/:id/containers/:id/files', function () {
       ctx.container.rootDir.contents.fetch(function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(200);
-        expect(body).to.be.an('array');
+        expect(body).to.be.an.array();
         expect(body).to.have.length(3);
-        expect(body).to.include(
+        expect(body).to.deep.include(
           { name: 'dir1', path: '/', isDir: true },
           { name: 'dir2', path: '/', isDir: true },
           { name: 'file1.txt', path: '/', isDir: false }
@@ -90,9 +95,9 @@ describe('File System - /instances/:id/containers/:id/files', function () {
       }, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(200);
-        expect(body).to.be.an('array');
+        expect(body).to.be.an.array();
         expect(body).to.have.length(2);
-        expect(body).to.include(
+        expect(body).to.deep.include(
           { name: 'dir1_dir1', path: '/dir1', isDir: true },
           { name: 'dir1_file1.txt', path: '/dir1', isDir: false }
         );
@@ -108,9 +113,9 @@ describe('File System - /instances/:id/containers/:id/files', function () {
       }, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(200);
-        expect(body).to.be.an('array');
+        expect(body).to.be.an.array();
         expect(body).to.have.length(1);
-        expect(body).to.include(
+        expect(body).to.deep.include(
           { name: 'dir1_dir1_file1.txt.', path: '/dir1/dir1_dir1', isDir: false }
         );
         done();
@@ -125,9 +130,9 @@ describe('File System - /instances/:id/containers/:id/files', function () {
       }, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(200);
-        expect(body).to.be.an('array');
+        expect(body).to.be.an.array();
         expect(body).to.have.length(1);
-        expect(body).to.include(
+        expect(body).to.deep.include(
           { name: 'dir2_dir1', path: '/dir2', isDir: true }
         );
         done();
@@ -142,7 +147,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
       }, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(200);
-        expect(body).to.be.an('array');
+        expect(body).to.be.an.array();
         expect(body).to.have.length(0);
         done();
       });
@@ -167,9 +172,9 @@ describe('File System - /instances/:id/containers/:id/files', function () {
       }, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(200);
-        expect(body).to.be.an('array');
+        expect(body).to.be.an.array();
         expect(body).to.have.length(3);
-        expect(body).to.include(
+        expect(body).to.deep.include(
           { name: 'dir1', path: '/', isDir: true },
           { name: 'dir2', path: '/', isDir: true },
           { name: 'file1.txt', path: '/', isDir: false }
