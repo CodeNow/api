@@ -151,7 +151,7 @@ describe('Build Stream', function() {
         });
       });
     });
-    it('100 people should get the same logs', function (done) {
+    it('100 people should get the same logs', { timeout: 2000 }, function (done) {
       var people = 100;
       ctx.build.build(ctx.buildId, {message: 'lots of people!'}, function (err, body, code) {
         if (err) { return done(err); }
