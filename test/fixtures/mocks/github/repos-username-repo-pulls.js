@@ -1,7 +1,7 @@
 var nock = require('nock');
 var multiline = require('multiline');
 
-exports.openPulls = function (username, repoName, branch) {
+exports.openPulls = function (username, gitHubUserId,repoName, branch) {
 
   var urlPath = '\/repos\/'+username+'\/'+repoName+'\/pulls';
   var urlRe = new RegExp(urlPath+'.*');
@@ -215,7 +215,7 @@ exports.openPulls = function (username, repoName, branch) {
         },
         "user": {
           "login": username,
-          "id": 1,
+          "id": gitHubUserId,
           "avatar_url": "https://github.com/images/error/octocat_happy.gif",
           "gravatar_id": "",
           "url": "https://api.github.com/users/" + username,
