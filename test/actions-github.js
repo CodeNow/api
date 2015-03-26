@@ -214,7 +214,6 @@ describe('Github - /actions/github', function () {
 
       var acv = ctx.contextVersion.attrs.appCodeVersions[0];
 
-
       sinon.stub(Slack.prototype, 'notifyOnNewBranch', function (gitInfo, cb) {
         expect(gitInfo.repo).to.equal(acv.repo);
         expect(gitInfo.user.login).to.equal('podviaznikov');
