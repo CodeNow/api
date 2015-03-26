@@ -19,19 +19,20 @@ function startDock (done) {
   if(started) { return done(); }
   started = true;
   var count = createCount(done);
-  ctx.mavis = mavisApp.listen(url.parse(process.env.MAVIS_HOST).port);
-  ctx.mavis.on('listening', count.inc().next);
   ctx.sauron = sauron.listen(process.env.SAURON_PORT);
   ctx.sauron.on('listening', count.inc().next);
   dockerModuleMock.setup(count.inc().next);
   count.inc();
   ctx.docker = docker.start(function (err) {
     if (err) { return count.next(err); }
-    dockerListener.start(
-      process.env.DOCKER_LISTENER_PORT, function(err) {
+    ctx.mavis = mavisApp.listen(url.parse(process.env.MAVIS_HOST).port);
+    ctx.mavis.on('listening', function (err) {
+      if (err) { return count.next(err); }
+      dockerListener.start(process.env.DOCKER_LISTENER_PORT, function(err) {
         if (err) { return count.next(err); }
         count.next();
       });
+    });
   });
 }
 function stopDock (done) {

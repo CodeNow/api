@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -100,6 +100,7 @@
     "rimraf": "^2.2.8",
     "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.8",
     "server-destroy": "^1.0.0",
+    "sinon": "^1.14.1",
     "through": "^2.3.6"
   },
   "engineStrict": true,
