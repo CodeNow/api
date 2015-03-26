@@ -1,9 +1,11 @@
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var expect = Lab.expect;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var after = lab.after;
+var Code = require('code');
+var expect = Code.expect;
 
 var Primus = require('primus');
 var api = require('../test/fixtures/api-control');
@@ -20,8 +22,8 @@ var Socket = Primus.createSocket({
 
 describe('messenger Unit Tests', function() {
   var ctx = {};
-  beforeEach(api.start.bind(ctx));
-  afterEach(api.stop.bind(ctx));
+  before(api.start.bind(ctx));
+  after(api.stop.bind(ctx));
 
   describe('send message to room', function () {
     it('should get joined room message', function(done) {
@@ -60,13 +62,17 @@ describe('messenger Unit Tests', function() {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org');
           expect(data.name).to.equal('test');
-          expect(data.data).to.deep.equal({test:'1234'});
+          expect(data.data).to.deep.contain({test:'1234'});
+          expect(Object.keys(data.data)).to.have.length(1);
           primus.end();
         } else {
-            messenger.messageRoom('org', 'test', {test:'1234'});
+          messenger.messageRoom('org', 'test', {test:'1234'});
         }
       });
-      primus.on('end', done);
+      primus.on('end', function (err) {
+        // console.log('primus end', err);
+        done(err);
+      });
     });
     it('should not get events of another room or no room', function(done) {
       // room message will be sent to
@@ -116,7 +122,8 @@ describe('messenger Unit Tests', function() {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org');
           expect(data.name).to.equal('test');
-          expect(data.data).to.deep.equal({test:'1234'});
+          expect(data.data).to.deep.contain({test:'1234'});
+          expect(Object.keys(data.data)).to.have.length(1);
           primus1.end();
           primus2.end();
           primus3.end();
@@ -147,7 +154,8 @@ describe('messenger Unit Tests', function() {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org');
           expect(data.name).to.equal('test');
-          expect(data.data).to.deep.equal({test:'1234'});
+          expect(data.data).to.deep.contain({test:'1234'});
+          expect(Object.keys(data.data)).to.have.length(1);
           primus1.end();
         } else {
           sendMessageCount.next();
@@ -157,7 +165,8 @@ describe('messenger Unit Tests', function() {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org');
           expect(data.name).to.equal('test');
-          expect(data.data).to.deep.equal({test:'1234'});
+          expect(data.data).to.deep.contain({test:'1234'});
+          expect(Object.keys(data.data)).to.have.length(1);
           primus2.end();
         } else {
           sendMessageCount.next();
@@ -167,7 +176,8 @@ describe('messenger Unit Tests', function() {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org');
           expect(data.name).to.equal('test');
-          expect(data.data).to.deep.equal({test:'1234'});
+          expect(data.data).to.deep.contain({test:'1234'});
+          expect(Object.keys(data.data)).to.have.length(1);
           primus3.end();
         } else {
           sendMessageCount.next();
@@ -193,7 +203,8 @@ describe('messenger Unit Tests', function() {
         } else if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org');
           expect(data.name).to.equal('test');
-          expect(data.data).to.deep.equal({test:'1234'});
+          expect(data.data).to.deep.contain({test:'1234'});
+          expect(Object.keys(data.data)).to.have.length(1);
           primus1.write({id:2222,event:'subscribe',data:{type:'org',name:'test',action:'leave'}});
         }
       });

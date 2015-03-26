@@ -1,15 +1,16 @@
-var Lab = require('lab');
-var describe = Lab.experiment;
+'use strict';
 
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
+var Lab = require('lab');
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
 
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
 
 var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 
 var typesTests = require('../../fixtures/types-test-util');
@@ -18,10 +19,8 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
   var dirPathName = 'dir[]()';
@@ -44,7 +43,6 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
       });
     });
   });
-
 
   describe('invalid types', function () {
     var def = {
@@ -70,16 +68,11 @@ describe('400 POST /contexts/:contextid/versions/:id/files', function () {
       ]
     };
 
-
-
-    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
+    typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
       require('../../fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
       require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       require('../../fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt');
       ctx.contextVersion.rootDir.contents.create({json: body}, cb);
     });
-
-
   });
-
 });
