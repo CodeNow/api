@@ -111,7 +111,7 @@ describe('Slack', function () {
 
   });
 
-  describe('#_createServerSelectionUrl', function () {
+  describe('#_createServerSelectionText', function () {
     it('should return text messages', function (done) {
       var gitInfo = {
         branch: 'feature-1',
@@ -122,7 +122,7 @@ describe('Slack', function () {
         }
       };
       var slack = new Slack({});
-      var text = slack._createServerSelectionUrl('CodeNow', gitInfo);
+      var text = slack._createServerSelectionText('CodeNow', gitInfo);
       var expected = '<https://runnable3.net/CodeNow/serverSelection/undefined?branch=feature-1';
       expected += '&commit=00000000000&message=first%2520commit|Choose a server> to run feature-1 (api)';
       expect(text).to.equal(expected);
