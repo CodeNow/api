@@ -21,7 +21,7 @@ var error = require('error');
 var noop = require('101/noop');
 var errorLog = error.log;
 
-describe('BDD - Instance Dependencies', function () {
+describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -39,7 +39,7 @@ describe('BDD - Instance Dependencies', function () {
     });
   });
   // Uncomment if you want to clear the (graph) database every time
-  beforeEach(function (done) {
+  beforeEach({ timeout: 5000 }, function (done) {
     if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
       var Cypher = require('cypher-stream');
       var cypher = Cypher('http://localhost:7474');
