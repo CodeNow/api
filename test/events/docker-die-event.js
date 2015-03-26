@@ -52,6 +52,9 @@ describe('EVENT runnable:docker:events:die', function () {
 
       it('should receive the docker die event', function (done) {
         var count = createCount(2, done);
+        dockerEvents.on('die', handler);
+        var docker = new Docker(ctx.instance.attrs.container.dockerHost);
+        docker.stopContainer(ctx.instance.attrs.container, count.next);
         function handler (data) {
           if (data.from === 'ubuntu:latest') { // ignore image-builder dies
             expect(data.status).to.equal('die');
@@ -61,9 +64,6 @@ describe('EVENT runnable:docker:events:die', function () {
             count.next();
           }
         }
-        dockerEvents.on('die', handler);
-        var docker = new Docker(ctx.instance.attrs.container.dockerHost);
-        docker.stopContainer(ctx.instance.attrs.container, count.next);
       });
 
       it('should update instance state in the mongo', function (done) {
