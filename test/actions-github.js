@@ -293,7 +293,6 @@ describe('Github - /actions/github', function () {
           var options = hooks(data).push;
           var repoName = acv.repo.split('/')[1];
 
-          console.log('asdasdasd', user, ctx.instance.attrs);
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
@@ -336,7 +335,6 @@ describe('Github - /actions/github', function () {
           var options = hooks(data).push;
           var repoName = acv.repo.split('/')[1];
 
-          console.log('asdasdasd', user, ctx.instance.attrs);
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
@@ -540,8 +538,7 @@ describe('Github - /actions/github', function () {
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             startStub.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
-            console.log(successStub.getCall(0).args);
-            console.log(successStub.getCall(1).args);
+
             expect(successStub.calledTwice).to.equal(true);
             expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
