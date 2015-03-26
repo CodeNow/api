@@ -296,10 +296,10 @@ describe('Github - /actions/github', function () {
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
-          request.post(options, function (err, res, instancesIds) {
+          request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
-            expect(instancesIds.length).to.equal(0);
+            expect(cvIds.length).to.equal(0);
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
             expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/)))
@@ -338,10 +338,11 @@ describe('Github - /actions/github', function () {
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
-          request.post(options, function (err, res, instancesIds) {
+          console.log('start1');
+          request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
-            expect(instancesIds.length).to.equal(0);
+            expect(cvIds.length).to.equal(0);
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
             expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
@@ -352,253 +353,253 @@ describe('Github - /actions/github', function () {
         });
 
 
-      it('should set deployment status to error if error happened during instance update', {timeout: 6000},
-        function (done) {
-          var baseDeploymentId = 100000;
+      // it('should set deployment status to error if error happened during instance update', {timeout: 6000},
+      //   function (done) {
+      //     var baseDeploymentId = 100000;
 
-          var count = cbCount(2, function () {
-            // restore what we stubbed
-            expect(PullRequest.prototype.createDeployment.calledOnce).to.equal(true);
-            PullRequest.prototype.createDeployment.restore();
-            var startStub = PullRequest.prototype.deploymentStarted;
-            expect(startStub.calledOnce).to.equal(true);
-            expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            startStub.restore();
-            var errorStub = PullRequest.prototype.deploymentErrored;
-            expect(errorStub.calledOnce).to.equal(true);
-            expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            errorStub.restore();
+      //     var count = cbCount(2, function () {
+      //       // restore what we stubbed
+      //       expect(PullRequest.prototype.createDeployment.calledOnce).to.equal(true);
+      //       PullRequest.prototype.createDeployment.restore();
+      //       var startStub = PullRequest.prototype.deploymentStarted;
+      //       expect(startStub.calledOnce).to.equal(true);
+      //       expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+      //         sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+      //       startStub.restore();
+      //       var errorStub = PullRequest.prototype.deploymentErrored;
+      //       expect(errorStub.calledOnce).to.equal(true);
+      //       expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+      //         sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+      //       errorStub.restore();
 
-            Runnable.prototype.updateInstance.restore();
-            done();
-          });
+      //       Runnable.prototype.updateInstance.restore();
+      //       done();
+      //     });
 
-          sinon.stub(Runnable.prototype, 'updateInstance', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb(Boom.notFound('Instance update failed'));
-          });
+      //     sinon.stub(Runnable.prototype, 'updateInstance', function () {
+      //       var cb = Array.prototype.slice.apply(arguments).pop();
+      //       cb(Boom.notFound('Instance update failed'));
+      //     });
 
-          sinon.stub(PullRequest.prototype, 'createDeployment', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb(null, {id: baseDeploymentId});
-          });
-          var countOnCallback = function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb();
-            count.next();
-          };
-          sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
-          sinon.stub(PullRequest.prototype, 'deploymentErrored', countOnCallback);
+      //     sinon.stub(PullRequest.prototype, 'createDeployment', function () {
+      //       var cb = Array.prototype.slice.apply(arguments).pop();
+      //       cb(null, {id: baseDeploymentId});
+      //     });
+      //     var countOnCallback = function () {
+      //       var cb = Array.prototype.slice.apply(arguments).pop();
+      //       cb();
+      //       count.next();
+      //     };
+      //     sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
+      //     sinon.stub(PullRequest.prototype, 'deploymentErrored', countOnCallback);
 
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'master',
-            repo: acv.repo
-          };
-          var user = ctx.user.attrs.accounts.github;
-          var options = hooks(data).push;
-          var username = acv.repo.split('/')[0];
-          var repoName = acv.repo.split('/')[1];
-          require('./fixtures/mocks/github/users-username')(101, username);
-          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
-            user.login, user.id, repoName, 'master');
-          request.post(options, function (err, res, cvsIds) {
-            if (err) { return done(err); }
-            finishAllIncompleteVersions();
-            expect(res.statusCode).to.equal(201);
-            expect(cvsIds).to.be.okay;
-            expect(cvsIds).to.be.an('array');
-            expect(cvsIds).to.have.a.lengthOf(1);
-          });
-        });
-
-
-      it('should set deployment status to error if error happened during instance deployment', {timeout: 6000},
-        function (done) {
-          var baseDeploymentId = 100000;
-
-          var count = cbCount(2, function () {
-            // restore what we stubbed
-            expect(PullRequest.prototype.createDeployment.calledOnce).to.equal(true);
-            PullRequest.prototype.createDeployment.restore();
-            var startStub = PullRequest.prototype.deploymentStarted;
-            expect(startStub.calledOnce).to.equal(true);
-            expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            startStub.restore();
-            var errorStub = PullRequest.prototype.deploymentErrored;
-            expect(errorStub.calledOnce).to.equal(true);
-            expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            errorStub.restore();
-
-            Runnable.prototype.waitForInstanceDeployed.restore();
-            done();
-          });
+      //     var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+      //     var data = {
+      //       branch: 'master',
+      //       repo: acv.repo
+      //     };
+      //     var user = ctx.user.attrs.accounts.github;
+      //     var options = hooks(data).push;
+      //     var username = acv.repo.split('/')[0];
+      //     var repoName = acv.repo.split('/')[1];
+      //     require('./fixtures/mocks/github/users-username')(101, username);
+      //     require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+      //       user.login, user.id, repoName, 'master');
+      //     request.post(options, function (err, res, cvsIds) {
+      //       if (err) { return done(err); }
+      //       finishAllIncompleteVersions();
+      //       expect(res.statusCode).to.equal(201);
+      //       expect(cvsIds).to.be.okay;
+      //       expect(cvsIds).to.be.an('array');
+      //       expect(cvsIds).to.have.a.lengthOf(1);
+      //     });
+      //   });
 
 
-          sinon.stub(Runnable.prototype, 'waitForInstanceDeployed', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb(Boom.notFound('Instance deploy failed'));
-          });
+      // it('should set deployment status to error if error happened during instance deployment', {timeout: 6000},
+      //   function (done) {
+      //     var baseDeploymentId = 100000;
 
-          sinon.stub(PullRequest.prototype, 'createDeployment', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb(null, {id: baseDeploymentId});
-          });
-          var countOnCallback = function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb();
-            count.next();
-          };
-          sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
-          sinon.stub(PullRequest.prototype, 'deploymentErrored', countOnCallback);
+      //     var count = cbCount(2, function () {
+      //       // restore what we stubbed
+      //       expect(PullRequest.prototype.createDeployment.calledOnce).to.equal(true);
+      //       PullRequest.prototype.createDeployment.restore();
+      //       var startStub = PullRequest.prototype.deploymentStarted;
+      //       expect(startStub.calledOnce).to.equal(true);
+      //       expect(startStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+      //         sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+      //       startStub.restore();
+      //       var errorStub = PullRequest.prototype.deploymentErrored;
+      //       expect(errorStub.calledOnce).to.equal(true);
+      //       expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
+      //         sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+      //       errorStub.restore();
 
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+      //       Runnable.prototype.waitForInstanceDeployed.restore();
+      //       done();
+      //     });
 
-          var data = {
-            branch: 'master',
-            repo: acv.repo
-          };
-          var user = ctx.user.attrs.accounts.github;
-          var options = hooks(data).push;
-          var username = acv.repo.split('/')[0];
-          var repoName = acv.repo.split('/')[1];
-          require('./fixtures/mocks/github/users-username')(101, username);
-          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
-            username, user.id, repoName, 'master');
-          request.post(options, function (err, res, cvsIds) {
-            if (err) { return done(err); }
-            finishAllIncompleteVersions();
-            expect(res.statusCode).to.equal(201);
-            expect(cvsIds).to.be.okay;
-            expect(cvsIds).to.be.an('array');
-            expect(cvsIds).to.have.a.lengthOf(1);
-          });
-        });
+
+      //     sinon.stub(Runnable.prototype, 'waitForInstanceDeployed', function () {
+      //       var cb = Array.prototype.slice.apply(arguments).pop();
+      //       cb(Boom.notFound('Instance deploy failed'));
+      //     });
+
+      //     sinon.stub(PullRequest.prototype, 'createDeployment', function () {
+      //       var cb = Array.prototype.slice.apply(arguments).pop();
+      //       cb(null, {id: baseDeploymentId});
+      //     });
+      //     var countOnCallback = function () {
+      //       var cb = Array.prototype.slice.apply(arguments).pop();
+      //       cb();
+      //       count.next();
+      //     };
+      //     sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
+      //     sinon.stub(PullRequest.prototype, 'deploymentErrored', countOnCallback);
+
+      //     var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+
+      //     var data = {
+      //       branch: 'master',
+      //       repo: acv.repo
+      //     };
+      //     var user = ctx.user.attrs.accounts.github;
+      //     var options = hooks(data).push;
+      //     var username = acv.repo.split('/')[0];
+      //     var repoName = acv.repo.split('/')[1];
+      //     require('./fixtures/mocks/github/users-username')(101, username);
+      //     require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+      //       username, user.id, repoName, 'master');
+      //     request.post(options, function (err, res, cvsIds) {
+      //       if (err) { return done(err); }
+      //       finishAllIncompleteVersions();
+      //       expect(res.statusCode).to.equal(201);
+      //       expect(cvsIds).to.be.okay;
+      //       expect(cvsIds).to.be.an('array');
+      //       expect(cvsIds).to.have.a.lengthOf(1);
+      //     });
+      //   });
     });
 
-    describe('success cases', function () {
-      beforeEach(function (done) {
+    // describe('success cases', function () {
+    //   beforeEach(function (done) {
 
-        multi.createInstance(function (err, instance, build, user, modelsArr) {
-          ctx.contextVersion = modelsArr[0];
-          ctx.context = modelsArr[1];
-          ctx.build = build;
-          ctx.user = user;
-          ctx.instance = instance;
-          var settings = {
-            owner: {
-              github: user.attrs.accounts.github.id
-            }
-          };
-          user.createSetting({json: settings}, function (err, body) {
-            if (err) { return done(err); }
-            expect(body._id).to.exist();
-            ctx.settingsId = body._id;
-            done();
-          });
-        });
-      });
+    //     multi.createInstance(function (err, instance, build, user, modelsArr) {
+    //       ctx.contextVersion = modelsArr[0];
+    //       ctx.context = modelsArr[1];
+    //       ctx.build = build;
+    //       ctx.user = user;
+    //       ctx.instance = instance;
+    //       var settings = {
+    //         owner: {
+    //           github: user.attrs.accounts.github.id
+    //         }
+    //       };
+    //       user.createSetting({json: settings}, function (err, body) {
+    //         if (err) { return done(err); }
+    //         expect(body._id).to.exist();
+    //         ctx.settingsId = body._id;
+    //         done();
+    //       });
+    //     });
+    //   });
 
-      afterEach(function (done) {
-        process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
-        done();
-      });
-
-
-      it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
-        ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
-          if (err) { return done(err); }
-          var baseDeploymentId = 1234567;
-          sinon.stub(PullRequest.prototype, 'createDeployment', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            baseDeploymentId++;
-            var newDeploymentId = baseDeploymentId;
-            cb(null, {id: newDeploymentId});
-          });
-          var countOnCallback = function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb();
-            count.next();
-          };
-          var count = cbCount(5, function () {
-            var expected = {
-              'contextVersion.build.started': exists,
-              'contextVersion.build.completed': exists,
-              'contextVersion.build.duration': exists,
-              'contextVersion.build.triggeredBy.github': exists,
-              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
-              'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
-              'contextVersion.appCodeVersions[0].branch': data.branch,
-              'contextVersion.build.triggeredAction.manual': false,
-              'contextVersion.build.triggeredAction.appCodeVersion.repo':
-                options.json.repository.full_name,
-              'contextVersion.build.triggeredAction.appCodeVersion.commit':
-                options.json.head_commit.id
-            };
-            // restore what we stubbed
-            expect(PullRequest.prototype.createDeployment.calledTwice).to.equal(true);
-            PullRequest.prototype.createDeployment.restore();
-            var startStub = PullRequest.prototype.deploymentStarted;
-            expect(startStub.calledTwice).to.equal(true);
-            expect(startStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            startStub.restore();
-            var successStub = PullRequest.prototype.deploymentSucceeded;
-
-            expect(successStub.calledTwice).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            successStub.restore();
-
-            var slackStub = Slack.prototype.notifyOnAutoUpdate;
-            expect(slackStub.calledOnce).to.equal(true);
-            expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
-            slackStub.restore();
-
-            ctx.instance.fetch(expects.success(200, expected, function (err) {
-              if (err) { return done(err); }
-              ctx.instance2.fetch(expects.success(200, expected, done));
-            }));
+    //   afterEach(function (done) {
+    //     process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
+    //     done();
+    //   });
 
 
-          });
-          sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
-          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
-          sinon.stub(Slack.prototype, 'notifyOnAutoUpdate', countOnCallback);
+    //   it('should redeploy two instances with new build', {timeout: 6000}, function (done) {
+    //     ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
+    //       if (err) { return done(err); }
+    //       var baseDeploymentId = 1234567;
+    //       sinon.stub(PullRequest.prototype, 'createDeployment', function () {
+    //         var cb = Array.prototype.slice.apply(arguments).pop();
+    //         baseDeploymentId++;
+    //         var newDeploymentId = baseDeploymentId;
+    //         cb(null, {id: newDeploymentId});
+    //       });
+    //       var countOnCallback = function () {
+    //         var cb = Array.prototype.slice.apply(arguments).pop();
+    //         cb();
+    //         count.next();
+    //       };
+    //       var count = cbCount(5, function () {
+    //         var expected = {
+    //           'contextVersion.build.started': exists,
+    //           'contextVersion.build.completed': exists,
+    //           'contextVersion.build.duration': exists,
+    //           'contextVersion.build.triggeredBy.github': exists,
+    //           'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
+    //           'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
+    //           'contextVersion.appCodeVersions[0].branch': data.branch,
+    //           'contextVersion.build.triggeredAction.manual': false,
+    //           'contextVersion.build.triggeredAction.appCodeVersion.repo':
+    //             options.json.repository.full_name,
+    //           'contextVersion.build.triggeredAction.appCodeVersion.commit':
+    //             options.json.head_commit.id
+    //         };
+    //         // restore what we stubbed
+    //         expect(PullRequest.prototype.createDeployment.calledTwice).to.equal(true);
+    //         PullRequest.prototype.createDeployment.restore();
+    //         var startStub = PullRequest.prototype.deploymentStarted;
+    //         expect(startStub.calledTwice).to.equal(true);
+    //         expect(startStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
+    //           sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+    //         startStub.restore();
+    //         var successStub = PullRequest.prototype.deploymentSucceeded;
+
+    //         expect(successStub.calledTwice).to.equal(true);
+    //         expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
+    //           sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+    //         expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
+    //           sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+    //         successStub.restore();
+
+    //         var slackStub = Slack.prototype.notifyOnAutoUpdate;
+    //         expect(slackStub.calledOnce).to.equal(true);
+    //         expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
+    //         slackStub.restore();
+
+    //         ctx.instance.fetch(expects.success(200, expected, function (err) {
+    //           if (err) { return done(err); }
+    //           ctx.instance2.fetch(expects.success(200, expected, done));
+    //         }));
 
 
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var user = ctx.user.attrs.accounts.github;
-          var data = {
-            branch: 'master',
-            repo: acv.repo,
-            ownerId: user.id,
-            owner: user.login
-          };
+    //       });
+    //       sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
+    //       sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
+    //       sinon.stub(Slack.prototype, 'notifyOnAutoUpdate', countOnCallback);
 
-          var options = hooks(data).push;
-          var username = user.login;
-          var repoName = acv.repo.split('/')[1];
-          require('./fixtures/mocks/github/users-username')(101, username);
-          require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
-            username, user.id, repoName, 'master');
-          request.post(options, function (err, res, cvIds) {
-            if (err) { return done(err); }
-            finishAllIncompleteVersions();
-            expect(res.statusCode).to.equal(201);
-            expect(cvIds).to.be.okay;
-            expect(cvIds).to.be.an('array');
-            expect(cvIds).to.have.a.lengthOf(2);
-          });
-        });
-      });
-    });
+
+    //       var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+    //       var user = ctx.user.attrs.accounts.github;
+    //       var data = {
+    //         branch: 'master',
+    //         repo: acv.repo,
+    //         ownerId: user.id,
+    //         owner: user.login
+    //       };
+
+    //       var options = hooks(data).push;
+    //       var username = user.login;
+    //       var repoName = acv.repo.split('/')[1];
+    //       require('./fixtures/mocks/github/users-username')(101, username);
+    //       require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
+    //         username, user.id, repoName, 'master');
+    //       request.post(options, function (err, res, cvIds) {
+    //         if (err) { return done(err); }
+    //         finishAllIncompleteVersions();
+    //         expect(res.statusCode).to.equal(201);
+    //         expect(cvIds).to.be.okay;
+    //         expect(cvIds).to.be.an('array');
+    //         expect(cvIds).to.have.a.lengthOf(2);
+    //       });
+    //     });
+    //   });
+    // });
   });
 });
 
