@@ -1,17 +1,17 @@
-var Lab = require('lab');
-var describe = Lab.experiment;
+'use strict';
 
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
+var Lab = require('lab');
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
 
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
 
 var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
-
 
 var typesTests = require('../../fixtures/types-test-util');
 
@@ -19,10 +19,8 @@ describe('400 PATCH /contexts/:contextid/versions/:id/files/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
   var dirPathName = 'dir[]()';
@@ -48,7 +46,6 @@ describe('400 PATCH /contexts/:contextid/versions/:id/files/:id', function () {
     });
   });
 
-
   describe('invalid types', function() {
     var def = {
       action: 'update file',
@@ -68,12 +65,9 @@ describe('400 PATCH /contexts/:contextid/versions/:id/files/:id', function () {
       ]
     };
 
-    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
+    typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
       var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
       dockerfile.update({json: body}, cb);
     });
-
-
   });
-
 });

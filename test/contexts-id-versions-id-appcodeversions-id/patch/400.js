@@ -1,11 +1,15 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
 var expects = require('../../fixtures/expects');
+
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
@@ -17,12 +21,10 @@ describe('400 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
   var ctx = {};
 
   before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   beforeEach(primus.connect);
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
   beforeEach(function (done) {
@@ -60,12 +62,14 @@ describe('400 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
         }
       ],
     };
-    typesTests.makeTestFromDef(def, ctx, function (body, cb) {
+    typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
       ctx.appCodeVersion.update(body, cb);
     });
   });
 
   describe('built version', function () {
+    before(dock.start.bind(ctx));
+    after(dock.stop.bind(ctx));
     beforeEach(function (done) {
       multi.buildTheBuild(ctx.user, ctx.build, done);
     });

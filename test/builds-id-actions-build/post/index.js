@@ -1,11 +1,15 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var api = require('./../../fixtures/api-control');
 var dock = require('./../../fixtures/dock');
@@ -174,50 +178,53 @@ describe('Build - /builds/:id/actions/build', function () {
           });
         });
       });
-      it('add another appcodeversion, build, remove an appcodeversion, it should not reuse cv', function (done) {
-        // Add a new repo to the cv
-        ctx.repoName = 'Dat-middleware';
-        ctx.fullRepoName = ctx.user.json().accounts.github.login + '/' + ctx.repoName;
-        var body = {
-          repo: ctx.fullRepoName,
-          branch: 'master',
-          commit: uuid().replace(/-/g, '')
-        };
-        require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
-        require('../../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
-        var username = ctx.user.attrs.accounts.github.login;
-        require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
-        ctx.appCodeVersion = ctx.cv.addGithubRepo(body, function (err) {
-          if (err) { return done(err); }
-          // Build the build
-          ctx.buildCopy = ctx.build.deepCopy(function (err) {
+      it('add another appcodeversion, build, remove an appcodeversion, it should not reuse cv',
+        { timeout: 2000 },
+        function (done) {
+          // Add a new repo to the cv
+          ctx.repoName = 'Dat-middleware';
+          ctx.fullRepoName = ctx.user.json().accounts.github.login + '/' + ctx.repoName;
+          var body = {
+            repo: ctx.fullRepoName,
+            branch: 'master',
+            commit: uuid().replace(/-/g, '')
+          };
+          require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
+          require('../../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
+          var username = ctx.user.attrs.accounts.github.login;
+          require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
+          ctx.appCodeVersion = ctx.cv.addGithubRepo(body, function (err) {
             if (err) { return done(err); }
-            multi.buildTheBuild(ctx.user, ctx.build, function (err) {
+            // Build the build
+            ctx.buildCopy = ctx.build.deepCopy(function (err) {
               if (err) { return done(err); }
-              dockerMockEvents.emitBuildComplete(ctx.cv);
-              // Now make a copy
-              var newCv = ctx.user
-                .newContext(ctx.context.id())
-                .newVersion(ctx.buildCopy.attrs.contextVersions[0]);
-
-              newCv.fetch(function (err, othercv) {
+              multi.buildTheBuild(ctx.user, ctx.build, function (err) {
                 if (err) { return done(err); }
-                ctx.otherCv = othercv;
-                // Now remove the repo
-                newCv.destroyAppCodeVersion(ctx.appCodeVersion.id(), function () {
-                  if (err) { return done(err); }
-                  // Build the build
-                  require('./../../fixtures/mocks/github/user')(ctx.user);
-                  ctx.buildCopy.build({message: 'hello!'}, function (err) {
-                    if (err) { return done(err); }
-                    dockerMockEvents.emitBuildComplete(newCv);
+                dockerMockEvents.emitBuildComplete(ctx.cv);
+                // Now make a copy
+                var newCv = ctx.user
+                  .newContext(ctx.context.id())
+                  .newVersion(ctx.buildCopy.attrs.contextVersions[0]);
 
-                    primus.onceVersionComplete(newCv.id(), function () {
-                      // Now refetch the build, and make sure the cv is different from the
-                      // original ctx.build it was cloned from
-                      ctx.buildCopy.fetch(function (err, build) {
-                        expect(build.contextVersions[0]).to.not.equal(ctx.build.attrs.contextVersions[0]);
-                        done();
+                newCv.fetch(function (err, othercv) {
+                  if (err) { return done(err); }
+                  ctx.otherCv = othercv;
+                  // Now remove the repo
+                  newCv.destroyAppCodeVersion(ctx.appCodeVersion.id(), function () {
+                    if (err) { return done(err); }
+                    // Build the build
+                    require('./../../fixtures/mocks/github/user')(ctx.user);
+                    ctx.buildCopy.build({message: 'hello!'}, function (err) {
+                      if (err) { return done(err); }
+                      dockerMockEvents.emitBuildComplete(newCv);
+
+                      primus.onceVersionComplete(newCv.id(), function () {
+                        // Now refetch the build, and make sure the cv is different from the
+                        // original ctx.build it was cloned from
+                        ctx.buildCopy.fetch(function (err, build) {
+                          expect(build.contextVersions[0]).to.not.equal(ctx.build.attrs.contextVersions[0]);
+                          done();
+                        });
                       });
                     });
                   });
@@ -225,8 +232,8 @@ describe('Build - /builds/:id/actions/build', function () {
               });
             });
           });
-        });
-      });
+        }
+      );
       describe('errors', function () {
         it('should error if the build is already in progress', function (done) {
           require('./../../fixtures/mocks/github/user')(ctx.user);
