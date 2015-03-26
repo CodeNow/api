@@ -31,7 +31,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
   after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  beforeEach(function (done) {
+  beforeEach({ timeout: 7000 }, function (done) {
     var r = require('models/redis');
     r.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
       if (err) { return done(err); }
@@ -39,7 +39,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
     });
   });
   // Uncomment if you want to clear the (graph) database every time
-  beforeEach({ timeout: 5000 }, function (done) {
+  beforeEach({ timeout: 7000 }, function (done) {
     if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
       var Cypher = require('cypher-stream');
       var cypher = Cypher('http://localhost:7474');
@@ -57,7 +57,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
-  beforeEach(function (done) {
+  beforeEach({ timeout: 5000 }, function (done) {
     multi.createInstance(function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.webInstance = instance;
