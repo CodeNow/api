@@ -1,4 +1,5 @@
 var nock = require('nock');
+var dockerHost = require('../../docker-host');
 
 var buffer = new Buffer(8);
 buffer[0] = 0x01;
@@ -12,10 +13,10 @@ buffer[6] = 0;
 buffer[7] = 0x53;
 
 // This mock is currently used with docker container die event
-// for an image builder container. The docker host information is
-// used from the docker die event data.
+// for an image builder container.
+// The docker host information is used from the instance doccument mongo (mavis).
+// Mavis get's it's docker host info from docker listener.
 // Docker listener uses emits data with docker's external host
-var dockerHost = 'http://localhost:4243';
 
 module.exports = function (failure) {
   nock(dockerHost, { allowUnmocked: true })

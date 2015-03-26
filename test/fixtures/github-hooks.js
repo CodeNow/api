@@ -1636,7 +1636,7 @@ module.exports = function (data) {
         },
         sender: {
           'login': owner,
-          'id': 160236,
+          'id': ownerId,
           'avatar_url': 'https://avatars.githubusercontent.com/u/160236?v=2',
           'gravatar_id': '',
           'url': 'https://api.github.com/users/bkendall',
@@ -1752,7 +1752,7 @@ module.exports = function (data) {
         },
         sender: {
           'login': owner,
-          'id': 160236,
+          'id': ownerId,
           'avatar_url': 'https://avatars.githubusercontent.com/u/160236?v=2',
           'gravatar_id': '',
           'url': 'https://api.github.com/users/bkendall',
