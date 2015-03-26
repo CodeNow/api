@@ -1,17 +1,26 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var expect = Lab.expect;
-var before = Lab.before;
-var after = Lab.after;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var after = lab.after;
+var Code = require('code');
+var expect = Code.expect;
+
 var createCount = require('callback-count');
 var RedisMutex = require('models/redis/mutex');
 var redis = require('models/redis');
 
 
 describe('RedisMutex', function () {
-  before(redis.flushdb.bind(redis));
-  after(redis.flushdb.bind(redis));
+  before(function (done) {
+    redis.flushdb(done);
+  });
+  after(function (done) {
+    redis.flushdb(done);
+  });
 
   var ctx = {};
 

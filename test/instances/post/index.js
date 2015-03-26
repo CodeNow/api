@@ -1,11 +1,15 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var expects = require('../../fixtures/expects');
 var clone = require('101/clone');
@@ -109,7 +113,7 @@ describe('POST /instances', function () {
             'owner.github': ctx.user.attrs.accounts.github.id,
             contextVersions: exists,
             'contextVersions[0]._id': ctx.cv.id(),
-            'contextVersions[0].appCodeVersions[0]': ctx.cv.json().appCodeVersions[0],
+            'contextVersions[0].appCodeVersions[0]._id': ctx.cv.json().appCodeVersions[0]._id,
             'network.networkIp': exists,
             'network.hostIp': exists
           };

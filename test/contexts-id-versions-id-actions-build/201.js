@@ -1,10 +1,15 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var api = require('../fixtures/api-control');
 var dock = require('../fixtures/dock');
@@ -14,8 +19,8 @@ var exists = require('101/exists');
 var multi = require('../fixtures/multi-factory');
 var primus = require('../fixtures/primus');
 var dockerMockEvents = require('../fixtures/docker-mock-events');
-var expect = require('lab').expect;
 var Context = require('models/mongo/context');
+var blacklight = require('blacklight');
 var dockerHost = require('../fixtures/docker-host');
 
 describe('201 POST /contexts/:id/versions/:id/actions/build', {timeout: 2000}, function() {
@@ -132,7 +137,7 @@ function buildTheVersionTests (ctx) {
           require('../fixtures/mocks/github/user')(ctx.user);
           ctx.copiedCv.build({json: {noCache: true}}, function(err, body) {
             if (err) { return done(err); }
-            expect(body._id).to.not.equal(ctx.cv.attrs._id);
+            expect(body._id).not.to.equal(ctx.cv.attrs._id);
             expect(body.id).to.not.equal(ctx.cv.attrs.id);
             expect(body.containerId).to.not.equal(ctx.cv.attrs.containerId);
             done();
@@ -209,8 +214,9 @@ function buildTheVersionTests (ctx) {
               waitForCvBuildToComplete(ctx.cv, done);
             }));
           });
-          require('../fixtures/equivalent-dockerfiles').forEach(function(fileInfo) {
-            it('should dedupe whitespace changes: ' + fileInfo, function(done) {
+
+          require('../fixtures/equivalent-dockerfiles').forEach(function (fileInfo) {
+            it('should dedupe whitespace changes: ' + blacklight.escape(fileInfo), function (done) {
               var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }
@@ -229,11 +235,11 @@ function buildTheVersionTests (ctx) {
                 });
               });
             });
-            it('should NOT dedupe whitespace changes when noCache: ' + fileInfo, function(done) {
+            it('should NOT dedupe whitespace changes when noCache: ' + blacklight.escape(fileInfo), function (done) {
               var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }
-                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(err){
+                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function (err){
                   if (err) { return done(err); }
                   ctx.cv2.build({json: {noCache: true}}, function (err) {
                     if (err) { return done(err); }
@@ -250,12 +256,12 @@ function buildTheVersionTests (ctx) {
             });
           });
 
-          require('../fixtures/different-dockerfiles').forEach(function(fileInfo) {
-            it('should NOT dedupe whitespace changes: ' + fileInfo, function(done) {
+          require('../fixtures/different-dockerfiles').forEach(function (fileInfo) {
+            it('should NOT dedupe whitespace changes: ' + blacklight.escape(fileInfo), function (done) {
                var rootDir = ctx.cv2.rootDir;
               rootDir.contents.fetch(function (err) {
                 if (err) { return done(err); }
-                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function(err) {
+                rootDir.contents.models[0].update({ json: {body:fileInfo} }, function (err) {
                   if (err) { return done(err); }
                   ctx.cv2.build(function (err) {
                     if (err) { return done(err); }

@@ -32,24 +32,32 @@ do
 done
 if [[ ${#files[@]} -ne 0 ]]
 then
-  npm run _bdd -- ${indexes[@]} ${extra_args[@]} ${files[@]}
+  npm run _bdd -- $indexes ${extra_args[@]} ${files[@]}
   exit $?
 fi
 
-numTests=$(npm run _bdd -- -d ${all_files[@]} | grep -E '[0-9]+ tests complete' | awk '{split($0,r," "); print r[1];}')
+numTests=$(npm run _bdd -- --dry ${all_files[@]} | tail -6 | perl -n -e '/- (\d+)\)/ && print $1')
 echo $numTests to run
 
 if [[ $indexes == "" ]]
 then
-  indexes=()
-  for i in $(seq 1 $numTests)
-  do
-    if [[ $(($i % $CIRCLE_NODE_TOTAL)) -eq $CIRCLE_NODE_INDEX ]]
+  indexes=""
+  if [[ $CIRCLE_NODE_TOTAL -eq 1 ]]
+  then
+    echo "local testing"
+  else
+    len=$(expr $numTests / $CIRCLE_NODE_TOTAL)
+    s=$(expr $len \* $CIRCLE_NODE_INDEX + 1)
+    n=$(expr $CIRCLE_NODE_INDEX + 1)
+    e=$(expr $len \* $n)
+    if [[ $CIRCLE_NODE_TOTAL -eq $n ]]
     then
-      indexes+=" -i $i"
+      e=$numTests
     fi
-  done
+    indexes="-i $s-$e"
+    echo "indexes $indexes"
+  fi
 fi
 
-npm run _bdd -- ${extra_args[@]} ${indexes[@]} ${all_files[@]}
+npm run _bdd -- ${extra_args[@]} $indexes ${all_files[@]}
 exit $?

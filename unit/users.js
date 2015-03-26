@@ -1,11 +1,13 @@
 'use strict';
 
 var Lab = require('lab');
-var describe = Lab.experiment;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var before = lab.before;
+var afterEach = lab.afterEach;
+
 var Faker = require('faker');
-var before = Lab.before;
-var afterEach = Lab.afterEach;
-var validation = require('./fixtures/validation');
+var validation = require('./fixtures/validation')(lab);
 //var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 
 var User = require('models/mongo/user');
@@ -57,7 +59,7 @@ describe('User', function () {
   });
 
   describe('Gravatar Validation', function () {
-    validation.urlValidationChecking(createNewUser, 'gravatar');
+    validation.urlValidationChecking(createNewUser, 'gravatar', 'gravatar');
   });
 
 //  describe('Accounts Validation', function() {
