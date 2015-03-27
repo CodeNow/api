@@ -1,10 +1,14 @@
 'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var after = Lab.after;
-var before = Lab.before;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var after = lab.after;
+var Code = require('code');
+var expect = Code.expect;
+
 var redis = require('models/redis');
 var activeApi = require('models/redis/active-api');
 
@@ -13,8 +17,12 @@ require('loadenv')();
 describe('Active API', function () {
   var ctx = {};
   describe('isMe', function () {
-    before(redis.flushdb.bind(redis));
-    after(redis.flushdb.bind(redis));
+    before(function (done) {
+      redis.flushdb(done);
+    });
+    after(function (done) {
+      redis.flushdb(done);
+    });
 
     it('should return false if setAsMe was never called', function (done) {
       activeApi.isMe(function (err, isActive) {
@@ -27,8 +35,12 @@ describe('Active API', function () {
   });
 
   describe('setAsMe', function () {
-    before(redis.flushdb.bind(redis));
-    after(redis.flushdb.bind(redis));
+    before(function (done) {
+      redis.flushdb(done);
+    });
+    after(function (done) {
+      redis.flushdb(done);
+    });
 
     before(function (done) {
       ctx.originUUID = process.env.UUID;

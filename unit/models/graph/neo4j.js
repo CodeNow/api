@@ -1,13 +1,16 @@
 'use strict';
 
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var expect = Lab.expect;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+
 var sinon = require('sinon');
 
 var Graph = require('models/apis/graph');
@@ -70,7 +73,7 @@ describe('neo4j driver', function () {
         expect(graph._query.calledOnce).to.be.true();
         var call = graph._query.getCall(0);
         expect(call.args[0]).to.equal(expectedQuery);
-        expect(call.args[1]).to.eql({ props: start.props });
+        expect(call.args[1]).to.deep.equal({ props: start.props });
         done();
       });
     });
@@ -104,7 +107,7 @@ describe('neo4j driver', function () {
         expect(graph._query.calledOnce).to.be.true();
         var call = graph._query.getCall(0);
         expect(call.args[0]).to.equal(expectedQuery);
-        expect(call.args[1]).to.eql({ props: start.props });
+        expect(call.args[1]).to.deep.equal({ props: start.props });
         done();
       });
     });
@@ -143,7 +146,7 @@ describe('neo4j driver', function () {
         expect(graph._query.calledOnce).to.be.true();
         var call = graph._query.getCall(0);
         expect(call.args[0]).to.equal(expectedQuery);
-        expect(call.args[1]).to.eql({ props: node.props });
+        expect(call.args[1]).to.deep.equal({ props: node.props });
         done();
       });
     });
@@ -184,7 +187,7 @@ describe('neo4j driver', function () {
         expect(graph._query.calledOnce).to.be.true();
         var call = graph._query.getCall(0);
         expect(call.args[0]).to.equal(expectedQuery);
-        expect(call.args[1]).to.eql({
+        expect(call.args[1]).to.deep.equal({
           startProps: startNode.props,
           endProps: endNode.props
         });
@@ -226,7 +229,7 @@ describe('neo4j driver', function () {
         expect(graph._query.calledOnce).to.be.true();
         var call = graph._query.getCall(0);
         expect(call.args[0]).to.equal(expectedQuery);
-        expect(call.args[1]).to.eql({
+        expect(call.args[1]).to.deep.equal({
           startProps: startNode.props,
           endProps: endNode.props
         });

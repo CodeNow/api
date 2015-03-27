@@ -12,9 +12,6 @@ database:
     - ./bin/neo4j console:
         background: true
         pwd: test/fixtures/graphs/neo4j
-    - "./cayley_linux http --host=0.0.0.0 --config=cayley.cfg":
-        background: true
-        pwd: test/fixtures/graphs/cayley
 test:
   pre:
     - ulimit -n 10240

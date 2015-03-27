@@ -1,14 +1,17 @@
 'use strict';
 
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var expect = Lab.expect;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var validation = require('../../fixtures/validation');
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+
+var validation = require('../../fixtures/validation')(lab);
 var Hashids = require('hashids');
 var async = require('async');
 var mongoose = require('mongoose');
@@ -37,6 +40,7 @@ function newObjectId () {
 }
 
 describe('Instance', function () {
+
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
 
@@ -105,11 +109,11 @@ describe('Instance', function () {
     var instance = createNewInstance('hello');
     instance.save(function (err, instance) {
       if (err) { return done(err); }
-      expect(instance).to.be.okay;
+      expect(instance).to.exist();
       var newInstance = createNewInstance('Hello');
       newInstance.save(function (err, instance) {
         expect(instance).to.not.be.okay;
-        expect(err).to.be.okay;
+        expect(err).to.exist();
         expect(err.code).to.equal(11000);
         done();
       });
@@ -123,7 +127,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -135,7 +139,7 @@ describe('Instance', function () {
       var dockerHost = 'http://localhost:4243';
       savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err, newInst) {
         if (err) { return done(err); }
-        expect(newInst.container).to.eql({
+        expect(newInst.container).to.deep.equal({
           dockerContainer: dockerContainer,
           dockerHost: dockerHost
         });
@@ -165,7 +169,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -227,7 +231,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -280,7 +284,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -340,7 +344,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -400,7 +404,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -428,7 +432,7 @@ describe('Instance', function () {
       var instance = createNewInstance('instance1');
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance1 = instance;
         done();
       });
@@ -437,7 +441,7 @@ describe('Instance', function () {
       var instance = createNewInstance('instance2', {locked: false});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance2 = instance;
         done();
       });
@@ -446,7 +450,7 @@ describe('Instance', function () {
       var instance = createNewInstance('instance3', {locked: true, repo: 'podviaznikov/hello'});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance3 = instance;
         done();
       });
@@ -478,7 +482,7 @@ describe('Instance', function () {
       var instance = createNewInstance('instance-name', {locked: true, repo: 'podviaznikov/hello'});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -522,7 +526,7 @@ describe('Instance', function () {
           owner_github: instances[0].owner.github
         }
       };
-      expect(generated).to.eql(expected);
+      expect(generated).to.deep.equal(expected);
       done();
     });
   
@@ -556,7 +560,7 @@ describe('Instance', function () {
             })
             .on('end', function () {
               expect(err).to.be.null();
-              expect(Object.keys(nodes)).to.have.lengthOf(1);
+              expect(Object.keys(nodes)).to.have.length(1);
               expect(nodes[i.id.toString()].lowerName).to.equal('new-a');
               done();
             })
@@ -577,8 +581,8 @@ describe('Instance', function () {
         var i = instances[0];
         i.getDependencies(function (err, deps) {
           expect(err).to.be.null();
-          expect(deps).to.be.an('array');
-          expect(deps).to.have.lengthOf(0);
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(0);
           done();
         });
       });
@@ -594,15 +598,15 @@ describe('Instance', function () {
         var shortD = pick(d.toJSON(), fields);
         i.addDependency(d, function (err, limitedInstance) {
           expect(err).to.be.null();
-          expect(limitedInstance).to.be.ok();
-          expect(Object.keys(limitedInstance)).to.eql(fields);
-          expect(limitedInstance).to.eql(shortD);
+          expect(limitedInstance).to.exist();
+          expect(Object.keys(limitedInstance)).to.contain(fields);
+          expect(limitedInstance).to.deep.equal(shortD);
           i.getDependencies(function (err, deps) {
             expect(err).to.be.null();
-            expect(deps).to.be.an('array');
-            expect(deps).to.have.lengthOf(1);
-            expect(Object.keys(deps[0])).to.eql(fields);
-            expect(deps[0]).to.eql(shortD);
+            expect(deps).to.be.an.array();
+            expect(deps).to.have.length(1);
+            expect(Object.keys(deps[0])).to.contain(fields);
+            expect(deps[0]).to.deep.equal(shortD);
             done();
           });
         });
@@ -620,8 +624,8 @@ describe('Instance', function () {
             expect(err).to.be.null();
             i.getDependencies(function (err, deps) {
               expect(err).to.be.null();
-              expect(deps).to.be.an('array');
-              expect(deps).to.have.lengthOf(0);
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(0);
               done();
             });
           });
@@ -638,15 +642,15 @@ describe('Instance', function () {
           var shortD = pick(d.toJSON(), fields);
           i.addDependency(d, function (err, limitedInstance) {
             expect(err).to.be.null();
-            expect(limitedInstance).to.be.ok();
-            expect(Object.keys(limitedInstance)).to.eql(fields);
-            expect(limitedInstance).to.eql(shortD);
+            expect(limitedInstance).to.exist();
+            expect(Object.keys(limitedInstance)).to.contain(fields);
+            expect(limitedInstance).to.deep.equal(shortD);
             i.getDependencies(function (err, deps) {
               expect(err).to.be.null();
-              expect(deps).to.be.an('array');
-              expect(deps).to.have.lengthOf(2);
-              expect(Object.keys(deps[1])).to.eql(fields);
-              expect(deps[1]).to.eql(shortD);
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(2);
+              expect(Object.keys(deps[1])).to.contain(fields);
+              expect(deps[1]).to.deep.equal(shortD);
               done();
             });
           });
@@ -663,19 +667,19 @@ describe('Instance', function () {
           var shortD = pick(d.toJSON(), fields);
           i.addDependency(d, function (err, limitedInstance) {
             expect(err).to.be.null();
-            expect(limitedInstance).to.be.ok();
-            expect(Object.keys(limitedInstance)).to.eql(fields);
-            expect(limitedInstance).to.eql(shortD);
+            expect(limitedInstance).to.exist();
+            expect(Object.keys(limitedInstance)).to.contain(fields);
+            expect(limitedInstance).to.deep.equal(shortD);
             i.getDependencies(function (err, deps) {
               expect(err).to.be.null();
-              expect(deps).to.be.an('array');
-              expect(deps).to.have.lengthOf(1);
-              expect(Object.keys(deps[0])).to.eql(fields);
-              expect(deps[0]).to.eql(shortD);
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(1);
+              expect(Object.keys(deps[0])).to.contain(fields);
+              expect(deps[0]).to.deep.equal(shortD);
               instances[0].getDependencies(function (err, deps) {
                 expect(err).to.be.null();
-                expect(deps).to.be.an('array');
-                expect(deps).to.have.lengthOf(1);
+                expect(deps).to.be.an.array();
+                expect(deps).to.have.length(1);
                 done();
               });
             });

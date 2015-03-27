@@ -1,11 +1,15 @@
+'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -131,7 +135,7 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
                   if (err) { return done(err); }
                   var container = ctx.instance.containers.models[0];
                   expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
-                  expect(container.attrs.inspect.Env).to.eql([]);
+                  expect(container.attrs.inspect.Env).to.deep.equal([]);
                   var count = createCount(done);
                   expects.deletedWeaveHost(oldContainer, count.inc().next);
                   expects.updatedWeaveHost(
@@ -167,7 +171,7 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
                   multi.tailInstance(ctx.user, ctx.instance, function (err) {
                     if (err) { return done(err); }
                     expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(oldDockerContainer);
-                    expect(ctx.instance.attrs.containers[0].inspect.Env).to.eql(['ONE=1']);
+                    expect(ctx.instance.attrs.containers[0].inspect.Env).to.deep.equal(['ONE=1']);
                     done();
                   });
                 }));

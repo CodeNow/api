@@ -1,9 +1,13 @@
 'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var expect = Lab.expect;
-var after = Lab.after;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var after = lab.after;
+var Code = require('code');
+var expect = Code.expect;
+
 var isEnvOn = require('middlewares/is-env-on');
 var createCount = require('callback-count');
 var noop = require('101/noop');

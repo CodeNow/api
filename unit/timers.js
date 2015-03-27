@@ -1,10 +1,14 @@
 'use strict';
+
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var expect = Lab.expect;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var beforeEach = lab.beforeEach;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+
 var Timers = require('models/apis/timers');
 var uuid = require('uuid');
 var createCount = require('callback-count');
@@ -22,7 +26,7 @@ describe('Timers', function () {
         done(err);
       }
       expect(t).to.not.equal(undefined);
-      expect(t).to.be.an('object');
+      expect(t).to.be.an.object();
       done();
     });
   });

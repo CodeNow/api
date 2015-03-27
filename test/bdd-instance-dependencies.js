@@ -1,13 +1,15 @@
 'use strict';
 
 var Lab = require('lab');
-var describe = Lab.experiment;
-var it = Lab.test;
-var before = Lab.before;
-var after = Lab.after;
-var beforeEach = Lab.beforeEach;
-var afterEach = Lab.afterEach;
-var expect = Lab.expect;
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var it = lab.it;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -20,7 +22,7 @@ var pluck = require('101/pluck');
 // var error = require('error');
 // var errorLog = error.log;
 
-describe('BDD - Instance Dependencies', function () {
+describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -30,7 +32,7 @@ describe('BDD - Instance Dependencies', function () {
   after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  beforeEach(function (done) {
+  beforeEach({ timeout: 7000 }, function (done) {
     var r = require('models/redis');
     r.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
       if (err) { return done(err); }
@@ -38,7 +40,7 @@ describe('BDD - Instance Dependencies', function () {
     });
   });
   // Uncomment if you want to clear the (graph) database every time
-  beforeEach(function (done) {
+  beforeEach({ timeout: 7000 }, function (done) {
     if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
       var Cypher = require('cypher-stream');
       var cypher = Cypher('http://localhost:7474');
@@ -56,7 +58,7 @@ describe('BDD - Instance Dependencies', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
-  beforeEach(function (done) {
+  beforeEach({ timeout: 5000 }, function (done) {
     multi.createInstance(function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.webInstance = instance;
@@ -79,8 +81,8 @@ describe('BDD - Instance Dependencies', function () {
   it('should have no dependencies to start', function (done) {
     ctx.webInstance.getDependencies(function (err, deps) {
       expect(err).to.be.not.ok;
-      expect(deps).to.be.an('array');
-      expect(deps).to.have.lengthOf(0);
+      expect(deps).to.be.an.array();
+      expect(deps).to.have.length(0);
       done();
     });
   });
@@ -103,8 +105,8 @@ describe('BDD - Instance Dependencies', function () {
       };
       ctx.webInstance.addDependency(body, function (err, body) {
         if (err) { return done(err); }
-        expect(body).to.be.an('object');
-        expect(Object.keys(body)).to.have.lengthOf(3);
+        expect(body).to.be.an.object();
+        expect(Object.keys(body)).to.have.length(3);
         expect(body.id).to.equal(ctx.apiInstance.attrs._id.toString());
         expect(body.lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
         expect(body.owner.github).to.equal(ctx.apiInstance.attrs.owner.github);
@@ -197,9 +199,9 @@ describe('BDD - Instance Dependencies', function () {
 
       it('should keep the dependencies', function (done) {
         ctx.webInstance.getDependencies(function (err, deps) {
-          expect(err).to.not.be.ok();
-          expect(deps).to.be.an('array');
-          expect(deps).to.have.lengthOf(1);
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(1);
           expect(deps[0].id).to.equal(ctx.apiInstance.attrs.id.toString());
           done();
         });
@@ -216,9 +218,9 @@ describe('BDD - Instance Dependencies', function () {
 
       it('should keep the dependencies', function (done) {
         ctx.webInstance.getDependencies(function (err, deps) {
-          expect(err).to.not.be.ok();
-          expect(deps).to.be.an('array');
-          expect(deps).to.have.lengthOf(1);
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(1);
           expect(deps[0].id).to.equal(ctx.apiInstance.attrs.id.toString());
           expect(deps[0].lowerName).to.equal('kayne-api');
           done();
@@ -230,11 +232,11 @@ describe('BDD - Instance Dependencies', function () {
       it('should update the deps of an instance', function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         ctx.webInstance.destroyDependency({ instance: ctx.apiInstance.id() }, function (err) {
-          expect(err).to.not.be.ok();
+          expect(err).to.be.null();
           ctx.webInstance.getDependencies(function (err, deps) {
-            expect(err).to.not.be.ok();
-            expect(deps).to.be.an('array');
-            expect(deps).to.have.lengthOf(0);
+            expect(err).to.be.null();
+            expect(deps).to.be.an.array();
+            expect(deps).to.have.length(0);
             done();
           });
         });
@@ -330,10 +332,11 @@ describe('BDD - Instance Dependencies', function () {
       });
       it('should keep the same dependencies, and have updated props on the dep', function (done) {
         ctx.webInstance.getDependencies(function (err, deps) {
-          expect(err).to.not.be.ok();
-          expect(deps).to.be.an('array');
-          expect(deps).to.have.lengthOf(1);
-          expect(deps[0]).to.eql({
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(1);
+          console.log(deps[0]);
+          expect(deps[0]).to.deep.equal({
             id: ctx.apiInstance.attrs._id.toString(),
             lowerName: 'a-new-and-awesome-name',
             owner: { github: ctx.apiInstance.attrs.owner.github }
@@ -362,10 +365,10 @@ describe('BDD - Instance Dependencies', function () {
       });
       it('should update the deps of an instance', function (done) {
         ctx.webInstance.getDependencies(function (err, deps) {
-          expect(err).to.not.be.ok();
-          expect(deps).to.be.an('array');
-          expect(deps).to.have.lengthOf(2);
-          expect(deps.map(pluck('lowerName'))).to.eql(['api-instance', 'mongo-instance']);
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(2);
+          expect(deps.map(pluck('lowerName'))).to.contain(['api-instance', 'mongo-instance']);
           done();
         });
       });
@@ -388,11 +391,11 @@ describe('BDD - Instance Dependencies', function () {
           owner: { github: ctx.webInstance.attrs.owner.github }
         }];
         ctx.webInstance.getDependencies(function (err, deps) {
-          expect(err).to.not.be.ok();
-          expect(deps).to.eql(webDeps);
+          expect(err).to.be.null();
+          expect(deps).to.deep.equal(webDeps);
           ctx.apiInstance.getDependencies(function (err, deps) {
-            expect(err).to.not.be.ok();
-            expect(deps).to.eql(apiDeps);
+            expect(err).to.be.null();
+            expect(deps).to.deep.equal(apiDeps);
             done();
           });
         });
