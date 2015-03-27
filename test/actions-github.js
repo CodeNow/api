@@ -298,6 +298,7 @@ describe('Github - /actions/github', function () {
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
+            expect(instancesIds).to.be.an.array();
             expect(instancesIds.length).to.equal(0);
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
