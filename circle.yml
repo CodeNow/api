@@ -15,9 +15,6 @@ database:
 test:
   pre:
     - ulimit -n 10240
-    - ./bin/neo4j console:
-        background: true
-        pwd: test/fixtures/graphs/neo4j
   override:
     - npm run lint
     - npm run unit
