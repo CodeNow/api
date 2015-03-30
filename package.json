@@ -43,6 +43,7 @@
     "hashids": "^0.3.3",
     "http-proxy": "^1.5.3",
     "i": "^0.3.2",
+    "ip": "^0.3.2",
     "json-hash": "0.0.4",
     "json-stable-stringify": "^1.0.0",
     "keypather": "^1.8.1",
