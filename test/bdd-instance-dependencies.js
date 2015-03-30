@@ -363,12 +363,40 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           },
         ], done);
       });
+
       it('should update the deps of an instance', function (done) {
         ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();
           expect(deps).to.be.an.array();
           expect(deps).to.have.length(2);
           expect(deps.map(pluck('lowerName'))).to.contain(['api-instance', 'mongo-instance']);
+          done();
+        });
+      });
+      it('should allow filtering by context (should get them all)', function (done) {
+        var opts = {
+          qs: {
+            'contextVersion.context': ctx.apiInstance.attrs.contextVersion.context.toString()
+          }
+        };
+        ctx.webInstance.fetchDependencies(opts, function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(2);
+          done();
+        });
+      });
+      it('should allow filtering by context (should get none)', function (done) {
+        var opts = {
+          qs: {
+            // using a not-context id for purpose of example
+            'contextVersion.context': ctx.apiInstance.attrs.contextVersion.id.toString()
+          }
+        };
+        ctx.webInstance.fetchDependencies(opts, function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(0);
           done();
         });
       });
