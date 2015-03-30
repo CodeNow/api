@@ -106,7 +106,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
       ctx.webInstance.createDependency(body, function (err, body) {
         if (err) { return done(err); }
         expect(body).to.be.an.object();
-        expect(Object.keys(body)).to.have.length(3);
+        expect(Object.keys(body)).to.have.length(4);
         expect(body.id).to.equal(ctx.apiInstance.attrs._id.toString());
         expect(body.lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
         expect(body.owner.github).to.equal(ctx.apiInstance.attrs.owner.github);
