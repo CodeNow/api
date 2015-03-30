@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -94,9 +94,10 @@
     "jshint": "2.6.0",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "^5.2.1",
-    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.0.8",
+    "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.1.1",
     "multiline": "^0.3.4",
     "nock": "^0.51.0",
+    "node-debug": "^0.1.0",
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
     "rimraf": "^2.2.8",
@@ -132,6 +133,7 @@
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "clean": "rm -rf docs coverage.html node_modules",
     "lint": "jshint .",
-    "cayley": "./test/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/fixtures/graphs/cayley/local.cfg --assets=./test/fixtures/graphs/cayley"
+    "cayley": "./test/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/fixtures/graphs/cayley/local.cfg --assets=./test/fixtures/graphs/cayley",
+    "generate-whitelist": "find ./test -path ./test/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt"
   }
 }
