@@ -17,7 +17,9 @@ if (process.env.NEWRELIC_KEY) {
   require('newrelic');
 }
 
-function Api () {}
+function Api () {
+  this.apiServer = apiServer;
+}
 
 Api.prototype.start = function (cb) {
   debug('start');
