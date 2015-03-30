@@ -79,7 +79,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
   });
 
   it('should have no dependencies to start', function (done) {
-    ctx.webInstance.getDependencies(function (err, deps) {
+    ctx.webInstance.fetchDependencies(function (err, deps) {
       expect(err).to.be.not.ok;
       expect(deps).to.be.an.array();
       expect(deps).to.have.length(0);
@@ -103,7 +103,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
       var body = {
         instance: ctx.apiInstance.id()
       };
-      ctx.webInstance.addDependency(body, function (err, body) {
+      ctx.webInstance.createDependency(body, function (err, body) {
         if (err) { return done(err); }
         expect(body).to.be.an.object();
         expect(Object.keys(body)).to.have.length(3);
@@ -184,7 +184,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
     beforeEach(function (done) {
       // define web as dependent on api
       require('./fixtures/mocks/github/user')(ctx.user);
-      ctx.webInstance.addDependency({
+      ctx.webInstance.createDependency({
         instance: ctx.apiInstance.id()
       }, done);
     });
@@ -198,7 +198,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
       });
 
       it('should keep the dependencies', function (done) {
-        ctx.webInstance.getDependencies(function (err, deps) {
+        ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();
           expect(deps).to.be.an.array();
           expect(deps).to.have.length(1);
@@ -217,7 +217,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
       });
 
       it('should keep the dependencies', function (done) {
-        ctx.webInstance.getDependencies(function (err, deps) {
+        ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();
           expect(deps).to.be.an.array();
           expect(deps).to.have.length(1);
@@ -231,9 +231,9 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
     describe('to 1 -> 0 relations', function () {
       it('should update the deps of an instance', function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
-        ctx.webInstance.destroyDependency({ instance: ctx.apiInstance.id() }, function (err) {
+        ctx.webInstance.destroyDependency(ctx.apiInstance.id(), function (err) {
           expect(err).to.be.null();
-          ctx.webInstance.getDependencies(function (err, deps) {
+          ctx.webInstance.fetchDependencies(function (err, deps) {
             expect(err).to.be.null();
             expect(deps).to.be.an.array();
             expect(deps).to.have.length(0);
@@ -331,11 +331,10 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
         ctx.apiInstance.update(update, expects.updateSuccess(update, done));
       });
       it('should keep the same dependencies, and have updated props on the dep', function (done) {
-        ctx.webInstance.getDependencies(function (err, deps) {
+        ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();
           expect(deps).to.be.an.array();
           expect(deps).to.have.length(1);
-          console.log(deps[0]);
           expect(deps[0]).to.deep.equal({
             id: ctx.apiInstance.attrs._id.toString(),
             lowerName: 'a-new-and-awesome-name',
@@ -359,12 +358,12 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
             }, cb);
           },
           function addMongoToWeb (cb) {
-            ctx.webInstance.addDependency({ instance: ctx.mongoInstance.id() }, cb);
+            ctx.webInstance.createDependency({ instance: ctx.mongoInstance.id() }, cb);
           },
         ], done);
       });
       it('should update the deps of an instance', function (done) {
-        ctx.webInstance.getDependencies(function (err, deps) {
+        ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();
           expect(deps).to.be.an.array();
           expect(deps).to.have.length(2);
@@ -376,7 +375,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
 
     describe('from a -> b to a -> b -> a (circular) relations', function () {
       beforeEach(function (done) {
-        ctx.apiInstance.addDependency({ instance: ctx.webInstance.id() }, done);
+        ctx.apiInstance.createDependency({ instance: ctx.webInstance.id() }, done);
       });
 
       it('should update the deps of an instance', function (done) {
@@ -390,10 +389,10 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           lowerName: ctx.webInstance.attrs.lowerName,
           owner: { github: ctx.webInstance.attrs.owner.github }
         }];
-        ctx.webInstance.getDependencies(function (err, deps) {
+        ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();
           expect(deps).to.deep.equal(webDeps);
-          ctx.apiInstance.getDependencies(function (err, deps) {
+          ctx.apiInstance.fetchDependencies(function (err, deps) {
             expect(err).to.be.null();
             expect(deps).to.deep.equal(apiDeps);
             done();
