@@ -338,7 +338,8 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           expect(deps[0]).to.deep.equal({
             id: ctx.apiInstance.attrs._id.toString(),
             lowerName: 'a-new-and-awesome-name',
-            owner: { github: ctx.apiInstance.attrs.owner.github }
+            owner: { github: ctx.apiInstance.attrs.owner.github },
+            contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
           });
           done();
         });
@@ -382,12 +383,14 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
         var webDeps = [{
           id: ctx.apiInstance.attrs._id.toString(),
           lowerName: ctx.apiInstance.attrs.lowerName,
-          owner: { github: ctx.apiInstance.attrs.owner.github }
+          owner: { github: ctx.apiInstance.attrs.owner.github },
+          contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
         }];
         var apiDeps = [{
           id: ctx.webInstance.attrs._id.toString(),
           lowerName: ctx.webInstance.attrs.lowerName,
-          owner: { github: ctx.webInstance.attrs.owner.github }
+          owner: { github: ctx.webInstance.attrs.owner.github },
+          contextVersion: { context: ctx.webInstance.attrs.contextVersion.context }
         }];
         ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();

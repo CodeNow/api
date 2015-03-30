@@ -523,7 +523,8 @@ describe('Instance', function () {
         props: {
           id: instances[0].id.toString(),
           lowerName: instances[0].lowerName,
-          owner_github: instances[0].owner.github
+          owner_github: instances[0].owner.github,
+          contextVersion_context: instances[0].contextVersion.context.toString()
         }
       };
       expect(generated).to.deep.equal(expected);
@@ -593,9 +594,13 @@ describe('Instance', function () {
         var fields = [
           'id',
           'lowerName',
-          'owner'
+          'owner',
+          'contextVersion'
         ];
         var shortD = pick(d.toJSON(), fields);
+        shortD.contextVersion = {
+          context: shortD.contextVersion.context.toString()
+        };
         i.addDependency(d, function (err, limitedInstance) {
           expect(err).to.be.null();
           expect(limitedInstance).to.exist();
@@ -637,9 +642,13 @@ describe('Instance', function () {
           var fields = [
             'id',
             'lowerName',
-            'owner'
+            'owner',
+            'contextVersion'
           ];
           var shortD = pick(d.toJSON(), fields);
+          shortD.contextVersion = {
+            context: shortD.contextVersion.context.toString()
+          };
           i.addDependency(d, function (err, limitedInstance) {
             expect(err).to.be.null();
             expect(limitedInstance).to.exist();
@@ -662,9 +671,13 @@ describe('Instance', function () {
           var fields = [
             'id',
             'lowerName',
-            'owner'
+            'owner',
+            'contextVersion'
           ];
-          var shortD = pick(d.toJSON(), fields);
+          var shortD = pick(d, fields);
+          shortD.contextVersion = {
+            context: shortD.contextVersion.context.toString()
+          };
           i.addDependency(d, function (err, limitedInstance) {
             expect(err).to.be.null();
             expect(limitedInstance).to.exist();
