@@ -558,7 +558,7 @@ describe('Github - /actions/github', function () {
           owner: 'cflynn07'
         };
         var options = hooks(data).push;
-        request.post(options, function (err, res) {
+        request.post(options, function (err) {
           if (err) { return done(err); }
           done();
         });
