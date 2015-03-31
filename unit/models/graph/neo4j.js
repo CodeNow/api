@@ -78,7 +78,7 @@ describe('neo4j driver', function () {
       });
     });
 
-    it('should produce correct queries looking for node via steps', function (done) {
+    it('should produce correct queries looking for node via out steps', function (done) {
       var start = {
         label: 'Instance',
         props: {
@@ -99,7 +99,7 @@ describe('neo4j driver', function () {
           'a.id={props}.id AND ' +
           'a.lowerName={props}.lowerName AND ' +
           'a.owner_github={props}.owner_github',
-        'RETURN b'
+        'RETURN a,b'
       ].join('\n');
       graph.getNodes(start, steps, function (err, data) {
         expect(err).to.be.null();
@@ -108,6 +108,123 @@ describe('neo4j driver', function () {
         var call = graph._query.getCall(0);
         expect(call.args[0]).to.equal(expectedQuery);
         expect(call.args[1]).to.deep.equal({ props: start.props });
+        done();
+      });
+    });
+
+    it('should produce correct queries looking for node via out multiple steps', function (done) {
+      var start = {
+        label: 'Instance',
+        props: {
+          id: '1234567890asdf',
+          lowerName: 'sample-instance',
+          owner_github: 1234
+        }
+      };
+      var steps = [{
+        Out: {
+          edge: 'dependsOn',
+          node: 'Instance'
+        }
+      },{
+        Out: {
+          edge: 'hasHostname',
+          node: 'Hostname',
+          props: { id: 'somehostname' }
+        }
+      }];
+      var expectedQuery = [
+        'MATCH (a:Instance)-[:dependsOn]->(b:Instance)-[:hasHostname]->(c:Hostname)',
+        'WHERE ' +
+          'a.id={props}.id AND ' +
+          'a.lowerName={props}.lowerName AND ' +
+          'a.owner_github={props}.owner_github AND ' +
+          'c.id={cProps}.id',
+        'RETURN a,b,c'
+      ].join('\n');
+      graph.getNodes(start, steps, function (err, data) {
+        expect(err).to.be.null();
+        expect(data).to.be.null(); // because that's what we set the stub to
+        expect(graph._query.calledOnce).to.be.true();
+        var call = graph._query.getCall(0);
+        expect(call.args[0]).to.equal(expectedQuery);
+        expect(call.args[1]).to.deep.equal({
+          props: start.props,
+          cProps: steps[1].Out.props
+        });
+        done();
+      });
+    });
+
+    it('should produce correct queries looking for node via in steps', function (done) {
+      var start = {
+        label: 'Instance',
+        props: {
+          id: '1234567890asdf',
+          lowerName: 'sample-instance',
+          owner_github: 1234
+        }
+      };
+      var steps = [{
+        In: {
+          edge: 'dependsOn',
+          node: 'Instance'
+        }
+      }];
+      var expectedQuery = [
+        'MATCH (a:Instance)<-[:dependsOn]-(b:Instance)',
+        'WHERE ' +
+          'a.id={props}.id AND ' +
+          'a.lowerName={props}.lowerName AND ' +
+          'a.owner_github={props}.owner_github',
+        'RETURN a,b'
+      ].join('\n');
+      graph.getNodes(start, steps, function (err, data) {
+        expect(err).to.be.null();
+        expect(data).to.be.null(); // because that's what we set the stub to
+        expect(graph._query.calledOnce).to.be.true();
+        var call = graph._query.getCall(0);
+        expect(call.args[0]).to.equal(expectedQuery);
+        expect(call.args[1]).to.deep.equal({ props: start.props });
+        done();
+      });
+    });
+
+    it('should follow steps with node properties', function (done) {
+      var start = {
+        label: 'Instance',
+        props: {
+          id: '1234567890asdf',
+          lowerName: 'sample-instance',
+          owner_github: 1234
+        }
+      };
+      var steps = [{
+        Out: {
+          edge: 'dependsOn',
+          node: 'Instance',
+          props: { lowerName: 'some-name' }
+        }
+      }];
+      var expectedQuery = [
+        'MATCH (a:Instance)-[:dependsOn]->(b:Instance)',
+        'WHERE ' +
+          'a.id={props}.id AND ' +
+          'a.lowerName={props}.lowerName AND ' +
+          'a.owner_github={props}.owner_github AND ' +
+          'b.lowerName={bProps}.lowerName',
+        'RETURN a,b'
+      ].join('\n');
+      graph.getNodes(start, steps, function (err, data) {
+        expect(err).to.be.null();
+        expect(data).to.be.null(); // because that's what we set the stub to
+        expect(graph._query.calledOnce).to.be.true();
+        var call = graph._query.getCall(0);
+        expect(call.args[0]).to.equal(expectedQuery);
+        expect(call.args[1]).to.deep.equal({
+          props: start.props,
+          bProps: steps[0].Out.props
+        });
         done();
       });
     });
@@ -139,6 +256,27 @@ describe('neo4j driver', function () {
           'n.owner_github = {props}.owner_github',
         'ON MATCH SET n.lowerName = {props}.lowerName, ' +
           'n.owner_github = {props}.owner_github',
+        'RETURN n'
+      ].join('\n');
+      graph.writeNode(node, function (err) {
+        expect(err).to.be.null();
+        expect(graph._query.calledOnce).to.be.true();
+        var call = graph._query.getCall(0);
+        expect(call.args[0]).to.equal(expectedQuery);
+        expect(call.args[1]).to.deep.equal({ props: node.props });
+        done();
+      });
+    });
+
+    it('should make a query to write in a unique node with no props except id', function (done) {
+      var node = {
+        label: 'Instance',
+        props: {
+          id: '1234567890asdf'
+        }
+      };
+      var expectedQuery = [
+        'MERGE (n:Instance {id: {props}.id})',
         'RETURN n'
       ].join('\n');
       graph.writeNode(node, function (err) {

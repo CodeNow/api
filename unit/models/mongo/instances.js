@@ -571,6 +571,12 @@ describe('Instance', function () {
     });
 
     describe('with instances in the graph', function () {
+      var nodeFields = [
+        'id',
+        'lowerName',
+        'owner',
+        'contextVersion'
+      ];
       beforeEach(function (done) {
         async.forEach(
           instances,
@@ -591,26 +597,20 @@ describe('Instance', function () {
       it('should allow us to add first dependency', function (done) {
         var i = instances[0];
         var d = instances[1];
-        var fields = [
-          'id',
-          'lowerName',
-          'owner',
-          'contextVersion'
-        ];
-        var shortD = pick(d.toJSON(), fields);
+        var shortD = pick(d.toJSON(), nodeFields);
         shortD.contextVersion = {
           context: shortD.contextVersion.context.toString()
         };
-        i.addDependency(d, function (err, limitedInstance) {
+        i.addDependency(d, 'somehostname', function (err, limitedInstance) {
           expect(err).to.be.null();
           expect(limitedInstance).to.exist();
-          expect(Object.keys(limitedInstance)).to.contain(fields);
+          expect(Object.keys(limitedInstance)).to.contain(nodeFields);
           expect(limitedInstance).to.deep.equal(shortD);
           i.getDependencies(function (err, deps) {
             expect(err).to.be.null();
             expect(deps).to.be.an.array();
             expect(deps).to.have.length(1);
-            expect(Object.keys(deps[0])).to.contain(fields);
+            expect(Object.keys(deps[0])).to.contain(nodeFields);
             expect(deps[0]).to.deep.equal(shortD);
             done();
           });
@@ -619,7 +619,7 @@ describe('Instance', function () {
 
       describe('with a dependency attached', function () {
         beforeEach(function (done) {
-          instances[0].addDependency(instances[1], done);
+          instances[0].addDependency(instances[1], 'somehostname', done);
         });
 
         it('should allow us to remove the dependency', function (done) {
@@ -639,26 +639,20 @@ describe('Instance', function () {
         it('should be able to add a second dependency', function (done) {
           var i = instances[0];
           var d = instances[2];
-          var fields = [
-            'id',
-            'lowerName',
-            'owner',
-            'contextVersion'
-          ];
-          var shortD = pick(d.toJSON(), fields);
+          var shortD = pick(d.toJSON(), nodeFields);
           shortD.contextVersion = {
             context: shortD.contextVersion.context.toString()
           };
-          i.addDependency(d, function (err, limitedInstance) {
+          i.addDependency(d, 'somehostname', function (err, limitedInstance) {
             expect(err).to.be.null();
             expect(limitedInstance).to.exist();
-            expect(Object.keys(limitedInstance)).to.contain(fields);
+            expect(Object.keys(limitedInstance)).to.contain(nodeFields);
             expect(limitedInstance).to.deep.equal(shortD);
             i.getDependencies(function (err, deps) {
               expect(err).to.be.null();
               expect(deps).to.be.an.array();
               expect(deps).to.have.length(2);
-              expect(Object.keys(deps[1])).to.contain(fields);
+              expect(Object.keys(deps[1])).to.contain(nodeFields);
               expect(deps[1]).to.deep.equal(shortD);
               done();
             });
@@ -668,26 +662,20 @@ describe('Instance', function () {
         it('should be able to chain dependencies', function (done) {
           var i = instances[1];
           var d = instances[2];
-          var fields = [
-            'id',
-            'lowerName',
-            'owner',
-            'contextVersion'
-          ];
-          var shortD = pick(d, fields);
+          var shortD = pick(d, nodeFields);
           shortD.contextVersion = {
             context: shortD.contextVersion.context.toString()
           };
-          i.addDependency(d, function (err, limitedInstance) {
+          i.addDependency(d, 'somehostname', function (err, limitedInstance) {
             expect(err).to.be.null();
             expect(limitedInstance).to.exist();
-            expect(Object.keys(limitedInstance)).to.contain(fields);
+            expect(Object.keys(limitedInstance)).to.contain(nodeFields);
             expect(limitedInstance).to.deep.equal(shortD);
             i.getDependencies(function (err, deps) {
               expect(err).to.be.null();
               expect(deps).to.be.an.array();
               expect(deps).to.have.length(1);
-              expect(Object.keys(deps[0])).to.contain(fields);
+              expect(Object.keys(deps[0])).to.contain(nodeFields);
               expect(deps[0]).to.deep.equal(shortD);
               instances[0].getDependencies(function (err, deps) {
                 expect(err).to.be.null();

@@ -80,7 +80,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
 
   it('should have no dependencies to start', function (done) {
     ctx.webInstance.fetchDependencies(function (err, deps) {
-      expect(err).to.be.not.ok;
+      expect(err).to.be.null();
       expect(deps).to.be.an.array();
       expect(deps).to.have.length(0);
       done();
@@ -101,7 +101,8 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
   describe('from none to 1 -> 1 relations', function () {
     it('should update the deps of an instance', function (done) {
       var body = {
-        instance: ctx.apiInstance.id()
+        instance: ctx.apiInstance.id(),
+        hostname: 'api.' + process.env.USER_CONTENT_DOMAIN
       };
       ctx.webInstance.createDependency(body, function (err, body) {
         if (err) { return done(err); }
@@ -185,7 +186,8 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
       // define web as dependent on api
       require('./fixtures/mocks/github/user')(ctx.user);
       ctx.webInstance.createDependency({
-        instance: ctx.apiInstance.id()
+        instance: ctx.apiInstance.id(),
+        hostname: 'api.' + process.env.USER_CONTENT_DOMAIN
       }, done);
     });
 
@@ -330,6 +332,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
         };
         ctx.apiInstance.update(update, expects.updateSuccess(update, done));
       });
+
       it('should keep the same dependencies, and have updated props on the dep', function (done) {
         ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();
@@ -359,7 +362,10 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
             }, cb);
           },
           function addMongoToWeb (cb) {
-            ctx.webInstance.createDependency({ instance: ctx.mongoInstance.id() }, cb);
+            ctx.webInstance.createDependency({
+              instance: ctx.mongoInstance.id(),
+              hostname: 'mongo.' + process.env.USER_CONTENT_DOMAIN
+            }, cb);
           },
         ], done);
       });
@@ -370,6 +376,20 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           expect(deps).to.be.an.array();
           expect(deps).to.have.length(2);
           expect(deps.map(pluck('lowerName'))).to.contain(['api-instance', 'mongo-instance']);
+          done();
+        });
+      });
+      it('should allow searching by hostname', function (done) {
+        var opts = {
+          qs: {
+            'hostname': 'api.' + process.env.USER_CONTENT_DOMAIN
+          }
+        };
+        ctx.webInstance.fetchDependencies(opts, function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(1);
+          expect(deps[0].lowerName).to.equal('api-instance');
           done();
         });
       });
@@ -404,7 +424,10 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
 
     describe('from a -> b to a -> b -> a (circular) relations', function () {
       beforeEach(function (done) {
-        ctx.apiInstance.createDependency({ instance: ctx.webInstance.id() }, done);
+        ctx.apiInstance.createDependency({
+          instance: ctx.webInstance.id(),
+          hostname: 'web.' + process.env.USER_CONTENT_DOMAIN
+        }, done);
       });
 
       it('should update the deps of an instance', function (done) {
