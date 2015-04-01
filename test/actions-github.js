@@ -44,17 +44,17 @@ before(function (done) {
 describe('Github - /actions/github', function () {
   var ctx = {};
 
+  before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
+  before(dock.start.bind(ctx));
   after(dock.stop.bind(ctx));
-  after(require('./fixtures/mocks/api-client').clean);
+  beforeEach(primus.connect);
   afterEach(primus.disconnect);
+  before(require('./fixtures/mocks/api-client').setup);
+  after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
-  before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
-  before(require('./fixtures/mocks/api-client').setup);
   beforeEach(generateKey);
-  beforeEach(primus.connect);
 
   describe('ping', function () {
     it('should return OKAY', function (done) {
