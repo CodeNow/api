@@ -26,7 +26,6 @@ var exists = require('101/exists');
 var expects = require('./fixtures/expects');
 var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/github-hooks');
-var keypather = require('keypather')();
 var multi = require('./fixtures/multi-factory');
 var nock = require('nock');
 var primus = require('./fixtures/primus');
@@ -461,7 +460,6 @@ describe('Github - /actions/github', function () {
       });
       afterEach(function (done) {
         process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
-        keypather.get(Mixpanel, 'prototype.track.reset()');
         done();
       });
       it('should redeploy two instances with new build', { timeout: 6000 }, function (done) {
@@ -559,6 +557,7 @@ describe('Github - /actions/github', function () {
         var options = hooks(data).push;
         request.post(options, function (err) {
           if (err) { return done(err); }
+          Mixpanel.prototype.track.restore();
           done();
         });
       });
