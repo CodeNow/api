@@ -143,34 +143,6 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  describe('disabled slack private messaging', function () {
-    beforeEach(function (done) {
-      ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
-      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'false';
-      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
-      process.env.ENABLE_GITHUB_HOOKS = 'true';
-      done();
-    });
-
-    afterEach(function (done) {
-      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
-      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
-      done();
-    });
-
-    it('should return OKAY', function (done) {
-      var options = hooks().push_new_branch;
-      request.post(options, function (err, res, body) {
-        if (err) { return done(err); }
-
-        expect(res.statusCode).to.equal(202);
-        expect(body).to.equal('New branch private notifications are disabled for now');
-        done();
-      });
-    });
-  });
-
-
   describe('slack notifications for non-deployed branch', function () {
 
     beforeEach(function (done) {
@@ -296,10 +268,10 @@ describe('Github - /actions/github', function () {
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
-          request.post(options, function (err, res, instancesIds) {
+          request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
-            expect(instancesIds.length).to.equal(0);
+            expect(cvIds.length).to.equal(0);
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
             expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/)))
@@ -338,10 +310,10 @@ describe('Github - /actions/github', function () {
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
-          request.post(options, function (err, res, instancesIds) {
+          request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
-            expect(instancesIds.length).to.equal(0);
+            expect(cvIds.length).to.equal(0);
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
             expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
@@ -350,6 +322,7 @@ describe('Github - /actions/github', function () {
             done();
           });
         });
+
 
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
         function (done) {
@@ -597,6 +570,7 @@ describe('Github - /actions/github', function () {
         });
       });
     });
+
   });
 });
 
