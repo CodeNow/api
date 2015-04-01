@@ -259,7 +259,7 @@ expects.deletedHipacheEntries = function (user, instanceName, container, cb) {
 };
 function toDnsUrl (user, instanceName) {
   var ownerUsername = user.attrs.accounts.github.login;
-  return [instanceName, '.', ownerUsername, '.', process.env.DOMAIN].join('');
+  return [instanceName, '-', ownerUsername, '.', process.env.USER_CONTENT_DOMAIN].join('');
 }
 
 /**
