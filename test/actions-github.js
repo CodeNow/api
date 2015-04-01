@@ -488,7 +488,17 @@ describe('Github - /actions/github', function () {
           ctx.build = build;
           ctx.user = user;
           ctx.instance = instance;
-          done();
+          var settings = {
+            owner: {
+              github: user.attrs.accounts.github.id
+            }
+          };
+          user.createSetting({json: settings}, function (err, body) {
+            if (err) { return done(err); }
+            expect(body._id).to.exist();
+            ctx.settingsId = body._id;
+            done();
+          });
         });
       });
 
@@ -512,7 +522,7 @@ describe('Github - /actions/github', function () {
             cb();
             count.next();
           };
-          var count = cbCount(4, function () {
+          var count = cbCount(5, function () {
             var expected = {
               'contextVersion.build.started': exists,
               'contextVersion.build.completed': exists,
@@ -543,13 +553,22 @@ describe('Github - /actions/github', function () {
             expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             successStub.restore();
+
+            var slackStub = Slack.prototype.notifyOnAutoUpdate;
+            expect(slackStub.calledOnce).to.equal(true);
+            expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
+            slackStub.restore();
+
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err); }
               ctx.instance2.fetch(expects.success(200, expected, done));
             }));
+
+
           });
           sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
+          sinon.stub(Slack.prototype, 'notifyOnAutoUpdate', countOnCallback);
 
 
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
