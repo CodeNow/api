@@ -546,10 +546,9 @@ describe('Github - /actions/github', function () {
         });
       });
       it('should report to mixpanel when a registered user pushes to a repo', function (done) {
-        sinon.stub(Mixpanel.prototype, 'track', function (eventName, eventData, cb) {
+        sinon.stub(Mixpanel.prototype, 'track', function (eventName, eventData) {
           expect(eventName).to.equal('github-push');
           expect(eventData.repoName).to.equal(data.repo);
-          cb(null);
         });
         var data = {
           repo: 'test-repo',
