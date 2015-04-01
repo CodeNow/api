@@ -112,7 +112,7 @@ var resp = {
   nameNotPermittedErr: function (name) {
     var message = 'RRSet with DNS name {name}. is not permitted in zone {domain}.'
       .replace('{name}', name)
-      .replace('{domain}', process.env.DOMAIN);
+      .replace('{domain}', process.env.USER_CONTENT_DOMAIN);
     return this.err(400, message);
   },
   deleteNotFoundErr: function (name, type) {
@@ -160,7 +160,7 @@ var resp = {
  */
 function mockUpsert (resourceRecordSet, cb) {
   debug('mockUpsert', formatArgs(arguments));
-  var domainRe = new RegExp(escapeRegExp(process.env.DOMAIN)+'$');
+  var domainRe = new RegExp(escapeRegExp(process.env.USER_CONTENT_DOMAIN)+'$');
   var name = resourceRecordSet.Name;
   if (!domainRe.test(name)) {
     cb(resp.nameNotPermittedErr(name));

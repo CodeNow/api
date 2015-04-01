@@ -4,28 +4,49 @@ var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
+var beforeEach = lab.beforeEach;
+var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
-
+var keypather = require('keypather')();
 var Hosts = require('models/redis/hosts');
 
 describe('Hosts',  function () {
 
-  describe('parseInstanceNameFromHostname', function() {
+  describe('parseHostname', function () {
+    var ctx = {};
+    beforeEach(function (done) {
+      ctx.hosts = new Hosts();
+      ctx.port = '80/tcp';
+      ctx.instance = {};
+      keypather.set(ctx.instance, 'container.dockerHost', 'http://10.0.0.1:4242');
+      keypather.set(ctx.instance, 'container.ports["80/tcp"][0].HostPort', 49201);
+
+      ctx.instanceName = 'instance-name';
+      ctx.username = 'user-name';
+      ctx.hosts.upsertHostForContainerPort(
+        ctx.port, ctx.username, ctx.instance, ctx.instanceName, done);
+    });
+    afterEach(function (done) {
+      ctx.hosts.removeHostForContainerPort(
+        ctx.port, ctx.username, ctx.instance, ctx.instanceName, done);
+    });
 
     it('should parse a username from a hostname', function (done) {
-      var hostname = 'instance-name-org-name.'+process.env.USER_CONTENT_DOMAIN;
-      var hosts = new Hosts();
-      var username = 'org-name';
-      hosts.parseInstanceNameFromHostname(hostname, username, function (err, instanceName) {
+      var hostname = [
+        ctx.instanceName, '-', ctx.username, '.',
+        process.env.USER_CONTENT_DOMAIN
+      ].join('');
+      ctx.hosts.parseHostname(hostname, function (err, parsed) {
         if (err) { return done(err); }
-        expect(instanceName).to.equal('instance-name');
+        expect(parsed.instanceName).to.equal('instance-name');
+        expect(parsed.username).to.equal('user-name');
         done();
       });
     });
   });
 
-  describe('parseUsernameFromHostname', function() {
+  describe('parseUsernameFromHostname', function () {
 
     it('should parse a username from a hostname', function (done) {
       var hostname = 'instance-name-org-name.'+process.env.USER_CONTENT_DOMAIN;
@@ -37,20 +58,20 @@ describe('Hosts',  function () {
         done();
       });
     });
-    describe('errors', function() {
-      describe('hostname is does not end with user content domain', function() {
+    describe('errors', function () {
+      describe('hostname is does not end with user content domain', function () {
         expectError({
           hostname: 'hello-codenow.otherdomain.com',
           name: 'name'
         });
       });
-      describe('hostname is does not contain a subdomain', function() {
+      describe('hostname is does not contain a subdomain', function () {
         expectError({
           hostname: 'bogus.com',
           name: 'name'
         });
       });
-      describe('hostname is does not contain name', function() {
+      describe('hostname is does not contain name', function () {
         expectError({
           hostname: 'bogus.com',
           name: 'name'
