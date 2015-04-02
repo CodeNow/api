@@ -206,6 +206,21 @@ describe('GET /instances', function () {
       }));
     });
 
+    it('should get instance by network.hostIp', function (done) {
+      require('../../fixtures/mocks/github/user')(ctx.user);
+      require('../../fixtures/mocks/github/users-username')(
+        ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
+      var query = {
+        'network.hostIp': ctx.instance.attrs.network.hostIp
+      };
+      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+        if (err) { return done(err); }
+        expect(body.length).to.equal(1);
+        expect(body[0].shortHash).to.equal(ctx.instance.id());
+        done();
+      }));
+    });
+
     describe('name and owner', function () {
       beforeEach(function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
