@@ -271,7 +271,6 @@ describe('Github - /actions/github', function () {
             owner: user.login
           };
           var options = hooks(data).push;
-          var repoName = acv.repo.split('/')[1];
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
@@ -305,7 +304,6 @@ describe('Github - /actions/github', function () {
             owner: user.login
           };
           var options = hooks(data).push;
-          var repoName = acv.repo.split('/')[1];
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
