@@ -192,6 +192,52 @@ describe('neo4j driver', function () {
       });
     });
 
+    it('should follow steps with edge properties', function (done) {
+      var start = {
+        label: 'Instance',
+        props: {
+          id: '1234567890asdf',
+          lowerName: 'sample-instance',
+          owner_github: 1234
+        }
+      };
+      var steps = [{
+        Out: {
+          edge: {
+            label: 'dependsOn',
+            props: { hostname: 'somehostname' }
+          },
+          node: {
+            label: 'Instance',
+            props: { lowerName: 'somename' }
+          }
+        }
+      }];
+      var expectedQuery = [
+        'MATCH (a:Instance)-[b:dependsOn]->(c:Instance)',
+        'WHERE ' +
+          'a.id={props}.id AND ' +
+          'a.lowerName={props}.lowerName AND ' +
+          'a.owner_github={props}.owner_github AND ' +
+          'b.hostname={bProps}.hostname AND ' +
+          'c.lowerName={cProps}.lowerName',
+        'RETURN a,b,c'
+      ].join('\n');
+      graph.getNodes(start, steps, function (err, data) {
+        expect(err).to.be.null();
+        expect(data).to.be.null(); // because that's what we set the stub to
+        expect(graph._query.calledOnce).to.be.true();
+        var call = graph._query.getCall(0);
+        expect(call.args[0]).to.equal(expectedQuery);
+        expect(call.args[1]).to.deep.equal({
+          props: start.props,
+          bProps: steps[0].Out.edge.props,
+          cProps: steps[0].Out.node.props
+        });
+        done();
+      });
+    });
+
     it('should follow steps with node properties', function (done) {
       var start = {
         label: 'Instance',
