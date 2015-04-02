@@ -211,7 +211,8 @@ describe('GET /instances', function () {
       require('../../fixtures/mocks/github/users-username')(
         ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
       var query = {
-        'network.hostIp': ctx.instance.attrs.network.hostIp
+        'network.hostIp': ctx.instance.attrs.network.hostIp,
+        'owner.github': ctx.user.attrs.accounts.github.id
       };
       ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
         if (err) { return done(err); }
