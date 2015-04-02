@@ -522,6 +522,7 @@ describe('Instance', function () {
         label: 'Instance',
         props: {
           id: instances[0].id.toString(),
+          shortHash: instances[0].shortHash.toString(),
           lowerName: instances[0].lowerName,
           owner_github: instances[0].owner.github,
           contextVersion_context: instances[0].contextVersion.context.toString()
@@ -573,6 +574,7 @@ describe('Instance', function () {
     describe('with instances in the graph', function () {
       var nodeFields = [
         'id',
+        'shortHash',
         'lowerName',
         'owner',
         'contextVersion'
