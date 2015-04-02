@@ -163,6 +163,21 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
     });
 
     describe('to 1 -> 0 relations', function () {
+      it('via dependency, should update the deps of an instance', function (done) {
+        require('./fixtures/mocks/github/user')(ctx.user);
+        var dependencies = ctx.webInstance.fetchDependencies(function (err) {
+          expect(err).to.be.null();
+          dependencies.models[0].destroy(function (err) {
+            expect(err).to.be.null();
+            ctx.webInstance.fetchDependencies(function (err, deps) {
+              expect(err).to.be.null();
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(0);
+              done();
+            });
+          });
+        });
+      });
       it('should update the deps of an instance', function (done) {
         require('./fixtures/mocks/github/user')(ctx.user);
         ctx.webInstance.destroyDependency(ctx.apiInstance.id(), function (err) {
@@ -192,6 +207,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           expect(deps).to.have.length(1);
           expect(deps[0]).to.deep.equal({
             id: ctx.apiInstance.attrs._id.toString(),
+            shortHash: ctx.apiInstance.id().toString(),
             lowerName: 'a-new-and-awesome-name',
             owner: { github: ctx.apiInstance.attrs.owner.github },
             contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
@@ -258,12 +274,14 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
       it('should update the deps of an instance', function (done) {
         var webDeps = [{
           id: ctx.apiInstance.attrs._id.toString(),
+          shortHash: ctx.apiInstance.id().toString(),
           lowerName: ctx.apiInstance.attrs.lowerName,
           owner: { github: ctx.apiInstance.attrs.owner.github },
           contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
         }];
         var apiDeps = [{
           id: ctx.webInstance.attrs._id.toString(),
+          shortHash: ctx.webInstance.id().toString(),
           lowerName: ctx.webInstance.attrs.lowerName,
           owner: { github: ctx.webInstance.attrs.owner.github },
           contextVersion: { context: ctx.webInstance.attrs.contextVersion.context }
