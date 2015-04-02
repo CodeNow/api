@@ -381,9 +381,9 @@ function expectHipacheHostsForContainers (instance, cb) {
         var instanceName = instance.attrs.lowerName;
         var ownerUsername = instance.attrs.owner.username;
         allUrls.push([portNumber, '.',
-          instanceName, '.',
+          instanceName, '-',
           ownerUsername, '.',
-          process.env.DOMAIN].join('').toLowerCase());
+          process.env.USER_CONTENT_DOMAIN].join('').toLowerCase());
       });
     } else {
       fail = true;
