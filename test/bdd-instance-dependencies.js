@@ -104,7 +104,14 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
       ctx.webInstance.createDependency(body, function (err, body) {
         if (err) { return done(err); }
         expect(body).to.be.an.object();
-        expect(Object.keys(body)).to.have.length(5);
+        expect(Object.keys(body)).to.contain([
+          'id',
+          'shortHash',
+          'lowerName',
+          'hostname',
+          'owner',
+          'contextVersion'
+        ]);
         expect(body.id).to.equal(ctx.apiInstance.attrs._id.toString());
         expect(body.lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
         expect(body.owner.github).to.equal(ctx.apiInstance.attrs.owner.github);
@@ -208,6 +215,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           expect(deps[0]).to.deep.equal({
             id: ctx.apiInstance.attrs._id.toString(),
             shortHash: ctx.apiInstance.id().toString(),
+            hostname: 'api.' + process.env.USER_CONTENT_DOMAIN,
             lowerName: 'a-new-and-awesome-name',
             owner: { github: ctx.apiInstance.attrs.owner.github },
             contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
@@ -258,6 +266,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           expect(deps).to.be.an.array();
           expect(deps).to.have.length(1);
           expect(deps[0].lowerName).to.equal('api-instance');
+          expect(deps[0].hostname).to.equal(opts.qs.hostname);
           done();
         });
       });
@@ -275,6 +284,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
         var webDeps = [{
           id: ctx.apiInstance.attrs._id.toString(),
           shortHash: ctx.apiInstance.id().toString(),
+          hostname: 'api.' + process.env.USER_CONTENT_DOMAIN,
           lowerName: ctx.apiInstance.attrs.lowerName,
           owner: { github: ctx.apiInstance.attrs.owner.github },
           contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
@@ -282,6 +292,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
         var apiDeps = [{
           id: ctx.webInstance.attrs._id.toString(),
           shortHash: ctx.webInstance.id().toString(),
+          hostname: 'web.' + process.env.USER_CONTENT_DOMAIN,
           lowerName: ctx.webInstance.attrs.lowerName,
           owner: { github: ctx.webInstance.attrs.owner.github },
           contextVersion: { context: ctx.webInstance.attrs.contextVersion.context }

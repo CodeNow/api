@@ -600,6 +600,7 @@ describe('Instance', function () {
         var i = instances[0];
         var d = instances[1];
         var shortD = pick(d.toJSON(), nodeFields);
+        shortD.hostname = 'somehostname';
         shortD.contextVersion = {
           context: shortD.contextVersion.context.toString()
         };
@@ -645,6 +646,7 @@ describe('Instance', function () {
           shortD.contextVersion = {
             context: shortD.contextVersion.context.toString()
           };
+          shortD.hostname = 'somehostname';
           i.addDependency(d, 'somehostname', function (err, limitedInstance) {
             expect(err).to.be.null();
             expect(limitedInstance).to.exist();
@@ -668,6 +670,7 @@ describe('Instance', function () {
           shortD.contextVersion = {
             context: shortD.contextVersion.context.toString()
           };
+          shortD.hostname = 'somehostname';
           i.addDependency(d, 'somehostname', function (err, limitedInstance) {
             expect(err).to.be.null();
             expect(limitedInstance).to.exist();
