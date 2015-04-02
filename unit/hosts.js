@@ -59,13 +59,13 @@ describe('Hosts',  function () {
       });
     });
     describe('errors', function () {
-      describe('hostname is does not end with user content domain', function () {
+      describe('hostname does not end with user content domain', function () {
         expectError({
           hostname: 'hello-codenow.otherdomain.com',
           name: 'name'
         });
       });
-      describe('hostname is does not contain a subdomain', function () {
+      describe('hostname does not contain a subdomain', function () {
         expectError({
           hostname: 'bogus.com',
           name: 'name'
