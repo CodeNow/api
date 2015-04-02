@@ -408,6 +408,7 @@ describe('neo4j driver', function () {
         'MATCH (a:Instance {id: {startProps}.id}),' +
           '(b:Instance {id: {endProps}.id})',
         'MERGE (a)-[r:dependsOn]->(b)',
+        'ON CREATE SET r.since=\'forever\'',
         'ON MATCH SET r.since=\'forever\'',
         'RETURN a,r,b'
       ].join('\n');
