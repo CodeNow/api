@@ -89,17 +89,17 @@ describe('neo4j driver', function () {
       };
       var steps = [{
         Out: {
-          edge: 'dependsOn',
-          node: 'Instance'
+          edge: { label: 'dependsOn' },
+          node: { label: 'Instance' }
         }
       }];
       var expectedQuery = [
-        'MATCH (a:Instance)-[:dependsOn]->(b:Instance)',
+        'MATCH (a:Instance)-[b:dependsOn]->(c:Instance)',
         'WHERE ' +
           'a.id={props}.id AND ' +
           'a.lowerName={props}.lowerName AND ' +
           'a.owner_github={props}.owner_github',
-        'RETURN a,b'
+        'RETURN a,b,c'
       ].join('\n');
       graph.getNodes(start, steps, function (err, data) {
         expect(err).to.be.null();
@@ -123,24 +123,26 @@ describe('neo4j driver', function () {
       };
       var steps = [{
         Out: {
-          edge: 'dependsOn',
-          node: 'Instance'
+          edge: { label: 'dependsOn' },
+          node: { label: 'Instance' }
         }
       },{
         Out: {
-          edge: 'hasHostname',
-          node: 'Hostname',
-          props: { id: 'somehostname' }
+          edge: { label: 'hasHostname' },
+          node: {
+            label: 'Hostname',
+            props: { id: 'somehostname' }
+          }
         }
       }];
       var expectedQuery = [
-        'MATCH (a:Instance)-[:dependsOn]->(b:Instance)-[:hasHostname]->(c:Hostname)',
+        'MATCH (a:Instance)-[b:dependsOn]->(c:Instance)-[d:hasHostname]->(e:Hostname)',
         'WHERE ' +
           'a.id={props}.id AND ' +
           'a.lowerName={props}.lowerName AND ' +
           'a.owner_github={props}.owner_github AND ' +
-          'c.id={cProps}.id',
-        'RETURN a,b,c'
+          'e.id={eProps}.id',
+        'RETURN a,b,c,d,e'
       ].join('\n');
       graph.getNodes(start, steps, function (err, data) {
         expect(err).to.be.null();
@@ -150,7 +152,7 @@ describe('neo4j driver', function () {
         expect(call.args[0]).to.equal(expectedQuery);
         expect(call.args[1]).to.deep.equal({
           props: start.props,
-          cProps: steps[1].Out.props
+          eProps: steps[1].Out.node.props
         });
         done();
       });
@@ -167,17 +169,17 @@ describe('neo4j driver', function () {
       };
       var steps = [{
         In: {
-          edge: 'dependsOn',
-          node: 'Instance'
+          edge: { label: 'dependsOn' },
+          node: { label: 'Instance' }
         }
       }];
       var expectedQuery = [
-        'MATCH (a:Instance)<-[:dependsOn]-(b:Instance)',
+        'MATCH (a:Instance)<-[b:dependsOn]-(c:Instance)',
         'WHERE ' +
           'a.id={props}.id AND ' +
           'a.lowerName={props}.lowerName AND ' +
           'a.owner_github={props}.owner_github',
-        'RETURN a,b'
+        'RETURN a,b,c'
       ].join('\n');
       graph.getNodes(start, steps, function (err, data) {
         expect(err).to.be.null();
@@ -201,19 +203,21 @@ describe('neo4j driver', function () {
       };
       var steps = [{
         Out: {
-          edge: 'dependsOn',
-          node: 'Instance',
-          props: { lowerName: 'some-name' }
+          edge: { label: 'dependsOn' },
+          node: {
+            label: 'Instance',
+            props: { lowerName: 'some-name' }
+          },
         }
       }];
       var expectedQuery = [
-        'MATCH (a:Instance)-[:dependsOn]->(b:Instance)',
+        'MATCH (a:Instance)-[b:dependsOn]->(c:Instance)',
         'WHERE ' +
           'a.id={props}.id AND ' +
           'a.lowerName={props}.lowerName AND ' +
           'a.owner_github={props}.owner_github AND ' +
-          'b.lowerName={bProps}.lowerName',
-        'RETURN a,b'
+          'c.lowerName={cProps}.lowerName',
+        'RETURN a,b,c'
       ].join('\n');
       graph.getNodes(start, steps, function (err, data) {
         expect(err).to.be.null();
@@ -223,7 +227,7 @@ describe('neo4j driver', function () {
         expect(call.args[0]).to.equal(expectedQuery);
         expect(call.args[1]).to.deep.equal({
           props: start.props,
-          bProps: steps[0].Out.props
+          cProps: steps[0].Out.node.props
         });
         done();
       });
@@ -307,7 +311,9 @@ describe('neo4j driver', function () {
           id: '1234567890asdf'
         }
       };
-      var connectionLabel = 'dependsOn';
+      var connection = {
+        label: 'dependsOn'
+      };
       var endNode = {
         label: 'Instance',
         props: {
@@ -320,7 +326,46 @@ describe('neo4j driver', function () {
         'MERGE (a)-[r:dependsOn]->(b)',
         'RETURN a,r,b'
       ].join('\n');
-      graph.writeConnection(startNode, connectionLabel, endNode, function (err) {
+      graph.writeConnection(startNode, connection, endNode, function (err) {
+        expect(err).to.be.null();
+        expect(graph._query.calledOnce).to.be.true();
+        var call = graph._query.getCall(0);
+        expect(call.args[0]).to.equal(expectedQuery);
+        expect(call.args[1]).to.deep.equal({
+          startProps: startNode.props,
+          endProps: endNode.props
+        });
+        done();
+      });
+    });
+
+    it('should make a query to write a connection with props', function (done) {
+      var startNode = {
+        label: 'Instance',
+        props: {
+          id: '1234567890asdf'
+        }
+      };
+      var connection = {
+        label: 'dependsOn',
+        props: {
+          since: 'forever'
+        }
+      };
+      var endNode = {
+        label: 'Instance',
+        props: {
+          id: 'fdsa0987654321'
+        }
+      };
+      var expectedQuery = [
+        'MATCH (a:Instance {id: {startProps}.id}),' +
+          '(b:Instance {id: {endProps}.id})',
+        'MERGE (a)-[r:dependsOn]->(b)',
+        'ON MERGE SET r.since=\'forever\'',
+        'RETURN a,r,b'
+      ].join('\n');
+      graph.writeConnection(startNode, connection, endNode, function (err) {
         expect(err).to.be.null();
         expect(graph._query.calledOnce).to.be.true();
         var call = graph._query.getCall(0);
