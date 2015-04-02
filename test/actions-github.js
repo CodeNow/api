@@ -2,33 +2,35 @@
 
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
+
+var Code = require('code');
 var after = lab.after;
 var afterEach = lab.afterEach;
-var Code = require('code');
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
 var expect = Code.expect;
+var it = lab.it;
 
-var request = require('request');
 var Boom = require('dat-middleware').Boom;
-var expects = require('./fixtures/expects');
-var exists = require('101/exists');
+var ContextVersion = require('models/mongo/context-version');
+var Mixpanel = require('models/apis/mixpanel');
+var PullRequest = require('models/apis/pullrequest');
+var Runnable = require('models/apis/runnable');
+var Slack = require('notifications/slack');
 var api = require('./fixtures/api-control');
+var cbCount = require('callback-count');
+var dock = require('./fixtures/dock');
+var dockerMockEvents = require('./fixtures/docker-mock-events');
+var exists = require('101/exists');
+var expects = require('./fixtures/expects');
+var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
-var primus = require('./fixtures/primus');
-var dockerMockEvents = require('./fixtures/docker-mock-events');
-var dock = require('./fixtures/dock');
-var ContextVersion = require('models/mongo/context-version');
-var Runnable = require('models/apis/runnable');
-var PullRequest = require('models/apis/pullrequest');
-var Slack = require('notifications/slack');
-var cbCount = require('callback-count');
-var sinon = require('sinon');
 var nock = require('nock');
-var generateKey = require('./fixtures/key-factory');
+var primus = require('./fixtures/primus');
+var request = require('request');
+var sinon = require('sinon');
 
 before(function (done) {
   nock('http://runnable.com:80')
@@ -49,12 +51,11 @@ describe('Github - /actions/github', function () {
   afterEach(primus.disconnect);
   before(require('./fixtures/mocks/api-client').setup);
   after(require('./fixtures/mocks/api-client').clean);
-  beforeEach(generateKey);
-  afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
+  afterEach(require('./fixtures/clean-mongo').removeEverything);
+  beforeEach(generateKey);
 
   describe('ping', function () {
-
     it('should return OKAY', function (done) {
       var options = hooks().ping;
       request.post(options, function (err, res, body) {
@@ -76,7 +77,6 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
-
     it('should send response immediately if hooks are disabled', function (done) {
       var options = hooks().pull_request_sync;
       options.json.ref = 'refs/heads/someotherbranch';
@@ -100,17 +100,14 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = 'true';
       done();
     });
-
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
-
     it('should return OKAY', function (done) {
       var options = hooks().issue_comment;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
-
         expect(res.statusCode).to.equal(202);
         expect(body).to.equal('No action set up for that payload.');
         done();
@@ -124,18 +121,15 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = 'true';
       done();
     });
-
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
-
     it('should return OKAY', function (done) {
       var options = hooks().push;
       options.json.deleted = true;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
-
         expect(res.statusCode).to.equal(202);
         expect(body).to.equal('Deleted the branch; no work to be done.');
         done();
@@ -151,18 +145,15 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = 'true';
       done();
     });
-
     afterEach(function (done) {
       process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
-
     it('should return OKAY', function (done) {
       var options = hooks().push_new_branch;
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
-
         expect(res.statusCode).to.equal(202);
         expect(body).to.equal('New branch private notifications are disabled for now');
         done();
@@ -170,9 +161,7 @@ describe('Github - /actions/github', function () {
     });
   });
 
-
   describe('slack notifications for non-deployed branch', function () {
-
     beforeEach(function (done) {
       ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
       process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'true';
@@ -198,23 +187,17 @@ describe('Github - /actions/github', function () {
             }
           }
         };
-
         ctx.user.createSetting({json: settings}, done);
       });
     });
-
     afterEach(function (done) {
       process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       Slack.prototype.notifyOnNewBranch = ctx.originalNotifyOnNewBranch;
       done();
     });
-
     it('should call Slack#notifyOnNewBranch', {timeout: 6000}, function (done) {
-
       var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-
-
       sinon.stub(Slack.prototype, 'notifyOnNewBranch', function (gitInfo, cb) {
         expect(gitInfo.repo).to.equal(acv.repo);
         expect(gitInfo.user.login).to.equal('podviaznikov');
@@ -223,7 +206,6 @@ describe('Github - /actions/github', function () {
         Slack.prototype.notifyOnNewBranch.restore();
         done();
       });
-
       var data = {
         branch: 'feature-1',
         repo: acv.repo
@@ -238,12 +220,10 @@ describe('Github - /actions/github', function () {
         expect(contextVersionIds).to.have.length(1);
       });
     });
-
   });
 
   describe('push event', function () {
     var ctx = {};
-
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
       process.env.ENABLE_GITHUB_HOOKS = 'true';
@@ -268,20 +248,16 @@ describe('Github - /actions/github', function () {
           done();
         });
       });
-
       it('should set build status to error if error happened build create', {timeout: 6000},
         function (done) {
-
           sinon.stub(Runnable.prototype, 'createBuild', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             cb(Boom.notFound('Build create failed'));
           });
-
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             cb();
           });
-
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var user = ctx.user.attrs.accounts.github;
           var data = {
@@ -292,13 +268,13 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).push;
           var repoName = acv.repo.split('/')[1];
-
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
           request.post(options, function (err, res, instancesIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
+            expect(instancesIds).to.be.an.array();
             expect(instancesIds.length).to.equal(0);
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
@@ -308,22 +284,18 @@ describe('Github - /actions/github', function () {
             Runnable.prototype.createBuild.restore();
             done();
           });
-
-        });
+      });
 
       it('should set build status to error if error happened build build', {timeout: 6000},
         function (done) {
-
           sinon.stub(Runnable.prototype, 'buildBuild', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             cb(Boom.notFound('Build build failed'));
           });
-
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             cb();
           });
-
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var user = ctx.user.attrs.accounts.github;
           var data = {
@@ -334,7 +306,6 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).push;
           var repoName = acv.repo.split('/')[1];
-
           require('./fixtures/mocks/github/users-username')(user.id, user.login);
           require('./fixtures/mocks/github/repos-username-repo-pulls').openPulls(
             user.login, user.id, repoName, 'master');
@@ -349,12 +320,11 @@ describe('Github - /actions/github', function () {
             Runnable.prototype.buildBuild.restore();
             done();
           });
-        });
+      });
 
       it('should set deployment status to error if error happened during instance update', {timeout: 6000},
         function (done) {
           var baseDeploymentId = 100000;
-
           var count = cbCount(2, function () {
             // restore what we stubbed
             expect(PullRequest.prototype.createDeployment.calledOnce).to.equal(true);
@@ -369,16 +339,13 @@ describe('Github - /actions/github', function () {
             expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             errorStub.restore();
-
             Runnable.prototype.updateInstance.restore();
             done();
           });
-
           sinon.stub(Runnable.prototype, 'updateInstance', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             cb(Boom.notFound('Instance update failed'));
           });
-
           sinon.stub(PullRequest.prototype, 'createDeployment', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             cb(null, {id: baseDeploymentId});
@@ -390,7 +357,6 @@ describe('Github - /actions/github', function () {
           };
           sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
           sinon.stub(PullRequest.prototype, 'deploymentErrored', countOnCallback);
-
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
             branch: 'master',
@@ -411,13 +377,11 @@ describe('Github - /actions/github', function () {
             expect(cvsIds).to.be.an.array();
             expect(cvsIds).to.have.length(1);
           });
-        });
-
+      });
 
       it('should set deployment status to error if error happened during instance deployment', {timeout: 6000},
         function (done) {
           var baseDeploymentId = 100000;
-
           var count = cbCount(2, function () {
             // restore what we stubbed
             expect(PullRequest.prototype.createDeployment.calledOnce).to.equal(true);
@@ -432,17 +396,13 @@ describe('Github - /actions/github', function () {
             expect(errorStub.calledWith(sinon.match.any, sinon.match(100000), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             errorStub.restore();
-
             Runnable.prototype.waitForInstanceDeployed.restore();
             done();
           });
-
-
           sinon.stub(Runnable.prototype, 'waitForInstanceDeployed', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             cb(Boom.notFound('Instance deploy failed'));
           });
-
           sinon.stub(PullRequest.prototype, 'createDeployment', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             cb(null, {id: baseDeploymentId});
@@ -454,9 +414,7 @@ describe('Github - /actions/github', function () {
           };
           sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
           sinon.stub(PullRequest.prototype, 'deploymentErrored', countOnCallback);
-
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-
           var data = {
             branch: 'master',
             repo: acv.repo
@@ -476,12 +434,11 @@ describe('Github - /actions/github', function () {
             expect(cvsIds).to.be.an.array();
             expect(cvsIds).to.have.length(1);
           });
-        });
+      });
     });
 
     describe('success cases', function () {
       beforeEach(function (done) {
-
         multi.createInstance(function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
@@ -501,12 +458,10 @@ describe('Github - /actions/github', function () {
           });
         });
       });
-
       afterEach(function (done) {
         process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
         done();
       });
-
       it('should redeploy two instances with new build', { timeout: 6000 }, function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
           if (err) { return done(err); }
@@ -527,6 +482,7 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.started': exists,
               'contextVersion.build.completed': exists,
               'contextVersion.build.duration': exists,
+              'contextVersion.build.network': exists,
               'contextVersion.build.triggeredBy.github': exists,
               'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
               'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
@@ -546,31 +502,24 @@ describe('Github - /actions/github', function () {
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             startStub.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
-
             expect(successStub.calledTwice).to.equal(true);
             expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             successStub.restore();
-
             var slackStub = Slack.prototype.notifyOnAutoUpdate;
             expect(slackStub.calledOnce).to.equal(true);
             expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
             slackStub.restore();
-
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err); }
               ctx.instance2.fetch(expects.success(200, expected, done));
             }));
-
-
           });
           sinon.stub(PullRequest.prototype, 'deploymentStarted', countOnCallback);
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
           sinon.stub(Slack.prototype, 'notifyOnAutoUpdate', countOnCallback);
-
-
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var user = ctx.user.attrs.accounts.github;
           var data = {
@@ -579,7 +528,6 @@ describe('Github - /actions/github', function () {
             ownerId: user.id,
             owner: user.login
           };
-
           var options = hooks(data).push;
           var username = user.login;
           var repoName = acv.repo.split('/')[1];
@@ -594,6 +542,24 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(2);
           });
+        });
+      });
+      it('should report to mixpanel when a registered user pushes to a repo', function (done) {
+        sinon.stub(Mixpanel.prototype, 'track', function (eventName, eventData) {
+          expect(eventName).to.equal('github-push');
+          expect(eventData.repoName).to.equal(data.repo);
+        });
+        var data = {
+          repo: 'test-repo',
+          branch: 'master',
+          ownerId: ctx.user.attrs.accounts.github.id,
+          owner: 'cflynn07'
+        };
+        var options = hooks(data).push;
+        request.post(options, function (err) {
+          if (err) { return done(err); }
+          Mixpanel.prototype.track.restore();
+          done();
         });
       });
     });

@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "0.11.0",
+  "version": "0.13.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -48,6 +48,7 @@
     "keypather": "^1.8.1",
     "middleware-flow": "^0.6.1",
     "middlewarize": "git+ssh://git@github.com:tjmehta/middlewarize#v0.0.1",
+    "mixpanel": "^0.1.0",
     "mongoose": "~3.8.24",
     "mongoose-validator": "^1.0.0",
     "morgan": "^1.1.1",
@@ -68,6 +69,7 @@
     "rollbar": "git://github.com/CodeNow/node_rollbar.git#714104400cd4695e731227edcd17a637a3ea7cf7",
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.38.27",
     "s3-stream-upload": "0.0.6",
+    "sauron-client": "git+ssh://git@github.com:codenow/sauron-client.git#v1.0.1",
     "simple-api-client": "^0.5.9",
     "slack-client": "^1.4.0",
     "strim": "^0.2.2",
@@ -100,7 +102,7 @@
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
     "rimraf": "^2.2.8",
-    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.8",
+    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.13",
     "server-destroy": "^1.0.0",
     "sinon": "^1.14.1",
     "through": "^2.3.6"
@@ -112,7 +114,7 @@
   },
   "scripts": {
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "_bdd": "NODE_PATH=./lib NODE_ENV=test lab --verbose --leaks",
+    "_bdd": "NODE_PATH=./lib NODE_ENV=test lab --verbose --leaks --context-timeout 5000",
     "bdd": "CIRCLE_NODE_TOTAL=1 CIRCLE_NODE_INDEX=0 ./scripts/npm-bdd-split-files.sh",
     "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd-whitelist",
     "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -v -l -m 36000 -e test `cat test/whitelist.txt`",
