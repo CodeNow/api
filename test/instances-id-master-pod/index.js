@@ -15,6 +15,7 @@ var api = require('../fixtures/api-control');
 var dock = require('../fixtures/dock');
 var multi = require('../fixtures/multi-factory');
 var primus = require('../fixtures/primus');
+var expects = require('../fixtures/expects');
 
 describe('Instance - /instances/:id/masterPod', function () {
   var ctx = {};
@@ -31,9 +32,10 @@ describe('Instance - /instances/:id/masterPod', function () {
 
   beforeEach(function (done) {
     ctx.orgId = 1001;
-    multi.createInstance(ctx.orgId, function (err, instance) {
+    multi.createInstance(ctx.orgId, function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.instance = instance;
+      ctx.user = user;
       done();
     });
   });
@@ -54,7 +56,19 @@ describe('Instance - /instances/:id/masterPod', function () {
         ctx.instance.isInMasterPod(function (err, isMaster) {
           expect(err).to.be.null();
           expect(isMaster).to.equal(true);
-          done();
+          // expect NAVI to be the urls
+          expects.updatedHosts(ctx.user, ctx.instance, done);
+        });
+      });
+    });
+
+    it('should exist over fetch', function (done) {
+      ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
+        expect(err).to.be.null();
+        ctx.instance.fetch(function (err, instance) {
+          expect(err).to.be.null();
+          expect(instance.masterPod).to.equal(true);
+          expects.updatedHosts(ctx.user, ctx.instance, done);
         });
       });
     });
@@ -71,10 +85,10 @@ describe('Instance - /instances/:id/masterPod', function () {
         ctx.instance.isInMasterPod(function (err, isMaster) {
           expect(err).to.be.null();
           expect(isMaster).to.equal(false);
-          done();
+          expect(ctx.instance.attrs.masterPod).to.equal(false);
+          expects.updatedHosts(ctx.user, ctx.instance, done);
         });
       });
     });
   });
-
 });
