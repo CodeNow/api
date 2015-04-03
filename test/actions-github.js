@@ -194,7 +194,7 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
-    it('should call Slack#notifyOnNewBranch', {timeout: 16000}, function (done) {
+    it('should call Slack#notifyOnNewBranch', {timeout: 4000}, function (done) {
       var acv = ctx.contextVersion.attrs.appCodeVersions[0];
       sinon.stub(Slack.prototype, 'notifyOnNewBranch', function (gitInfo, cb) {
         expect(gitInfo.repo).to.equal(acv.repo);
