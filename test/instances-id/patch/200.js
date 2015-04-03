@@ -234,7 +234,7 @@ describe('200 PATCH /instances/:id', {timeout:5000}, function () {
   // });
   function createInstanceAndRunTests (ctx) {
     describe('and env.', function() {
-      beforeEach(function (done) {
+      beforeEach({ timeout: 5000 }, function (done) {
         var body = {
           env: ['ENV=OLD'],
           build: ctx.build.id()
