@@ -154,6 +154,7 @@ var url = require('url');
  * @param  {String}         hostIp          expected dns hostIp value
  * @param  {Function}       cb              callback
  */
+// jshint maxcomplexity:8
 expects.updatedHosts = function (userOrUsername, instanceOrName, container, hostIp, cb) {
   var username = userOrUsername;
   if (isObject(userOrUsername)) {
@@ -179,6 +180,7 @@ expects.updatedHosts = function (userOrUsername, instanceOrName, container, host
     expects.updatedHipacheEntries(username, instanceName, container, cb);
   }
 };
+// jshint maxcomplexity:6
 expects.updatedDnsEntry = function (username, instanceName, hostIp) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
