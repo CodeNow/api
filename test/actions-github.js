@@ -254,8 +254,8 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/)))
-              .to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match.string,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             stub.restore();
             Runnable.prototype.createBuild.restore();
             done();
@@ -286,7 +286,8 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match.string,
+              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             stub.restore();
             Runnable.prototype.buildBuild.restore();
             done();
