@@ -249,10 +249,8 @@ describe('Github - /actions/github', function () {
 
       it('should set build status to error if error happened build create', {timeout: 6000},
         function (done) {
-          sinon.stub(Runnable.prototype, 'createBuild', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb(Boom.notFound('Build create failed'));
-          });
+          sinon.stub(Runnable.prototype, 'createBuild')
+            .yields(Boom.notFound('Build create failed'));
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
@@ -283,10 +281,8 @@ describe('Github - /actions/github', function () {
 
       it('should set build status to error if error happened build build',
         function (done) {
-          sinon.stub(Runnable.prototype, 'buildBuild', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb(Boom.notFound('Build build failed'));
-          });
+          sinon.stub(Runnable.prototype, 'buildBuild')
+            .yields(Boom.notFound('Build build failed'));
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
@@ -333,10 +329,8 @@ describe('Github - /actions/github', function () {
             Runnable.prototype.updateInstance.restore();
             done();
           });
-          sinon.stub(Runnable.prototype, 'updateInstance', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            cb(Boom.notFound('Instance deploy failed'));
-          });
+          sinon.stub(Runnable.prototype, 'updateInstance')
+            .yields(Boom.notFound('Instance deploy failed'));
 
           sinon.stub(PullRequest.prototype, 'deploymentErrored', count.inc().next);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
