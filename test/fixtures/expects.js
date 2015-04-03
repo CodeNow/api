@@ -171,7 +171,11 @@ expects.updatedHosts = function (user, instanceOrName, container, hostIp, cb) {
     return;
   }
   expects.updatedDnsEntry(user, instanceName, instance.attrs.network.hostIp);
-  expects.updatedHipacheEntries(user, instanceName, container, cb);
+  if (keypather.get(instance, 'attrs.masterPod')) {
+    expects.updatedNaviHipacheEntries(user, instanceName, container, cb);
+  } else {
+    expects.updatedHipacheEntries(user, instanceName, container, cb);
+  }
 };
 expects.updatedDnsEntry = function (user, instanceName, hostIp) {
   // dns entry
@@ -195,6 +199,28 @@ expects.updatedHipacheEntries = function (user, instanceName, container, cb) {
       Object.keys(container.ports).forEach(function (containerPort) {
         var key = toHipacheEntryKey(containerPort, instanceName, user);
         var val = toHipacheEntryVal(containerPort, container, instanceName);
+        expectedRedisData[key] = val;
+      });
+      expect(redisData).to.deep.equal(expectedRedisData);
+      cb();
+    });
+};
+expects.updatedNaviHipacheEntries = function (user, instanceName, container, cb) {
+  // hipache entries
+  var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
+  var hosts = new Hosts();
+  hosts.readHipacheEntriesForContainer(
+    user.attrs.accounts.github.login,
+    instanceName,
+    container,
+    function (err, redisData) {
+      if (err) { return cb(err); }
+      var expectedRedisData = {};
+      Object.keys(container.ports).forEach(function (containerPort) {
+        var key = toHipacheEntryKey(containerPort, instanceName, user);
+        var val = toHipacheEntryVal(containerPort, container, instanceName);
+        // but we want to go w/ navi
+        val[1] = process.env.NAVI_HOST;
         expectedRedisData[key] = val;
       });
       expect(redisData).to.deep.equal(expectedRedisData);
