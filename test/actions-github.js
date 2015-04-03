@@ -275,7 +275,6 @@ describe('Github - /actions/github', function () {
             finishAllIncompleteVersions();
             expect(instancesIds).to.be.an.array();
             expect(instancesIds.length).to.equal(0);
-
           });
       });
 
@@ -351,7 +350,6 @@ describe('Github - /actions/github', function () {
             expect(cvsIds).to.have.length(1);
           });
       });
-
     });
 
     describe('success cases', function () {

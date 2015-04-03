@@ -86,7 +86,7 @@ Api.prototype.stop = function (cb) {
  */
 Api.prototype.getPrimusSocket = function () {
   return apiServer.socketServer.primus.Socket;
-}
+};
 
 // we are exposing here apiServer as a singletond
 
