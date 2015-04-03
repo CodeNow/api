@@ -57,7 +57,7 @@ describe('Instance - /instances/:id/masterPod', function () {
           expect(err).to.be.null();
           expect(isMaster).to.equal(true);
           // expect NAVI to be the urls
-          expects.updatedHosts(ctx.user, ctx.instance, done);
+          expects.updatedHosts('Runnable', ctx.instance, done);
         });
       });
     });
@@ -68,7 +68,7 @@ describe('Instance - /instances/:id/masterPod', function () {
         ctx.instance.fetch(function (err, instance) {
           expect(err).to.be.null();
           expect(instance.masterPod).to.equal(true);
-          expects.updatedHosts(ctx.user, ctx.instance, done);
+          expects.updatedHosts('Runnable', ctx.instance, done);
         });
       });
     });
@@ -86,7 +86,7 @@ describe('Instance - /instances/:id/masterPod', function () {
           expect(err).to.be.null();
           expect(isMaster).to.equal(false);
           expect(ctx.instance.attrs.masterPod).to.equal(false);
-          expects.updatedHosts(ctx.user, ctx.instance, done);
+          expects.updatedHosts('Runnable', ctx.instance, done);
         });
       });
     });

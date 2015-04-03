@@ -148,56 +148,58 @@ var url = require('url');
 /**
  * assert updated dns and hipache entries
  * NOTE: if instance is provided for instanceOrName args are: (user, instance, cb)
- * @param  {Object}         user            user client model
+ * @param  {String|Object}  userOrUsername  user client model or string owner
  * @param  {String|Object}  instanceOrName  instance client model OR instance name
  * @param  {Object}         container       container client model
  * @param  {String}         hostIp          expected dns hostIp value
  * @param  {Function}       cb              callback
  */
-expects.updatedHosts = function (user, instanceOrName, container, hostIp, cb) {
-  var instanceName, instance;
+expects.updatedHosts = function (userOrUsername, instanceOrName, container, hostIp, cb) {
+  var username = userOrUsername;
+  if (isObject(userOrUsername)) {
+    username = userOrUsername.attrs.accounts.github.username;
+  }
+  var instanceName = instanceOrName;
+  var instance;
   if (isObject(instanceOrName)) { // instanceOrInstanceName
     instance = instanceOrName;
     cb = container;
     instanceName = instance.attrs.name;
     container = instance.containers.models[0];
   }
-  else {
-    instanceName = instanceOrName;
-  }
   container = container && container.toJSON ? container.toJSON() : container;
   if (!container || !container.dockerContainer || !container.ports) {
     process.nextTick(cb);
     return;
   }
-  expects.updatedDnsEntry(user, instanceName, instance.attrs.network.hostIp);
+  expects.updatedDnsEntry(username, instanceName, instance.attrs.network.hostIp);
   if (keypather.get(instance, 'attrs.masterPod')) {
-    expects.updatedNaviHipacheEntries(user, instanceName, container, cb);
+    expects.updatedNaviHipacheEntries(username, instanceName, container, cb);
   } else {
-    expects.updatedHipacheEntries(user, instanceName, container, cb);
+    expects.updatedHipacheEntries(username, instanceName, container, cb);
   }
 };
-expects.updatedDnsEntry = function (user, instanceName, hostIp) {
+expects.updatedDnsEntry = function (username, instanceName, hostIp) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var dnsUrl = toDnsUrl(user, instanceName);
+  var dnsUrl = toDnsUrl(username, instanceName);
   expect(mockRoute53.findRecordIp(dnsUrl), 'dns record')
     .to.equal(hostIp);
 };
-expects.updatedHipacheEntries = function (user, instanceName, container, cb) {
+expects.updatedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
   hosts.readHipacheEntriesForContainer(
-    user.attrs.accounts.github.login,
+    username,
     instanceName,
     container,
     function (err, redisData) {
       if (err) { return cb(err); }
       var expectedRedisData = {};
       Object.keys(container.ports).forEach(function (containerPort) {
-        var key = toHipacheEntryKey(containerPort, instanceName, user);
+        var key = toHipacheEntryKey(containerPort, instanceName, username);
         var val = toHipacheEntryVal(containerPort, container, instanceName);
         expectedRedisData[key] = val;
       });
@@ -205,19 +207,19 @@ expects.updatedHipacheEntries = function (user, instanceName, container, cb) {
       cb();
     });
 };
-expects.updatedNaviHipacheEntries = function (user, instanceName, container, cb) {
+expects.updatedNaviHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
   hosts.readHipacheEntriesForContainer(
-    user.attrs.accounts.github.login,
+    username,
     instanceName,
     container,
     function (err, redisData) {
       if (err) { return cb(err); }
       var expectedRedisData = {};
       Object.keys(container.ports).forEach(function (containerPort) {
-        var key = toHipacheEntryKey(containerPort, instanceName, user);
+        var key = toHipacheEntryKey(containerPort, instanceName, username);
         var val = toHipacheEntryVal(containerPort, container, instanceName);
         // but we want to go w/ navi
         val[1] = process.env.NAVI_HOST;
@@ -231,13 +233,13 @@ expects.updatedNaviHipacheEntries = function (user, instanceName, container, cb)
 /**
  * assert updated dns and hipache entries are non-existant
  * NOTE: if instance is provided for instanceOrName args are: (user, instance, cb)
- * @param  {Object}         user            user client model
+ * @param  {Object}         username        username
  * @param  {String|Object}  instanceOrName  instance client model OR instance name
  * @param  {Object}         container       container client model
  * @param  {String}         hostIp          expected dns hostIp value
  * @param  {Function}       cb              callback
  */
-expects.deletedHosts = function (user, instanceOrName, container, cb) {
+expects.deletedHosts = function (username, instanceOrName, container, cb) {
   var instanceName, instance;
   if (isObject(instanceOrName)) { // instanceOrInstanceName
     instance = instanceOrName;
@@ -253,39 +255,38 @@ expects.deletedHosts = function (user, instanceOrName, container, cb) {
     process.nextTick(cb);
     return;
   }
-  expects.deletedDnsEntry(user, instanceName);
-  expects.deletedHipacheEntries(user, instanceName, container, cb);
+  expects.deletedDnsEntry(username, instanceName);
+  expects.deletedHipacheEntries(username, instanceName, container, cb);
 };
-expects.deletedDnsEntry = function (user, instanceName) {
+expects.deletedDnsEntry = function (username, instanceName) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var dnsUrl = toDnsUrl(user, instanceName);
+  var dnsUrl = toDnsUrl(username, instanceName);
   expect(mockRoute53.findRecordIp(dnsUrl), 'dns record')
     .to.not.be.ok;
 };
-expects.deletedHipacheEntries = function (user, instanceName, container, cb) {
+expects.deletedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
   hosts.readHipacheEntriesForContainer(
-    user.attrs.accounts.github.login,
+    username,
     instanceName,
     container,
     function (err, redisData) {
       if (err) { return cb(err); }
       var expectedRedisData = {};
       Object.keys(container.ports).forEach(function (containerPort) {
-        var key = toHipacheEntryKey(containerPort, instanceName, user);
+        var key = toHipacheEntryKey(containerPort, instanceName, username);
         expectedRedisData[key] = [];
       });
       expect(redisData).to.deep.equal(expectedRedisData);
       cb();
     });
 };
-function toDnsUrl (user, instanceName) {
-  var ownerUsername = user.attrs.accounts.github.login;
-  return [instanceName, '-', ownerUsername, '.', process.env.USER_CONTENT_DOMAIN].join('');
+function toDnsUrl (username, instanceName) {
+  return [instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN].join('');
 }
 
 /**
@@ -308,10 +309,9 @@ expects.deletedContainer = function (container, cb) {
     cb();
   });
 };
-function toHipacheEntryKey (containerPort, instanceName, user) {
+function toHipacheEntryKey (containerPort, instanceName, username) {
   containerPort = containerPort.split('/')[0];
-  var ownerUsername = user.attrs.accounts.github.login;
-  var key = [containerPort, '.', instanceName, '-', ownerUsername, '.', process.env.USER_CONTENT_DOMAIN];
+  var key = [containerPort, '.', instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN];
   return ['frontend:'].concat(key).join('').toLowerCase();
 }
 function toHipacheEntryVal (containerPort, container, instanceName) {
