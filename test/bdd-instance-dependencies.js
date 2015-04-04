@@ -212,14 +212,14 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           expect(err).to.be.null();
           expect(deps).to.be.an.array();
           expect(deps).to.have.length(1);
-          expect(deps[0]).to.deep.equal({
+          expect(deps[0]).to.deep.contain({
             id: ctx.apiInstance.attrs._id.toString(),
             shortHash: ctx.apiInstance.id().toString(),
             hostname: 'api.' + process.env.USER_CONTENT_DOMAIN,
             lowerName: 'a-new-and-awesome-name',
             owner: { github: ctx.apiInstance.attrs.owner.github },
-            contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
           });
+          expect(deps[0].contextVersion).to.deep.contain({ context: ctx.apiInstance.attrs.contextVersion.context });
           done();
         });
       });
@@ -287,7 +287,7 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           hostname: 'api.' + process.env.USER_CONTENT_DOMAIN,
           lowerName: ctx.apiInstance.attrs.lowerName,
           owner: { github: ctx.apiInstance.attrs.owner.github },
-          contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
+          // contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
         }];
         var apiDeps = [{
           id: ctx.webInstance.attrs._id.toString(),
@@ -295,14 +295,16 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
           hostname: 'web.' + process.env.USER_CONTENT_DOMAIN,
           lowerName: ctx.webInstance.attrs.lowerName,
           owner: { github: ctx.webInstance.attrs.owner.github },
-          contextVersion: { context: ctx.webInstance.attrs.contextVersion.context }
+          // contextVersion: { context: ctx.webInstance.attrs.contextVersion.context }
         }];
         ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();
-          expect(deps).to.deep.equal(webDeps);
+          expect(deps).to.have.length(1);
+          expect(deps[0]).to.deep.contain(webDeps[0]);
           ctx.apiInstance.fetchDependencies(function (err, deps) {
             expect(err).to.be.null();
-            expect(deps).to.deep.equal(apiDeps);
+            expect(deps).to.have.length(1);
+            expect(deps[0]).to.deep.contain(apiDeps[0]);
             done();
           });
         });
