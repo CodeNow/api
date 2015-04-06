@@ -225,13 +225,10 @@ describe('Github - /actions/github', function () {
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
       process.env.ENABLE_GITHUB_HOOKS = 'true';
-      ctx.originalStatusesForUnlinked = process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES;
-      process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = 'true';
       done();
     });
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
-      process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalStatusesForUnlinked;
       done();
     });
 
@@ -372,10 +369,6 @@ describe('Github - /actions/github', function () {
             done();
           });
         });
-      });
-      afterEach(function (done) {
-        process.env.ENABLE_GITHUB_PR_CALL_TO_ACTION_STATUSES = ctx.originalGitHubPRCallToAction;
-        done();
       });
 
       it('should redeploy two instances with new build', { timeout: 6000 }, function (done) {
