@@ -57,6 +57,7 @@ Api.prototype.start = function (cb) {
     }
   }
 };
+
 Api.prototype.stop = function (cb) {
   debug('stop');
   cb = cb || error.logIfErr;
@@ -76,6 +77,15 @@ Api.prototype.stop = function (cb) {
     events.close(count.inc().next);
     apiServer.stop(count.inc().next);
   });
+};
+
+/**
+ * Returns PrimusSocket constructor function that can be used for
+ * primus Client instantiation.
+ * @return {Function} - PrimusSocket class
+ */
+Api.prototype.getPrimusSocket = function () {
+  return apiServer.socketServer.primus.Socket;
 };
 
 // we are exposing here apiServer as a singletond
