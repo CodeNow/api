@@ -1558,7 +1558,7 @@ module.exports = function (data) {
         ref: 'refs/heads/' + branch,
         after: '7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
         before: 'd5455d9c4fa4c43b3dfdc88e446bb1ec4903fd90',
-        created: false,
+        created: true,
         deleted: false,
         forced: false,
         compare: 'https://github.com/' + fullRepo + '/compare/d5455d9c4fa4...7caa8452a30d',
