@@ -1,19 +1,28 @@
+/**
+ * @module unit/socket-server
+ */
 'use strict';
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var after = lab.after;
-var Code = require('code');
-var expect = Code.expect;
-
 require('loadenv')();
-var uuid = require('uuid');
-var SocketServer = require('../lib/socket/socket-server.js');
+
+var Code = require('code');
+var Lab = require('lab');
 var Primus = require('primus');
 var http = require('http');
+var sinon = require('sinon');
+var uuid = require('uuid');
+
+var SocketServer = require('socket/socket-server.js');
+var error = require('error');
+
+var lab = exports.lab = Lab.script();
+
+var after = lab.after;
+var before = lab.before;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
+
 var httpServer;
 var primusClient = Primus.createSocket({
   transformer: process.env.PRIMUS_TRANSFORMER,
@@ -22,7 +31,6 @@ var primusClient = Primus.createSocket({
   },
   parser: 'JSON'
 });
-
 
 describe('socket-server', function () {
 
@@ -45,6 +53,38 @@ describe('socket-server', function () {
         return done(err);
       }
       return done();
+    });
+  });
+
+  describe('domains', function () {
+    var socketServer;
+    before(function (done) {
+      httpServer = http.createServer();
+      socketServer = new SocketServer(httpServer);
+      httpServer.listen(process.env.PORT, done);
+    });
+
+    after(function (done) {
+      httpServer.close();
+      done();
+    });
+
+    it('should use domains to handle uncaught exceptions', function (done) {
+      sinon.stub(error, 'socketErrorHandler', function (err) {
+        expect(err.message).to.equal('test error');
+        error.socketErrorHandler.restore();
+        done();
+      });
+      function testHandler () {
+        throw new Error('test error');
+      }
+      socketServer.addHandler('test', testHandler);
+      var client = new primusClient('http://localhost:'+process.env.PORT);
+      client.write({
+        id: 1,
+        event: 'test',
+        data: {foo:'bar'}
+      });
     });
   });
 
