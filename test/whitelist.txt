@@ -4,6 +4,7 @@
 ./test/actions-github.js
 ./test/actions-kill.js
 ./test/actions-redirect.js
+./test/autoforking.js
 ./test/bdd-context-version-deduping.js
 ./test/bdd-deploy-instance.js
 ./test/bdd-instance-dependencies.js
