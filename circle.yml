@@ -1,17 +1,14 @@
 machine:
   environment:
     NODE_ENV: testing
+  services:
+    - neo4j
 dependencies:
   override:
     - nvm install 0.10.28
     - nvm alias default 0.10.28
     - npm install -g npm@2.1.18
     - npm install
-database:
-  post:
-    - ./bin/neo4j console:
-        background: true
-        pwd: test/fixtures/graphs/neo4j
 test:
   pre:
     - ulimit -n 10240

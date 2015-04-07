@@ -39,10 +39,10 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
   // Uncomment if you want to clear the (graph) database every time
   beforeEach({ timeout: 7000 }, function (done) {
     if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
-      var Cypher = require('cypher-stream');
-      var cypher = Cypher('http://localhost:7474');
+      var Graph = require('models/graph/neo4j');
+      var client = new Graph();
       var err;
-      cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
+      client.cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
         .on('error', function (e) { err = e; })
         .on('end', function () { done(err); })
         .on('data', function () {});
