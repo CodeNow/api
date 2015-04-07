@@ -1,5 +1,7 @@
 'use strict';
 
+require('loadenv')();
+
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -107,8 +109,8 @@ describe('Slack', function () {
       expected += '<http://localhost:3031/actions/redirect?';
       expected += 'url=https%3A%2F%2Fgithub.com%2FCodeNow%2Fapi%2Fcompare%2Fa240edf982d4...a240edf982d4|1 more>)';
       expected += ' to podviaznikov/server-1 (feature-1) are deployed on servers:';
-      expected += '\n<https://runnable3.net/podviaznikov/server-1|server-1>';
-      expected += '\n<https://runnable3.net/podviaznikov/server-1-copy|server-1-copy>';
+      expected += '\n<https://runnable3.net/podviaznikov/server-1?ref=slack|server-1>';
+      expected += '\n<https://runnable3.net/podviaznikov/server-1-copy?ref=slack|server-1-copy>';
       expect(text).to.equal(expected);
       done();
     });
@@ -128,7 +130,7 @@ describe('Slack', function () {
       var slack = new Slack({});
       var text = slack._createServerSelectionText('CodeNow', gitInfo);
       var expected = '<https://runnable3.net/CodeNow/serverSelection/undefined?branch=feature-1';
-      expected += '&commit=00000000000&message=first%2520commit|Choose a server> to run feature-1 (api)';
+      expected += '&commit=00000000000&message=first%2520commit&ref=slack|Choose a server> to run feature-1 (api)';
       expect(text).to.equal(expected);
       done();
     });
