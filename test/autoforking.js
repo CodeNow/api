@@ -1,23 +1,27 @@
+/**
+ * @module test/autoforking
+ */
 'use strict';
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
 var Code = require('code');
-var expect = Code.expect;
-var Runnable = require('models/apis/runnable');
+var Lab = require('lab');
 
 var Instance = require('models/mongo/instance');
+var Runnable = require('models/apis/runnable');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 
+var lab = exports.lab = Lab.script();
+
+var after = lab.after;
+var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 describe('Autoforking', function () {
   var ctx = {};
