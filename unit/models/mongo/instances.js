@@ -507,7 +507,7 @@ describe('Instance', function () {
       }
       done();
     });
-    beforeEach(function (done) {
+    beforeEach({ timeout: 5000 }, function (done) {
       // this deletes all the things out of the graph
       var graph = new Graph();
       graph.graph
@@ -657,7 +657,7 @@ describe('Instance', function () {
               expect(deps).to.be.an.array();
               expect(deps).to.have.length(2);
               expect(Object.keys(deps[1])).to.contain(nodeFields);
-              expect(deps[1]).to.deep.equal(shortD);
+              expect(deps).to.deep.contain(shortD);
               done();
             });
           });
