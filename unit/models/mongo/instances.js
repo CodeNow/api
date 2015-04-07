@@ -532,7 +532,7 @@ describe('Instance', function () {
       done();
     });
   
-    it('should be able to put an instance in the graph db', function (done) {
+    it('should be able to put an instance in the graph db', { timeout: 5000 }, function (done) {
       var i = instances[0];
       i.upsertIntoGraph(function (err) {
         expect(err).to.be.null();
@@ -544,7 +544,7 @@ describe('Instance', function () {
       });
     });
 
-    it('should upsert, not created duplicate', function (done) {
+    it('should upsert, not created duplicate', { timeout: 5000 }, function (done) {
       var graph = new Graph();
       var i = instances[0];
       i.upsertIntoGraph(function (err) {
