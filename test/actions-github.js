@@ -374,7 +374,7 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it('should send 202 and message if autofirking disabled', { timeout: 6000 }, function (done) {
+      it('should send 202 and message if autoforking disabled', { timeout: 6000 }, function (done) {
         var acv = ctx.contextVersion.attrs.appCodeVersions[0];
         var user = ctx.user.attrs.accounts.github;
         var data = {
