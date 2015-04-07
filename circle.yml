@@ -9,6 +9,10 @@ dependencies:
     - nvm alias default 0.10.28
     - npm install -g npm@2.1.18
     - npm install
+database:
+  post:
+    - "curl localhost:7474/user/neo4j/password -H 'authorization: basic bmVvNGo6bmVvNGo=' -X POST -H 'content-type: application/json' -d '{\"password\":\"password\"}'"
+    - "curl localhost:7474/db/data/ -H 'authorization: basic bmVvNGo6cGFzc3dvcmQ='"
 test:
   pre:
     - ulimit -n 10240
