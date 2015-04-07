@@ -416,7 +416,7 @@ describe('Github - /actions/github', function () {
           var countOnCallback = function () {
             count.next();
           };
-          var count = cbCount(2, function () {
+          var count = cbCount(3, function () {
             // restore what we stubbed
             expect(PullRequest.prototype.createAndStartDeployment.calledOnce).to.equal(true);
             PullRequest.prototype.createAndStartDeployment.restore();
@@ -453,6 +453,7 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.be.okay;
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
+            countOnCallback();
           });
         });
       });
