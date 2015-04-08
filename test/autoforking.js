@@ -150,7 +150,7 @@ describe('Autoforking', function () {
             ];
             expect(names).to.only.include([forks[0].name, forks[1].name]);
             done();
-          })
+          });
         });
       });
     });
