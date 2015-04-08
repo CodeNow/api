@@ -21,15 +21,8 @@ var mongooseControl = require('models/mongo/mongoose-control');
 // express server, handles web HTTP requests
 var apiServer = new ApiServer();
 
-// we are exposing here apiServer as a singletond
-var api = module.exports = new Api();
-
 if (process.env.NEWRELIC_KEY) {
   require('newrelic');
-}
-
-if (!module.parent) { // npm start
-  api.start();
 }
 
 /**
@@ -119,6 +112,13 @@ Api.prototype.stop = function (cb) {
 Api.prototype.getPrimusSocket = function () {
   return apiServer.socketServer.primus.Socket;
 };
+
+// we are exposing here apiServer as a singletond
+var api = module.exports = new Api();
+
+if (!module.parent) { // npm start
+  api.start();
+}
 
 // should not occur in practice, using domains to catch errors
 process.on('uncaughtException', function(err) {
