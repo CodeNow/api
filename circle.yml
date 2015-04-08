@@ -1,18 +1,17 @@
 machine:
   environment:
     NODE_ENV: testing
-  services:
-    - neo4j
 dependencies:
+  cache_directories:
+    - neo4j-community-2.1.8
+  pre:
+    - if [[ ! -e neo4j-community-2.1.8 ]]; then wget http://neo4j.com/artifact.php?name=neo4j-community-2.1.8-unix.tar.gz -O neo4j-community-2.1.8-unix.tar.gz && tar -xzvf neo4j-community-2.1.8-unix.tar.gz; fi
+    - neo4j-community-2.1.8/bin/neo4j start: {background: true}
   override:
     - nvm install 0.10.28
     - nvm alias default 0.10.28
     - npm install -g npm@2.1.18
     - npm install
-database:
-  post:
-    - "curl localhost:7474/user/neo4j/password -H 'authorization: basic bmVvNGo6bmVvNGo=' -X POST -H 'content-type: application/json' -d '{\"password\":\"password\"}'"
-    - "curl localhost:7474/db/data/ -H 'authorization: basic bmVvNGo6cGFzc3dvcmQ='"
 test:
   pre:
     - ulimit -n 10240
