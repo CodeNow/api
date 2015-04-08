@@ -25,16 +25,19 @@ describe('GitHub Actions', function () {
       });
     });
 
-    it('should return error if req.body.head_commit not found', function (done) {
+    it('should parse headCommit as {} if req.body.head_commit is null', function (done) {
       var req = {
         body: {
-          repository: 'podviaznikov/hellonode'
+          repository: 'podviaznikov/hellonode',
+          ref: 'refs/heads/feature-1'
         }
       };
       var res = {};
       githubActions.parseGitHubPushData(req, res, function (err) {
-        expect(err.output.statusCode).to.equal(400);
-        expect(err.output.payload.message).to.equal('Unexpected commit hook format. Head commit is required');
+        if (err) { return done(err); }
+        expect(req.githubPushInfo.branch).to.equal('feature-1');
+        expect(req.githubPushInfo.commitLog.length).to.equal(0);
+        expect(Object.keys(req.githubPushInfo.headCommit).length).to.equal(0);
         done();
       });
     });
