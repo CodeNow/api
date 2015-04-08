@@ -140,7 +140,17 @@ describe('Autoforking', function () {
           expect(instance.name).to.be.equal(ctx.instance.attrs.name + '-feat-1-copy');
           expect(instance.parent).to.be.equal(ctx.instance.attrs.shortHash);
           expect(instance.createdBy.github).to.be.equal(ctx.user.attrs.accounts.github.id);
-          done();
+          var repo = ctx.instance.attrs.contextVersion.appCodeVersions[0].repo;
+          Instance.findForkedInstances(repo, function (err, forks) {
+            expect(err).to.be.null();
+            expect(forks.length).to.equal(2);
+            var names = [
+              ctx.instance.attrs.name + '-feat-1',
+              ctx.instance.attrs.name + '-feat-1-copy'
+            ];
+            expect(names).to.only.include([forks[0].name, forks[1].name]);
+            done();
+          })
         });
       });
     });
