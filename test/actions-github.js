@@ -394,6 +394,7 @@ describe('Github - /actions/github', function () {
           done();
         });
       });
+
       describe('enabled autoforking', function () {
         beforeEach(function (done) {
           ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH;
@@ -456,7 +457,90 @@ describe('Github - /actions/github', function () {
             countOnCallback();
           });
         });
-      });
+
+        describe('fork 2 instances', function () {
+          beforeEach(function (done) {
+            multi.createInstance(function (err, instance, build, user, modelsArr) {
+              ctx.contextVersion = modelsArr[0];
+              ctx.context = modelsArr[1];
+              ctx.build = build;
+              ctx.user = user;
+              ctx.instance = instance;
+              var settings = {
+                owner: {
+                  github: user.attrs.accounts.github.id
+                }
+              };
+              user.createSetting({json: settings}, function (err, body) {
+                if (err) { return done(err); }
+                expect(body._id).to.exist();
+                ctx.settingsId = body._id;
+                ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
+                  expect(err).to.be.null();
+                  ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
+                    expect(err).to.be.null();
+                    ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({ masterPod: true }, function (err) {
+                      expect(err).to.be.null();
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+          });
+
+          it('should fork 2 instance from 2 master instances', { timeout: 6000 }, function (done) {
+            var baseDeploymentId = 1234567;
+            sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
+              var cb = Array.prototype.slice.apply(arguments).pop();
+              baseDeploymentId++;
+              var newDeploymentId = baseDeploymentId;
+              cb(null, {id: newDeploymentId});
+            });
+            var countOnCallback = function () {
+              count.next();
+            };
+            var count = cbCount(4, function () {
+              // restore what we stubbed
+              expect(PullRequest.prototype.createAndStartDeployment.calledTwice).to.equal(true);
+              PullRequest.prototype.createAndStartDeployment.restore();
+              var successStub = PullRequest.prototype.deploymentSucceeded;
+              expect(successStub.calledTwice).to.equal(true);
+              expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
+                sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+              successStub.restore();
+              var slackStub = Slack.prototype.notifyOnAutoFork;
+              expect(slackStub.calledTwice).to.equal(true);
+              expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
+              slackStub.restore();
+              done();
+            });
+            sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
+            sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
+            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+            var user = ctx.user.attrs.accounts.github;
+            var data = {
+              branch: 'feature-1',
+              repo: acv.repo,
+              ownerId: user.id,
+              owner: user.login
+            };
+            var options = hooks(data).push;
+            var username = user.login;
+            require('./fixtures/mocks/github/users-username')(101, username);
+            request.post(options, function (err, res, cvIds) {
+              if (err) { return done(err); }
+              finishAllIncompleteVersions();
+              expect(res.statusCode).to.equal(200);
+              expect(cvIds).to.be.okay;
+              expect(cvIds).to.be.an.array();
+              expect(cvIds).to.have.length(2);
+            });
+          });
+
+        });
+
+       });
     });
 
     describe('autodeploy', function () {
