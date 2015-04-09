@@ -8,7 +8,6 @@ var after = lab.after;
 var afterEach = lab.afterEach;
 
 var api = require('./fixtures/api-control');
-
 var Primus = require('primus');
 var Socket = Primus.createSocket({
   transformer: process.env.PRIMUS_TRANSFORMER,
@@ -29,8 +28,8 @@ describe('Socket Server', { timeout: 5000 }, function () {
   beforeEach(function(done) {
     ctx.server = http.createServer();
     filibuster({
-        httpServer: ctx.server
-      });
+      httpServer: ctx.server
+    });
     ctx.server.listen(process.env.FILIBUSTER_PORT, done);
   });
 
@@ -61,10 +60,10 @@ describe('Socket Server', { timeout: 5000 }, function () {
           eventStreamId: 'eventStream'
         }
       });
-      done();
+      primus.once('open', done);
     });
     var check = function(errMsg, done) {
-      primus.on('end', function () {
+      primus.once('end', function () {
         if (pass) {
           return done();
         }
@@ -113,10 +112,10 @@ describe('Socket Server', { timeout: 5000 }, function () {
     beforeEach(function (done) {
       pass = false;
       primus = new Socket('http://localhost:'+process.env.PORT);
-      done();
+      primus.once('open', done);
     });
     afterEach(function (done) {
-      primus.on('end', done);
+      primus.once('end', done);
       primus.end();
     });
     requiredParams.forEach(function(param, i) {
