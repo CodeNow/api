@@ -278,7 +278,7 @@ describe('GET /instances', function () {
         expect(body.length).to.equal(1);
         expect(body[0].shortHash).to.equal(ctx.instance.id());
         done();
-      });
+      }));
     });
 
     describe('name and owner', function () {
