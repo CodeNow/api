@@ -1,27 +1,32 @@
+/**
+ * @module test/builds-id-actions-build/post/201
+ */
 'use strict';
 
+var Code = require('code');
 var Lab = require('lab');
+var createCount = require('callback-count');
+var exists = require('101/exists');
+var extend = require('extend');
+var not = require('101/not');
+var uuid = require('uuid');
+
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
+
 var after = lab.after;
 var afterEach = lab.afterEach;
-var Code = require('code');
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
 var expect = Code.expect;
+var it = lab.it;
 
+var Docker = require('models/apis/docker');
 var api = require('./../../fixtures/api-control');
 var dock = require('./../../fixtures/dock');
-var multi = require('./../../fixtures/multi-factory');
-var expects = require('./../../fixtures/expects');
-var createCount = require('callback-count');
-var uuid = require('uuid');
-var exists = require('101/exists');
-var not = require('101/not');
-var extend = require('extend');
-var Docker = require('models/apis/docker');
 var dockerMockEvents = require('./../../fixtures/docker-mock-events');
+var expects = require('./../../fixtures/expects');
+var multi = require('./../../fixtures/multi-factory');
 var primus = require('./../../fixtures/primus');
 
 describe('201 POST /builds/:id/actions/build', {timeout: 500}, function() {
