@@ -141,7 +141,8 @@ describe('Autoforking', function () {
           expect(instance.parent).to.be.equal(ctx.instance.attrs.shortHash);
           expect(instance.createdBy.github).to.be.equal(ctx.user.attrs.accounts.github.id);
           var repo = ctx.instance.attrs.contextVersion.appCodeVersions[0].repo;
-          Instance.findForkedInstances(repo, function (err, forks) {
+          var branch = ctx.instance.attrs.contextVersion.appCodeVersions[0].branch;
+          Instance.findForkedInstances(repo, branch, function (err, forks) {
             expect(err).to.be.null();
             expect(forks.length).to.equal(2);
             var names = [
