@@ -115,6 +115,30 @@ describe('Github - /actions/github', function () {
     });
   });
 
+
+  describe('created tag', function () {
+    beforeEach(function (done) {
+      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
+      process.env.ENABLE_GITHUB_HOOKS = 'true';
+      done();
+    });
+    afterEach(function (done) {
+      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+      done();
+    });
+    it('should return message that we cannot handle tags events', function (done) {
+      var options = hooks().push;
+      options.json.ref = 'refs/tags/v1';
+      request.post(options, function (err, res, body) {
+        if (err) { return done(err); }
+        expect(res.statusCode).to.equal(202);
+        expect(body).to.equal('Cannot handle tags\' related events');
+        done();
+      });
+    });
+  });
+
+
   describe('disabled slack private messaging', function () {
     beforeEach(function (done) {
       ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
