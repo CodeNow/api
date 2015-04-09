@@ -207,6 +207,26 @@ describe('GET /instances', function () {
           done();
         }));
       });
+
+      it('should get instance by masterPod', function (done) {
+        require('../../fixtures/mocks/github/user')(ctx.user);
+        require('../../fixtures/mocks/github/users-username')(
+          ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
+        var hostname = [
+          ctx.instance.attrs.name, '-', ctx.user.attrs.accounts.github.username, '.',
+          process.env.USER_CONTENT_DOMAIN
+        ].join('');
+        var query = {
+          masterPod: true,
+          hostname: hostname
+        };
+        ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+          if (err) { return done(err); }
+          expect(body.length).to.equal(1);
+          expect(body[0].shortHash).to.equal(ctx.instance.id());
+          done();
+        }));
+      });
     });
 
     it('should get instance by hostname', function (done) {
