@@ -549,8 +549,8 @@ describe('Github - /actions/github', function () {
               options.json.deleted = true;
               request.post(options, function (err, res, body) {
                 if (err) { return done(err); }
-                expect(res.statusCode).to.equal(201);
-                expect(body.length).to.equal(0);
+                expect(res.statusCode).to.equal(202);
+                expect(body).to.equal('No appropriate work to be done; finishing.');
                 done();
               });
             });
