@@ -1,40 +1,61 @@
+/**
+ * Index file of API, program begins here
+ * @module app
+ */
 'use strict';
+
 require('loadenv')();
-var error = require('error');
-var ApiServer = require('server');
-var apiServer = new ApiServer();
-var keyGen = require('key-generator');
-var events = require('models/events');
-var debug = require('debug')('runnable-api');
-var createCount = require('callback-count');
 var Boom = require('dat-middleware').Boom;
-var activeApi = require('models/redis/active-api');
-var mongooseControl = require('models/mongo/mongoose-control');
+var createCount = require('callback-count');
+var debug = require('debug')('runnable-api');
 var envIs = require('101/env-is');
+
+var ApiServer = require('server');
+var activeApi = require('models/redis/active-api');
 var dogstatsd = require('models/datadog');
+var error = require('error');
+var events = require('models/events');
+var keyGen = require('key-generator');
+var mongooseControl = require('models/mongo/mongoose-control');
+
+// express server, handles web HTTP requests
+var apiServer = new ApiServer();
 
 if (process.env.NEWRELIC_KEY) {
   require('newrelic');
 }
 
+/**
+ * @class
+ */
 function Api () {}
 
+/**
+ * - Listen to incoming HTTP requests
+ * - Initialize datadog system monitoring
+ * - Set self as "active api"
+ * - Listen to all events (docker events from docks)
+ * - Generate GitHub ssh keys
+ * @param {Function} cb
+ */
 Api.prototype.start = function (cb) {
+  var count = createCount(callback);
   debug('start');
   // start github ssh key generator
   keyGen.start();
   // start sending socket count
   dogstatsd.monitorStart();
-
-  var count = createCount(callback);
   // connect to mongoose
   mongooseControl.start(count.inc.next);
+
   // start listening to events
   count.inc();
   activeApi.setAsMe(function (err) {
     if (err) { return count.next(err); }
-    events.listen(count.next);
+    events.listen();
+    count.next();
   });
+
   // express server start
   apiServer.start(count.inc().next);
   // all started callback
@@ -58,6 +79,10 @@ Api.prototype.start = function (cb) {
   }
 };
 
+/**
+ * Stop listening to requests and drain all current requests gracefully
+ * @param {Function} cb
+ */
 Api.prototype.stop = function (cb) {
   debug('stop');
   cb = cb || error.logIfErr;
@@ -89,13 +114,13 @@ Api.prototype.getPrimusSocket = function () {
 };
 
 // we are exposing here apiServer as a singletond
-
 var api = module.exports = new Api();
 
 if (!module.parent) { // npm start
   api.start();
 }
 
+// should not occur in practice, using domains to catch errors
 process.on('uncaughtException', function(err) {
   debug('stopping app due too uncaughtException:',err);
   error.log(err);
