@@ -89,8 +89,11 @@ describe('Autoforking', function () {
             Instance.findMasterInstances(repo, function (err, instances) {
               expect(err).to.be.null();
               expect(instances.length).to.equal(2);
-              expect(instances[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
-              expect(instances[1].shortHash).to.equal(copiedInstance.shortHash);
+              var arr = [
+                instances[0].shortHash,
+                instances[1].shortHash
+              ];
+              expect(arr).to.only.contain([ctx.instance.attrs.shortHash, copiedInstance.shortHash]);
               done();
             });
           });
