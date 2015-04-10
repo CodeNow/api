@@ -2,19 +2,16 @@ machine:
   environment:
     NODE_ENV: testing
 dependencies:
+  cache_directories:
+    - neo4j-community-2.1.8
+  pre:
+    - if [[ ! -e neo4j-community-2.1.8 ]]; then wget http://neo4j.com/artifact.php?name=neo4j-community-2.1.8-unix.tar.gz -O neo4j-community-2.1.8-unix.tar.gz && tar -xzvf neo4j-community-2.1.8-unix.tar.gz; fi
+    - neo4j-community-2.1.8/bin/neo4j start: {background: true}
   override:
     - nvm install 0.10.28
     - nvm alias default 0.10.28
     - npm install -g npm@2.1.18
     - npm install
-database:
-  post:
-    - ./bin/neo4j console:
-        background: true
-        pwd: test/fixtures/graphs/neo4j
-    - "./cayley_linux http --host=0.0.0.0 --config=cayley.cfg":
-        background: true
-        pwd: test/fixtures/graphs/cayley
 test:
   pre:
     - ulimit -n 10240
@@ -23,6 +20,3 @@ test:
     - npm run unit
     - ./scripts/npm-bdd-split-files.sh:
         parallel: true
-    - npm run bdd -- test/bdd-instance-dependencies.js:
-        environment:
-          GRAPH_DATABASE_TYPE: neo4j

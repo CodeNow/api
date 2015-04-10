@@ -15,8 +15,10 @@ var validation = require('../../fixtures/validation')(lab);
 var Hashids = require('hashids');
 var async = require('async');
 var mongoose = require('mongoose');
+var pick = require('101/pick');
 var createCount = require('callback-count');
 var error = require('error');
+var Graph = require('models/apis/graph');
 
 var Instance = require('models/mongo/instance');
 var dock = require('../../../test/fixtures/dock');
@@ -107,11 +109,11 @@ describe('Instance', function () {
     var instance = createNewInstance('hello');
     instance.save(function (err, instance) {
       if (err) { return done(err); }
-      expect(instance).to.be.okay;
+      expect(instance).to.exist();
       var newInstance = createNewInstance('Hello');
       newInstance.save(function (err, instance) {
         expect(instance).to.not.be.okay;
-        expect(err).to.be.okay;
+        expect(err).to.exist();
         expect(err.code).to.equal(11000);
         done();
       });
@@ -125,7 +127,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -167,7 +169,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -229,7 +231,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -282,7 +284,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -342,7 +344,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -402,7 +404,7 @@ describe('Instance', function () {
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -430,7 +432,7 @@ describe('Instance', function () {
       var instance = createNewInstance('instance1');
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance1 = instance;
         done();
       });
@@ -439,7 +441,7 @@ describe('Instance', function () {
       var instance = createNewInstance('instance2', {locked: false});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance2 = instance;
         done();
       });
@@ -448,7 +450,7 @@ describe('Instance', function () {
       var instance = createNewInstance('instance3', {locked: true, repo: 'podviaznikov/hello'});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance3 = instance;
         done();
       });
@@ -480,7 +482,7 @@ describe('Instance', function () {
       var instance = createNewInstance('instance-name', {locked: true, repo: 'podviaznikov/hello'});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
-        expect(instance).to.be.okay;
+        expect(instance).to.exist();
         savedInstance = instance;
         done();
       });
@@ -492,6 +494,203 @@ describe('Instance', function () {
         expect(cvs.length).to.equal(1);
         expect(cvs[0].toString()).to.equal(savedInstance.contextVersion._id.toString());
         done();
+      });
+    });
+  });
+
+  describe('dependencies', function () {
+    var instances = [];
+    beforeEach(function (done) {
+      var names = ['A', 'B', 'C'];
+      while (instances.length < names.length) {
+        instances.push(createNewInstance(names[instances.length]));
+      }
+      done();
+    });
+    beforeEach({ timeout: 5000 }, function (done) {
+      // this deletes all the things out of the graph
+      var graph = new Graph();
+      graph.graph
+        .cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
+        .on('end', done)
+        .resume();
+    });
+
+    it('should be able to generate a graph node data structure', function (done) {
+      var generated = instances[0].generateGraphNode();
+      var expected = {
+        label: 'Instance',
+        props: {
+          id: instances[0].id.toString(),
+          shortHash: instances[0].shortHash.toString(),
+          lowerName: instances[0].lowerName,
+          owner_github: instances[0].owner.github,
+          contextVersion_context: instances[0].contextVersion.context.toString()
+        }
+      };
+      expect(generated).to.deep.equal(expected);
+      done();
+    });
+  
+    it('should be able to put an instance in the graph db', { timeout: 5000 }, function (done) {
+      var i = instances[0];
+      i.upsertIntoGraph(function (err) {
+        expect(err).to.be.null();
+        i.getSelfFromGraph(function (err, selfNode) {
+          expect(err).to.be.null();
+          expect(selfNode.id).to.equal(i.id.toString());
+          done();
+        });
+      });
+    });
+
+    it('should upsert, not created duplicate', { timeout: 5000 }, function (done) {
+      var graph = new Graph();
+      var i = instances[0];
+      i.upsertIntoGraph(function (err) {
+        expect(err).to.be.null();
+        i.lowerName = 'new-' + i.lowerName;
+        i.upsertIntoGraph(function (err) {
+          expect(err).to.be.null();
+          // have to manually check the db
+          var nodes = {};
+          graph.graph
+            .cypher('MATCH (n:Instance) RETURN n')
+            .on('data', function (d) {
+              if (!nodes[d.n.id]) { nodes[d.n.id] = d.n; }
+              else { err = new Error('duplicate node ' + d.n.id); }
+            })
+            .on('end', function () {
+              expect(err).to.be.null();
+              expect(Object.keys(nodes)).to.have.length(1);
+              expect(nodes[i.id.toString()].lowerName).to.equal('new-a');
+              done();
+            })
+            .on('error', done);
+        });
+      });
+    });
+
+    describe('with instances in the graph', function () {
+      var nodeFields = [
+        'id',
+        'shortHash',
+        'lowerName',
+        'owner',
+        'contextVersion'
+      ];
+      beforeEach(function (done) {
+        async.forEach(
+          instances,
+          function (i, cb) { i.upsertIntoGraph(cb); },
+          done);
+      });
+
+      it('should give us no dependencies when none are defined', function (done) {
+        var i = instances[0];
+        i.getDependencies(function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(0);
+          done();
+        });
+      });
+
+      it('should allow us to add first dependency', function (done) {
+        var i = instances[0];
+        var d = instances[1];
+        var shortD = pick(d.toJSON(), nodeFields);
+        shortD.hostname = 'somehostname';
+        shortD.contextVersion = {
+          context: shortD.contextVersion.context.toString()
+        };
+        i.addDependency(d, 'somehostname', function (err, limitedInstance) {
+          expect(err).to.be.null();
+          expect(limitedInstance).to.exist();
+          expect(Object.keys(limitedInstance)).to.contain(nodeFields);
+          expect(limitedInstance).to.deep.equal(shortD);
+          i.getDependencies(function (err, deps) {
+            expect(err).to.be.null();
+            expect(deps).to.be.an.array();
+            expect(deps).to.have.length(1);
+            expect(Object.keys(deps[0])).to.contain(nodeFields);
+            expect(deps[0]).to.deep.equal(shortD);
+            done();
+          });
+        });
+      });
+
+      describe('with a dependency attached', function () {
+        beforeEach(function (done) {
+          instances[0].addDependency(instances[1], 'somehostname', done);
+        });
+
+        it('should allow us to remove the dependency', function (done) {
+          var i = instances[0];
+          var d = instances[1];
+          i.removeDependency(d, function (err) {
+            expect(err).to.be.null();
+            i.getDependencies(function (err, deps) {
+              expect(err).to.be.null();
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(0);
+              done();
+            });
+          });
+        });
+
+        it('should be able to add a second dependency', function (done) {
+          var i = instances[0];
+          var d = instances[2];
+          var shortD = pick(d.toJSON(), nodeFields);
+          shortD.contextVersion = {
+            context: shortD.contextVersion.context.toString()
+          };
+          shortD.hostname = 'somehostname';
+          i.addDependency(d, 'somehostname', function (err, limitedInstance) {
+            expect(err).to.be.null();
+            expect(limitedInstance).to.exist();
+            expect(Object.keys(limitedInstance)).to.contain(nodeFields);
+            expect(limitedInstance).to.deep.equal(shortD);
+            i.getDependencies(function (err, deps) {
+              expect(err).to.be.null();
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(2);
+              expect(Object.keys(deps[1])).to.contain(nodeFields);
+              expect(deps).to.deep.contain(shortD);
+              done();
+            });
+          });
+        });
+
+        it('should be able to chain dependencies', function (done) {
+          var i = instances[1];
+          var d = instances[2];
+          var shortD = pick(d, nodeFields);
+          shortD.contextVersion = {
+            context: shortD.contextVersion.context.toString()
+          };
+          shortD.hostname = 'somehostname';
+          i.addDependency(d, 'somehostname', function (err, limitedInstance) {
+            expect(err).to.be.null();
+            expect(limitedInstance).to.exist();
+            expect(Object.keys(limitedInstance)).to.contain(nodeFields);
+            expect(limitedInstance).to.deep.equal(shortD);
+            i.getDependencies(function (err, deps) {
+              expect(err).to.be.null();
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(1);
+              expect(Object.keys(deps[0])).to.contain(nodeFields);
+              expect(deps[0]).to.deep.equal(shortD);
+              instances[0].getDependencies(function (err, deps) {
+                expect(err).to.be.null();
+                expect(deps).to.be.an.array();
+                expect(deps).to.have.length(1);
+                done();
+              });
+            });
+          });
+        });
       });
     });
   });

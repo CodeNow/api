@@ -248,6 +248,21 @@ describe('GET /instances', function () {
       }));
     });
 
+    it('should return empty for unknown hostname', function (done) {
+      require('../../fixtures/mocks/github/user')(ctx.user);
+      require('../../fixtures/mocks/github/users-username')(
+        ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
+      var query = {
+        hostname: 'http://google.com'
+      };
+      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+        if (err) { return done(err); }
+        expect(body).to.be.an.array();
+        expect(body.length).to.equal(0);
+        done();
+      }));
+    });
+
     it('should get instance by network.hostIp', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user);
       require('../../fixtures/mocks/github/users-username')(
