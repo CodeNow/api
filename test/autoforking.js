@@ -11,6 +11,7 @@ var Runnable = require('models/apis/runnable');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
+var pluck = require('101/pluck');
 var primus = require('./fixtures/primus');
 
 var lab = exports.lab = Lab.script();
@@ -89,8 +90,11 @@ describe('Autoforking', function () {
             Instance.findMasterInstances(repo, function (err, instances) {
               expect(err).to.be.null();
               expect(instances.length).to.equal(2);
-              expect(instances[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
-              expect(instances[1].shortHash).to.equal(copiedInstance.shortHash);
+              // no guarentees about the order
+              expect(instances.map(pluck('shortHash'))).to.only.contain([
+                ctx.instance.attrs.shortHash,
+                copiedInstance.shortHash
+              ]);
               done();
             });
           });
@@ -100,16 +104,6 @@ describe('Autoforking', function () {
   });
 
   describe('fork master instance', function () {
-    beforeEach(function (done) {
-      ctx.orgId = 1001;
-      multi.createInstance(ctx.orgId, function (err, instance, build, user) {
-        if (err) { return done(err); }
-        ctx.instance = instance;
-        ctx.user = user;
-        ctx.build = build;
-        done();
-      });
-    });
 
     it('should create new instance forked instance', function (done) {
       var runnable = new Runnable({}, ctx.user.attrs);
