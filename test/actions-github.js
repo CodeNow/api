@@ -277,7 +277,7 @@ describe('Github - /actions/github', function () {
           });
       });
 
-      it('should set build status to error if error happened build build',
+      it('should set build status to error if error happened during build build',
         function (done) {
           sinon.stub(Runnable.prototype, 'buildBuild')
             .yields(Boom.notFound('Build build failed'));
