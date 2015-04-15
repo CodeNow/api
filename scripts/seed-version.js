@@ -6,6 +6,7 @@
  * NOTE: This script will attempt to delete any existing source contexts, as well as their
  * instances.  It should output what it's deleting, so be sure to verify nothing else was targeted
  *
+ * NOTE 2: Must log in as HelloRunnable and populate user model in mongo before running this script
  */
 
 'use strict';
