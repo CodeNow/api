@@ -118,6 +118,30 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
         done();
       });
     });
+
+    it('should toLowerCase the hostname', function (done) {
+      var body = {
+        instance: ctx.apiInstance.id(),
+        hostname: 'api-CodeNow.' + process.env.USER_CONTENT_DOMAIN
+      };
+      ctx.webInstance.createDependency(body, function (err, body) {
+        if (err) { return done(err); }
+        expect(body).to.be.an.object();
+        expect(Object.keys(body)).to.contain([
+          'id',
+          'shortHash',
+          'lowerName',
+          'hostname',
+          'owner',
+          'contextVersion'
+        ]);
+        expect(body.id).to.equal(ctx.apiInstance.attrs._id.toString());
+        expect(body.lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
+        expect(body.owner.github).to.equal(ctx.apiInstance.attrs.owner.github);
+        expect(body.hostname).to.equal('api-codenow.' + process.env.USER_CONTENT_DOMAIN);
+        done();
+      });
+    });
   });
 
   describe('from 1 -> 1', function () {
