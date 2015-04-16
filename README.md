@@ -23,7 +23,7 @@
 
 # Running Tests
 
-## Prerequisites (services running in the background)
+## Prerequisites
 
 - mongo
   - `brew install mongodb`
@@ -37,6 +37,8 @@
   - `brew install neo4j`
   - disable auth: `sed -ie 's/.*auth_enabled.*/dbms.security.auth_enabled=false/g' /usr/local/Cellar/neo4j/2.2.0/libexec/conf/neo4j-server.properties`
   - `neo4j start`
+- ulimit
+  - `ulimit -n 10240` (at minimum)
 
 ## Tests
 
@@ -45,14 +47,15 @@ Run all tests: `npm test`
 Granular:
 
 - Lint: `npm run lint`
-- All BDD: `npm run bdd`
-- Pass additional arguments to BDD: `npm run bdd -- -d`
-- BDD one file: `npm run bdd -- test/path/to/file.js`
-- BDD one test (optional file): `npm run bdd -- -i 3 [test/path/to/file.js]`
-- BDD range of tests (optional file): `npm run bdd -- -i 3-10 [test/path/to/file.js]`
-- BDD Watch: `npm run bdd-watch`
-- BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
-- All Unit: `npm run unit`
+- BDD: `npm run bdd`
+  - Pass additional arguments to BDD: `npm run bdd -- -d`
+  - BDD one file: `npm run bdd -- test/path/to/file.js`
+  - BDD one test (optional file): `npm run bdd -- -i 3 [test/path/to/file.js]`
+  - BDD range of tests (optional file): `npm run bdd -- -i 3-10 [test/path/to/file.js]`
+  - BDD Watch: `npm run bdd-watch`
+  - BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
+- Unit: `npm run unit`
+  - (similar options exist to run individual and ranges of tests as BDD)
 
 # Opinions
 
