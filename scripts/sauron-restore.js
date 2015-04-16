@@ -1,5 +1,5 @@
 'use strict';
-require('loadenv');
+require('loadenv')();
 var redis = require('models/redis');
 var Instance = require('models/mongo/instance');
 var mongoose = require('models/mongo/mongoose-control');
