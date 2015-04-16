@@ -14,6 +14,7 @@ var it = lab.it;
 
 var Boom = require('dat-middleware').Boom;
 var ContextVersion = require('models/mongo/context-version');
+var User = require('models/mongo/user');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
 var Runnable = require('models/apis/runnable');
@@ -220,6 +221,26 @@ describe('Github - /actions/github', function () {
         expect(contextVersionIds).to.have.length(1);
       });
     });
+
+    it('should not process new branch event for user that has no runnable account', {timeout: 4000}, function (done) {
+      var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+      var data = {
+        branch: 'feature-1',
+        repo: acv.repo
+      };
+      var options = hooks(data).push;
+      require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+      User.findOneAndRemove({'accounts.github.id': ctx.contextVersion.attrs.createdBy.github}, function(err) {
+        if (err) { return done(err); }
+        request.post(options, function (err, res, body) {
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(202);
+          expect(body).to.equal('No appropriate work to be done; user not found, finishing.');
+          done();
+        });
+      });
+    });
+
   });
 
   describe('push event', function () {
