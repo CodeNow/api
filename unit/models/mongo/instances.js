@@ -586,6 +586,14 @@ describe('Instance', function () {
           done);
       });
 
+      it('should give us the count of instance in the graph', function (done) {
+        Instance.getGraphNodeCount(function (err, count) {
+          expect(err).to.be.null();
+          expect(count).to.equal(3);
+          done();
+        });
+      });
+
       it('should give us no dependencies when none are defined', function (done) {
         var i = instances[0];
         i.getDependencies(function (err, deps) {
