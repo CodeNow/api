@@ -49,6 +49,19 @@ describe('neo4j driver', function () {
       done();
     });
 
+    it('should be able make a query to get the count of nodes', function (done) {
+      var expectedQuery = 'MATCH (n:Instance) RETURN count(*)';
+      graph.getNodeCount('Instance', function (err, data) {
+        expect(err).to.be.null();
+        expect(data).to.be.null(); // because that's what we set the stub to
+        expect(graph._query.calledOnce).to.be.true();
+        var call = graph._query.getCall(0);
+        expect(call.args[0]).to.equal(expectedQuery);
+        expect(call.args[1]).to.deep.equal({});
+        done();
+      });
+    });
+
     it('should produce correct queries looking for 1 node (no steps)', function (done) {
       var start = {
         label: 'Instance',
