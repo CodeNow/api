@@ -39,9 +39,11 @@ describe('neo4j driver', function () {
     done();
   });
 
-  describe('getNodes', function () {
+  describe('getNodeCount', function () {
     beforeEach(function (done) {
-      sinon.stub(graph, '_query').yieldsAsync(null, null);
+      sinon.stub(graph, '_query').yieldsAsync(null, {
+        'count(*)': [ 1 ]
+      });
       done();
     });
     afterEach(function (done) {
@@ -53,13 +55,24 @@ describe('neo4j driver', function () {
       var expectedQuery = 'MATCH (n:Instance) RETURN count(*)';
       graph.getNodeCount('Instance', function (err, data) {
         expect(err).to.be.null();
-        expect(data).to.be.null(); // because that's what we set the stub to
+        expect(data).to.equal(1); // because that's what we set the stub to
         expect(graph._query.calledOnce).to.be.true();
         var call = graph._query.getCall(0);
         expect(call.args[0]).to.equal(expectedQuery);
         expect(call.args[1]).to.deep.equal({});
         done();
       });
+    });
+  });
+
+  describe('getNodes', function () {
+    beforeEach(function (done) {
+      sinon.stub(graph, '_query').yieldsAsync(null, null);
+      done();
+    });
+    afterEach(function (done) {
+      graph._query.restore();
+      done();
     });
 
     it('should produce correct queries looking for 1 node (no steps)', function (done) {
