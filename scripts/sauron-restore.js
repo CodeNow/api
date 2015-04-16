@@ -24,7 +24,7 @@ mongoose.start(function () {
     Instance.find({ 'container.dockerContainer': { $exists: true } }, function (err, instances) {
       if (err) { throw err; }
 
-      async.eachLimit(instances, 1, function (instance, cb) {
+      async.eachLimit(instances, 100, function (instance, cb) {
         var hostIp = instance.network.hostIp;
         var networkIp = instance.network.networkIp;
         var dockerHostname = parseUrl(instance.container.dockerHost).hostname;
