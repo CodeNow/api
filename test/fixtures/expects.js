@@ -89,7 +89,7 @@ expects.errorStatus = function (code, messageMatch, done) {
     else if (isString(messageMatch)) {
       expect(err.message).to.equal(messageMatch);
     }
-    done();
+    done(null, err);
   };
 };
 expects.error = expects.errorStatus;
