@@ -16,7 +16,7 @@ var primus = require('./fixtures/primus');
 
 var request = require('request');
 
-describe('GET /instances', function () {
+describe('GET /dependencies/actions/health', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -34,14 +34,12 @@ describe('GET /instances', function () {
       .on('data', function () {});
   });
 
-  describe('GET /instance/_dependencies_health', function () {
-    it('should tell us how many instances are in the graph', function (done) {
-      request.get(process.env.FULL_API_DOMAIN + '/instances/_dependencies_health', function (err, res, body) {
-        expect(err).to.be.null();
-        expect(body).to.equal('0');
+  it('should tell us how many instances are in the graph', function (done) {
+    request.get(process.env.FULL_API_DOMAIN + '/dependencies/actions/health', function (err, res, body) {
+      expect(err).to.be.null();
+      expect(body).to.equal('0');
 
-        done(err);
-      });
+      done(err);
     });
   });
 
