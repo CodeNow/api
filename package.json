@@ -99,7 +99,7 @@
     "mavis": "git+ssh://git@github.com:CodeNow/mavis#v0.1.1",
     "multiline": "^0.3.4",
     "nock": "^0.51.0",
-    "node-debug": "^0.1.0",
+    "node-inspector": "^0.9.2",
     "nodemon": "^1.2.1",
     "require-inject": "^1.1.0",
     "rimraf": "^2.2.8",
