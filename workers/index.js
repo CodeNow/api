@@ -4,14 +4,21 @@
  */
 'use strict';
 
-var keypath = require('keypather')();
+require('loadenv')();
 
-var subscribeJobs = process.env.SUBSCRIBE_JOBS.split(',');
+var debug = require('debug')('api:worker:index');
+
+var opts = {
+  hostname: process.env.RABBITMQ_HOSTNAME,
+  password: process.env.RABBITMQ_PASSWORD,
+  port: process.env.RABBITMQ_PORT,
+  username: process.env.RABBITMQ_USERNAME
+};
+debug('hermes options', opts);
+var hermes = require('hermes').hermesSingletonFactory(opts);
 
 var workers = {
-  'container-create': require('./container-create')
+  containerCreateWorker: require('./container-create')
 };
 
-subscribeJobs.forEach(function (job) {
-  keypath.get(workers, job+'()');
-});
+workers.containerCreateWorker(hermes);
