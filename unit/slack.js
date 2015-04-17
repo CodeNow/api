@@ -121,12 +121,6 @@ describe('Slack', function () {
         message: 'init & commit & push long test \n next line \n 3d line',
         url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
       };
-      var commit2 = {
-        id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
-        author: {
-          username: 'podviaznikov'
-        }
-      };
       var gitInfo = {
         branch: 'feature-1',
         headCommit: headCommit,
