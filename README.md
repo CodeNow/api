@@ -1,44 +1,66 @@
 [![Circle CI](https://circleci.com/gh/CodeNow/api.svg?style=svg&circle-token=15c68bfd7d9ca99637f0c5a6e05505366f5d9fd3)](https://circleci.com/gh/CodeNow/api)
 
-Application Components
-==========
+# Application Components
+
 #### Express
-/lib/express-app.js
+
+`/lib/express-app.js`
 
 #### Routes
-/lib/routes/**/*.js
+
+`/lib/routes/**/*.js`
 
 #### Mongo
-Models  - /lib/models/mongo/*.js
-Schemas - /lib/models/mongo/schemas/*.js
+
+- Models: `/lib/models/mongo/*.js`
+- Schemas: `/lib/models/mongo/schemas/*.js`
 
 #### Tests
-Behavioral tests (BDD) - /test
-Unit Tests - /unit
-Lab - Testing Framework - [hapijs/lab](https://github.com/hapijs/lab)
 
-Running Tests
-=============
+- Behavioral tests (BDD): `/test`
+- Unit Tests: `/unit`
+- Lab (testing framework): [hapijs/lab](https://github.com/hapijs/lab)
 
-Run all tests:
-```
-npm test
-```
+# Running Tests
+
+## Prerequisites
+
+- mongo
+  - `brew install mongodb`
+  - default configuration (listening on `127.0.0.1:27017`)
+  - `mongod`
+- redis
+  - `brew install redis`
+  - default configuration (listening on `127.0.0.1:6379`)
+  - `redis-server`
+- neo4j
+  - `brew install neo4j`
+  - disable auth: `sed -ie 's/.*auth_enabled.*/dbms.security.auth_enabled=false/g' /usr/local/Cellar/neo4j/2.2.0/libexec/conf/neo4j-server.properties`
+  - `neo4j start`
+- ulimit
+  - `ulimit -n 10240` (at minimum)
+
+## Tests
+
+Run all tests: `npm test`
 
 Granular:
 
 - Lint: `npm run lint`
-- All BDD: `npm run bdd`
-- Pass additional arguments to BDD: `npm run bdd -- -d`
-- BDD one file: `npm run bdd -- test/path/to/file.js`
-- BDD one test (optional file): `npm run bdd -- -i3 [test/path/to/file.js]`
-- BDD Watch: `npm run bdd-watch`
-- BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
-- All Unit: `npm run unit`
+- BDD: `npm run bdd`
+  - Pass additional arguments to BDD: `npm run bdd -- -d`
+  - BDD one file: `npm run bdd -- test/path/to/file.js`
+  - BDD one test (optional file): `npm run bdd -- -i 3 [test/path/to/file.js]`
+  - BDD range of tests (optional file): `npm run bdd -- -i 3-10 [test/path/to/file.js]`
+  - BDD Watch: `npm run bdd-watch`
+  - BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
+- Unit: `npm run unit`
+  - (similar options exist to run individual and ranges of tests as BDD)
 
-Opinions
-========
+# Opinions
+
 #### Restful resource urls
+
 Create - POST   - /resources  
 Read   - GET    - /resources/:id  
 Update - PATCH  - /resources/:id  *PATCH is a partial update, PUT is a full resource update  
@@ -56,12 +78,11 @@ asynchronous code look synchronous and avoid "callback hell"
 
 
 #### Boom for Http Errors
+
 Nice Http Error library - [hapijs/boom](https://github.com/hapijs/boom)
 
+# Resource Overview
 
-
-Resource Overview
-=================
 Mongo Schemas - /lib/models/mongo/schemas/*.js
 
 Context Versions - a snapshot of infrastructure code version and application code version
@@ -79,10 +100,7 @@ Instances - Running build which consists of running containers for each project 
 * This is a grouping on running docker containers for a build's docker images.
 
 
-
-
-Help and Tips
-=============
+# Help and Tips
 
 ### Problems npm installing?
 
@@ -102,7 +120,6 @@ npm run client-version # this will update the client's version to the latest in 
 ```
 ```
 Models:
-
 
 A context represents a project context (like redis)
 A version is a version of a particular context (build files, github commitHash)
