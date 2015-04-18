@@ -11,17 +11,31 @@
 'use strict';
 
 var debug = require('debug')('api:worker:container-create');
+var keypather = require('keypather')();
+
+var Runnable = require('models/apis/runnable');
+var runnable = new Runnable({}, {});
 
 var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
 var messenger = require('socket/messenger');
 
-
-// messenger.messageRoom() // type, name, data
-
 function start (hermes) {
   debug('container create worker started');
   hermes.subscribe('container-create', function (data, done) {
+
+    debug('job recieved: "container-create"');
+    var labels = keypather.get(data, 'inspectData.Config.Labels');
+    debug(labels);
+    runnable.workerContainerCreate(
+      labels.containerId,
+      labels.buildId,
+      labels.container,
+      function () {
+        done();
+      }
+    );
+
     /**
      * SAMPLE DATA
       { status: 'create',
@@ -133,11 +147,6 @@ function start (hermes) {
          Volumes: {},
          VolumesRW: {} } }
      */
-    debug('job recieved: "container-create"');
-    debug('Labels');
-    debug(data.inspectData.Config.Labels);
-    debug(data);
-    done();
   });
 }
 
