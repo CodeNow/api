@@ -115,6 +115,47 @@ describe('Slack', function () {
       done();
     });
 
+    it('should return text if commitLog is []', function (done) {
+      var headCommit = {
+        id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
+        message: 'init & commit & push long test \n next line \n 3d line',
+        url: 'https://github.com/CodeNow/api/commit/a240edf982d467201845b3bf10ccbe16f6049ea9'
+      };
+      var gitInfo = {
+        branch: 'feature-1',
+        headCommit: headCommit,
+        commitLog: [],
+        repo: 'CodeNow/api',
+        repoName: 'api'
+      };
+      var instances = [
+        {
+          name: 'server-1',
+          owner: {
+            github: 3213,
+            username: 'podviaznikov'
+          }
+        },
+        {
+          name: 'server-1-copy',
+          owner: {
+            github: 3213,
+            username: 'podviaznikov'
+          }
+        }
+      ];
+      var slack = new Slack({});
+      var text = slack._createAutoUpdateText(gitInfo, instances);
+      var expected = 'Your <http://localhost:3031/actions/redirect?';
+      expected += 'url=https%3A%2F%2Fgithub.com%2FCodeNow%2Fapi%2Fcommit%2Fa240edf982d467201845b3bf10ccbe16f6049ea9';
+      expected += '|changes> (init &amp; commit &amp; push long test   next line   3d...)';
+      expected += ' to podviaznikov/server-1 (feature-1) are deployed on servers:';
+      expected += '\n<https://runnable3.net/podviaznikov/server-1?ref=slack|server-1>';
+      expected += '\n<https://runnable3.net/podviaznikov/server-1-copy?ref=slack|server-1-copy>';
+      expect(text).to.equal(expected);
+      done();
+    });
+
   });
 
   describe('#_createServerSelectionText', function () {
