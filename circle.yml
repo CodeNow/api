@@ -8,9 +8,9 @@ dependencies:
     - if [[ ! -e neo4j-community-2.1.8 ]]; then wget http://neo4j.com/artifact.php?name=neo4j-community-2.1.8-unix.tar.gz -O neo4j-community-2.1.8-unix.tar.gz && tar -xzvf neo4j-community-2.1.8-unix.tar.gz; fi
     - neo4j-community-2.1.8/bin/neo4j start: {background: true}
   override:
-    - nvm install 0.10.28
-    - nvm alias default 0.10.28
-    - npm install -g npm@2.1.18
+    - nvm install 0.10.38
+    - nvm alias default 0.10.38
+    - npm install -g npm@2.8.3
     - npm install
 test:
   pre:

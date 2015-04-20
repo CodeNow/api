@@ -120,7 +120,7 @@ describe('EVENT runnable:docker:events:die', function () {
       it('should acquire event lock', function (done) {
         var count = createCount(2, done);
         dockerEvents.getEventLock = function (eventId) {
-          expect(eventId).to.be.ok;
+          expect(eventId).to.exist();
           count.next();
         };
         ctx.instance.stop(count.next);

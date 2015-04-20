@@ -34,7 +34,7 @@ describe('Infracode Versions', function () {
     var infracode = createNewInfracodeVersion();
     infracode.save(function (err, infracode) {
       if (err) { return done(err); }
-      expect(infracode).to.be.okay;
+      expect(infracode).to.exist();
       done();
     });
   });
@@ -46,7 +46,7 @@ describe('Infracode Versions', function () {
     infracode.save(function (err, infracode) {
       InfracodeVersion.createCopyById(infracode._id, function(err, childInfracode) {
         if (err) { return done(err); }
-        expect(childInfracode).to.be.okay;
+        expect(childInfracode).to.exist();
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
       });
@@ -58,7 +58,7 @@ describe('Infracode Versions', function () {
     infracode.save(function (err, infracode) {
       InfracodeVersion.createCopyById(infracode._id, function(err, childInfracode) {
         if (err) { return done(err); }
-        expect(childInfracode).to.be.okay;
+        expect(childInfracode).to.exist();
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
       });
@@ -70,7 +70,7 @@ describe('Infracode Versions', function () {
     infracode.save(function (err, infracode) {
       InfracodeVersion.createCopyById(infracode._id, function(err, childInfracode) {
         if (err) { return done(err); }
-        expect(childInfracode).to.be.okay;
+        expect(childInfracode).to.exist();
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
       });
@@ -82,7 +82,7 @@ describe('Infracode Versions', function () {
     infracode.save(function (err, infracode) {
       InfracodeVersion.createCopyById(infracode._id, function(err, childInfracode) {
         if (err) { return done(err); }
-        expect(childInfracode).to.be.okay;
+        expect(childInfracode).to.exist();
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
         done();
       });
