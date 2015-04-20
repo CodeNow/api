@@ -30,7 +30,7 @@ expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done)
     if (err) { return done(err); }
     expect(statusCode).to.equal(code);
     if (expectedHeaders) {
-      expect(res.headers).to.be.okay;
+      expect(res.headers).to.exist();
       expectKeypaths(res.headers, expectedHeaders);
     }
     expects.check(expectedKeypaths, body);
@@ -40,7 +40,7 @@ expects.success = function (statusCode, expectedKeypaths, expectedHeaders, done)
 
 expects.check = function (expected, object) {
   if (expected) {
-    expect(object).to.be.ok;
+    expect(object).to.exist();
     if (Array.isArray(expected) && expected.length) {
       // don't allow us to have more than we expect
       expect(object).to.have.length(expected.length);
@@ -266,7 +266,7 @@ expects.deletedDnsEntry = function (username, instanceName) {
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var dnsUrl = toDnsUrl(username, instanceName);
   expect(mockRoute53.findRecordIp(dnsUrl), 'dns record')
-    .to.not.be.ok;
+    .to.not.exist();
 };
 expects.deletedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
@@ -306,7 +306,7 @@ expects.deletedContainer = function (container, cb) {
   }
   var docker = new Docker(container.dockerHost);
   docker.inspectContainer(container, function (err) {
-    expect(err, 'deleted container '+container.dockerContainer).to.be.ok;
+    expect(err, 'deleted container '+container.dockerContainer).to.exist();
     expect(err.output.statusCode, 'deleted container '+container.dockerContainer).to.equal(404);
     cb();
   });
@@ -361,7 +361,7 @@ expects.deletedWeaveHost = function (container, cb) {
   sauron.getContainerIp(container.dockerContainer, function (err, val) {
     if (err) { return cb(err); }
     expect(val, 'Container '+container.dockerContainer+' to be unattached')
-      .to.not.be.ok;
+      .to.not.exist();
     cb();
   });
 };

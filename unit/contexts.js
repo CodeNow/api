@@ -39,7 +39,7 @@ describe('Context Unit Testing', function () {
         done(err);
       }
       else {
-        expect(context).to.be.okay;
+        expect(context).to.exist();
         done();
       }
     });

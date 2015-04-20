@@ -124,7 +124,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
     //         if (err) { return done(err); }
     //         Lab.expect(res.statusCode).to.equal(201);
     //         Lab.expect(err).to.be.not.okay;
-    //         Lab.expect(res).to.be.okay;
+    //         Lab.expect(res).to.exist();
     //         var expected = {
     //           Key: ctx.context.id() + '/source/log-stream.js',
     //           VersionId: '5Sae_tebJTYHeDf1thrEl2nw3QPE6VvH',

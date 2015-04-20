@@ -81,7 +81,7 @@ describe('Building - Context Version Deduping', function () {
           multi.tailInstance(ctx.user, forkedInstance, next);
           function next (err, instance) {
             if (err) { return count.next(err); }
-            expect(instance.attrs.containers[0].inspect.State.Running).to.be.okay;
+            expect(instance.attrs.containers[0].inspect.State.Running).to.exist();
             count.next();
           }
         });
@@ -104,7 +104,7 @@ describe('Building - Context Version Deduping', function () {
             forkedInstance.fetch(assertInstanceHasNoContainers);
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err); }
-              expect(instance.containers.length).to.not.be.okay;
+              expect(instance.containers).to.have.length(0);
               count.next();
             }
           });
@@ -128,7 +128,7 @@ describe('Building - Context Version Deduping', function () {
             forkedInstance.fetch(assertInstanceHasNoContainers);
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err); }
-              expect(instance.containers.length).to.not.be.okay;
+              expect(instance.containers).to.have.length(0);
               count.next();
             }
           });
@@ -160,7 +160,7 @@ describe('Building - Context Version Deduping', function () {
           multi.tailInstance(ctx.user, forkedInstance, next);
           function next(err, instance) {
             if (err) { return done(err); }
-            expect(instance.attrs.containers[0].inspect.State.Running).to.be.okay;
+            expect(instance.attrs.containers[0].inspect.State.Running).to.exist();
             count.next();
           }
         });
