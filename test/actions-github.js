@@ -216,7 +216,7 @@ describe('Github - /actions/github', function () {
       request.post(options, function (err, res, contextVersionIds) {
         if (err) { return done(err); }
         expect(res.statusCode).to.equal(201);
-        expect(contextVersionIds).to.be.okay;
+        expect(contextVersionIds).to.exist();
         expect(contextVersionIds).to.be.an.array();
         expect(contextVersionIds).to.have.length(1);
       });
@@ -365,7 +365,7 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(200);
-            expect(cvsIds).to.be.okay;
+            expect(cvsIds).to.exist();
             expect(cvsIds).to.be.an.array();
             expect(cvsIds).to.have.length(1);
           });
@@ -474,7 +474,7 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(200);
-            expect(cvIds).to.be.okay;
+            expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
             countOnCallback();
@@ -556,7 +556,7 @@ describe('Github - /actions/github', function () {
               if (err) { return done(err); }
               finishAllIncompleteVersions();
               expect(res.statusCode).to.equal(200);
-              expect(cvIds).to.be.okay;
+              expect(cvIds).to.exist();
               expect(cvIds).to.be.an.array();
               expect(cvIds).to.have.length(2);
             });
@@ -617,7 +617,7 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 finishAllIncompleteVersions();
                 expect(res.statusCode).to.equal(200);
-                expect(cvIds).to.be.okay;
+                expect(cvIds).to.exist();
                 expect(cvIds).to.be.an.array();
                 expect(cvIds).to.have.length(2);
                 count.next();
@@ -720,7 +720,7 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(200);
-            expect(cvIds).to.be.okay;
+            expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(2);
           });

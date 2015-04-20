@@ -144,7 +144,7 @@ describe('POST /instances', function () {
               dockerMockEvents.emitBuildComplete(ctx.cv);
               multi.tailInstance(ctx.user, instance, function (err) {
                 if (err) { return done(err); }
-                expect(instance.attrs.containers[0]).to.be.okay;
+                expect(instance.attrs.containers[0]).to.exist();
                 var count = createCount(done);
                 expects.updatedHosts(
                   ctx.user, instance, count.inc().next);

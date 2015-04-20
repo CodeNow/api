@@ -147,7 +147,7 @@ describe('PATCH /settings/:id', {timeout:500}, function () {
         expect(body.notifications.slack.apiToken).to.equal(
           newSettings.notifications.slack.apiToken
         );
-        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.be.undefined;
+        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.be.undefined();
         expect(body.notifications.hipchat.authToken).to.equal(
           newSettings.notifications.hipchat.authToken
         );
