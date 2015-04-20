@@ -45,7 +45,7 @@ describe('Build', function () {
     build.save(function (err, build) {
       if (err) { done(err); }
       else {
-        expect(build).to.be.okay;
+        expect(build).to.exist();
         done();
       }
     });
@@ -89,7 +89,7 @@ describe('Build', function () {
       done();
     });
     it('should be able to set the build in progress', function (done) {
-      expect(ctx.build).to.be.okay;
+      expect(ctx.build).to.exist();
       done();
     });
     it('should create another build, and the buildNumber should be higher ', function (done) {
@@ -99,7 +99,7 @@ describe('Build', function () {
           if (err) {
             done(err);
           } else {
-            expect(newbuild).to.be.okay;
+            expect(newbuild).to.exist();
             expect(ctx.build.buildNumber).to.be.below(newbuild.buildNumber);
             done();
           }
