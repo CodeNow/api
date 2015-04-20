@@ -36,7 +36,7 @@ then
   exit $?
 fi
 
-numTests=$(npm run _bdd -- --dry ${all_files[@]} | tail -6 | perl -n -e '/- (\d+)\)/ && print $1')
+numTests=$(npm run _bdd -- --dry ${all_files[@]} | tail -7 | perl -n -e '/- (\d+)\)/ && print $1')
 echo $numTests to run
 
 if [[ $indexes == "" ]]

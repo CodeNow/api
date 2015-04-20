@@ -65,7 +65,7 @@ describe('Build Stream', function() {
         }
 
         expect(code).to.equal(201);
-        expect(body).to.be.ok;
+        expect(body).to.exist();
 
         dockerMockEvents.emitBuildComplete(ctx.cv);
         primus.onceVersionComplete(ctx.cv.id(), function () {
@@ -119,7 +119,7 @@ describe('Build Stream', function() {
       ctx.build.build(ctx.buildId, {message: 'hello!'}, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);
-        expect(body).to.be.ok;
+        expect(body).to.exist();
         require('./fixtures/mocks/docker/build-logs.js')();
         var client = new primusClient( 'http://localhost:' + process.env.PORT);
         // start build stream
@@ -156,7 +156,7 @@ describe('Build Stream', function() {
       ctx.build.build(ctx.buildId, {message: 'lots of people!'}, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);
-        expect(body).to.be.ok;
+        expect(body).to.exist();
         primus.onceVersionComplete(ctx.cv.id(), function () {
           // start build stream
           var count = createCount(done);

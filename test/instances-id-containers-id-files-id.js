@@ -378,7 +378,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
     //           var body = JSON.parse(res.body[0]);
     //           Lab.expect(res.statusCode).to.equal(201);
     //           Lab.expect(err).to.be.not.okay;
-    //           Lab.expect(res).to.be.okay;
+    //           Lab.expect(res).to.exist();
     //           var expected = {
     //             isDir: false,
     //             path: '/',

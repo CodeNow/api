@@ -14,6 +14,7 @@ var it = lab.it;
 
 var Boom = require('dat-middleware').Boom;
 var ContextVersion = require('models/mongo/context-version');
+var User = require('models/mongo/user');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
 var Runnable = require('models/apis/runnable');
@@ -215,11 +216,31 @@ describe('Github - /actions/github', function () {
       request.post(options, function (err, res, contextVersionIds) {
         if (err) { return done(err); }
         expect(res.statusCode).to.equal(201);
-        expect(contextVersionIds).to.be.okay;
+        expect(contextVersionIds).to.exist();
         expect(contextVersionIds).to.be.an.array();
         expect(contextVersionIds).to.have.length(1);
       });
     });
+
+    it('should not process new branch event for user that has no runnable account', {timeout: 4000}, function (done) {
+      var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+      var data = {
+        branch: 'feature-1',
+        repo: acv.repo
+      };
+      var options = hooks(data).push;
+      require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
+      User.findOneAndRemove({'accounts.github.id': ctx.contextVersion.attrs.createdBy.github}, function(err) {
+        if (err) { return done(err); }
+        request.post(options, function (err, res, body) {
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(202);
+          expect(body).to.equal('No appropriate work to be done; user not found, finishing.');
+          done();
+        });
+      });
+    });
+
   });
 
   describe('push event', function () {
@@ -277,7 +298,7 @@ describe('Github - /actions/github', function () {
           });
       });
 
-      it('should set build status to error if error happened build build',
+      it('should set build status to error if error happened during build build',
         function (done) {
           sinon.stub(Runnable.prototype, 'buildBuild')
             .yields(Boom.notFound('Build build failed'));
@@ -344,7 +365,7 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(200);
-            expect(cvsIds).to.be.okay;
+            expect(cvsIds).to.exist();
             expect(cvsIds).to.be.an.array();
             expect(cvsIds).to.have.length(1);
           });
@@ -453,7 +474,7 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(200);
-            expect(cvIds).to.be.okay;
+            expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
             countOnCallback();
@@ -535,7 +556,7 @@ describe('Github - /actions/github', function () {
               if (err) { return done(err); }
               finishAllIncompleteVersions();
               expect(res.statusCode).to.equal(200);
-              expect(cvIds).to.be.okay;
+              expect(cvIds).to.exist();
               expect(cvIds).to.be.an.array();
               expect(cvIds).to.have.length(2);
             });
@@ -596,7 +617,7 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 finishAllIncompleteVersions();
                 expect(res.statusCode).to.equal(200);
-                expect(cvIds).to.be.okay;
+                expect(cvIds).to.exist();
                 expect(cvIds).to.be.an.array();
                 expect(cvIds).to.have.length(2);
                 count.next();
@@ -699,7 +720,7 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(200);
-            expect(cvIds).to.be.okay;
+            expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(2);
           });
