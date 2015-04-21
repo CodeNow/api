@@ -59,7 +59,7 @@ describe('Build - /builds/:id/actions/build', function () {
           if (err) { return done(err); }
 
           expect(code).to.equal(201);
-          expect(body).to.be.ok;
+          expect(body).to.exist();
           dockerMockEvents.emitBuildComplete(ctx.cv);
           primus.onceVersionComplete(ctx.cv.id(), function (data) {
             expect(data.data.data.build.log).to.contain('Successfully built');
@@ -98,12 +98,12 @@ describe('Build - /builds/:id/actions/build', function () {
               return done(err);
             }
             expect(code).to.equal(201);
-            expect(body).to.be.ok;
+            expect(body).to.exist();
             require('./../../fixtures/mocks/github/user')(ctx.user);
             ctx.buildCopy.build({message: 'hello!'}, function (err, body, code) {
 
               expect(code).to.equal(201);
-              expect(body).to.be.ok;
+              expect(body).to.exist();
               expect(body.contextVersions[0]).to.equal(ctx.cv.attrs._id);
 
               dockerMockEvents.emitBuildComplete(ctx.cv);
@@ -153,12 +153,12 @@ describe('Build - /builds/:id/actions/build', function () {
               return done(err);
             }
             expect(code).to.equal(201);
-            expect(body).to.be.ok;
+            expect(body).to.exist();
             require('./../../fixtures/mocks/github/user')(ctx.user);
             ctx.buildCopy.build({message: 'hello!'}, function (err, body, code) {
 
               expect(code).to.equal(201);
-              expect(body).to.be.ok;
+              expect(body).to.exist();
               expect(body.contextVersions[0]).to.equal(ctx.cv.attrs._id);
 
               dockerMockEvents.emitBuildComplete(ctx.cv, true);

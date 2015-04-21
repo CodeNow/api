@@ -29,7 +29,7 @@ describe('Hasher',  function () {
       var fileStream = fs.createReadStream(__filename);
       hasher(fileStream, true, function (err, data) {
         if (err) { return done(err); }
-        expect(data).to.be.ok;
+        expect(data).to.exist();
         done();
       });
     });
@@ -56,10 +56,10 @@ describe('Hasher',  function () {
           var fileStream = through(function (data) {this.queue(data);});
           hasher(fileStream, function (err, hash) {
             if (err) { return cb(err); }
-            expect(hash).to.be.ok;
+            expect(hash).to.exist();
             hasher(chunks.join(''), function (err, compareHash) {
               if (err) { return cb(err); }
-              expect(compareHash).to.be.ok;
+              expect(compareHash).to.exist();
               expect(hash).to.equal(compareHash);
               cb();
             });
@@ -81,7 +81,7 @@ describe('Hasher',  function () {
           var fileStream = through(function (data) {this.queue(data);});
           hasher(fileStream, function (err, hash, data) {
             if (err) { return count.next(err); }
-            expect(hash).to.be.ok;
+            expect(hash).to.exist();
             streamHash = hash;
             streamData = data;
             count.next();
@@ -93,7 +93,7 @@ describe('Hasher',  function () {
           // hash file string
           hasher(dockerfile, function (err, hash, data) {
             if (err) { return count.next(err); }
-            expect(hash).to.be.ok;
+            expect(hash).to.exist();
             stringHash = hash;
             stringData = data;
             count.next();
@@ -114,7 +114,7 @@ describe('Hasher',  function () {
       var fileData = fs.readFileSync(__filename).toString();
       hasher(fileData, function (err, data) {
         if (err) { return done(err); }
-        expect(data).to.be.ok;
+        expect(data).to.exist();
         done();
       });
     });

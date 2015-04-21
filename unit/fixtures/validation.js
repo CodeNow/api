@@ -54,8 +54,8 @@ Validator.prototype.githubUserRefValidationChecking = function(createModelFuncti
       var myObject = createModelFunction();
       self.fixArrayKeypathSet(myObject, property, word);
       myObject.save(function (err) {
-        expect(err).to.be.ok;
-        expect(err.name).to.be.ok;
+        expect(err).to.exist();
+        expect(err.name).to.exist();
         expect(err.name).to.equal('ValidationError');
         done();
       });
@@ -76,8 +76,8 @@ Validator.prototype.tokenValidationChecking = function(createModelFunction, prop
       var myObject = createModelFunction();
       self.fixArrayKeypathSet(myObject, property, isList ? [word] : word);
       myObject.save(function (err) {
-        expect(err).to.be.ok;
-        expect(err.name).to.be.ok;
+        expect(err).to.exist();
+        expect(err.name).to.exist();
         expect(err.name).to.equal('CastError');
         done();
       });
@@ -117,8 +117,8 @@ Validator.prototype.objectIdValidationChecking = function(createModelFunction, p
       var myObject = createModelFunction();
       self.fixArrayKeypathSet(myObject, property, isList ? [word] : word);
       myObject.save(function (err) {
-        expect(err).to.be.ok;
-        expect(err.name).to.be.ok;
+        expect(err).to.exist();
+        expect(err.name).to.exist();
         expect(err.name).to.equal('CastError');
         done();
       });
@@ -139,8 +139,8 @@ Validator.prototype.dockerIdValidationChecking = function(createModelFunction, p
       var myObject = createModelFunction();
       self.fixArrayKeypathSet(myObject, property, isList ? [word] : word);
       myObject.save(function (err) {
-        expect(err).to.be.ok;
-        expect(err.name).to.be.ok;
+        expect(err).to.exist();
+        expect(err.name).to.exist();
         expect(err.name).to.equal(VALIDATOR_ERROR);
         done();
       });
@@ -286,14 +286,14 @@ Validator.prototype.fixArrayKeypathDel = function(myObject, property, value) {
 
 Validator.prototype.errorCheck = function (modelObject, done, property, validationString) {
     modelObject.save(function (err, model) {
-      expect(model).to.not.be.ok;
-      expect(err).to.be.ok;
-      expect(err.name).to.be.ok;
+      expect(model).to.not.exist();
+      expect(err).to.exist();
+      expect(err.name).to.exist();
       expect(err.name).to.equal(VALIDATOR_ERROR);
-      expect(err.errors).to.be.ok;
+      expect(err.errors).to.exist();
       if (err.errors.hasOwnProperty(property)) {
         var errorValue = err.errors[property];
-        expect(errorValue.value).to.be.ok;
+        expect(errorValue.value).to.exist();
         expect(errorValue.value).to.equal(keypath.get(modelObject,property));
         expect(errorValue.message).to.contain(validationString);
       } else {
@@ -306,10 +306,10 @@ Validator.prototype.errorCheck = function (modelObject, done, property, validati
 
 Validator.prototype.requiredCheck = function (modelObject, done, property) {
     modelObject.save(function (err) {
-      expect(err).to.be.ok;
-      expect(err.name).to.be.ok;
+      expect(err).to.exist();
+      expect(err.name).to.exist();
       expect(err.name).to.equal(VALIDATOR_ERROR);
-      expect(err.errors).to.be.ok;
+      expect(err.errors).to.exist();
       if (err.errors.hasOwnProperty(property)) {
         var errorValue = err.errors[property];
         expect(errorValue.message).to.contain('require');
@@ -326,9 +326,9 @@ Validator.prototype.successCheck = function (modelObject, done, property) {
       if (err) {
         return done(err);
       }
-      expect(err).to.not.be.ok;
-      expect(savedModel).to.be.ok;
-      expect(keypath.get(savedModel, property)).to.be.ok;
+      expect(err).to.not.exist();
+      expect(savedModel).to.exist();
+      expect(keypath.get(savedModel, property)).to.exist();
       expect(keypath.get(savedModel, property)).to.equal(keypath.get(modelObject, property));
       done();
     });

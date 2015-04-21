@@ -50,7 +50,7 @@ describe('Versions', function () {
     version.save(function (err, version) {
       if (err) { done(err); }
       else {
-        expect(version).to.be.okay;
+        expect(version).to.exist();
         done();
       }
     });
@@ -101,8 +101,8 @@ describe('Versions', function () {
             manual: true
           };
           version.save(function (err, model) {
-            expect(model).to.not.be.ok;
-            expect(err).to.be.ok;
+            expect(model).to.not.exist();
+            expect(err).to.exist();
             done();
           });
         });
@@ -113,8 +113,8 @@ describe('Versions', function () {
             rebuild: true
           };
           version.save(function (err, model) {
-            expect(model).to.not.be.ok;
-            expect(err).to.be.ok;
+            expect(model).to.not.exist();
+            expect(err).to.exist();
             done();
           });
         });
@@ -126,8 +126,8 @@ describe('Versions', function () {
           };
           version.build.triggeredBy = { github: validation.VALID_GITHUB_ID };
           version.save(function (err, model) {
-            expect(model).to.be.ok;
-            expect(err).to.not.be.ok;
+            expect(model).to.exist();
+            expect(err).to.not.exist();
             done(err);
           });
         });
@@ -136,8 +136,8 @@ describe('Versions', function () {
           version.build.message = 'hello!';
           version.build.triggeredBy = { github: validation.VALID_GITHUB_ID };
           version.save(function (err, model) {
-            expect(model).to.not.be.ok;
-            expect(err).to.be.ok;
+            expect(model).to.not.exist();
+            expect(err).to.exist();
             done();
           });
         });

@@ -81,7 +81,7 @@ describe('PATCH 400 - /instances/:id', function () {
     // it('should not update dns and hosts', function (done) {
     //   ctx.instance.update(body, expects.error(400, function (err) {
     //     if (err) { return done(err); }
-    //     expect(instance.attrs.containers[0]).to.be.okay;
+    //     expect(instance.attrs.containers[0]).to.exist();
     //     var count = createCount(done);
     //     expects.updatedHipacheHosts(
     //       ctx.user, instance, count.inc().next);

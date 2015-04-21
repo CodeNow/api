@@ -259,7 +259,7 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
                       name: file.name,
                       path: file.path
                     }))
-                  ).to.be.ok;
+                  ).to.exist();
                 });
                 expect(destICV.parent.toString()).to.equal(sourceICV._id.toString());
                 done();
