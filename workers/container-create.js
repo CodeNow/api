@@ -16,10 +16,6 @@ var keypather = require('keypather')();
 var Runnable = require('models/apis/runnable');
 var runnable = new Runnable({}, {});
 
-var Docker = require('models/apis/docker');
-var Instance = require('models/mongo/instance');
-var messenger = require('socket/messenger');
-
 function start (hermes) {
   debug('container create worker started');
   hermes.subscribe('container-create', function (data, done) {
@@ -31,10 +27,6 @@ function start (hermes) {
       // if err deal with here...
       done
     );
-
-
-
-
     /**
      * SAMPLE DATA
       { status: 'create',
