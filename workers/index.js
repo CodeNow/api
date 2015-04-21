@@ -15,7 +15,7 @@ var opts = {
   username: process.env.RABBITMQ_USERNAME
 };
 debug('hermes options', opts);
-var hermes = require('hermes').hermesSingletonFactory(opts);
+var hermes = require('runnable-hermes').hermesSingletonFactory(opts);
 
 var workers = {
   containerCreateWorker: require('./container-create')

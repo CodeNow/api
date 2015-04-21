@@ -71,6 +71,7 @@
     "request": "2.42.0",
     "rollbar": "git://github.com/CodeNow/node_rollbar.git#714104400cd4695e731227edcd17a637a3ea7cf7",
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v0.44.0",
+    "runnable-hermes": "^1.0.0",
     "s3-stream-upload": "0.0.6",
     "sauron-client": "git+ssh://git@github.com:codenow/sauron-client.git#v1.0.2",
     "simple-api-client": "^0.5.9",
