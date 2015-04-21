@@ -23,18 +23,17 @@ var messenger = require('socket/messenger');
 function start (hermes) {
   debug('container create worker started');
   hermes.subscribe('container-create', function (data, done) {
-
     debug('job recieved: "container-create"');
     var labels = keypather.get(data, 'inspectData.Config.Labels');
     debug(labels);
     runnable.workerContainerCreate(
-      labels.containerId,
-      labels.buildId,
-      labels.container,
-      function () {
-        done();
-      }
+      data,
+      // if err deal with here...
+      done
     );
+
+
+
 
     /**
      * SAMPLE DATA
