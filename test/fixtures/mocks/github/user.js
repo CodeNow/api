@@ -8,8 +8,8 @@ function nextUserId () {
   userId++;
   return userId;
 }
-
 module.exports = function (userId, username, token) {
+  /*jshint maxcomplexity:10*/
   if (isObject(userId)) {
     // assume user model
     var user = userId.toJSON ? userId.toJSON() : userId;
