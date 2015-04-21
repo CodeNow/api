@@ -1,0 +1,84 @@
+'use strict';
+require('loadenv')();
+
+var Lab = require('lab');
+var lab = exports.lab = Lab.script();
+var describe = lab.describe;
+var expect = require('code').expect;
+var it = lab.it;
+var after = lab.after;
+var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+
+var request = require('request');
+
+var api = require('../fixtures/api-control');
+var redis = require('models/redis');
+var multi = require('../fixtures/multi-factory');
+
+describe('/auth/github routes', function () {
+  var ctx = {};
+  var testToken = '9999999999999999999999999999999999999999';
+  var baseUrl = 'http://' + process.env.ROOT_DOMAIN + '/auth/github/';
+
+  beforeEach(function(done) {
+    redis.flushdb(done);
+  });
+  before(api.start.bind(ctx));
+  after(api.stop.bind(ctx));
+
+  describe('/auth/github/callback', function() {
+    var target = baseUrl + 'callback';
+
+    beforeEach(require('../fixtures/mocks/github/login'));
+    beforeEach(function (done) {
+      ctx.user = multi.createUser(done);
+    });
+    afterEach(require('../fixtures/clean-nock'));
+
+    it('should redirect without token if none requested', function(done) {
+      require('../fixtures/mocks/github/user')(ctx.user, null, testToken);
+      request.get({
+        url: target,
+        followRedirect: false,
+        qs: { code: testToken }
+      }, function (err, res) {
+        if (err) { return done(err); }
+        expect(res.statusCode).to.equal(302);
+        expect(res.headers.location).to.not.contain('token');
+        done();
+      });
+    });
+    describe('when requireToken was set in session', function() {
+      var testRedir = 'http://thisredir:9283';
+      var j = request.jar();
+      beforeEach(function (done) {
+        require('../fixtures/mocks/github/user')(ctx.user, null, testToken);
+        request.get({
+          jar: j,
+          url: baseUrl,
+          followRedirect: false,
+          qs: {
+            requiresToken: 'true',
+            redirect: testRedir
+          }
+        }, done);
+      });
+      it('should pass one time use token', function(done) {
+        request.get({
+          jar: j,
+          url: target,
+          followRedirect: false,
+          qs: { code: testToken }
+        }, function (err, res) {
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(302);
+          expect(res.headers.location).to.contain(testRedir);
+          expect(res.headers.location).to.contain('token');
+          done();
+        });
+      });
+    });
+  });
+});

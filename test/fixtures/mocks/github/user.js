@@ -15,8 +15,8 @@ module.exports = function (userId, username, token) {
     var user = userId.toJSON ? userId.toJSON() : userId;
     var github = user.accounts.github;
     userId = github.id;
-    username = github.login;
-    token = user.accounts.github.accessToken;
+    username = username || github.login;
+    token = token || user.accounts.github.accessToken;
   }
   else {
     userId = userId || nextUserId();
