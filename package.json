@@ -48,7 +48,7 @@
     "json-hash": "0.0.4",
     "json-stable-stringify": "^1.0.0",
     "keypather": "^1.8.1",
-    "middleware-flow": "^0.6.1",
+    "middleware-flow": "^0.7.0",
     "middlewarize": "git+ssh://git@github.com:tjmehta/middlewarize#v0.0.1",
     "mixpanel": "^0.1.0",
     "mongoose": "~3.8.24",
