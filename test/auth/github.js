@@ -51,7 +51,7 @@ describe('/auth/github routes', function () {
       });
     });
     describe('when requireToken was set in session', function() {
-      var testRedir = 'http://thisredir:9283';
+      var testRedir = 'http://thisredir:9283/datPath?thisqs=great';
       var j = request.jar();
       beforeEach(function (done) {
         require('../fixtures/mocks/github/user')(ctx.user, null, testToken);
