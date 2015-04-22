@@ -4,6 +4,10 @@
 ./test/actions-github.js
 ./test/actions-kill.js
 ./test/actions-redirect.js
+./test/auth-whitelist-id/delete/204.js
+./test/auth-whitelist-id/delete/404.js
+./test/auth-whitelist/post/201.js
+./test/auth-whitelist/post/409.js
 ./test/autoforking.js
 ./test/bdd-context-version-deduping.js
 ./test/bdd-deploy-instance.js
