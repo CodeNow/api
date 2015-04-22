@@ -42,7 +42,7 @@ describe('DELETE /auth/whitelist/:name', function () {
       expect(res).to.exist();
       expect(res.statusCode).to.equal(204);
       expect(body).to.equal('');
-      require('../../fixtures/check-whitelist')([ctx.name], done);
+      require('../../fixtures/check-whitelist')([], done);
     });
   });
 });
