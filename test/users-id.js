@@ -76,7 +76,8 @@ describe('User - /users/:id', function () {
 
       it('should update the user with the new option', function (done) {
         ctx.user.update({
-          'userOptions.uiState.shownCoachMarks.editButton': true
+          'userOptions.uiState.shownCoachMarks.editButton': true,
+          'userOptions.uiState.previousLocation.instance': 'cheeseburgers'
         }, function (err, body, code) {
           if (err) {
             return done(err);
@@ -87,6 +88,9 @@ describe('User - /users/:id', function () {
             uiState: {
               shownCoachMarks: {
                 editButton: true
+              },
+              previousLocation: {
+                instance: 'cheeseburgers'
               }
             }
           });
@@ -102,7 +106,8 @@ describe('User - /users/:id', function () {
 
       it('should be able to update consecutively without losing data ', function (done) {
         ctx.user.update({
-          'userOptions.uiState.shownCoachMarks.editButton': true
+          'userOptions.uiState.shownCoachMarks.editButton': true,
+          'userOptions.uiState.previousLocation.instance': 'cheeseburgers'
         }, function (err, body, code) {
           if (err) {
             return done(err);
@@ -113,6 +118,9 @@ describe('User - /users/:id', function () {
             uiState: {
               shownCoachMarks: {
                 editButton: true
+              },
+              previousLocation: {
+                instance: 'cheeseburgers'
               }
             }
           });
@@ -128,6 +136,9 @@ describe('User - /users/:id', function () {
                 shownCoachMarks: {
                   editButton: true,
                   repoList: true
+                },
+                previousLocation: {
+                  instance: 'cheeseburgers'
                 }
               }
             });
