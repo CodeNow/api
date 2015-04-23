@@ -47,7 +47,7 @@ describe('Timers', function () {
       });
       it('should fail without a name', function (done) {
         ctx.timer.startTimer(function (err) {
-          expect(err).to.be.okay;
+          expect(err).to.exist();
           expect(err.message).to.match(/require a name/);
           done();
         });
@@ -63,14 +63,14 @@ describe('Timers', function () {
       });
       it('should fail without a name', function (done) {
         ctx.timer.startTimer(function (err) {
-          expect(err).to.be.okay;
+          expect(err).to.exist();
           expect(err.message).to.match(/require a name/);
           done();
         });
       });
       it('should fail with a duplicate name', function (done) {
         ctx.timer.startTimer(ctx.timerName, function (err) {
-          expect(err).to.be.okay;
+          expect(err).to.exist();
           expect(err.message).to.match(/already exists/);
           done();
         });
@@ -102,14 +102,14 @@ describe('Timers', function () {
       });
       it('should fail without a name', function (done) {
         ctx.timer.stopTimer(function (err) {
-          expect(err).to.be.okay;
+          expect(err).to.exist();
           expect(err.message).to.match(/require a name/);
           done();
         });
       });
       it('should fail with a name that does not exist', function (done) {
         ctx.timer.stopTimer(uuid(), function (err) {
-          expect(err).to.be.okay;
+          expect(err).to.exist();
           expect(err.message).to.match(/does not exist/);
           done();
         });
@@ -149,7 +149,7 @@ describe('Timers', function () {
       });
       it('should not stop again', function (done) {
         ctx.timer.stopTimer(ctx.timerName, function (err) {
-          expect(err).to.be.okay;
+          expect(err).to.exist();
           expect(err.message).to.match(/does not exist/);
           done();
         });

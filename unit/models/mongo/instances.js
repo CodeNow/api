@@ -112,7 +112,7 @@ describe('Instance', function () {
       expect(instance).to.exist();
       var newInstance = createNewInstance('Hello');
       newInstance.save(function (err, instance) {
-        expect(instance).to.not.be.okay;
+        expect(instance).to.not.exist();
         expect(err).to.exist();
         expect(err.code).to.equal(11000);
         done();
@@ -152,7 +152,7 @@ describe('Instance', function () {
       var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
       var dockerHost = 'http://localhost:4243';
       savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err) {
-        expect(err).to.be.ok;
+        expect(err).to.exist();
         expect(err.output.statusCode).to.equal(409);
         done();
       });
@@ -327,7 +327,7 @@ describe('Instance', function () {
           // first call
           if (err === fakeError) { return count.next(); }
           // second call
-          expect(err).to.be.ok;
+          expect(err).to.exist();
           expect(err.output.statusCode).to.equal(409);
           count.next();
         };
@@ -387,7 +387,7 @@ describe('Instance', function () {
           // first call
           if (err === fakeError) { return count.next(); }
           // second call
-          expect(err).to.be.ok;
+          expect(err).to.exist();
           expect(err.output.statusCode).to.equal(409);
           count.next();
         };
@@ -584,6 +584,14 @@ describe('Instance', function () {
           instances,
           function (i, cb) { i.upsertIntoGraph(cb); },
           done);
+      });
+
+      it('should give us the count of instance in the graph', function (done) {
+        Instance.getGraphNodeCount(function (err, count) {
+          expect(err).to.be.null();
+          expect(count).to.equal(3);
+          done();
+        });
       });
 
       it('should give us no dependencies when none are defined', function (done) {

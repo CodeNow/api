@@ -110,7 +110,7 @@ describe('Build - /builds/:id', function () {
 //         }
 
 //         expect(code).to.equal(201);
-//         expect(body).to.be.ok;
+//         expect(body).to.exist();
 
 //         tailBuildStream(body.contextVersions[0], function (err, log) {
 //           if (err) {
