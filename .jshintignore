@@ -1,5 +1,3 @@
 node_modules
 scripts
 docs
-test/fixtures/graphs/cayley/
-test/fixtures/graphs/neo4j/
