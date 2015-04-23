@@ -32,14 +32,28 @@ describe('POST /auth/whitelist', function () {
     ctx.name = uuid();
     done();
   });
+  before(function (done) {
+    ctx.j = request.jar();
+    require('../../fixtures/multi-factory').createUser({
+      requestDefaults: { jar: ctx.j }
+    }, function (err, user) {
+      ctx.user = user;
+      done(err);
+    });
+  });
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
   it('should add a name to the whitelist', function (done) {
+    require('../../fixtures/mocks/github/user-memberships-org').isMember(
+      ctx.user.attrs.accounts.github.id,
+      ctx.user.attrs.accounts.github.username,
+      'Runnable');
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
       json: true,
-      body: { name: ctx.name }
+      body: { name: ctx.name },
+      jar: ctx.j
     };
     request(opts, function (err, res, body) {
       expect(err).to.be.null();

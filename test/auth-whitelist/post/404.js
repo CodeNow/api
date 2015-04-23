@@ -30,6 +30,7 @@ describe('POST /auth/whitelist - 409', function () {
   });
 
   beforeEach(function (done) {
+    ctx.name = uuid();
     ctx.j = request.jar();
     require('../../fixtures/multi-factory').createUser({
       requestDefaults: { jar: ctx.j }
@@ -38,28 +39,17 @@ describe('POST /auth/whitelist - 409', function () {
       done(err);
     });
   });
-  beforeEach(function (done) {
-    require('../../fixtures/mocks/github/user-memberships-org').isMember(
-      ctx.user.attrs.accounts.github.id,
-      ctx.user.attrs.accounts.github.username,
-      'Runnable');
-    ctx.name = uuid();
-    var opts = {
-      method: 'POST',
-      url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
-      json: true,
-      body: { name: ctx.name },
-      jar: ctx.j
-    };
-    request(opts, done);
-  });
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
-  it('should not add a duplicate name', function (done) {
-    require('../../fixtures/mocks/github/user-memberships-org').isMember(
+  it('should not allow unauthorized users', function (done) {
+    require('../../fixtures/mocks/github/user-memberships-org').notMember(
       ctx.user.attrs.accounts.github.id,
       ctx.user.attrs.accounts.github.username,
       'Runnable');
+    require('../../fixtures/mocks/github/user-memberships-org').notMember(
+      ctx.user.attrs.accounts.github.id,
+      ctx.user.attrs.accounts.github.username,
+      'CodeNow');
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
@@ -70,9 +60,10 @@ describe('POST /auth/whitelist - 409', function () {
     request(opts, function (err, res, body) {
       expect(err).to.be.null();
       expect(res).to.exist();
-      expect(res.statusCode).to.equal(409);
-      expect(body.error).to.match(/conflict/i);
-      require('../../fixtures/check-whitelist')([ctx.name], done);
+      expect(res.statusCode).to.equal(404);
+      expect(body.error).to.match(/not found/i);
+      expect(body.message).to.match(/not a member of org/i);
+      require('../../fixtures/check-whitelist')([], done);
     });
   });
 });
