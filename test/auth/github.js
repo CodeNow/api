@@ -16,6 +16,8 @@ var request = require('request');
 var api = require('../fixtures/api-control');
 var redis = require('models/redis');
 var multi = require('../fixtures/multi-factory');
+var url = require('url');
+var querystring = require('querystring');
 
 describe('/auth/github routes', function () {
   var ctx = {};
@@ -46,7 +48,9 @@ describe('/auth/github routes', function () {
       }, function (err, res) {
         if (err) { return done(err); }
         expect(res.statusCode).to.equal(302);
-        expect(res.headers.location).to.not.contain('token');
+        var testUrl = url.parse(res.headers.location);
+        var qs = querystring.parse(testUrl.query);
+        expect(qs.token).to.not.exist();
         done();
       });
     });
@@ -74,8 +78,13 @@ describe('/auth/github routes', function () {
         }, function (err, res) {
           if (err) { return done(err); }
           expect(res.statusCode).to.equal(302);
-          expect(res.headers.location).to.contain(testRedir);
-          expect(res.headers.location).to.contain('token');
+          var testUrl = url.parse(res.headers.location);
+          var qs = querystring.parse(testUrl.query);
+          expect(testUrl.protocol).to.equal('http:');
+          expect(testUrl.host).to.equal('thisredir:9283');
+          expect(testUrl.pathname).to.equal('/datPath');
+          expect(qs.token).to.exist();
+          expect(qs.thisqs).to.equal('great');
           done();
         });
       });
