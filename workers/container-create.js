@@ -10,9 +10,9 @@
  */
 'use strict';
 
+require('loadenv')();
 var debug = require('debug')('api:worker:container-create');
 var keypather = require('keypather')();
-
 var Runnable = require('models/apis/runnable');
 var runnable = new Runnable({}, {});
 
