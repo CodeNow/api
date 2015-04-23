@@ -49,6 +49,11 @@ describe('Socket Server', { timeout: 5000 }, function () {
       terminalStream = primus.substream('terminalStream');
       eventStream = primus.substream('eventStream');
 
+      eventStream.on('data', function (data) {
+        if(data.event === 'connected') {
+          done();
+        }
+      });
       primus.write({
         id: 1,
         event: 'terminal-stream',
@@ -60,7 +65,6 @@ describe('Socket Server', { timeout: 5000 }, function () {
           eventStreamId: 'eventStream'
         }
       });
-      primus.once('open', done);
     });
     var check = function(errMsg, done) {
       primus.once('end', function () {
@@ -70,16 +74,6 @@ describe('Socket Server', { timeout: 5000 }, function () {
         return done(new Error(errMsg));
       });
     };
-    it('should connect', function (done) {
-      check('failed to connect', done);
-      eventStream.on('data', function (data) {
-        if(data.event === 'connected'){
-          pass = true;
-          primus.end();
-        }
-      });
-    });
-
     it('should send event stream ping event', function (done) {
       check('echo failed to ping', done);
       eventStream.on('data', function (data) {
@@ -87,9 +81,9 @@ describe('Socket Server', { timeout: 5000 }, function () {
           pass = true;
           return primus.end();
         }
-        eventStream.write({
-          event: 'ping'
-        });
+      });
+      eventStream.write({
+        event: 'ping'
       });
     });
 
@@ -100,8 +94,8 @@ describe('Socket Server', { timeout: 5000 }, function () {
           pass = true;
           return primus.end();
         }
-        terminalStream.write('echo TEST\n');
       });
+      terminalStream.write('echo TEST\n');
     });
   });
   describe('param validator', function() {
@@ -129,11 +123,6 @@ describe('Socket Server', { timeout: 5000 }, function () {
         };
         var testParams = JSON.parse(JSON.stringify(allParams));
         delete testParams[param];
-        primus.write({
-          id: i+1,
-          event: 'terminal-stream',
-          data: testParams
-        });
         primus.on('data', function(data) {
           if(data.id === (i+1)) {
             if(data.error) {
@@ -141,6 +130,11 @@ describe('Socket Server', { timeout: 5000 }, function () {
             }
             done(new Error('should have error if invalid param sent'));
           }
+        });
+        primus.write({
+          id: i+1,
+          event: 'terminal-stream',
+          data: testParams
         });
       });
     });
