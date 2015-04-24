@@ -24,13 +24,13 @@ describe('/auth/github routes', function () {
   var testToken = '9999999999999999999999999999999999999999';
   var baseUrl = 'http://' + process.env.ROOT_DOMAIN + '/auth/github/';
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     redis.flushdb(done);
   });
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
 
-  describe('/auth/github/callback', function() {
+  describe('/auth/github/callback', function () {
     var target = baseUrl + 'callback';
 
     beforeEach(require('../fixtures/mocks/github/login'));
@@ -39,7 +39,7 @@ describe('/auth/github routes', function () {
     });
     afterEach(require('../fixtures/clean-nock'));
 
-    it('should redirect without token if none requested', function(done) {
+    it('should redirect without token if none requested', function (done) {
       require('../fixtures/mocks/github/user')(ctx.user, null, testToken);
       request.get({
         url: target,
@@ -54,7 +54,7 @@ describe('/auth/github routes', function () {
         done();
       });
     });
-    describe('when requireToken was set in session', function() {
+    describe('when requireToken was set in session', function () {
       var testRedir = 'http://thisredir:9283/datPath?thisqs=great';
       var j = request.jar();
       beforeEach(function (done) {
@@ -69,7 +69,7 @@ describe('/auth/github routes', function () {
           }
         }, done);
       });
-      it('should pass one time use token', function(done) {
+      it('should pass one time use token', function (done) {
         request.get({
           jar: j,
           url: target,
