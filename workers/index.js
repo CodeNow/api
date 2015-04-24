@@ -6,19 +6,11 @@
 
 require('loadenv')();
 
-var debug = require('debug')('api:worker:index');
-
-var opts = {
-  hostname: process.env.RABBITMQ_HOSTNAME,
-  password: process.env.RABBITMQ_PASSWORD,
-  port: process.env.RABBITMQ_PORT,
-  username: process.env.RABBITMQ_USERNAME
-};
-debug('hermes options', opts);
-var hermes = require('runnable-hermes').hermesSingletonFactory(opts);
+//var debug = require('debug')('api:worker:index');
+var hermesClient = require('lib/models/rabbitmq/hermes');
 
 var workers = {
   containerCreateWorker: require('./container-create')
 };
 
-workers.containerCreateWorker(hermes);
+workers.containerCreateWorker(hermesClient);
