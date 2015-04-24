@@ -7,6 +7,7 @@ var describe = lab.describe;
 var expect = require('code').expect;
 var it = lab.it;
 var after = lab.after;
+var afterEach = lab.afterEach;
 var before = lab.before;
 var beforeEach = lab.beforeEach;
 
@@ -20,8 +21,18 @@ var uuid = require('uuid');
 describe('/auth/github with whitelist', function () {
   var ctx = {};
   var baseUrl = 'http://' + process.env.ROOT_DOMAIN + '/auth/github/';
+  before(function (done) {
+    process.env.ENABLE_USER_WHITELIST = true;
+    done();
+  });
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
+  after(function (done) {
+    delete process.env.ENABLE_USER_WHITELIST;
+    done();
+  });
+  afterEach(require('../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../fixtures/clean-ctx')(ctx));
 
   describe('user not in the whitelist', function () {
     var tokenUrl = baseUrl + 'token';
@@ -57,11 +68,11 @@ describe('/auth/github with whitelist', function () {
       ctx.username = uuid();
       ctx.testToken = uuid();
       var Whitelist = require('models/mongo/user-whitelist');
-      var w = new Whitelist({
+      ctx.w = new Whitelist({
         name: ctx.username,
         allowed: true
       });
-      w.save(done);
+      ctx.w.save(done);
     });
 
     it('should let the user authenticate', function (done) {
