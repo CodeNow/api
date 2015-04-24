@@ -11,6 +11,7 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
+var createCount = require('callback-count');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -35,6 +36,60 @@ describe('201 POST /instances', function () {
 
   describe('For User', function () {
 
+    describe('with in-progress build', function () {
+      beforeEach(function (done) {
+        ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
+        multi.createContextVersion(function (err,  cv, context, build, user) {
+          if (err) { return done(err); }
+          ctx.user = user;
+          ctx.build = build;
+          ctx.cv = cv;
+          done();
+        });
+      });
+      beforeEach(function () {
+        primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, done);
+      });
+      beforeEach(function (done) {
+        ctx.build.build(function (err) {
+          if (err) { return done(err); }
+          ctx.cv.fetch(done); // used in assertions
+        });
+      });
+      afterEach(function (done) {
+        // TODO: wait for event first, make sure everything finishes.. then drop db
+        ctx.createUserContainerSpy.restore();
+        done();
+      });
+
+      it('should create an instance with a build', function (done) {
+        var count = createCount(2, done);
+
+        ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
+          if (err) { return done(err); }
+          expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
+          done();
+        });
+        waitForBuildCompleteAndDeploy(done);
+      });
+
+      it('should create an instance with name, build, env', function(done) {
+        var count = createCount(2, done);
+        var name = 'CustomName';
+        var env = ['one=one','two=two','three=three'];
+
+        ctx.user.createInstance({ build: ctx.build.id(), name: name, env: env }, function (err, body, statusCode) {
+          if (err) { return done(err); }
+          expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
+          done();
+        });
+        waitForBuildCompleteAndDeploy(done);
+      });
+
+      waitForBuildCompleteAndDeploy()
+    });
+
+
     describe('with built build', function () {
       beforeEach(function (done) {
         ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
@@ -44,7 +99,7 @@ describe('201 POST /instances', function () {
           ctx.build = build;
           ctx.cv = models[0];
           done();
-        })
+        });
       });
       afterEach(function (done) {
         // TODO: wait for event first, make sure everything finishes.. then drop db
@@ -56,13 +111,7 @@ describe('201 POST /instances', function () {
       it('should create an instance with a build', function (done) {
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
-          var user = ctx.user.json();
-          var owner = {
-            github:   user.accounts.github.id,
-            username: user.accounts.github.login,
-            gravatar: user.gravatar
-          };
-          expectInstanceCreated(body, statusCode, ctx.build, ctx.cv, owner);
+          expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           expect(ctx.createUserContainerSpy.calledOnce).to.be.true();
           expect(ctx.createUserContainerSpy.args[0][1]).to.deep.equal({
             Env: [],
@@ -70,7 +119,7 @@ describe('201 POST /instances', function () {
               instanceId: body._id,
               instanceName: body.name,
               contextVersionId: ctx.cv.id(),
-              ownerUsername: user.accounts.github.login
+              ownerUsername: ctx.user.attrs.accounts.github.login
             }
           });
           done();
@@ -80,28 +129,29 @@ describe('201 POST /instances', function () {
       it('should create an instance with a name, build, env', function (done) {
         var name = 'CustomName';
         var env = ['one=one','two=two','three=three'];
+
         ctx.user.createInstance({ build: ctx.build.id(), name: name, env: env }, function (err, body, statusCode) {
           if (err) { return done(err); }
-          var user = ctx.user.json();
-          var owner = {
-            github:   user.accounts.github.id,
-            username: user.accounts.github.login,
-            gravatar: user.gravatar
-          };
+
           expect(body.name).to.equal(name);
           expect(body.env).to.deep.equal(env);
-          expectInstanceCreated(body, statusCode, ctx.build, ctx.cv, owner);
+          expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
         });
       });
     });
-
   });
 });
 
-function expectInstanceCreated (body, statusCode, build, cv, owner) {
-  var build = build.json();
-  var cv = cv.json();
+function expectInstanceCreated (body, statusCode, user, build, cv) {
+  user = user.json();
+  build = build.json();
+  cv = cv.json();
+  var owner = {
+    github:   user.accounts.github.id,
+    username: user.accounts.github.login,
+    gravatar: user.gravatar
+  };
 
   expect(body._id).to.exist();
   expect(body.shortHash).to.exist();
