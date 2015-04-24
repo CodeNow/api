@@ -4,9 +4,12 @@
 ./test/actions-github.js
 ./test/actions-kill.js
 ./test/actions-redirect.js
+./test/auth-github/callback-token.js
+./test/auth-github/token.js
 ./test/auth-whitelist-id/delete/204.js
 ./test/auth-whitelist-id/delete/404.js
 ./test/auth-whitelist/post/201.js
+./test/auth-whitelist/post/404.js
 ./test/auth-whitelist/post/409.js
 ./test/autoforking.js
 ./test/bdd-context-version-deduping.js
@@ -39,6 +42,7 @@
 ./test/contexts/post/400.js
 ./test/events/docker-die-event.js
 ./test/github-proxy.js
+./test/instance-dependency-health.js
 ./test/instances-id-actions-copy/post/400.js
 ./test/instances-id-actions-copy/post/index.js
 ./test/instances-id-actions-restart/put/index.js
