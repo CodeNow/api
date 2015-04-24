@@ -25,7 +25,7 @@ module.exports = {
     require('./mocks/github/action-auth')(token, undefined, name);
     var User = require('runnable');
     var user = new User(host, opts);
-    user.githubLogin(token, name, function (err) {
+    user.githubLogin(token, function (err) {
       if (err) {
         return cb(err);
       }
