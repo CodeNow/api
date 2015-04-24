@@ -71,14 +71,26 @@ describe('202 PATCH /instances', function () {
         //done();
       });
 
-      it('should create an instance with a build', function (done) {
-        ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
+      //it('should create an instance with a build', function (done) {
+      it('should update an instance with container inspect', function (done) {
+        ctx.instance.update({
+          container: ''
+        }, function (err, body, statusCode) {
+
+        });
+       /* 
+        ({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
         });
+        */
       });
+    });
+  });
+});
 
+/*
       it('should create an instance with name, build, env', function (done) {
         var name = 'CustomName';
         var env = ['one=one','two=two','three=three'];
@@ -88,8 +100,9 @@ describe('202 PATCH /instances', function () {
           done();
         });
       });
+*/
     });
-
+/*
     describe('with built build', function () {
       beforeEach(function (done) {
         ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
@@ -169,3 +182,4 @@ function expectInstanceCreated (body, statusCode, user, build, cv) {
     masterPod : false
   });
 }
+*/
