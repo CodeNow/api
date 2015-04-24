@@ -21,15 +21,17 @@ module.exports = {
     debug('createUser', formatArgs(arguments));
     var host = require('./host');
     var token = uuid();
-    require('./mocks/github/action-auth')(token);
+    var name = opts.username || uuid();
+    require('./mocks/github/action-auth')(token, undefined, name);
     var User = require('runnable');
     var user = new User(host, opts);
-    user.githubLogin(token, function (err) {
+    user.githubLogin(token, name, function (err) {
       if (err) {
         return cb(err);
       }
       else {
         user.attrs.accounts.github.accessToken = token;
+        user.attrs.accounts.github.username = name;
         cb(null, user);
       }
     });
