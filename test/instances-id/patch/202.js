@@ -1,5 +1,5 @@
 /**
- * @module test/instances/post/201
+ * @module test/instances-id/patch/202
  */
 'use strict';
 
@@ -20,7 +20,7 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 
-describe('201 POST /instances', function () {
+describe('202 PATCH /instances', function () {
   var ctx = {};
   // before
   before(api.start.bind(ctx));
@@ -37,6 +37,13 @@ describe('201 POST /instances', function () {
   // afterEach(require('../../fixtures/clean-nock'));
 
   describe('For User', function () {
+    beforeEach(function (done) {
+      multi.createInstance(function (err, instance) {
+        if (err) { throw err; }
+        ctx.instance = instance;
+        done();
+      });
+    });
     describe('with in-progress build', function () {
       beforeEach(function (done) {
         ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
