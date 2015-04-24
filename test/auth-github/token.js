@@ -20,16 +20,8 @@ var uuid = require('uuid');
 describe('/auth/github with whitelist', function () {
   var ctx = {};
   var baseUrl = 'http://' + process.env.ROOT_DOMAIN + '/auth/github/';
-  before(function (done) {
-    process.env.ENABLE_USER_WHITELIST = true;
-    done();
-  });
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  after(function (done) {
-    delete process.env.ENABLE_USER_WHITELIST;
-    done();
-  });
 
   describe('user not in the whitelist', function () {
     var tokenUrl = baseUrl + 'token';

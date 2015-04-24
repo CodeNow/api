@@ -18,16 +18,8 @@ var uuid = require('uuid');
 
 var ctx = {};
 describe('POST /auth/whitelist', function () {
-  before(function (done) {
-    process.env.ENABLE_USER_WHITELIST = true;
-    done();
-  });
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
-  after(function (done) {
-    delete process.env.ENABLE_USER_WHITELIST;
-    done();
-  });
   beforeEach(function (done) {
     ctx.name = uuid();
     done();
