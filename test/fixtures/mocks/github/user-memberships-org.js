@@ -3,9 +3,7 @@ var nock = require('nock');
 
 var multiline = require('multiline');
 
-
 exports.isMember = function (userId, username, orgName) {
-
   nock('https://api.github.com:443')
     .filteringPath(/\/user\/memberships\/orgs\/[^\/]+\?.+/, '/user/memberships/orgs/' + orgName)
     .get('/user/memberships/orgs/' + orgName)
@@ -18,10 +16,11 @@ exports.isMember = function (userId, username, orgName) {
         'login': orgName,
         'url': 'https://api.github.com/orgs/' + orgName,
         'id': 2,
-        'repos_url': 'https://api.github.com/users/' + orgName+ '/repos',
-        'events_url': 'https://api.github.com/users/' + orgName+ '/events{/privacy}',
-        'members_url': 'https://api.github.com/users/' + orgName+ '/members{/member}',
-        'public_members_url': 'https://api.github/com/users/' + orgName+ '/public_members{/member}',
+        'repos_url': 'https://api.github.com/users/' + orgName + '/repos',
+        'events_url': 'https://api.github.com/users/' + orgName + '/events{/privacy}',
+        'members_url': 'https://api.github.com/users/' + orgName + '/members{/member}',
+        'public_members_url':
+          'https://api.github/com/users/' + orgName + '/public_members{/member}',
         'avatar_url': 'https://secure.gravatar.com/avatar/7ad39074b0584bc555d0417ae3e7d974?'
       },
       'user': {
@@ -84,7 +83,6 @@ exports.isMember = function (userId, username, orgName) {
 };
 
 exports.pendingMember = function (userId, username, orgName) {
-
   nock('https://api.github.com:443')
     .filteringPath(/\/user\/memberships\/orgs\/[^\/]+\?.+/, '/user/memberships/orgs/' + orgName)
     .get('/user/memberships/orgs/' + orgName)
@@ -97,10 +95,11 @@ exports.pendingMember = function (userId, username, orgName) {
         'login': orgName,
         'url': 'https://api.github.com/orgs/' + orgName,
         'id': 2,
-        'repos_url': 'https://api.github.com/users/' + orgName+ '/repos',
-        'events_url': 'https://api.github.com/users/' + orgName+ '/events{/privacy}',
-        'members_url': 'https://api.github.com/users/' + orgName+ '/members{/member}',
-        'public_members_url': 'https://api.github/com/users/' + orgName+ '/public_members{/member}',
+        'repos_url': 'https://api.github.com/users/' + orgName + '/repos',
+        'events_url': 'https://api.github.com/users/' + orgName + '/events{/privacy}',
+        'members_url': 'https://api.github.com/users/' + orgName + '/members{/member}',
+        'public_members_url':
+          'https://api.github/com/users/' + orgName + '/public_members{/member}',
         'avatar_url': 'https://secure.gravatar.com/avatar/7ad39074b0584bc555d0417ae3e7d974'
       },
       'user': {
@@ -163,7 +162,6 @@ exports.pendingMember = function (userId, username, orgName) {
 };
 
 exports.notMember = function (userId, username, orgName) {
-
   nock('https://api.github.com:443')
     .filteringPath(/\/user\/memberships\/orgs\/[^\/]+\?.+/, '/user/memberships/orgs/' + orgName)
     .get('/user/memberships/orgs/' + orgName)
