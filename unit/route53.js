@@ -81,13 +81,6 @@ describe('Route53 Unit Tests', function () {
   describe('UPSERT', function () {
     var ctx = {};
     afterEach(function (done) {
-      var params = createParams('DELETE', ctx.url, ctx.ip);
-      var route53 = new AWS.Route53();
-      route53.changeResourceRecordSets(params, function () {
-        done();
-      });
-    });
-    afterEach(function (done) {
       ctx = {};
       done();
     });
