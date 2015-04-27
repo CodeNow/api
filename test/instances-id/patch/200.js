@@ -1,5 +1,5 @@
 /**
- * @module test/instances-id/patch/202
+ * @module test/instances-id/patch/200
  */
 'use strict';
 
@@ -71,24 +71,65 @@ describe('202 PATCH /instances', function () {
         //done();
       });
 
-      //it('should create an instance with a build', function (done) {
-      it('should update an instance with container inspect', function (done) {
+      it('should create an instance with a build', function (done) {
+        var container = {
+          dockerHost: 'http://10.10.10.10:4444',
+          dockerContainer: ''
+        };
+        // required when updating container in PATCH route
+        var contextVersion = {
+           //?? string?
+        };
         ctx.instance.update({
-          container: ''
+          build: ctx.build.id(),
+          container: container,
+          contextVersion: contextVersion // <-- query string?
         }, function (err, body, statusCode) {
-
-        });
-       /* 
-        ({ build: ctx.build.id() }, function (err, body, statusCode) {
-          if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
         });
-        */
       });
     });
   });
 });
+
+function expectInstanceCreated (body, statusCode, user, build, cv) {
+  user = user.json();
+  build = build.json();
+  cv = cv.json();
+  var owner = {
+    github:   user.accounts.github.id,
+    username: user.accounts.github.login,
+    gravatar: user.gravatar
+  };
+
+  expect(body._id).to.exist();
+  expect(body.shortHash).to.exist();
+  expect(body.network).to.exist();
+  expect(body.network.networkIp).to.exist();
+  expect(body.network.hostIp).to.exist();
+  expect(body.name).to.exist();
+  expect(body.lowerName).to.equal(body.name.toLowerCase());
+
+  expect(body).deep.contain({
+    build: build,
+    contextVersion: cv,
+    contextVersions: [ cv ], // legacy support for now
+    owner: owner,
+    containers: [ ],
+    autoForked: false,
+    masterPod : false
+  });
+}
+
+
+
+
+
+
+
+
+
 
 /*
       it('should create an instance with name, build, env', function (done) {
@@ -100,9 +141,7 @@ describe('202 PATCH /instances', function () {
           done();
         });
       });
-*/
     });
-/*
     describe('with built build', function () {
       beforeEach(function (done) {
         ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
@@ -153,33 +192,4 @@ describe('202 PATCH /instances', function () {
     });
   });
 });
-
-function expectInstanceCreated (body, statusCode, user, build, cv) {
-  user = user.json();
-  build = build.json();
-  cv = cv.json();
-  var owner = {
-    github:   user.accounts.github.id,
-    username: user.accounts.github.login,
-    gravatar: user.gravatar
-  };
-
-  expect(body._id).to.exist();
-  expect(body.shortHash).to.exist();
-  expect(body.network).to.exist();
-  expect(body.network.networkIp).to.exist();
-  expect(body.network.hostIp).to.exist();
-  expect(body.name).to.exist();
-  expect(body.lowerName).to.equal(body.name.toLowerCase());
-
-  expect(body).deep.contain({
-    build: build,
-    contextVersion: cv,
-    contextVersions: [ cv ], // legacy support for now
-    owner: owner,
-    containers: [ ],
-    autoForked: false,
-    masterPod : false
-  });
-}
 */

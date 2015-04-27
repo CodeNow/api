@@ -142,6 +142,10 @@ module.exports = {
       cb = ownerId;
       ownerId = null;
     } else {
+      /**
+       * Mock successive github API requests that will occur
+       * internally as a result of the following API requests
+       */
       // post copy version from source
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
       // post create app code version
