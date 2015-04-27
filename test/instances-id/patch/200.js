@@ -37,13 +37,6 @@ describe('202 PATCH /instances', function () {
   // afterEach(require('../../fixtures/clean-nock'));
 
   describe('For User', function () {
-    beforeEach(function (done) {
-      multi.createInstance(function (err, instance) {
-        if (err) { throw err; }
-        ctx.instance = instance;
-        done();
-      });
-    });
     describe('with in-progress build', function () {
       beforeEach(function (done) {
         ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
@@ -64,6 +57,16 @@ describe('202 PATCH /instances', function () {
           ctx.cv.fetch(done); // used in assertions
         });
       });
+      beforeEach(function (done) {
+        // create instance
+        ctx.instance = ctx.user.createInstance({
+          json: {
+            build: ctx.build.id()
+          }
+        }, function (err, statusCode) {
+          done();
+        });
+      });
       afterEach(function (done) {
         // TODO: wait for event first, make sure everything finishes.. then drop db
         ctx.createUserContainerSpy.restore();
@@ -72,18 +75,8 @@ describe('202 PATCH /instances', function () {
       });
 
       it('should update an instance with a build', function (done) {
-        var container = {
-          dockerHost: 'http://10.10.10.10:4444',
-          dockerContainer: ''
-        };
-        // required when updating container in PATCH route
-        var contextVersion = {
-           //?? string?
-        };
         ctx.instance.update({
           build: ctx.build.id(),
-          container: container,
-          contextVersion: contextVersion // <-- query string?
         }, function (err, body, statusCode) {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
@@ -105,7 +98,27 @@ describe('202 PATCH /instances', function () {
       });
 
       it('should update an instance with a container and context version', function (done) {
-
+        var container = {
+          dockerHost: 'http://10.10.10.10:4444',
+          dockerContainer: {}
+        };
+        // required when updating container in PATCH route
+        var contextVersion = ctx.cv.id();
+        var opts = {
+          json: {
+            build: ctx.build.id(),
+            container: container
+          },
+          qs: {
+            contextVersion: contextVersion
+          }
+        };
+        console.log('opts', opts);
+        ctx.instance.update(opts, function (err, body, statusCode) {
+          console.log(err, body, statusCode);
+          //expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
+          done();
+        });
       });
 
     });
