@@ -366,6 +366,40 @@ describe('neo4j driver', function () {
     });
   });
 
+  describe('deleteNodeAndConnections', function () {
+    beforeEach(function (done) {
+      // fake the node being created
+      sinon.stub(graph, '_query').yieldsAsync(null, { n: true });
+      done();
+    });
+    afterEach(function (done) {
+      graph._query.restore();
+      done();
+    });
+
+    it('should make a query to delete the node and incoming connections', function (done) {
+      var node = {
+        label: 'Instance',
+        props: {
+          id: '1234567890asdf'
+        }
+      };
+      var expectedQuery = [
+        'MATCH (n:Instance {id: {props}.id})',
+        'OPTIONAL MATCH ()-[r]->(n)',
+        'DELETE r,n'
+      ].join('\n');
+      graph.deleteNodeAndConnections(node, function (err) {
+        expect(err).to.be.null();
+        expect(graph._query.calledOnce).to.be.true();
+        var call = graph._query.getCall(0);
+        expect(call.args[0]).to.equal(expectedQuery);
+        expect(call.args[1]).to.deep.equal({ props: node.props });
+        done();
+      });
+    });
+  });
+
   describe('writeConnection', function () {
     beforeEach(function (done) {
       sinon.stub(graph, '_query').yieldsAsync(null, { a: true, b: true, r: true });
