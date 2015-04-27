@@ -42,7 +42,7 @@ describe('neo4j driver', function () {
   describe('getNodeCount', function () {
     beforeEach(function (done) {
       sinon.stub(graph, '_query').yieldsAsync(null, {
-        'count(*)': [ 1 ]
+        'count(*)': [1]
       });
       done();
     });
@@ -152,7 +152,7 @@ describe('neo4j driver', function () {
           edge: { label: 'dependsOn' },
           node: { label: 'Instance' }
         }
-      },{
+      }, {
         Out: {
           edge: { label: 'hasHostname' },
           node: {
@@ -279,7 +279,7 @@ describe('neo4j driver', function () {
           node: {
             label: 'Instance',
             props: { lowerName: 'some-name' }
-          },
+          }
         }
       }];
       var expectedQuery = [
