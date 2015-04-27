@@ -71,7 +71,7 @@ describe('202 PATCH /instances', function () {
         //done();
       });
 
-      it('should create an instance with a build', function (done) {
+      it('should update an instance with a build', function (done) {
         var container = {
           dockerHost: 'http://10.10.10.10:4444',
           dockerContainer: ''
@@ -85,15 +85,34 @@ describe('202 PATCH /instances', function () {
           container: container,
           contextVersion: contextVersion // <-- query string?
         }, function (err, body, statusCode) {
-          expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
+          expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
         });
       });
+
+      it('should update an instance with name, build, env', function (done) {
+        var name = 'CustomName';
+        var env = ['one=one','two=two','three=three'];
+        ctx.instance.update({
+          build: ctx.build.id(),
+          name: name,
+          env: env
+        }, function (err, body, statusCode) {
+          if (err) { return done(err); }
+          expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
+          done();
+        });
+      });
+
+      it('should update an instance with a container and context version', function (done) {
+
+      });
+
     });
   });
 });
 
-function expectInstanceCreated (body, statusCode, user, build, cv) {
+function expectInstanceUpdated (body, statusCode, user, build, cv) {
   user = user.json();
   build = build.json();
   cv = cv.json();
