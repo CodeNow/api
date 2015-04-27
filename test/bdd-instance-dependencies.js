@@ -96,6 +96,60 @@ describe('BDD - Instance Dependencies', { timeout: 5000 }, function () {
   // });
 
   describe('from none to 1 -> 1 relations', function () {
+    describe('as master pod environment relations', function () {
+      beforeEach(function (done) {
+        // everything is deleted after, so this should be fine to leave alone
+        async.parallel([
+          ctx.webInstance.setInMasterPod.bind(ctx.webInstance),
+          ctx.apiInstance.setInMasterPod.bind(ctx.apiInstance)
+        ], done);
+      });
+      beforeEach(function (done) {
+        var envs = ctx.webInstance.attrs.env || [];
+        envs.push('API=' + ctx.apiInstance.attrs.lowerName + '-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN);
+        envs.push('PI=does-not-exist-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN);
+        ctx.webInstance.update({ env: envs }, done);
+      });
+
+      it('should catch dependencies via environment variables', function (done) {
+        ctx.webInstance.fetchDependencies(function (err, deps) {
+          if (err) { return done(err); }
+          expect(deps).to.have.length(1);
+          expect(deps[0]).to.deep.contain({
+            lowerName: 'api-instance',
+            id: ctx.apiInstance.attrs._id.toString()
+          });
+          done();
+        });
+      });
+
+      it('should remove dependencies via environment variables', function (done) {
+        async.series([
+          ctx.webInstance.update.bind(ctx.webInstance, { env: [] }),
+          ctx.webInstance.fetchDependencies.bind(ctx.webInstance)
+        ], function (err, results) {
+          if (err) { return done(err); }
+          var deps = results[1][0];
+          expect(deps).to.have.length(0);
+          done();
+        });
+      });
+
+      it('should remove dependencies that are deleted', function (done) {
+        async.series([
+          ctx.apiInstance.destroy.bind(ctx.apiInstance),
+          ctx.webInstance.fetchDependencies.bind(ctx.webInstance)
+        ], function (err, results) {
+          if (err) { return done(err); }
+          var deps = results[1][0];
+          expect(deps).to.have.length(0);
+          done();
+        });
+      });
+    });
+
     it('should update the deps of an instance', function (done) {
       var body = {
         instance: ctx.apiInstance.id(),
