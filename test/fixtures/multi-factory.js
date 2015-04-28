@@ -9,22 +9,29 @@ var formatArgs = require('format-args');
 var primus = require('./primus');
 var dockerMockEvents = require('./docker-mock-events');
 var createCount = require('callback-count');
+var isFunction = require('101/is-function');
 
 module.exports = {
 
-  createUser: function (cb) {
+  createUser: function (opts, cb) {
+    if (isFunction(opts)) {
+      cb = opts;
+      opts = {};
+    }
     debug('createUser', formatArgs(arguments));
     var host = require('./host');
     var token = uuid();
-    require('./mocks/github/action-auth')(token);
+    var name = opts.username || uuid();
+    require('./mocks/github/action-auth')(token, undefined, name);
     var User = require('runnable');
-    var user = new User(host);
+    var user = new User(host, opts);
     user.githubLogin(token, function (err) {
       if (err) {
         return cb(err);
       }
       else {
         user.attrs.accounts.github.accessToken = token;
+        user.attrs.accounts.github.username = name;
         cb(null, user);
       }
     });

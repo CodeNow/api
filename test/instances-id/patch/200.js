@@ -20,7 +20,7 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 
-describe('202 PATCH /instances', function () {
+describe('200 PATCH /instances', function () {
   var ctx = {};
   // before
   before(api.start.bind(ctx));

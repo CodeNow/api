@@ -14,7 +14,6 @@ var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
-var uuid = require('uuid');
 
 describe('Version - /contexts/:contextId/versions/:id', function () {
   var ctx = {};
@@ -91,52 +90,6 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
           // by id.
           require('./fixtures/mocks/github/user')(ctx.user);
           ctx.modContext.fetchVersion(ctx.contextVersion.id(), expects.success(200, expected, done));
-        });
-      });
-    });
-  });
-
-  describe('PATCH', function () {
-    var updates = [{
-      name: uuid()
-    },{
-      started: Date.now()
-    },{
-      completed: Date.now()
-    }];
-
-    describe('permissions', function() {
-      describe('owner', function () {
-        updates.forEach(function (json) {
-          var keys = Object.keys(json);
-          var vals = keys.map(function (key) { return json[key]; });
-          it('should 405 update context\'s '+keys+' to '+vals, function (done) {
-            ctx.contextVersion.update({ json: json }, expects.errorStatus(405, done));
-          });
-        });
-      });
-      describe('non-owner', function () {
-        beforeEach(createNonOwner);
-        beforeEach(createNonOwnerContext);
-        updates.forEach(function (json) {
-          var keys = Object.keys(json);
-          var vals = keys.map(function (key) { return json[key]; });
-          it('should 405 not update context\'s '+keys+' to '+vals+' (403 forbidden)', function (done) {
-            ctx.nonOwnerContext.updateVersion(ctx.contextVersion.id(), {json: json},
-              expects.errorStatus(405, done));
-          });
-        });
-      });
-      describe('moderator', function () {
-        beforeEach(createModUser);
-        beforeEach(createModContextVersion);
-        updates.forEach(function (json) {
-          var keys = Object.keys(json);
-          var vals = keys.map(function (key) { return json[key]; });
-          it('should 405 update context\'s '+keys+' to '+vals, function (done) {
-            ctx.modContext.updateVersion(ctx.contextVersion.id(), {json: json},
-              expects.errorStatus(405, done));
-          });
         });
       });
     });
