@@ -23,6 +23,40 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 
+function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
+  user = user.json();
+  build = build.json();
+  cv = cv.json();
+  var owner = {
+    github:   user.accounts.github.id,
+    username: user.accounts.github.login,
+    gravatar: user.gravatar
+  };
+  expect(body._id).to.exist();
+  expect(body.shortHash).to.exist();
+  expect(body.network).to.exist();
+  expect(body.network.networkIp).to.exist();
+  expect(body.network.hostIp).to.exist();
+  expect(body.name).to.exist();
+  expect(body.lowerName).to.equal(body.name.toLowerCase());
+  var deepContain = {
+    build: build,
+    contextVersion: cv,
+    contextVersions: [ cv ], // legacy support for now
+    owner: owner,
+    containers: [ ],
+    autoForked: false,
+    masterPod : false
+  };
+  if (container) {
+    delete deepContain.containers;
+    expect(body.containers[0].inspect.Id).to.equal(container.Id);
+    expect(body.containers[0].dockerHost).to.equal('http://127.0.0.1:4243');
+    expect(body.containers[0].dockerContainer).to.equal(container.Id);
+  }
+  expect(body).deep.contain(deepContain);
+}
+
 describe('200 PATCH /instances', function () {
   var ctx = {};
   // before
@@ -135,8 +169,7 @@ describe('200 PATCH /instances', function () {
           }
         };
         ctx.instance.update(opts, function (err, body, statusCode) {
-          //console.log('arguments', err, body, statusCode);
-          //expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
+          expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv, ctx.container);
           done();
         });
       });
@@ -144,36 +177,6 @@ describe('200 PATCH /instances', function () {
     });
   });
 });
-
-function expectInstanceUpdated (body, statusCode, user, build, cv) {
-  user = user.json();
-  build = build.json();
-  cv = cv.json();
-  var owner = {
-    github:   user.accounts.github.id,
-    username: user.accounts.github.login,
-    gravatar: user.gravatar
-  };
-
-  expect(body._id).to.exist();
-  expect(body.shortHash).to.exist();
-  expect(body.network).to.exist();
-  expect(body.network.networkIp).to.exist();
-  expect(body.network.hostIp).to.exist();
-  expect(body.name).to.exist();
-  expect(body.lowerName).to.equal(body.name.toLowerCase());
-
-  expect(body).deep.contain({
-    build: build,
-    contextVersion: cv,
-    contextVersions: [ cv ], // legacy support for now
-    owner: owner,
-    containers: [ ],
-    autoForked: false,
-    masterPod : false
-  });
-}
-
 
 
 
