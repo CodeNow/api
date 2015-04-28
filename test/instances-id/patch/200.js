@@ -2,7 +2,6 @@
  * @module test/instances-id/patch/200
  */
 'use strict';
-
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -110,7 +109,7 @@ describe('200 PATCH /instances', function () {
             container: container
           },
           qs: {
-            contextVersion: contextVersion
+            'contextVersion._id': contextVersion
           }
         };
         var pick = require('101/pick');
