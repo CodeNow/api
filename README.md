@@ -46,7 +46,6 @@ Run all tests: `npm test`
 
 Granular:
 
-- Lint: `npm run lint`
 - BDD: `npm run bdd`
   - Pass additional arguments to BDD: `npm run bdd -- -d`
   - BDD one file: `npm run bdd -- test/path/to/file.js`
@@ -56,6 +55,20 @@ Granular:
   - BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
 - Unit: `npm run unit`
   - (similar options exist to run individual and ranges of tests as BDD)
+
+## Formatting
+
+#### jshint
+
+We rely (and require) that `jshint` passes with flying colors: `npm run lint`.
+
+#### eslint
+
+Additionally, `eslint` is available to help with formatting. It is not a tool that will format code _for you_, but provides suggestions at either a warning or error level. To run `eslint`, simply run `npm run eslint`, or ignore warnings, run `npm run eslint-errors`. These are not required to pass, but can be used as suggestions for formatting. Try it out and we can tweak it as needed, and maybe will require it at some point.
+
+`eslint`'s [rules](http://eslint.org/docs/rules/) are rather extensive, but are fairly well documented.
+
+If you would like to run `eslint` on a single file, run `./node_modules/.bin/eslint path/to/filename.js` (or install it with `npm -g eslint` and run `eslint path/to/filename.js`).
 
 # Opinions
 

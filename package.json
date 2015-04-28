@@ -1,14 +1,14 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
   },
   "private": true,
   "dependencies": {
-    "101": "^0.8.2",
+    "101": "^0.16.1",
     "async": "^0.9.0",
     "aws-sdk": "^2.0.14",
     "batch": "^0.5.1",
@@ -49,7 +49,7 @@
     "json-stable-stringify": "^1.0.0",
     "keypather": "^1.8.1",
     "middleware-flow": "^0.6.1",
-    "middlewarize": "git+ssh://git@github.com:tjmehta/middlewarize#v0.0.1",
+    "middlewarize": "0.0.1",
     "mixpanel": "^0.1.0",
     "mongoose": "~3.8.24",
     "mongoose-validator": "^1.0.0",
@@ -89,6 +89,7 @@
     "console-trace": "git://github.com/numbcoder/console-trace.git",
     "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v0.2.1",
     "docker-mock": "^1.0.1",
+    "eslint": "^0.20.0",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
     "function-proxy": "^0.5.2",
@@ -135,6 +136,8 @@
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "clean": "rm -rf docs coverage.html node_modules",
     "lint": "jshint .",
+    "eslint": "eslint .",
+    "eslint-errors": "eslint --quiet .",
     "cayley": "./test/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/fixtures/graphs/cayley/local.cfg --assets=./test/fixtures/graphs/cayley",
     "generate-whitelist": "find ./test -path ./test/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt"
   }
