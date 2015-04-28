@@ -105,7 +105,6 @@ describe('200 PATCH /instances', function () {
         var contextVersion = ctx.cv.id();
         var opts = {
           json: {
-            build: ctx.build.id(),
             container: container
           },
           qs: {
