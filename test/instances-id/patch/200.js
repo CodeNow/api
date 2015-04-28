@@ -2,17 +2,21 @@
  * @module test/instances-id/patch/200
  */
 'use strict';
+
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
+
+var Code = require('code');
+var Docker = require('dockerode');
+var sinon = require('sinon');
+
 var after = lab.after;
 var afterEach = lab.afterEach;
-var Code = require('code');
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
 var expect = Code.expect;
-var sinon = require('sinon');
+var it = lab.it;
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -26,6 +30,25 @@ describe('200 PATCH /instances', function () {
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   beforeEach(primus.connect);
+  before(function (done) {
+    // container to update test w/ later
+    var docker = ctx.docker = new Docker({
+      host: 'localhost',
+      port: 4243
+    });
+    docker.createContainer({
+      Image: 'ubuntu',
+      Cmd: ['/bin/bash'],
+      name: 'fight-frustration'
+    }, function (err, container) {
+      if (err) { return done(err); }
+      container.inspect(function (err, data) {
+        if (err) { return done(err); }
+        ctx.container = data;
+        done();
+      });
+    });
+  });
   // after
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
@@ -39,7 +62,7 @@ describe('200 PATCH /instances', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {
         ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
-        multi.createContextVersion(function (err,  cv, context, build, user) {
+        multi.createContextVersion(function (err, cv, context, build, user) {
           if (err) { return done(err); }
           ctx.build = build;
           ctx.cv = cv;
@@ -62,8 +85,8 @@ describe('200 PATCH /instances', function () {
           json: {
             build: ctx.build.id()
           }
-        }, function (err, statusCode) {
-          done();
+        }, function (err) {
+          done(err);
         });
       });
       afterEach(function (done) {
@@ -98,8 +121,8 @@ describe('200 PATCH /instances', function () {
 
       it('should update an instance with a container and context version', function (done) {
         var container = {
-          dockerHost: 'http://10.10.10.10:4444',
-          dockerContainer: {}
+          dockerHost: 'http://127.0.0.1:4243',
+          dockerContainer: ctx.container.Id
         };
         // required when updating container in PATCH route
         var contextVersion = ctx.cv.id();
@@ -111,12 +134,7 @@ describe('200 PATCH /instances', function () {
             'contextVersion._id': contextVersion
           }
         };
-        var pick = require('101/pick');
-        var User = require('models/mongo/user').find({}, {'accounts.github.id': 1}, function (err, users) {
-          console.log(err, users);
-        });
         ctx.instance.update(opts, function (err, body, statusCode) {
-
           console.log('arguments', err, body, statusCode);
           //expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
