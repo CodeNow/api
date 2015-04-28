@@ -25,7 +25,9 @@ var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 
-var ctx = {};
+var ctx = {
+  expected: {}
+};
 
 function assertCreate (body, done) {
   ctx.instance = ctx.user.createInstance(body,
@@ -50,7 +52,6 @@ function expectInstanceCreated (body, statusCode, user, build, cv) {
     username: user.accounts.github.login,
     gravatar: user.gravatar
   };
-
   expect(body._id).to.exist();
   expect(body.shortHash).to.exist();
   expect(body.network).to.exist();
@@ -58,7 +59,6 @@ function expectInstanceCreated (body, statusCode, user, build, cv) {
   expect(body.network.hostIp).to.exist();
   expect(body.name).to.exist();
   expect(body.lowerName).to.equal(body.name.toLowerCase());
-
   expect(body).deep.contain({
     build: build,
     contextVersion: cv,
@@ -81,48 +81,11 @@ describe('201 POST /instances', function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
-  // afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../fixtures/clean-mongo').removeEverything);
   // afterEach(require('../../fixtures/clean-ctx')(ctx));
   // afterEach(require('../../fixtures/clean-nock'));
 
   describe('For User', function () {
-    describe('master pod', function () {
-      it('should create a private instance by default', function (done) {
-        var name = uuid();
-        var env = [
-          'FOO=BAR'
-        ];
-        var body = {
-          name: name,
-          build: ctx.build.id(),
-          env: env
-        };
-        ctx.expected.name = name;
-        ctx.expected.env = env;
-        assertCreate(body, function () {
-          expect(ctx.instance.attrs.public).to.equal(false);
-          expect(ctx.instance.attrs.masterPod).to.equal(false);
-          done();
-        });
-      });
-
-      it('should make a master pod instance', function (done) {
-        var name = uuid();
-        var body = {
-          name: name,
-          build: ctx.build.id(),
-          masterPod: true
-        };
-        ctx.expected.name = name;
-        ctx.expected.masterPod = true;
-        assertCreate(body, function () {
-          expect(ctx.instance.attrs.public).to.equal(false);
-          expect(ctx.instance.attrs.masterPod).to.equal(true);
-          done();
-        });
-      });
-    });
-
     describe('with in-progress build', function () {
       beforeEach(function (done) {
         ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
@@ -148,6 +111,42 @@ describe('201 POST /instances', function () {
         ctx.createUserContainerSpy.restore();
         require('../../fixtures/clean-mongo').removeEverything(done);
         //done();
+      });
+
+      it('should create a private instance by default', function (done) {
+        var name = uuid();
+        var env = [
+          'FOO=BAR'
+        ];
+        var body = {
+          name: name,
+          build: ctx.build.id(),
+          env: env
+        };
+        //ctx.expected.name = name;
+        //ctx.expected.env = env;
+        assertCreate(body, function () {
+          expect(ctx.instance.attrs.public).to.equal(false);
+          expect(ctx.instance.attrs.masterPod).to.equal(false);
+          done();
+        });
+      });
+
+      it('should make a master pod instance', function (done) {
+        var name = uuid();
+        var body = {
+          name: name,
+          build: ctx.build.id(),
+          masterPod: true
+        };
+        //ctx.expected.name = name;
+        //ctx.expected.masterPod = true;
+        assertCreate(body, function () {
+          console.log('body!', body);
+          //expect(ctx.instance.attrs.public).to.equal(false);
+          //expect(ctx.instance.attrs.masterPod).to.equal(true);
+          done();
+        });
       });
 
       it('should create an instance with a build', function (done) {
