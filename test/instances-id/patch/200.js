@@ -39,19 +39,12 @@ describe('200 PATCH /instances', function () {
   describe('For User', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {
-        multi.createUser(function (err, user) {
-          if (err) { return done(err); }
-          ctx.user = user;
-          done();
-        });
-      });
-      beforeEach(function (done) {
         ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
-        var ownerId = ctx.user.attrs.accounts.github.id;
-        multi.createContextVersion(ownerId, function (err,  cv, context, build, user) {
+        multi.createContextVersion(function (err,  cv, context, build, user) {
           if (err) { return done(err); }
           ctx.build = build;
           ctx.cv = cv;
+          ctx.user = user;
           done();
         });
       });
@@ -120,7 +113,12 @@ describe('200 PATCH /instances', function () {
             contextVersion: contextVersion
           }
         };
+        var pick = require('101/pick');
+        var User = require('models/mongo/user').find({}, {'accounts.github.id': 1}, function (err, users) {
+          console.log(err, users);
+        });
         ctx.instance.update(opts, function (err, body, statusCode) {
+
           console.log('arguments', err, body, statusCode);
           //expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
