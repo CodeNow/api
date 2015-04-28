@@ -135,7 +135,7 @@ describe('200 PATCH /instances', function () {
           }
         };
         ctx.instance.update(opts, function (err, body, statusCode) {
-          console.log('arguments', err, body, statusCode);
+          //console.log('arguments', err, body, statusCode);
           //expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
         });

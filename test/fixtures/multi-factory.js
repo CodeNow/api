@@ -1,18 +1,21 @@
+/**
+ * @module test/fixtures/multi-factory
+ */
 'use strict';
 
-var MongoUser = require('models/mongo/user');
-var uuid = require('uuid');
-var generateKey = require('./key-factory');
-var EventEmitter = require('events').EventEmitter;
-var debug = require('debug')('runnable-api:multi-factory');
-var formatArgs = require('format-args');
-var primus = require('./primus');
-var dockerMockEvents = require('./docker-mock-events');
 var createCount = require('callback-count');
+var debug = require('debug')('runnable-api:multi-factory');
 var isFunction = require('101/is-function');
+var uuid = require('uuid');
+
+var EventEmitter = require('events').EventEmitter;
+var MongoUser = require('models/mongo/user');
+var dockerMockEvents = require('./docker-mock-events');
+var formatArgs = require('format-args');
+var generateKey = require('./key-factory');
+var primus = require('./primus');
 
 module.exports = {
-
   createUser: function (opts, cb) {
     if (isFunction(opts)) {
       cb = opts;
