@@ -4,7 +4,11 @@
 'use strict';
 
 var Lab = require('lab');
+var createCount = require('callback-count');
+var uuid = require('uuid');
+
 var lab = exports.lab = Lab.script();
+
 var describe = lab.describe;
 var it = lab.it;
 var before = lab.before;
@@ -17,11 +21,56 @@ var sinon = require('sinon');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
+var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 
+var ctx = {};
+
+function assertCreate (body, done) {
+  ctx.instance = ctx.user.createInstance(body,
+    expects.success(201, ctx.expected, function (err) {
+      if (err) { return done(err); }
+      if (!ctx.afterPostAsserts || ctx.afterPostAsserts.length === 0) {
+        return done();
+      }
+      var count = createCount(ctx.afterPostAsserts.length, done);
+      ctx.afterPostAsserts.forEach(function (assert) {
+        assert(count.next);
+      });
+    }));
+}
+
+function expectInstanceCreated (body, statusCode, user, build, cv) {
+  user = user.json();
+  build = build.json();
+  cv = cv.json();
+  var owner = {
+    github:   user.accounts.github.id,
+    username: user.accounts.github.login,
+    gravatar: user.gravatar
+  };
+
+  expect(body._id).to.exist();
+  expect(body.shortHash).to.exist();
+  expect(body.network).to.exist();
+  expect(body.network.networkIp).to.exist();
+  expect(body.network.hostIp).to.exist();
+  expect(body.name).to.exist();
+  expect(body.lowerName).to.equal(body.name.toLowerCase());
+
+  expect(body).deep.contain({
+    build: build,
+    contextVersion: cv,
+    contextVersions: [ cv ], // legacy support for now
+    owner: owner,
+    containers: [ ],
+    autoForked: false,
+    masterPod : false
+  });
+}
+
 describe('201 POST /instances', function () {
-  var ctx = {};
   // before
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -37,6 +86,43 @@ describe('201 POST /instances', function () {
   // afterEach(require('../../fixtures/clean-nock'));
 
   describe('For User', function () {
+    describe('master pod', function () {
+      it('should create a private instance by default', function (done) {
+        var name = uuid();
+        var env = [
+          'FOO=BAR'
+        ];
+        var body = {
+          name: name,
+          build: ctx.build.id(),
+          env: env
+        };
+        ctx.expected.name = name;
+        ctx.expected.env = env;
+        assertCreate(body, function () {
+          expect(ctx.instance.attrs.public).to.equal(false);
+          expect(ctx.instance.attrs.masterPod).to.equal(false);
+          done();
+        });
+      });
+
+      it('should make a master pod instance', function (done) {
+        var name = uuid();
+        var body = {
+          name: name,
+          build: ctx.build.id(),
+          masterPod: true
+        };
+        ctx.expected.name = name;
+        ctx.expected.masterPod = true;
+        assertCreate(body, function () {
+          expect(ctx.instance.attrs.public).to.equal(false);
+          expect(ctx.instance.attrs.masterPod).to.equal(true);
+          done();
+        });
+      });
+    });
+
     describe('with in-progress build', function () {
       beforeEach(function (done) {
         ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
@@ -133,32 +219,3 @@ describe('201 POST /instances', function () {
     });
   });
 });
-
-function expectInstanceCreated (body, statusCode, user, build, cv) {
-  user = user.json();
-  build = build.json();
-  cv = cv.json();
-  var owner = {
-    github:   user.accounts.github.id,
-    username: user.accounts.github.login,
-    gravatar: user.gravatar
-  };
-
-  expect(body._id).to.exist();
-  expect(body.shortHash).to.exist();
-  expect(body.network).to.exist();
-  expect(body.network.networkIp).to.exist();
-  expect(body.network.hostIp).to.exist();
-  expect(body.name).to.exist();
-  expect(body.lowerName).to.equal(body.name.toLowerCase());
-
-  expect(body).deep.contain({
-    build: build,
-    contextVersion: cv,
-    contextVersions: [ cv ], // legacy support for now
-    owner: owner,
-    containers: [ ],
-    autoForked: false,
-    masterPod : false
-  });
-}
