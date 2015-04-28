@@ -1,3 +1,7 @@
+/**
+ * Mock Docker & Sauron
+ * @module test/fixtures/dock
+ */
 var vm = require('vm');
 var pick = require('101/pick');
 var put = require('101/put');
