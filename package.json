@@ -89,6 +89,7 @@
     "console-trace": "git://github.com/numbcoder/console-trace.git",
     "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v0.2.1",
     "docker-mock": "^1.0.1",
+    "eslint": "^0.20.0",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
     "function-proxy": "^0.5.2",
@@ -135,6 +136,8 @@
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "clean": "rm -rf docs coverage.html node_modules",
     "lint": "jshint .",
+    "eslint": "eslint .",
+    "eslint-errors": "eslint --quiet .",
     "cayley": "./test/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/fixtures/graphs/cayley/local.cfg --assets=./test/fixtures/graphs/cayley",
     "generate-whitelist": "find ./test -path ./test/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt"
   }
