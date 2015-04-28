@@ -352,6 +352,21 @@ function createInstanceTests (ctx) {
       done();
     });
   });
+  it('should make a master pod instance', { timeout: 1000 }, function (done) {
+    var name = uuid();
+    var body = {
+      name: name,
+      build: ctx.build.id(),
+      masterPod: true
+    };
+    ctx.expected.name = name;
+    ctx.expected.masterPod = true;
+    assertCreate(body, function () {
+      expect(ctx.instance.attrs.public).to.equal(false);
+      expect(ctx.instance.attrs.masterPod).to.equal(true);
+      done();
+    });
+  });
   describe('name generation', function () {
     // TODO
   });
