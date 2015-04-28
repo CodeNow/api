@@ -349,6 +349,7 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, function () {
       expect(ctx.instance.attrs.public).to.equal(false);
+      expect(ctx.instance.attrs.masterPod).to.equal(false);
       done();
     });
   });
