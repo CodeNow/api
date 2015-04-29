@@ -12,7 +12,6 @@ var expect = Code.expect;
 var Slack = require('notifications/slack');
 
 describe('Slack', function () {
-
   describe('#notifyOnNewBranch', function () {
     it('should do nothing if slack messaging is disabled', function (done) {
       var slack = new Slack();
@@ -81,7 +80,7 @@ describe('Slack', function () {
       var gitInfo = {
         branch: 'feature-1',
         headCommit: headCommit,
-        commitLog: [headCommit, commit2],
+        commitLog: [ headCommit, commit2 ],
         repo: 'CodeNow/api',
         repoName: 'api'
       };
@@ -155,7 +154,6 @@ describe('Slack', function () {
       expect(text).to.equal(expected);
       done();
     });
-
   });
 
   describe('#_createServerSelectionText', function () {
@@ -175,7 +173,5 @@ describe('Slack', function () {
       expect(text).to.equal(expected);
       done();
     });
-
   });
-
 });
