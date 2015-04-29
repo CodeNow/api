@@ -3,6 +3,7 @@
 var Code = require('code');
 var expect = Code.expect;
 
+var createCount = require('callback-count');
 var isFunction = require('101/is-function');
 var isString = require('101/is-string');
 var isObject = require('101/is-object');
@@ -193,6 +194,7 @@ expects.updatedHipacheEntries = function (username, instanceName, container, cb)
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
+  var count = createCount(2, cb);
   hosts.readHipacheEntriesForContainer(
     username,
     instanceName,
@@ -206,8 +208,26 @@ expects.updatedHipacheEntries = function (username, instanceName, container, cb)
         expectedRedisData[key] = val;
       });
       expect(redisData).to.deep.equal(expectedRedisData);
-      cb();
-    });
+      count.next();
+    }
+  );
+
+  hosts.readHipacheEntriesForContainer(
+    'staging-' + username,
+    instanceName,
+    container,
+    function (err, redisData) {
+      if (err) { return cb(err); }
+      var expectedRedisData = {};
+      Object.keys(container.ports).forEach(function (containerPort) {
+        var key = toHipacheEntryKey(containerPort, instanceName, 'staging-' + username);
+        var val = toHipacheEntryVal(containerPort, container, instanceName);
+        expectedRedisData[key] = val;
+      });
+      expect(redisData).to.deep.equal(expectedRedisData);
+      count.next();
+    }
+  );
 };
 expects.updatedNaviHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
@@ -235,14 +255,19 @@ expects.updatedNaviHipacheEntries = function (username, instanceName, container,
 /**
  * assert updated dns and hipache entries are non-existant
  * NOTE: if instance is provided for instanceOrName args are: (user, instance, cb)
- * @param  {Object}         username        username
+ * @param  {Object}         userOrUsername  user client model OR username
  * @param  {String|Object}  instanceOrName  instance client model OR instance name
  * @param  {Object}         container       container client model
  * @param  {String}         hostIp          expected dns hostIp value
  * @param  {Function}       cb              callback
  */
-expects.deletedHosts = function (username, instanceOrName, container, cb) {
-  var instanceName, instance;
+expects.deletedHosts = function (userOrUsername, instanceOrName, container, cb) {
+  var username = userOrUsername;
+  if (isObject(userOrUsername)) {
+    username = userOrUsername.attrs.accounts.github.username;
+  }
+  var instanceName;
+  var instance;
   if (isObject(instanceOrName)) { // instanceOrInstanceName
     instance = instanceOrName;
     cb = container;
@@ -265,13 +290,13 @@ expects.deletedDnsEntry = function (username, instanceName) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var dnsUrl = toDnsUrl(username, instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record')
-    .to.not.exist();
+  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record').to.not.exist();
 };
 expects.deletedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
+  var count = createCount(2, cb);
   hosts.readHipacheEntriesForContainer(
     username,
     instanceName,
@@ -284,8 +309,25 @@ expects.deletedHipacheEntries = function (username, instanceName, container, cb)
         expectedRedisData[key] = [];
       });
       expect(redisData).to.deep.equal(expectedRedisData);
-      cb();
-    });
+      count.next();
+    }
+  );
+
+  hosts.readHipacheEntriesForContainer(
+    'staging-' + username,
+    instanceName,
+    container,
+    function (err, redisData) {
+      if (err) { return cb(err); }
+      var expectedRedisData = {};
+      Object.keys(container.ports).forEach(function (containerPort) {
+        var key = toHipacheEntryKey(containerPort, instanceName, 'staging-' + username);
+        expectedRedisData[key] = [];
+      });
+      expect(redisData).to.deep.equal(expectedRedisData);
+      count.next();
+    }
+  );
 };
 function toDnsUrl (username, instanceName) {
   return [instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN].join('');
