@@ -11,7 +11,6 @@ var Code = require('code');
 var expect = Code.expect;
 
 var Runnable = require('models/apis/runnable');
-
 describe('Runnable', function () {
   describe('#forkMasterInstance', function () {
     it('should create new instance with branch-masterName pattern', function (done) {
@@ -19,7 +18,7 @@ describe('Runnable', function () {
       var master = {
         shortHash: 'd1as6213a',
         name: 'inst1',
-        env: [ 'x=1' ],
+        env: ['x=1'],
         owner: { github: { id: 1 } }
       };
       sinon.stub(Runnable.prototype, 'createInstance', function (inst) {
@@ -41,7 +40,7 @@ describe('Runnable', function () {
       var master = {
         shortHash: 'd1as6213a',
         name: 'inst1',
-        env: [ 'x=1' ],
+        env: ['x=1'],
         owner: { github: { id: 1 } }
       };
       sinon.stub(Runnable.prototype, 'createInstance', function (inst) {
@@ -63,18 +62,19 @@ describe('Runnable', function () {
       var master = {
         shortHash: 'd1as6213a',
         name: 'inst1',
-        env: [ 'x=1' ],
+        env: ['x=1'],
         owner: { github: { id: 1 } }
       };
       sinon.stub(Runnable.prototype, 'createInstance', function (inst, cb) {
         var err = Boom.conflict('instance with lowerName already exists');
-        sinon.stub(Runnable.prototype, 'forkMasterInstance', function (masterInst, buildId, branch) {
-          expect(branch).to.equal('b1');
-          expect(masterInst.name).to.equal('inst1-1');
-          Runnable.prototype.createInstance.restore();
-          Runnable.prototype.forkMasterInstance.restore();
-          done();
-        });
+        sinon.stub(Runnable.prototype, 'forkMasterInstance',
+          function (masterInst, buildId, branch) {
+            expect(branch).to.equal('b1');
+            expect(masterInst.name).to.equal('inst1-1');
+            Runnable.prototype.createInstance.restore();
+            Runnable.prototype.forkMasterInstance.restore();
+            done();
+          });
         cb(err);
       });
       runnable.forkMasterInstance(master, 'build1', 'b1', noop);
