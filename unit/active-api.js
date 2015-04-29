@@ -17,12 +17,8 @@ require('loadenv')();
 describe('Active API', function () {
   var ctx = {};
   describe('isMe', function () {
-    before(function (done) {
-      redis.flushdb(done);
-    });
-    after(function (done) {
-      redis.flushdb(done);
-    });
+    before(redis.flushdb.bind(redis));
+    after(redis.flushdb.bind(redis));
 
     it('should return false if setAsMe was never called', function (done) {
       activeApi.isMe(function (err, isActive) {
@@ -31,16 +27,11 @@ describe('Active API', function () {
         done();
       });
     });
-
   });
 
   describe('setAsMe', function () {
-    before(function (done) {
-      redis.flushdb(done);
-    });
-    after(function (done) {
-      redis.flushdb(done);
-    });
+    before(redis.flushdb.bind(redis));
+    after(redis.flushdb.bind(redis));
 
     before(function (done) {
       ctx.originUUID = process.env.UUID;
@@ -82,7 +73,5 @@ describe('Active API', function () {
         done();
       }
     });
-
   });
-
 });
