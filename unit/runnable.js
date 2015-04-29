@@ -2,6 +2,7 @@
 
 var sinon = require('sinon');
 var noop = require('101/noop');
+var Boom = require('dat-middleware').Boom;
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -58,6 +59,27 @@ describe('Runnable', function () {
         done();
       });
       runnable.forkMasterInstance(master, 'build1', 'a1/b2/c3', noop);
+    });
+
+    it('should create new instance and append -1 if name exists', function (done) {
+      var runnable = new Runnable({});
+      var master = {
+        shortHash: 'd1as6213a',
+        name: 'inst1',
+        env: ['x=1'],
+        owner: {github: {id: 1}}
+      };
+      sinon.stub(Runnable.prototype, 'createInstance', function (inst, cb) {
+        var err = Boom.conflict('instance with lowerName already exists');
+        sinon.stub(Runnable.prototype, 'forkMasterInstance', function (masterInst, buildId, branch) {
+          expect(branch).to.equal('b1-1');
+          Runnable.prototype.createInstance.restore();
+          Runnable.prototype.forkMasterInstance.restore();
+          done();
+        });
+        cb(err);
+      });
+      runnable.forkMasterInstance(master, 'build1', 'b1', noop);
     });
   });
 });
