@@ -96,9 +96,52 @@ describe('Messenger', function () {
     sinon.stub(User, 'findByGithubId').yields(null, null);
     Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
       expect(err.output.statusCode).to.equal(404);
-      expect(canJoin).to.be.undefined();
       expect(err.output.payload.message).to.equal('User not found');
+      expect(canJoin).to.be.undefined();
       User.findByGithubId.restore();
+      done();
+    });
+  });
+  it('should return error if org search callbacks with error', function (done) {
+    var socket = {
+      request: {
+        session: {
+          passport: {
+            user: 'some-user-id'
+          }
+        }
+      }
+    };
+    var user = new User();
+    sinon.stub(User, 'findByGithubId').yields(null, user);
+    sinon.stub(User.prototype, 'findGithubOrgByGithubId').yields(new Error('Mongoose error'));
+    Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
+      expect(err.message).to.equal('Mongoose error');
+      expect(canJoin).to.be.undefined();
+      User.findByGithubId.restore();
+      User.prototype.findGithubOrgByGithubId.restore();
+      done();
+    });
+  });
+  it('should return error if org not found', function (done) {
+    var socket = {
+      request: {
+        session: {
+          passport: {
+            user: 'some-user-id'
+          }
+        }
+      }
+    };
+    var user = new User();
+    sinon.stub(User, 'findByGithubId').yields(null, user);
+    sinon.stub(User.prototype, 'findGithubOrgByGithubId').yields(null, null);
+    Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
+      expect(err.output.statusCode).to.equal(404);
+      expect(err.output.payload.message).to.equal('Org not found');
+      expect(canJoin).to.be.undefined();
+      User.findByGithubId.restore();
+      User.prototype.findGithubOrgByGithubId.restore();
       done();
     });
   });
