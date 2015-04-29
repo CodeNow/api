@@ -71,10 +71,11 @@ describe('201 POST /workers/container-create', function () {
     //
     // Casey Notes / Ideas
     //   - Race condition in the test following the above proposal that wouldn't occur normally
-    //     - POST instances/ - creates container, docker-listener picks that up (async) and creates job
+    //     - POST instances/ - creates container, docker-listener creates job to modify instance
     //       - (1) job calls worker route (updates instance /w container)
     //     - (2) Test calls worker route (updates instance w/ container)
     //     - Order could occur as 2, then 1
+    //  Possible race fix, wait for worker to recieve job & update instance, then have test call worker route
 });
 
   it('should upate instance with container information', function (done) {
