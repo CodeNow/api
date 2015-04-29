@@ -1,7 +1,7 @@
 /**
  * Tests for POST /workers/container-create
  * - Internal route
- * @module test/workers/container-create
+ * @module test/workers/container-create/post/201
  */
 'use strict';
 
@@ -10,8 +10,12 @@ var Lab = require('lab');
 var createCount = require('callback-count');
 var sinon = require('sinon');
 
-var api = require('../../fixtures/api-control');
-var multi = require('../../fixtures/multi-factory');
+//var Runnable = require('models/apis/runnable');
+var api = require('../../../fixtures/api-control');
+var dock = require('../../../fixtures/dock');
+var expects = require('../../../fixtures/expects');
+var multi = require('../../../fixtures/multi-factory');
+var primus = require('../../../fixtures/primus');
 
 var lab = exports.lab = Lab.script();
 
@@ -23,15 +27,30 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
+//var runnable = new Runnable({}, {});
+
+var ctx = {};
 describe('201 POST /workers/container-create', function () {
-  var ctx = {};
+
+  // before
+  before(api.start.bind(ctx));
+  before(dock.start.bind(ctx));
+  //before(require('../../../fixtures/mocks/api-client').setup);
+  beforeEach(primus.connect);
+  // after
+  afterEach(primus.disconnect);
+  after(api.stop.bind(ctx));
+  after(dock.stop.bind(ctx));
+  //after(require('../../../fixtures/mocks/api-client').clean);
+  afterEach(require('../../../fixtures/clean-mongo').removeEverything);
+
   beforeEach(function (done) {
-    var count = createCount(3, done);
     // need instance
     multi.createInstance(function (instance) {
       ctx.instance = instance;
-      count.inc();
+      done();
     });
+
     // fake container info
     // dockerode method spies for assertion
 
@@ -49,11 +68,25 @@ describe('201 POST /workers/container-create', function () {
     //      use that information to create an accurate 'body' to post to this route and
     //      add the labels to the body (so it the route can use them to query the instance)
     //   * finally, assert properties the response body
-  });
+    //
+    // Casey Notes / Ideas
+    //   - Race condition in the test following the above proposal that wouldn't occur normally
+    //     - POST instances/ - creates container, docker-listener picks that up (async) and creates job
+    //       - (1) job calls worker route (updates instance /w container)
+    //     - (2) Test calls worker route (updates instance w/ container)
+    //     - Order could occur as 2, then 1
+});
+
   it('should upate instance with container information', function (done) {
-    done();
+    return done();
+    runnable.workerContainerCreate({}, function () {
+      console.log(arguments);
+      done();
+    });
   });
+/*
   it('should deploy/start the container', function (done) {
     done();
   });
+*/
 });
