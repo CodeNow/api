@@ -42,6 +42,7 @@ describe('Autoforking', function () {
     multi.createInstance(ctx.orgId, function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.instance = instance;
+      ctx.instanceName = instance.attrs.name;
       ctx.user = user;
       ctx.build = build;
       done();
@@ -105,13 +106,13 @@ describe('Autoforking', function () {
 
   describe('fork master instance', function () {
 
-    it('should create new instance forked instance', function (done) {
+    it('should create new forked instance', function (done) {
       var runnable = new Runnable({}, ctx.user.attrs);
       runnable.forkMasterInstance(ctx.instance.attrs, ctx.build.attrs._id, 'feat-1', function (err, instance) {
         expect(err).to.be.null();
         expect(instance.masterPod).to.be.false();
         expect(instance.autoForked).to.be.true();
-        expect(instance.name).to.be.equal(ctx.instance.attrs.name + '-feat-1');
+        expect(instance.name).to.be.equal('feat-1-' + ctx.instance.attrs.name);
         expect(instance.parent).to.be.equal(ctx.instance.attrs.shortHash);
         expect(instance.createdBy.github).to.be.equal(ctx.user.attrs.accounts.github.id);
         done();
@@ -124,14 +125,14 @@ describe('Autoforking', function () {
         expect(err).to.be.null();
         expect(instance.masterPod).to.be.false();
         expect(instance.autoForked).to.be.true();
-        expect(instance.name).to.be.equal(ctx.instance.attrs.name + '-feat-1');
+        expect(instance.name).to.be.equal('feat-1-' + ctx.instance.attrs.name);
         expect(instance.parent).to.be.equal(ctx.instance.attrs.shortHash);
         expect(instance.createdBy.github).to.be.equal(ctx.user.attrs.accounts.github.id);
         runnable.forkMasterInstance(ctx.instance.attrs, ctx.build.attrs._id, 'feat-1', function (err, instance) {
           expect(err).to.be.null();
           expect(instance.masterPod).to.be.false();
           expect(instance.autoForked).to.be.true();
-          expect(instance.name).to.be.equal(ctx.instance.attrs.name + '-feat-1-copy');
+          expect(instance.name).to.be.equal('feat-1-' + ctx.instanceName + '-1');
           expect(instance.parent).to.be.equal(ctx.instance.attrs.shortHash);
           expect(instance.createdBy.github).to.be.equal(ctx.user.attrs.accounts.github.id);
           var repo = ctx.instance.attrs.contextVersion.appCodeVersions[0].repo;
@@ -140,10 +141,10 @@ describe('Autoforking', function () {
             expect(err).to.be.null();
             expect(forks.length).to.equal(2);
             var names = [
-              ctx.instance.attrs.name + '-feat-1',
-              ctx.instance.attrs.name + '-feat-1-copy'
+              'feat-1-' + ctx.instanceName,
+              'feat-1-' + ctx.instanceName + '-1'
             ];
-            expect(names).to.only.include([forks[0].name, forks[1].name]);
+            expect(names).to.deep.include([forks[0].name, forks[1].name]);
             done();
           });
         });
