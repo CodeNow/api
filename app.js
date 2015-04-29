@@ -47,7 +47,6 @@ Api.prototype.start = function (cb) {
   dogstatsd.monitorStart();
   // connect to mongoose
   mongooseControl.start(count.inc().next);
-
   // start listening to events
   count.inc();
   activeApi.setAsMe(function (err) {
@@ -55,7 +54,6 @@ Api.prototype.start = function (cb) {
     events.listen();
     count.next();
   });
-
   // express server start
   apiServer.start(count.inc().next);
   // all started callback

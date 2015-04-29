@@ -59,7 +59,8 @@ var vmProcess = {
     'MAVIS_HOST',
     'DOCKER_LISTENER_PORT',
     'REDIS_HOST_KEYS',
-    'AUTO_RECONNECT'
+    'AUTO_RECONNECT',
+    'DISABLE_HERMES_PUBLISH'
   ])
 };
 function runInSandbox (fn, str, done) {
