@@ -126,7 +126,7 @@ var resp = {
       .replace('{type}', type);
     return this.err(400, message);
   },
-  deleteFoundNotMatchErr: function () {
+  deleteFoundNotMatchErr: function (name, type) {
     var message =
       "Tried to delete resource record set [name='{name}.', type='{type}'] " +
       "but the values provided do not match the current values";
