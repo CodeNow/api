@@ -261,6 +261,7 @@ expects.updatedNaviHipacheEntries = function (username, instanceName, container,
  * @param  {String}         hostIp          expected dns hostIp value
  * @param  {Function}       cb              callback
  */
+// jshint maxcomplexity:8
 expects.deletedHosts = function (userOrUsername, instanceOrName, container, cb) {
   var username = userOrUsername;
   if (isObject(userOrUsername)) {
@@ -285,6 +286,7 @@ expects.deletedHosts = function (userOrUsername, instanceOrName, container, cb) 
   expects.deletedDnsEntry(username, instanceName);
   expects.deletedHipacheEntries(username, instanceName, container, cb);
 };
+// jshint maxcomplexity:6
 expects.deletedDnsEntry = function (username, instanceName) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
