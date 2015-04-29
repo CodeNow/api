@@ -187,8 +187,9 @@ expects.updatedDnsEntry = function (username, instanceName, hostIp) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var dnsUrl = toDnsUrl(username, instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record')
-    .to.equal(hostIp);
+  var dnsUrlMP = toDnsUrl('staging-' + username, instanceName);
+  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record').to.equal(hostIp);
+  expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record').to.equal(hostIp);
 };
 expects.updatedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
@@ -292,7 +293,9 @@ expects.deletedDnsEntry = function (username, instanceName) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var dnsUrl = toDnsUrl(username, instanceName);
+  var dnsUrlMP = toDnsUrl('staging-' + username, instanceName);
   expect(mockRoute53.findRecordIp(dnsUrl), 'dns record').to.not.exist();
+  expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record').to.not.exist();
 };
 expects.deletedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
