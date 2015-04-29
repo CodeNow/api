@@ -72,7 +72,8 @@ describe('Runnable', function () {
       sinon.stub(Runnable.prototype, 'createInstance', function (inst, cb) {
         var err = Boom.conflict('instance with lowerName already exists');
         sinon.stub(Runnable.prototype, 'forkMasterInstance', function (masterInst, buildId, branch) {
-          expect(branch).to.equal('b1-1');
+          expect(branch).to.equal('b1');
+          expect(masterInst.name).to.equal('inst1-1');
           Runnable.prototype.createInstance.restore();
           Runnable.prototype.forkMasterInstance.restore();
           done();
