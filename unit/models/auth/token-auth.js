@@ -49,7 +49,7 @@ describe('token.js unit test', function () {
         done();
       });
     });
-    it('should add token to callback url', function(done) {
+    it('should add runnableappAccessToken to callback url', function(done) {
       var testCookie = 'yummy';
       var testRedir = 'http://thisredir:9283/datPath?thisqs=great';
       var session = {
@@ -64,7 +64,7 @@ describe('token.js unit test', function () {
         expect(testUrl.protocol).to.equal('http:');
         expect(testUrl.host).to.equal('thisredir:9283');
         expect(testUrl.pathname).to.equal('/datPath');
-        expect(qs.token).to.exist();
+        expect(qs.runnableappAccessToken).to.exist();
         expect(qs.thisqs).to.equal('great');
         expect(err).to.not.exist();
         expect(RedisToken.prototype.setValue.calledWith(testCookie))
