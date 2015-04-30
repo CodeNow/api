@@ -77,11 +77,11 @@ describe('Messenger', function () {
         }
       }
     };
-    sinon.stub(User, 'findByGithubId').yields(new Error('Mongoose error'));
+    sinon.stub(User, 'findById').yields(new Error('Mongoose error'));
     Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
       expect(err.message).to.equal('Mongoose error');
       expect(canJoin).to.be.undefined();
-      User.findByGithubId.restore();
+      User.findById.restore();
       done();
     });
   });
@@ -95,12 +95,12 @@ describe('Messenger', function () {
         }
       }
     };
-    sinon.stub(User, 'findByGithubId').yields(null, null);
+    sinon.stub(User, 'findById').yields(null, null);
     Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
       expect(err.output.statusCode).to.equal(404);
       expect(err.output.payload.message).to.equal('User not found');
       expect(canJoin).to.be.undefined();
-      User.findByGithubId.restore();
+      User.findById.restore();
       done();
     });
   });
@@ -115,12 +115,12 @@ describe('Messenger', function () {
       }
     };
     var user = new User();
-    sinon.stub(User, 'findByGithubId').yields(null, user);
+    sinon.stub(User, 'findById').yields(null, user);
     sinon.stub(User.prototype, 'findGithubOrgByGithubId').yields(new Error('Mongoose error'));
     Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
       expect(err.message).to.equal('Mongoose error');
       expect(canJoin).to.be.undefined();
-      User.findByGithubId.restore();
+      User.findById.restore();
       User.prototype.findGithubOrgByGithubId.restore();
       done();
     });
@@ -136,13 +136,13 @@ describe('Messenger', function () {
       }
     };
     var user = new User();
-    sinon.stub(User, 'findByGithubId').yields(null, user);
+    sinon.stub(User, 'findById').yields(null, user);
     sinon.stub(User.prototype, 'findGithubOrgByGithubId').yields(null, null);
     Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
       expect(err.output.statusCode).to.equal(404);
       expect(err.output.payload.message).to.equal('Org not found');
       expect(canJoin).to.be.undefined();
-      User.findByGithubId.restore();
+      User.findById.restore();
       User.prototype.findGithubOrgByGithubId.restore();
       done();
     });
@@ -163,13 +163,13 @@ describe('Messenger', function () {
         accessToken: 'token'
       }
     };
-    sinon.stub(User, 'findByGithubId').yields(null, user);
+    sinon.stub(User, 'findById').yields(null, user);
     sinon.stub(User.prototype, 'findGithubOrgByGithubId').yields(null, { login: 'Runnable' });
     sinon.stub(GitHub.prototype, 'isOrgMember').yields(new Error('GitHub error'));
     Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
       expect(err.message).to.equal('GitHub error');
       expect(canJoin).to.be.undefined();
-      User.findByGithubId.restore();
+      User.findById.restore();
       User.prototype.findGithubOrgByGithubId.restore();
       GitHub.prototype.isOrgMember.restore();
       done();
@@ -191,13 +191,13 @@ describe('Messenger', function () {
         accessToken: 'token'
       }
     };
-    sinon.stub(User, 'findByGithubId').yields(null, user);
+    sinon.stub(User, 'findById').yields(null, user);
     sinon.stub(User.prototype, 'findGithubOrgByGithubId').yields(null, { login: 'Runnable' });
     sinon.stub(GitHub.prototype, 'isOrgMember').yields(null, false);
     Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
       expect(err).to.be.null();
       expect(canJoin).to.be.false();
-      User.findByGithubId.restore();
+      User.findById.restore();
       User.prototype.findGithubOrgByGithubId.restore();
       GitHub.prototype.isOrgMember.restore();
       done();
@@ -219,13 +219,13 @@ describe('Messenger', function () {
         accessToken: 'token'
       }
     };
-    sinon.stub(User, 'findByGithubId').yields(null, user);
+    sinon.stub(User, 'findById').yields(null, user);
     sinon.stub(User.prototype, 'findGithubOrgByGithubId').yields(null, { login: 'Runnable' });
     sinon.stub(GitHub.prototype, 'isOrgMember').yields(null, true);
     Messenger.canJoin(socket, 'some-id', { name: 'some-org-id' }, function (err, canJoin) {
       expect(err).to.be.null();
       expect(canJoin).to.be.true();
-      User.findByGithubId.restore();
+      User.findById.restore();
       User.prototype.findGithubOrgByGithubId.restore();
       GitHub.prototype.isOrgMember.restore();
       done();
@@ -285,10 +285,10 @@ describe('Messenger', function () {
         expect(msg.id).to.equal(id);
         expect(msg.error).to.equal('access denied');
         expect(msg.data).to.equal(data);
-        User.findByGithubId.restore();
+        User.findById.restore();
         done();
       };
-      sinon.stub(User, 'findByGithubId').yields(new Error('Mongoose error'));
+      sinon.stub(User, 'findById').yields(new Error('Mongoose error'));
       Messenger.subscribeStreamHandler(socket, id, data);
     });
   });
