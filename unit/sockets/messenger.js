@@ -16,7 +16,7 @@ var User = require('models/mongo/user');
 
 
 describe('Messenger', function () {
-  describe('canJoin', function () {
+  describe('#canJoin', function () {
     it('should return true if authToken provided', function (done) {
       var socket = {
         request: {
@@ -229,6 +229,67 @@ describe('Messenger', function () {
       User.prototype.findGithubOrgByGithubId.restore();
       GitHub.prototype.isOrgMember.restore();
       done();
+    });
+  });
+
+  describe('#subscribeStreamHandler', function () {
+    it('should return error if name is empty', function (done) {
+      var id = 'some-id';
+      var data = { type: 'some-type', action: 'join' };
+      var socket = {};
+      socket.write = function (msg) {
+        expect(msg.id).to.equal(id);
+        expect(msg.error).to.equal('name, type and action are required');
+        expect(msg.data).to.equal(data);
+        done();
+      };
+      Messenger.subscribeStreamHandler(socket, id, data);
+    });
+    it('should return error if action is empty', function (done) {
+      var id = 'some-id';
+      var data = { type: 'some-type', name: 'some-name' };
+      var socket = {};
+      socket.write = function (msg) {
+        expect(msg.id).to.equal(id);
+        expect(msg.error).to.equal('name, type and action are required');
+        expect(msg.data).to.equal(data);
+        done();
+      };
+      Messenger.subscribeStreamHandler(socket, id, data);
+    });
+    it('should return error if type is empty', function (done) {
+      var id = 'some-id';
+      var data = { action: 'join', name: 'some-name' };
+      var socket = {};
+      socket.write = function (msg) {
+        expect(msg.id).to.equal(id);
+        expect(msg.error).to.equal('name, type and action are required');
+        expect(msg.data).to.equal(data);
+        done();
+      };
+      Messenger.subscribeStreamHandler(socket, id, data);
+    });
+    it('should return access denied if user wasnot found', function (done) {
+      var id = 'some-id';
+      var data = { action: 'join', name: 'some-name', type: 'data' };
+      var socket = {
+        request: {
+          session: {
+            passport: {
+              user: 'some-user-id'
+            }
+          }
+        }
+      };
+      socket.write = function (msg) {
+        expect(msg.id).to.equal(id);
+        expect(msg.error).to.equal('access denied');
+        expect(msg.data).to.equal(data);
+        User.findByGithubId.restore();
+        done();
+      };
+      sinon.stub(User, 'findByGithubId').yields(new Error('Mongoose error'));
+      Messenger.subscribeStreamHandler(socket, id, data);
     });
   });
 });
