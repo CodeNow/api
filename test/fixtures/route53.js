@@ -1,3 +1,5 @@
+'use strict';
+
 var AWS = require('aws-sdk');
 var isObject = require('101/is-object');
 var find = require('101/find');
@@ -42,36 +44,36 @@ mock.start = function (cb) {
   return this;
 };
 
-  function changeResourceRecordSets (params, cb) {
-    debug('changeResourceRecordSets mock!', params);
-    if (!params) {
-      throw new Error('params is required');
-    }
-    if (!isObject(params)) {
-      throw new Error('params must be an object');
-    }
-    requireKeypath(params, 'HostedZoneId');
-    requireKeypath(params, 'ChangeBatch');
-    requireKeypath(params, 'ChangeBatch.Changes');
-    async.each(params.ChangeBatch.Changes, function (change, cb) {
-      var action = requireKeypath(change, 'Action');
-      var resourceRecordSet = requireKeypath(change, 'ResourceRecordSet');
-      requireKeypath(change, 'ResourceRecordSet.Name');
-      requireKeypath(change, 'ResourceRecordSet.Type');
-      requireKeypath(change, 'ResourceRecordSet.ResourceRecords[0].Value');
-      requireKeypath(change, 'ResourceRecordSet.TTL');
-      if (action.toUpperCase() === 'UPSERT') {
-        mockUpsert(resourceRecordSet, cb);
-      }
-      else if (action.toUpperCase() === 'DELETE') {
-        mockDelete(resourceRecordSet, cb);
-      }
-      else {
-        throw new Error('Unexpected "ChangeBatch.Changes[0].Action" value "' +
-          action + '" (mock expects UPSERT|DELETE)');
-      }
-    }, cb);
+function changeResourceRecordSets (params, cb) {
+  debug('changeResourceRecordSets mock!', params);
+  if (!params) {
+    throw new Error('params is required');
   }
+  if (!isObject(params)) {
+    throw new Error('params must be an object');
+  }
+  requireKeypath(params, 'HostedZoneId');
+  requireKeypath(params, 'ChangeBatch');
+  requireKeypath(params, 'ChangeBatch.Changes');
+  async.each(params.ChangeBatch.Changes, function (change, cb) {
+    var action = requireKeypath(change, 'Action');
+    var resourceRecordSet = requireKeypath(change, 'ResourceRecordSet');
+    requireKeypath(change, 'ResourceRecordSet.Name');
+    requireKeypath(change, 'ResourceRecordSet.Type');
+    requireKeypath(change, 'ResourceRecordSet.ResourceRecords[0].Value');
+    requireKeypath(change, 'ResourceRecordSet.TTL');
+    if (action.toUpperCase() === 'UPSERT') {
+      mockUpsert(resourceRecordSet, cb);
+    }
+    else if (action.toUpperCase() === 'DELETE') {
+      mockDelete(resourceRecordSet, cb);
+    }
+    else {
+      throw new Error('Unexpected "ChangeBatch.Changes[0].Action" value "' +
+        action + '" (mock expects UPSERT|DELETE)');
+    }
+  }, cb);
+}
 
 /**
  * stop route53 mock
@@ -124,7 +126,7 @@ var resp = {
       .replace('{type}', type);
     return this.err(400, message);
   },
-  deleteFoundNotMatchErr: function () {
+  deleteFoundNotMatchErr: function (name, type) {
     var message =
       "Tried to delete resource record set [name='{name}.', type='{type}'] " +
       "but the values provided do not match the current values";
@@ -181,22 +183,22 @@ function mockUpsert (resourceRecordSet, cb) {
  * @param  {Function} cb                callback
  */
 function mockDelete (resourceRecordSet, cb) {
-  debug('mockDelete', formatArgs(arguments));
-  var name = resourceRecordSet.Name;
-  var type = resourceRecordSet.Type;
-  var index = findIndex(records, hasKeypaths({
-    Name: name,
-    Type: type
-  }));
-  var record = ~index ? records[index] : null;
-  var equalRecord = find(records, hasKeypaths({
-    Name: name,
-    Type: type,
-    'ResourceRecords[0].Value': resourceRecordSet.ResourceRecords[0].Value,
-    TTL: resourceRecordSet.TTL
-  }));
-  // async
+  // async - WHICH MEANS YOU HAVE TO LOOK AND DELETE SYNCHRONOUSLY
   process.nextTick(function () {
+    debug('mockDelete', formatArgs(arguments));
+    var name = resourceRecordSet.Name;
+    var type = resourceRecordSet.Type;
+    var index = findIndex(records, hasKeypaths({
+      Name: name,
+      Type: type
+    }));
+    var record = ~index ? records[index] : null;
+    var equalRecord = find(records, hasKeypaths({
+      Name: name,
+      Type: type,
+      'ResourceRecords[0].Value': resourceRecordSet.ResourceRecords[0].Value,
+      TTL: resourceRecordSet.TTL
+    }));
     if (!exists(record)) {
       cb(resp.deleteNotFoundErr(name, type));
     }
