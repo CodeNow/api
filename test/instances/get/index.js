@@ -94,7 +94,6 @@ describe('GET /instances', function () {
           github: ctx.user.attrs.accounts.github.id
         }
       };
-      console.log(query);
       var expected = [{
         _id: ctx.instance.json()._id,
         shortHash: ctx.instance.json().shortHash,
