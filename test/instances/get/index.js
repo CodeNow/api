@@ -84,6 +84,43 @@ describe('GET /instances', function () {
       }];
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
+    it('should get instances by id', function (done) {
+      var count = createCount(2, done);
+      require('../../fixtures/mocks/github/user')(ctx.user);
+      require('../../fixtures/mocks/github/user')(ctx.user2);
+      var query = {
+        _id: ctx.instance.json()._id,
+        owner: {
+          github: ctx.user.attrs.accounts.github.id
+        }
+      };
+      var expected = [{
+        _id: ctx.instance.json()._id,
+        shortHash: ctx.instance.json().shortHash,
+        'containers[0].inspect.State.Running': true,
+        'owner.github': ctx.user.json().accounts.github.id,
+        'owner.username': ctx.user.json().accounts.github.login,
+        'createdBy.username': ctx.user.json().accounts.github.login,
+        'createdBy.gravatar': ctx.user.json().accounts.github.avatar_url
+      }];
+      ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
+      var query2 = {
+        shortHash: ctx.instance2.json().shortHash,
+        owner: {
+          github: ctx.user2.attrs.accounts.github.id
+        }
+      };
+      var expected2 = [{
+        _id: ctx.instance2.json()._id,
+        shortHash: ctx.instance2.json().shortHash,
+        'containers[0].inspect.State.Running': true,
+        'owner.github': ctx.user2.json().accounts.github.id,
+        'owner.username': ctx.user2.json().accounts.github.login,
+        'createdBy.username': ctx.user2.json().accounts.github.login,
+        'createdBy.gravatar': ctx.user2.json().accounts.github.avatar_url
+      }];
+      ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
+    });
     it('should get instances by username', {timeout:500}, function (done) {
       var count = createCount(2, done);
       require('../../fixtures/mocks/github/user')(ctx.user);
