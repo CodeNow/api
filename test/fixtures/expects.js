@@ -188,69 +188,71 @@ expects.updatedDnsEntry = function (username, instanceName, hostIp) {
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var dnsUrl = toDnsUrl(username, instanceName);
   var dnsUrlMP = toDnsUrl('staging-' + username, instanceName);
+  var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
   expect(mockRoute53.findRecordIp(dnsUrl), 'dns record').to.equal(hostIp);
   expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record').to.equal(hostIp);
+  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record').to.equal(hostIp);
 };
 expects.updatedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
-  var count = createCount(2, cb);
-  hosts.readHipacheEntriesForContainer(
-    username,
-    instanceName,
-    container,
-    function (err, redisData) {
-      if (err) { return cb(err); }
-      var expectedRedisData = {};
-      Object.keys(container.ports).forEach(function (containerPort) {
-        var key = toHipacheEntryKey(containerPort, instanceName, username);
-        var val = toHipacheEntryVal(containerPort, container, instanceName);
-        expectedRedisData[key] = val;
-      });
-      expect(redisData).to.deep.equal(expectedRedisData);
-      count.next();
-    }
-  );
+  var count = createCount(3, cb);
 
-  hosts.readHipacheEntriesForContainer(
-    'staging-' + username,
-    instanceName,
-    container,
-    function (err, redisData) {
-      if (err) { return cb(err); }
-      var expectedRedisData = {};
-      Object.keys(container.ports).forEach(function (containerPort) {
-        var key = toHipacheEntryKey(containerPort, instanceName, 'staging-' + username);
-        var val = toHipacheEntryVal(containerPort, container, instanceName);
-        expectedRedisData[key] = val;
-      });
-      expect(redisData).to.deep.equal(expectedRedisData);
-      count.next();
-    }
-  );
+  runExpects(username, instanceName, container, '', count.next);
+  runExpects('staging-' + username, instanceName, container, '', count.next);
+  runExpects('staging-' + username, instanceName, container, 'master', count.next);
+
+  function runExpects (_username, _instanceName, _container, _branch, cb) {
+    var branchInstanceName = _branch.length ? _branch + '-' + _instanceName : _instanceName;
+    hosts.readHipacheEntriesForContainer(
+      _username,
+      branchInstanceName,
+      _container,
+      function (err, redisData) {
+        if (err) { return cb(err); }
+        var expectedRedisData = {};
+        Object.keys(_container.ports).forEach(function (containerPort) {
+          var key = toHipacheEntryKey(containerPort, branchInstanceName, _username);
+          var val = toHipacheEntryVal(containerPort, _container, _instanceName);
+          expectedRedisData[key] = val;
+        });
+        expect(redisData).to.deep.equal(expectedRedisData);
+        cb();
+      }
+    );
+  }
 };
 expects.updatedNaviHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
-  hosts.readHipacheEntriesForContainer(
-    username,
-    instanceName,
-    container,
-    function (err, redisData) {
-      if (err) { return cb(err); }
-      var expectedRedisData = {};
-      Object.keys(container.ports).forEach(function (containerPort) {
-        var key = toHipacheEntryKey(containerPort, instanceName, username);
-        var val = toHipacheEntryVal(containerPort, container, instanceName);
-        // but we want to go w/ navi
-        val[1] = process.env.NAVI_HOST;
-        expectedRedisData[key] = val;
+  var count = createCount(3, cb);
+
+  runExpects(username, instanceName, container, '', count.next);
+  runExpects('staging-' + username, instanceName, container, '', count.next);
+  runExpects('staging-' + username, instanceName, container, 'master', count.next);
+
+  function runExpects (_username, _instanceName, _container, _branch, cb) {
+    var branchInstanceName = _branch.length ? _branch + '-' + _instanceName : _instanceName;
+    hosts.readHipacheEntriesForContainer(
+      _username,
+      (_branch.length) ? branchInstanceName : _instanceName,
+      _container,
+      function (err, redisData) {
+        if (err) { return cb(err); }
+        var expectedRedisData = {};
+        Object.keys(_container.ports).forEach(function (containerPort) {
+          var key = toHipacheEntryKey(containerPort, branchInstanceName, _username);
+          var val = toHipacheEntryVal(containerPort, _container, _instanceName);
+          // but we want to go w/ navi
+          val[1] = process.env.NAVI_HOST;
+          expectedRedisData[key] = val;
+        });
+        expect(redisData).to.deep.equal(expectedRedisData);
+        cb();
       });
-      expect(redisData).to.deep.equal(expectedRedisData);
-      cb();
-    });
+  }
 };
 
 /**
@@ -294,45 +296,38 @@ expects.deletedDnsEntry = function (username, instanceName) {
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var dnsUrl = toDnsUrl(username, instanceName);
   var dnsUrlMP = toDnsUrl('staging-' + username, instanceName);
+  var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
   expect(mockRoute53.findRecordIp(dnsUrl), 'dns record').to.not.exist();
   expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record').to.not.exist();
+  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record').to.not.exist();
 };
 expects.deletedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
-  var count = createCount(2, cb);
-  hosts.readHipacheEntriesForContainer(
-    username,
-    instanceName,
-    container,
-    function (err, redisData) {
-      if (err) { return cb(err); }
-      var expectedRedisData = {};
-      Object.keys(container.ports).forEach(function (containerPort) {
-        var key = toHipacheEntryKey(containerPort, instanceName, username);
-        expectedRedisData[key] = [];
-      });
-      expect(redisData).to.deep.equal(expectedRedisData);
-      count.next();
-    }
-  );
+  var count = createCount(3, cb);
 
-  hosts.readHipacheEntriesForContainer(
-    'staging-' + username,
-    instanceName,
-    container,
-    function (err, redisData) {
-      if (err) { return cb(err); }
-      var expectedRedisData = {};
-      Object.keys(container.ports).forEach(function (containerPort) {
-        var key = toHipacheEntryKey(containerPort, instanceName, 'staging-' + username);
-        expectedRedisData[key] = [];
-      });
-      expect(redisData).to.deep.equal(expectedRedisData);
-      count.next();
-    }
-  );
+  runExpects(username, instanceName, container, '', count.next);
+  runExpects('staging-' + username, instanceName, container, '', count.next);
+  runExpects('staging-' + username, instanceName, container, 'master', count.next);
+
+  function runExpects(_username, _instanceName, _container, _branch, cb) {
+    hosts.readHipacheEntriesForContainer(
+      'staging-' + username,
+      instanceName,
+      container,
+      function (err, redisData) {
+        if (err) { return cb(err); }
+        var expectedRedisData = {};
+        Object.keys(container.ports).forEach(function (containerPort) {
+          var key = toHipacheEntryKey(containerPort, instanceName, 'staging-' + username);
+          expectedRedisData[key] = [];
+        });
+        expect(redisData).to.deep.equal(expectedRedisData);
+        count.next();
+      }
+    );
+  }
 };
 function toDnsUrl (username, instanceName) {
   return [instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN].join('');
