@@ -31,7 +31,6 @@ describe('Active API', function () {
         done();
       });
     });
-
   });
 
   describe('setAsMe', function () {
@@ -82,7 +81,6 @@ describe('Active API', function () {
         done();
       }
     });
-
   });
 
 });
