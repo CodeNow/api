@@ -82,7 +82,7 @@ expects.errorStatus = function (code, messageMatch, done) {
   }
   return function (err) {
     debug('errorStatus', err);
-    expect(err, 'Expected '+code+' error response').to.satisfy(exists);
+    expect(err, 'Expected ' + code + ' error response').to.satisfy(exists);
     expect(err.output.statusCode).to.equal(code);
     if (messageMatch instanceof RegExp) {
       expect(err.message).to.match(messageMatch);
@@ -105,7 +105,7 @@ expects.updateSuccess = function (json, done) {
     done();
   };
 };
-expects.convertObjectId = function(expected) {
+expects.convertObjectId = function (expected) {
   return function (val) {
     expect(val.toString()).to.equal(expected);
     return true;
@@ -121,11 +121,11 @@ function expectKeypaths (body, expectedKeypaths) {
     Object.keys(expectedKeypaths).forEach(function (keypath) {
       var expectedVal = expectedKeypaths[keypath];
       if (expectedVal instanceof RegExp) {
-        expect(keypather.get(body, keypath), 'Expected body.'+keypath+'to match '+expectedVal)
+        expect(keypather.get(body, keypath), 'Expected body.' + keypath + 'to match ' + expectedVal)
           .to.match(expectedVal);
       }
       else if (typeof expectedVal === 'function') {
-        expect(keypather.get(body, keypath), 'Value for '+keypath)
+        expect(keypather.get(body, keypath), 'Value for ' + keypath)
           .to.satisfy(expectedVal);
       }
       else {
@@ -203,14 +203,14 @@ expects.updatedHipacheEntries = function (username, instanceName, container, cb)
   runExpects('staging-' + username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, 'master', count.next);
 
-  function runExpects (_username, _instanceName, _container, _branch, cb) {
+  function runExpects (_username, _instanceName, _container, _branch, callback) {
     var branchInstanceName = _branch.length ? _branch + '-' + _instanceName : _instanceName;
     hosts.readHipacheEntriesForContainer(
       _username,
       branchInstanceName,
       _container,
       function (err, redisData) {
-        if (err) { return cb(err); }
+        if (err) { return callback(err); }
         var expectedRedisData = {};
         Object.keys(_container.ports).forEach(function (containerPort) {
           var key = toHipacheEntryKey(containerPort, branchInstanceName, _username);
@@ -218,7 +218,7 @@ expects.updatedHipacheEntries = function (username, instanceName, container, cb)
           expectedRedisData[key] = val;
         });
         expect(redisData).to.deep.equal(expectedRedisData);
-        cb();
+        callback();
       }
     );
   }
@@ -233,14 +233,14 @@ expects.updatedNaviHipacheEntries = function (username, instanceName, container,
   runExpects('staging-' + username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, 'master', count.next);
 
-  function runExpects (_username, _instanceName, _container, _branch, cb) {
+  function runExpects (_username, _instanceName, _container, _branch, callback) {
     var branchInstanceName = _branch.length ? _branch + '-' + _instanceName : _instanceName;
     hosts.readHipacheEntriesForContainer(
       _username,
       (_branch.length) ? branchInstanceName : _instanceName,
       _container,
       function (err, redisData) {
-        if (err) { return cb(err); }
+        if (err) { return callback(err); }
         var expectedRedisData = {};
         Object.keys(_container.ports).forEach(function (containerPort) {
           var key = toHipacheEntryKey(containerPort, branchInstanceName, _username);
@@ -250,7 +250,7 @@ expects.updatedNaviHipacheEntries = function (username, instanceName, container,
           expectedRedisData[key] = val;
         });
         expect(redisData).to.deep.equal(expectedRedisData);
-        cb();
+        callback();
       });
   }
 };
@@ -311,26 +311,26 @@ expects.deletedHipacheEntries = function (username, instanceName, container, cb)
   runExpects('staging-' + username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, 'master', count.next);
 
-  function runExpects(_username, _instanceName, _container, _branch, cb) {
+  function runExpects (_username, _instanceName, _container, _branch, callback) {
     hosts.readHipacheEntriesForContainer(
       'staging-' + username,
       instanceName,
       container,
       function (err, redisData) {
-        if (err) { return cb(err); }
+        if (err) { return callback(err); }
         var expectedRedisData = {};
         Object.keys(container.ports).forEach(function (containerPort) {
           var key = toHipacheEntryKey(containerPort, instanceName, 'staging-' + username);
           expectedRedisData[key] = [];
         });
         expect(redisData).to.deep.equal(expectedRedisData);
-        count.next();
+        callback();
       }
     );
   }
 };
 function toDnsUrl (username, instanceName) {
-  return [instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN].join('');
+  return [ instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN ].join('');
 }
 
 /**
@@ -348,14 +348,15 @@ expects.deletedContainer = function (container, cb) {
   }
   var docker = new Docker(container.dockerHost);
   docker.inspectContainer(container, function (err) {
-    expect(err, 'deleted container '+container.dockerContainer).to.exist();
-    expect(err.output.statusCode, 'deleted container '+container.dockerContainer).to.equal(404);
+    expect(err, 'deleted container ' + container.dockerContainer).to.exist();
+    expect(err.output.statusCode, 'deleted container ' + container.dockerContainer).to.equal(404);
     cb();
   });
 };
 function toHipacheEntryKey (containerPort, instanceName, username) {
   containerPort = containerPort.split('/')[0];
-  var key = [containerPort, '.', instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN];
+  var key =
+    [ containerPort, '.', instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN ];
   return ['frontend:'].concat(key).join('').toLowerCase();
 }
 function toHipacheEntryVal (containerPort, container, instanceName) {
@@ -377,16 +378,17 @@ function toHipacheEntryVal (containerPort, container, instanceName) {
 
 /**
  * asserts container is attached to weave network hostIp
- * @param  {Instance} instance       instance which container belongs to
- * @param  {Object}   expectedHostIp expected host ip for container
- * @param  {Function} cb             callback
+ * @param  {Container} container      container information
+ * @param  {Object}    expectedHostIp expected host ip for container
+ * @param  {Function}  cb             callback
  */
 expects.updatedWeaveHost = function (container, expectedHostIp, cb) {
   container = container.toJSON();
   var sauron = new Sauron(container.dockerHost);
   sauron.getContainerIp(container.dockerContainer, function (err, hostIp) {
     if (err) { return cb(err); }
-    expect(hostIp, 'Container '+container.dockerContainer+' to be attached to '+expectedHostIp)
+    expect(hostIp,
+      'Container ' + container.dockerContainer + ' to be attached to ' + expectedHostIp)
       .to.equal(expectedHostIp);
     cb();
   });
@@ -394,15 +396,15 @@ expects.updatedWeaveHost = function (container, expectedHostIp, cb) {
 
 /**
  * asserts container detached from all weave network hostIps
- * @param  {Instance}  instance instance which container should'
- * @param  {Function}  cb       callback
+ * @param  {Container} container container information
+ * @param  {Function}  cb        callback
  */
 expects.deletedWeaveHost = function (container, cb) {
   container = container.toJSON();
   var sauron = new Sauron(container.dockerHost);
   sauron.getContainerIp(container.dockerContainer, function (err, val) {
     if (err) { return cb(err); }
-    expect(val, 'Container '+container.dockerContainer+' to be unattached')
+    expect(val, 'Container ' + container.dockerContainer + ' to be unattached')
       .to.not.exist();
     cb();
   });
