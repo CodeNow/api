@@ -13,6 +13,7 @@
 ./test/auth-whitelist/post/201.js
 ./test/auth-whitelist/post/404.js
 ./test/auth-whitelist/post/409.js
+./test/auth/delete/200.js
 ./test/autoforking.js
 ./test/bdd-context-version-deduping.js
 ./test/bdd-deploy-instance.js
