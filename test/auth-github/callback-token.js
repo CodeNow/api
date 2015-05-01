@@ -50,7 +50,7 @@ describe('/auth/github routes', function () {
         expect(res.statusCode).to.equal(302);
         var testUrl = url.parse(res.headers.location);
         var qs = querystring.parse(testUrl.query);
-        expect(qs.token).to.not.exist();
+        expect(qs.runnableappAccessToken).to.not.exist();
         done();
       });
     });
@@ -83,7 +83,7 @@ describe('/auth/github routes', function () {
           expect(testUrl.protocol).to.equal('http:');
           expect(testUrl.host).to.equal('thisredir:9283');
           expect(testUrl.pathname).to.equal('/datPath');
-          expect(qs.token).to.exist();
+          expect(qs.runnableappAccessToken).to.exist();
           expect(qs.thisqs).to.equal('great');
           done();
         });
