@@ -11,8 +11,7 @@ var expect = Code.expect;
 var keypather = require('keypather')();
 var Hosts = require('models/redis/hosts');
 
-describe('Hosts',  function () {
-
+describe('Hosts', function () {
   describe('parseHostname', function () {
     var ctx = {};
     beforeEach(function (done) {
@@ -21,15 +20,17 @@ describe('Hosts',  function () {
       ctx.instance = {};
       keypather.set(ctx.instance, 'container.dockerHost', 'http://10.0.0.1:4242');
       keypather.set(ctx.instance, 'container.ports["80/tcp"][0].HostPort', 49201);
+      ctx.branch = 'somebranch';
+      keypather.set(ctx.instance, 'contextVersion.appCodeVersions[0].lowerBranch', ctx.branch);
 
       ctx.instanceName = 'instance-name';
       ctx.username = 'user-name';
       ctx.hosts.upsertHostForContainerPort(
-        ctx.port, ctx.username, ctx.instance, ctx.instanceName, done);
+        ctx.port, ctx.branch, ctx.username, ctx.instance, ctx.instanceName, done);
     });
     afterEach(function (done) {
       ctx.hosts.removeHostForContainerPort(
-        ctx.port, ctx.username, ctx.instance, ctx.instanceName, done);
+        ctx.port, ctx.branch, ctx.username, ctx.instance, ctx.instanceName, done);
     });
 
     it('should parse a username from a hostname', function (done) {
@@ -47,9 +48,8 @@ describe('Hosts',  function () {
   });
 
   describe('parseUsernameFromHostname', function () {
-
     it('should parse a username from a hostname', function (done) {
-      var hostname = 'instance-name-org-name.'+process.env.USER_CONTENT_DOMAIN;
+      var hostname = 'instance-name-org-name.' + process.env.USER_CONTENT_DOMAIN;
       var hosts = new Hosts();
       var name = 'instance-name';
       hosts.parseUsernameFromHostname(hostname, name, function (err, username) {
