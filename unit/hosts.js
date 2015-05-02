@@ -26,11 +26,11 @@ describe('Hosts', function () {
       ctx.instanceName = 'instance-name';
       ctx.username = 'user-name';
       ctx.hosts.upsertHostForContainerPort(
-        ctx.port, ctx.branch, ctx.username, ctx.instance, ctx.instanceName, done);
+        ctx.port, ctx.username, ctx.instance, ctx.instanceName, done);
     });
     afterEach(function (done) {
       ctx.hosts.removeHostForContainerPort(
-        ctx.port, ctx.branch, ctx.username, ctx.instance, ctx.instanceName, done);
+        ctx.port, ctx.username, ctx.instance, ctx.instanceName, done);
     });
 
     it('should parse a username from a hostname', function (done) {
