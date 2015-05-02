@@ -297,6 +297,7 @@ function createInstanceTests (ctx) {
   afterEach(require('../../fixtures/clean-nock'));
   it('should create an instance with build', {timeout:1000}, function (done) {
     var body = {
+      masterPod: true,
       build: ctx.build.id()
     };
     assertCreate(body, done);
@@ -304,6 +305,7 @@ function createInstanceTests (ctx) {
   it('should create an instance with build and name', {timeout:1000}, function (done) {
     var name = 'ABCDEFGHIJKLMNOPQRSTUVWYXZ_-';
     var body = {
+      masterPod: true,
       name: name,
       build: ctx.build.id()
     };
@@ -315,6 +317,7 @@ function createInstanceTests (ctx) {
       'FOO=BAR'
     ];
     var body = {
+      masterPod: true,
       env: env,
       build: ctx.build.id()
     };
@@ -327,6 +330,7 @@ function createInstanceTests (ctx) {
       'FOO=BAR'
     ];
     var body = {
+      masterPod: true,
       name: name,
       build: ctx.build.id(),
       env: env
@@ -341,6 +345,7 @@ function createInstanceTests (ctx) {
       'FOO=BAR'
     ];
     var body = {
+      masterPod: true,
       name: name,
       build: ctx.build.id(),
       env: env
@@ -349,7 +354,6 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, function () {
       expect(ctx.instance.attrs.public).to.equal(false);
-      expect(ctx.instance.attrs.masterPod).to.equal(false);
       done();
     });
   });

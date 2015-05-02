@@ -166,7 +166,7 @@ expects.updatedHosts = function (userOrUsername, instanceOrName, container, host
   if (isObject(instanceOrName)) { // instanceOrInstanceName
     instance = instanceOrName;
     cb = container;
-    instanceName = instance.attrs.name;
+    instanceName = instance.attrs.lowerName;
     container = instance.containers.models[0];
   }
   container = container && container.toJSON ? container.toJSON() : container;
@@ -189,9 +189,9 @@ expects.updatedDnsEntry = function (username, instanceName, hostIp) {
   var dnsUrl = toDnsUrl(username, instanceName);
   var dnsUrlMP = toDnsUrl('staging-' + username, instanceName);
   var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record').to.equal(hostIp);
-  expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record').to.equal(hostIp);
-  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record').to.equal(hostIp);
+  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record ' + dnsUrl).to.equal(hostIp);
+  expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record ' + dnsUrlMP).to.equal(hostIp);
+  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record ' + dnsUrlDirect).to.equal(hostIp);
 };
 expects.updatedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
@@ -297,9 +297,9 @@ expects.deletedDnsEntry = function (username, instanceName) {
   var dnsUrl = toDnsUrl(username, instanceName);
   var dnsUrlMP = toDnsUrl('staging-' + username, instanceName);
   var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record').to.not.exist();
-  expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record').to.not.exist();
-  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record').to.not.exist();
+  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record ' + dnsUrl).to.not.exist();
+  expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record ' + dnsUrlMP).to.not.exist();
+  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record ' + dnsUrlDirect).to.not.exist();
 };
 expects.deletedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
@@ -313,14 +313,14 @@ expects.deletedHipacheEntries = function (username, instanceName, container, cb)
 
   function runExpects (_username, _instanceName, _container, _branch, callback) {
     hosts.readHipacheEntriesForContainer(
-      'staging-' + username,
+      username,
       instanceName,
       container,
       function (err, redisData) {
         if (err) { return callback(err); }
         var expectedRedisData = {};
         Object.keys(container.ports).forEach(function (containerPort) {
-          var key = toHipacheEntryKey(containerPort, instanceName, 'staging-' + username);
+          var key = toHipacheEntryKey(containerPort, instanceName, username);
           expectedRedisData[key] = [];
         });
         expect(redisData).to.deep.equal(expectedRedisData);
