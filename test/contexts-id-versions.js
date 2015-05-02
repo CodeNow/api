@@ -87,7 +87,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
           done();
         });
       });
-      it('should create a contextVersion with infraCodeVersion', {timeout:2500}, function (done) {
+      it('should create a contextVersion with infraCodeVersion', function (done) {
         var expected = {
           infraCodeVersion: not(equals(ctx.infraCodeVersionId))
         };
@@ -111,7 +111,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
             done();
           });
         });
-        it('should not create an infraCodeVersion', {timeout:1000}, function (done) {
+        it('should not create an infraCodeVersion', function (done) {
           ctx.context.createVersion({
             infraCodeVersion: ctx.infraCodeVersionId2
           }, expects.error(400, /same context/, done));

@@ -29,7 +29,7 @@ var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 var dockerEvents = require('models/events/docker');
 
-describe('204 DELETE /instances/:id', {timeout:10000}, function () {
+describe('204 DELETE /instances/:id', function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;

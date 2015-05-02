@@ -23,7 +23,7 @@ var Context = require('models/mongo/context');
 var blacklight = require('blacklight');
 var dockerHost = require('../fixtures/docker-host');
 
-describe('201 POST /contexts/:id/versions/:id/actions/build', {timeout: 2000}, function() {
+describe('201 POST /contexts/:id/versions/:id/actions/build', function() {
   var ctx = {};
 
   beforeEach(function (done) {
@@ -293,7 +293,7 @@ function buildTheVersionTests (ctx) {
                 done();
               }
             });
-            it('should dedupe in progress builds', { timeout: 1000 }, function (done) {
+            it('should dedupe in progress builds', function (done) {
               ctx.cv2.build(function (err) {
                 if (err) { return done(err); }
                 ctx.cv3.build(function (err) {
@@ -318,7 +318,7 @@ function buildTheVersionTests (ctx) {
           });
         });
         describe('with in progress builds', function() {
-          it('should dedupe', { timeout: 1000 }, function (done) {
+          it('should dedupe', function (done) {
             ctx.cv.build(function (err) {
               if (err) { return done(err); }
               ctx.cv2.build(function (err) {

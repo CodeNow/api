@@ -197,7 +197,7 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
-    it('should call Slack#notifyOnNewBranch', {timeout: 4000}, function (done) {
+    it('should call Slack#notifyOnNewBranch', function (done) {
       var acv = ctx.contextVersion.attrs.appCodeVersions[0];
       sinon.stub(Slack.prototype, 'notifyOnNewBranch', function (gitInfo, cb) {
         expect(gitInfo.repo).to.equal(acv.repo);
@@ -222,7 +222,7 @@ describe('Github - /actions/github', function () {
       });
     });
 
-    it('should not process new branch event for user that has no runnable account', {timeout: 4000}, function (done) {
+    it('should not process new branch event for user that has no runnable account', function (done) {
       var acv = ctx.contextVersion.attrs.appCodeVersions[0];
       var data = {
         branch: 'feature-1',
@@ -267,7 +267,7 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it('should set build status to error if error happened build create', {timeout: 6000},
+      it('should set build status to error if error happened build create',
         function (done) {
           sinon.stub(Runnable.prototype, 'createBuild')
             .yields(Boom.notFound('Build create failed'));
@@ -328,7 +328,7 @@ describe('Github - /actions/github', function () {
           });
       });
 
-      it('should set deployment status to error if error happened during instance update', {timeout: 6000},
+      it('should set deployment status to error if error happened during instance update',
         function (done) {
           var baseDeploymentId = 1234567;
           sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
@@ -397,7 +397,7 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it('should send 202 and message if autoforking disabled', { timeout: 6000 }, function (done) {
+      it('should send 202 and message if autoforking disabled', function (done) {
         var acv = ctx.contextVersion.attrs.appCodeVersions[0];
         var user = ctx.user.attrs.accounts.github;
         var data = {
@@ -429,7 +429,7 @@ describe('Github - /actions/github', function () {
           done();
         });
 
-        it('should fork instance from master', { timeout: 6000 }, function (done) {
+        it('should fork instance from master', function (done) {
           var baseDeploymentId = 1234567;
           sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
@@ -513,7 +513,7 @@ describe('Github - /actions/github', function () {
             });
           });
 
-          it('should fork 2 instance from 2 master instances', { timeout: 6000 }, function (done) {
+          it('should fork 2 instance from 2 master instances', function (done) {
             var baseDeploymentId = 1234567;
             sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
               var cb = Array.prototype.slice.apply(arguments).pop();
@@ -576,7 +576,7 @@ describe('Github - /actions/github', function () {
               });
             });
 
-            it('should return 2 instancesIds if 2 instances were deleted', {timeout: 5000}, function (done) {
+            it('should return 2 instancesIds if 2 instances were deleted', function (done) {
               var acv = ctx.contextVersion.attrs.appCodeVersions[0];
               var user = ctx.user.attrs.accounts.github;
               var data = {
@@ -655,7 +655,7 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it('should redeploy two instances with new build', { timeout: 6000 }, function (done) {
+      it('should redeploy two instances with new build', function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
           if (err) { return done(err); }
           var baseDeploymentId = 1234567;
