@@ -453,7 +453,7 @@ describe('Github - /actions/github', function () {
             expect(slackStub.calledOnce).to.equal(true);
             expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
             var forkedInstance = slackStub.args[0][1];
-            expect(forkedInstance.name).to.equal(ctx.instance.attrs.name + '-feature-1');
+            expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name);
             slackStub.restore();
             done();
           });

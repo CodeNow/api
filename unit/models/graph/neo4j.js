@@ -42,7 +42,7 @@ describe('neo4j driver', function () {
   describe('getNodeCount', function () {
     beforeEach(function (done) {
       sinon.stub(graph, '_query').yieldsAsync(null, {
-        'count(*)': [ 1 ]
+        'count(*)': [1]
       });
       done();
     });
@@ -152,7 +152,7 @@ describe('neo4j driver', function () {
           edge: { label: 'dependsOn' },
           node: { label: 'Instance' }
         }
-      },{
+      }, {
         Out: {
           edge: { label: 'hasHostname' },
           node: {
@@ -279,7 +279,7 @@ describe('neo4j driver', function () {
           node: {
             label: 'Instance',
             props: { lowerName: 'some-name' }
-          },
+          }
         }
       }];
       var expectedQuery = [
@@ -356,6 +356,40 @@ describe('neo4j driver', function () {
         'RETURN n'
       ].join('\n');
       graph.writeNode(node, function (err) {
+        expect(err).to.be.null();
+        expect(graph._query.calledOnce).to.be.true();
+        var call = graph._query.getCall(0);
+        expect(call.args[0]).to.equal(expectedQuery);
+        expect(call.args[1]).to.deep.equal({ props: node.props });
+        done();
+      });
+    });
+  });
+
+  describe('deleteNodeAndConnections', function () {
+    beforeEach(function (done) {
+      // fake the node being created
+      sinon.stub(graph, '_query').yieldsAsync(null, { n: true });
+      done();
+    });
+    afterEach(function (done) {
+      graph._query.restore();
+      done();
+    });
+
+    it('should make a query to delete the node and incoming connections', function (done) {
+      var node = {
+        label: 'Instance',
+        props: {
+          id: '1234567890asdf'
+        }
+      };
+      var expectedQuery = [
+        'MATCH (n:Instance {id: {props}.id})',
+        'OPTIONAL MATCH ()-[r]->(n)',
+        'DELETE r,n'
+      ].join('\n');
+      graph.deleteNodeAndConnections(node, function (err) {
         expect(err).to.be.null();
         expect(graph._query.calledOnce).to.be.true();
         var call = graph._query.getCall(0);

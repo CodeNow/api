@@ -21,7 +21,7 @@
   },
 
   "nodejs": {
-    "name": "Node.Js",
+    "name": "Node.js",
     "versions": [
       "0.8",
       "0.8.28",

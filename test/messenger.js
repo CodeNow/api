@@ -1,3 +1,5 @@
+'use strict';
+
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -27,7 +29,10 @@ describe('messenger Unit Tests', function() {
 
   describe('send message to room', function () {
     it('should get joined room message', function(done) {
-      var primus = new Socket('http://localhost:'+process.env.PORT);
+      var token = process.env.PRIMUS_AUTH_TOKEN;
+      var url = process.env.FULL_API_DOMAIN + ':' + process.env.PORT +
+        '?token=' + token;
+      var primus = new Socket(url);
       primus.write({
         id: 1,
         event: 'subscribe',
@@ -48,7 +53,10 @@ describe('messenger Unit Tests', function() {
       primus.on('end', done);
     });
     it('should get message from joined room', function(done) {
-      var primus = new Socket('http://localhost:'+process.env.PORT);
+      var token = process.env.PRIMUS_AUTH_TOKEN;
+      var url = process.env.FULL_API_DOMAIN + ':' + process.env.PORT +
+        '?token=' + token;
+      var primus = new Socket(url);
       primus.write({
         id: 1421,
         event: 'subscribe',
@@ -75,12 +83,15 @@ describe('messenger Unit Tests', function() {
       });
     });
     it('should not get events of another room or no room', function(done) {
+      var token = process.env.PRIMUS_AUTH_TOKEN;
+      var url = process.env.FULL_API_DOMAIN + ':' + process.env.PORT +
+        '?token=' + token;
       // room message will be sent to
-      var primus1 = new Socket('http://localhost:'+process.env.PORT);
+      var primus1 = new Socket(url);
       // in no room
-      var primus2 = new Socket('http://localhost:'+process.env.PORT);
+      var primus2 = new Socket(url);
       // in room with similer name
-      var primus3 = new Socket('http://localhost:'+process.env.PORT);
+      var primus3 = new Socket(url);
 
       // primus2 join room testt
       // primus1 join room test
@@ -133,9 +144,12 @@ describe('messenger Unit Tests', function() {
       });
     });
    it('should send events to everyone in room', function(done) {
-      var primus1 = new Socket('http://localhost:'+process.env.PORT);
-      var primus2 = new Socket('http://localhost:'+process.env.PORT);
-      var primus3 = new Socket('http://localhost:'+process.env.PORT);
+     var token = process.env.PRIMUS_AUTH_TOKEN;
+     var url = process.env.FULL_API_DOMAIN + ':' + process.env.PORT +
+       '?token=' + token;
+      var primus1 = new Socket(url);
+      var primus2 = new Socket(url);
+      var primus3 = new Socket(url);
 
       var count = createCount(3, done);
       var sendMessageCount  = createCount(3, function() {
@@ -185,7 +199,10 @@ describe('messenger Unit Tests', function() {
       });
     });
     it('should join and leave room', function(done) {
-      var primus1 = new Socket('http://localhost:'+process.env.PORT);
+      var token = process.env.PRIMUS_AUTH_TOKEN;
+      var url = process.env.FULL_API_DOMAIN + ':' + process.env.PORT +
+        '?token=' + token;
+      var primus1 = new Socket(url);
 
       primus1.on('end', done);
 

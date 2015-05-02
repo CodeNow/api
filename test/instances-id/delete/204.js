@@ -1,4 +1,4 @@
-'ues strict';
+'use strict';
 
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
@@ -47,11 +47,11 @@ describe('204 DELETE /instances/:id', {timeout:10000}, function () {
   };
   var forceCreateContainerErr = function () {
     var cb = last(arguments);
-    var createErr = new Error("server error");
+    var createErr = new Error('server error');
     extend(createErr, {
       statusCode : 500,
-      reason     : "server error",
-      json       : "No command specified\n"
+      reason: 'server error',
+      json: 'No command specified\n'
     });
     if (isFunction(cb)) {
       cb(createErr);
@@ -256,11 +256,12 @@ describe('204 DELETE /instances/:id', {timeout:10000}, function () {
         }));
       }
       function check(cb) {
-        var count = createCount(cb);
-        expects.deletedHosts(ctx.user, instanceName, container, count.inc().next);
+        var c = (container && container.attrs.dockerContainer) ? 3 : 1;
+        var count = createCount(c, cb);
+        expects.deletedHosts(ctx.user, instanceName, container, count.next);
         if (container && container.attrs.dockerContainer) {
-          expects.deletedWeaveHost(container, count.inc().next);
-          expects.deletedContainer(container, count.inc().next);
+          expects.deletedWeaveHost(container, count.next);
+          expects.deletedContainer(container, count.next);
         }
       }
     });
