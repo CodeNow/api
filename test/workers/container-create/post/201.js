@@ -7,13 +7,14 @@
 
 var Code = require('code');
 var Lab = require('lab');
-var createCount = require('callback-count');
+var async = require('async');
 var sinon = require('sinon');
 
-//var Runnable = require('models/apis/runnable');
+var Instance = require('models/mongo/instance');
 var api = require('../../../fixtures/api-control');
+var containerInspectFixture = require('../../../fixtures/container-inspect');
 var dock = require('../../../fixtures/dock');
-var expects = require('../../../fixtures/expects');
+//var expects = require('../../../fixtures/expects');
 var multi = require('../../../fixtures/multi-factory');
 var primus = require('../../../fixtures/primus');
 
@@ -27,19 +28,25 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-//var runnable = new Runnable({}, {});
-
+var containerInspect;
 var ctx = {};
+var originalContainCreateWorker;
+
 describe('201 POST /workers/container-create', function () {
 
+  // before
   before(function (done) {
-    // will prevent docker-listener from publishing a container-create job
-    // when recieves a container-created docker event
-    process.env.DISABLE_HERMES_PUBLISH = true;
+    /**
+     * monkey patch contain-create worker callback
+     * Note: This is just-shy of a full BDD test isn't it? If we didn't prevent the worker
+     * process from running and tested the instance for containers, this would be an BDD test.
+     */
+    originalContainCreateWorker = require('workers/container-create').worker;
+    require('workers/container-create').worker = function (data, ack) {
+      ack();
+    };
     done();
   });
-
-  // before
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   //before(require('../../../fixtures/mocks/api-client').setup);
@@ -50,14 +57,18 @@ describe('201 POST /workers/container-create', function () {
   after(dock.stop.bind(ctx));
   //after(require('../../../fixtures/mocks/api-client').clean);
   afterEach(require('../../../fixtures/clean-mongo').removeEverything);
+  after(function (done) {
+    require('workers/container-create').worker = originalContainCreateWorker;
+    done();
+  });
 
   beforeEach(function (done) {
     // need instance
 
-    // process.env.DISABLE_HERMES_PUBLISH: docker-listener wont publish job, worker wont run
-    multi.createInstance(function (instance) {
+    multi.createInstance(function (err, instance) {
       // poll for worker to complete update
       ctx.instance = instance;
+      containerInspect = containerInspectFixture.getContainerInspect(instance);
       done();
     });
 
@@ -96,78 +107,43 @@ describe('201 POST /workers/container-create', function () {
   });
 
   it('should upate instance with container information', function (done) {
-    return done();
-    var body = {
-      status: 'create',
-      time: 1430350280081,
-      id: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713',
-      from: 'ubuntu:latest',
-      uuid: 'd6fdd720-eec7-11e4-bf14-0d517431e40f',
-      ip: '10.1.10.40',
-      numCpus: 8,
-      mem: 8589934592,
-      tags: 'some,comma,tags',
-      host: 'http://10.1.10.40:4243',
-      inspectData:
-       { Id: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713',
-         Hostname: '',
-         User: '',
-         Memory: 1000000000,
-         MemorySwap: 0,
-         AttachStdin: false,
-         AttachStdout: true,
-         AttachStderr: true,
-         PortSpecs: null,
-         Tty: false,
-         OpenStdin: false,
-         StdinOnce: false,
-         Env:
-          [ 'RUNNABLE_AWS_ACCESS_KEY=FAKE_AWS_ACCESS_KEY_ID',
-            'RUNNABLE_AWS_SECRET_KEY=FAKE_AWS_SECRET_ACCESS_KEY',
-            'RUNNABLE_FILES_BUCKET=runnable.context.resources.test',
-            'RUNNABLE_PREFIX=554169c7dd3f3d21e1fb380e/source/',
-            'RUNNABLE_FILES={"554169c7dd3f3d21e1fb380e/source/":"af4c5848-2938-4dbc-ae21-8914749b37a0","554169c7dd3f3d21e1fb380e/source/Dockerfile":"db5a191f-3b59-4506-b0b2-32ef6872a595"}',
-            'RUNNABLE_DOCKER=unix:///var/run/docker.sock',
-            'RUNNABLE_DOCKERTAG=registry.runnable.com/2/554169c7dd3f3d21e1fb380e:554169c7dd3f3d21e1fb3811',
-            'RUNNABLE_IMAGE_BUILDER_NAME=runnable/image-builder',
-            'RUNNABLE_IMAGE_BUILDER_TAG=d1.4.1-v2.2.2',
-            'RUNNABLE_REPO=git@github.com:7d2f922a-a511-4fbc-bafa-02331b3edb6a/flaming-octo-nemesis',
-            'RUNNABLE_COMMITISH=065470f6949b0b6f0f0f78f4ee2b0e7a3dc715ac',
-            'RUNNABLE_KEYS_BUCKET=runnable.deploykeys.test',
-            'RUNNABLE_DEPLOYKEY=7d2f922a-a511-4fbc-bafa-02331b3edb6a/flaming-octo-nemesis.key',
-            'DOCKER_IMAGE_BUILDER_CACHE=/git-cache',
-            'RUNNABLE_NETWORK_DRIVER=sauron',
-            'RUNNABLE_WAIT_FOR_WEAVE=until grep -q ethwe /proc/net/dev; do sleep 1; done;',
-            'RUNNABLE_SAURON_HOST=10.1.10.40:3200',
-            'RUNNABLE_NETWORK_IP=10.255.120.0',
-            'RUNNABLE_HOST_IP=10.255.120.1',
-            'RUNNABLE_BUILD_FLAGS={"Memory":1000000000}' ],
-         Cmd: [],
-         Dns: null,
-         Image: 'runnable/image-builder:d1.4.1-v2.2.2',
-         Volumes: { '/cache': {} },
-         VolumesFrom: '',
-         WorkingDir: '',
-         ExposedPorts: {},
-         State: { Running: false, Pid: -1 },
-         NetworkSettings: {
-           Bridge: '',
-           Gateway: '',
-           IPAddress: '',
-           IPPrefixLen: 0,
-           MacAddress: '',
-           Ports: null
-         },
-         name: '554169c7dd3f3d21e1fb3810',
-         Binds: [ '/git-cache:/cache:rw' ]
+    // this is essentially all the worker callback does, invoke this method
+    // containerInspect is sample data collected from actual docker-listener created job
+    async.series([
+      function (cb) {
+        //assert instance has no container
+        Instance.findById(ctx.instance.attrs._id, function (err, instance) {
+          expect(instance.container).to.equal(undefined);
+          cb();
+        });
+      },
+      function (cb) {
+        originalContainCreateWorker(containerInspect, cb);
+        /*
+        runnable.workerContainerCreate({
+          json: containerInspect,
+        }, function (err, res, body) {
+          expect(res.statusCode).to.equal(200);
+          cb();
+        });
+        */
+      },
+      function (cb) {
+        //assert instance has no container
+        Instance.findById(ctx.instance.attrs._id, function (err, instance) {
+          expect(instance.container).to.be.an.object();
+          expect(instance.container.inspect).to.be.an.object();
+          expect(instance.container.dockerContainer).to.be.a.string();
+          expect(instance.container.dockerHost).to.be.a.string();
+          cb();
+        });
       }
-    };
+    ], done);
 
-    runnable.workerContainerCreate({test: 'foo'}, function () {
-      console.log(arguments);
-      done();
-    });
+/*
+*/
   });
+
 /*
   it('should deploy/start the container', function (done) {
     done();
