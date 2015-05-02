@@ -139,14 +139,9 @@ describe('201 POST /workers/container-create', function () {
         });
       }
     ], done);
-
-/*
-*/
   });
 
-/*
-  it('should deploy/start the container', function (done) {
-    done();
-  });
-*/
+  //it('should start the container', function (done) {
+  //  done();
+  //});
 });
