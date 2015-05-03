@@ -178,7 +178,8 @@ expects.updatedHosts = function (userOrUsername, instanceOrName, container, host
   if (keypather.get(instance, 'attrs.masterPod')) {
     expects.updatedNaviHipacheEntries(username, instanceName, container, cb);
   } else {
-    expects.updatedHipacheEntries(username, instanceName, container, cb);
+    var branch = keypather.get(instance, 'contextVersion.appCodeVersions[0].lowerBranch');
+    expects.updatedHipacheEntries(username, instanceName, container, branch, cb);
   }
 };
 // jshint maxcomplexity:6
@@ -193,13 +194,12 @@ expects.updatedDnsEntry = function (username, instanceName, hostIp) {
   expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record ' + dnsUrlMP).to.equal(hostIp);
   expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record ' + dnsUrlDirect).to.equal(hostIp);
 };
-expects.updatedHipacheEntries = function (username, instanceName, container, cb) {
+expects.updatedHipacheEntries = function (username, instanceName, container, branch, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
   var count = createCount(3, cb);
 
-  var branch = keypather.get(instance, 'contextVersion.appCodeVersions[0].lowerBranch');
   branch = branch || 'master';
   runExpects(username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, '', count.next);
