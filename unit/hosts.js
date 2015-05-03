@@ -9,6 +9,9 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 var keypather = require('keypather')();
+
+require('loadenv')();
+
 var Hosts = require('models/redis/hosts');
 
 describe('Hosts',  function () {
@@ -50,6 +53,16 @@ describe('Hosts',  function () {
 
     it('should parse a username from a hostname', function (done) {
       var hostname = 'instance-name-org-name.'+process.env.USER_CONTENT_DOMAIN;
+      var hosts = new Hosts();
+      var name = 'instance-name';
+      hosts.parseUsernameFromHostname(hostname, name, function (err, username) {
+        if (err) { return done(err); }
+        expect(username).to.equal('org-name');
+        done();
+      });
+    });
+    it('should parse a username from an elastic hostname', function (done) {
+      var hostname = 'instance-name-staging-org-name.' + process.env.USER_CONTENT_DOMAIN;
       var hosts = new Hosts();
       var name = 'instance-name';
       hosts.parseUsernameFromHostname(hostname, name, function (err, username) {
