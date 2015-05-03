@@ -199,9 +199,11 @@ expects.updatedHipacheEntries = function (username, instanceName, container, cb)
   var hosts = new Hosts();
   var count = createCount(3, cb);
 
+  var branch = keypather.get(instance, 'contextVersion.appCodeVersions[0].lowerBranch');
+  branch = branch || 'master';
   runExpects(username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, '', count.next);
-  runExpects('staging-' + username, instanceName, container, 'master', count.next);
+  runExpects('staging-' + username, instanceName, container, branch, count.next);
 
   function runExpects (_username, _instanceName, _container, _branch, callback) {
     var branchInstanceName = _branch.length ? _branch + '-' + _instanceName : _instanceName;
