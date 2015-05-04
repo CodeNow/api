@@ -132,7 +132,7 @@ describe('POST /instances', function () {
         });
 
         it('should deploy the instance after the build finishes', {timeout:2000}, function(done) {
-          var json = { build: ctx.build.id(), name: uuid() };
+          var json = { build: ctx.build.id(), name: uuid(), masterPod: true };
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
@@ -277,7 +277,8 @@ describe('POST /instances', function () {
         it('should create an instance, and start it', {timeout:2000}, function (done) {
           var json = {
             name: uuid(),
-            build: ctx.build.id()
+            build: ctx.build.id(),
+            masterPod: true
           };
           var expected = {
             _id: exists,
