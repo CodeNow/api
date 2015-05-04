@@ -39,8 +39,13 @@ describe('EVENT runnable:docker:events:die', function () {
         if (err) { return done(err); }
         ctx.instance = instance;
         ctx.container = container;
-        expect(instance.attrs.container.inspect.State.Running).to.equal(true);
-        done();
+        // docker mock always creates container in stopped state
+        expect(instance.attrs.container.inspect.State.Running).to.equal(false);
+        var docker = new Docker(ctx.instance.attrs.container.dockerHost);
+        docker.startContainer(ctx.instance.attrs.container, function (err) {
+          if (err) { return done(err); }
+          done();
+        });
       });
     });
     describe('container die event handler', function() {
