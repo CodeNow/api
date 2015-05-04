@@ -1,3 +1,6 @@
+/**
+ * @module test/bdd-deploy-instance
+ */
 'use strict';
 
 var Lab = require('lab');
@@ -11,17 +14,19 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
+var RedisList = require('redis-types').List;
+var Url = require('url');
+var async = require('async');
+var createCount = require('callback-count');
+var find = require('101/find');
+var hasKeypaths = require('101/has-keypaths');
+var isObject = require('101/is-object');
+var pick = require('101/pick');
+
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
-var async = require('async');
-var Url = require('url');
-var find = require('101/find');
-var hasKeypaths = require('101/has-keypaths');
-var RedisList = require('redis-types').List;
 var primus = require('./fixtures/primus');
-var createCount = require('callback-count');
-var pick = require('101/pick');
 
 describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {};
@@ -36,6 +41,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   describe('create a cv to test dudupe logic with', function () {
+
     beforeEach(function (done) {
       multi.createInstance(function (err, instance, build, user, modelsArr) {
         if (err) { return done(err); }
@@ -48,6 +54,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         done();
       });
     });
+
     describe('duplicate build', function() {
       it('should deploy an instance deduped context versions', { timeout: 10000 }, function (done) {
         async.waterfall([
@@ -555,13 +562,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
 function expectHipacheHostsForContainers (instance, cb) {
   var containers = instance.containers;
   var allUrls = [];
-  var fail = false;
   containers.forEach(function (container) {
     var ports = container.json().ports;
-    if (ports) {
+    if (isObject(ports)) {
       Object.keys(ports).forEach(function (port) {
         var portNumber = port.split('/')[0];
-
         var instanceName = instance.attrs.lowerName;
         var ownerUsername = instance.attrs.owner.username;
         allUrls.push([portNumber, '.',
@@ -569,13 +574,8 @@ function expectHipacheHostsForContainers (instance, cb) {
           ownerUsername, '.',
           process.env.USER_CONTENT_DOMAIN].join('').toLowerCase());
       });
-    } else {
-      fail = true;
     }
   });
-  if (fail) {
-    return cb(new Error('all the containers _should_ have ports'));
-  }
   async.forEach(allUrls, function (url, cb) {
     var exposedPort = url.split('.')[0];
     var hipacheEntry = new RedisList('frontend:'+url);

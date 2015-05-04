@@ -274,7 +274,12 @@ module.exports = {
       }
       require('./mocks/github/user')(user);
       var instance = user.createInstance(body, function (err) {
-        cb(err, instance, build, user, modelsArr, srcArr);
+        if (err) { return cb(err); }
+        // hold until instance worker completes
+        module.exports.tailInstance(user, instance, function (err, instance) {
+          cb(err, instance, build, user, modelsArr, srcArr);
+        });
+        //
       });
     });
   },
@@ -357,6 +362,7 @@ module.exports = {
       else {
         require('./mocks/github/user')(user);
       }
+      // instead of polling for deployed, hook into redis events?
       instance.deployed(function (err, deployed) {
         if (err) {
           cb(err);

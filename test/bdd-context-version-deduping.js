@@ -47,7 +47,6 @@ describe('Building - Context Version Deduping', function () {
   after(dock.stop.bind(ctx));
   after(require('./fixtures/mocks/api-client').clean);
 
-
   describe('In-progress build', function () {
     beforeEach(function (done) {
       multi.createContextVersion(function (err, contextVersion, context, build, user) {
