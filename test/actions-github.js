@@ -41,7 +41,7 @@ before(function (done) {
   done();
 });
 
-describe('Github - /actions/github', function () {
+describe('Github - /actions/github', {timeout: 4000}, function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -513,7 +513,7 @@ describe('Github - /actions/github', function () {
             });
           });
 
-          it('should fork 2 instance from 2 master instances', { timeout: 6000 }, function (done) {
+          it('should fork 2 instance from 2 master instances', { timeout: 9000 }, function (done) {
             var baseDeploymentId = 1234567;
             sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
               var cb = Array.prototype.slice.apply(arguments).pop();
@@ -624,13 +624,9 @@ describe('Github - /actions/github', function () {
               });
 
             });
-
           });
-
-
         });
-
-       });
+      });
     });
 
     describe('autodeploy', function () {
@@ -655,6 +651,25 @@ describe('Github - /actions/github', function () {
         });
       });
 
+      it('should report to mixpanel when a registered user pushes to a repo', function (done) {
+        sinon.stub(Mixpanel.prototype, 'track', function (eventName, eventData) {
+          expect(eventName).to.equal('github-push');
+          expect(eventData.repoName).to.equal(data.repo);
+        });
+        var data = {
+          repo: 'hellonode',
+          branch: 'master',
+          ownerId: ctx.user.attrs.accounts.github.id,
+          owner: 'cflynn07'
+        };
+        var options = hooks(data).push;
+        request.post(options, function (err) {
+          if (err) { return done(err); }
+          Mixpanel.prototype.track.restore();
+          done();
+        });
+      });
+      
       it('should redeploy two instances with new build', { timeout: 6000 }, function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
           if (err) { return done(err); }
@@ -726,26 +741,6 @@ describe('Github - /actions/github', function () {
           });
         });
       });
-
-      it('should report to mixpanel when a registered user pushes to a repo', function (done) {
-        sinon.stub(Mixpanel.prototype, 'track', function (eventName, eventData) {
-          expect(eventName).to.equal('github-push');
-          expect(eventData.repoName).to.equal(data.repo);
-        });
-        var data = {
-          repo: 'hellonode',
-          branch: 'master',
-          ownerId: ctx.user.attrs.accounts.github.id,
-          owner: 'cflynn07'
-        };
-        var options = hooks(data).push;
-        request.post(options, function (err) {
-          if (err) { return done(err); }
-          Mixpanel.prototype.track.restore();
-          done();
-        });
-      });
-
     });
   });
 });
