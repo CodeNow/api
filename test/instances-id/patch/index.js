@@ -572,7 +572,7 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
           var newName = ctx.newName = uuid();
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.instance.update({ json: { name: newName }}, done);
+          ctx.instance.update({ json: { name: newName, masterPod: true }}, done);
         });
         it('should update hipache entries when the name is updated', function (done) {
           require('../../fixtures/mocks/github/user')(ctx.user);
