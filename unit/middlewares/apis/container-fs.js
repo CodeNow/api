@@ -1,8 +1,5 @@
 'use strict';
 
-var sinon = require('sinon');
-var noop = require('101/noop');
-var Boom = require('dat-middleware').Boom;
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -31,6 +28,22 @@ describe('container-fs', function () {
         done();
       });
     });
-
+    it('should parse pathname correctly for file', function (done) {
+      var req = {
+        body: {
+          isDir: false,
+          name: 'hellonode',
+          path: '/'
+        },
+        params: {}
+      };
+      var res = {};
+      containerFs.parseBody(req, res, function () {
+        expect(req.params.path).to.equal('/hellonode');
+        expect(req.params.content).to.equal('');
+        expect(req.params.isDir).to.equal(false);
+        done();
+      });
+    });
   });
 });
