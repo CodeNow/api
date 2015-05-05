@@ -48,7 +48,6 @@ describe('Context Version', function () {
       sinon.stub(Github.prototype, 'addDeployKeyIfNotAlready', function (repo, cb) {
         cb(null, { privateKey: 'private', publicKey: 'public' });
       });
-      console.log('go', Github.prototype.getRepo);
       ContextVersion.addGithubRepoToVersion(user, ctx.cv.id, repoInfo, function (err) {
         if (err) { return done(err); }
         Github.prototype.getRepo.restore();
