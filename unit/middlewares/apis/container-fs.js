@@ -10,6 +10,26 @@ var expect = Code.expect;
 var containerFs = require('middlewares/apis/container-fs');
 
 describe('container-fs', function () {
+  describe('#parseParams', function () {
+    it('should parse params correctly for dir', function (done) {
+      var container = '0021da9eb7f3fee201cbc4b42d6efcdb8f494ba9466fb783a46f4527575d880f';
+      var url = 'http://api.runnable.io/instances/eo6jxe/containers/';
+      url += container + '/files/api/.git/refs/';
+      var req = {
+        url: url,
+        params: {},
+        container: {
+          dockerContainer: container,
+          dockerHost: '192.0.0.1'
+        }
+      };
+      var res = {};
+      containerFs.parseParams(req, res, function () {
+        expect(req.params.path).to.equal('/api/.git/refs/');
+        done();
+      });
+    });
+  });
   describe('#parseBody', function () {
     it('should parse pathname correctly for dir', function (done) {
       var req = {
