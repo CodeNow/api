@@ -56,6 +56,32 @@ function createFile (ctx, fileName, filePath, fileContent, done) {
   });
 }
 
+function createDir (ctx, dirName, dirPath, done) {
+  ctx.dir = ctx.container.createFile({
+    json: {
+      name: dirName,
+      path: dirPath,
+      isDir: true
+    }
+  }, function (err, body, code) {
+    if (err) {
+      return done(err);
+    }
+    expect(code).to.equal(201);
+    expect(body).to.deep.contain({
+      name: dirName,
+      path: dirPath,
+      isDir: true
+    });
+    var files = fs.readdirSync(
+      path.join(containerRoot(ctx), dirPath, dirName), {
+        encoding: 'utf8'
+      });
+    expect(files.length).to.equal(0);
+    done();
+  });
+}
+
 describe('File System - /instances/:id/containers/:id/files/*path*', function () {
   var ctx = {};
   var fileName = "file1.txt";
@@ -422,6 +448,32 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           });
         });
       });
+
+      it('should delete a directory', function (done) {
+        createDir(ctx, '.git', '/', function (err) {
+          if (err) {
+            return done(err);
+          }
+          ctx.dir.destroy(function (err, body, code) {
+            if (err) {
+              return done(err);
+            }
+            expect(code).to.equal(204);
+            try {
+              fs.readdirSync(
+                path.join(ctx.containerRoot, '/', '.git'), {
+                  encoding: 'utf8'
+                });
+            } catch (err) {
+              if (err.code === 'ENOENT') {
+                return done();
+              }
+            }
+            return done(new Error('file did not delete'));
+          });
+        });
+      });
+
     });
     describe('non-owner', function () {
       beforeEach(createFileForModAndNonUser);
@@ -466,5 +518,3 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
     });
   });
 });
-
-
