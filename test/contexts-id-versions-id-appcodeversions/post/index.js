@@ -70,7 +70,8 @@ describe('XXX POST /contexts/:id/versions/:id/appCodeVersions', function () {
           var expected = {
             repo: ctx.fullRepoName,
             branch: 'master',
-            commit: body.commit
+            commit: body.commit,
+            defaultBranch: 'master'
           };
           var username = ctx.user.attrs.accounts.github.login;
           require('../../fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
