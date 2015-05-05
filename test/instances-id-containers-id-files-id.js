@@ -127,7 +127,6 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
     });
   });
 
-
   describe('GET', function () {
     it('should read a file', function (done) {
       createFile(ctx, fileName, filePath, fileContent, function(err) {

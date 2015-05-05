@@ -66,6 +66,7 @@ describe('201 POST /workers/container-create', function () {
     // need instance
 
     multi.createInstance(function (err, instance) {
+      if (err) { return done(err); }
       // poll for worker to complete update
       ctx.instance = instance;
       containerInspect = containerInspectFixture.getContainerInspect(instance);
@@ -113,12 +114,14 @@ describe('201 POST /workers/container-create', function () {
       function (cb) {
         //assert instance has no container
         Instance.findById(ctx.instance.attrs._id, function (err, instance) {
-          expect(instance.container).to.equal(undefined);
+          expect(instance.container).to.be.undefined();
           cb();
         });
       },
       function (cb) {
-        originalContainCreateWorker(containerInspect, cb);
+        originalContainCreateWorker(containerInspect, function () {
+          cb();
+        });
         /*
         runnable.workerContainerCreate({
           json: containerInspect,

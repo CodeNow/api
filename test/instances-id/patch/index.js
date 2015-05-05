@@ -88,16 +88,19 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
     describe('User', function() {
       beforeEach(function (done) {
         multi.createInstance(function (err, instance, build, user, mdlArray, srcArray) {
-          //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
           if (err) { return done(err); }
-          ctx.instance = instance;
-          ctx.build = build;
-          ctx.user = user;
-          ctx.cv = mdlArray[0];
-          ctx.context = mdlArray[1];
-          ctx.srcArray = srcArray;
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          done();
+          multi.tailInstance(user, instance, function (err) {
+            if (err) { return done(err); }
+            //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
+            ctx.instance = instance;
+            ctx.build = build;
+            ctx.user = user;
+            ctx.cv = mdlArray[0];
+            ctx.context = mdlArray[1];
+            ctx.srcArray = srcArray;
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            done();
+          });
         });
       });
       describe('Build', function () {
@@ -138,6 +141,11 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
                   expect(container.attrs.inspect.Env).to.deep.equal([]);
                   var count = createCount(done);
                   expects.deletedWeaveHost(oldContainer, count.inc().next);
+                  /*
+                  console.log('ctx.instance', ctx.instance.json());
+                  console.log('-------------------------------------');
+                  console.log('container', container);
+                  */
                   expects.updatedWeaveHost(
                     container, ctx.instance.attrs.network.hostIp, count.inc().next);
                 });

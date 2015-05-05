@@ -276,19 +276,26 @@ module.exports = {
       var instance = user.createInstance(body, function (err) {
         if (err) { return cb(err); }
         // hold until instance worker completes
+        cb(err, instance, build, user, modelsArr, srcArr);
+        /*
         module.exports.tailInstance(user, instance, function (err, instance) {
-          cb(err, instance, build, user, modelsArr, srcArr);
+          console.log('tail instancep', arguments);
         });
-        //
+        */
       });
     });
   },
+
   createContainer: function (cb) {
     debug('createContainer', formatArgs(arguments));
+    var _this = this;
     this.createInstance(function (err, instance, build, user, modelsArray, srcArr) {
       if (err) { return cb(err); }
-      var container = instance.newContainer(instance.json().containers[0]);
-      cb(err, container, instance, build, user, modelsArray, srcArr);
+      _this.tailInstance(user, instance, function (err) {
+        if (err) { return cb(err); }
+        var container = instance.newContainer(instance.json().containers[0]);
+        cb(err, container, instance, build, user, modelsArray, srcArr);
+      });
     });
   },
 

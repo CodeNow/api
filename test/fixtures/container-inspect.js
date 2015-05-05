@@ -58,6 +58,7 @@ module.exports.getContainerInspect = function (instance) {
        Cmd: [],
        Config: {
          Labels: {
+           type: 'user-container',
            ownerUsername: 'cflynn07',
            instanceId: instance.attrs._id,
            instanceShortHash: instance.attrs.shortHash,
