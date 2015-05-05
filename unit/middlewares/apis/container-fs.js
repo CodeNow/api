@@ -28,6 +28,23 @@ describe('container-fs', function () {
         done();
       });
     });
+    it('should parse pathname correctly for nested dir', function (done) {
+      var req = {
+        body: {
+          isDir: true,
+          name: 'refs',
+          path: '/api/.git'
+        },
+        params: {}
+      };
+      var res = {};
+      containerFs.parseBody(req, res, function () {
+        expect(req.params.path).to.equal('/api/.git/refs/');
+        expect(req.params.content).to.equal('');
+        expect(req.params.isDir).to.equal(true);
+        done();
+      });
+    });
     it('should parse pathname correctly for file', function (done) {
       var req = {
         body: {
