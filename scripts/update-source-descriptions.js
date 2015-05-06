@@ -1,12 +1,9 @@
 /*
- * This script should be run whenever the database needs to be repopulated with
- * the seed contexts
- * `NODE_ENV=development NODE_PATH=./lib node scripts/seed-version.js`
+ * This script is used to add the descriptions to the existing Hello Runnable instances,
+ * used in the configure page
+ * `NODE_ENV=development NODE_PATH=./lib node scripts/update-source-descriptions.js`
  *
- * NOTE: This script will attempt to delete any existing source contexts, as well as their
- * instances.  It should output what it's deleting, so be sure to verify nothing else was targeted
- *
- * NOTE 2: Must log in as HelloRunnable and populate user model in mongo before running this script
+ * NOTE: Must log in as HelloRunnable and populate user model in mongo before running this script
  */
 
 'use strict';
@@ -24,68 +21,26 @@ var Runnable = require('runnable');
 var user = new Runnable(process.env.FULL_API_DOMAIN);
 var mongoose = require('mongoose');
 var sources = [{
-  name: 'PHP',
-  isTemplate: true,
-  isSource: true,
-  body: fs.readFileSync('./scripts/sourceDockerfiles/php').toString()
-}, {
-  name: 'NodeJs',
-  isTemplate: true,
-  isSource: true,
-  body: fs.readFileSync('./scripts/sourceDockerfiles/nodejs').toString()
-}, {
-  name: 'Rails',
-  isTemplate: true,
-  isSource: true,
-  body: fs.readFileSync('./scripts/sourceDockerfiles/rails').toString()
-}, {
-  name: 'Ruby',
-  isTemplate: true,
-  isSource: true,
-  body: fs.readFileSync('./scripts/sourceDockerfiles/ruby').toString()
-}, {
-  name: 'Python',
-  isTemplate: true,
-  isSource: true,
-  body: fs.readFileSync('./scripts/sourceDockerfiles/python').toString()
-}, {
   name: 'PostgreSQL',
-  description: 'An object-relational database management system',
-  body: fs.readFileSync('./scripts/sourceDockerfiles/postgresSql').toString()
+  description: 'An object-relational database management system'
 }, {
   name: 'MySQL',
-  description: 'Relational database management system',
-  body: fs.readFileSync('./scripts/sourceDockerfiles/mysql').toString()
+  description: 'Relational database management system'
 }, {
   name: 'MongoDB',
-  description: 'A cross-platform document-oriented database',
-  body: '# Full list of versions available here:' +
-  ' https://registry.hub.docker.com/_/mongo/tags/manage/\n' +
-  'FROM mongo:2.8.0\n'
+  description: 'A cross-platform document-oriented database'
 }, {
   name: 'Redis',
-  description: 'A data structure server',
-  body: '# Full list of versions available here:' +
-  ' https://registry.hub.docker.com/_/redis/tags/manage/\n' +
-  'FROM redis:2.8.9\n'
+  description: 'A data structure server'
 }, {
   name: 'ElasticSearch',
-  description: 'Search and analyze data in real time',
-  body: '# Full details of this base image can be found here:' +
-  ' https://registry.hub.docker.com/u/dockerfile/elasticsearch/\n' +
-  'FROM dockerfile/elasticsearch\n'
+  description: 'Search and analyze data in real time'
 }, {
   name: 'Nginx',
-  description: 'High-performance load balancer and application accelerator',
-  body: '# Full list of versions available here:' +
-  ' https://registry.hub.docker.com/_/nginx/tags/manage/\n' +
-  'FROM nginx:1.7.9\n'
+  description: 'High-performance load balancer and application accelerator'
 }, {
   name: 'RabbitMQ',
-  description: 'Robust messaging for applications',
-  body: '# Full list of versions available here:' +
-  ' https://registry.hub.docker.com/_/rabbitmq/tags/manage/\n' +
-  'FROM rabbitmq:3.4.2\n'
+  description: 'Robust messaging for applications'
 }, {
   name: 'Cassandra',
   description: 'Open source distributed database management system'
