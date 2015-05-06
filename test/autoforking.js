@@ -58,48 +58,19 @@ describe('Autoforking', function () {
       });
     });
 
-    it('should return empty [] for repo that has no instances', function (done) {
-      var repo = 'not-a-repo';
-      Instance.findMasterInstances(repo, function (err, instances) {
-        expect(err).to.be.null();
-        expect(instances.length).to.equal(0);
-        done();
-      });
-    });
-
-    it('should return array with instance that has masterPod=true', function (done) {
-      var repo = ctx.instance.attrs.contextVersion.appCodeVersions[0].repo;
-      ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
-        expect(err).to.be.null();
-        Instance.findMasterInstances(repo, function (err, instances) {
-          expect(err).to.be.null();
-          expect(instances.length).to.equal(1);
-          expect(instances[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
-          done();
-        });
-      });
-    });
-
     it('should return array with 2 instances that has masterPod=true', function (done) {
       var repo = ctx.instance.attrs.contextVersion.appCodeVersions[0].repo;
       ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
         expect(err).to.be.null();
-        ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
+        Instance.findMasterInstances(repo, function (err, instances) {
           expect(err).to.be.null();
-          ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({ masterPod: true },
-            function (err) {
-              expect(err).to.be.null();
-              Instance.findMasterInstances(repo, function (err, instances) {
-                expect(err).to.be.null();
-                expect(instances.length).to.equal(2);
-                // no guarentees about the order
-                expect(instances.map(pluck('shortHash'))).to.only.contain([
-                  ctx.instance.attrs.shortHash,
-                  copiedInstance.shortHash
-                ]);
-                done();
-              });
-            });
+          expect(instances.length).to.equal(2);
+          // no guarentees about the order
+          expect(instances.map(pluck('shortHash'))).to.only.contain([
+            ctx.instance.attrs.shortHash,
+            copiedInstance.shortHash
+          ]);
+          done();
         });
       });
     });
