@@ -31,7 +31,7 @@ var redisCleaner = require('../../fixtures/redis-cleaner');
 var dockerEvents = require('models/events/docker');
 var keypather = require('keypather')();
 
-describe('200 PATCH /instances/:id', {timeout:5000}, function () {
+describe('200 PATCH /instances/:id', function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;
@@ -234,10 +234,11 @@ describe('200 PATCH /instances/:id', {timeout:5000}, function () {
   // });
   function createInstanceAndRunTests (ctx) {
     describe('and env.', function() {
-      beforeEach({ timeout: 5000 }, function (done) {
+      beforeEach(function (done) {
         var body = {
           env: ['ENV=OLD'],
-          build: ctx.build.id()
+          build: ctx.build.id(),
+          masterPod: true
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
@@ -248,7 +249,8 @@ describe('200 PATCH /instances/:id', {timeout:5000}, function () {
     describe('and no env.', function() {
       beforeEach(function (done) {
         var body = {
-          build: ctx.build.id()
+          build: ctx.build.id(),
+          masterPod: true
         };
         ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
       });

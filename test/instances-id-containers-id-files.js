@@ -53,7 +53,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
-  beforeEach({ timeout: 5000 }, function (done) {
+  beforeEach(function (done) {
     multi.createContainer(function (err, container) {
       if (err) { return done(err); }
       ctx.container = container;

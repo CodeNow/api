@@ -44,7 +44,7 @@ describe('Build Stream', function() {
   after(dock.stop.bind(ctx));
   after(api.stop.bind(ctx));
 
-  describe('POST', {timeout: 1000}, function () {
+  describe('POST', function () {
     beforeEach(function (done) {
       multi.createContextVersion(function (err, cv, context, build, user) {
         ctx.cv = cv;
@@ -151,7 +151,7 @@ describe('Build Stream', function() {
         });
       });
     });
-    it('100 people should get the same logs', { timeout: 2000 }, function (done) {
+    it('100 people should get the same logs', function (done) {
       var people = 100;
       ctx.build.build(ctx.buildId, {message: 'lots of people!'}, function (err, body, code) {
         if (err) { return done(err); }
