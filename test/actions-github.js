@@ -663,6 +663,8 @@ describe('Github - /actions/github', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             baseDeploymentId++;
             var newDeploymentId = baseDeploymentId;
+            expect(this.github.config.token)
+              .to.equal(ctx.user.attrs.accounts.github.access_token);
             cb(null, {id: newDeploymentId});
           });
           var countOnCallback = function () {
