@@ -2,7 +2,7 @@
 
 require('loadenv')();
 
-var sinon = require('sinon');
+// var sinon = require('sinon');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -10,9 +10,9 @@ var it = lab.it;
 var Code = require('code');
 var expect = Code.expect;
 
-var GitHub = require('models/apis/github');
+// var GitHub = require('models/apis/github');
 var Messenger = require('socket/messenger');
-var User = require('models/mongo/user');
+// var User = require('models/mongo/user');
 
 
 describe('Messenger', function () {
