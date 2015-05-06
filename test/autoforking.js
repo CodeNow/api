@@ -59,7 +59,7 @@ describe('Autoforking', function () {
     });
 
     it('should return empty [] for repo that has no instances', function (done) {
-      var repo = ctx.instance.attrs.contextVersion.appCodeVersions[0].repo;
+      var repo = 'not-a-repo';
       Instance.findMasterInstances(repo, function (err, instances) {
         expect(err).to.be.null();
         expect(instances.length).to.equal(0);
