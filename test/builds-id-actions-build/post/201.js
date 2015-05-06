@@ -29,7 +29,7 @@ var expects = require('./../../fixtures/expects');
 var multi = require('./../../fixtures/multi-factory');
 var primus = require('./../../fixtures/primus');
 
-describe('201 POST /builds/:id/actions/build', {timeout: 500}, function() {
+describe('201 POST /builds/:id/actions/build', function() {
   var ctx = {};
 
   before(api.start.bind(ctx));

@@ -103,7 +103,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
     });
   });
   describe('POST', function () {
-    // it('should create a file with multi-part upload', {timeout: 10000}, function (done) {
+    // it('should create a file with multi-part upload', function (done) {
     //   require('./fixtures/mocks/s3/multi-part-upload')(ctx.context, 'log-stream.js');
     //   require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
     //   var FormData = require('form-data');
@@ -206,7 +206,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done));
       }));
     });
-    it('should create nested directories, but does not list them at root', { timeout: 1000 }, function (done) {
+    it('should create nested directories, but does not list them at root', function (done) {
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/');
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
       var dataDir = createFile(ctx.context.id(), '/', 'dir', true);

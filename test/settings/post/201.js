@@ -13,7 +13,7 @@ var api = require('../../fixtures/api-control');
 var multi = require('../../fixtures/multi-factory');
 
 
-describe('201 POST /settings', {timeout:500}, function () {
+describe('201 POST /settings', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
