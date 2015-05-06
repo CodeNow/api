@@ -14,7 +14,7 @@ var expect = Code.expect;
 var api = require('../../fixtures/api-control');
 var multi = require('../../fixtures/multi-factory');
 
-describe('PATCH /settings/:id', {timeout:500}, function () {
+describe('PATCH /settings/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));

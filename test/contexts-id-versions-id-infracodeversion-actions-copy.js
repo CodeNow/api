@@ -202,7 +202,7 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
         //           expects.success(undefined, expected, done));
         //     });
         //   });
-        //   it('should use original icv when built without editing', {timeout: 1000}, function (done) {
+        //   it('should use original icv when built without editing', function (done) {
         //     multi.buildTheBuild(ctx.user, ctx.forkedBuild, function(err) {
         //       if (err) { done(err); }
         //       var contextId = ctx.forkedBuild.json().contexts[0];
@@ -226,7 +226,7 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
   describe('PUT', function () {
     describe('unbuilt build (contextVersion)', function() {
       describe('owner', function () {
-        it('should copy the files of the source version', { timeout: 5000 }, function (done) {
+        it('should copy the files of the source version', function (done) {
           var sourceInfraCodeVersionId = ctx.sourceContextVersion.attrs.infraCodeVersion;
           require('./fixtures/mocks/s3/get-object')(ctx.sourceContext.id(), '/');
           require('./fixtures/mocks/s3/get-object')(ctx.sourceContext.id(), '/Dockerfile');

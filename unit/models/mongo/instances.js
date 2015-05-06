@@ -507,7 +507,7 @@ describe('Instance', function () {
       }
       done();
     });
-    beforeEach({ timeout: 5000 }, function (done) {
+    beforeEach(function (done) {
       // this deletes all the things out of the graph
       var graph = new Graph();
       graph.graph
@@ -531,8 +531,8 @@ describe('Instance', function () {
       expect(generated).to.deep.equal(expected);
       done();
     });
-  
-    it('should be able to put an instance in the graph db', { timeout: 5000 }, function (done) {
+
+    it('should be able to put an instance in the graph db', function (done) {
       var i = instances[0];
       i.upsertIntoGraph(function (err) {
         expect(err).to.be.null();
@@ -544,7 +544,7 @@ describe('Instance', function () {
       });
     });
 
-    it('should upsert, not created duplicate', { timeout: 5000 }, function (done) {
+    it('should upsert, not created duplicate', function (done) {
       var graph = new Graph();
       var i = instances[0];
       i.upsertIntoGraph(function (err) {

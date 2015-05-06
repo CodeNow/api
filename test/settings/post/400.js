@@ -13,7 +13,7 @@ var api = require('../../fixtures/api-control');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 
-describe('400 POST /settings', {timeout: 700}, function () {
+describe('400 POST /settings', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
