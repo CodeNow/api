@@ -1,3 +1,6 @@
+/**
+ * @module test/instances-id/patch/index
+ */
 'use strict';
 
 var Lab = require('lab');
@@ -11,22 +14,22 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
-var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
-var multi = require('../../fixtures/multi-factory');
-var expects = require('../../fixtures/expects');
-var primus = require('../../fixtures/primus');
-var dockerMockEvents = require('../../fixtures/docker-mock-events');
-var uuid = require('uuid');
 var async = require('async');
-var exists = require('101/exists');
-var not = require('101/not');
+var createCount = require('callback-count');
 var equals = require('101/equals');
-var Build = require('models/mongo/build');
+var exists = require('101/exists');
 var extend = require('extend');
 var nock = require('nock');
-var createCount = require('callback-count');
+var not = require('101/not');
+var uuid = require('uuid');
 
+var Build = require('models/mongo/build');
+var api = require('../../fixtures/api-control');
+var dock = require('../../fixtures/dock');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+var expects = require('../../fixtures/expects');
+var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
 
 describe('Instance - /instances/:id', {timeout:1000}, function () {
   var ctx = {};
@@ -144,8 +147,8 @@ describe('Instance - /instances/:id', {timeout:1000}, function () {
                   /*
                   console.log('ctx.instance', ctx.instance.json());
                   console.log('-------------------------------------');
-                  console.log('container', container);
                   */
+                  console.log('container', container);
                   expects.updatedWeaveHost(
                     container, ctx.instance.attrs.network.hostIp, count.inc().next);
                 });

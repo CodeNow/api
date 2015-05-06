@@ -58,11 +58,12 @@ module.exports.getContainerInspect = function (instance) {
        Cmd: [],
        Config: {
          Labels: {
-           type: 'user-container',
-           ownerUsername: 'cflynn07',
+           contextVersionId: instance.json().contextVersion.id,
            instanceId: instance.attrs._id,
            instanceShortHash: instance.attrs.shortHash,
-           contextVersionId: instance.json().contextVersion.id
+           ownerUsername: 'cflynn07',
+           type: 'user-container',
+           userGithubId: instance.json().owner.github
          }
        },
        Dns: null,
