@@ -106,9 +106,9 @@ describe('BDD - Instance Dependencies', function () {
       });
       beforeEach(function (done) {
         var envs = ctx.webInstance.attrs.env || [];
-        envs.push('API=' + ctx.apiInstance.attrs.lowerName + '-' +
+        envs.push('API=' + ctx.apiInstance.attrs.lowerName + '-staging-' +
           ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN);
-        envs.push('PI=does-not-exist-' +
+        envs.push('PI=does-not-exist-staging-' +
           ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN);
         ctx.webInstance.update({ env: envs }, done);
       });
