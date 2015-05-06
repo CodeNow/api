@@ -462,7 +462,6 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
           sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var user = ctx.user.attrs.accounts.github;
           var data = {
             branch: 'feature-1',
             repo: acv.repo,
