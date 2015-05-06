@@ -19,7 +19,7 @@ var Socket = Primus.createSocket({
 var filibuster = require('Filibuster');
 var http = require('http');
 
-describe('Socket Server', { timeout: 5000 }, function () {
+describe('Socket Server', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));

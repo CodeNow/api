@@ -295,14 +295,14 @@ function createInstanceTests (ctx) {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
-  it('should create an instance with build', {timeout:1000}, function (done) {
+  it('should create an instance with build', function (done) {
     var body = {
       masterPod: true,
       build: ctx.build.id()
     };
     assertCreate(body, done);
   });
-  it('should create an instance with build and name', {timeout:1000}, function (done) {
+  it('should create an instance with build and name', function (done) {
     var name = 'ABCDEFGHIJKLMNOPQRSTUVWYXZ_-';
     var body = {
       masterPod: true,
@@ -312,7 +312,7 @@ function createInstanceTests (ctx) {
     ctx.expected.name = name;
     assertCreate(body, done);
   });
-  it('should create an instance with env and build', {timeout:1000}, function (done) {
+  it('should create an instance with env and build', function (done) {
     var env = [
       'FOO=BAR'
     ];
@@ -324,7 +324,7 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, done);
   });
-  it('should create an instance with name, env and build', {timeout:1000}, function (done) {
+  it('should create an instance with name, env and build', function (done) {
     var name = uuid();
     var env = [
       'FOO=BAR'
@@ -339,7 +339,7 @@ function createInstanceTests (ctx) {
     ctx.expected.env = env;
     assertCreate(body, done);
   });
-  it('should create a private instance by default', {timeout:1000}, function (done) {
+  it('should create a private instance by default', function (done) {
     var name = uuid();
     var env = [
       'FOO=BAR'
@@ -357,7 +357,7 @@ function createInstanceTests (ctx) {
       done();
     });
   });
-  it('should make a master pod instance', { timeout: 1000 }, function (done) {
+  it('should make a master pod instance', function (done) {
     var name = uuid();
     var body = {
       name: name,

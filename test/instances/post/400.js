@@ -18,7 +18,7 @@ var typesTests = require('../../fixtures/types-test-util');
 var uuid = require('uuid');
 
 
-describe('400 POST /instances', {timeout:500}, function () {
+describe('400 POST /instances', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));

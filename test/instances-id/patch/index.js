@@ -28,7 +28,7 @@ var nock = require('nock');
 var createCount = require('callback-count');
 
 
-describe('Instance - /instances/:id', {timeout:1000}, function () {
+describe('Instance - /instances/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
