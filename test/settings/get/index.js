@@ -15,7 +15,7 @@ var api = require('../../fixtures/api-control');
 var multi = require('../../fixtures/multi-factory');
 
 
-describe('GET /settings', {timeout:500}, function () {
+describe('GET /settings', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));

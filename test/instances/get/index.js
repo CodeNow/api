@@ -121,7 +121,7 @@ describe('GET /instances', function () {
       }];
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
-    it('should get instances by username', {timeout:500}, function (done) {
+    it('should get instances by username', function (done) {
       var count = createCount(2, done);
       require('../../fixtures/mocks/github/user')(ctx.user);
       require('../../fixtures/mocks/github/user')(ctx.user2);
@@ -152,7 +152,7 @@ describe('GET /instances', function () {
         (ctx.user2.json().accounts.github.id, ctx.user2.json().accounts.github.username);
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
-    it('should get instances by ["contextVersion.appCodeVersions.repo"]', {timeout:500}, function (done) {
+    it('should get instances by ["contextVersion.appCodeVersions.repo"]', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user);
       var count = createCount(2, done);
       require('../../fixtures/mocks/github/user')(ctx.user);

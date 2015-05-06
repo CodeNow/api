@@ -38,7 +38,7 @@ describe('Build - /builds/:id/actions/build', function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
 
-  describe('POST', {timeout:500}, function () {
+  describe('POST', function () {
     describe('unbuilt build', function () {
       beforeEach(function (done) {
         multi.createContextVersion(function (err, cv, context, build, user) {
@@ -181,7 +181,6 @@ describe('Build - /builds/:id/actions/build', function () {
         });
       });
       it('add another appcodeversion, build, remove an appcodeversion, it should not reuse cv',
-        { timeout: 2000 },
         function (done) {
           // Add a new repo to the cv
           ctx.repoName = 'Dat-middleware';

@@ -219,7 +219,7 @@
 //     describe('permissions', function() {
 //       describe('regular file', function() {
 //         describe('owner', function () {
-//           it('should let us update a file\'s content', {timeout: 1000}, function (done) {
+//           it('should let us update a file\'s content', function (done) {
 //             var dockerfile = find(ctx.files.models, hasKeypaths({ 'id()': '/Dockerfile' }));
 //             var opts = {
 //               json: {
@@ -582,7 +582,7 @@
 //           ctx.dir.contents.fetch(expects.success(200, expected, done));
 //         }));
 //       });
-//       it('should rename a dir and move it\'s contents', {timeout: 1000}, function (done) {
+//       it('should rename a dir and move it\'s contents', function (done) {
 //         var newName = 'dir2/';
 //         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
 //         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
@@ -695,7 +695,7 @@
 //         Lab.expect(ctx.nestedFile.path()).to.match(regexp);
 //         ctx.nestedFile.update(body, expects.error(409, done));
 //       });
-//       it('should rename a dir and move it\'s contents', {timeout: 1000}, function (done) {
+//       it('should rename a dir and move it\'s contents', function (done) {
 //         var newName = 'dir2/';
 //         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());
 //         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), ctx.dir.id());

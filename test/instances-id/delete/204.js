@@ -29,7 +29,7 @@ var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 var dockerEvents = require('models/events/docker');
 
-describe('204 DELETE /instances/:id', {timeout:10000}, function () {
+describe('204 DELETE /instances/:id', function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;
@@ -213,7 +213,8 @@ describe('204 DELETE /instances/:id', {timeout:10000}, function () {
       beforeEach(function (done) {
         var body = {
           env: ['ENV=OLD'],
-          build: ctx.build.id()
+          build: ctx.build.id(),
+          masterPod: true
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
