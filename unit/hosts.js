@@ -81,6 +81,16 @@ describe('Hosts', function () {
         done();
       });
     });
+    it('should parse a username from an direct hostname on a non master branch', function (done) {
+      var hostname = 'some-cool-branch-dude-instance-name-staging-org-name.' + process.env.USER_CONTENT_DOMAIN;
+      var hosts = new Hosts();
+      var name = 'instance-name';
+      hosts.parseUsernameFromHostname(hostname, name, function (err, username) {
+        if (err) { return done(err); }
+        expect(username).to.equal('org-name');
+        done();
+      });
+    });
     describe('errors', function () {
       describe('hostname does not end with user content domain', function () {
         expectError({
