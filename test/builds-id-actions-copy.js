@@ -71,7 +71,7 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
     });
     describe('deep copy', function () {
       describe('as owner', function () {
-        it('should create a copy of the build', {timeout:1000}, function (done) {
+        it('should create a copy of the build', function (done) {
           var expectedNewBuild = clone(ctx.build.json());
           expectedNewBuild.contextVersions = function (contextVersions) {
             expect(contextVersions.length).to.equal(1);
@@ -93,7 +93,7 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
         beforeEach(function (done) {
           ctx.moderator = multi.createModerator(done);
         });
-        it('should create a copy of the build', {timeout:1000}, function (done) {
+        it('should create a copy of the build', function (done) {
           var expectedNewBuild = clone(ctx.build.json());
           expectedNewBuild.contextVersions = function (contextVersions) {
             expect(contextVersions.length).to.equal(1);

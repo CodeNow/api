@@ -24,7 +24,7 @@ describe('GET /dependencies/actions/health', function () {
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
 
-  before({ timeout: 7000 }, function (done) {
+  before(function (done) {
     var Graph = require('models/graph/neo4j');
     var client = new Graph();
     var err;

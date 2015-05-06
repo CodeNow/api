@@ -1,6 +1,3 @@
-./test/actions-analyze-info/get/200.js
-./test/actions-analyze/get/200.js
-./test/actions-analyze/get/400.js
 ./test/actions-github.js
 ./test/actions-kill.js
 ./test/actions-redirect.js
