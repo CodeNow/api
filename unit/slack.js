@@ -74,8 +74,7 @@ describe('Slack', function () {
           }
         }
       ];
-      var slack = new Slack({});
-      var text = slack._createAutoDeployText(gitInfo, instances);
+      var text = Slack.createAutoDeployText(gitInfo, instances);
       var expected = 'Your <http://localhost:3031/actions/redirect?';
       expected += 'url=https%3A%2F%2Fgithub.com%2FCodeNow%2Fapi%2Fcommit%2Fa240edf982d467201845b3bf10ccbe16f6049ea9';
       expected += '|changes> (init &amp; commit &amp; push long test   next line   3d... and ';
@@ -117,8 +116,7 @@ describe('Slack', function () {
           }
         }
       ];
-      var slack = new Slack({});
-      var text = slack._createAutoDeployText(gitInfo, instances);
+      var text = Slack.createAutoDeployText(gitInfo, instances);
       var expected = 'Your <http://localhost:3031/actions/redirect?';
       expected += 'url=https%3A%2F%2Fgithub.com%2FCodeNow%2Fapi%2Fcommit%2Fa240edf982d467201845b3bf10ccbe16f6049ea9';
       expected += '|changes> (init &amp; commit &amp; push long test   next line   3d...)';
