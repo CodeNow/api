@@ -14,7 +14,6 @@ var it = lab.it;
 
 var Boom = require('dat-middleware').Boom;
 var ContextVersion = require('models/mongo/context-version');
-var User = require('models/mongo/user');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
 var Runnable = require('models/apis/runnable');
@@ -140,108 +139,6 @@ describe('Github - /actions/github', function () {
   });
 
 
-  describe('disabled slack private messaging', function () {
-    beforeEach(function (done) {
-      ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
-      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'false';
-      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
-      process.env.ENABLE_GITHUB_HOOKS = 'true';
-      done();
-    });
-    afterEach(function (done) {
-      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
-      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
-      done();
-    });
-    it('should return OKAY', function (done) {
-      var options = hooks().push_new_branch;
-      request.post(options, function (err, res, body) {
-        if (err) { return done(err); }
-        expect(res.statusCode).to.equal(202);
-        expect(body).to.equal('New branch private notifications are disabled for now');
-        done();
-      });
-    });
-  });
-
-  describe('slack notifications for non-deployed branch', function () {
-    beforeEach(function (done) {
-      ctx.originalNewBranchPrivateMessaging = process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES;
-      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = 'true';
-      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
-      process.env.ENABLE_GITHUB_HOOKS = 'true';
-      multi.createInstance(function (err, instance, build, user, modelsArr) {
-        ctx.contextVersion = modelsArr[0];
-        ctx.context = modelsArr[1];
-        ctx.build = build;
-        ctx.user = user;
-        ctx.instance = instance;
-        var settings = {
-          owner: {
-            github: user.attrs.accounts.github.id
-          },
-          notifications: {
-            slack: {
-              apiToken: 'xoxo-dasjdkasjdk243248392482394',
-              githubUsernameToSlackIdMap: {
-                'cheese': 'U023BECGF'
-              }
-            }
-          }
-        };
-        ctx.user.createSetting({json: settings}, done);
-      });
-    });
-    afterEach(function (done) {
-      process.env.ENABLE_NEW_BRANCH_PRIVATE_MESSAGES = ctx.originalNewBranchPrivateMessaging;
-      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
-      done();
-    });
-    it('should call Slack#notifyOnNewBranch', function (done) {
-      var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-      sinon.stub(Slack.prototype, 'notifyOnNewBranch', function (gitInfo, cb) {
-        expect(gitInfo.repo).to.equal(acv.repo);
-        expect(gitInfo.user.login).to.equal('podviaznikov');
-        expect(gitInfo.headCommit.committer.username).to.equal('podviaznikov');
-        cb();
-        Slack.prototype.notifyOnNewBranch.restore();
-        done();
-      });
-      var data = {
-        branch: 'feature-1',
-        repo: acv.repo
-      };
-      var options = hooks(data).push;
-      require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-      request.post(options, function (err, res, contextVersionIds) {
-        if (err) { return done(err); }
-        expect(res.statusCode).to.equal(201);
-        expect(contextVersionIds).to.exist();
-        expect(contextVersionIds).to.be.an.array();
-        expect(contextVersionIds).to.have.length(1);
-      });
-    });
-
-    it('should not process new branch event for user that has no runnable account', function (done) {
-      var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-      var data = {
-        branch: 'feature-1',
-        repo: acv.repo
-      };
-      var options = hooks(data).push;
-      require('./fixtures/mocks/github/users-username')(101, 'podviaznikov');
-      User.findOneAndRemove({'accounts.github.id': ctx.contextVersion.attrs.createdBy.github}, function(err) {
-        if (err) { return done(err); }
-        request.post(options, function (err, res, body) {
-          if (err) { return done(err); }
-          expect(res.statusCode).to.equal(202);
-          expect(body).to.equal('No appropriate work to be done; user not found, finishing.');
-          done();
-        });
-      });
-    });
-
-  });
 
   describe('push event', function () {
     var ctx = {};

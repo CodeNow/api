@@ -219,7 +219,8 @@ describe('PUT /instances/:id/actions/restart', function () {
       beforeEach(function (done) {
         var body = {
           env: ['ENV=OLD'],
-          build: ctx.build.id()
+          build: ctx.build.id(),
+          masterPod: true
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
@@ -230,7 +231,8 @@ describe('PUT /instances/:id/actions/restart', function () {
     describe('and no env.', function() {
       beforeEach(function (done) {
         var body = {
-          build: ctx.build.id()
+          build: ctx.build.id(),
+          masterPod: true
         };
         ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
       });
