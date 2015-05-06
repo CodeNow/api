@@ -31,25 +31,25 @@ describe('Messenger', function () {
         done();
       });
     });
-    it('should return false if both authToken and userId are null', function (done) {
-      var socket = {
-        request: {
-          query: {
-            token: null
-          },
-          session: {
-            passport: {
-              user: null
-            }
-          }
-        }
-      };
-      Messenger.canJoin(socket, {}, function (err, canJoin) {
-        expect(err).to.be.null();
-        expect(canJoin).to.be.false();
-        done();
-      });
-    });
+    // it('should return false if both authToken and userId are null', function (done) {
+    //   var socket = {
+    //     request: {
+    //       query: {
+    //         token: null
+    //       },
+    //       session: {
+    //         passport: {
+    //           user: null
+    //         }
+    //       }
+    //     }
+    //   };
+    //   Messenger.canJoin(socket, {}, function (err, canJoin) {
+    //     expect(err).to.be.null();
+    //     expect(canJoin).to.be.false();
+    //     done();
+    //   });
+    // });
     // it('should return true if accountId equals user.accounts.github.id', function (done) {
     //   var socket = {
     //     request: {
