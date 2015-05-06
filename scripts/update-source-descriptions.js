@@ -68,7 +68,9 @@ function main() {
       console.error('hello runnable error', err);
       return process.exit(err ? 1 : 0);
     }
-    createOtherSources();
+    createOtherSources(function () {
+      process.exit(0);
+    });
   });
 }
 
@@ -110,17 +112,25 @@ function loginAsHelloRunnable(cb) {
 
 
 function createOtherSources(cb) {
-  async.forEach(sources, updateDescriptions, cb);
+  async.forEach(sources, updateDescriptions, function () {
+    cb();
+  });
 }
 
 function updateDescriptions(data, done) {
   if (data.description) {
-
+    console.log('updating description for ', data.name);
+    Context.findOneAndUpdate({
+      'name': data.name,
+      'owner.github': process.env.HELLO_RUNNABLE_GITHUB_ID
+    }, {
+      $set: {
+        description: data.description
+      }
+    }, function () {
+      done();
+    });
+  } else {
+    done();
   }
-  console.log('updating description for ', data.name);
-  Context.findOneAndUpdate({'name': data.name, 'isSource': data.isSource}, {
-    $set: {
-      description: data.description
-    }
-  }, done);
 }
