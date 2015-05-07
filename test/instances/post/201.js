@@ -303,7 +303,7 @@ function createInstanceTests (ctx) {
     assertCreate(body, done);
   });
   it('should create an instance with build and name', function (done) {
-    var name = 'ABCDEFGHIJKLMNOPQRSTUVWYXZ_-';
+    var name = 'ABCDEFGHIJKLMNOPQRSTUVWYXZ-';
     var body = {
       masterPod: true,
       name: name,
