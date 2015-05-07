@@ -162,7 +162,7 @@ describe('Github - /actions/github', function () {
         request.post(options, function (err, res, body) {
           if (err) { return done(err); }
           expect(res.statusCode).to.equal(202);
-          expect(body).to.equal('No appropriate work to be done; nothing to deploy or fork');
+          expect(body).to.equal('Nothing to deploy or fork');
           done();
         });
     });
