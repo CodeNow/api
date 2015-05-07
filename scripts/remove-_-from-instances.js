@@ -51,7 +51,7 @@ async.waterfall([
       if (dryRun) {
         return eachCb();
       }
-      user.updateInstance(i._id.toString(), {
+      user.updateInstance(i.shortHash.toString(), {
         name: newName
       }, function (err) {
         if (err) { console.error('err renaming',i.name, newName, err.message); }
@@ -63,3 +63,5 @@ async.waterfall([
   console.log('done. err', err);
   process.exit(0);
 });
+
+
