@@ -8,11 +8,11 @@ var Runnabe = require('runnable');
 var user = new Runnabe(process.env.API_HOST);
 
 var dryRun = !process.env.ACTUALLY_RUN;
-if (process.env.API_HOST) {
+if (!process.env.API_HOST) {
   console.log('need API_HOST');
   process.exit(1);
 }
-if (process.env.API_TOKEN) {
+if (!process.env.API_TOKEN) {
   console.log('need API_TOKEN');
   process.exit(1);
 }
