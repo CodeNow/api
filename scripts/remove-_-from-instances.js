@@ -64,14 +64,14 @@ async.waterfall([
 function renameInstance (token, instance, cb) {
   var newName = instance.name.replace(/[^a-zA-Z0-9]/g, '-');
   console.log('RENAMING', instance.name, newName);
-  if (dryRun) {
-    return cb();
-  }
   console.log('logging in to runnable');
   var user = new Runnable(process.env.API_HOST);
   user.githubLogin(token, function (err) {
     if (err) {
       console.error('error logging in', token);
+      return cb();
+    }
+    if (dryRun) {
       return cb();
     }
     user.updateInstance(instance.shortHash.toString(), {
