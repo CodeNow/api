@@ -101,7 +101,7 @@ describe('EVENT runnable:docker:events:die', function () {
 
     });
 
-    describe('user stops the instance\'s container', {timeout: 2000}, function() {
+    describe('user stops the instance\'s container', function() {
       beforeEach(function (done) {
         ctx.origHandleDieGetEventLock = dockerEvents.getEventLock;
         ctx.originalUserStoppedContainerLock = UserStoppedContainer.prototype.lock;

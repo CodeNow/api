@@ -59,7 +59,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
     });
 
     describe('duplicate build', function() {
-      it('should deploy an instance deduped context versions', { timeout: 10000 }, function (done) {
+      it('should deploy an instance deduped context versions', function (done) {
         async.waterfall([
           createVersion,
           addAppCodeVersions,
@@ -124,7 +124,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
     describe('modified build', function() {
       describe('appCodeVersions', function() {
         describe('change commit', function() {
-          it('should deploy an instance with new context versions', { timeout: 5000 }, function (done) {
+          it('should deploy an instance with new context versions', function (done) {
             async.waterfall([
               createVersion,
               addAppCodeVersions,
@@ -195,9 +195,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
           });
         });
         describe('change branch', function() {
-          it('should deploy an instance with new context versions (with same docker image)',
-            { timeout: 5000 }, function (done) {
-
+          it('should deploy an instance with new context versions (with same docker image)', function (done) {
             async.waterfall([
               createVersion,
               addAppCodeVersions,
@@ -277,7 +275,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         }
       });
       describe('edit dockerfile (infraCodeVersion)', function() {
-        it('should deploy an instance with new context versions', { timeout: 5000 }, function (done) {
+        it('should deploy an instance with new context versions', function (done) {
           async.waterfall([
             createVersion,
             modifyDockerfile,
@@ -375,7 +373,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
       beforeEach(function (done) {
         ctx.instance = ctx.user.createInstance({ build: ctx.build.id() }, done);
       });
-      it('should deploy an instance with new context versions', { timeout: 10000 }, function (done) {
+      it('should deploy an instance with new context versions', function (done) {
         async.waterfall([
           createVersion,
           addAppCodeVersions,
@@ -453,7 +451,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
       beforeEach(function (done) {
         ctx.instance = ctx.user.createInstance({ build: ctx.build.id() }, done);
       });
-      it('should deploy an instance with new context versions', { timeout: 10000 }, function (done) {
+      it('should deploy an instance with new context versions', function (done) {
         async.waterfall([
           createVersion,
           addAppCodeVersions,

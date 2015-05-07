@@ -102,7 +102,7 @@ describe('Build - /builds/:id', function () {
 //       });
 //     });
 
-//     it('should return an environment build', { timeout: 5000 }, function (done) {
+//     it('should return an environment build', function (done) {
 //       require('./fixtures/mocks/docker/container-id-attach')();
 //       ctx.build.build(ctx.buildId, {message: 'hello!'}, function (err, body, code) {
 //         if (err) {

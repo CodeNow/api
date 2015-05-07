@@ -31,7 +31,7 @@ var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 
-describe('Instance - /instances/:id', {timeout:1000}, function () {
+describe('Instance - /instances/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));

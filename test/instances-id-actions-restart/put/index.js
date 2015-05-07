@@ -30,7 +30,7 @@ var isFunction = require('101/is-function');
 var last = require('101/last');
 var uuid = require('uuid');
 
-describe('PUT /instances/:id/actions/restart', { timeout: 500 }, function () {
+describe('PUT /instances/:id/actions/restart', function () {
   var ctx = {};
   var stopContainerRightAfterStart = function () {
     var self = this;

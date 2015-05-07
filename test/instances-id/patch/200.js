@@ -31,6 +31,7 @@ function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
     github:   user.accounts.github.id,
     username: user.accounts.github.login,
     gravatar: user.gravatar
+
   };
   expect(body._id).to.exist();
   expect(body.shortHash).to.exist();
@@ -127,11 +128,11 @@ describe('200 PATCH /instances', function () {
         // TODO: wait for event first, make sure everything finishes.. then drop db
         ctx.createUserContainerSpy.restore();
         require('../../fixtures/clean-mongo').removeEverything(done);
-        //done();
       });
 
       it('should update an instance with a build', function (done) {
         ctx.instance.update({
+          env: ['ENV=OLD'],
           build: ctx.build.id(),
         }, function (err, body, statusCode) {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
