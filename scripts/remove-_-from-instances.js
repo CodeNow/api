@@ -17,15 +17,19 @@ if (!process.env.API_TOKEN) {
   process.exit(1);
 }
 
-mongoose.connect(process.env.MONGO);
-
 console.log('dryRun?', !!dryRun);
 
 async.waterfall([
+  function connectMongo (cb) {
+    console.log('connect to mongo');
+    mongoose.connect(process.env.MONGO, cb);
+  },
   function loginApiClient (cb) {
+    console.log('logging in to runnable');
     user.githubLogin(process.env.API_TOKEN, cb);
   },
   function getAllInstances (cb) {
+    console.log('fetching instances');
     Instances.find({}, cb);
   },
   function rename (instances, cb) {
