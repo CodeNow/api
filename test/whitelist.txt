@@ -1,6 +1,3 @@
-./test/actions-github.js
-./test/actions-kill.js
-./test/actions-redirect.js
 ./test/auth-github/callback-token.js
 ./test/auth-github/token.js
 ./test/auth-whitelist-id/delete/204.js
@@ -51,7 +48,6 @@
 ./test/instances-id-actions-stop/put/index.js
 ./test/instances-id-containers-id-files-id.js
 ./test/instances-id-containers-id-files.js
-./test/instances-id-master-pod/index.js
 ./test/instances-id/delete/204.js
 ./test/instances-id/delete/index.js
 ./test/instances-id/get/index.js
@@ -71,4 +67,7 @@
 ./test/settings/post/400.js
 ./test/terminal-stream.js
 ./test/test-errors.js
+./test/users-id-routes-id/index.js
+./test/users-id-routes/index.js
 ./test/users-id.js
+./test/workers/container-create/post/201.js
