@@ -26,7 +26,10 @@ async.waterfall([
   },
   function loginApiClient (cb) {
     console.log('logging in to runnable');
-    user.githubLogin(process.env.API_TOKEN, cb);
+    user.githubLogin(process.env.API_TOKEN, function (err) {
+      if (err) { return cb(err); }
+      cb();
+    });
   },
   function getAllInstances (cb) {
     console.log('fetching instances');
