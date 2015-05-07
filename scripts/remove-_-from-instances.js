@@ -4,13 +4,27 @@ require('loadenv')();
 var Instances = require('models/mongo/instance');
 var async = require('async');
 var mongoose = require('mongoose');
-mongoose.connect(process.env.MONGO);
+var Runnabe = require('runnable');
+var user = new Runnabe(process.env.API_HOST);
 
 var dryRun = !process.env.ACTUALLY_RUN;
+if (process.env.API_HOST) {
+  console.log('need API_HOST');
+  process.exit(1);
+}
+if (process.env.API_TOKEN) {
+  console.log('need API_TOKEN');
+  process.exit(1);
+}
+
+mongoose.connect(process.env.MONGO);
 
 console.log('dryRun?', !!dryRun);
 
 async.waterfall([
+  function loginApiClient (cb) {
+    user.githubLogin(process.env.API_TOKEN, cb);
+  },
   function getAllInstances (cb) {
     Instances.find({}, cb);
   },
@@ -30,14 +44,10 @@ async.waterfall([
       if (dryRun) {
         return eachCb();
       }
-      Instances.findOneAndUpdate({
-        _id: i._id
-      }, {
-        $set: {
-          name: newName
-        }
+      user.updateInstance(i._id.toString(), {
+        name: newName
       }, function (err) {
-        if (err) { console.error('err renameing',i.name, newName, err.message); }
+        if (err) { console.error('err renaming',i.name, newName, err.message); }
         eachCb();
       });
     }, cb);
