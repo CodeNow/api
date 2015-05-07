@@ -36,14 +36,13 @@ async.waterfall([
         $set: {
           name: newName
         }
-      }, eachCb);
+      }, function (err) {
+        if (err) { console.error('err renameing',i.name, newName, err.message); }
+        eachCb();
+      });
     }, cb);
   }
 ], function (err) {
-  console.log('done.');
-  if (err) {
-    console.error('error happened', err);
-    return process.exit(1);
-  }
+  console.log('done. err', err);
   process.exit(0);
 });
