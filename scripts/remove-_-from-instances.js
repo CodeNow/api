@@ -5,15 +5,15 @@ var Instances = require('models/mongo/instance');
 var Users = require('models/mongo/user');
 var async = require('async');
 var mongoose = require('mongoose');
-var Runnabe = require('runnable');
+var Runnable = require('runnable');
 
 var dryRun = !process.env.ACTUALLY_RUN;
 if (!process.env.API_HOST) {
   console.log('need API_HOST');
   process.exit(1);
 }
-if (!process.env.API_TOKEN) {
-  console.log('need API_TOKEN');
+if (!process.env.MONGO) {
+  console.log('need MONGO');
   process.exit(1);
 }
 
@@ -68,10 +68,10 @@ function renameInstance (token, instance, cb) {
     return cb();
   }
   console.log('logging in to runnable');
-  var user = new Runnabe(process.env.API_HOST);
+  var user = new Runnable(process.env.API_HOST);
   user.githubLogin(token, function (err) {
     if (err) {
-      console.error('error logging in', user);
+      console.error('error logging in', token);
       return cb();
     }
     user.updateInstance(instance.shortHash.toString(), {
