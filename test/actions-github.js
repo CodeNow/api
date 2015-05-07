@@ -562,9 +562,7 @@ describe('Github - /actions/github', function () {
             });
           });
 
-
           describe('delete branch', function () {
-
             it('should return 0 instancesIds if nothing was deleted', function (done) {
               var options = hooks().push;
               options.json.deleted = true;
@@ -575,18 +573,16 @@ describe('Github - /actions/github', function () {
                 done();
               });
             });
-
             it('should return 2 instancesIds if 2 instances were deleted', {timeout: 5000}, function (done) {
               var acv = ctx.contextVersion.attrs.appCodeVersions[0];
               var user = ctx.user.attrs.accounts.github;
+              var username = user.login;
               var data = {
                 branch: 'feature-1',
                 repo: acv.repo,
                 ownerId: user.id,
                 owner: user.login
               };
-              var username = user.login;
-
               var countOnCallback = function () {
                 count.next();
               };
@@ -595,25 +591,20 @@ describe('Github - /actions/github', function () {
                 expect(slackStub.calledTwice).to.equal(true);
                 expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
                 slackStub.restore();
-
-
                 var deleteOptions = hooks(data).push;
                 deleteOptions.json.deleted = true;
-
                 request.post(deleteOptions, function (err, res, body) {
                   if (err) { return done(err); }
                   expect(res.statusCode).to.equal(201);
                   expect(body.length).to.equal(2);
                   done();
                 });
-
               });
-
               sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-
               var options = hooks(data).push;
               require('./fixtures/mocks/github/users-username')(101, username);
               request.post(options, function (err, res, cvIds) {
+                console.log('post complete');
                 if (err) { return done(err); }
                 finishAllIncompleteVersions();
                 expect(res.statusCode).to.equal(200);
@@ -622,14 +613,9 @@ describe('Github - /actions/github', function () {
                 expect(cvIds).to.have.length(2);
                 count.next();
               });
-
             });
-
           });
-
-
         });
-
        });
     });
 

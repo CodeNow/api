@@ -2,6 +2,8 @@
  * @module test/fixtures/container-inspect
  */
 
+var dockerHost = require('./docker-host');
+
 /**
  * Generate an example set of meta data for job created
  * from docker-listener. Instance is required for container
@@ -20,7 +22,7 @@ module.exports.getContainerInspect = function (instance) {
     numCpus: 8,
     mem: 8589934592,
     tags: 'some,comma,tags',
-    host: 'http://10.1.10.40:4243',
+    host: dockerHost, //'http://10.1.10.40:4243',
     inspectData:
      { Id: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713',
        Hostname: '',

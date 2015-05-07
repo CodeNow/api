@@ -6,16 +6,18 @@
 'use strict';
 
 var Code = require('code');
+var EventEmitter = require('events').EventEmitter;
 var Lab = require('lab');
 var async = require('async');
 var createCount = require('callback-count');
+var emitter = new EventEmitter();
+var keypath = require('keypather')();
 var sinon = require('sinon');
 
+//var expects = require('../../../fixtures/expects');
 var Instance = require('models/mongo/instance');
 var api = require('../../../fixtures/api-control');
-var containerInspectFixture = require('../../../fixtures/container-inspect');
 var dock = require('../../../fixtures/dock');
-//var expects = require('../../../fixtures/expects');
 var multi = require('../../../fixtures/multi-factory');
 var primus = require('../../../fixtures/primus');
 
@@ -29,7 +31,6 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-var containerInspect;
 var ctx = {};
 var originalContainCreateWorker;
 
@@ -39,6 +40,7 @@ describe('201 POST /workers/container-create', function () {
   before(function (done) {
     originalContainCreateWorker = require('workers/container-create').worker;
     require('workers/container-create').worker = function (data, ack) {
+      emitter.emit('container-create', data);
       ack();
     };
     done();
@@ -60,22 +62,27 @@ describe('201 POST /workers/container-create', function () {
   });
 
   beforeEach(function (done) {
+    var count = createCount(2, done);
+    emitter.on('container-create', function (data) {
+      var labels = keypath.get(data, 'inspectData.Config.Labels');
+      if (labels.type === 'user-container') {
+        ctx.jobData = data;
+        count.next();
+        emitter.removeAllListeners('container-create');
+      }
+    });
     multi.createInstance(function (err, instance, build, user) {
       if (err) { return done(err); }
       // poll for worker to complete update
       ctx.instance = instance;
       ctx.user = user;
-      done();
+      count.next();
     });
   });
   beforeEach(function(done){
     primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
   });
-  beforeEach(function(done){
-    containerInspect = containerInspectFixture.getContainerInspect(ctx.instance);
-    done();
-  });
-  it('should upate instance with container information', function (done) {
+  it('should upate instance with container information', {timeout: 10000}, function (done) {
     // this is essentially all the worker callback does, invoke this method
     // containerInspect is sample data collected from actual docker-listener created job
     async.series([
@@ -88,12 +95,13 @@ describe('201 POST /workers/container-create', function () {
       },
       function (cb) {
         var count = createCount(cb);
-        primus.expectAction('deploy', {}, count.inc().next);
-        originalContainCreateWorker(containerInspect, count.inc().next);
+        primus.expectAction('start', {}, count.inc().next);
+        originalContainCreateWorker(ctx.jobData, count.inc().next);
       },
       function (cb) {
         //assert instance has no container
         Instance.findById(ctx.instance.attrs._id, function (err, instance) {
+          console.log('final fetch instance', instance.container);
           expect(instance.container).to.be.an.object();
           expect(instance.container.inspect).to.be.an.object();
           expect(instance.container.dockerContainer).to.be.a.string();
