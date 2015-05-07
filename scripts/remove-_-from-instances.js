@@ -40,7 +40,7 @@ async.waterfall([
     console.log('looking at instances', renameList.length);
     async.eachLimit(renameList, 10, function (instance, eachCb) {
 
-      var githubId = instance.owner.github;
+      var githubId = instance.createdBy.github;
       var token = tokenHash[githubId];
       if (token) {
         renameInstance(token, instance, eachCb);
