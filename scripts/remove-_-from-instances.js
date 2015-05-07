@@ -2,10 +2,10 @@
 
 require('loadenv')();
 var Instances = require('models/mongo/instance');
+var Users = require('models/mongo/user');
 var async = require('async');
 var mongoose = require('mongoose');
 var Runnabe = require('runnable');
-var user = new Runnabe(process.env.API_HOST);
 
 var dryRun = !process.env.ACTUALLY_RUN;
 if (!process.env.API_HOST) {
@@ -19,44 +19,40 @@ if (!process.env.API_TOKEN) {
 
 console.log('dryRun?', !!dryRun);
 
+var tokenHash = {};
+
 async.waterfall([
   function connectMongo (cb) {
     console.log('connect to mongo');
     mongoose.connect(process.env.MONGO, cb);
   },
-  function loginApiClient (cb) {
-    console.log('logging in to runnable');
-    user.githubLogin(process.env.API_TOKEN, function (err) {
-      if (err) { return cb(err); }
-      cb();
-    });
-  },
   function getAllInstances (cb) {
     console.log('fetching instances');
-    Instances.find({}, cb);
-  },
-  function rename (instances, cb) {
-    console.log('looking at instances', instances.length);
-
-    var reanameList = [];
-    instances.forEach(function (i) {
-      if (~i.name.indexOf('_')) {
-        reanameList.push(i);
-      }
-    });
-
-    async.eachLimit(reanameList, 10, function (i, eachCb) {
-      var newName = i.name.replace(/[^a-zA-Z0-9]/g, '-');
-      console.log('RENAMING', i.name, newName);
-      if (dryRun) {
-        return eachCb();
-      }
-      user.updateInstance(i.shortHash.toString(), {
-        name: newName
-      }, function (err) {
-        if (err) { console.error('err renaming',i.name, newName, err.message); }
-        eachCb();
+    Instances.find({}, function (err, instances) {
+      if (err) { return cb(err); }
+      var renameList = instances.filter(function (i) {
+        return ~i.name.indexOf('_');
       });
+      cb(null, renameList);
+    });
+  },
+  function rename (renameList, cb) {
+    console.log('looking at instances', renameList.length);
+    async.eachLimit(renameList, 10, function (instance, eachCb) {
+
+      var githubId = instance.owner.github;
+      var token = tokenHash[githubId];
+      if (token) {
+        renameInstance(token, instance, eachCb);
+      }
+      else {
+        Users.findOne({ 'accounts.github.id': githubId }, function (err, user) {
+          if (err) { return cb(err); }
+          token = user.accounts.github.accessToken;
+          tokenHash[githubId] = token;
+          renameInstance(token, instance, eachCb);
+        });
+      }
     }, cb);
   }
 ], function (err) {
@@ -65,3 +61,24 @@ async.waterfall([
 });
 
 
+function renameInstance (token, instance, cb) {
+  var newName = instance.name.replace(/[^a-zA-Z0-9]/g, '-');
+  console.log('RENAMING', instance.name, newName);
+  if (dryRun) {
+    return cb();
+  }
+  console.log('logging in to runnable');
+  var user = new Runnabe(process.env.API_HOST);
+  user.githubLogin(token, function (err) {
+    if (err) {
+      console.error('error logging in', user);
+      return cb();
+    }
+    user.updateInstance(instance.shortHash.toString(), {
+      name: newName
+    }, function (err) {
+      if (err) { console.error('err renaming', instance.name, newName, err.message); }
+      cb();
+    });
+  });
+}
