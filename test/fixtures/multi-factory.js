@@ -3,12 +3,12 @@
  */
 'use strict';
 
+var EventEmitter = require('events').EventEmitter;
 var createCount = require('callback-count');
 var debug = require('debug')('runnable-api:multi-factory');
 var isFunction = require('101/is-function');
 var uuid = require('uuid');
 
-var EventEmitter = require('events').EventEmitter;
 var MongoUser = require('models/mongo/user');
 var dockerMockEvents = require('./docker-mock-events');
 var formatArgs = require('format-args');
@@ -238,6 +238,46 @@ module.exports = {
           cb(err, build, user,
               [contextVersion, context, build, user],
               srcArray);
+        });
+      });
+    });
+  },
+  /**
+   * Creates and waits for primus org room events indicating
+   * instance has completed deploying via background worker
+   * process.
+   * @param {Object} primus - already connected primus fixture
+   * @param {Function} finalCb
+   */
+  createAndTailInstance: function (primus, finalCb) {
+    debug('createAndTailInstance');
+    var ctx = {};
+    this.createBuiltBuild(null, function (err, build, user, modelsArr, srcArr) {
+      if (err) { return finalCb(err); }
+      ctx.build = build;
+      ctx.user = user;
+      ctx.modelsArr = modelsArr;
+      ctx.srcArr = srcArr;
+      var body = {
+        name: uuid(),
+        build: build.id()
+      };
+      require('./mocks/github/user')(user);
+      require('./mocks/github/user')(user);
+      require('./mocks/github/user')(user);
+      function CountCallback () {
+        ctx.instance.fetch(function (err) {
+          if (err) { return finalCb(err); }
+          finalCb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.scrArr);
+        });
+      }
+      var count = createCount(2, CountCallback);
+      primus.joinOrgRoom(user.json().accounts.github.id, function (err) {
+        if (err) { return finalCb(err); }
+        primus.expectAction('start', {}, count.next);
+        ctx.instance = user.createInstance(body, function (err) {
+          if (err) { return finalCb(err); }
+          count.next();
         });
       });
     });

@@ -139,7 +139,6 @@ describe('Github - /actions/github', function () {
   });
 
 
-
   describe('push event', function () {
     var ctx = {};
     beforeEach(function (done) {
@@ -154,7 +153,7 @@ describe('Github - /actions/github', function () {
 
     describe('errored cases', function () {
       beforeEach(function (done) {
-        multi.createInstance(function (err, instance, build, user, modelsArr) {
+        multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
           ctx.build = build;
@@ -271,7 +270,7 @@ describe('Github - /actions/github', function () {
 
     describe('autofork', function () {
       beforeEach(function (done) {
-        multi.createInstance(function (err, instance, build, user, modelsArr) {
+        multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
           ctx.build = build;
@@ -380,7 +379,7 @@ describe('Github - /actions/github', function () {
 
         describe('fork 2 instances', function () {
           beforeEach(function (done) {
-            multi.createInstance(function (err, instance, build, user, modelsArr) {
+            multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
               ctx.contextVersion = modelsArr[0];
               ctx.context = modelsArr[1];
               ctx.build = build;
@@ -397,12 +396,17 @@ describe('Github - /actions/github', function () {
                 ctx.settingsId = body._id;
                 ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
                   expect(err).to.be.null();
-                  ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
-                    expect(err).to.be.null();
-                    ctx.instance2 = copiedInstance;
-                    ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({ masterPod: true }, function (err) {
+                  primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+                    if (err) { return done(err); }
+                    primus.expectAction('start', {}, done);
+                    ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
                       expect(err).to.be.null();
-                      done();
+                      ctx.instance2 = copiedInstance;
+                      ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({
+                        masterPod: true
+                      }, function (err) {
+                        expect(err).to.be.null();
+                      });
                     });
                   });
                 });
@@ -518,7 +522,7 @@ describe('Github - /actions/github', function () {
 
     describe('autodeploy', function () {
       beforeEach(function (done) {
-        multi.createInstance(function (err, instance, build, user, modelsArr) {
+        multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
           ctx.build = build;

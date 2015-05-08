@@ -43,18 +43,15 @@ describe('BDD - Create Build and Deploy Instance', function () {
   describe('create a cv to test dudupe logic with', function () {
 
     beforeEach(function (done) {
-      multi.createInstance(function (err, instance, build, user, modelsArr) {
+      multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
         if (err) { return done(err); }
-        multi.tailInstance(user, instance, function (err) {
-          if (err) { return done(err); }
-          ctx.instance = instance;
-          ctx.build = build;
-          ctx.user = user;
-          ctx.contextVersion = modelsArr[0];
-          ctx.context = modelsArr[1];
-          ctx.oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
-          done();
-        });
+        ctx.instance = instance;
+        ctx.build = build;
+        ctx.user = user;
+        ctx.contextVersion = modelsArr[0];
+        ctx.context = modelsArr[1];
+        ctx.oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
+        done();
       });
     });
 

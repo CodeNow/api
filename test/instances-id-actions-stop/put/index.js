@@ -9,16 +9,16 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 
-var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
+var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
+var tailBuildStream = require('../../fixtures/tail-build-stream');
+
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
-var tailBuildStream = require('../../fixtures/tail-build-stream');
-var primus = require('../../fixtures/primus');
-
 var uuid = require('uuid');
 var createCount = require('callback-count');
 var uuid = require('uuid');
@@ -142,6 +142,14 @@ describe('PUT /instances/:id/actions/stop', function () {
       });
       createInstanceAndRunTests(ctx);
     });
+
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+
     describe('create instance with built build', function () {
       beforeEach(function (done) {
         multi.createBuiltBuild(function (err, build, user, modelsArr) {
@@ -165,7 +173,7 @@ describe('PUT /instances/:id/actions/stop', function () {
             'containers[0].inspect.State.Running': true
             */
           });
-          ctx.expectAlreadyStopped = true;
+          ctx.expectAlreadyStopped = false;
           done();
         });
         createInstanceAndRunTests(ctx);
@@ -199,7 +207,6 @@ describe('PUT /instances/:id/actions/stop', function () {
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
           */
-          ctx.expectAlreadyStopped = true;
           ctx.expectNoContainerErr = true;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
           ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
@@ -228,7 +235,19 @@ describe('PUT /instances/:id/actions/stop', function () {
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        }
+        else {
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            var count = createCount(2, function () {
+              ctx.instance.fetch(done);
+            });
+            primus.expectAction('start', {}, count.next);
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
+          });
+        }
       });
       stopInstanceTests(ctx);
     });
@@ -237,7 +256,19 @@ describe('PUT /instances/:id/actions/stop', function () {
         var body = {
           build: ctx.build.id()
         };
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        }
+        else {
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            var count = createCount(2, function () {
+              ctx.instance.fetch(done);
+            });
+            primus.expectAction('start', {}, count.next);
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
+          });
+        }
       });
       stopInstanceTests(ctx);
     });
