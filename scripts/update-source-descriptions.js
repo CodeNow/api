@@ -120,16 +120,21 @@ function createOtherSources(cb) {
 function updateDescriptions(data, done) {
   if (data.description) {
     console.log('updating description for ', data.name);
-    Context.findOneAndUpdate({
-      'name': data.name,
-      'owner.github': process.env.HELLO_RUNNABLE_GITHUB_ID
-    }, {
-      $set: {
-        description: data.description
-      }
-    }, function () {
-      done();
-    });
+    if (!process.env.ACTUALLY_RUN) {
+      console.log('Nope, just a dry run');
+      return done();
+    } else {
+      Context.findOneAndUpdate({
+        'name': data.name,
+        'owner.github': process.env.HELLO_RUNNABLE_GITHUB_ID
+      }, {
+        $set: {
+          description: data.description
+        }
+      }, function () {
+        done();
+      });
+    }
   } else {
     done();
   }
