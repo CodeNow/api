@@ -330,6 +330,8 @@ describe('Github - /actions/github', function () {
           var baseDeploymentId = 1234567;
           sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
+            expect(this.github.config.token)
+              .to.equal(ctx.user.attrs.accounts.github.access_token);
             baseDeploymentId++;
             var newDeploymentId = baseDeploymentId;
             cb(null, {id: newDeploymentId});
@@ -357,16 +359,13 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
           sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var user = ctx.user.attrs.accounts.github;
           var data = {
             branch: 'feature-1',
             repo: acv.repo,
-            ownerId: user.id,
-            owner: user.login
+            ownerId: 1987,
+            owner: 'anton'
           };
           var options = hooks(data).push;
-          var username = user.login;
-          require('./fixtures/mocks/github/users-username')(101, username);
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -414,6 +413,8 @@ describe('Github - /actions/github', function () {
             var baseDeploymentId = 1234567;
             sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
               var cb = Array.prototype.slice.apply(arguments).pop();
+              expect(this.github.config.token)
+                .to.equal(ctx.user.attrs.accounts.github.access_token);
               baseDeploymentId++;
               var newDeploymentId = baseDeploymentId;
               cb(null, {id: newDeploymentId});
@@ -505,9 +506,7 @@ describe('Github - /actions/github', function () {
                 });
 
               });
-
               sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-
               var options = hooks(data).push;
               require('./fixtures/mocks/github/users-username')(101, username);
               request.post(options, function (err, res, cvIds) {
@@ -519,15 +518,10 @@ describe('Github - /actions/github', function () {
                 expect(cvIds).to.have.length(2);
                 count.next();
               });
-
             });
-
           });
-
-
         });
-
-       });
+      });
     });
 
     describe('autodeploy', function () {
@@ -560,6 +554,8 @@ describe('Github - /actions/github', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             baseDeploymentId++;
             var newDeploymentId = baseDeploymentId;
+            expect(this.github.config.token)
+              .to.equal(ctx.user.attrs.accounts.github.access_token);
             cb(null, {id: newDeploymentId});
           });
           var countOnCallback = function () {
