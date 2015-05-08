@@ -122,7 +122,18 @@ function updateDescriptions(data, done) {
     console.log('updating description for ', data.name);
     if (!process.env.ACTUALLY_RUN) {
       console.log('Nope, just a dry run');
-      return done();
+      Context.findOne({
+        'name': data.name,
+        'owner.github': process.env.HELLO_RUNNABLE_GITHUB_ID
+      }, function (err, context) {
+        if (err) {
+          console.error('Finding context err for ' + data.name, err);
+          return done(err);
+        } else {
+          console.log('description would have been changed for ', context);
+          done();
+        }
+      });
     } else {
       Context.findOneAndUpdate({
         'name': data.name,
