@@ -305,14 +305,14 @@ describe('200 PATCH /instances/:id', function () {
         beforeEach(afterEachAssertUpdatedNewHostsAndNetwork);
         it('should update an instance with new name', function (done) {
           var body = {
-            name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ_-'
+            name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ-'
           };
           extend(ctx.expected, body);
           ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
         });
         it('should update an instance with new name and env', function (done) {
           var body = {
-            name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ_-',
+            name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ-',
             env: [
               'ENV=NEW'
             ]
@@ -618,7 +618,7 @@ describe('200 PATCH /instances/:id', function () {
     });
     it('should update an instance with new build and name', function (done) {
       var body = {
-        name: 'PATCH2-ABCDEFGHIJKLMNOPQRSTUVWYXZ_-',
+        name: 'PATCH2-ABCDEFGHIJKLMNOPQRSTUVWYXZ-',
         build: ctx.patchBuild.id()
       };
       ctx.expected.name = body.name;
@@ -627,7 +627,7 @@ describe('200 PATCH /instances/:id', function () {
     });
     it('should update an instance with new name, env and build', function (done) {
       var body = {
-        name: 'PATCH2-ABCDEFGHIJKLMNOPQRSTUVWYXZ_-FOO',
+        name: 'PATCH2-ABCDEFGHIJKLMNOPQRSTUVWYXZ-FOO',
         env: [
           'ENV=NEW'
         ],

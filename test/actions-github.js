@@ -596,7 +596,7 @@ describe('Github - /actions/github', function () {
             expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             successStub.restore();
-            var slackStub = Slack.prototype.notifyOnAutoUpdate;
+            var slackStub = Slack.prototype.notifyOnAutoDeploy;
             expect(slackStub.calledOnce).to.equal(true);
             expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
             slackStub.restore();
@@ -608,7 +608,7 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', function () {
             count.next();
           });
-          sinon.stub(Slack.prototype, 'notifyOnAutoUpdate', function () {
+          sinon.stub(Slack.prototype, 'notifyOnAutoDeploy', function () {
             count.next();
           });
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
