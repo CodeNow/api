@@ -83,6 +83,12 @@ describe('Instance - /instances/:id', function () {
       };
       ctx.instance.fetch(expects.success(200, expected, done));
     });
+    it('should fetch by _id', function(done) {
+      var expected = {
+        'containers[0].inspect.State.Running': true
+      };
+      ctx.user.fetchInstance(ctx.instance.attrs._id, expects.success(200, expected, done));
+    });
     describe('permissions', function () {
       describe('public', function () {
         beforeEach(function (done) {
