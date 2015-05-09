@@ -249,10 +249,18 @@ module.exports = {
    * @param {Object} primus - already connected primus fixture
    * @param {Function} finalCb
    */
-  createAndTailInstance: function (primus, finalCb) {
+  createAndTailInstance: function (primus, buildOwnerId, buildOwnerName, finalCb) {
     debug('createAndTailInstance');
+    if (typeof buildOwnerId === 'function') {
+      finalCb = buildOwnerId;
+      buildOwnerId = null;
+    }
+    if (typeof buildOwnerName === 'function') {
+      finalCb = buildOwnerName;
+      buildOwnerName = 'Runnable';
+    }
     var ctx = {};
-    this.createBuiltBuild(null, function (err, build, user, modelsArr, srcArr) {
+    this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return finalCb(err); }
       ctx.build = build;
       ctx.user = user;
@@ -262,8 +270,20 @@ module.exports = {
         name: uuid(),
         build: build.id()
       };
-      require('./mocks/github/user')(user);
-      require('./mocks/github/user')(user);
+      if (buildOwnerId) {
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        // redeploy
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+      } else {
+        require('./mocks/github/user')(user);
+        require('./mocks/github/user')(user);
+      }
       require('./mocks/github/user')(user);
       function CountCallback () {
         ctx.instance.fetch(function (err) {
