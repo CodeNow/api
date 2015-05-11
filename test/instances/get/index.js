@@ -407,16 +407,6 @@ describe('GET /instances', function () {
               var query = {
                 githubUsername: ctx.user.json().accounts.github.username
               };
-              var expected = [
-                {
-                  _id: ctx.instance.json()._id,
-                  shortHash: ctx.instance.json().shortHash,
-                  'containers[0].inspect.State.Running': true
-                }, {
-                  _id: ctx.instance3.json()._id,
-                  shortHash: ctx.instance3.json().shortHash
-                }
-              ];
               require('../../fixtures/mocks/github/users-username')
                 (ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.username);
               ctx.helloRunnable.fetchInstances(query, function (err, instances) {
