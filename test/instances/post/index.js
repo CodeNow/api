@@ -11,19 +11,21 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
-var expects = require('../../fixtures/expects');
 var clone = require('101/clone');
+var createCount = require('callback-count');
+var equals = require('101/equals');
+var exists = require('101/exists');
+var noop = require('101/noop');
+var not = require('101/not');
+var uuid = require('uuid');
+
+var Build = require('models/mongo/build');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
-var dockerMockEvents = require('../../fixtures/docker-mock-events');
-var exists = require('101/exists');
-var not = require('101/not');
-var equals = require('101/equals');
-var uuid = require('uuid');
-var createCount = require('callback-count');
-var Build = require('models/mongo/build');
 
 describe('POST /instances', function () {
   var ctx = {};
@@ -212,7 +214,7 @@ describe('POST /instances', function () {
               dockerMockEvents.emitBuildComplete(ctx.cv);
               expects.success(201, expected, function(err) {
                 if (err) { done(err); }
-                multi.tailInstance(ctx.user, instance, ctx.orgId, done);
+                done();
               })(err, body, code, res);
             });
           });
@@ -254,6 +256,9 @@ describe('POST /instances', function () {
         });
       });
       describe('with built versions', function () {
+        beforeEach(function (done) {
+          primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, done);
+        });
         it('should default the name to a short hash', function (done) {
           var json = {
             build: ctx.build.id()
@@ -295,18 +300,18 @@ describe('POST /instances', function () {
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
           var instance = ctx.user.createInstance(json,
-            expects.success(201, expected, function (err) {
+            expects.success(201, {}, function (err) {
               if (err) { return done(err); }
-              multi.tailInstance(ctx.user, instance, function (err) {
-                if (err) { return done(err); }
-                var container = instance.containers.models[0];
-                var count = createCount(done);
-                expects.updatedHosts(
-                  ctx.user, instance, count.inc().next);
-                expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.inc().next);
-              });
+              return done();
             }));
+          primus.expectAction('start', expected, function () {
+            var container = instance.containers.models[0];
+            var count = createCount(done);
+            expects.updatedHosts(
+              ctx.user, instance, count.inc().next);
+            expects.updatedWeaveHost(
+              container, instance.attrs.network.hostIp, count.inc().next);
+          });
         });
         describe('body.env', function() {
           it('should create an instance, with ENV', function (done) {
@@ -334,7 +339,8 @@ describe('POST /instances', function () {
             };
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
-              expects.success(201, expected, done));
+              expects.success(201, {}, noop));
+            primus.expectAction('start', expected, done);
           });
           it('should error if body.env is not an array of strings', function(done) {
             var json = {
@@ -371,7 +377,8 @@ describe('POST /instances', function () {
             };
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
-              expects.success(201, expected, done));
+              expects.success(201, {}, noop));
+            primus.expectAction('start', expected, done);
           });
           it('should error if body.env contains an invalid variable', function (done) {
             var json = {

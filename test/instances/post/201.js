@@ -194,10 +194,13 @@ describe('201 POST /instances', function () {
           expect(ctx.createUserContainerSpy.args[0][1]).to.deep.equal({
             Env: [],
             Labels: {
+              contextVersionId: ctx.cv.id(),
               instanceId: body._id,
               instanceName: body.name,
-              contextVersionId: ctx.cv.id(),
-              ownerUsername: ctx.user.attrs.accounts.github.login
+              instanceShortHash: body.shortHash,
+              ownerUsername: ctx.user.attrs.accounts.github.login,
+              type: 'user-container',
+              userGithubId: ctx.user.attrs.accounts.github.id
             }
           });
           done();
