@@ -35,23 +35,16 @@ describe('EVENT runnable:docker:events:die', function () {
   describe('container dies naturally', function() {
 
     beforeEach(function (done) {
-      multi.createInstance(function (err, instance, build, user) {
+      multi.createAndTailInstance(primus, function (err, instance) {
         if (err) { return done(err); }
-        multi.tailInstance(user, instance, function (err) {
-          if (err) { return done(err); }
-          var container = instance.newContainer(instance.json().containers[0]);
-          ctx.instance = instance;
-          ctx.container = container;
-          // docker mock always creates container in stopped state
-          expect(instance.attrs.container.inspect.State.Running).to.equal(false);
-          var docker = new Docker(ctx.instance.attrs.container.dockerHost);
-          docker.startContainer(ctx.instance.attrs.container, function (err) {
-            if (err) { return done(err); }
-            done();
-          });
-        });
+        var container = instance.newContainer(instance.json().containers[0]);
+        ctx.instance = instance;
+        ctx.container = container;
+        expect(instance.attrs.container.inspect.State.Running).to.equal(true);
+        done();
       });
     });
+
     describe('container die event handler', function() {
       beforeEach(function (done) {
         ctx.originalUserStoppedContainerUnLock = UserStoppedContainer.prototype.unlock;
@@ -61,16 +54,13 @@ describe('EVENT runnable:docker:events:die', function () {
         UserStoppedContainer.prototype.unlock = ctx.originalUserStoppedContainerUnLock;
         done();
       });
-      // beforeEach(dockerEvents.close.bind(dockerEvents));
 
       it('should receive the docker die event', function (done) {
-        return done();
         var count = createCount(2, done);
         dockerEvents.on('die', handler);
         var docker = new Docker(ctx.instance.attrs.container.dockerHost);
-        //docker.stopContainer(ctx.instance.attrs.container, count.next);
+        docker.stopContainer(ctx.instance.attrs.container, count.next);
         function handler (data) {
-          return count.next();
           if (data.from === 'ubuntu:latest') { // ignore image-builder dies
             expect(data.status).to.equal('die');
             expect(data.from).to.equal('ubuntu:latest');
@@ -85,7 +75,9 @@ describe('EVENT runnable:docker:events:die', function () {
         var count = createCount(2, done);
         var userStoppedContainer = new UserStoppedContainer(ctx.instance.attrs.container.inspect.Id);
         UserStoppedContainer.prototype.unlock = function (cb) {
+          // here
           ctx.originalUserStoppedContainerUnLock.bind(userStoppedContainer)(function (err, success) {
+            if (err) { return done(err); }
             ctx.instance.fetch(function (err, instance) {
               if (err) { return done(err); }
               expect(instance.container.inspect.State.Running).to.equal(false);

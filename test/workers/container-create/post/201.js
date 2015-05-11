@@ -12,7 +12,7 @@ var async = require('async');
 var createCount = require('callback-count');
 var emitter = new EventEmitter();
 var keypath = require('keypather')();
-var sinon = require('sinon');
+//var sinon = require('sinon');
 
 //var expects = require('../../../fixtures/expects');
 var Instance = require('models/mongo/instance');
@@ -45,6 +45,7 @@ describe('201 POST /workers/container-create', function () {
     };
     done();
   });
+
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../../fixtures/mocks/api-client').setup);
@@ -54,8 +55,8 @@ describe('201 POST /workers/container-create', function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../../fixtures/mocks/api-client').clean);
-  //after(require('../../../fixtures/clean-mongo').removeEverything);
-  // afterEach(require('../../fixtures/clean-nock'));
+  after(require('../../../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../../fixtures/clean-nock'));
   after(function (done) {
     require('workers/container-create').worker = originalContainCreateWorker;
     done();
@@ -68,17 +69,19 @@ describe('201 POST /workers/container-create', function () {
       if (labels.type === 'user-container') {
         ctx.jobData = data;
         count.next();
+        console.log('p2');
         emitter.removeAllListeners('container-create');
       }
     });
     multi.createInstance(function (err, instance, build, user) {
       if (err) { return done(err); }
-      // poll for worker to complete update
       ctx.instance = instance;
       ctx.user = user;
+      console.log('p1');
       count.next();
     });
   });
+
   beforeEach(function(done){
     primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
   });
@@ -111,9 +114,4 @@ describe('201 POST /workers/container-create', function () {
       }
     ], done);
   });
-
-  //it('should start the container', function (done) {
-  //  done();
-  //});
 });
-

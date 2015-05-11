@@ -41,7 +41,6 @@ module.exports.getContainerInspect = function (instance) {
           'RUNNABLE_AWS_SECRET_KEY=FAKE_AWS_SECRET_ACCESS_KEY',
           'RUNNABLE_FILES_BUCKET=runnable.context.resources.test',
           'RUNNABLE_PREFIX=554169c7dd3f3d21e1fb380e/source/',
-          'RUNNABLE_FILES={"554169c7dd3f3d21e1fb380e/source/":"af4c5848-2938-4dbc-ae21-8914749b37a0","554169c7dd3f3d21e1fb380e/source/Dockerfile":"db5a191f-3b59-4506-b0b2-32ef6872a595"}',
           'RUNNABLE_DOCKER=unix:///var/run/docker.sock',
           'RUNNABLE_DOCKERTAG=registry.runnable.com/2/554169c7dd3f3d21e1fb380e:554169c7dd3f3d21e1fb3811',
           'RUNNABLE_IMAGE_BUILDER_NAME=runnable/image-builder',

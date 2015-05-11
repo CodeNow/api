@@ -346,10 +346,19 @@ module.exports = {
     });
   },
 
+  createAndTailContainer: function (primus, cb) {
+    debug('createAndTailContainer', formatArgs(arguments));
+    this.createAndTailInstance(primus, function (err, instance, build, user, modelsArray, srcArr) {
+      if (err) { return cb(err); }
+      var container = instance.newContainer(instance.json().containers[0]);
+      cb(err, container, instance, build, user, modelsArray, srcArr);
+    });
+  },
+
   createContainer: function (cb) {
     debug('createContainer', formatArgs(arguments));
     var _this = this;
-    this.createInstance(function (err, instance, build, user, modelsArray, srcArr) {
+    this.createAndTailInstance(function (err, instance, build, user, modelsArray, srcArr) {
       if (err) { return cb(err); }
       _this.tailInstance(user, instance, function (err) {
         if (err) { return cb(err); }
