@@ -209,7 +209,7 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user')(ctx.user);
-            var instance = ctx.user.createInstance({ json: json }, function (err, body, code, res) {
+            ctx.user.createInstance({ json: json }, function (err, body, code, res) {
               if (err) { return done(err); }
               dockerMockEvents.emitBuildComplete(ctx.cv);
               expects.success(201, expected, function(err) {
