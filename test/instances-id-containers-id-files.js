@@ -54,7 +54,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    multi.createContainer(function (err, container) {
+    multi.createAndTailContainer(primus, function (err, container) {
       if (err) { return done(err); }
       ctx.container = container;
       var krain = require('krain');

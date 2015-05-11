@@ -142,7 +142,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    multi.createContainer(function (err, container, instance) {
+    multi.createAndTailContainer(primus, function (err, container, instance) {
       if (err) { return done(err); }
       ctx.container = container;
       ctx.instanceId = instance.id();
