@@ -29,7 +29,7 @@ describe('DELETE /instances/:id', function () {
   afterEach(require('../../fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user) {
+    multi.createAndTailInstance(primus, function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.instance = instance;
       ctx.build = build;

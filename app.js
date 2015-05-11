@@ -46,8 +46,7 @@ Api.prototype.start = function (cb) {
   // start sending socket count
   dogstatsd.monitorStart();
   // connect to mongoose
-  mongooseControl.start(count.inc.next);
-
+  mongooseControl.start(count.inc().next);
   // start listening to events
   count.inc();
   activeApi.setAsMe(function (err) {
@@ -55,7 +54,6 @@ Api.prototype.start = function (cb) {
     events.listen();
     count.next();
   });
-
   // express server start
   apiServer.start(count.inc().next);
   // all started callback
@@ -72,7 +70,7 @@ Api.prototype.start = function (cb) {
       return;
     }
     debug('API started');
-    console.log('API started');
+    //console.log('API started');
     if (cb) {
       cb();
     }
