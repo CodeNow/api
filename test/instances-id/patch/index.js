@@ -89,7 +89,6 @@ describe('Instance - /instances/:id', function () {
 
     describe('User', function() {
       beforeEach(function (done) {
-        console.log('should fire');
         multi.createAndTailInstance(primus, function (err, instance, build, user, mdlArray, srcArray) {
           if (err) { return done(err); }
           //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
