@@ -45,7 +45,7 @@ describe('Instance', function () {
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
 
-  function createNewVersion(opts) {
+  function createNewVersion (opts) {
     return new Version({
       message: "test",
       owner: { github: validation.VALID_GITHUB_ID },
@@ -71,7 +71,7 @@ describe('Instance', function () {
     });
   }
 
-  function createNewInstance(name, opts) {
+  function createNewInstance (name, opts) {
     opts = opts || {};
     return new Instance({
       name: name || 'name',
@@ -79,6 +79,8 @@ describe('Instance', function () {
       locked: opts.locked || false,
       public: false,
       masterPod: opts.masterPod || false,
+      parent: opts.parent,
+      autoForked: opts.autoForked || false,
       owner: { github: validation.VALID_GITHUB_ID },
       createdBy: { github: validation.VALID_GITHUB_ID },
       build: validation.VALID_OBJECT_ID,
@@ -276,7 +278,6 @@ describe('Instance', function () {
         });
       });
     });
-
   });
 
   describe('modifyContainerCreateErr', function () {
@@ -496,6 +497,54 @@ describe('Instance', function () {
         expect(cvs.length).to.equal(1);
         expect(cvs[0].toString()).to.equal(ctx.savedInstance.contextVersion._id.toString());
         done();
+      });
+    });
+  });
+
+  describe('#findInstancesByParent', function () {
+    it('should return empty [] for if no children were found', function (done) {
+      Instance.findInstancesByParent('a5agn3', function (err, instances) {
+        expect(err).to.be.null();
+        expect(instances.length).to.equal(0);
+        done();
+      });
+    });
+
+    it('should return empty [] for if no autoForked was false', function (done) {
+      var repo = 'podviaznikov/hello-2';
+      var opts = {
+        autoForked: false,
+        masterPod: false,
+        repo: repo,
+        parent: 'a1b2c4'
+      };
+      var instance = createNewInstance('instance-name-325', opts);
+      instance.save(function (err, instance) {
+        if (err) { return done(err); }
+        Instance.findInstancesByParent('a1b2c4', function (err, instances) {
+          expect(err).to.be.null();
+          expect(instances.length).to.equal(0);
+          done();
+        });
+      });
+    });
+
+    it('should return array with instance that has matching parent', function (done) {
+      var repo = 'podviaznikov/hello-2';
+      var opts = {
+        autoForked: true,
+        masterPod: false,
+        repo: repo,
+        parent: 'a1b2c3'
+      };
+      var instance = createNewInstance('instance-name-324', opts);
+      instance.save(function (err, instance) {
+        if (err) { return done(err); }
+        Instance.findInstancesByParent('a1b2c3', function (err, instances) {
+          expect(err).to.be.null();
+          expect(instances.length).to.equal(1);
+          done();
+        });
       });
     });
   });
