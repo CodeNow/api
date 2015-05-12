@@ -39,6 +39,9 @@ function newObjectId () {
   return new mongoose.Types.ObjectId();
 }
 
+before(dock.start);
+after(dock.stop);
+
 describe('Instance', function () {
 
   before(require('../../fixtures/mongo').connect);
@@ -160,9 +163,6 @@ describe('Instance', function () {
   });
 
   describe('inspectAndUpdate', function () {
-    before(dock.start);
-    after(dock.stop);
-
     var savedInstance = null;
     var instance = null;
     beforeEach(function (done) {
@@ -222,9 +222,6 @@ describe('Instance', function () {
   });
 
   describe('inspectAndUpdateByContainer', function () {
-    before(dock.start);
-    after(dock.stop);
-
     var savedInstance = null;
     var instance = null;
     beforeEach(function (done) {
