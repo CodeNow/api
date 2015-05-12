@@ -28,6 +28,7 @@ describe('PATCH /settings/:id', function () {
   describe('create and get', function () {
     var settings = {
       owner: {},
+      ignoredHelpCards: ['1234', '5678'],
       notifications: {
         slack: {
           apiToken: 'xoxo-dasjdkasjdk243248392482394',
@@ -102,7 +103,8 @@ describe('PATCH /settings/:id', function () {
             authToken: 'new-hipchat-token',
             roomId: 1231231
           }
-        }
+        },
+        ignoredHelpCards: ['test']
       };
       ctx.user.newSetting(settingsId).update({json: newSettings}, function (err, body) {
         if (err) { return done(err); }
@@ -121,6 +123,7 @@ describe('PATCH /settings/:id', function () {
         expect(body.notifications.hipchat.roomId).to.equal(
           newSettings.notifications.hipchat.roomId
         );
+        expect(body.ignoredHelpCards).to.equal(['test']);
         done();
       });
     });
@@ -137,7 +140,8 @@ describe('PATCH /settings/:id', function () {
             authToken: 'new-hipchat-token',
             roomId: 1231231
           }
-        }
+        },
+        ignoredHelpCards: []
       };
       ctx.user.newSetting(settingsId).update({json: newSettings}, function (err, body) {
         if (err) { return done(err); }
@@ -154,6 +158,7 @@ describe('PATCH /settings/:id', function () {
         expect(body.notifications.hipchat.roomId).to.equal(
           newSettings.notifications.hipchat.roomId
         );
+        expect(body.ignoredHelpCards).to.be.empty;
         done();
       });
     });

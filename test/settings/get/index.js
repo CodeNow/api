@@ -29,6 +29,7 @@ describe('GET /settings', function () {
   describe('create and get', function () {
     var settings = {
       owner: {},
+      ignoredHelpCards: ['1234', '5678'],
       notifications: {
         slack: {
           apiToken: 'xoxo-dasjdkasjdk243248392482394',
@@ -63,13 +64,14 @@ describe('GET /settings', function () {
       it('should create settings if they are not exist', function (done) {
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
-          var st = runnable.newSettings([], {qs: {owner: {github: runnable.user.attrs.accounts.github.id}}});
+          var st = runnable.newSettings([], {qs: {owner: {github: runnable.user.attrs.accounts.github.id}, ignoredHelpCards: ['test']}});
           st.fetch(function (err, body) {
             if (err) { return done(err); }
             var settings = body[0];
             expect(settings._id).to.exist();
             expect(settings.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
             expect(settings.notifications.slack.enabled).to.equal(true);
+            expect(settings.ignoredHelpCards).to.equal(['test']);
             done();
           });
         });
@@ -92,6 +94,9 @@ describe('GET /settings', function () {
           );
           expect(returnedSettings.notifications.hipchat.roomId).to.equal(
             settings.notifications.hipchat.roomId
+          );
+          expect(body.ignoredHelpCards).to.equal(
+            settings.ignoredHelpCards
           );
           done();
         });
@@ -120,6 +125,9 @@ describe('GET /settings', function () {
           );
           expect(settings.notifications.hipchat.roomId).to.equal(
             settings.notifications.hipchat.roomId
+          );
+          expect(body.ignoredHelpCards).to.equal(
+            settings.ignoredHelpCards
           );
 
           done();
@@ -169,6 +177,9 @@ describe('GET /settings', function () {
           );
           expect(body.notifications.hipchat.roomId).to.equal(
             settings.notifications.hipchat.roomId
+          );
+          expect(body.ignoredHelpCards).to.equal(
+            settings.ignoredHelpCards
           );
           done();
         });
