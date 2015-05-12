@@ -64,7 +64,14 @@ describe('GET /settings', function () {
       it('should create settings if they are not exist', function (done) {
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
-          var st = runnable.newSettings([], {qs: {owner: {github: runnable.user.attrs.accounts.github.id}, ignoredHelpCards: ['test']}});
+          var st = runnable.newSettings([], {
+            qs: {
+              owner: {
+                github: runnable.user.attrs.accounts.github.id
+              },
+              ignoredHelpCards: ['test']
+            }
+          });
           st.fetch(function (err, body) {
             if (err) { return done(err); }
             var settings = body[0];
