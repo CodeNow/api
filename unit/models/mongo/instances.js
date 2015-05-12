@@ -72,6 +72,7 @@ describe('Instance', function () {
   }
 
   function createNewInstance (name, opts) {
+    /*jshint maxcomplexity:8 */
     opts = opts || {};
     return new Instance({
       name: name || 'name',
@@ -519,7 +520,7 @@ describe('Instance', function () {
         parent: 'a1b2c4'
       };
       var instance = createNewInstance('instance-name-325', opts);
-      instance.save(function (err, instance) {
+      instance.save(function (err) {
         if (err) { return done(err); }
         Instance.findInstancesByParent('a1b2c4', function (err, instances) {
           expect(err).to.be.null();
@@ -538,7 +539,7 @@ describe('Instance', function () {
         parent: 'a1b2c3'
       };
       var instance = createNewInstance('instance-name-324', opts);
-      instance.save(function (err, instance) {
+      instance.save(function (err) {
         if (err) { return done(err); }
         Instance.findInstancesByParent('a1b2c3', function (err, instances) {
           expect(err).to.be.null();
