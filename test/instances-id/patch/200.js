@@ -13,6 +13,7 @@ var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
+var clone = require('101/clone');
 var exists = require('101/exists');
 var last = require('101/last');
 var not = require('101/not');
@@ -383,7 +384,7 @@ describe('200 PATCH /instances/:id', function () {
           done();
         });
         beforeEach(function (done) {
-          var oldInstanceName = ctx.instance.attrs.name;
+          var oldInstance = clone(ctx.instance);
           var oldContainer = keypather.get(ctx.instance, 'containers.models[0]');
           ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
           ctx.afterPatchAsserts.push(function (done) {
@@ -395,7 +396,7 @@ describe('200 PATCH /instances/:id', function () {
                 // assert old values are deleted - technically these are delete on PATCH
                 if (oldContainer && oldContainer.dockerContainer) {
                   expects.deletedHosts(
-                    ctx.user, oldInstanceName, oldContainer, count.inc().next);
+                    ctx.user, oldInstance, oldContainer, count.inc().next);
                   expects.deletedWeaveHost(
                     oldContainer, count.inc().next);
                 }
@@ -535,7 +536,7 @@ describe('200 PATCH /instances/:id', function () {
     function afterEachAssertDeletedOldHostsAndNetwork (done) {
       var oldInstanceBuildBuilt = ctx.instance.attrs.build && ctx.instance.attrs.build.completed;
       var oldInstanceBuildId = ctx.instance.attrs.build && ctx.instance.attrs.build._id;
-      var oldInstanceName = ctx.instance.attrs.name;
+      var oldInstance = clone(ctx.instance);
       var oldContainer = keypather.get(ctx.instance, 'containers.models[0]');
       ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
       ctx.afterPatchAsserts.push(function (done) {
@@ -554,10 +555,10 @@ describe('200 PATCH /instances/:id', function () {
             // NOTE!: timeout is required for the following tests, bc container deletion occurs in bg
             // User create instance with built build Long running container and env.
             // Patch with build: in-progress build, should update an instance ______.
-            if (ctx.instance.attrs.name !== oldInstanceName) {
+            if (ctx.instance.attrs.name !== oldInstance.attrs.name) {
               // if name changed
               expects.deletedHosts(
-                ctx.user, oldInstanceName, oldContainer, count.inc().next);
+                ctx.user, oldInstance, oldContainer, count.inc().next);
             } // else assert updated values for same entries next beforeEach
             var newInstanceBuildId = ctx.instance.attrs.build && ctx.instance.attrs.build._id;
             if (newInstanceBuildId !== oldInstanceBuildId) {

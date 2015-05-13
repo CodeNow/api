@@ -23,22 +23,23 @@ describe('Hosts', function () {
       ctx.instance = {};
       keypather.set(ctx.instance, 'container.dockerHost', 'http://10.0.0.1:4242');
       keypather.set(ctx.instance, 'container.ports["80/tcp"][0].HostPort', 49201);
+      keypather.set(ctx.instance, 'network.hostIp', '10.6.4.1');
       ctx.branch = 'somebranch';
       keypather.set(ctx.instance, 'contextVersion.appCodeVersions[0].lowerBranch', ctx.branch);
 
       ctx.instanceName = 'instance-name';
       ctx.username = 'user-name';
-      ctx.hosts.upsertHostForContainerPort(
-        ctx.port, ctx.username, ctx.instance, ctx.instanceName, done);
+      ctx.hosts.upsertHostsForInstance(
+        ctx.username, ctx.instance, ctx.instanceName, ctx.instance.container, done);
     });
     afterEach(function (done) {
-      ctx.hosts.removeHostForContainerPort(
-        ctx.port, ctx.username, ctx.instance, ctx.instanceName, done);
+      ctx.hosts.removeHostsForInstance(
+        ctx.username, ctx.instance, ctx.instanceName, ctx.instance.container, done);
     });
 
     it('should parse a username from a hostname', function (done) {
       var hostname = [
-        ctx.instanceName, '-staging-', ctx.username, '.',
+        ctx.branch, '-', ctx.instanceName, '-staging-', ctx.username, '.',
         process.env.USER_CONTENT_DOMAIN
       ].join('');
       ctx.hosts.parseHostname(hostname, function (err, parsed) {
