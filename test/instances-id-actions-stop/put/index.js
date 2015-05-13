@@ -273,7 +273,7 @@ describe('PUT /instances/:id/actions/stop', function () {
             expects.deletedWeaveHost(container, count.next);
             expects.deletedHosts(ctx.user, instance, count.next);
             if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }
-            count.inc();
+            count.next();
           }));
         });
       }
