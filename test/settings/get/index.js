@@ -29,7 +29,7 @@ describe('GET /settings', function () {
   describe('create and get', function () {
     var settings = {
       owner: {},
-      ignoredHelpCards: ['123', '345'],
+      ignoredHelpCards: ['ignoredCard1', 'ignoredCard2'],
       notifications: {
         slack: {
           apiToken: 'xoxo-dasjdkasjdk243248392482394',

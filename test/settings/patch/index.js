@@ -28,7 +28,7 @@ describe('PATCH /settings/:id', function () {
   describe('create and get', function () {
     var settings = {
       owner: {},
-      ignoredHelpCards: ['1234', '5678'],
+      ignoredHelpCards: ['ignoredCard1', 'ignoredCard2'],
       notifications: {
         slack: {
           apiToken: 'xoxo-dasjdkasjdk243248392482394',
