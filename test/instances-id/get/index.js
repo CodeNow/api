@@ -85,7 +85,7 @@ describe('Instance - /instances/:id', function () {
     });
     it('should fetch by _id', function(done) {
       var expected = {
-        'containers[0].inspect.State.Running': true
+        _id: ctx.instance.attrs._id
       };
       ctx.user.fetchInstance(ctx.instance.attrs._id, expects.success(200, expected, done));
     });
