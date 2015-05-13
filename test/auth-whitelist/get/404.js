@@ -35,7 +35,7 @@ describe('GET /auth/whitelist/:name', function () {
       ctx.user.attrs.accounts.github.id,
       ctx.user.attrs.accounts.github.username,
       'Runnable');
-    ctx.name = uuid();
+    ctx.name = ''+Date.now();
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',

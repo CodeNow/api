@@ -1,9 +1,8 @@
 var nock = require('nock');
-var uuid = require('uuid');
 var multiline = require('multiline');
 
 module.exports = function (userId, username, repos) {
-  username = username || uuid();
+  username = username || ''+Date.now();
 
   repos = repos.map(function (repo, index) {
     return {

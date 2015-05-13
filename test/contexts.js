@@ -29,7 +29,7 @@ describe('Context - /contexts', function () {
   });
 
   var required = {
-    name: uuid()
+    name: ''+Date.now()
   };
   it('should create a context with a name', function (done) {
     var expected = {

@@ -9,7 +9,6 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 
-var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
@@ -102,7 +101,7 @@ describe('Context - /contexts/:id', function () {
 
   describe('PATCH', function () {
     var updates = [{
-      name: uuid()
+      name: ''+Date.now()
     }, {
       public: true
     }, {

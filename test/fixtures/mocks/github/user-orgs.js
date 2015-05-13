@@ -1,5 +1,4 @@
 var nock = require('nock');
-var uuid = require('uuid');
 var multiline = require('multiline');
 
 var _orgId = 1000; // these should not intersect with github user-ids
@@ -9,7 +8,7 @@ function nextOrgId () {
 }
 
 module.exports = function (orgId, orgName) {
-  orgName = orgName || uuid();
+  orgName = orgName || ''+Date.now();
   orgId = orgId || nextOrgId();
   nock('https://api.github.com:443')
     .filteringPath(/\/user\/orgs\?.+/, '/user/orgs')

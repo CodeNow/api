@@ -67,7 +67,7 @@ describe('Building - Context Version Deduping', function () {
     });
     it('should fork the instance, and both should be deployed when the build is finished', function (done) {
       // Add it to an instance
-      var json = { build: ctx.build.id(), name: uuid() };
+      var json = { build: ctx.build.id(), name: ''+Date.now() };
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
         // Now fork that instance
@@ -88,7 +88,7 @@ describe('Building - Context Version Deduping', function () {
     });
     it('should fork the instance, and but not deploy since the build will fail', function (done) {
       // Add it to an instance
-      var json = { build: ctx.build.id(), name: uuid() };
+      var json = { build: ctx.build.id(), name: ''+Date.now() };
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
         // Now fork that instance
@@ -112,7 +112,7 @@ describe('Building - Context Version Deduping', function () {
     });
     it('should fork after failure, so the instance should not deploy', function (done) {
       // Add it to an instance
-      var json = { build: ctx.build.id(), name: uuid() };
+      var json = { build: ctx.build.id(), name: ''+Date.now() };
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
         // finish the build
@@ -147,7 +147,7 @@ describe('Building - Context Version Deduping', function () {
     it('should deploy right after', function (done) {
       // start the build
       // Add it to an instance
-      var json = { build: ctx.build.id(), name: uuid() };
+      var json = { build: ctx.build.id(), name: ''+Date.now() };
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
 

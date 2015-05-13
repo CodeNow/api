@@ -1,5 +1,4 @@
 var nock = require('nock');
-var uuid = require('uuid');
 var multiline = require('multiline');
 
 var _orgId = 10000;
@@ -9,7 +8,7 @@ function nextOrgId () {
 }
 
 module.exports = function (orgId, orgName, repos) {
-  orgName = orgName || uuid();
+  orgName = orgName || ''+Date.now();
   orgId = orgId || nextOrgId();
 
   repos = repos.map(function (repo, index) {

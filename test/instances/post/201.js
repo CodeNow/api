@@ -325,7 +325,7 @@ function createInstanceTests (ctx) {
     assertCreate(body, done);
   });
   it('should create an instance with name, env and build', function (done) {
-    var name = uuid();
+    var name = ''+Date.now();
     var env = [
       'FOO=BAR'
     ];
@@ -340,7 +340,7 @@ function createInstanceTests (ctx) {
     assertCreate(body, done);
   });
   it('should create a private instance by default', function (done) {
-    var name = uuid();
+    var name = ''+Date.now();
     var env = [
       'FOO=BAR'
     ];
@@ -358,7 +358,7 @@ function createInstanceTests (ctx) {
     });
   });
   it('should make a master pod instance', function (done) {
-    var name = uuid();
+    var name = ''+Date.now();
     var body = {
       name: name,
       build: ctx.build.id(),

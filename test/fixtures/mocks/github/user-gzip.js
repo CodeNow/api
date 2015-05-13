@@ -20,7 +20,7 @@ module.exports = function (userId, username, token, callback) {
   }
   else {
     userId = userId || nextUserId();
-    username = username || uuid();
+    username = username || ''+Date.now();
     token = token || uuid();
   }
 

@@ -21,7 +21,7 @@ module.exports = {
     debug('createUser', formatArgs(arguments));
     var host = require('./host');
     var token = uuid();
-    var name = opts.username || uuid();
+    var name = opts.username || ''+Date.now();
     require('./mocks/github/action-auth')(token, undefined, name);
     var User = require('runnable');
     var user = new User(host, opts);
@@ -80,7 +80,7 @@ module.exports = {
     }
     this.createUser(function (err, user) {
       if (err) { return cb(err); }
-      var body = { name: uuid() };
+      var body = { name: ''+Date.now() };
       if (ownerId) { body.owner = { github: ownerId }; }
       var context = user.createContext(body, function (err) {
         cb(err, context, user);
@@ -92,7 +92,7 @@ module.exports = {
     this.createModerator(function (err, moderator) {
       if (err) { return cb(err); }
       var body = {
-        name: uuid(),
+        name: ''+Date.now(),
         isSource: true
       };
       var context = moderator.createContext(body, function (err) {
@@ -135,7 +135,7 @@ module.exports = {
       if (err) { return cb(err); }
       self.createContext(ownerId, function (err, context, user) {
         if (err) { return cb(err); }
-        var body = { name: uuid() };
+        var body = { name: ''+Date.now() };
         if (ownerId) { body.owner = { github: ownerId }; }
         var build = user.createBuild(body, function (err) {
           cb(err, build, context, user, [srcContextVersion, srcContext, moderator]);
@@ -248,7 +248,7 @@ module.exports = {
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err); }
       var body = {
-        name: uuid(),
+        name: ''+Date.now(),
         build: build.id(),
         masterPod: true
       };

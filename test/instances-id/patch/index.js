@@ -188,7 +188,7 @@ describe('Instance - /instances/:id', function () {
                 function (done) {
                   // this has to be it's own function since models[0] doesn't exist when the series is created
                   ctx.newCV.appCodeVersions.models[0].update({
-                    branch: uuid()
+                    branch: ''+Date.now()
                   }, done);
                 },
                 ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
@@ -255,7 +255,7 @@ describe('Instance - /instances/:id', function () {
                 function (done) {
                   // this has to be it's own function since models[0] doesn't exist when the series is created
                   ctx.newCV.appCodeVersions.models[0].update({
-                    branch: uuid()
+                    branch: ''+Date.now()
                   }, done);
                 },
                 ctx.newCV.rootDir.contents.createFile.bind(ctx.newCV.rootDir.contents, 'file.txt'),
@@ -284,7 +284,7 @@ describe('Instance - /instances/:id', function () {
         describe('Patching an unbuilt build', function () {
           beforeEach(function (done) {
             var data = {
-              name: uuid(),
+              name: ''+Date.now(),
               owner: { github: ctx.user.attrs.accounts.github.id }
             };
             ctx.otherBuild = ctx.user.createBuild(data, done);
@@ -362,7 +362,7 @@ describe('Instance - /instances/:id', function () {
         });
         describe('Testing all patching possibilities', function () {
           var updates = [{
-            name: uuid()
+            name: ''+Date.now()
           }, {
             public: true
           }, {
@@ -374,17 +374,17 @@ describe('Instance - /instances/:id', function () {
             public: true,
             build: 'newBuild'
           }, {
-            name: uuid(),
+            name: ''+Date.now(),
             build: 'newBuild'
           }, {
-            name: uuid(),
+            name: ''+Date.now(),
               env: ['sdfasdfasdfadsf=asdfadsfasdfasdf']
             },
             {
-              name: uuid(),
+              name: ''+Date.now(),
             public: true
           }, {
-            name: uuid(),
+            name: ''+Date.now(),
             build: 'newBuild',
               public: true,
               env: ['THREE=1asdfsdf', 'TWO=dsfasdfas']
@@ -510,7 +510,7 @@ describe('Instance - /instances/:id', function () {
       });
 
       var updates = [{
-        name: uuid()
+        name: ''+Date.now()
       }, {
         public: true
       }, {
@@ -569,7 +569,7 @@ describe('Instance - /instances/:id', function () {
       });
       describe('hipache changes', function () {
         beforeEach(function (done) {
-          var newName = ctx.newName = uuid();
+          var newName = ctx.newName = ''+Date.now();
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({ json: { name: newName, masterPod: true }}, done);

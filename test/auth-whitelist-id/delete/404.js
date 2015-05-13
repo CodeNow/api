@@ -31,7 +31,7 @@ describe('DELETE /auth/whitelist/:name - 404', function () {
     });
   });
   beforeEach(function (done) {
-    ctx.name = uuid();
+    ctx.name = ''+Date.now();
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',

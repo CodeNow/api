@@ -48,7 +48,7 @@ describe('POST /instances', function () {
         });
       });
       it('should error if the build has unbuilt versions', function(done) {
-        var json = { build: ctx.build.id(), name: uuid() };
+        var json = { build: ctx.build.id(), name: ''+Date.now() };
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/user')(ctx.user);
         ctx.user.createInstance({ json: json }, expects.error(400, /been started/, done));
@@ -87,7 +87,7 @@ describe('POST /instances', function () {
               'network.hostIp': exists
             };
 
-            var json = { build: ctx.build.id(), name: uuid() };
+            var json = { build: ctx.build.id(), name: ''+Date.now() };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
@@ -104,7 +104,7 @@ describe('POST /instances', function () {
           });
         });
         it('should create a new instance', function(done) {
-          var json = { build: ctx.build.id(), name: uuid() };
+          var json = { build: ctx.build.id(), name: ''+Date.now() };
           var expected = {
             shortHash: exists,
             'createdBy.github': ctx.user.attrs.accounts.github.id,
@@ -132,7 +132,7 @@ describe('POST /instances', function () {
         });
 
         it('should deploy the instance after the build finishes', function(done) {
-          var json = { build: ctx.build.id(), name: uuid(), masterPod: true };
+          var json = { build: ctx.build.id(), name: ''+Date.now(), masterPod: true };
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
@@ -164,7 +164,7 @@ describe('POST /instances', function () {
             });
           });
           it('should not create a new instance', function(done) {
-            var json = { build: ctx.build.id(), name: uuid() };
+            var json = { build: ctx.build.id(), name: ''+Date.now() };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance({ json: json }, expects.error(400, done));
@@ -185,7 +185,7 @@ describe('POST /instances', function () {
             });
         });
         it('should create a new instance', function(done) {
-          var json = { build: ctx.build.id(), name: uuid() };
+          var json = { build: ctx.build.id(), name: ''+Date.now() };
           var expected = {
             shortHash: exists,
             'createdBy.github': ctx.user.attrs.accounts.github.id,
@@ -243,7 +243,7 @@ describe('POST /instances', function () {
       requiredProjectKeys.forEach(function (missingBodyKey) {
         it('should error if missing ' + missingBodyKey, function (done) {
           var json = {
-            name: uuid(),
+            name: ''+Date.now(),
             build: ctx.build.id()
           };
           var incompleteBody = clone(json);
@@ -276,7 +276,7 @@ describe('POST /instances', function () {
         });
         it('should create an instance, and start it', function (done) {
           var json = {
-            name: uuid(),
+            name: ''+Date.now(),
             build: ctx.build.id(),
             masterPod: true
           };
@@ -311,7 +311,7 @@ describe('POST /instances', function () {
         describe('body.env', function() {
           it('should create an instance, with ENV', function (done) {
             var json = {
-              name: uuid(),
+              name: ''+Date.now(),
               build: ctx.build.id(),
               env: [
                 'ONE=1',
@@ -338,7 +338,7 @@ describe('POST /instances', function () {
           });
           it('should error if body.env is not an array of strings', function(done) {
             var json = {
-              name: uuid(),
+              name: ''+Date.now(),
               build: ctx.build.id(),
               env: [{
                 iCauseError: true
@@ -349,7 +349,7 @@ describe('POST /instances', function () {
           });
           it('should filter empty/whitespace-only strings from env array', function (done) {
             var json = {
-              name: uuid(),
+              name: ''+Date.now(),
               build: ctx.build.id(),
               env: [
                 '', ' ', 'ONE=1'
@@ -375,7 +375,7 @@ describe('POST /instances', function () {
           });
           it('should error if body.env contains an invalid variable', function (done) {
             var json = {
-              name: uuid(),
+              name: ''+Date.now(),
               build: ctx.build.id(),
               env: [
                 'ONE=1',

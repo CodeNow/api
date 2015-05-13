@@ -85,7 +85,7 @@ function buildTheBuildTests (ctx) {
     var count = createCount(done);
     ctx.build = ctx.user.createBuild({ owner: ctx.bodyOwner }, count.inc().next);
     ctx.context = ctx.user.createContext({
-      name: uuid(),
+      name: ''+Date.now(),
       owner: ctx.bodyOwner
     }, count.inc().next);
   });
