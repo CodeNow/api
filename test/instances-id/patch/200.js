@@ -392,20 +392,18 @@ describe('200 PATCH /instances/:id', function () {
             multi.tailInstance(ctx.user, instance, function (err) {
               if (err) { return done(err); }
               try {
-                var count = createCount(done);
+                var count = createCount(1, done);
                 // assert old values are deleted - technically these are delete on PATCH
                 if (oldContainer && oldContainer.dockerContainer) {
-                  expects.deletedHosts(
-                    ctx.user, oldInstance, oldContainer, count.inc().next);
-                  expects.deletedWeaveHost(
-                    oldContainer, count.inc().next);
+                  expects.deletedHosts(ctx.user, oldInstance, oldContainer, count.inc().next);
+                  expects.deletedWeaveHost(oldContainer, count.inc().next);
                 }
                 // assert new values
-                expects.updatedHosts(
-                  ctx.user, instance, count.inc().next);
+                expects.updatedHosts(ctx.user, instance, count.inc().next);
                 var container = instance.containers.models[0];
                 expects.updatedWeaveHost(
                   container, instance.attrs.network.hostIp, count.inc().next);
+                 count.next();
               }
               catch (e) {
                 done(e);
@@ -469,12 +467,10 @@ describe('200 PATCH /instances/:id', function () {
             ctx.afterPatchAsserts.push(function (done) {
               try {
                 var instance = ctx.instance;
-                var count = createCount(done);
-                expects.deletedHosts(
-                  ctx.user, instance, count.inc().next);
+                var count = createCount(2, done);
+                expects.deletedHosts(ctx.user, instance, count.next);
                 var container = instance.containers.models[0];
-                expects.deletedWeaveHost(
-                  container, count.inc().next);
+                expects.deletedWeaveHost(container, count.next);
               }
               catch (e) {
                 done(e);
@@ -551,22 +547,20 @@ describe('200 PATCH /instances/:id', function () {
         }
         function checkOldContainerDeleted (done) {
           try {
-            var count = createCount(done);
+            var count = createCount(1, done);
             // NOTE!: timeout is required for the following tests, bc container deletion occurs in bg
             // User create instance with built build Long running container and env.
             // Patch with build: in-progress build, should update an instance ______.
             if (ctx.instance.attrs.name !== oldInstance.attrs.name) {
               // if name changed
-              expects.deletedHosts(
-                ctx.user, oldInstance, oldContainer, count.inc().next);
+              expects.deletedHosts(ctx.user, oldInstance, oldContainer, count.inc().next);
             } // else assert updated values for same entries next beforeEach
             var newInstanceBuildId = ctx.instance.attrs.build && ctx.instance.attrs.build._id;
             if (newInstanceBuildId !== oldInstanceBuildId) {
-              expects.deletedWeaveHost(
-                oldContainer, count.inc().next);
-              expects.deletedContainer(
-                oldContainer.json(), count.inc().next);
+              expects.deletedWeaveHost(oldContainer, count.inc().next);
+              expects.deletedContainer(oldContainer.json(), count.inc().next);
             }
+            count.next();
           }
           catch (e) {
             done(e);
@@ -580,17 +574,16 @@ describe('200 PATCH /instances/:id', function () {
       ctx.afterPatchAsserts.push(function (done) {
         try {
           var instance = ctx.instance;
-          var count = createCount(done);
+          var count = createCount(1, done);
           ctx.instance.fetch(function (err) {
             if (err) { return done(err); }
-            expects.updatedHosts(
-              ctx.user, instance, count.inc().next);
+            expects.updatedHosts(ctx.user, instance, count.inc().next);
             var container = instance.containers.models[0];
             if (container && container.attrs.ports) {
-              expects.updatedWeaveHost(
-                container, instance.attrs.network.hostIp, count.inc().next);
+              expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
             }
           });
+          count.next();
         }
         catch (e) {
           done(e);
