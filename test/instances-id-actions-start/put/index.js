@@ -280,20 +280,20 @@ describe('PUT /instances/:id/actions/start', function () {
       }
       function stopStartAssert (err) {
         if (err) { return done(err); }
-        var count = createCount(done);
+        var count = createCount(4, done);
         // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
-        expects.updatedHosts(ctx.user, ctx.instance, count.inc().next);
+        expects.updatedHosts(ctx.user, ctx.instance, count.next);
         // try stop and start
-        count.inc();
         var instance = ctx.instance;
         var container = instance.containers.models[0];
         instance.stop(function (err) {
           if (err) { return count.next(err); }
           instance.start(expects.success(200, ctx.expected, function (err) {
             if (err) { return count.next(err); }
-            expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
+            expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.next);
             expects.updatedHosts(ctx.user, instance, count.next);
             if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }
+            count.next();
           }));
         });
       }
