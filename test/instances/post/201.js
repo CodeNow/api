@@ -136,12 +136,12 @@ describe('201 POST /instances', function () {
           multi.tailInstance(ctx.user, instance, function (err) {
             if (err) { return done(err); }
             try {
-              var count = createCount(done);
+              var count = createCount(2, done);
               expects.updatedHosts(
-                ctx.user, instance, count.inc().next);
+                ctx.user, instance, count.next);
               var container = instance.containers.models[0];
               expects.updatedWeaveHost(
-                container, instance.attrs.network.hostIp, count.inc().next);
+                container, instance.attrs.network.hostIp, count.next);
             }
             catch (e) {
               done(e);
@@ -184,14 +184,14 @@ describe('201 POST /instances', function () {
           ctx.afterPostAsserts.push(function (done) {
             try {
               var instance = ctx.instance;
-              var count = createCount(done);
+              var count = createCount(2, done);
               ctx.instance.fetch(function (err) {
                 if (err) { return done(err); }
                 expects.updatedHosts(
-                  ctx.user, instance, count.inc().next);
+                  ctx.user, instance, count.next);
                 var container = instance.containers.models[0];
                 expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.inc().next);
+                  container, instance.attrs.network.hostIp, count.next);
               });
             }
             catch (e) {
@@ -226,12 +226,12 @@ describe('201 POST /instances', function () {
           ctx.afterPostAsserts.push(function (done) {
             try {
               var instance = ctx.instance;
-              var count = createCount(done);
+              var count = createCount(2, done);
               expects.deletedHosts(
-                ctx.user, instance, count.inc().next);
+                ctx.user, instance, count.next);
               var container = instance.containers.models[0];
               expects.deletedWeaveHost(
-                container, count.inc().next);
+                container, count.next);
             }
             catch (e) {
               done(e);

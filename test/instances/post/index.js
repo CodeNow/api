@@ -145,12 +145,12 @@ describe('POST /instances', function () {
               multi.tailInstance(ctx.user, instance, function (err) {
                 if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.exist();
-                var count = createCount(done);
+                var count = createCount(2, done);
                 expects.updatedHosts(
-                  ctx.user, instance, count.inc().next);
+                  ctx.user, instance, count.next);
                 var container = instance.containers.models[0];
                 expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.inc().next);
+                  container, instance.attrs.network.hostIp, count.next);
               });
             });
           });
@@ -300,11 +300,11 @@ describe('POST /instances', function () {
               multi.tailInstance(ctx.user, instance, function (err) {
                 if (err) { return done(err); }
                 var container = instance.containers.models[0];
-                var count = createCount(done);
+                var count = createCount(2, done);
                 expects.updatedHosts(
-                  ctx.user, instance, count.inc().next);
+                  ctx.user, instance, count.next);
                 expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.inc().next);
+                  container, instance.attrs.network.hostIp, count.next);
               });
             }));
         });
