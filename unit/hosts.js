@@ -22,7 +22,7 @@ describe('Hosts', function () {
     beforeEach(function (done) {
       ctx.hosts = new Hosts();
       ctx.port = '80/tcp';
-      ctx.instance = {};
+      ctx.instance = { masterPod: false };
       sinon.stub(Dns.prototype, 'putEntryForInstance').yieldsAsync();
       sinon.stub(Dns.prototype, 'deleteEntryForInstance').yieldsAsync();
       keypather.set(ctx.instance, 'container.dockerHost', 'http://10.0.0.1:4242');
@@ -31,7 +31,7 @@ describe('Hosts', function () {
       ctx.branch = 'some-branch';
       keypather.set(ctx.instance, 'contextVersion.appCodeVersions[0].lowerBranch', ctx.branch);
 
-      ctx.instanceName = 'some-branch-instance-name';
+      ctx.instanceName = ctx.branch + '-instance-name';
       ctx.username = 'user-name';
       ctx.hosts.upsertHostsForInstance(
         ctx.username, ctx.instance, ctx.instanceName, ctx.instance.container, done);
