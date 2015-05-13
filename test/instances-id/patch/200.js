@@ -582,8 +582,8 @@ describe('200 PATCH /instances/:id', function () {
             if (container && container.attrs.ports) {
               expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
             }
+            count.next();
           });
-          count.next();
         }
         catch (e) {
           done(e);
