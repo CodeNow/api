@@ -260,7 +260,7 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
       instanceName: instanceName,
       ownerUsername: username,
       userContentDomain: process.env.USER_CONTENT_DOMAIN,
-      masterPod: instance.masterPod
+      masterPod: instance.masterPod || false
     }).lrange(0, -1, function (err, backends) {
       expect(backends.length).to.equal(0);
     });
