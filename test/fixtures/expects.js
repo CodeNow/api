@@ -187,19 +187,22 @@ expects.updatedNaviEntries = function (username, instance, container, cb) {
     return cb();
   }
   var instanceName = instance.attrs.lowerName;
-  var branch = keypather.get(instance, 'contextVersion.appCodeVersions[0].lowerBranch');
+  var branch = keypather.get(instance.attrs, 'contextVersion.appCodeVersions[0].lowerBranch');
+  var ownerGithub = instance.attrs.owner.github;
+  var masterPod = instance.attrs.masterPod;
   Object.keys(container.ports).forEach(function (containerPort) {
     containerPort = containerPort.split('/').shift();
     var opts = {
       exposedPort: containerPort,
       branch: branch,
       instanceName: instanceName,
-      ownerGithub: username,
+      ownerUsername: username,
+      ownerGithub: ownerGithub,
       userContentDomain: process.env.USER_CONTENT_DOMAIN,
-      masterPod: instance.masterPod || false
+      masterPod: masterPod
     };
     new NaviEntry(opts).lrange(0, -1, function (err, backends) {
-      expect(backends[0]).to.deep.equal(opts);
+      expect(JSON.parse(backends[0])).to.deep.contains(opts);
       expect(backends[1]).to.equal(process.env.NAVI_HOST);
     });
   });
@@ -253,16 +256,19 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
     return cb();
   }
   var instanceName = instance.attrs.lowerName;
-  var branch = keypather.get(instance, 'contextVersion.appCodeVersions[0].lowerBranch');
+  var branch = keypather.get(instance.attrs, 'contextVersion.appCodeVersions[0].lowerBranch');
+  var ownerGithub = instance.attrs.owner.github;
+  var masterPod = instance.attrs.masterPod;
   Object.keys(container.ports).forEach(function (containerPort) {
     containerPort = containerPort.split('/').shift();
     new NaviEntry({
       exposedPort: containerPort,
       branch: branch,
       instanceName: instanceName,
-      ownerGithub: username,
+      ownerUsername: username,
+      ownerGithub: ownerGithub,
       userContentDomain: process.env.USER_CONTENT_DOMAIN,
-      masterPod: instance.masterPod || false
+      masterPod: masterPod
     }).lrange(0, -1, function (err, backends) {
       expect(backends.length).to.equal(0);
     });
