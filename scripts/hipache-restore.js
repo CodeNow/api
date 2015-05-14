@@ -1,15 +1,14 @@
 'use strict';
 require('loadenv')();
 // redis is required for hosts and hipache-entry to work (below)
-var redis = require('models/redis/index');
 var User = require('models/mongo/user');
 var Instance = require('models/mongo/instance');
 var mongoose = require('models/mongo/mongoose-control');
-var createCount = require('callback-count');
 var async = require('async');
 var cachedGithubUsers = {}; /* githubId: githubUser */
 var fetchingGithubUser= {}; /* githubId: [handlers...] */
 
+var dryRun = !process.env.ACTUALLY_RUN;
 
 mongoose.start(function () {
 
@@ -65,45 +64,14 @@ mongoose.start(function () {
             return cb();
           }
           var username = githubUser.login;
-          var ports = Object.keys(instance.container.ports);
-          if (ports.length === 0) {
-            return cb();
+
+          var Hosts = require('models/redis/hosts');
+          var hosts = new Hosts();
+          console.log('updating', username, instance.name);
+          if (!dryRun) {
+            hosts.upsertHostsForInstance(
+              username, instance, instance.name, instance.container, cb);
           }
-          var count = createCount(ports.length, cb);
-
-          ports.forEach(function (containerPort) {
-            /*
-             * DEBUG LOGIC
-             */
-            // var url = require('url');
-            // var dockerUrl = instance.container.dockerHost;
-            // var HipacheEntry = require('models/redis/hipache-entry');
-            // var hipacheEntry = new HipacheEntry(
-            //     containerPort, instance.name, username);
-            // hipacheEntry.lrange(0, -1, function (err, data) {
-            //   var actualPort = instance.container.ports[containerPort][0].HostPort;
-            //   var backendUrl = url.format({
-            //     protocol: /^443\/.+/.test(containerPort) ? 'https:' : 'http:',
-            //     slashes: true,
-            //     hostname: url.parse(dockerUrl).hostname,
-            //     port: actualPort
-            //   });
-            //   console.log('\nKEY     ', hipacheEntry.key);
-            //   console.log('ACTUAL  '  , data);
-            //   console.log('EXPECTED'  , [instance.name, backendUrl]);
-            //   count.next();
-            // });
-
-            /*
-             * WRITE!! LOGIC
-             */
-            var Hosts = require('models/redis/hosts');
-            var hosts = new Hosts();
-            console.log(
-              containerPort, username, instance, instance.name);
-            hosts.upsertHostForContainerPort(
-              containerPort, username, instance, instance.name, count.next);
-          });
         }
       }, cb);
     });
