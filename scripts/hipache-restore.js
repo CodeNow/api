@@ -10,6 +10,7 @@ var cachedGithubUsers = {}; /* githubId: githubUser */
 var fetchingGithubUser= {}; /* githubId: [handlers...] */
 
 var dryRun = !process.env.ACTUALLY_RUN;
+console.log('dryRun?', !!dryRun);
 
 mongoose.start(function () {
 
@@ -69,10 +70,14 @@ mongoose.start(function () {
           var Hosts = require('models/redis/hosts');
           var hosts = new Hosts();
           console.log('updating', username, instance.name);
-          if (!dryRun) {
-            hosts.upsertHostsForInstance(
-              username, instance, instance.name, instance.container, cb);
-          }
+          if (dryRun) { return cb(); }
+          hosts.upsertHostsForInstance(
+            username, instance, instance.name, instance.container, function (err) {
+              if (err) {
+                console.log('ERROR for', username, instance.name, err);
+              }
+              cb();
+            });
         }
       }, cb);
     });
