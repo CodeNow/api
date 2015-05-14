@@ -259,11 +259,11 @@ describe('Github - /actions/github', function () {
             expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             errorStub.restore();
-            Runnable.prototype.forkMasterInstance.restore();
+            Runnable.prototype.updateInstance.restore();
             done();
           });
-          sinon.stub(Runnable.prototype, 'forkMasterInstance')
-            .yields(Boom.notFound('Instance deploy failed'));
+          sinon.stub(Runnable.prototype, 'updateInstance')
+            .yields(Boom.notFound('Instance update failed'));
 
           sinon.stub(PullRequest.prototype, 'deploymentErrored', count.next);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
