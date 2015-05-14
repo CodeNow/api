@@ -124,35 +124,40 @@ describe('GET /instances', function () {
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
     it('should get instances by username', function (done) {
-      var count = createCount(2, done);
       require('../../fixtures/mocks/github/user')(ctx.user);
-      require('../../fixtures/mocks/github/user')(ctx.user2);
-      var query = {
-        githubUsername: ctx.user.json().accounts.github.username
-      };
-      var expected = [
-        {
-          _id: ctx.instance.json()._id,
-          shortHash: ctx.instance.json().shortHash,
-          'containers[0].inspect.State.Running': true
-        }
-      ];
       require('../../fixtures/mocks/github/users-username')
         (ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.username);
-      ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
-      var query2 = {
-        githubUsername: ctx.user2.json().accounts.github.username
-      };
-      var expected2 = [
-        {
-          _id: ctx.instance2.json()._id,
-          shortHash: ctx.instance2.json().shortHash,
-          'containers[0].inspect.State.Running': true
-        }
-      ];
+      require('../../fixtures/mocks/github/user')(ctx.user2);
       require('../../fixtures/mocks/github/users-username')
         (ctx.user2.json().accounts.github.id, ctx.user2.json().accounts.github.username);
-      ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
+      async.series([
+        function userOne (cb) {
+          var query = {
+            githubUsername: ctx.user.json().accounts.github.username
+          };
+          var expected = [
+            {
+              _id: ctx.instance.json()._id,
+              shortHash: ctx.instance.json().shortHash,
+              'containers[0].inspect.State.Running': true
+            }
+          ];
+          ctx.user.fetchInstances(query, expects.success(200, expected, cb));
+        },
+        function userTwo (cb) {
+          var query2 = {
+            githubUsername: ctx.user2.json().accounts.github.username
+          };
+          var expected2 = [
+            {
+              _id: ctx.instance2.json()._id,
+              shortHash: ctx.instance2.json().shortHash,
+              'containers[0].inspect.State.Running': true
+            }
+          ];
+          ctx.user2.fetchInstances(query2, expects.success(200, expected2, cb));
+        }
+      ], done);
     });
     it('should get instances by ["contextVersion.appCodeVersions.repo"]', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user);
