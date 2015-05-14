@@ -22,7 +22,7 @@ describe('Hosts', function () {
     beforeEach(function (done) {
       ctx.hosts = new Hosts();
       ctx.port = '80/tcp';
-      ctx.instance = { masterPod: false };
+      ctx.instance = { masterPod: false, owner: { github: 101 } };
       sinon.stub(Dns.prototype, 'putEntryForInstance').yieldsAsync();
       sinon.stub(Dns.prototype, 'deleteEntryForInstance').yieldsAsync();
       keypather.set(ctx.instance, 'container.dockerHost', 'http://10.0.0.1:4242');
