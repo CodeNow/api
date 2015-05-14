@@ -12,6 +12,7 @@ var afterEach = lab.afterEach;
 var api = require('./fixtures/api-control');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
+var randStr = require('randomstring').generate;
 
 describe('Context - /contexts/:id', function () {
   var ctx = {};
@@ -101,7 +102,7 @@ describe('Context - /contexts/:id', function () {
 
   describe('PATCH', function () {
     var updates = [{
-      name: ''+Date.now()
+      name: randStr(5)
     }, {
       public: true
     }, {

@@ -1,5 +1,6 @@
 var nock = require('nock');
 var multiline = require('multiline');
+var randStr = require('randomstring').generate;
 
 var _orgId = 10000;
 function nextOrgId () {
@@ -8,7 +9,7 @@ function nextOrgId () {
 }
 
 module.exports = function (orgId, orgName, repos) {
-  orgName = orgName || ''+Date.now();
+  orgName = orgName || randStr(5);
   orgId = orgId || nextOrgId();
 
   repos = repos.map(function (repo, index) {

@@ -13,6 +13,7 @@ var api = require('./fixtures/api-control');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
 var exists = require('101/exists');
+var randStr = require('randomstring').generate;
 
 describe('Context - /contexts', function () {
   var ctx = {};
@@ -28,7 +29,7 @@ describe('Context - /contexts', function () {
   });
 
   var required = {
-    name: ''+Date.now()
+    name: randStr(5)
   };
   it('should create a context with a name', function (done) {
     var expected = {

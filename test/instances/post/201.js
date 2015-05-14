@@ -28,6 +28,7 @@ var Docker = require('models/apis/docker');
 var extend = require('extend');
 var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
+var randStr = require('randomstring').generate;
 
 describe('201 POST /instances', function () {
   var ctx = {};
@@ -325,7 +326,7 @@ function createInstanceTests (ctx) {
     assertCreate(body, done);
   });
   it('should create an instance with name, env and build', function (done) {
-    var name = ''+Date.now();
+    var name = randStr(5);
     var env = [
       'FOO=BAR'
     ];
@@ -340,7 +341,7 @@ function createInstanceTests (ctx) {
     assertCreate(body, done);
   });
   it('should create a private instance by default', function (done) {
-    var name = ''+Date.now();
+    var name = randStr(5);
     var env = [
       'FOO=BAR'
     ];
@@ -358,7 +359,7 @@ function createInstanceTests (ctx) {
     });
   });
   it('should make a master pod instance', function (done) {
-    var name = ''+Date.now();
+    var name = randStr(5);
     var body = {
       name: name,
       build: ctx.build.id(),

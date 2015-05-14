@@ -28,6 +28,7 @@ var dockerMockEvents = require('./../../fixtures/docker-mock-events');
 var expects = require('./../../fixtures/expects');
 var multi = require('./../../fixtures/multi-factory');
 var primus = require('./../../fixtures/primus');
+var randStr = require('randomstring').generate;
 
 describe('201 POST /builds/:id/actions/build', function() {
   var ctx = {};
@@ -85,7 +86,7 @@ function buildTheBuildTests (ctx) {
     var count = createCount(done);
     ctx.build = ctx.user.createBuild({ owner: ctx.bodyOwner }, count.inc().next);
     ctx.context = ctx.user.createContext({
-      name: ''+Date.now(),
+      name: randStr(5),
       owner: ctx.bodyOwner
     }, count.inc().next);
   });
