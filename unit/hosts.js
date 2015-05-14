@@ -38,7 +38,7 @@ describe('Hosts', function () {
 
     it('should parse a username from a hostname', function (done) {
       var hostname = [
-        ctx.instanceName, '-', ctx.username, '.',
+        ctx.instanceName, '-staging-', ctx.username, '.',
         process.env.USER_CONTENT_DOMAIN
       ].join('');
       ctx.hosts.parseHostname(hostname, function (err, parsed) {
@@ -51,16 +51,6 @@ describe('Hosts', function () {
   });
 
   describe('parseUsernameFromHostname', function () {
-    it('should parse a username from a hostname', function (done) {
-      var hostname = 'instance-name-org-name.' + process.env.USER_CONTENT_DOMAIN;
-      var hosts = new Hosts();
-      var name = 'instance-name';
-      hosts.parseUsernameFromHostname(hostname, name, function (err, username) {
-        if (err) { return done(err); }
-        expect(username).to.equal('org-name');
-        done();
-      });
-    });
     it('should parse a username from an elastic hostname', function (done) {
       var hostname = 'instance-name-staging-org-name.' + process.env.USER_CONTENT_DOMAIN;
       var hosts = new Hosts();
