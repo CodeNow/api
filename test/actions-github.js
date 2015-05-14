@@ -391,6 +391,66 @@ describe('Github - /actions/github', function () {
           });
         });
 
+        describe('delete branch', function () {
+
+          it('should return 0 instancesIds if nothing was deleted', function (done) {
+            var options = hooks().push;
+            options.json.deleted = true;
+            request.post(options, function (err, res, body) {
+              if (err) { return done(err); }
+              expect(res.statusCode).to.equal(202);
+              expect(body).to.equal('No appropriate work to be done; finishing.');
+              done();
+            });
+          });
+
+          it('should return 1 instancesIds if 1 instances was deleted', function (done) {
+            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+            var user = ctx.user.attrs.accounts.github;
+            var data = {
+              branch: 'feature-1',
+              repo: acv.repo,
+              ownerId: user.id,
+              owner: user.login
+            };
+            var username = user.login;
+
+            var countOnCallback = function () {
+              count.next();
+            };
+            var count = cbCount(2, function () {
+              var slackStub = Slack.prototype.notifyOnAutoFork;
+              expect(slackStub.calledOnce).to.equal(true);
+              expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
+              slackStub.restore();
+
+
+              var deleteOptions = hooks(data).push;
+              deleteOptions.json.deleted = true;
+
+              request.post(deleteOptions, function (err, res, body) {
+                if (err) { return done(err); }
+                expect(res.statusCode).to.equal(201);
+                expect(body.length).to.equal(1);
+                done();
+              });
+
+            });
+            sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
+            var options = hooks(data).push;
+            require('./fixtures/mocks/github/users-username')(101, username);
+            request.post(options, function (err, res, cvIds) {
+              if (err) { return done(err); }
+              finishAllIncompleteVersions();
+              expect(res.statusCode).to.equal(200);
+              expect(cvIds).to.exist();
+              expect(cvIds).to.be.an.array();
+              expect(cvIds).to.have.length(1);
+              count.next();
+            });
+          });
+        });
+
         describe('fork 2 instances', function () {
           beforeEach(function (done) {
             multi.createInstance(function (err, instance, build, user, modelsArr) {
@@ -408,15 +468,12 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(body._id).to.exist();
                 ctx.settingsId = body._id;
-                ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
+                ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
                   expect(err).to.be.null();
-                  ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
+                  ctx.instance2 = copiedInstance;
+                  ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({ masterPod: true }, function (err) {
                     expect(err).to.be.null();
-                    ctx.instance2 = copiedInstance;
-                    ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({ masterPod: true }, function (err) {
-                      expect(err).to.be.null();
-                      done();
-                    });
+                    done();
                   });
                 });
               });
@@ -471,67 +528,6 @@ describe('Github - /actions/github', function () {
               expect(cvIds).to.exist();
               expect(cvIds).to.be.an.array();
               expect(cvIds).to.have.length(2);
-            });
-          });
-
-
-          describe('delete branch', function () {
-
-            it('should return 0 instancesIds if nothing was deleted', function (done) {
-              var options = hooks().push;
-              options.json.deleted = true;
-              request.post(options, function (err, res, body) {
-                if (err) { return done(err); }
-                expect(res.statusCode).to.equal(202);
-                expect(body).to.equal('No appropriate work to be done; finishing.');
-                done();
-              });
-            });
-
-            it('should return 2 instancesIds if 2 instances were deleted', function (done) {
-              var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-              var user = ctx.user.attrs.accounts.github;
-              var data = {
-                branch: 'feature-1',
-                repo: acv.repo,
-                ownerId: user.id,
-                owner: user.login
-              };
-              var username = user.login;
-
-              var countOnCallback = function () {
-                count.next();
-              };
-              var count = cbCount(3, function () {
-                var slackStub = Slack.prototype.notifyOnAutoFork;
-                expect(slackStub.calledTwice).to.equal(true);
-                expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
-                slackStub.restore();
-
-
-                var deleteOptions = hooks(data).push;
-                deleteOptions.json.deleted = true;
-
-                request.post(deleteOptions, function (err, res, body) {
-                  if (err) { return done(err); }
-                  expect(res.statusCode).to.equal(201);
-                  expect(body.length).to.equal(2);
-                  done();
-                });
-
-              });
-              sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-              var options = hooks(data).push;
-              require('./fixtures/mocks/github/users-username')(101, username);
-              request.post(options, function (err, res, cvIds) {
-                if (err) { return done(err); }
-                finishAllIncompleteVersions();
-                expect(res.statusCode).to.equal(200);
-                expect(cvIds).to.exist();
-                expect(cvIds).to.be.an.array();
-                expect(cvIds).to.have.length(2);
-                count.next();
-              });
             });
           });
         });
