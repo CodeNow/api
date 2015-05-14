@@ -129,8 +129,6 @@ describe('Github - /actions/github', function () {
     });
   });
 
-
-
   describe('push event', function () {
     var ctx = {};
     beforeEach(function (done) {
@@ -141,6 +139,23 @@ describe('Github - /actions/github', function () {
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
+    });
+
+    it('should return 202 if there is neither autoDeploy nor autoLaunch is needed',
+      function (done) {
+        var data = {
+          branch: 'some-branch',
+          repo: 'some-repo',
+          ownerId: 3217371238,
+          owner: 'anton'
+        };
+        var options = hooks(data).push;
+        request.post(options, function (err, res, body) {
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(202);
+          expect(body).to.equal('Nothing to deploy or fork');
+          done();
+        });
     });
 
     describe('errored cases', function () {
