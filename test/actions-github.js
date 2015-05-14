@@ -404,7 +404,7 @@ describe('Github - /actions/github', function () {
             });
           });
 
-          it('should return 1 instancesIds if 1 instances was deleted', function (done) {
+          it('should return 1 instancesIds if 1 instance was deleted', function (done) {
             var acv = ctx.contextVersion.attrs.appCodeVersions[0];
             var user = ctx.user.attrs.accounts.github;
             var data = {
