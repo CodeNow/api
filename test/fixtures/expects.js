@@ -190,15 +190,17 @@ expects.updatedNaviEntries = function (username, instance, container, cb) {
   var branch = keypather.get(instance, 'contextVersion.appCodeVersions[0].lowerBranch');
   Object.keys(container.ports).forEach(function (containerPort) {
     containerPort = containerPort.split('/').shift();
-    new NaviEntry({
+    var opts = {
       exposedPort: containerPort,
       branch: branch,
       instanceName: instanceName,
       ownerUsername: username,
       userContentDomain: process.env.USER_CONTENT_DOMAIN,
       masterPod: instance.masterPod || false
-    }).lrange(0, -1, function (err, backends) {
-      expect(backends).to.deep.equal([instanceName, process.env.NAVI_HOST]);
+    };
+    new NaviEntry(opts).lrange(0, -1, function (err, backends) {
+      expect(backends[0]).to.deep.equal(opts);
+      expect(backends[1]).to.equal(process.env.NAVI_HOST);
     });
   });
   cb(null);
