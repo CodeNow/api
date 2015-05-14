@@ -190,21 +190,18 @@ expects.updatedDnsEntry = function (username, instanceName, hostIp) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var dnsUrl = toDnsUrl(username, instanceName);
-  var dnsUrlMP = toDnsUrl('staging-' + username, instanceName);
+  var dnsUrlElastic = toDnsUrl('staging-' + username, instanceName);
   var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record ' + dnsUrl).to.equal(hostIp);
-  expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record ' + dnsUrlMP).to.equal(hostIp);
+  expect(mockRoute53.findRecordIp(dnsUrlElastic), 'dns record ' + dnsUrlElastic).to.equal(hostIp);
   expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record ' + dnsUrlDirect).to.equal(hostIp);
 };
 expects.updatedHipacheEntries = function (username, instanceName, container, branch, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
-  var count = createCount(3, cb);
+  var count = createCount(2, cb);
 
   branch = branch || 'master';
-  runExpects(username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, branch, count.next);
 
@@ -232,9 +229,8 @@ expects.updatedNaviHipacheEntries = function (username, instanceName, container,
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
-  var count = createCount(3, cb);
+  var count = createCount(2, cb);
 
-  runExpects(username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, 'master', count.next);
 
@@ -299,20 +295,17 @@ expects.deletedDnsEntry = function (username, instanceName) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var dnsUrl = toDnsUrl(username, instanceName);
-  var dnsUrlMP = toDnsUrl('staging-' + username, instanceName);
+  var dnsUrlElastic = toDnsUrl('staging-' + username, instanceName);
   var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrl), 'dns record ' + dnsUrl).to.not.exist();
-  expect(mockRoute53.findRecordIp(dnsUrlMP), 'dns record ' + dnsUrlMP).to.not.exist();
+  expect(mockRoute53.findRecordIp(dnsUrlElastic), 'dns record ' + dnsUrlElastic).to.not.exist();
   expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record ' + dnsUrlDirect).to.not.exist();
 };
 expects.deletedHipacheEntries = function (username, instanceName, container, cb) {
   // hipache entries
   var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
   var hosts = new Hosts();
-  var count = createCount(3, cb);
+  var count = createCount(2, cb);
 
-  runExpects(username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, '', count.next);
   runExpects('staging-' + username, instanceName, container, 'master', count.next);
 
