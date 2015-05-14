@@ -15,6 +15,7 @@ var api = require('../../fixtures/api-control');
 
 var request = require('request');
 var uuid = require('uuid');
+var randStr = require('randomstring').generate;
 
 var ctx = {};
 describe('DELETE /auth/whitelist/:name - 404', function () {
@@ -31,7 +32,7 @@ describe('DELETE /auth/whitelist/:name - 404', function () {
     });
   });
   beforeEach(function (done) {
-    ctx.name = ''+Date.now();
+    ctx.name = randStr(5);
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',

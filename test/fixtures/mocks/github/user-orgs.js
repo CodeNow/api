@@ -1,5 +1,6 @@
 var nock = require('nock');
 var multiline = require('multiline');
+var randStr = require('randomstring').generate;
 
 var _orgId = 1000; // these should not intersect with github user-ids
 function nextOrgId () {
@@ -8,7 +9,7 @@ function nextOrgId () {
 }
 
 module.exports = function (orgId, orgName) {
-  orgName = orgName || ''+Date.now();
+  orgName = orgName || randStr(5);
   orgId = orgId || nextOrgId();
   nock('https://api.github.com:443')
     .filteringPath(/\/user\/orgs\?.+/, '/user/orgs')

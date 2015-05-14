@@ -17,6 +17,7 @@ var api = require('../fixtures/api-control');
 var url = require('url');
 var querystring = require('querystring');
 var uuid = require('uuid');
+var randStr = require('randomstring').generate;
 
 describe('/auth/github with whitelist', function () {
   var ctx = {};
@@ -37,7 +38,7 @@ describe('/auth/github with whitelist', function () {
   describe('user not in the whitelist', function () {
     var tokenUrl = baseUrl + 'token';
     beforeEach(function (done) {
-      ctx.username = ''+Date.now();
+      ctx.username = randStr(5);
       ctx.testToken = uuid();
       done();
     });
@@ -45,7 +46,7 @@ describe('/auth/github with whitelist', function () {
     it('should not let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken);
       require('../fixtures/mocks/github/user-emails')();
-      require('../fixtures/mocks/github/user-orgs')(1001, ''+Date.now());
+      require('../fixtures/mocks/github/user-orgs')(1001, randStr(5));
       request.post({
         url: tokenUrl,
         json: true,
@@ -65,7 +66,7 @@ describe('/auth/github with whitelist', function () {
   describe('user in the whitelist', function () {
     var tokenUrl = baseUrl + 'token';
     before(function (done) {
-      ctx.username = ''+Date.now();
+      ctx.username = randStr(5);
       ctx.testToken = uuid();
       var Whitelist = require('models/mongo/user-whitelist');
       ctx.w = new Whitelist({
@@ -78,7 +79,7 @@ describe('/auth/github with whitelist', function () {
     it('should let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken);
       require('../fixtures/mocks/github/user-emails')();
-      require('../fixtures/mocks/github/user-orgs')(1001, ''+Date.now());
+      require('../fixtures/mocks/github/user-orgs')(1001, randStr(5));
       request.post({
         url: tokenUrl,
         json: true,
@@ -96,8 +97,8 @@ describe('/auth/github with whitelist', function () {
   describe('user in an org in the whitelist', function () {
     var tokenUrl = baseUrl + 'token';
     before(function (done) {
-      ctx.orgname = ''+Date.now();
-      ctx.username = ''+Date.now();
+      ctx.orgname = randStr(5);
+      ctx.username = randStr(5);
       ctx.testToken = uuid();
       var Whitelist = require('models/mongo/user-whitelist');
       var w = new Whitelist({

@@ -2,6 +2,7 @@ var nock = require('nock');
 var uuid = require('uuid');
 var multiline = require('multiline');
 var isObject = require('101/is-object');
+var randStr = require('randomstring').generate;
 
 var userId = 0;
 function nextUserId () {
@@ -20,7 +21,7 @@ module.exports = function (userId, username, token) {
   }
   else {
     userId = userId || nextUserId();
-    username = username || ''+Date.now();
+    username = username || randStr(5);
     token = token || uuid();
   }
 
