@@ -1,6 +1,7 @@
 'use strict';
 require('loadenv')();
 // redis is required for hosts and hipache-entry to work (below)
+require('models/redis/index');
 var User = require('models/mongo/user');
 var Instance = require('models/mongo/instance');
 var mongoose = require('models/mongo/mongoose-control');
