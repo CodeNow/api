@@ -172,8 +172,7 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.string,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.createBuild.restore();
             done();
@@ -203,8 +202,7 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.string,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.buildBuild.restore();
             done();
@@ -241,8 +239,7 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createAndStartDeployment.restore();
             var errorStub = PullRequest.prototype.deploymentErrored;
             expect(errorStub.calledOnce).to.equal(true);
-            expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-             sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.object)).to.equal(true);
             errorStub.restore();
             Runnable.prototype.forkMasterInstance.restore();
             done();
@@ -344,8 +341,7 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createAndStartDeployment.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledOnce).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
             successStub.restore();
             var slackStub = Slack.prototype.notifyOnAutoFork;
             expect(slackStub.calledOnce).to.equal(true);
@@ -427,8 +423,7 @@ describe('Github - /actions/github', function () {
               PullRequest.prototype.createAndStartDeployment.restore();
               var successStub = PullRequest.prototype.deploymentSucceeded;
               expect(successStub.calledTwice).to.equal(true);
-              expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-                sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+              expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
               successStub.restore();
               var slackStub = Slack.prototype.notifyOnAutoFork;
               expect(slackStub.calledTwice).to.equal(true);
@@ -587,10 +582,8 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createAndStartDeployment.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledTwice).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any)).to.equal(true);
             successStub.restore();
             var slackStub = Slack.prototype.notifyOnAutoDeploy;
             expect(slackStub.calledOnce).to.equal(true);
