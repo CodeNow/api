@@ -14,14 +14,14 @@ var expect = Code.expect;
 var api = require('../../fixtures/api-control');
 
 var request = require('request');
-var uuid = require('uuid');
+var randStr = require('randomstring').generate;
 
 var ctx = {};
 describe('DELETE /auth', function () {
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
   beforeEach(function (done) {
-    ctx.name = uuid();
+    ctx.name = randStr(5);
     done();
   });
   before(function (done) {
