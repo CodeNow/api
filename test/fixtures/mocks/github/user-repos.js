@@ -1,9 +1,9 @@
 var nock = require('nock');
-var uuid = require('uuid');
 var multiline = require('multiline');
+var randStr = require('randomstring').generate;
 
 module.exports = function (userId, username, repos) {
-  username = username || uuid();
+  username = username || randStr(5);
 
   repos = repos.map(function (repo, index) {
     return {

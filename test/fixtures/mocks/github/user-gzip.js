@@ -2,6 +2,7 @@ var nock = require('nock');
 var uuid = require('uuid');
 var isObject = require('101/is-object');
 var zlib = require('zlib');
+var randStr = require('randomstring').generate;
 
 var userId = 0;
 function nextUserId () {
@@ -20,7 +21,7 @@ module.exports = function (userId, username, token, callback) {
   }
   else {
     userId = userId || nextUserId();
-    username = username || uuid();
+    username = username || randStr(5);
     token = token || uuid();
   }
 
