@@ -587,7 +587,7 @@ describe('Github - /actions/github', function () {
               'contextVersion.appCodeVersions[0].lowerRepo':
                 options.json.repository.full_name.toLowerCase(),
               'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
-              'contextVersion.appCodeVersions[0].branch': data.branch.toLowerCase(),
+              'contextVersion.appCodeVersions[0].branch': data.branch,
               'contextVersion.build.triggeredAction.manual': false,
               'contextVersion.build.triggeredAction.appCodeVersion.repo':
                 options.json.repository.full_name,
