@@ -27,9 +27,18 @@ var expects = require('./fixtures/expects');
 var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
+var nock = require('nock');
 var primus = require('./fixtures/primus');
 var request = require('request');
 var sinon = require('sinon');
+
+before(function (done) {
+  nock('http://runnable.com:80')
+    .persist()
+    .get('/')
+    .reply(200);
+  done();
+});
 
 describe('Github - /actions/github', function () {
   var ctx = {};
@@ -129,6 +138,7 @@ describe('Github - /actions/github', function () {
     });
   });
 
+
   describe('push event', function () {
     var ctx = {};
     beforeEach(function (done) {
@@ -141,36 +151,9 @@ describe('Github - /actions/github', function () {
       done();
     });
 
-    it('should return 202 if there is neither autoDeploy nor autoLaunch is needed',
-      function (done) {
-        var data = {
-          branch: 'some-branch',
-          repo: 'some-repo',
-          ownerId: 3217371238,
-          owner: 'anton'
-        };
-        var options = hooks(data).push;
-        request.post(options, function (err, res, body) {
-          if (err) { return done(err); }
-          expect(res.statusCode).to.equal(202);
-          expect(body).to.equal('Nothing to deploy or fork');
-          done();
-        });
-    });
-
     describe('errored cases', function () {
       beforeEach(function (done) {
-        ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH;
-        process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true';
-        done();
-      });
-      afterEach(function (done) {
-        process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking;
-        done();
-      });
-      beforeEach(function (done) {
         multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
-          if (err) { return done(err); }
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
           ctx.build = build;
@@ -248,7 +231,7 @@ describe('Github - /actions/github', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             baseDeploymentId++;
             var newDeploymentId = baseDeploymentId;
-            cb(null, { id: newDeploymentId });
+            cb(null, {id: newDeploymentId});
           });
           var count = cbCount(1, function () {
             // restore what we stubbed
@@ -259,13 +242,13 @@ describe('Github - /actions/github', function () {
             expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             errorStub.restore();
-            Runnable.prototype.forkMasterInstance.restore();
+            Runnable.prototype.updateInstance.restore();
             done();
           });
-          sinon.stub(Runnable.prototype, 'forkMasterInstance')
+          sinon.stub(Runnable.prototype, 'updateInstance')
             .yields(Boom.notFound('Instance deploy failed'));
 
-          sinon.stub(PullRequest.prototype, 'deploymentErrored', count.next);
+          sinon.stub(PullRequest.prototype, 'deploymentErrored', count.inc().next);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
             branch: 'master',
@@ -288,7 +271,6 @@ describe('Github - /actions/github', function () {
     describe('autofork', function () {
       beforeEach(function (done) {
         multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
-          if (err) { return done(err); }
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
           ctx.build = build;
@@ -303,7 +285,10 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             expect(body._id).to.exist();
             ctx.settingsId = body._id;
-            done();
+            ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
+              expect(err).to.be.null();
+              done();
+            });
           });
         });
       });
@@ -538,15 +523,6 @@ describe('Github - /actions/github', function () {
 
     describe('autodeploy', function () {
       beforeEach(function (done) {
-        ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH;
-        process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true';
-        done();
-      });
-      afterEach(function (done) {
-        process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking;
-        done();
-      });
-      beforeEach(function (done) {
         multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
@@ -579,6 +555,9 @@ describe('Github - /actions/github', function () {
               .to.equal(ctx.user.attrs.accounts.github.access_token);
             cb(null, {id: newDeploymentId});
           });
+          var countOnCallback = function () {
+            count.next();
+          };
           var count = cbCount(3, function () {
             var expected = {
               'contextVersion.build.started': exists,
@@ -614,12 +593,8 @@ describe('Github - /actions/github', function () {
               ctx.instance2.fetch(expects.success(200, expected, done));
             }));
           });
-          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', function () {
-            count.next();
-          });
-          sinon.stub(Slack.prototype, 'notifyOnAutoDeploy', function () {
-            count.next();
-          });
+          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
+          sinon.stub(Slack.prototype, 'notifyOnAutoDeploy', countOnCallback);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var user = ctx.user.attrs.accounts.github;
           var data = {
@@ -629,7 +604,6 @@ describe('Github - /actions/github', function () {
             owner: user.login
           };
           var options = hooks(data).push;
-          options.json.created = false;
           var username = user.login;
           require('./fixtures/mocks/github/users-username')(101, username);
           request.post(options, function (err, res, cvIds) {

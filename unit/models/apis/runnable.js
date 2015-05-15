@@ -24,7 +24,7 @@ describe('Runnable', function () {
       sinon.stub(Runnable.prototype, 'createInstance', function (inst) {
         expect(inst.parent).to.equal(master.shortHash);
         expect(inst.env).to.equal(master.env);
-        expect(inst.name).to.equal('feature-1-inst1');
+        expect(inst.name).to.equal('branch1-inst1');
         expect(inst.owner.github.id).to.equal(master.owner.github.id);
         expect(inst.build).to.equal('build1');
         expect(inst.autoForked).to.equal(true);
@@ -32,7 +32,7 @@ describe('Runnable', function () {
         Runnable.prototype.createInstance.restore();
         done();
       });
-      runnable.forkMasterInstance(master, 'build1', 'feature-1', noop);
+      runnable.forkMasterInstance(master, 'build1', 'branch1', noop);
     });
 
     it('should sanitize branch name', function (done) {

@@ -316,8 +316,7 @@ module.exports = {
       if (err) { return cb(err); }
       var body = {
         name: uuid(),
-        build: build.id(),
-        masterPod: true
+        build: build.id()
       };
       if (buildOwnerId) {
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
