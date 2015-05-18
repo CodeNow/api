@@ -27,18 +27,9 @@ var expects = require('./fixtures/expects');
 var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
-var nock = require('nock');
 var primus = require('./fixtures/primus');
 var request = require('request');
 var sinon = require('sinon');
-
-before(function (done) {
-  nock('http://runnable.com:80')
-    .persist()
-    .get('/')
-    .reply(200);
-  done();
-});
 
 describe('Github - /actions/github', function () {
   var ctx = {};
@@ -138,8 +129,6 @@ describe('Github - /actions/github', function () {
     });
   });
 
-
-
   describe('push event', function () {
     var ctx = {};
     beforeEach(function (done) {
@@ -152,9 +141,36 @@ describe('Github - /actions/github', function () {
       done();
     });
 
+    it('should return 202 if there is neither autoDeploy nor autoLaunch is needed',
+      function (done) {
+        var data = {
+          branch: 'some-branch',
+          repo: 'some-repo',
+          ownerId: 3217371238,
+          owner: 'anton'
+        };
+        var options = hooks(data).push;
+        request.post(options, function (err, res, body) {
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(202);
+          expect(body).to.equal('Nothing to deploy or fork');
+          done();
+        });
+    });
+
     describe('errored cases', function () {
       beforeEach(function (done) {
+        ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH;
+        process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true';
+        done();
+      });
+      afterEach(function (done) {
+        process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking;
+        done();
+      });
+      beforeEach(function (done) {
         multi.createInstance(function (err, instance, build, user, modelsArr) {
+          if (err) { return done(err); }
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
           ctx.build = build;
@@ -232,7 +248,7 @@ describe('Github - /actions/github', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             baseDeploymentId++;
             var newDeploymentId = baseDeploymentId;
-            cb(null, {id: newDeploymentId});
+            cb(null, { id: newDeploymentId });
           });
           var count = cbCount(1, function () {
             // restore what we stubbed
@@ -247,9 +263,9 @@ describe('Github - /actions/github', function () {
             done();
           });
           sinon.stub(Runnable.prototype, 'updateInstance')
-            .yields(Boom.notFound('Instance deploy failed'));
+            .yields(Boom.notFound('Instance update failed'));
 
-          sinon.stub(PullRequest.prototype, 'deploymentErrored', count.inc().next);
+          sinon.stub(PullRequest.prototype, 'deploymentErrored', count.next);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
             branch: 'master',
@@ -272,6 +288,7 @@ describe('Github - /actions/github', function () {
     describe('autofork', function () {
       beforeEach(function (done) {
         multi.createInstance(function (err, instance, build, user, modelsArr) {
+          if (err) { return done(err); }
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
           ctx.build = build;
@@ -286,10 +303,7 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             expect(body._id).to.exist();
             ctx.settingsId = body._id;
-            ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
-              expect(err).to.be.null();
-              done();
-            });
+            done();
           });
         });
       });
@@ -330,6 +344,8 @@ describe('Github - /actions/github', function () {
           var baseDeploymentId = 1234567;
           sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
+            expect(this.github.config.token)
+              .to.equal(ctx.user.attrs.accounts.github.access_token);
             baseDeploymentId++;
             var newDeploymentId = baseDeploymentId;
             cb(null, {id: newDeploymentId});
@@ -357,16 +373,13 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
           sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var user = ctx.user.attrs.accounts.github;
           var data = {
             branch: 'feature-1',
             repo: acv.repo,
-            ownerId: user.id,
-            owner: user.login
+            ownerId: 1987,
+            owner: 'anton'
           };
           var options = hooks(data).push;
-          var username = user.login;
-          require('./fixtures/mocks/github/users-username')(101, username);
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -375,6 +388,66 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
             countOnCallback();
+          });
+        });
+
+        describe('delete branch', function () {
+
+          it('should return 0 instancesIds if nothing was deleted', function (done) {
+            var options = hooks().push;
+            options.json.deleted = true;
+            request.post(options, function (err, res, body) {
+              if (err) { return done(err); }
+              expect(res.statusCode).to.equal(202);
+              expect(body).to.equal('No appropriate work to be done; finishing.');
+              done();
+            });
+          });
+
+          it('should return 1 instancesIds if 1 instance was deleted', function (done) {
+            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+            var user = ctx.user.attrs.accounts.github;
+            var data = {
+              branch: 'feature-1',
+              repo: acv.repo,
+              ownerId: user.id,
+              owner: user.login
+            };
+            var username = user.login;
+
+            var countOnCallback = function () {
+              count.next();
+            };
+            var count = cbCount(2, function () {
+              var slackStub = Slack.prototype.notifyOnAutoFork;
+              expect(slackStub.calledOnce).to.equal(true);
+              expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
+              slackStub.restore();
+
+
+              var deleteOptions = hooks(data).push;
+              deleteOptions.json.deleted = true;
+
+              request.post(deleteOptions, function (err, res, body) {
+                if (err) { return done(err); }
+                expect(res.statusCode).to.equal(201);
+                expect(body.length).to.equal(1);
+                done();
+              });
+
+            });
+            sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
+            var options = hooks(data).push;
+            require('./fixtures/mocks/github/users-username')(101, username);
+            request.post(options, function (err, res, cvIds) {
+              if (err) { return done(err); }
+              finishAllIncompleteVersions();
+              expect(res.statusCode).to.equal(200);
+              expect(cvIds).to.exist();
+              expect(cvIds).to.be.an.array();
+              expect(cvIds).to.have.length(1);
+              count.next();
+            });
           });
         });
 
@@ -395,15 +468,12 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(body._id).to.exist();
                 ctx.settingsId = body._id;
-                ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
+                ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
                   expect(err).to.be.null();
-                  ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
+                  ctx.instance2 = copiedInstance;
+                  ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({ masterPod: true }, function (err) {
                     expect(err).to.be.null();
-                    ctx.instance2 = copiedInstance;
-                    ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({ masterPod: true }, function (err) {
-                      expect(err).to.be.null();
-                      done();
-                    });
+                    done();
                   });
                 });
               });
@@ -414,6 +484,8 @@ describe('Github - /actions/github', function () {
             var baseDeploymentId = 1234567;
             sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
               var cb = Array.prototype.slice.apply(arguments).pop();
+              expect(this.github.config.token)
+                .to.equal(ctx.user.attrs.accounts.github.access_token);
               baseDeploymentId++;
               var newDeploymentId = baseDeploymentId;
               cb(null, {id: newDeploymentId});
@@ -458,79 +530,20 @@ describe('Github - /actions/github', function () {
               expect(cvIds).to.have.length(2);
             });
           });
-
-
-          describe('delete branch', function () {
-
-            it('should return 0 instancesIds if nothing was deleted', function (done) {
-              var options = hooks().push;
-              options.json.deleted = true;
-              request.post(options, function (err, res, body) {
-                if (err) { return done(err); }
-                expect(res.statusCode).to.equal(202);
-                expect(body).to.equal('No appropriate work to be done; finishing.');
-                done();
-              });
-            });
-
-            it('should return 2 instancesIds if 2 instances were deleted', function (done) {
-              var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-              var user = ctx.user.attrs.accounts.github;
-              var data = {
-                branch: 'feature-1',
-                repo: acv.repo,
-                ownerId: user.id,
-                owner: user.login
-              };
-              var username = user.login;
-
-              var countOnCallback = function () {
-                count.next();
-              };
-              var count = cbCount(3, function () {
-                var slackStub = Slack.prototype.notifyOnAutoFork;
-                expect(slackStub.calledTwice).to.equal(true);
-                expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
-                slackStub.restore();
-
-
-                var deleteOptions = hooks(data).push;
-                deleteOptions.json.deleted = true;
-
-                request.post(deleteOptions, function (err, res, body) {
-                  if (err) { return done(err); }
-                  expect(res.statusCode).to.equal(201);
-                  expect(body.length).to.equal(2);
-                  done();
-                });
-
-              });
-
-              sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-
-              var options = hooks(data).push;
-              require('./fixtures/mocks/github/users-username')(101, username);
-              request.post(options, function (err, res, cvIds) {
-                if (err) { return done(err); }
-                finishAllIncompleteVersions();
-                expect(res.statusCode).to.equal(200);
-                expect(cvIds).to.exist();
-                expect(cvIds).to.be.an.array();
-                expect(cvIds).to.have.length(2);
-                count.next();
-              });
-
-            });
-
-          });
-
-
         });
-
-       });
+      });
     });
 
     describe('autodeploy', function () {
+      beforeEach(function (done) {
+        ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH;
+        process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true';
+        done();
+      });
+      afterEach(function (done) {
+        process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking;
+        done();
+      });
       beforeEach(function (done) {
         multi.createInstance(function (err, instance, build, user, modelsArr) {
           ctx.contextVersion = modelsArr[0];
@@ -560,11 +573,10 @@ describe('Github - /actions/github', function () {
             var cb = Array.prototype.slice.apply(arguments).pop();
             baseDeploymentId++;
             var newDeploymentId = baseDeploymentId;
+            expect(this.github.config.token)
+              .to.equal(ctx.user.attrs.accounts.github.access_token);
             cb(null, {id: newDeploymentId});
           });
-          var countOnCallback = function () {
-            count.next();
-          };
           var count = cbCount(3, function () {
             var expected = {
               'contextVersion.build.started': exists,
@@ -572,7 +584,8 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.duration': exists,
               'contextVersion.build.network': exists,
               'contextVersion.build.triggeredBy.github': exists,
-              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
+              'contextVersion.appCodeVersions[0].lowerRepo':
+                options.json.repository.full_name.toLowerCase(),
               'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
               'contextVersion.appCodeVersions[0].branch': data.branch,
               'contextVersion.build.triggeredAction.manual': false,
@@ -591,7 +604,7 @@ describe('Github - /actions/github', function () {
             expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
               sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
             successStub.restore();
-            var slackStub = Slack.prototype.notifyOnAutoUpdate;
+            var slackStub = Slack.prototype.notifyOnAutoDeploy;
             expect(slackStub.calledOnce).to.equal(true);
             expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
             slackStub.restore();
@@ -600,8 +613,12 @@ describe('Github - /actions/github', function () {
               ctx.instance2.fetch(expects.success(200, expected, done));
             }));
           });
-          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
-          sinon.stub(Slack.prototype, 'notifyOnAutoUpdate', countOnCallback);
+          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', function () {
+            count.next();
+          });
+          sinon.stub(Slack.prototype, 'notifyOnAutoDeploy', function () {
+            count.next();
+          });
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var user = ctx.user.attrs.accounts.github;
           var data = {
@@ -611,6 +628,7 @@ describe('Github - /actions/github', function () {
             owner: user.login
           };
           var options = hooks(data).push;
+          options.json.created = false;
           var username = user.login;
           require('./fixtures/mocks/github/users-username')(101, username);
           request.post(options, function (err, res, cvIds) {
