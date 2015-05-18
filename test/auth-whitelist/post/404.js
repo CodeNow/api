@@ -14,7 +14,7 @@ var expect = Code.expect;
 var api = require('../../fixtures/api-control');
 
 var request = require('request');
-var uuid = require('uuid');
+var randStr = require('randomstring').generate;
 
 var ctx = {};
 describe('POST /auth/whitelist - 409', function () {
@@ -22,7 +22,7 @@ describe('POST /auth/whitelist - 409', function () {
   after(api.stop.bind(ctx));
 
   beforeEach(function (done) {
-    ctx.name = uuid();
+    ctx.name = randStr(5);
     ctx.j = request.jar();
     require('../../fixtures/multi-factory').createUser({
       requestDefaults: { jar: ctx.j }
