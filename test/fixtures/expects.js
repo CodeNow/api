@@ -217,6 +217,7 @@ expects.updatedNaviEntries = function (username, instance, container, cb) {
   Object.keys(container.ports).forEach(function (containerPort) {
     containerPort = containerPort.split('/').shift();
     var opts = {
+      shortHash: instance.attrs.shortHash,
       exposedPort: containerPort,
       branch: branch,
       instanceName: instanceName,
@@ -309,6 +310,7 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
   Object.keys(container.ports).forEach(function (containerPort) {
     containerPort = containerPort.split('/').shift();
     new NaviEntry({
+      shortHash: instance.attrs.shortHash,
       exposedPort: containerPort,
       branch: branch,
       instanceName: instanceName,
