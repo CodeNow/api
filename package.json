@@ -56,7 +56,7 @@
     "mongooseware": "^0.4.2",
     "morgan": "^1.1.1",
     "multiparty": "^3.3.2",
-    "navi-entry": "git+ssh://git@github.com/CodeNow/navi-entry.git#v1.2.0",
+    "navi-entry": "git+ssh://git@github.com/CodeNow/navi-entry.git#064fb012745dcfe149e160b40e18887237622949",
     "newrelic": "^1.12.2",
     "node-dogstatsd": "0.0.5",
     "node-forge": "^0.6.12",
