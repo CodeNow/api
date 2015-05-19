@@ -55,8 +55,15 @@ async.waterfall([
     }, cb);
   }
 ], function (err) {
-  console.log('done. err', err);
-  process.exit(0);
+  if (err) {
+    console.log('done. err', err);
+  }
+  console.log('done... disconnect from mongo');
+  mongoose.stop(function (err) {
+    if (err) { throw err; }
+    console.log('DONE!');
+    process.exit(0);
+  });
 });
 
 
