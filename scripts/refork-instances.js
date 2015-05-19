@@ -66,7 +66,7 @@ function deleteAndForkInstance (token, instance, cb) {
   var user = new Runnable(process.env.API_HOST);
   user.githubLogin(token, function (err) {
     if (err) {
-      console.error('error logging in', token);
+      console.error('error logging in', token, err);
       return cb();
     }
     if (dryRun) {
