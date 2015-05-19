@@ -540,6 +540,7 @@ describe('Instance', function () {
           locked: true,
           masterPod: true,
           repo: 'podviaznikov/hello-2',
+          branch: 'master',
           defaultBranch: 'master'
         };
         var instance = createNewInstance('instance-name-2', opts);
@@ -559,7 +560,7 @@ describe('Instance', function () {
           done();
         });
       });
-      it('should return [] when branch equals default branch', function (done) {
+      it('should return [] when branch equals masterPod branch', function (done) {
         var repo = 'podviaznikov/hello-2';
         Instance.findForkableMasterInstances(repo, 'master', function (err, instances) {
           expect(err).to.be.null();
