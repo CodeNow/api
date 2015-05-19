@@ -36,7 +36,6 @@ async.waterfall([
   function deleteAndFork (instances, cb) {
     console.log('looking at instances', instances.length);
     async.eachLimit(instances, 10, function (instance, eachCb) {
-
       var githubId = instance.createdBy.github;
       var token = tokenHash[githubId];
       if (token) {
@@ -44,7 +43,10 @@ async.waterfall([
       }
       else {
         Users.findOne({ 'accounts.github.id': githubId }, function (err, user) {
-          if (err) { return cb(err); }
+          if (err) {
+            console.log('error finding user', githubId);
+            return eachCb();
+          }
           token = user.accounts.github.accessToken;
           tokenHash[githubId] = token;
           deleteAndForkInstance(token, instance, eachCb);
