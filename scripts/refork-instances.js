@@ -86,8 +86,8 @@ function deleteAndForkInstance (token, instance, cb) {
         console.log('instance wasnot deleted', instance.name, err);
         return cb();
       }
-      console.log('instance was deleted', instance.name);
-      forkMasterInstance(user, instance, instance.build._id, branchName, function (err) {
+      console.log('instance was deleted', instance.name, instance.build);
+      forkMasterInstance(user, instance, instance.build, branchName, function (err) {
         if (err) {
           console.error('err reforking', instance.name, err.message);
         }
@@ -102,7 +102,7 @@ function deleteAndForkInstance (token, instance, cb) {
 
 
 function forkMasterInstance (user, masterInst, buildId, branch, cb) {
-  console.log('forking masterInst', branch, buildId)
+  console.log('forking masterInst', branch, masterInst.build, buildId)
   // basically only letters, numbers and - are allowed in domain names
   var sanitizedBranch = branch.replace(/[^a-zA-Z0-9]/g, '-');
   var body = {
