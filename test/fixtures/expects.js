@@ -11,6 +11,7 @@ var debug = require('debug')('runnable-api:testing:fixtures:expects');
 var exists = require('101/exists');
 var Docker = require('models/apis/docker');
 var NaviEntry = require('navi-entry');
+var runnableHostname = require('runnable-hostname');
 NaviEntry.setRedisClient(require('models/redis'));
 
 var expects = module.exports = function (keypath) {
@@ -168,18 +169,41 @@ expects.updatedHosts = function (userOrUsername, instance, cb) {
     process.nextTick(cb);
     return;
   }
-  expects.updatedDnsEntry(username, instanceName, instance.attrs.network.hostIp);
+  expects.updatedDnsEntry(username, instanceName, instance);
   expects.updatedNaviEntries(username, instance, container, cb);
 };
 // jshint maxcomplexity:6
-expects.updatedDnsEntry = function (username, instanceName, hostIp) {
+expects.updatedDnsEntry = function (username, instanceName, instance) {
+  var hostIp = instance.attrs.network.hostIp;
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var dnsUrlElastic = toDnsUrl('staging-' + username, instanceName);
-  var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrlElastic), 'dns record ' + dnsUrlElastic).to.equal(hostIp);
-  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record ' + dnsUrlDirect).to.equal(hostIp);
+  var elasticUrl, directUrl;
+  var branch = instance.getBranchName();
+  var opts = {
+    masterPod: instance.attrs.masterPod,
+    branch: branch,
+    instanceName: instanceName,
+    ownerUsername: username,
+    shortHash: instance.attrs.shortHash,
+    userContentDomain: process.env.USER_CONTENT_DOMAIN,
+  };
+  if (opts.masterPod) {
+    if (opts.branch) {
+      elasticUrl = runnableHostname.elastic(opts);
+      directUrl = runnableHostname.direct(opts);
+      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.equal(hostIp);
+      expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.equal(hostIp);
+    }
+    else {
+      elasticUrl = runnableHostname.elastic(opts);
+      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.equal(hostIp);
+    }
+  }
+  else {
+    directUrl = runnableHostname.direct(opts);
+    expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.equal(hostIp);
+  }
 };
 
 expects.updatedNaviEntries = function (username, instance, container, cb) {
@@ -193,6 +217,7 @@ expects.updatedNaviEntries = function (username, instance, container, cb) {
   Object.keys(container.ports).forEach(function (containerPort) {
     containerPort = containerPort.split('/').shift();
     var opts = {
+      shortHash: instance.attrs.shortHash,
       exposedPort: containerPort,
       branch: branch,
       instanceName: instanceName,
@@ -238,19 +263,42 @@ expects.deletedHosts = function (userOrUsername, instance, container, cb) {
     process.nextTick(cb);
     return;
   }
-  expects.deletedDnsEntry(username, instanceName);
+  expects.deletedDnsEntry(username, instanceName, instance);
   expects.deletedNaviEntries(username, instance, container, cb) ;
 };
 // jshint maxcomplexity:6
-expects.deletedDnsEntry = function (username, instanceName) {
+expects.deletedDnsEntry = function (username, instanceName, instance) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var dnsUrlElastic = toDnsUrl('staging-' + username, instanceName);
-  var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrlElastic), 'dns record ' + dnsUrlElastic).to.not.exist();
-  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record ' + dnsUrlDirect).to.not.exist();
+  var elasticUrl, directUrl;
+  var branch = instance.getBranchName();
+  var opts = {
+    masterPod: instance.attrs.masterPod,
+    branch: branch,
+    instanceName: instanceName,
+    ownerUsername: username,
+    shortHash: instance.attrs.shortHash,
+    userContentDomain: process.env.USER_CONTENT_DOMAIN,
+  };
+  if (opts.masterPod) {
+    if (opts.branch) {
+      elasticUrl = runnableHostname.elastic(opts);
+      directUrl = runnableHostname.direct(opts);
+      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.not.exist();
+      expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.not.exist();
+    }
+    else {
+      elasticUrl = runnableHostname.elastic(opts);
+      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.not.exist();
+    }
+  }
+  else {
+    directUrl = runnableHostname.direct(opts);
+    expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.not.exist();
+  }
 };
+
 expects.deletedNaviEntries = function (username, instance, container, cb) {
   if (!container || !container.ports) {
     return cb();
@@ -262,6 +310,7 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
   Object.keys(container.ports).forEach(function (containerPort) {
     containerPort = containerPort.split('/').shift();
     new NaviEntry({
+      shortHash: instance.attrs.shortHash,
       exposedPort: containerPort,
       branch: branch,
       instanceName: instanceName,
@@ -275,9 +324,6 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
   });
   cb(null);
 };
-function toDnsUrl (username, instanceName) {
-  return [ instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN ].join('');
-}
 
 /**
  * assert container was deleted from docker

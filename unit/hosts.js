@@ -22,7 +22,7 @@ describe('Hosts', function () {
     beforeEach(function (done) {
       ctx.hosts = new Hosts();
       ctx.port = '80/tcp';
-      ctx.instance = { masterPod: false, owner: { github: 101 } };
+      ctx.instance = { masterPod: true, owner: { github: 101 }, shortHash: 'abcdef' };
       sinon.stub(Dns.prototype, 'putEntryForInstance').yieldsAsync();
       sinon.stub(Dns.prototype, 'deleteEntryForInstance').yieldsAsync();
       keypather.set(ctx.instance, 'container.dockerHost', 'http://10.0.0.1:4242');
@@ -48,7 +48,7 @@ describe('Hosts', function () {
 
     it('should parse a username from a hostname', function (done) {
       var hostname = [
-        ctx.instanceName, '-staging-', ctx.username, '.',
+        ctx.instance.shortHash, '-', ctx.instanceName, '-staging-', ctx.username, '.',
         process.env.USER_CONTENT_DOMAIN
       ].join('');
       ctx.hosts.parseHostname(hostname, function (err, parsed) {
