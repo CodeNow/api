@@ -60,7 +60,7 @@ async.waterfall([
     console.log('done. err', err);
   }
   console.log('done... disconnect from mongo');
-  mongoose.stop(function (err) {
+  mongoose.disconnect(function (err) {
     if (err) { throw err; }
     console.log('DONE!');
     process.exit(0);
