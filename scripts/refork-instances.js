@@ -59,7 +59,7 @@ async.waterfall([
 
 
 function deleteAndForkInstance (token, instance, cb) {
-  console.log('DELETING AND FORKING', instance.name);
+  console.log('deleting and forling', instance.name);
   console.log('logging in to runnable');
   var user = new Runnable(process.env.API_HOST);
   user.githubLogin(token, function (err) {
@@ -74,11 +74,16 @@ function deleteAndForkInstance (token, instance, cb) {
     user.newInstance(instance.shortHash).destroy(function (err) {
       if (err) {
         console.log('instance wasnot deleted', instance.name, err);
+        return cb();
       }
       console.log('instance was deleted', instance.name);
       user.forkMasterInstance(instance, instance.build._id, branchName, function (err) {
-        if (err) { console.error('err reforking', instance.name, err.message); }
-        console.log('instance was reforked', instance.name);
+        if (err) {
+          console.error('err reforking', instance.name, err.message);
+        }
+        else {
+          console.log('instance was reforked', instance.name);
+        }
         cb();
       });
     });
