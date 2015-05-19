@@ -46,9 +46,21 @@ describe('Hosts', function () {
       done();
     });
 
-    it('should parse a username from a hostname', function (done) {
+    it('should parse a username from a container hostname', function (done) {
       var hostname = [
         ctx.instance.shortHash, '-', ctx.instanceName, '-staging-', ctx.username, '.',
+        process.env.USER_CONTENT_DOMAIN
+      ].join('');
+      ctx.hosts.parseHostname(hostname, function (err, parsed) {
+        if (err) { return done(err); }
+        expect(parsed.instanceName).to.equal(ctx.instanceName);
+        expect(parsed.username).to.equal('user-name');
+        done();
+      });
+    });
+    it('should parse a username from a elastic hostname', function (done) {
+      var hostname = [
+        ctx.instanceName, '-staging-', ctx.username, '.',
         process.env.USER_CONTENT_DOMAIN
       ].join('');
       ctx.hosts.parseHostname(hostname, function (err, parsed) {
