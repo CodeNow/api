@@ -59,7 +59,7 @@ async.waterfall([
 
 
 function deleteAndForkInstance (token, instance, cb) {
-  console.log('deleting and forling', instance.name);
+  console.log('deleting and forking', instance.name);
   console.log('logging in to runnable');
   var user = new Runnable(process.env.API_HOST);
   user.githubLogin(token, function (err) {
