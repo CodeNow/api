@@ -77,7 +77,8 @@ function deleteAndForkInstance (token, instance, cb) {
       }
       console.log('instance was deleted', instance.name);
       user.forkMasterInstance(instance, instance.build._id, branchName, function (err) {
-        if (err) { console.error('err renaming', instance.name, err.message); }
+        if (err) { console.error('err reforking', instance.name, err.message); }
+        console.log('instance was reforked', instance.name);
         cb();
       });
     });
