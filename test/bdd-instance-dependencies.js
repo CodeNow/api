@@ -29,13 +29,6 @@ describe('BDD - Instance Dependencies', function () {
   after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  beforeEach(function (done) {
-    var r = require('models/redis');
-    r.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
-      if (err) { return done(err); }
-      async.map(keys, function (key, cb) { r.del(key, cb); }, done);
-    });
-  });
   // Uncomment if you want to clear the (graph) database every time
   beforeEach(function (done) {
     if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
@@ -67,7 +60,8 @@ describe('BDD - Instance Dependencies', function () {
       require('./fixtures/mocks/github/user')(ctx.user);
       ctx.apiInstance = ctx.user.createInstance({
         name: 'api-instance',
-        build: ctx.build.id()
+        build: ctx.build.id(),
+        masterPod: true
       }, function (err) {
         if (err) { return done(err); }
         ctx.webInstance.update({ name: 'web-instance' }, done);
@@ -97,13 +91,6 @@ describe('BDD - Instance Dependencies', function () {
 
   describe('from none to 1 -> 1 relations', function () {
     describe('as master pod environment relations', function () {
-      beforeEach(function (done) {
-        // everything is deleted after, so this should be fine to leave alone
-        async.parallel([
-          ctx.webInstance.setInMasterPod.bind(ctx.webInstance),
-          ctx.apiInstance.setInMasterPod.bind(ctx.apiInstance)
-        ], done);
-      });
       beforeEach(function (done) {
         var envs = ctx.webInstance.attrs.env || [];
         envs.push('API=' + ctx.apiInstance.attrs.lowerName + '-staging-' +
@@ -312,7 +299,8 @@ describe('BDD - Instance Dependencies', function () {
             require('./fixtures/mocks/github/user')(ctx.user);
             ctx.mongoInstance = ctx.user.createInstance({
               name: 'mongo-instance',
-              build: ctx.build.id()
+              build: ctx.build.id(),
+              masterPod: true
             }, cb);
           },
           function addMongoToWeb (cb) {
