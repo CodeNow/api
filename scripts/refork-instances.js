@@ -6,6 +6,7 @@ var Users = require('models/mongo/user');
 var async = require('async');
 var mongoose = require('mongoose');
 var Runnable = require('runnable');
+var keypather = require('keypather')();
 
 var dryRun = !process.env.ACTUALLY_RUN;
 if (!process.env.API_HOST) {
