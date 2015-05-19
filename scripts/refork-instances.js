@@ -86,7 +86,7 @@ function deleteAndForkInstance (token, instance, cb) {
         return cb();
       }
       console.log('instance was deleted', instance.name);
-      user.forkMasterInstance(instance, instance.build._id, branchName, function (err) {
+      forkMasterInstance(user, instance, instance.build._id, branchName, function (err) {
         if (err) {
           console.error('err reforking', instance.name, err.message);
         }
@@ -98,3 +98,37 @@ function deleteAndForkInstance (token, instance, cb) {
     });
   });
 }
+
+
+function forkMasterInstance (user, masterInst, buildId, branch, cb) {
+  console.log('forking masterInst', branch, buildId)
+  // basically only letters, numbers and - are allowed in domain names
+  var sanitizedBranch = branch.replace(/[^a-zA-Z0-9]/g, '-');
+  var body = {
+    parent: masterInst.shortHash,
+    build: buildId,
+    name: sanitizedBranch + '-' + masterInst.name,
+    env:  masterInst.env,
+    owner: {
+      github: masterInst.owner.github
+    },
+    masterPod: false,
+    autoForked: true
+  };
+  user.createInstance(body, function (err, instance) {
+    if (err) {
+      var errMsg = keypather.get(err, 'output.payload.message');
+      if (err.output.statusCode === 409 && errMsg === 'instance with lowerName already exists') {
+        // retry and append suffix to the parent instance name
+        masterInst.name = masterInst.name + '-1';
+        forkMasterInstance(user, masterInst, buildId, sanitizedBranch, cb);
+      }
+      else {
+        cb(err);
+      }
+    }
+    else {
+      cb(null, instance);
+    }
+  });
+};
