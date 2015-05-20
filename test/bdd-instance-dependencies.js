@@ -160,6 +160,41 @@ describe('BDD - Instance Dependencies', function () {
       });
     });
 
+    it('should be able to magically detect things dependent on it', function (done) {
+      async.series([
+        function updateWeb (cb) {
+          var envs = ctx.webInstance.attrs.env || [];
+          envs.push('API=redis-staging-' +
+            ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN);
+          ctx.webInstance.update({ env: envs }, cb);
+        },
+        function newInstance (cb) {
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          require('./fixtures/mocks/github/user')(ctx.user);
+          ctx.redisInstance = ctx.user.createInstance({
+            name: 'redis',
+            build: ctx.build.id(),
+            masterPod: true
+          }, cb);
+        },
+        function wait (cb) {
+          // since it's in a 'background' thread updating, need to wait
+          setTimeout(function () { cb(); }, 100);
+        },
+        function checkDepsOfWeb (cb) {
+          ctx.webInstance.fetchDependencies(function (err, deps) {
+            if (err) { return cb(err); }
+            expect(deps).to.exist();
+            expect(deps).to.be.an.array();
+            expect(deps).to.have.length(1);
+            expect(deps[0].id).to.equal(ctx.redisInstance.attrs.id.toString());
+            cb();
+          });
+        }
+      ], done);
+    });
+
     it('should toLowerCase the hostname', function (done) {
       var body = {
         instance: ctx.apiInstance.id(),
