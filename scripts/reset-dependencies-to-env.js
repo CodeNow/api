@@ -8,7 +8,7 @@ var Instance = require('models/mongo/instance');
 var mongoose = require('models/mongo/mongoose-control');
 
 var githubIdToUsername = {};
-var populateHandlers = {};
+var populateHandlersMap = {};
 
 var dryRun = !process.env.ACTUALLY_RUN;
 console.log('dryRun?', dryRun);
@@ -22,13 +22,14 @@ mongoose.start(function (err) {
     // Reset deps for instances task
     async.eachLimit(instances, 100, function (instance, cb) {
       // Find ownerUsername
-      findInstanceOwnerUsername(function (err, ownerUsername) {
+      findInstanceOwnerUsername(instance, function (err, ownerUsername) {
         if (err) { return log(err, instance, cb); }
         // Reset deps for instance from env
         if (dryRun) {
-          console.log('Dry Run Info:');
+          console.log('Dry Run Success:');
           console.log('Instance Id', instance._id);
           console.log('setDependenciesFromEnvironment', ownerUsername);
+          return cb();
         }
         instance.setDependenciesFromEnvironment(ownerUsername, function (err) {
           if (err) { return log(err, instance, cb); }
@@ -50,14 +51,18 @@ function findInstanceOwnerUsername (instance, cb) {
     }
 
     var ownerGithubId = instance.owner.github;
-    checkGithubUsernameCache(ownerGithubId, cb);
-    instance.populateOwnerAndCreatedBy(creator, handlePopulate);
+    var cacheHit = checkGithubUsernameCache(ownerGithubId, cb);
+    if (!cacheHit) {
+      instance.populateOwnerAndCreatedBy(creator, handlePopulate);
+    }
     function handlePopulate (err, instance) {
-      populateHandlers[ownerGithubId].forEach(function (handler) {
-        handler(err, instance);
-      });
+      var username = instance && instance.owner.username;
+      var handler;
+      while(handler = populateHandlersMap[ownerGithubId].pop()) {
+        handler(err, username);
+      }
       if (instance) {
-        githubIdToUsername[ownerGithubId] = instance.owner.github;
+        githubIdToUsername[ownerGithubId] = username;
       }
     }
   });
@@ -66,13 +71,17 @@ function findInstanceOwnerUsername (instance, cb) {
 function checkGithubUsernameCache (githubId, cb) {
   var ownerUsername = githubIdToUsername[githubId];
   if (ownerUsername) {
-    return cb(null, ownerUsername);
+    cb(null, ownerUsername);
+    return true;
   }
+  var populateHandlers = populateHandlersMap[githubId];
   if (populateHandlers) {
     populateHandlers.push(cb);
+    return true;
   }
   else {
-    populateHandlers = [ cb ];
+    populateHandlersMap[githubId] = [ cb ];
+    return false;
   }
 }
 
