@@ -14,7 +14,7 @@ var expect = Code.expect;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
-var expects = require('./fixtures/expects');
+// var expects = require('./fixtures/expects');
 var async = require('async');
 var primus = require('./fixtures/primus');
 
@@ -189,38 +189,38 @@ describe('BDD - Instance Dependencies', function () {
       });
     });
 
-    describe('changing the name of the dependent instance', function () {
-      beforeEach(function (done) {
-        var update = {
-          name: 'a-new-and-awesome-name'
-        };
-        ctx.apiInstance.update(update, expects.updateSuccess(update, done));
-      });
+    // describe('changing the name of the dependent instance', function () {
+    //   beforeEach(function (done) {
+    //     var update = {
+    //       name: 'a-new-and-awesome-name'
+    //     };
+    //     ctx.apiInstance.update(update, expects.updateSuccess(update, done));
+    //   });
 
-      it('should keep the same dependencies, and have updated props on the dep', function (done) {
-        ctx.webInstance.fetchDependencies(function (err, deps) {
-          expect(err).to.be.null();
-          expect(deps).to.be.an.array();
-          expect(deps).to.have.length(1);
-          expect(deps[0]).to.deep.contain({
-            id: ctx.apiInstance.attrs._id.toString(),
-            shortHash: ctx.apiInstance.id().toString(),
-            hostname: [
-              'api-instance-staging-',
-              ctx.user.attrs.accounts.github.username.toLowerCase(),
-              '.' + process.env.USER_CONTENT_DOMAIN
-            ].join(''),
-            lowerName: 'a-new-and-awesome-name',
-            name: 'a-new-and-awesome-name',
-            owner: { github: ctx.apiInstance.attrs.owner.github },
-          });
-          expect(deps[0].contextVersion).to.deep.contain({
-            context: ctx.apiInstance.attrs.contextVersion.context
-          });
-          done();
-        });
-      });
-    });
+    //   it('should keep the same dependencies, and have updated props on the dep', function (done) {
+    //     ctx.webInstance.fetchDependencies(function (err, deps) {
+    //       expect(err).to.be.null();
+    //       expect(deps).to.be.an.array();
+    //       expect(deps).to.have.length(1);
+    //       expect(deps[0]).to.deep.contain({
+    //         id: ctx.apiInstance.attrs._id.toString(),
+    //         shortHash: ctx.apiInstance.id().toString(),
+    //         hostname: [
+    //           'api-instance-staging-',
+    //           ctx.user.attrs.accounts.github.username.toLowerCase(),
+    //           '.' + process.env.USER_CONTENT_DOMAIN
+    //         ].join(''),
+    //         lowerName: 'a-new-and-awesome-name',
+    //         name: 'a-new-and-awesome-name',
+    //         owner: { github: ctx.apiInstance.attrs.owner.github },
+    //       });
+    //       expect(deps[0].contextVersion).to.deep.contain({
+    //         context: ctx.apiInstance.attrs.contextVersion.context
+    //       });
+    //       done();
+    //     });
+    //   });
+    // });
 
     describe('from a -> b to a -> b -> a (circular) relations', function () {
       beforeEach(function (done) {
@@ -233,7 +233,7 @@ describe('BDD - Instance Dependencies', function () {
       it('should update the deps of an instance', function (done) {
         var webDeps = [{
           id: ctx.apiInstance.attrs._id.toString(),
-          shortHash: ctx.apiInstance.id().toString(),
+          shortHash: ctx.apiInstance.attrs.shortHash.toString(),
           hostname: [
             'api-instance-staging-',
             ctx.user.attrs.accounts.github.username.toLowerCase(),
@@ -246,7 +246,7 @@ describe('BDD - Instance Dependencies', function () {
         }];
         var apiDeps = [{
           id: ctx.webInstance.attrs._id.toString(),
-          shortHash: ctx.webInstance.id().toString(),
+          shortHash: ctx.webInstance.attrs.shortHash.toString(),
           hostname: [
             'web-instance-staging-',
             ctx.user.attrs.accounts.github.username.toLowerCase(),
