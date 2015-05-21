@@ -468,7 +468,7 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(body._id).to.exist();
                 ctx.settingsId = body._id;
-                ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
+                ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err, copiedInstance) {
                   expect(err).to.be.null();
                   ctx.instance2 = copiedInstance;
                   ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({ masterPod: true }, function (err) {
@@ -566,7 +566,7 @@ describe('Github - /actions/github', function () {
       });
 
       it('should redeploy two instances with new build', function (done) {
-        ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
+        ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
           if (err) { return done(err); }
           var baseDeploymentId = 1234567;
           sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {

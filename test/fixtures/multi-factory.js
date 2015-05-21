@@ -25,6 +25,7 @@ module.exports = {
     var name = opts.username || randStr(5);
     require('./mocks/github/action-auth')(token, undefined, name);
     var User = require('runnable');
+    opts.userContentDomain = process.env.USER_CONTENT_DOMAIN;
     var user = new User(host, opts);
     user.githubLogin(token, function (err) {
       if (err) {
@@ -45,7 +46,9 @@ module.exports = {
     require('./mocks/github/action-auth')(token,
       process.env.HELLO_RUNNABLE_GITHUB_ID);
     var User = require('runnable');
-    var user = new User(host);
+    var opts = {};
+    opts.userContentDomain = process.env.USER_CONTENT_DOMAIN;
+    var user = new User(host, opts);
     user.githubLogin(token, function (err) {
       if (err) {
         return cb(err);
