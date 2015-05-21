@@ -87,10 +87,10 @@ describe('Runnable', function () {
     it('should return error if Instance#isAutoDeployOn returned error', function (done) {
       var runnable = new Runnable({});
       var error = Boom.create(400, 'Some error');
-      sinon.stub(Instance, 'isAutoDeployOn', function (hash, cb) {
+      sinon.stub(Instance, 'isAutoDeployOn', function (id, cb) {
         cb(error);
       });
-      runnable.autoDeployBuildToInstance('i8as7d', '2132173812', function (err) {
+      runnable.autoDeployBuildToInstance('507f1f77bcf86cd799439011', '2132173812', function (err) {
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Some error');
         Instance.isAutoDeployOn.restore();
@@ -100,10 +100,10 @@ describe('Runnable', function () {
 
     it('should return null if autodeploy is disabled', function (done) {
       var runnable = new Runnable({});
-      sinon.stub(Instance, 'isAutoDeployOn', function (hash, cb) {
+      sinon.stub(Instance, 'isAutoDeployOn', function (id, cb) {
         cb(null, false);
       });
-      runnable.autoDeployBuildToInstance('i8as7d', '2132173812', function (err, updated) {
+      runnable.autoDeployBuildToInstance('507f1f77bcf86cd799439011', '2132173812', function (err, updated) {
         expect(err).to.be.null();
         expect(updated).to.be.undefined();
         Instance.isAutoDeployOn.restore();
@@ -113,17 +113,17 @@ describe('Runnable', function () {
 
     it('should call #updateInstance if autodeploy is enabled', function (done) {
       var runnable = new Runnable({});
-      sinon.stub(Instance, 'isAutoDeployOn', function (hash, cb) {
+      sinon.stub(Instance, 'isAutoDeployOn', function (id, cb) {
         cb(null, true);
       });
-      sinon.stub(Runnable.prototype, 'updateInstance', function (hash, payload) {
-        expect(hash).to.equal('i8as7d');
+      sinon.stub(Runnable.prototype, 'updateInstance', function (id, payload) {
+        expect(id).to.equal('507f1f77bcf86cd799439011');
         expect(payload.json.build).to.equal('2132173812');
         Instance.isAutoDeployOn.restore();
         Runnable.prototype.updateInstance.restore();
         done();
       });
-      runnable.autoDeployBuildToInstance('i8as7d', '2132173812', function (err, updated) {
+      runnable.autoDeployBuildToInstance('507f1f77bcf86cd799439011', '2132173812', function (err, updated) {
         expect(err).to.be.null();
         expect(updated).to.be.undefined();
       });
