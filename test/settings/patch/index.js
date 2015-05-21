@@ -28,6 +28,7 @@ describe('PATCH /settings/:id', function () {
   describe('create and get', function () {
     var settings = {
       owner: {},
+      ignoredHelpCards: ['ignoredCard1', 'ignoredCard2'],
       notifications: {
         slack: {
           apiToken: 'xoxo-dasjdkasjdk243248392482394',
@@ -102,7 +103,8 @@ describe('PATCH /settings/:id', function () {
             authToken: 'new-hipchat-token',
             roomId: 1231231
           }
-        }
+        },
+        ignoredHelpCards: ['test2']
       };
       ctx.user.newSetting(settingsId).update({json: newSettings}, function (err, body) {
         if (err) { return done(err); }
@@ -121,6 +123,22 @@ describe('PATCH /settings/:id', function () {
         expect(body.notifications.hipchat.roomId).to.equal(
           newSettings.notifications.hipchat.roomId
         );
+        expect(body.ignoredHelpCards.length).to.equal(1);
+        expect(body.ignoredHelpCards[0]).to.equal('test2');
+        done();
+      });
+    });
+
+    it('should be possible to update ignoredHelpCards', function (done) {
+      var newSettings = {
+        ignoredHelpCards: ['test']
+      };
+      ctx.user.newSetting(settingsId).update({json: newSettings}, function (err, body) {
+        if (err) { return done(err); }
+        expect(body._id).to.exist();
+        expect(body.owner.github).to.equal(settings.owner.github);
+        expect(body.ignoredHelpCards.length).to.equal(1);
+        expect(body.ignoredHelpCards[0]).to.equal('test');
         done();
       });
     });
@@ -139,7 +157,7 @@ describe('PATCH /settings/:id', function () {
           }
         }
       };
-      ctx.user.newSetting(settingsId).update({json: newSettings}, function (err, body) {
+      ctx.user.newSetting(settingsId).update({ json: newSettings }, function (err, body) {
         if (err) { return done(err); }
         expect(body._id).to.exist();
         expect(body.owner.github).to.equal(settings.owner.github);
@@ -181,8 +199,5 @@ describe('PATCH /settings/:id', function () {
         });
       });
     });
-
-
   });
-
 });
