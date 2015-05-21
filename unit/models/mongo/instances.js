@@ -19,6 +19,7 @@ var pick = require('101/pick');
 var createCount = require('callback-count');
 var error = require('error');
 var Graph = require('models/apis/graph');
+var pluck = require('101/pluck');
 
 var Instance = require('models/mongo/instance');
 var dock = require('../../../test/fixtures/dock');
@@ -65,6 +66,7 @@ describe('Instance', function () {
         repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
         lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
         branch: opts.branch || 'master',
+        defaultBranch: opts.defaultBranch || 'master',
         commit: 'deadbeef'
       }]
     });
@@ -77,6 +79,7 @@ describe('Instance', function () {
       shortHash: getNextHash(),
       locked: opts.locked || false,
       public: false,
+      masterPod: opts.masterPod || false,
       owner: { github: validation.VALID_GITHUB_ID },
       createdBy: { github: validation.VALID_GITHUB_ID },
       build: validation.VALID_OBJECT_ID,
@@ -477,13 +480,13 @@ describe('Instance', function () {
   });
 
   describe('findContextVersionsForRepo', function () {
-    var savedInstance = null;
+    var ctx = {};
     before(function (done) {
       var instance = createNewInstance('instance-name', {locked: true, repo: 'podviaznikov/hello'});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
         expect(instance).to.exist();
-        savedInstance = instance;
+        ctx.savedInstance = instance;
         done();
       });
     });
@@ -492,11 +495,103 @@ describe('Instance', function () {
       Instance.findContextVersionsForRepo('podviaznikov/hello', function (err, cvs) {
         if (err) { return done(err); }
         expect(cvs.length).to.equal(1);
-        expect(cvs[0].toString()).to.equal(savedInstance.contextVersion._id.toString());
+        expect(cvs[0].toString()).to.equal(ctx.savedInstance.contextVersion._id.toString());
         done();
       });
     });
   });
+
+
+  describe('#findForkableMasterInstances', function () {
+
+    it('should return empty [] for repo that has no instances', function (done) {
+      Instance.findForkableMasterInstances('anton/node', 'master', function (err, instances) {
+        expect(err).to.be.null();
+        expect(instances.length).to.equal(0);
+        done();
+      });
+    });
+
+    describe('non-masterPod instances', function () {
+      var ctx = {};
+      before(function (done) {
+        var instance = createNewInstance('instance-name', { locked: true, repo: 'podviaznikov/hello' });
+        instance.save(function (err, instance) {
+          if (err) { return done(err); }
+          expect(instance).to.exist();
+          ctx.savedInstance = instance;
+          done();
+        });
+      });
+      it('should return empty [] for repo that has no master instances', function (done) {
+        var repo = 'podviaznikov/hello';
+        Instance.findForkableMasterInstances(repo, 'develop', function (err, instances) {
+          expect(err).to.be.null();
+          expect(instances.length).to.equal(0);
+          done();
+        });
+      });
+    });
+
+    describe('masterPod instances', function () {
+      var ctx = {};
+      beforeEach(function (done) {
+        var opts = {
+          locked: true,
+          masterPod: true,
+          repo: 'podviaznikov/hello-2',
+          branch: 'master',
+          defaultBranch: 'master'
+        };
+        var instance = createNewInstance('instance-name-2', opts);
+        instance.save(function (err, instance) {
+          if (err) { return done(err); }
+          expect(instance).to.exist();
+          ctx.savedInstance = instance;
+          done();
+        });
+      });
+      it('should return array with instance that has masterPod=true', function (done) {
+        var repo = 'podviaznikov/hello-2';
+        Instance.findForkableMasterInstances(repo, 'feature1', function (err, instances) {
+          expect(err).to.be.null();
+          expect(instances.length).to.equal(1);
+          expect(instances[0].shortHash).to.equal(ctx.savedInstance.shortHash);
+          done();
+        });
+      });
+      it('should return [] when branch equals masterPod branch', function (done) {
+        var repo = 'podviaznikov/hello-2';
+        Instance.findForkableMasterInstances(repo, 'master', function (err, instances) {
+          expect(err).to.be.null();
+          expect(instances.length).to.equal(0);
+          done();
+        });
+      });
+      it('should return array with instance that has masterPod=true', function (done) {
+        var repo = 'podviaznikov/hello-2';
+        var opts = {
+          locked: true,
+          masterPod: true,
+          repo: repo
+        };
+        var instance2 = createNewInstance('instance-name-3', opts);
+        instance2.save(function (err, instance) {
+          if (err) { return done(err); }
+          Instance.findForkableMasterInstances(repo, 'feature1', function (err, instances) {
+            expect(err).to.be.null();
+            expect(instances.length).to.equal(2);
+            expect(instances.map(pluck('shortHash'))).to.only.contain([
+              ctx.savedInstance.shortHash,
+              instance.shortHash
+            ]);
+            done();
+          });
+        });
+      });
+    });
+  });
+
 
   describe('dependencies', function () {
     var instances = [];
