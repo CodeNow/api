@@ -243,7 +243,7 @@ describe('GET /instances', function () {
         ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
           if (err) { return done(err); }
           expect(body.length).to.equal(1);
-          expect(body[0].shortHash).to.equal(ctx.instance.id());
+          expect(body[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
           done();
         }));
       });
@@ -263,7 +263,7 @@ describe('GET /instances', function () {
         ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
           if (err) { return done(err); }
           expect(body.length).to.equal(1);
-          expect(body[0].shortHash).to.equal(ctx.instance.id());
+          expect(body[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
           done();
         }));
       });
@@ -283,7 +283,7 @@ describe('GET /instances', function () {
       ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
         if (err) { return done(err); }
         expect(body.length).to.equal(1);
-        expect(body[0].shortHash).to.equal(ctx.instance.id());
+        expect(body[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
         done();
       }));
     });
@@ -314,7 +314,7 @@ describe('GET /instances', function () {
       ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
         if (err) { return done(err); }
         expect(body.length).to.equal(1);
-        expect(body[0].shortHash).to.equal(ctx.instance.id());
+        expect(body[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
         done();
       }));
     });
@@ -331,7 +331,7 @@ describe('GET /instances', function () {
       ctx.user.fetchInstances(query, expects.success(200, function (err, body) {
         if (err) { return done(err); }
         expect(body.length).to.equal(1);
-        expect(body[0].shortHash).to.equal(ctx.instance.id());
+        expect(body[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
         done();
       }));
     });
