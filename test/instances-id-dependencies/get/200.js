@@ -58,7 +58,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
         ctx.instanceWithDep = ctx.user.createInstance(body, done);
       });
 
-      it('should return a depency', function (done) {
+      it('should return a dependency', function (done) {
         ctx.instanceWithDep.fetchDependencies(function (err, data) {
           expect(err).to.not.exist();
           expect(data).to.be.an.array();
