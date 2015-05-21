@@ -583,18 +583,17 @@ describe('Instance - /instances/:id', function () {
           });
         });
       });
-      ['instance'].forEach(function (destroyName) {
-        describe('not founds', function () {
-          beforeEach(function (done) {
-            ctx[destroyName].destroy(done);
-          });
-          updates.forEach(function (json) {
-            var keys = Object.keys(json);
-            var vals = keys.map(function (key) { return json[key]; });
-            it('should not update instance\'s '+keys+' to '+vals+' (404 not found)', function (done) {
-              require('../../fixtures/mocks/github/user')(ctx.user);
-              ctx.instance.update({ json: json }, expects.errorStatus(404, done));
-            });
+      describe('not founds', function () {
+        beforeEach(function (done) {
+          ctx.instance.destroy(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should not update instance\'s '+keys+' to '+vals+' (404 not found)', function (done) {
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            // create a new instance bc the model is destroyed...
+            ctx.user.newInstance(ctx.instance.id()).update({ json: json }, expects.errorStatus(404, done));
           });
         });
       });
