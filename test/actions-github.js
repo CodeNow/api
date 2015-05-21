@@ -608,11 +608,9 @@ describe('Github - /actions/github', function () {
             }));
           });
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', function () {
-            console.log('xxx111');
             count.next();
           });
           sinon.stub(Slack.prototype, 'notifyOnAutoDeploy', function () {
-            console.log('xxx222');
             count.next();
           });
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
