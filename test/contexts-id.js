@@ -9,10 +9,10 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 
-var uuid = require('uuid');
 var api = require('./fixtures/api-control');
 var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
+var randStr = require('randomstring').generate;
 
 describe('Context - /contexts/:id', function () {
   var ctx = {};
@@ -102,7 +102,7 @@ describe('Context - /contexts/:id', function () {
 
   describe('PATCH', function () {
     var updates = [{
-      name: uuid()
+      name: randStr(5)
     }, {
       public: true
     }, {

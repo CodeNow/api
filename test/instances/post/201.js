@@ -28,6 +28,7 @@ var Docker = require('models/apis/docker');
 var extend = require('extend');
 var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
+var randStr = require('randomstring').generate;
 
 describe('201 POST /instances', function () {
   var ctx = {};
@@ -136,12 +137,12 @@ describe('201 POST /instances', function () {
           multi.tailInstance(ctx.user, instance, function (err) {
             if (err) { return done(err); }
             try {
-              var count = createCount(done);
+              var count = createCount(2, done);
               expects.updatedHosts(
-                ctx.user, instance, count.inc().next);
+                ctx.user, instance, count.next);
               var container = instance.containers.models[0];
               expects.updatedWeaveHost(
-                container, instance.attrs.network.hostIp, count.inc().next);
+                container, instance.attrs.network.hostIp, count.next);
             }
             catch (e) {
               done(e);
@@ -184,14 +185,14 @@ describe('201 POST /instances', function () {
           ctx.afterPostAsserts.push(function (done) {
             try {
               var instance = ctx.instance;
-              var count = createCount(done);
+              var count = createCount(2, done);
               ctx.instance.fetch(function (err) {
                 if (err) { return done(err); }
                 expects.updatedHosts(
-                  ctx.user, instance, count.inc().next);
+                  ctx.user, instance, count.next);
                 var container = instance.containers.models[0];
                 expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.inc().next);
+                  container, instance.attrs.network.hostIp, count.next);
               });
             }
             catch (e) {
@@ -226,12 +227,12 @@ describe('201 POST /instances', function () {
           ctx.afterPostAsserts.push(function (done) {
             try {
               var instance = ctx.instance;
-              var count = createCount(done);
+              var count = createCount(2, done);
               expects.deletedHosts(
-                ctx.user, instance, count.inc().next);
+                ctx.user, instance, count.next);
               var container = instance.containers.models[0];
               expects.deletedWeaveHost(
-                container, count.inc().next);
+                container, count.next);
             }
             catch (e) {
               done(e);
@@ -325,7 +326,7 @@ function createInstanceTests (ctx) {
     assertCreate(body, done);
   });
   it('should create an instance with name, env and build', function (done) {
-    var name = uuid();
+    var name = randStr(5);
     var env = [
       'FOO=BAR'
     ];
@@ -340,7 +341,7 @@ function createInstanceTests (ctx) {
     assertCreate(body, done);
   });
   it('should create a private instance by default', function (done) {
-    var name = uuid();
+    var name = randStr(5);
     var env = [
       'FOO=BAR'
     ];
@@ -358,7 +359,7 @@ function createInstanceTests (ctx) {
     });
   });
   it('should make a master pod instance', function (done) {
-    var name = uuid();
+    var name = randStr(5);
     var body = {
       name: name,
       build: ctx.build.id(),
