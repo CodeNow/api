@@ -50,7 +50,6 @@
 ./test/instances-id-actions-stop/put/index.js
 ./test/instances-id-containers-id-files-id.js
 ./test/instances-id-containers-id-files.js
-./test/instances-id-master-pod/index.js
 ./test/instances-id/delete/204.js
 ./test/instances-id/delete/index.js
 ./test/instances-id/get/index.js
