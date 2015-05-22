@@ -63,14 +63,14 @@ describe('Slack', function () {
           name: 'server-1',
           owner: {
             github: 3213,
-            username: 'podviaznikov'
+            username: 'CodeNow'
           }
         },
         {
           name: 'server-1-copy',
           owner: {
             github: 3213,
-            username: 'podviaznikov'
+            username: 'CodeNow'
           }
         }
       ];
@@ -80,9 +80,9 @@ describe('Slack', function () {
       expected += '|changes> (init &amp; commit &amp; push long test   next line   3d... and ';
       expected += '<http://localhost:3031/actions/redirect?';
       expected += 'url=https%3A%2F%2Fgithub.com%2FCodeNow%2Fapi%2Fcompare%2Fa240edf982d4...a240edf982d4|1 more>)';
-      expected += ' to podviaznikov/server-1 (feature-1) are deployed on:';
-      expected += '\n<https://runnable3.net/podviaznikov/server-1?ref=slack|server-1>';
-      expected += '\n<https://runnable3.net/podviaznikov/server-1-copy?ref=slack|server-1-copy>';
+      expected += ' to CodeNow/api (feature-1) are deployed on:';
+      expected += '\n<https://runnable3.net/CodeNow/server-1?ref=slack|server-1>';
+      expected += '\n<https://runnable3.net/CodeNow/server-1-copy?ref=slack|server-1-copy>';
       expect(text).to.equal(expected);
       done();
     });
@@ -105,14 +105,14 @@ describe('Slack', function () {
           name: 'server-1',
           owner: {
             github: 3213,
-            username: 'podviaznikov'
+            username: 'CodeNow'
           }
         },
         {
           name: 'server-1-copy',
           owner: {
             github: 3213,
-            username: 'podviaznikov'
+            username: 'CodeNow'
           }
         }
       ];
@@ -120,9 +120,9 @@ describe('Slack', function () {
       var expected = 'Your <http://localhost:3031/actions/redirect?';
       expected += 'url=https%3A%2F%2Fgithub.com%2FCodeNow%2Fapi%2Fcommit%2Fa240edf982d467201845b3bf10ccbe16f6049ea9';
       expected += '|changes> (init &amp; commit &amp; push long test   next line   3d...)';
-      expected += ' to podviaznikov/server-1 (feature-1) are deployed on:';
-      expected += '\n<https://runnable3.net/podviaznikov/server-1?ref=slack|server-1>';
-      expected += '\n<https://runnable3.net/podviaznikov/server-1-copy?ref=slack|server-1-copy>';
+      expected += ' to CodeNow/api (feature-1) are deployed on:';
+      expected += '\n<https://runnable3.net/CodeNow/server-1?ref=slack|server-1>';
+      expected += '\n<https://runnable3.net/CodeNow/server-1-copy?ref=slack|server-1-copy>';
       expect(text).to.equal(expected);
       done();
     });
