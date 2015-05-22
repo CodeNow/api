@@ -1,3 +1,9 @@
+./test/actions-analyze-info/get/200.js
+./test/actions-analyze/get/200.js
+./test/actions-analyze/get/400.js
+./test/actions-github.js
+./test/actions-kill.js
+./test/actions-redirect.js
 ./test/auth-github/callback-token.js
 ./test/auth-github/token.js
 ./test/auth-whitelist-id/delete/204.js
@@ -69,4 +75,3 @@
 ./test/users-id-routes-id/index.js
 ./test/users-id-routes/index.js
 ./test/users-id.js
-./test/workers/container-create/post/201.js
