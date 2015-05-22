@@ -7,6 +7,8 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
+var sinon = require('sinon');
+var error = require('error');
 var expect = Code.expect;
 
 var multi = require('./fixtures/multi-factory');
@@ -36,6 +38,37 @@ describe('Errors', function () {
         expect(body.message).to.equal('An internal server error occurred');
         ctx.user.client.get('/', done); // make sure server is still up
       });
+    });
+  });
+
+  describe('GET /test/errors/runtime/background', function () {
+    beforeEach(function (done) {
+      ctx.errorHandlerSpy = sinon.spy(error, 'errorHandler');
+      done();
+    });
+    afterEach(function (done) {
+      clearInterval(ctx.wait);// cleanup even on failure
+      error.errorHandler.restore();
+      done();
+    });
+
+    it('should respond the error', function (done) {
+
+      ctx.user.client.get('test/errors/runtime/background', function (err, res) {
+        if (err) { return done(err); }
+        expect(res.statusCode).to.equal(200);
+        waitForErrorHandlerCall(function () {
+          ctx.user.client.get('/', done); // make sure server is still up
+        });
+      });
+      function waitForErrorHandlerCall (cb) {
+        ctx.wait = setInterval(function () {
+          if (ctx.errorHandlerSpy.calledOnce) {
+            clearInterval(ctx.wait);
+            cb();
+          }
+        }, 5);// time must be longer than timeout in route
+      }
     });
   });
 
