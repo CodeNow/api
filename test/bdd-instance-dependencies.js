@@ -14,10 +14,9 @@ var expect = Code.expect;
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var multi = require('./fixtures/multi-factory');
-var expects = require('./fixtures/expects');
+// var expects = require('./fixtures/expects');
 var async = require('async');
 var primus = require('./fixtures/primus');
-var pluck = require('101/pluck');
 
 describe('BDD - Instance Dependencies', function () {
   var ctx = {};
@@ -29,13 +28,6 @@ describe('BDD - Instance Dependencies', function () {
   after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  beforeEach(function (done) {
-    var r = require('models/redis');
-    r.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
-      if (err) { return done(err); }
-      async.map(keys, function (key, cb) { r.del(key, cb); }, done);
-    });
-  });
   // Uncomment if you want to clear the (graph) database every time
   beforeEach(function (done) {
     if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
@@ -67,7 +59,8 @@ describe('BDD - Instance Dependencies', function () {
       require('./fixtures/mocks/github/user')(ctx.user);
       ctx.apiInstance = ctx.user.createInstance({
         name: 'api-instance',
-        build: ctx.build.id()
+        build: ctx.build.id(),
+        masterPod: true
       }, function (err) {
         if (err) { return done(err); }
         ctx.webInstance.update({ name: 'web-instance' }, done);
@@ -84,26 +77,8 @@ describe('BDD - Instance Dependencies', function () {
     });
   });
 
-  // describe('from none to depending on itself', function () {
-  //   it('should have no dependencies', function (done) {
-  //     require('./fixtures/mocks/github/user')(ctx.user);
-  //     ctx.webInstance.fetch(function (err, instance) {
-  //       if (err) { return done(err); }
-  //       expect(instance.dependencies).to.eql({});
-  //       done();
-  //     });
-  //   });
-  // });
-
   describe('from none to 1 -> 1 relations', function () {
     describe('as master pod environment relations', function () {
-      beforeEach(function (done) {
-        // everything is deleted after, so this should be fine to leave alone
-        async.parallel([
-          ctx.webInstance.setInMasterPod.bind(ctx.webInstance),
-          ctx.apiInstance.setInMasterPod.bind(ctx.apiInstance)
-        ], done);
-      });
       beforeEach(function (done) {
         var envs = ctx.webInstance.attrs.env || [];
         envs.push('API=' + ctx.apiInstance.attrs.lowerName + '-staging-' +
@@ -149,63 +124,15 @@ describe('BDD - Instance Dependencies', function () {
         });
       });
     });
-
-    it('should update the deps of an instance', function (done) {
-      var body = {
-        instance: ctx.apiInstance.id(),
-        hostname: 'api.' + process.env.USER_CONTENT_DOMAIN
-      };
-      ctx.webInstance.createDependency(body, function (err, body) {
-        if (err) { return done(err); }
-        expect(body).to.be.an.object();
-        expect(Object.keys(body)).to.contain([
-          'id',
-          'shortHash',
-          'lowerName',
-          'hostname',
-          'owner',
-          'contextVersion'
-        ]);
-        expect(body.id).to.equal(ctx.apiInstance.attrs._id.toString());
-        expect(body.lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
-        expect(body.owner.github).to.equal(ctx.apiInstance.attrs.owner.github);
-        done();
-      });
-    });
-
-    it('should toLowerCase the hostname', function (done) {
-      var body = {
-        instance: ctx.apiInstance.id(),
-        hostname: 'api-CodeNow.' + process.env.USER_CONTENT_DOMAIN
-      };
-      ctx.webInstance.createDependency(body, function (err, body) {
-        if (err) { return done(err); }
-        expect(body).to.be.an.object();
-        expect(Object.keys(body)).to.contain([
-          'id',
-          'shortHash',
-          'lowerName',
-          'hostname',
-          'owner',
-          'contextVersion'
-        ]);
-        expect(body.id).to.equal(ctx.apiInstance.attrs._id.toString());
-        expect(body.lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
-        expect(body.owner.github).to.equal(ctx.apiInstance.attrs.owner.github);
-        expect(body.hostname).to.equal('api-codenow.' + process.env.USER_CONTENT_DOMAIN);
-        done();
-      });
-    });
   });
 
   describe('from 1 -> 1', function () {
     beforeEach(function (done) {
       // define web as dependent on api
-      require('./fixtures/mocks/github/user')(ctx.user);
-      ctx.webInstance.createDependency({
-        instance: ctx.apiInstance.id(),
-        hostname: 'api.' + process.env.USER_CONTENT_DOMAIN
-      }, done);
+      var envs = ctx.webInstance.attrs.env || [];
+      envs.push('API=' + ctx.apiInstance.attrs.lowerName + '-staging-' +
+        ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN);
+      ctx.webInstance.update({ env: envs }, done);
     });
 
     describe('changing the name of the depending instance', function () {
@@ -248,25 +175,10 @@ describe('BDD - Instance Dependencies', function () {
     });
 
     describe('to 1 -> 0 relations', function () {
-      it('via dependency, should update the deps of an instance', function (done) {
-        require('./fixtures/mocks/github/user')(ctx.user);
-        var dependencies = ctx.webInstance.fetchDependencies(function (err) {
-          expect(err).to.be.null();
-          dependencies.models[0].destroy(function (err) {
-            expect(err).to.be.null();
-            ctx.webInstance.fetchDependencies(function (err, deps) {
-              expect(err).to.be.null();
-              expect(deps).to.be.an.array();
-              expect(deps).to.have.length(0);
-              done();
-            });
-          });
-        });
-      });
-      it('should update the deps of an instance', function (done) {
-        require('./fixtures/mocks/github/user')(ctx.user);
-        ctx.webInstance.destroyDependency(ctx.apiInstance.id(), function (err) {
-          expect(err).to.be.null();
+      it('should remove deps when envs updated', function (done) {
+        // define web as dependent on api
+        ctx.webInstance.update({ env: [] }, function (err) {
+          if (err) { return done(err); }
           ctx.webInstance.fetchDependencies(function (err, deps) {
             expect(err).to.be.null();
             expect(deps).to.be.an.array();
@@ -277,103 +189,73 @@ describe('BDD - Instance Dependencies', function () {
       });
     });
 
-    describe('changing the name of the dependent instance', function () {
-      beforeEach(function (done) {
-        var update = {
-          name: 'a-new-and-awesome-name'
-        };
-        ctx.apiInstance.update(update, expects.updateSuccess(update, done));
-      });
+    // describe('changing the name of the dependent instance', function () {
+    //   beforeEach(function (done) {
+    //     var update = {
+    //       name: 'a-new-and-awesome-name'
+    //     };
+    //     ctx.apiInstance.update(update, expects.updateSuccess(update, done));
+    //   });
 
-      it('should keep the same dependencies, and have updated props on the dep', function (done) {
-        ctx.webInstance.fetchDependencies(function (err, deps) {
-          expect(err).to.be.null();
-          expect(deps).to.be.an.array();
-          expect(deps).to.have.length(1);
-          expect(deps[0]).to.deep.contain({
-            id: ctx.apiInstance.attrs._id.toString(),
-            shortHash: ctx.apiInstance.id().toString(),
-            hostname: 'api.' + process.env.USER_CONTENT_DOMAIN,
-            lowerName: 'a-new-and-awesome-name',
-            owner: { github: ctx.apiInstance.attrs.owner.github },
-          });
-          expect(deps[0].contextVersion).to.deep.contain({ context: ctx.apiInstance.attrs.contextVersion.context });
-          done();
-        });
-      });
-    });
-
-    describe('from 1 -> 1 to 1 -> 2 relations', function () {
-      beforeEach(function (done) {
-        async.series([
-          function createMongoInstance (cb) {
-            require('./fixtures/mocks/github/user')(ctx.user);
-            require('./fixtures/mocks/github/user')(ctx.user);
-            require('./fixtures/mocks/github/user')(ctx.user);
-            ctx.mongoInstance = ctx.user.createInstance({
-              name: 'mongo-instance',
-              build: ctx.build.id()
-            }, cb);
-          },
-          function addMongoToWeb (cb) {
-            ctx.webInstance.createDependency({
-              instance: ctx.mongoInstance.id(),
-              hostname: 'mongo.' + process.env.USER_CONTENT_DOMAIN
-            }, cb);
-          },
-        ], done);
-      });
-
-      it('should update the deps of an instance', function (done) {
-        ctx.webInstance.fetchDependencies(function (err, deps) {
-          expect(err).to.be.null();
-          expect(deps).to.be.an.array();
-          expect(deps).to.have.length(2);
-          expect(deps.map(pluck('lowerName'))).to.contain(['api-instance', 'mongo-instance']);
-          done();
-        });
-      });
-      it('should allow searching by hostname', function (done) {
-        var opts = {
-          qs: {
-            'hostname': 'api.' + process.env.USER_CONTENT_DOMAIN
-          }
-        };
-        ctx.webInstance.fetchDependencies(opts, function (err, deps) {
-          expect(err).to.be.null();
-          expect(deps).to.be.an.array();
-          expect(deps).to.have.length(1);
-          expect(deps[0].lowerName).to.equal('api-instance');
-          expect(deps[0].hostname).to.equal(opts.qs.hostname);
-          done();
-        });
-      });
-    });
+    //   it('should keep the same dependencies, and have updated props on the dep', function (done) {
+    //     ctx.webInstance.fetchDependencies(function (err, deps) {
+    //       expect(err).to.be.null();
+    //       expect(deps).to.be.an.array();
+    //       expect(deps).to.have.length(1);
+    //       expect(deps[0]).to.deep.contain({
+    //         id: ctx.apiInstance.attrs._id.toString(),
+    //         shortHash: ctx.apiInstance.id().toString(),
+    //         hostname: [
+    //           'api-instance-staging-',
+    //           ctx.user.attrs.accounts.github.username.toLowerCase(),
+    //           '.' + process.env.USER_CONTENT_DOMAIN
+    //         ].join(''),
+    //         lowerName: 'a-new-and-awesome-name',
+    //         name: 'a-new-and-awesome-name',
+    //         owner: { github: ctx.apiInstance.attrs.owner.github },
+    //       });
+    //       expect(deps[0].contextVersion).to.deep.contain({
+    //         context: ctx.apiInstance.attrs.contextVersion.context
+    //       });
+    //       done();
+    //     });
+    //   });
+    // });
 
     describe('from a -> b to a -> b -> a (circular) relations', function () {
       beforeEach(function (done) {
-        ctx.apiInstance.createDependency({
-          instance: ctx.webInstance.id(),
-          hostname: 'web.' + process.env.USER_CONTENT_DOMAIN
-        }, done);
+        var envs = ctx.apiInstance.attrs.env || [];
+        envs.push('API=' + ctx.webInstance.attrs.lowerName + '-staging-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN);
+        ctx.apiInstance.update({ env: envs }, done);
       });
 
       it('should update the deps of an instance', function (done) {
         var webDeps = [{
           id: ctx.apiInstance.attrs._id.toString(),
-          shortHash: ctx.apiInstance.id().toString(),
-          hostname: 'api.' + process.env.USER_CONTENT_DOMAIN,
+          shortHash: ctx.apiInstance.attrs.shortHash.toString(),
+          hostname: [
+            'api-instance-staging-',
+            ctx.user.attrs.accounts.github.username.toLowerCase(),
+            '.' + process.env.USER_CONTENT_DOMAIN
+          ].join(''),
           lowerName: ctx.apiInstance.attrs.lowerName,
+          name: ctx.apiInstance.attrs.name,
           owner: { github: ctx.apiInstance.attrs.owner.github },
-          // contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
+          contextVersion: { context: ctx.apiInstance.attrs.contextVersion.context }
         }];
         var apiDeps = [{
           id: ctx.webInstance.attrs._id.toString(),
-          shortHash: ctx.webInstance.id().toString(),
-          hostname: 'web.' + process.env.USER_CONTENT_DOMAIN,
+          shortHash: ctx.webInstance.attrs.shortHash.toString(),
+          hostname: [
+            'web-instance-staging-',
+            ctx.user.attrs.accounts.github.username.toLowerCase(),
+            '.' + process.env.USER_CONTENT_DOMAIN
+          ].join(''),
           lowerName: ctx.webInstance.attrs.lowerName,
+          name: ctx.webInstance.attrs.name,
           owner: { github: ctx.webInstance.attrs.owner.github },
-          // contextVersion: { context: ctx.webInstance.attrs.contextVersion.context }
+          contextVersion: { context: ctx.webInstance.attrs.contextVersion.context }
         }];
         ctx.webInstance.fetchDependencies(function (err, deps) {
           expect(err).to.be.null();

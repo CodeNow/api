@@ -68,14 +68,13 @@ describe('DELETE /instances/:id', function () {
         });
       });
     });
-    ['instance'].forEach(function (destroyName) {
-      describe('not founds', function () {
-        beforeEach(function (done) {
-          ctx[destroyName].destroy(done);
-        });
-        it('should not delete the instance if missing (404 '+destroyName+')', function (done) {
-          ctx.instance.destroy(expects.errorStatus(404, done));
-        });
+
+    describe('not founds', function () {
+      beforeEach(function (done) {
+        ctx.instance.destroy(done);
+      });
+      it('should not delete the instance if missing (404 instance)', function (done) {
+        ctx.user.destroyInstance(ctx.instance.id(), expects.errorStatus(404, done));
       });
     });
   });

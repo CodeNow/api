@@ -59,7 +59,7 @@ describe('POST /instances/:id/actions/copy', function () {
           owner: { github: ctx.user.json().accounts.github.id,
                    username: ctx.user.json().accounts.github.username,
                    gravatar: ctx.user.json().accounts.github.avatar_url },
-          parent: ctx.instance.id(),
+          parent: ctx.instance.attrs.shortHash,
           'build._id': ctx.build.id(),
           containers: exists
         };
@@ -77,7 +77,7 @@ describe('POST /instances/:id/actions/copy', function () {
           owner: { github: ctx.user.json().accounts.github.id,
                    username: ctx.user.json().accounts.github.username,
                    gravatar: ctx.user.json().accounts.github.avatar_url },
-          parent: ctx.instance.id(),
+          parent: ctx.instance.attrs.shortHash,
           'build._id': ctx.build.id(),
           containers: exists
         };
@@ -101,7 +101,7 @@ describe('POST /instances/:id/actions/copy', function () {
             owner: { github: ctx.user.json().accounts.github.id,
                      username: ctx.user.json().accounts.github.username,
                      gravatar: ctx.user.json().accounts.github.avatar_url },
-            parent: ctx.instance.id(),
+            parent: ctx.instance.attrs.shortHash,
             'build._id': ctx.build.id(),
             containers: exists,
             env: ['ONE=1']
@@ -120,7 +120,7 @@ describe('POST /instances/:id/actions/copy', function () {
             owner: { github: ctx.user.json().accounts.github.id,
                      username: ctx.user.json().accounts.github.username,
                      gravatar: ctx.user.json().accounts.github.avatar_url },
-            parent: ctx.instance.id(),
+            parent: ctx.instance.attrs.shortHash,
             'build._id': ctx.build.id(),
             containers: exists,
             env: ['TWO=2']
@@ -153,7 +153,7 @@ describe('POST /instances/:id/actions/copy', function () {
                        username: ctx.user.json().accounts.github.username,
                        gravatar: ctx.user.json().accounts.github.avatar_url },
           'owner.github': ctx.orgId,
-          parent: ctx.instance.id(),
+          parent: ctx.instance.attrs.shortHash,
           'build._id': ctx.build.id(),
           containers: exists
         };
@@ -164,7 +164,8 @@ describe('POST /instances/:id/actions/copy', function () {
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.user.copyInstance(ctx.instance.id(), {owner:{github:ctx.orgId}}, expects.success(201, expected, done));
+        ctx.user.copyInstance(
+          ctx.instance.attrs.shortHash, {owner:{github:ctx.orgId}}, expects.success(201, expected, done));
       });
       describe('Same org, different user', function () {
         beforeEach(function (done) {
@@ -178,7 +179,7 @@ describe('POST /instances/:id/actions/copy', function () {
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user')(ctx.nonOwner);
-          ctx.otherInstance = ctx.user.copyInstance(ctx.instance.id(), done);
+          ctx.otherInstance = ctx.user.copyInstance(ctx.instance.attrs.shortHash, done);
         });
         it('should copy the instance when part of the same org as the owner', function (done) {
           var expected = {
@@ -209,7 +210,7 @@ describe('POST /instances/:id/actions/copy', function () {
         ctx.nonOwner = multi.createUser(done);
       });
       it('should not copy a private instance', function (done) {
-        var instance = ctx.nonOwner.newInstance(ctx.instance.id());
+        var instance = ctx.nonOwner.newInstance(ctx.instance.attrs.shortHash);
         instance.copy(expects.errorStatus(403, done));
       });
       describe('public instance', function () {
@@ -227,7 +228,7 @@ describe('POST /instances/:id/actions/copy', function () {
             owner: { github: ctx.user.json().accounts.github.id,
                      username: ctx.user.json().accounts.github.username,
                      gravatar: ctx.user.json().accounts.github.avatar_url },
-            parent: ctx.instance.id(),
+            parent: ctx.instance.attrs.shortHash,
             'build._id': ctx.build.id(),
             containers: exists
           };
