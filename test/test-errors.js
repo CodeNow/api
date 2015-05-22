@@ -43,7 +43,7 @@ describe('Errors', function () {
 
   describe('GET /test/errors/runtime/background', function () {
     beforeEach(function (done) {
-      ctx.errorHandlerSpy = sinon.spy(error, 'errorHandler');
+      sinon.spy(error, 'errorHandler');
       done();
     });
     afterEach(function (done) {
@@ -63,7 +63,7 @@ describe('Errors', function () {
       });
       function waitForErrorHandlerCall (cb) {
         ctx.wait = setInterval(function () {
-          if (ctx.errorHandlerSpy.calledOnce) {
+          if (error.errorHandler.calledOnce) {
             clearInterval(ctx.wait);
             cb();
           }
