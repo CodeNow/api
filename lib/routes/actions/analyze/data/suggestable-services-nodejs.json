@@ -133,6 +133,7 @@
   "mongo-migrate",
   "mongo-scheduler",
   "mongodb",
+  "mongojs",
   "mongodb-backup-cli",
   "mongodb-baserepository",
   "mongodb-bluebird",
