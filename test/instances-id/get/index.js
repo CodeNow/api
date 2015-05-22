@@ -167,7 +167,7 @@ describe('Instance - /instances/:id', function () {
       });
       it('should not get the instance if missing (404)', function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.instance.fetch(expects.error(404, done));
+        ctx.user.fetchInstance(ctx.instance.id(), expects.error(404, done));
       });
     });
   });
