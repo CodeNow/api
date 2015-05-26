@@ -61,7 +61,7 @@
     "newrelic": "^1.12.2",
     "node-dogstatsd": "0.0.5",
     "node-forge": "^0.6.12",
-    "optimus": "git+ssh://git@github.com/CodeNow/optimus.git#6c666d15d229f2681cc2f9ec0d77a4ea4def4602",
+    "optimus": "git+ssh://git@github.com/CodeNow/optimus.git#v1.0.0",
     "passport": "~0.2.0",
     "passport-github": "~0.1.5",
     "passport-strategy": "^1.0.0",
