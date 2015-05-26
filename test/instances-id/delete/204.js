@@ -16,6 +16,7 @@ var multi = require('../../fixtures/multi-factory');
 var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var primus = require('../../fixtures/primus');
 
+var clone = require('101/clone');
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
@@ -245,7 +246,7 @@ describe('204 DELETE /instances/:id', function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should delete an instance', function (done) {
-      var instanceName = ctx.instance.attrs.name;
+      var instance = clone(ctx.instance);
       var container = ctx.instance.containers.models[0];
       if (ctx.waitForDestroy) {
         dockerEvents.once('destroy', function () {
@@ -265,7 +266,7 @@ describe('204 DELETE /instances/:id', function () {
       function check(cb) {
         var c = (container && container.attrs.dockerContainer) ? 3 : 1;
         var count = createCount(c, cb);
-        expects.deletedHosts(ctx.user, instanceName, container, count.next);
+        expects.deletedHosts(ctx.user, instance, container, count.next);
         if (container && container.attrs.dockerContainer) {
           expects.deletedWeaveHost(container, count.next);
           expects.deletedContainer(container, count.next);

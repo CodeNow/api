@@ -6,7 +6,6 @@
 var Code = require('code');
 var expect = Code.expect;
 
-var createCount = require('callback-count');
 var isFunction = require('101/is-function');
 var isString = require('101/is-string');
 var isObject = require('101/is-object');
@@ -14,6 +13,9 @@ var keypather = require('keypather')();
 var debug = require('debug')('runnable-api:testing:fixtures:expects');
 var exists = require('101/exists');
 var Docker = require('models/apis/docker');
+var NaviEntry = require('navi-entry');
+var runnableHostname = require('runnable-hostname');
+NaviEntry.setRedisClient(require('models/redis'));
 
 var expects = module.exports = function (keypath) {
   return function (val) {
@@ -147,189 +149,184 @@ function expectKeypaths (body, expectedKeypaths) {
 
 // Specific expectation helpers
 var Sauron = require('models/apis/sauron');
-var url = require('url');
 
 /**
  * assert updated dns and hipache entries
  * NOTE: if instance is provided for instanceOrName args are: (user, instance, cb)
  * @param  {String|Object}  userOrUsername  user client model or string owner
- * @param  {String|Object}  instanceOrName  instance client model OR instance name
+ * @param  {Object}         instanceOrName  instance client model
  * @param  {Object}         container       container client model
  * @param  {String}         hostIp          expected dns hostIp value
  * @param  {Function}       cb              callback
  */
 // jshint maxcomplexity:8
-expects.updatedHosts = function (userOrUsername, instanceOrName, container, hostIp, cb) {
+expects.updatedHosts = function (userOrUsername, instance, cb) {
   var username = userOrUsername;
   if (isObject(userOrUsername)) {
     username = userOrUsername.attrs.accounts.github.username;
   }
-  var instanceName = instanceOrName;
-  var instance;
-  if (isObject(instanceOrName)) { // instanceOrInstanceName
-    instance = instanceOrName;
-    cb = container;
-    instanceName = instance.attrs.lowerName;
-    container = instance.containers.models[0];
-  }
+  var instanceName = instance.attrs.lowerName;
+  var container = instance.containers.models[0];
   container = container && container.toJSON ? container.toJSON() : container;
-  if (!container || !container.dockerContainer || !container.ports) {
+  if (!container || !container.ports) {
     process.nextTick(cb);
     return;
   }
-  expects.updatedDnsEntry(username, instanceName, instance.attrs.network.hostIp);
-  if (keypather.get(instance, 'attrs.masterPod')) {
-    expects.updatedNaviHipacheEntries(username, instanceName, container, cb);
-  } else {
-    var branch = keypather.get(instance, 'contextVersion.appCodeVersions[0].lowerBranch');
-    expects.updatedHipacheEntries(username, instanceName, container, branch, cb);
-  }
+  expects.updatedDnsEntry(username, instanceName, instance);
+  expects.updatedNaviEntries(username, instance, container, cb);
 };
 // jshint maxcomplexity:6
-expects.updatedDnsEntry = function (username, instanceName, hostIp) {
+expects.updatedDnsEntry = function (username, instanceName, instance) {
+  var hostIp = instance.attrs.network.hostIp;
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var dnsUrlElastic = toDnsUrl('staging-' + username, instanceName);
-  var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrlElastic), 'dns record ' + dnsUrlElastic).to.equal(hostIp);
-  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record ' + dnsUrlDirect).to.equal(hostIp);
-};
-expects.updatedHipacheEntries = function (username, instanceName, container, branch, cb) {
-  // hipache entries
-  var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
-  var hosts = new Hosts();
-  var count = createCount(2, cb);
-
-  branch = branch || 'master';
-  runExpects('staging-' + username, instanceName, container, '', count.next);
-  runExpects('staging-' + username, instanceName, container, branch, count.next);
-
-  function runExpects (_username, _instanceName, _container, _branch, callback) {
-    var branchInstanceName = _branch.length ? _branch + '-' + _instanceName : _instanceName;
-    hosts.readHipacheEntriesForContainer(
-      _username,
-      branchInstanceName,
-      _container,
-      function (err, redisData) {
-        if (err) { return callback(err); }
-        var expectedRedisData = {};
-        Object.keys(_container.ports).forEach(function (containerPort) {
-          var key = toHipacheEntryKey(containerPort, branchInstanceName, _username);
-          var val = toHipacheEntryVal(containerPort, _container, _instanceName);
-          expectedRedisData[key] = val;
-        });
-        expect(redisData).to.deep.equal(expectedRedisData);
-        callback();
-      }
-    );
+  var elasticUrl, directUrl;
+  var branch = instance.getBranchName();
+  var opts = {
+    masterPod: instance.attrs.masterPod,
+    branch: branch,
+    instanceName: instanceName,
+    ownerUsername: username,
+    shortHash: instance.attrs.shortHash,
+    userContentDomain: process.env.USER_CONTENT_DOMAIN,
+  };
+  if (opts.masterPod) {
+    if (opts.branch) {
+      elasticUrl = runnableHostname.elastic(opts);
+      directUrl = runnableHostname.direct(opts);
+      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.equal(hostIp);
+      expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.equal(hostIp);
+    }
+    else {
+      elasticUrl = runnableHostname.elastic(opts);
+      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.equal(hostIp);
+    }
+  }
+  else {
+    directUrl = runnableHostname.direct(opts);
+    expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.equal(hostIp);
   }
 };
-expects.updatedNaviHipacheEntries = function (username, instanceName, container, cb) {
-  // hipache entries
-  var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
-  var hosts = new Hosts();
-  var count = createCount(2, cb);
 
-  runExpects('staging-' + username, instanceName, container, '', count.next);
-  runExpects('staging-' + username, instanceName, container, 'master', count.next);
-
-  function runExpects (_username, _instanceName, _container, _branch, callback) {
-    var branchInstanceName = _branch.length ? _branch + '-' + _instanceName : _instanceName;
-    hosts.readHipacheEntriesForContainer(
-      _username,
-      (_branch.length) ? branchInstanceName : _instanceName,
-      _container,
-      function (err, redisData) {
-        if (err) { return callback(err); }
-        var expectedRedisData = {};
-        Object.keys(_container.ports).forEach(function (containerPort) {
-          var key = toHipacheEntryKey(containerPort, branchInstanceName, _username);
-          var val = toHipacheEntryVal(containerPort, _container, _instanceName);
-          // but we want to go w/ navi
-          val[1] = process.env.NAVI_HOST;
-          expectedRedisData[key] = val;
-        });
-        expect(redisData).to.deep.equal(expectedRedisData);
-        callback();
-      });
+expects.updatedNaviEntries = function (username, instance, container, cb) {
+  if (!container || !container.ports) {
+    return cb();
   }
+  var instanceName = instance.attrs.lowerName;
+  var branch = keypather.get(instance.attrs, 'contextVersion.appCodeVersions[0].lowerBranch');
+  var ownerGithub = instance.attrs.owner.github;
+  var masterPod = instance.attrs.masterPod;
+  Object.keys(container.ports).forEach(function (containerPort) {
+    containerPort = containerPort.split('/').shift();
+    var opts = {
+      shortHash: instance.attrs.shortHash,
+      exposedPort: containerPort,
+      branch: branch,
+      instanceName: instanceName,
+      ownerUsername: username,
+      ownerGithub: ownerGithub,
+      userContentDomain: process.env.USER_CONTENT_DOMAIN,
+      masterPod: masterPod
+    };
+    new NaviEntry(opts).lrange(0, -1, function (err, backends) {
+      expect(JSON.parse(backends[0])).to.deep.contains(opts);
+      expect(backends[1]).to.equal(process.env.NAVI_HOST);
+    });
+  });
+  cb(null);
 };
 
 /**
  * assert updated dns and hipache entries are non-existant
  * NOTE: if instance is provided for instanceOrName args are: (user, instance, cb)
- * @param  {Object}         userOrUsername  user client model OR username
- * @param  {String|Object}  instanceOrName  instance client model OR instance name
- * @param  {Object}         container       container client model
- * @param  {String}         hostIp          expected dns hostIp value
- * @param  {Function}       cb              callback
+ * @param  {Object}   userOrUsername  user client model OR username
+ * @param  {Object}   instance        instance client model
+ * @param  {Object}   container       container client model
+ * @param  {String}   hostIp          expected dns hostIp value
+ * @param  {Function} cb              callback
  */
 // jshint maxcomplexity:8
-expects.deletedHosts = function (userOrUsername, instanceOrName, container, cb) {
+expects.deletedHosts = function (userOrUsername, instance, container, cb) {
   var username = userOrUsername;
   if (isObject(userOrUsername)) {
     username = userOrUsername.attrs.accounts.github.username;
   }
-  var instanceName;
-  var instance;
-  if (isObject(instanceOrName)) { // instanceOrInstanceName
-    instance = instanceOrName;
+  var instanceName = instance.attrs.name;
+
+  if (isFunction(container)) {
     cb = container;
-    instanceName = instance.attrs.name;
-    container = instance.containers.models[0];
+    container = null;
   }
-  else {
-    instanceName = instanceOrName;
-  }
+
+  container = container || instance.containers.models[0];
+
   container = container && container.toJSON ? container.toJSON() : container;
   if (!container || !container.dockerContainer || !container.ports) {
     process.nextTick(cb);
     return;
   }
-  expects.deletedDnsEntry(username, instanceName);
-  expects.deletedHipacheEntries(username, instanceName, container, cb);
+  expects.deletedDnsEntry(username, instanceName, instance);
+  expects.deletedNaviEntries(username, instance, container, cb) ;
 };
 // jshint maxcomplexity:6
-expects.deletedDnsEntry = function (username, instanceName) {
+expects.deletedDnsEntry = function (username, instanceName, instance) {
   // dns entry
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var dnsUrlElastic = toDnsUrl('staging-' + username, instanceName);
-  var dnsUrlDirect = toDnsUrl('staging-' + username, 'master-' + instanceName);
-  expect(mockRoute53.findRecordIp(dnsUrlElastic), 'dns record ' + dnsUrlElastic).to.not.exist();
-  expect(mockRoute53.findRecordIp(dnsUrlDirect), 'dns record ' + dnsUrlDirect).to.not.exist();
-};
-expects.deletedHipacheEntries = function (username, instanceName, container, cb) {
-  // hipache entries
-  var Hosts = require('models/redis/hosts'); // must require here, else dns mocks will break
-  var hosts = new Hosts();
-  var count = createCount(2, cb);
-
-  runExpects('staging-' + username, instanceName, container, '', count.next);
-  runExpects('staging-' + username, instanceName, container, 'master', count.next);
-
-  function runExpects (_username, _instanceName, _container, _branch, callback) {
-    hosts.readHipacheEntriesForContainer(
-      username,
-      instanceName,
-      container,
-      function (err, redisData) {
-        if (err) { return callback(err); }
-        var expectedRedisData = {};
-        Object.keys(container.ports).forEach(function (containerPort) {
-          var key = toHipacheEntryKey(containerPort, instanceName, username);
-          expectedRedisData[key] = [];
-        });
-        expect(redisData).to.deep.equal(expectedRedisData);
-        callback();
-      }
-    );
+  var elasticUrl, directUrl;
+  var branch = instance.getBranchName();
+  var opts = {
+    masterPod: instance.attrs.masterPod,
+    branch: branch,
+    instanceName: instanceName,
+    ownerUsername: username,
+    shortHash: instance.attrs.shortHash,
+    userContentDomain: process.env.USER_CONTENT_DOMAIN,
+  };
+  if (opts.masterPod) {
+    if (opts.branch) {
+      elasticUrl = runnableHostname.elastic(opts);
+      directUrl = runnableHostname.direct(opts);
+      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.not.exist();
+      expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.not.exist();
+    }
+    else {
+      elasticUrl = runnableHostname.elastic(opts);
+      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.not.exist();
+    }
+  }
+  else {
+    directUrl = runnableHostname.direct(opts);
+    expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.not.exist();
   }
 };
-function toDnsUrl (username, instanceName) {
-  return [ instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN ].join('');
-}
+
+expects.deletedNaviEntries = function (username, instance, container, cb) {
+  if (!container || !container.ports) {
+    return cb();
+  }
+  var instanceName = instance.attrs.lowerName;
+  var branch = keypather.get(instance.attrs, 'contextVersion.appCodeVersions[0].lowerBranch');
+  var ownerGithub = instance.attrs.owner.github;
+  var masterPod = instance.attrs.masterPod;
+  Object.keys(container.ports).forEach(function (containerPort) {
+    containerPort = containerPort.split('/').shift();
+    new NaviEntry({
+      shortHash: instance.attrs.shortHash,
+      exposedPort: containerPort,
+      branch: branch,
+      instanceName: instanceName,
+      ownerUsername: username,
+      ownerGithub: ownerGithub,
+      userContentDomain: process.env.USER_CONTENT_DOMAIN,
+      masterPod: masterPod
+    }).lrange(0, -1, function (err, backends) {
+      expect(backends.length).to.equal(0);
+    });
+  });
+  cb(null);
+};
 
 /**
  * assert container was deleted from docker
@@ -351,28 +348,6 @@ expects.deletedContainer = function (container, cb) {
     cb();
   });
 };
-function toHipacheEntryKey (containerPort, instanceName, username) {
-  containerPort = containerPort.split('/')[0];
-  var key =
-    [ containerPort, '.', instanceName, '-', username, '.', process.env.USER_CONTENT_DOMAIN ];
-  return ['frontend:'].concat(key).join('').toLowerCase();
-}
-function toHipacheEntryVal (containerPort, container, instanceName) {
-  if (container.toJSON) { container = container.toJSON(); }
-  var exposedPort = containerPort.split('/')[0];
-  var actualPort = container.ports[containerPort][0].HostPort;
-  var parsedDockerHost = url.parse(container.dockerHost);
-  var backendUrl = url.format({
-    protocol: (exposedPort === '443') ? 'https:' : 'http:',
-    slashes: true,
-    hostname: parsedDockerHost.hostname,
-    port: actualPort
-  });
-  return [
-    instanceName,
-    backendUrl
-  ];
-}
 
 /**
  * asserts container is attached to weave network hostIp

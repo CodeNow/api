@@ -3,27 +3,36 @@
  */
 'use strict';
 
+var Code = require('code');
+var Dockerode = require('dockerode');
 var Lab = require('lab');
 var createCount = require('callback-count');
-var uuid = require('uuid');
-
-var lab = exports.lab = Lab.script();
-
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
-var Code = require('code');
-var expect = Code.expect;
+var exists = require('101/exists');
+var extend = require('extend');
+var isFunction = require('101/is-function');
+var last = require('101/last');
+var not = require('101/not');
+var randStr = require('randomstring').generate;
 var sinon = require('sinon');
+var uuid = require('uuid');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+var Docker = require('models/apis/docker');
+
+var lab = exports.lab = Lab.script();
+
+var after = lab.after;
+var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 var ctx = {
   expected: {}
@@ -112,7 +121,6 @@ describe('201 POST /instances', function () {
         require('../../fixtures/clean-mongo').removeEverything(done);
         //done();
       });
-
       it('should create a private instance by default', function (done) {
         var name = uuid();
         var env = [

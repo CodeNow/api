@@ -1,3 +1,6 @@
+/**
+ * @module test/instances-id-actions-stop/put/index
+ */
 'use strict';
 
 var Lab = require('lab');
@@ -295,14 +298,14 @@ describe('PUT /instances/:id/actions/stop', function () {
       }
       function startStopAssert (err) {
         if (err) { return done(err); }
-        var count = createCount(done);
+        var count = createCount(4, done);
         // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
-        expects.deletedHosts(ctx.user, ctx.instance, count.inc().next);
+        expects.deletedHosts(ctx.user, ctx.instance, count.next);
         // try stop and start
-        count.inc();
         var instance = ctx.instance;
         var container = instance.containers.models[0];
         if (!container) {
+          // note to self/casey: switch to primus
           multi.tailInstance(ctx.user, ctx.instance, function (err, instance) {
             if (err) { return done(err); }
             container = instance.containers.models[0];

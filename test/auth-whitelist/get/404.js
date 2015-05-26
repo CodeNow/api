@@ -15,6 +15,7 @@ var api = require('../../fixtures/api-control');
 
 var request = require('request');
 var uuid = require('uuid');
+var randStr = require('randomstring').generate;
 
 var ctx = {};
 describe('GET /auth/whitelist/:name', function () {
@@ -35,7 +36,7 @@ describe('GET /auth/whitelist/:name', function () {
       ctx.user.attrs.accounts.github.id,
       ctx.user.attrs.accounts.github.username,
       'Runnable');
-    ctx.name = uuid();
+    ctx.name = randStr(5);
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',

@@ -4,14 +4,15 @@
 'use strict';
 
 var Lab = require('lab');
+var Code = require('code');
 var lab = exports.lab = Lab.script();
+
 var describe = lab.describe;
 var it = lab.it;
 var before = lab.before;
 var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
-var Code = require('code');
 var expect = Code.expect;
 
 var async = require('async');
@@ -22,6 +23,7 @@ var extend = require('extend');
 var nock = require('nock');
 var noop = require('101/noop');
 var not = require('101/not');
+var randStr = require('randomstring').generate;
 var uuid = require('uuid');
 
 var Build = require('models/mongo/build');
@@ -119,7 +121,7 @@ describe('Instance - /instances/:id', function () {
               var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
-                shortHash: ctx.instance.id(),
+                shortHash: ctx.instance.attrs.shortHash,
                 'build._id': ctx.newBuild.id(),
                 'owner.github': ctx.user.attrs.accounts.github.id,
                 'owner.username': ctx.user.attrs.accounts.github.login,
@@ -163,7 +165,7 @@ describe('Instance - /instances/:id', function () {
                 };
                 var expected = {
                   _id: ctx.instance.json()._id,
-                  shortHash: ctx.instance.id(),
+                  shortHash: ctx.instance.attrs.shortHash,
                   'build._id': ctx.newBuild.id(),
                   'owner.github': ctx.user.attrs.accounts.github.id,
                   'owner.username': ctx.user.attrs.accounts.github.login,
@@ -206,7 +208,7 @@ describe('Instance - /instances/:id', function () {
                 function (done) {
                   // this has to be it's own function since models[0] doesn't exist when the series is created
                   ctx.newCV.appCodeVersions.models[0].update({
-                    branch: uuid()
+                    branch: randStr(5)
                   }, done);
                 },
                 ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
@@ -221,7 +223,7 @@ describe('Instance - /instances/:id', function () {
               var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
-                shortHash: ctx.instance.id(),
+                shortHash: ctx.instance.attrs.shortHash,
                 'build._id': ctx.newBuild.id(),
                 // this represents a new docker container! :)
                 //'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
@@ -271,7 +273,7 @@ describe('Instance - /instances/:id', function () {
               var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
-                shortHash: ctx.instance.id(),
+                shortHash: ctx.instance.attrs.shortHash,
                 'build._id': ctx.newBuild.id(),
                 // this represents a new docker container! :)
                 // 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
@@ -311,7 +313,7 @@ describe('Instance - /instances/:id', function () {
                 function (done) {
                   // this has to be it's own function since models[0] doesn't exist when the series is created
                   ctx.newCV.appCodeVersions.models[0].update({
-                    branch: uuid()
+                    branch: randStr(5)
                   }, done);
                 },
                 ctx.newCV.rootDir.contents.createFile.bind(ctx.newCV.rootDir.contents, 'file.txt'),
@@ -327,7 +329,7 @@ describe('Instance - /instances/:id', function () {
               var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
-                shortHash: ctx.instance.id(),
+                shortHash: ctx.instance.attrs.shortHash,
                 'build._id': ctx.newBuild.id(),
                 // this represents a new docker container! :)
                 // 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
@@ -359,7 +361,7 @@ describe('Instance - /instances/:id', function () {
         describe('Patching an unbuilt build', function () {
           beforeEach(function (done) {
             var data = {
-              name: uuid(),
+              name: randStr(5),
               owner: { github: ctx.user.attrs.accounts.github.id }
             };
             ctx.otherBuild = ctx.user.createBuild(data, done);
@@ -475,7 +477,7 @@ describe('Instance - /instances/:id', function () {
         });
         describe('Testing all patching possibilities', function () {
           var updates = [{
-            name: uuid()
+            name: randStr(5)
           }, {
             public: true
           }, {
@@ -487,17 +489,17 @@ describe('Instance - /instances/:id', function () {
             public: true,
             build: 'newBuild'
           }, {
-            name: uuid(),
+            name: randStr(5),
             build: 'newBuild'
           }, {
-            name: uuid(),
+            name: randStr(5),
               env: ['sdfasdfasdfadsf=asdfadsfasdfasdf']
             },
             {
-              name: uuid(),
+              name: randStr(5),
             public: true
           }, {
-            name: uuid(),
+            name: randStr(5),
             build: 'newBuild',
               public: true,
               env: ['THREE=1asdfsdf', 'TWO=dsfasdfas']
@@ -641,7 +643,7 @@ describe('Instance - /instances/:id', function () {
       });
 
       var updates = [{
-        name: uuid()
+        name: randStr(5)
       }, {
         public: true
       }, {
@@ -701,7 +703,7 @@ describe('Instance - /instances/:id', function () {
 
       describe('hipache changes', function () {
         beforeEach(function (done) {
-          var newName = ctx.newName = uuid();
+          var newName = ctx.newName = randStr(5);
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.instance.update({ json: { name: newName, masterPod: true }}, done);
@@ -714,20 +716,17 @@ describe('Instance - /instances/:id', function () {
           });
         });
       });
-
-      ['instance'].forEach(function (destroyName) {
-        describe('not founds', function () {
-          beforeEach(function (done) {
-            // this removes the opts?
-            ctx[destroyName].destroy(done);
-          });
-          updates.forEach(function (json) {
-            var keys = Object.keys(json);
-            var vals = keys.map(function (key) { return json[key]; });
-            it('should not update instance\'s '+keys+' to '+vals+' (404 not found)', function (done) {
-              require('../../fixtures/mocks/github/user')(ctx.user);
-              ctx.user.updateInstance(ctx.instance.id(), expects.errorStatus(404, done));
-            });
+      describe('not founds', function () {
+        beforeEach(function (done) {
+          ctx.instance.destroy(done);
+        });
+        updates.forEach(function (json) {
+          var keys = Object.keys(json);
+          var vals = keys.map(function (key) { return json[key]; });
+          it('should not update instance\'s '+keys+' to '+vals+' (404 not found)', function (done) {
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            // create a new instance bc the model is destroyed...
+            ctx.user.newInstance(ctx.instance.id()).update({ json: json }, expects.errorStatus(404, done));
           });
         });
       });

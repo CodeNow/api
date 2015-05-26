@@ -29,6 +29,7 @@ describe('GET /settings', function () {
   describe('create and get', function () {
     var settings = {
       owner: {},
+      ignoredHelpCards: ['ignoredCard1', 'ignoredCard2'],
       notifications: {
         slack: {
           apiToken: 'xoxo-dasjdkasjdk243248392482394',
@@ -49,7 +50,7 @@ describe('GET /settings', function () {
         if (err) { return done(err); }
         ctx.user = runnable;
         settings.owner.github = runnable.user.attrs.accounts.github.id;
-        runnable.createSetting({json: settings}, function (err, body) {
+        runnable.createSetting({ json: settings }, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
           settingsId = body._id;
@@ -63,13 +64,20 @@ describe('GET /settings', function () {
       it('should create settings if they are not exist', function (done) {
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
-          var st = runnable.newSettings([], {qs: {owner: {github: runnable.user.attrs.accounts.github.id}}});
+          var st = runnable.newSettings([], {
+            qs: {
+              owner: {
+                github: runnable.user.attrs.accounts.github.id
+              }
+            }
+          });
           st.fetch(function (err, body) {
             if (err) { return done(err); }
             var settings = body[0];
             expect(settings._id).to.exist();
             expect(settings.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
             expect(settings.notifications.slack.enabled).to.equal(true);
+            expect(settings.ignoredHelpCards.length).to.equal(0);
             done();
           });
         });
@@ -121,7 +129,6 @@ describe('GET /settings', function () {
           expect(settings.notifications.hipchat.roomId).to.equal(
             settings.notifications.hipchat.roomId
           );
-
           done();
         });
       });
@@ -170,6 +177,9 @@ describe('GET /settings', function () {
           expect(body.notifications.hipchat.roomId).to.equal(
             settings.notifications.hipchat.roomId
           );
+          expect(body.ignoredHelpCards).to.only.include(
+            settings.ignoredHelpCards
+          );
           done();
         });
       });
@@ -197,7 +207,6 @@ describe('GET /settings', function () {
       it('should return 400 for non-objectId settings-id', function (done) {
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
-
           runnable.fetchSetting('fake-id', function (err) {
             expect(err.data.statusCode).to.equal(400);
             expect(err.data.message).to.equal('url parameter \"id\" is not an ObjectId');

@@ -1,22 +1,14 @@
 'use strict';
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
 var Code = require('code');
-var expect = Code.expect;
-
+var Lab = require('lab');
 var clone = require('101/clone');
 var createCount = require('callback-count');
 var equals = require('101/equals');
 var exists = require('101/exists');
 var noop = require('101/noop');
 var not = require('101/not');
+var randStr = require('randomstring').generate;
 var uuid = require('uuid');
 
 var Build = require('models/mongo/build');
@@ -26,6 +18,16 @@ var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
+
+var lab = exports.lab = Lab.script();
+
+var after = lab.after;
+var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 describe('POST /instances', function () {
   var ctx = {};
@@ -50,7 +52,7 @@ describe('POST /instances', function () {
         });
       });
       it('should error if the build has unbuilt versions', function(done) {
-        var json = { build: ctx.build.id(), name: uuid() };
+        var json = { build: ctx.build.id(), name: randStr(5) };
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/user')(ctx.user);
         ctx.user.createInstance({ json: json }, expects.error(400, /been started/, done));
@@ -89,7 +91,7 @@ describe('POST /instances', function () {
               'network.hostIp': exists
             };
 
-            var json = { build: ctx.build.id(), name: uuid() };
+            var json = { build: ctx.build.id(), name: randStr(5) };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
@@ -106,7 +108,7 @@ describe('POST /instances', function () {
           });
         });
         it('should create a new instance', function(done) {
-          var json = { build: ctx.build.id(), name: uuid() };
+          var json = { build: ctx.build.id(), name: randStr(5) };
           var expected = {
             shortHash: exists,
             'createdBy.github': ctx.user.attrs.accounts.github.id,
@@ -134,7 +136,7 @@ describe('POST /instances', function () {
         });
 
         it('should deploy the instance after the build finishes', function(done) {
-          var json = { build: ctx.build.id(), name: uuid(), masterPod: true };
+          var json = { build: ctx.build.id(), name: randStr(5), masterPod: true };
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
@@ -147,12 +149,12 @@ describe('POST /instances', function () {
               multi.tailInstance(ctx.user, instance, function (err) {
                 if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.exist();
-                var count = createCount(done);
+                var count = createCount(2, done);
                 expects.updatedHosts(
-                  ctx.user, instance, count.inc().next);
+                  ctx.user, instance, count.next);
                 var container = instance.containers.models[0];
                 expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.inc().next);
+                  container, instance.attrs.network.hostIp, count.next);
               });
             });
           });
@@ -166,7 +168,7 @@ describe('POST /instances', function () {
             });
           });
           it('should not create a new instance', function(done) {
-            var json = { build: ctx.build.id(), name: uuid() };
+            var json = { build: ctx.build.id(), name: randStr(5) };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance({ json: json }, expects.error(400, done));
@@ -187,7 +189,7 @@ describe('POST /instances', function () {
             });
         });
         it('should create a new instance', function(done) {
-          var json = { build: ctx.build.id(), name: uuid() };
+          var json = { build: ctx.build.id(), name: randStr(5) };
           var expected = {
             shortHash: exists,
             'createdBy.github': ctx.user.attrs.accounts.github.id,
@@ -245,7 +247,7 @@ describe('POST /instances', function () {
       requiredProjectKeys.forEach(function (missingBodyKey) {
         it('should error if missing ' + missingBodyKey, function (done) {
           var json = {
-            name: uuid(),
+            name: randStr(5),
             build: ctx.build.id()
           };
           var incompleteBody = clone(json);
@@ -274,14 +276,14 @@ describe('POST /instances', function () {
             expects.success(201, expected, function (err, instanceData) {
               if (err) { return done(err); }
               expect(instanceData.name).to.equal('Instance1');
-              expect(instanceData.shortHash).to.equal(instance.id());
+              expect(instanceData.shortHash).to.equal(instance.attrs.shortHash);
               expect(/[a-z0-9]+/.test(instanceData.shortHash)).to.equal(true);
               done();
             }));
         });
         it('should create an instance, and start it', function (done) {
           var json = {
-            name: uuid(),
+            name: randStr(5),
             build: ctx.build.id(),
             masterPod: true
           };
@@ -302,7 +304,6 @@ describe('POST /instances', function () {
           var instance = ctx.user.createInstance(json,
             expects.success(201, {}, function (err) {
               if (err) { return done(err); }
-              return done();
             }));
           primus.expectAction('start', expected, function () {
             var container = instance.containers.models[0];
@@ -316,7 +317,7 @@ describe('POST /instances', function () {
         describe('body.env', function() {
           it('should create an instance, with ENV', function (done) {
             var json = {
-              name: uuid(),
+              name: randStr(5),
               build: ctx.build.id(),
               env: [
                 'ONE=1',
@@ -344,7 +345,7 @@ describe('POST /instances', function () {
           });
           it('should error if body.env is not an array of strings', function(done) {
             var json = {
-              name: uuid(),
+              name: randStr(5),
               build: ctx.build.id(),
               env: [{
                 iCauseError: true
@@ -355,7 +356,7 @@ describe('POST /instances', function () {
           });
           it('should filter empty/whitespace-only strings from env array', function (done) {
             var json = {
-              name: uuid(),
+              name: randStr(5),
               build: ctx.build.id(),
               env: [
                 '', ' ', 'ONE=1'
@@ -382,7 +383,7 @@ describe('POST /instances', function () {
           });
           it('should error if body.env contains an invalid variable', function (done) {
             var json = {
-              name: uuid(),
+              name: randStr(5),
               build: ctx.build.id(),
               env: [
                 'ONE=1',
@@ -504,7 +505,7 @@ describe('POST /instances', function () {
       it('should have the parent instance set in the new one', function (done) {
         var json = {
           build: ctx.build.id(),
-          parent: ctx.instance.id()
+          parent: ctx.instance.attrs.shortHash
         };
         var expected = {
           _id: exists,
@@ -517,7 +518,7 @@ describe('POST /instances', function () {
           public: false,
           'build._id': ctx.build.id(),
           containers: exists,
-          parent: ctx.instance.id(),
+          parent: ctx.instance.attrs.shortHash,
           shortHash: exists,
           'network.networkIp': ctx.instance.attrs.network.networkIp, // same owner, same network
           'network.hostIp': not(equals(ctx.instance.attrs.network.hostIp))

@@ -1,3 +1,6 @@
+/**
+ * @module test/actions-github
+ */
 'use strict';
 
 var Lab = require('lab');
@@ -187,8 +190,7 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.string,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.createBuild.restore();
             done();
@@ -218,8 +220,7 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.string,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.buildBuild.restore();
             done();
@@ -256,14 +257,13 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createAndStartDeployment.restore();
             var errorStub = PullRequest.prototype.deploymentErrored;
             expect(errorStub.calledOnce).to.equal(true);
-            expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-             sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.object)).to.equal(true);
             errorStub.restore();
-            Runnable.prototype.forkMasterInstance.restore();
+            Runnable.prototype.updateInstance.restore();
             done();
           });
-          sinon.stub(Runnable.prototype, 'forkMasterInstance')
-            .yields(Boom.notFound('Instance deploy failed'));
+          sinon.stub(Runnable.prototype, 'updateInstance')
+            .yields(Boom.notFound('Instance update failed'));
 
           sinon.stub(PullRequest.prototype, 'deploymentErrored', count.next);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
@@ -359,8 +359,7 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createAndStartDeployment.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledOnce).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
             successStub.restore();
             var slackStub = Slack.prototype.notifyOnAutoFork;
             expect(slackStub.calledOnce).to.equal(true);
@@ -391,6 +390,66 @@ describe('Github - /actions/github', function () {
           });
         });
 
+        describe('delete branch', function () {
+
+          it('should return 0 instancesIds if nothing was deleted', function (done) {
+            var options = hooks().push;
+            options.json.deleted = true;
+            request.post(options, function (err, res, body) {
+              if (err) { return done(err); }
+              expect(res.statusCode).to.equal(202);
+              expect(body).to.equal('No appropriate work to be done; finishing.');
+              done();
+            });
+          });
+
+          it('should return 1 instancesIds if 1 instance was deleted', function (done) {
+            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+            var user = ctx.user.attrs.accounts.github;
+            var data = {
+              branch: 'feature-1',
+              repo: acv.repo,
+              ownerId: user.id,
+              owner: user.login
+            };
+            var username = user.login;
+
+            var countOnCallback = function () {
+              count.next();
+            };
+            var count = cbCount(2, function () {
+              var slackStub = Slack.prototype.notifyOnAutoFork;
+              expect(slackStub.calledOnce).to.equal(true);
+              expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
+              slackStub.restore();
+
+
+              var deleteOptions = hooks(data).push;
+              deleteOptions.json.deleted = true;
+
+              request.post(deleteOptions, function (err, res, body) {
+                if (err) { return done(err); }
+                expect(res.statusCode).to.equal(201);
+                expect(body.length).to.equal(1);
+                done();
+              });
+
+            });
+            sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
+            var options = hooks(data).push;
+            require('./fixtures/mocks/github/users-username')(101, username);
+            request.post(options, function (err, res, cvIds) {
+              if (err) { return done(err); }
+              finishAllIncompleteVersions();
+              expect(res.statusCode).to.equal(200);
+              expect(cvIds).to.exist();
+              expect(cvIds).to.be.an.array();
+              expect(cvIds).to.have.length(1);
+              count.next();
+            });
+          });
+        });
+
         describe('fork 2 instances', function () {
           beforeEach(function (done) {
             multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
@@ -408,7 +467,7 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(body._id).to.exist();
                 ctx.settingsId = body._id;
-                ctx.instance.setInMasterPod({ masterPod: true }, function (err) {
+                ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err, copiedInstance) {
                   expect(err).to.be.null();
                   primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
                     if (err) { return done(err); }
@@ -447,8 +506,7 @@ describe('Github - /actions/github', function () {
               PullRequest.prototype.createAndStartDeployment.restore();
               var successStub = PullRequest.prototype.deploymentSucceeded;
               expect(successStub.calledTwice).to.equal(true);
-              expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-                sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+              expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
               successStub.restore();
               var slackStub = Slack.prototype.notifyOnAutoFork;
               expect(slackStub.calledTwice).to.equal(true);
@@ -476,60 +534,6 @@ describe('Github - /actions/github', function () {
               expect(cvIds).to.exist();
               expect(cvIds).to.be.an.array();
               expect(cvIds).to.have.length(2);
-            });
-          });
-
-          describe('delete branch', function () {
-            it('should return 0 instancesIds if nothing was deleted', function (done) {
-              var options = hooks().push;
-              options.json.deleted = true;
-              request.post(options, function (err, res, body) {
-                if (err) { return done(err); }
-                expect(res.statusCode).to.equal(202);
-                expect(body).to.equal('No appropriate work to be done; finishing.');
-                done();
-              });
-            });
-            it('should return 2 instancesIds if 2 instances were deleted', function (done) {
-              var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-              var user = ctx.user.attrs.accounts.github;
-              var username = user.login;
-              var data = {
-                branch: 'feature-1',
-                repo: acv.repo,
-                ownerId: user.id,
-                owner: user.login
-              };
-              var countOnCallback = function () {
-                count.next();
-              };
-              var count = cbCount(3, function () {
-                var slackStub = Slack.prototype.notifyOnAutoFork;
-                expect(slackStub.calledTwice).to.equal(true);
-                expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
-                slackStub.restore();
-                var deleteOptions = hooks(data).push;
-                deleteOptions.json.deleted = true;
-                request.post(deleteOptions, function (err, res, body) {
-                  if (err) { return done(err); }
-                  expect(res.statusCode).to.equal(201);
-                  expect(body.length).to.equal(2);
-                  done();
-                });
-              });
-              sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-              var options = hooks(data).push;
-              require('./fixtures/mocks/github/users-username')(101, username);
-              request.post(options, function (err, res, cvIds) {
-                console.log('post complete');
-                if (err) { return done(err); }
-                finishAllIncompleteVersions();
-                expect(res.statusCode).to.equal(200);
-                expect(cvIds).to.exist();
-                expect(cvIds).to.be.an.array();
-                expect(cvIds).to.have.length(2);
-                count.next();
-              });
             });
           });
         });
@@ -568,7 +572,7 @@ describe('Github - /actions/github', function () {
       });
 
       it('should redeploy two instances with new build', function (done) {
-        ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
+        ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
           if (err) { return done(err); }
           var baseDeploymentId = 1234567;
           sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
@@ -586,7 +590,8 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.duration': exists,
               'contextVersion.build.network': exists,
               'contextVersion.build.triggeredBy.github': exists,
-              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name,
+              'contextVersion.appCodeVersions[0].lowerRepo':
+                options.json.repository.full_name.toLowerCase(),
               'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
               'contextVersion.appCodeVersions[0].branch': data.branch,
               'contextVersion.build.triggeredAction.manual': false,
@@ -600,10 +605,8 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createAndStartDeployment.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledTwice).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any)).to.equal(true);
             successStub.restore();
             var slackStub = Slack.prototype.notifyOnAutoDeploy;
             expect(slackStub.calledOnce).to.equal(true);

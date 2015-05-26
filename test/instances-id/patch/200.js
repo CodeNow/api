@@ -8,7 +8,18 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var Docker = require('dockerode');
+var clone = require('101/clone');
+var exists = require('101/exists');
+var isFunction = require('101/is-function');
+var last = require('101/last');
+var not = require('101/not');
 var sinon = require('sinon');
+
+var api = require('../../fixtures/api-control');
+var dock = require('../../fixtures/dock');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
 
 var after = lab.after;
 var afterEach = lab.afterEach;
@@ -17,11 +28,6 @@ var beforeEach = lab.beforeEach;
 var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
-
-var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
-var multi = require('../../fixtures/multi-factory');
-var primus = require('../../fixtures/primus');
 
 function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
   user = user.json();
@@ -174,7 +180,6 @@ describe('200 PATCH /instances', function () {
           done();
         });
       });
-
     });
   });
 });

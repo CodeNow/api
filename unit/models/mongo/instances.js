@@ -69,6 +69,7 @@ describe('Instance', function () {
         repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
         lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
         branch: opts.branch || 'master',
+        defaultBranch: opts.defaultBranch || 'master',
         commit: 'deadbeef'
       }]
     });
@@ -498,10 +499,10 @@ describe('Instance', function () {
   });
 
 
-  describe('#findMasterInstances', function () {
+  describe('#findForkableMasterInstances', function () {
 
     it('should return empty [] for repo that has no instances', function (done) {
-      Instance.findMasterInstances('anton/node', function (err, instances) {
+      Instance.findForkableMasterInstances('anton/node', 'master', function (err, instances) {
         expect(err).to.be.null();
         expect(instances.length).to.equal(0);
         done();
@@ -511,7 +512,7 @@ describe('Instance', function () {
     describe('non-masterPod instances', function () {
       var ctx = {};
       before(function (done) {
-        var instance = createNewInstance('instance-name', {locked: true, repo: 'podviaznikov/hello'});
+        var instance = createNewInstance('instance-name', { locked: true, repo: 'podviaznikov/hello' });
         instance.save(function (err, instance) {
           if (err) { return done(err); }
           expect(instance).to.exist();
@@ -521,7 +522,7 @@ describe('Instance', function () {
       });
       it('should return empty [] for repo that has no master instances', function (done) {
         var repo = 'podviaznikov/hello';
-        Instance.findMasterInstances(repo, function (err, instances) {
+        Instance.findForkableMasterInstances(repo, 'develop', function (err, instances) {
           expect(err).to.be.null();
           expect(instances.length).to.equal(0);
           done();
@@ -535,7 +536,9 @@ describe('Instance', function () {
         var opts = {
           locked: true,
           masterPod: true,
-          repo: 'podviaznikov/hello-2'
+          repo: 'podviaznikov/hello-2',
+          branch: 'master',
+          defaultBranch: 'master'
         };
         var instance = createNewInstance('instance-name-2', opts);
         instance.save(function (err, instance) {
@@ -547,14 +550,21 @@ describe('Instance', function () {
       });
       it('should return array with instance that has masterPod=true', function (done) {
         var repo = 'podviaznikov/hello-2';
-        Instance.findMasterInstances(repo, function (err, instances) {
+        Instance.findForkableMasterInstances(repo, 'feature1', function (err, instances) {
           expect(err).to.be.null();
           expect(instances.length).to.equal(1);
           expect(instances[0].shortHash).to.equal(ctx.savedInstance.shortHash);
           done();
         });
       });
-
+      it('should return [] when branch equals masterPod branch', function (done) {
+        var repo = 'podviaznikov/hello-2';
+        Instance.findForkableMasterInstances(repo, 'master', function (err, instances) {
+          expect(err).to.be.null();
+          expect(instances.length).to.equal(0);
+          done();
+        });
+      });
       it('should return array with instance that has masterPod=true', function (done) {
         var repo = 'podviaznikov/hello-2';
         var opts = {
@@ -565,7 +575,7 @@ describe('Instance', function () {
         var instance2 = createNewInstance('instance-name-3', opts);
         instance2.save(function (err, instance) {
           if (err) { return done(err); }
-          Instance.findMasterInstances(repo, function (err, instances) {
+          Instance.findForkableMasterInstances(repo, 'feature1', function (err, instances) {
             expect(err).to.be.null();
             expect(instances.length).to.equal(2);
             expect(instances.map(pluck('shortHash'))).to.only.contain([
@@ -577,7 +587,6 @@ describe('Instance', function () {
         });
       });
     });
-
   });
 
 
@@ -606,6 +615,7 @@ describe('Instance', function () {
         props: {
           id: instances[0].id.toString(),
           shortHash: instances[0].shortHash.toString(),
+          name: instances[0].name,
           lowerName: instances[0].lowerName,
           owner_github: instances[0].owner.github,
           contextVersion_context: instances[0].contextVersion.context.toString()
@@ -656,11 +666,13 @@ describe('Instance', function () {
 
     describe('with instances in the graph', function () {
       var nodeFields = [
+        'contextVersion',
+        'hostname',
         'id',
-        'shortHash',
         'lowerName',
+        'name',
         'owner',
-        'contextVersion'
+        'shortHash'
       ];
       beforeEach(function (done) {
         async.forEach(
@@ -698,7 +710,7 @@ describe('Instance', function () {
         i.addDependency(d, 'somehostname', function (err, limitedInstance) {
           expect(err).to.be.null();
           expect(limitedInstance).to.exist();
-          expect(Object.keys(limitedInstance)).to.contain(nodeFields);
+          expect(Object.keys(limitedInstance)).to.only.contain(nodeFields);
           expect(limitedInstance).to.deep.equal(shortD);
           i.getDependencies(function (err, deps) {
             expect(err).to.be.null();
@@ -780,6 +792,81 @@ describe('Instance', function () {
                 done();
               });
             });
+          });
+        });
+
+        describe('with chained depedencies', function () {
+          beforeEach(function (done) {
+            instances[1].addDependency(instances[2], 'somehostname2', done);
+          });
+
+          it('should be able to recurse dependencies', function (done) {
+            var i = instances[0];
+            i.getDependencies({ recurse: true }, function (err, deps) {
+              if (err) { return done(err); }
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(1);
+              expect(deps[0].id).to.equal(instances[1].id.toString());
+              expect(deps[0].dependencies).to.be.an.array();
+              expect(deps[0].dependencies).to.have.length(1);
+              expect(deps[0].dependencies[0].id).to.equal(instances[2].id.toString());
+              done();
+            });
+          });
+
+          it('should be able to flatten recursed dependencies', function (done) {
+            var i = instances[0];
+            i.getDependencies({ recurse: true, flatten: true }, function (err, deps) {
+              if (err) { return done(err); }
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(2);
+              expect(deps.map(pluck('id'))).to.only.include([
+                instances[1].id.toString(),
+                instances[2].id.toString()
+              ]);
+              done();
+            });
+          });
+
+          it('should not follow circles while flattening', function (done) {
+            async.series([
+              function (cb) {
+                instances[2].addDependency(instances[0], 'circlehost', cb);
+              },
+              function (cb) {
+                var i = instances[0];
+                i.getDependencies({ recurse: true, flatten: true }, function (err, deps) {
+                  if (err) { return done(err); }
+                  expect(deps).to.be.an.array();
+                  expect(deps).to.have.length(3);
+                  expect(deps.map(pluck('id'))).to.only.include(instances.map(pluck('id')));
+                  cb();
+                });
+              }
+            ], done);
+          });
+
+          it('should not follow circles', function (done) {
+            async.series([
+              function (cb) {
+                instances[2].addDependency(instances[0], 'circlehost', cb);
+              },
+              function (cb) {
+                var i = instances[0];
+                i.getDependencies({ recurse: true }, function (err, deps) {
+                  if (err) { return done(err); }
+                  expect(deps).to.be.an.array();
+                  expect(deps).to.have.length(1);
+                  expect(deps[0].id).to.equal(instances[1].id.toString());
+                  expect(deps[0].dependencies).to.be.an.array();
+                  expect(deps[0].dependencies).to.have.length(1);
+                  expect(deps[0].dependencies[0].id).to.equal(instances[2].id.toString());
+                  expect(deps[0].dependencies[0].dependencies)
+                    .to.be.an.array(instances[0].id.toString());
+                  cb();
+                });
+              }
+            ], done);
           });
         });
       });

@@ -6,12 +6,13 @@
 var EventEmitter = require('events').EventEmitter;
 var createCount = require('callback-count');
 var debug = require('debug')('runnable-api:multi-factory');
+var formatArgs = require('format-args');
 var isFunction = require('101/is-function');
+var randStr = require('randomstring').generate;
 var uuid = require('uuid');
 
 var MongoUser = require('models/mongo/user');
 var dockerMockEvents = require('./docker-mock-events');
-var formatArgs = require('format-args');
 var generateKey = require('./key-factory');
 var primus = require('./primus');
 
@@ -24,9 +25,10 @@ module.exports = {
     debug('createUser', formatArgs(arguments));
     var host = require('./host');
     var token = uuid();
-    var name = opts.username || uuid();
+    var name = opts.username || randStr(5);
     require('./mocks/github/action-auth')(token, undefined, name);
     var User = require('runnable');
+    opts.userContentDomain = process.env.USER_CONTENT_DOMAIN;
     var user = new User(host, opts);
     user.githubLogin(token, function (err) {
       if (err) {
@@ -48,6 +50,7 @@ module.exports = {
       process.env.HELLO_RUNNABLE_GITHUB_ID);
     var User = require('runnable');
     var user = new User(host);
+    user.opts.userContentDomain = process.env.USER_CONTENT_DOMAIN;
     user.githubLogin(token, function (err) {
       if (err) {
         return cb(err);
@@ -83,7 +86,7 @@ module.exports = {
     }
     this.createUser(function (err, user) {
       if (err) { return cb(err); }
-      var body = { name: uuid() };
+      var body = { name: randStr(5) };
       if (ownerId) { body.owner = { github: ownerId }; }
       var context = user.createContext(body, function (err) {
         cb(err, context, user);
@@ -95,7 +98,7 @@ module.exports = {
     this.createModerator(function (err, moderator) {
       if (err) { return cb(err); }
       var body = {
-        name: uuid(),
+        name: randStr(5),
         isSource: true
       };
       var context = moderator.createContext(body, function (err) {
@@ -138,7 +141,7 @@ module.exports = {
       if (err) { return cb(err); }
       self.createContext(ownerId, function (err, context, user) {
         if (err) { return cb(err); }
-        var body = { name: uuid() };
+        var body = { name: randStr(5) };
         if (ownerId) { body.owner = { github: ownerId }; }
         var build = user.createBuild(body, function (err) {
           cb(err, build, context, user, [srcContextVersion, srcContext, moderator]);
@@ -315,7 +318,7 @@ module.exports = {
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err); }
       var body = {
-        name: uuid(),
+        name: randStr(5),
         build: build.id(),
         masterPod: true
       };

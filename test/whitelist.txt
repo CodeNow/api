@@ -53,6 +53,10 @@
 ./test/instances-id-actions-stop/put/index.js
 ./test/instances-id-containers-id-files-id.js
 ./test/instances-id-containers-id-files.js
+./test/instances-id-dependencies-id/put/200.js
+./test/instances-id-dependencies-id/put/400.js
+./test/instances-id-dependencies-id/put/404.js
+./test/instances-id-dependencies/get/200.js
 ./test/instances-id/delete/204.js
 ./test/instances-id/delete/index.js
 ./test/instances-id/get/index.js
