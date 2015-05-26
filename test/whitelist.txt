@@ -76,3 +76,6 @@
 ./test/settings/post/400.js
 ./test/terminal-stream.js
 ./test/test-errors.js
+./test/users-id-routes-id/index.js
+./test/users-id-routes/index.js
+./test/users-id.js
