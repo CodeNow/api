@@ -271,7 +271,8 @@ module.exports = {
       ctx.srcArr = srcArr;
       var body = {
         name: uuid(),
-        build: build.id()
+        build: build.id(),
+        masterPod: true
       };
       if (buildOwnerId) {
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
