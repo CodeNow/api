@@ -306,12 +306,14 @@ describe('POST /instances', function () {
               if (err) { return done(err); }
             }));
           primus.expectAction('start', expected, function () {
-            var container = instance.containers.models[0];
-            var count = createCount(done);
-            expects.updatedHosts(
-              ctx.user, instance, count.inc().next);
-            expects.updatedWeaveHost(
-              container, instance.attrs.network.hostIp, count.inc().next);
+            instance.fetch(function () {
+              var container = instance.containers.models[0];
+              var count = createCount(2, done);
+              expects.updatedHosts(
+                ctx.user, instance, count.next);
+              expects.updatedWeaveHost(
+                container, instance.attrs.network.hostIp, count.next);
+            });
           });
         });
         describe('body.env', function() {
