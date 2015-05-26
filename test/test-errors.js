@@ -42,10 +42,6 @@ describe('Errors', function () {
   });
 
   describe('GET /test/errors/runtime/background', function () {
-    beforeEach(function (done) {
-      sinon.spy(error, 'errorHandler');
-      done();
-    });
     afterEach(function (done) {
       clearInterval(ctx.wait);// cleanup even on failure
       error.errorHandler.restore();
@@ -53,21 +49,18 @@ describe('Errors', function () {
     });
 
     it('should respond the error', function (done) {
-
+      var errorHandler = error.errorHandler.bind(error);
+      sinon.stub(error, 'errorHandler', errorHandlerStub);
       ctx.user.client.get('test/errors/runtime/background', function (err, res) {
         if (err) { return done(err); }
         expect(res.statusCode).to.equal(200);
-        waitForErrorHandlerCall(function () {
-          ctx.user.client.get('/', done); // make sure server is still up
-        });
       });
-      function waitForErrorHandlerCall (cb) {
-        ctx.wait = setInterval(function () {
-          if (error.errorHandler.calledOnce) {
-            clearInterval(ctx.wait);
-            cb();
-          }
-        }, 5);// time must be longer than timeout in route
+
+      function errorHandlerStub () {
+        // call original function and
+        // make sure the server does not crash
+        errorHandler.apply(null, arguments);
+        ctx.user.client.get('/', done); // make sure server is still up
       }
     });
   });
