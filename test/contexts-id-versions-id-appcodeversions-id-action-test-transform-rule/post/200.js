@@ -19,7 +19,7 @@ var uuid = require('uuid');
 var primus = require('../../fixtures/primus');
 var last = require('101/last');
 
-describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTransformRules', function () {
+describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransformRule', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
