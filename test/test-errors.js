@@ -43,7 +43,6 @@ describe('Errors', function () {
 
   describe('GET /test/errors/runtime/background', function () {
     afterEach(function (done) {
-      clearInterval(ctx.wait);// cleanup even on failure
       error.errorHandler.restore();
       done();
     });
