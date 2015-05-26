@@ -78,7 +78,11 @@ module.exports = {
     debug('expectAction');
     if (!ctx.primus) { return cb(new Error('can not primus.expectAction if not connected')); }
     ctx.primus.on('data', function check (data) {
+      debug('primus expect:',
+        'ROOM_MESSAGE', action,
+        data.event, data.data.action);
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
+        debug('primus expected data:', expected, data.data.data);
         expect(data.type).to.equal('org');
         expect(data.event).to.equal('ROOM_MESSAGE');
         expect(data.data.event).to.equal('INSTANCE_UPDATE');
