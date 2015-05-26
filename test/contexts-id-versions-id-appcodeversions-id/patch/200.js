@@ -38,6 +38,11 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
       ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
       require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
       require('../../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
+      done();
+    });
+  });
+  describe('with master repo', function() {
+    beforeEach(function(done) {
       var body = {
         repo: ctx.fullRepoName,
         branch: 'master',
@@ -47,33 +52,90 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
       require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
       ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
     });
+    it('it should update an appCodeVersion\'s branch', function (done) {
+      var body = {
+        branch: 'feature1'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.branch = body.branch;
+      expected.lowerBranch = body.branch.toLowerCase();
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
+    it('it should update an appCodeVersion\'s commit', function (done) {
+      var body = {
+        commit: 'abcdef'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.commit = body.commit;
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
+    it('it should update an appCodeVersion\'s commit and branch', function (done) {
+      var body = {
+        branch: 'other-feature',
+        commit: 'abcdef'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.commit = body.commit;
+      expected.branch = body.branch;
+      expected.lowerBranch = body.branch.toLowerCase();
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
   });
-  it('it should update an appCodeVersion\'s branch', function (done) {
-    var body = {
-      branch: 'feature1'
-    };
-    var expected = ctx.appCodeVersion.json();
-    expected.branch = body.branch;
-    expected.lowerBranch = body.branch.toLowerCase();
-    ctx.appCodeVersion.update(body, expects.success(200, expected, done));
-  });
-  it('it should update an appCodeVersion\'s commit', function (done) {
-    var body = {
-      commit: 'abcdef'
-    };
-    var expected = ctx.appCodeVersion.json();
-    expected.commit = body.commit;
-    ctx.appCodeVersion.update(body, expects.success(200, expected, done));
-  });
-  it('it should update an appCodeVersion\'s commit and branch', function (done) {
-    var body = {
-      branch: 'other-feature',
-      commit: 'abcdef'
-    };
-    var expected = ctx.appCodeVersion.json();
-    expected.commit = body.commit;
-    expected.branch = body.branch;
-    expected.lowerBranch = body.branch.toLowerCase();
-    ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+  describe('with additionalRepo repo', function() {
+    beforeEach(function(done) {
+      var body = {
+        repo: ctx.fullRepoName,
+        branch: 'master',
+        commit: uuid(),
+        additionalRepo: true
+      };
+      var username = ctx.user.attrs.accounts.github.login;
+      require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
+      ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
+    });
+    it('it should update an appCodeVersion\'s branch', function (done) {
+      var body = {
+        branch: 'feature1'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.branch = body.branch;
+      expected.lowerBranch = body.branch.toLowerCase();
+      expected.additionalRepo = true;
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
+    it('it should update an appCodeVersion\'s commit', function (done) {
+      var body = {
+        commit: 'abcdef'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.commit = body.commit;
+      expected.additionalRepo = true;
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
+    it('it should update an appCodeVersion\'s commit and branch', function (done) {
+      var body = {
+        branch: 'other-feature',
+        commit: 'abcdef'
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.commit = body.commit;
+      expected.branch = body.branch;
+      expected.lowerBranch = body.branch.toLowerCase();
+      expected.additionalRepo = true;
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
+    it('it should NOT update additionalRepo', function (done) {
+      var body = {
+        branch: 'other-feature',
+        commit: 'abcdef',
+        additionalRepo: false
+      };
+      var expected = ctx.appCodeVersion.json();
+      expected.commit = body.commit;
+      expected.branch = body.branch;
+      expected.lowerBranch = body.branch.toLowerCase();
+      expected.additionalRepo = true;
+      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+    });
   });
 });

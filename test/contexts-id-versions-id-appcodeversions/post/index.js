@@ -131,25 +131,24 @@ describe('XXX POST /contexts/:id/versions/:id/appCodeVersions', function () {
         ctx.contextVersion.addGithubRepo(body, expects.error(409, /already added/, done));
       }));
     });
+    it('should save additionalRepo', function (done) {
+      var body = {
+        repo: ctx.fullRepoName,
+        branch: 'master',
+        commit: uuid(),
+        additionalRepo: true
+      };
+      var expected = {
+        repo: ctx.fullRepoName,
+        branch: 'master',
+        commit: body.commit,
+        additionalRepo: true
+      };
+      var username = ctx.user.attrs.accounts.github.login;
+      require('../../fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName);
+      require('../../fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName);
+      require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
+      ctx.contextVersion.addGithubRepo(body, expects.success(201, expected, done));
+    });
   });
 });
-
-// describe('built version', function () {
-//       beforeEach(function (done) {
-//         multi.createBuiltBuild(function (err, build, user, modelArr) {
-//           ctx.builtVersion = modelArr[0];
-//           done(err);
-//         });
-//       });
-//       it('should not add the repo', function (done) {
-//         console.log('should not add the repo')
-//         console.log('should not add the repo')
-//         console.log('should not add the repo')
-//         var data = {
-//           repo: 'tjmehta/101',
-//           branch: 'master',
-//           commit: uuid()
-//         };
-//         ctx.builtVersion.addGithubRepo(data, expects.error(400, /Cannot/, done));
-//       });
-//     });
