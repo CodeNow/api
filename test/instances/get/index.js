@@ -33,7 +33,7 @@ describe('GET /instances', function () {
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
 
-  describe('GET', function() {
+  describe('GET', function () {
     beforeEach(function (done) {
       multi.createAndTailInstance(primus, function (err, instance, build, user) {
         if (err) { return done(err); }
@@ -226,11 +226,7 @@ describe('GET /instances', function () {
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
 
-    describe('masterPod', function() {
-      beforeEach(function (done) {
-        ctx.instance.setInMasterPod(done);
-      });
-
+    describe('masterPod', function () {
       it('should get instance by masterPod', function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/users-username')(
@@ -252,7 +248,7 @@ describe('GET /instances', function () {
         require('../../fixtures/mocks/github/users-username')(
           ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
         var hostname = [
-          ctx.instance.attrs.name, '-', ctx.user.attrs.accounts.github.username, '.',
+          ctx.instance.attrs.name, '-staging-', ctx.user.attrs.accounts.github.username, '.',
           process.env.USER_CONTENT_DOMAIN
         ].join('');
         var query = {
@@ -273,7 +269,7 @@ describe('GET /instances', function () {
       require('../../fixtures/mocks/github/users-username')(
         ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
       var hostname = [
-        ctx.instance.attrs.name, '-', ctx.user.attrs.accounts.github.username, '.',
+        ctx.instance.attrs.name, '-staging-', ctx.user.attrs.accounts.github.username, '.',
         process.env.USER_CONTENT_DOMAIN
       ].join('');
       var query = {
@@ -292,7 +288,7 @@ describe('GET /instances', function () {
       require('../../fixtures/mocks/github/users-username')(
         ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
       var query = {
-        hostname: 'http://dne-codenow.runnableapp.com'
+        hostname: 'http://dne-staging-codenow.runnableapp.com'
       };
       ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
         if (err) { return done(err); }
@@ -323,7 +319,7 @@ describe('GET /instances', function () {
       require('../../fixtures/mocks/github/users-username')(
         ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
       var query = {
-        masterPod: false,
+        masterPod: true,
         'contextVersion.context': ctx.instance.attrs.contextVersion.context,
         githubUsername: ctx.user.json().accounts.github.username
       };

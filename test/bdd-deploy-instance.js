@@ -14,15 +14,16 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
-var RedisList = require('redis-types').List;
-var Url = require('url');
+var api = require('./fixtures/api-control');
 var async = require('async');
 var createCount = require('callback-count');
+var dock = require('./fixtures/dock');
+var expects = require('./fixtures/expects');
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
-var isObject = require('101/is-object');
 var multi = require('./fixtures/multi-factory');
 var pick = require('101/pick');
+var primus = require('./fixtures/primus');
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
@@ -66,7 +67,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         ], function (err, newBuild) {
           if (err) { return done(err); }
           expect(ctx.instance.build._id).to.equal(newBuild._id);
-          expectHipacheHostsForContainers(ctx.instance, done);
+          expects.updatedHosts(ctx.user, ctx.instance, done);
         });
         function createVersion (cb) {
           var newVersion = ctx.context.createVersion({
@@ -132,7 +133,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
             ], function (err, newBuild) {
               if (err) { return done(err); }
               expect(ctx.instance.build._id).to.equal(newBuild._id);
-              expectHipacheHostsForContainers(ctx.instance, done);
+              expects.updatedHosts(ctx.user, ctx.instance, done);
             });
             function createVersion (cb) {
               var newVersion = ctx.context.createVersion({
@@ -202,7 +203,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
             ], function (err, newBuild) {
               if (err) { return done(err); }
               expect(ctx.instance.build._id).to.equal(newBuild._id);
-              expectHipacheHostsForContainers(ctx.instance, done);
+              expects.updatedHosts(ctx.user, ctx.instance, done);
             });
             function createVersion (cb) {
               var newVersion = ctx.context.createVersion({
@@ -283,7 +284,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
           ], function (err, newBuild) {
             if (err) { return done(err); }
             expect(ctx.instance.build._id).to.equal(newBuild._id);
-            expectHipacheHostsForContainers(ctx.instance, done);
+            expects.updatedHosts(ctx.user, ctx.instance, done);
           });
           function createVersion (cb) {
             var newVersion = ctx.context.createVersion({
@@ -369,7 +370,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         multi.buildTheBuild(ctx.user, ctx.build, done);
       });
       beforeEach(function (done) {
-        ctx.instance = ctx.user.createInstance({ build: ctx.build.id() }, done);
+        ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done);
       });
       it('should deploy an instance with new context versions', function (done) {
         async.waterfall([
@@ -381,7 +382,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         ], function (err, newBuild) {
           if (err) { return done(err); }
           expect(ctx.instance.build._id).to.equal(newBuild._id);
-          expectHipacheHostsForContainers(ctx.instance, done);
+          expects.updatedHosts(ctx.user, ctx.instance, done);
         });
         function createVersion (cb) {
           var newVersion = ctx.context.createVersion({
@@ -447,7 +448,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         multi.buildTheBuild(ctx.user, ctx.build, done);
       });
       beforeEach(function (done) {
-        ctx.instance = ctx.user.createInstance({ build: ctx.build.id() }, done);
+        ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done);
       });
       it('should deploy an instance with new context versions', function (done) {
         async.waterfall([
@@ -460,7 +461,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         ], function (err, newBuild) {
           if (err) { return done(err); }
           expect(ctx.instance.build._id).to.equal(newBuild._id);
-          expectHipacheHostsForContainers(ctx.instance, done);
+          expects.updatedHosts(ctx.user, ctx.instance, done);
         });
         function createVersion (cb) {
           var newVersion = ctx.context.createVersion({
