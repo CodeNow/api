@@ -20,6 +20,8 @@ var createCount = require('callback-count');
 var error = require('error');
 var Graph = require('models/apis/graph');
 var pluck = require('101/pluck');
+var find = require('101/find');
+var hasProps = require('101/has-properties');
 
 var Instance = require('models/mongo/instance');
 var dock = require('../../../test/fixtures/dock');
@@ -827,6 +829,11 @@ describe('Instance', function () {
                 instances[1].id.toString(),
                 instances[2].id.toString()
               ]);
+              var dep1 = find(deps, hasProps({ id: instances[1].id.toString() }));
+              var dep2 = find(deps, hasProps({ id: instances[2].id.toString() }));
+              expect(dep1.dependencies).to.have.length(1);
+              expect(dep1.dependencies[0].id).to.equal(instances[2].id.toString());
+              expect(dep2.dependencies).to.have.length(0);
               done();
             });
           });
