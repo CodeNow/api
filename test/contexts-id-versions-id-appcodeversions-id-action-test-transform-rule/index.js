@@ -10,16 +10,18 @@ var after = lab.after;
 var afterEach = lab.afterEach;
 var expect = require('code').expect;
 var sinon = require('sinon');
-var optimus = require('optimus/client');
 
-var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
-var multi = require('../../fixtures/multi-factory');
+var optimus = require('optimus/client');
+var path = require('path');
 var uuid = require('uuid');
-var primus = require('../../fixtures/primus');
 var last = require('101/last');
 
-describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransformRule', function () {
+var api = require('../fixtures/api-control');
+var dock = require('../fixtures/dock');
+var multi = require('../fixtures/multi-factory');
+var primus = require('../fixtures/primus');
+
+describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransformRule', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -28,9 +30,9 @@ describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTr
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  afterEach(require('../../fixtures/clean-mongo').removeEverything);
-  afterEach(require('../../fixtures/clean-ctx')(ctx));
-  afterEach(require('../../fixtures/clean-nock'));
+  afterEach(require('../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../fixtures/clean-ctx')(ctx));
+  afterEach(require('../fixtures/clean-nock'));
 
   beforeEach(function (done) {
     ctx.optimusResponse = {
@@ -83,15 +85,15 @@ describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTr
       ctx.user = user;
       ctx.repoName = 'Dat-middleware';
       ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
-      require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
-      require('../../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
+      require('../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
+      require('../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
       var body = {
         repo: ctx.fullRepoName,
         branch: 'master',
         commit: uuid()
       };
       var username = ctx.user.attrs.accounts.github.login;
-      require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
+      require('../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
       ctx.appCodeVersion = ctx.contextVersion.appCodeVersions.models[0];
       done();
     });
@@ -196,6 +198,81 @@ describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTr
           expect(optimusRules[index][key]).to.deep.equal(expected[key]);
         });
       });
+      done();
+    });
+  });
+
+  it('should respond with 400 bad request if given a rule without an action', function(done) {
+    var malformedRule = { search: 'foo' };
+    var expectedMessage = 'Supplied transformation rule requires an action attribute.';
+    ctx.appCodeVersion.testTransformRule(malformedRule, function (err) {
+      expect(err).to.exist();
+      expect(err.data.res.statusCode).to.equal(400);
+      expect(err.data.res.body.message).to.equal(expectedMessage);
+      done();
+    });
+  });
+
+  it('should respond with 400 bad request if given a rule with a non-string action', function(done) {
+    var malformedRule = { action: { hello: 'world' }, search: 'foo' };
+    var expectedMessage = 'Supplied transformation rule requires an action attribute.';
+    ctx.appCodeVersion.testTransformRule(malformedRule, function (err) {
+      expect(err).to.exist();
+      expect(err.data.res.statusCode).to.equal(400);
+      expect(err.data.res.body.message).to.equal(expectedMessage);
+      done();
+    });
+  });
+
+  it('should respond with 400 bad request if given a rule with an invalid action', function(done) {
+    var malformedRule = { action: 'invalid', search: 'foo' };
+    var expectedMessage = 'Invalid action "invalid" given' +
+      ' for test rule. Expected "rename" or "replace".';
+    ctx.appCodeVersion.testTransformRule(malformedRule, function (err) {
+      expect(err).to.exist();
+      expect(err.data.res.statusCode).to.equal(400);
+      expect(err.data.res.body.message).to.equal(expectedMessage);
+      done();
+    });
+  });
+
+  it('should respond with 400 bad request if the given rule id could not be found', function(done) {
+    var unknownRule = { action: 'rename', source: 'src', dest: 'dest', _id: 'invalid' };
+    var expectedMessage = 'Rule with given _id: "invalid" was not found.';
+    ctx.appCodeVersion.testTransformRule(unknownRule, function (err) {
+      expect(err).to.exist();
+      expect(err.data.res.statusCode).to.equal(400);
+      expect(err.data.res.body.message).to.equal(expectedMessage);
+      done();
+    });
+  });
+
+
+  it('should report gateway timeouts (504) when optimus times out', function(done) {
+    var error = new Error('totes busted');
+    optimus.transform.yieldsAsync(error);
+    ctx.appCodeVersion.testTransformRule(ctx.replaceRule, function (err) {
+      expect(err.data.res.statusCode).to.equal(504);
+      done();
+    });
+  });
+
+  it('should report a bad gateway (502) when optimus returns a 5XX', function(done) {
+    var errMessage = 'Dis ist zee errorz';
+    optimus.transform.yieldsAsync(null, { statusCode: 500, body: errMessage });
+    ctx.appCodeVersion.testTransformRule(ctx.replaceRule, function (err, body, code, res) {
+      expect(err.data.res.statusCode).to.equal(502);
+      expect(err.data.res.body.message).to.equal(errMessage);
+      done();
+    });
+  });
+
+  it('should directly respond with 4XXs given by optimus', function(done) {
+    var errMessage = 'Parameter `commitish` is required.';
+    optimus.transform.yieldsAsync(null, { statusCode: 400, body: errMessage });
+    ctx.appCodeVersion.testTransformRule(ctx.replaceRule, function (err) {
+      expect(err.data.res.statusCode).to.equal(400);
+      expect(err.data.res.body.message).to.equal(errMessage);
       done();
     });
   });

@@ -12,15 +12,15 @@ var expect = require('code').expect;
 var sinon = require('sinon');
 var optimus = require('optimus/client');
 
-var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
-var multi = require('../../fixtures/multi-factory');
+var api = require('../fixtures/api-control');
+var dock = require('../fixtures/dock');
+var multi = require('../fixtures/multi-factory');
 var uuid = require('uuid');
-var primus = require('../../fixtures/primus');
+var primus = require('../fixtures/primus');
 
-var InfraCodeVersion = require('../../../lib/models/mongo/infra-code-version');
+var InfraCodeVersion = require('../../lib/models/mongo/infra-code-version');
 
-describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTransformRules', function () {
+describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTransformRules', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -29,9 +29,9 @@ describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyT
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  afterEach(require('../../fixtures/clean-mongo').removeEverything);
-  afterEach(require('../../fixtures/clean-ctx')(ctx));
-  afterEach(require('../../fixtures/clean-nock'));
+  afterEach(require('../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../fixtures/clean-ctx')(ctx));
+  afterEach(require('../fixtures/clean-nock'));
 
   beforeEach(function (done) {
     ctx.optimusResponse = {
@@ -71,15 +71,15 @@ describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyT
       ctx.user = user;
       ctx.repoName = 'Dat-middleware';
       ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
-      require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
-      require('../../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
+      require('../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
+      require('../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
       var body = {
         repo: ctx.fullRepoName,
         branch: 'master',
         commit: uuid()
       };
       var username = ctx.user.attrs.accounts.github.login;
-      require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
+      require('../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
       ctx.appCodeVersion = ctx.contextVersion.appCodeVersions.models[0];
       done();
     });
@@ -110,15 +110,6 @@ describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyT
     });
   });
 
-  it('should pass optimus errors to the client', function(done) {
-    var error = new Error('totes busted');
-    optimus.transform.yieldsAsync(error);
-    ctx.appCodeVersion.runTransformRules(function (err) {
-      expect(err.data.res.statusCode).to.equal(500);
-      done();
-    });
-  });
-
   it('should save the script to the build files', function(done) {
     ctx.appCodeVersion.runTransformRules(function (err, body, code, res) {
       expect(ctx.upsertFs.calledOnce).to.be.true();
@@ -126,6 +117,35 @@ describe('200 POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyT
         '/translation_rules.sh',
         ctx.optimusResponse.script
       )).to.be.true();
+      done();
+    });
+  });
+
+  it('should report gateway timeouts (504) when optimus times out', function(done) {
+    var error = new Error('totes busted');
+    optimus.transform.yieldsAsync(error);
+    ctx.appCodeVersion.runTransformRules(function (err) {
+      expect(err.data.res.statusCode).to.equal(504);
+      done();
+    });
+  });
+
+  it('should report a bad gateway (502) when optimus returns a 5XX', function(done) {
+    var errMessage = 'Dis ist zee errorz';
+    optimus.transform.yieldsAsync(null, { statusCode: 500, body: errMessage });
+    ctx.appCodeVersion.runTransformRules(function (err, body, code, res) {
+      expect(err.data.res.statusCode).to.equal(502);
+      expect(err.data.res.body.message).to.equal(errMessage);
+      done();
+    });
+  });
+
+  it('should directly respond with 4XXs given by optimus', function(done) {
+    var errMessage = 'Parameter `commitish` is required.';
+    optimus.transform.yieldsAsync(null, { statusCode: 400, body: errMessage });
+    ctx.appCodeVersion.runTransformRules(function (err) {
+      expect(err.data.res.statusCode).to.equal(400);
+      expect(err.data.res.body.message).to.equal(errMessage);
       done();
     });
   });
