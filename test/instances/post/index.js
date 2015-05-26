@@ -270,7 +270,7 @@ describe('POST /instances', function () {
             expects.success(201, expected, function (err, instanceData) {
               if (err) { return done(err); }
               expect(instanceData.name).to.equal('Instance1');
-              expect(instanceData.shortHash).to.equal(instance.id());
+              expect(instanceData.shortHash).to.equal(instance.attrs.shortHash);
               expect(/[a-z0-9]+/.test(instanceData.shortHash)).to.equal(true);
               done();
             }));
@@ -498,7 +498,7 @@ describe('POST /instances', function () {
       it('should have the parent instance set in the new one', function (done) {
         var json = {
           build: ctx.build.id(),
-          parent: ctx.instance.id()
+          parent: ctx.instance.attrs.shortHash
         };
         var expected = {
           _id: exists,
@@ -511,7 +511,7 @@ describe('POST /instances', function () {
           public: false,
           'build._id': ctx.build.id(),
           containers: exists,
-          parent: ctx.instance.id(),
+          parent: ctx.instance.attrs.shortHash,
           shortHash: exists,
           'network.networkIp': ctx.instance.attrs.network.networkIp, // same owner, same network
           'network.hostIp': not(equals(ctx.instance.attrs.network.hostIp))

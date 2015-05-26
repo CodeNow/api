@@ -147,6 +147,7 @@
   "mongodb-restore",
   "mongodb-restore-cli",
   "mongodb-wrapper",
+  "mongojs",
   "mongoose",
   "montmanu-sails-mongo",
   "nodegame-mongodb",
