@@ -8,6 +8,9 @@ var before = lab.before;
 var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
+var find = require('101/find');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -32,17 +35,18 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, user) {
       ctx.contextVersion = contextVersion;
+      ctx.mainAppCodeVersion = contextVersion.attrs.appCodeVersions[0];
       ctx.context = context;
       ctx.user = user;
-      ctx.repoName = 'Dat-middleware';
-      ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
-      require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
-      require('../../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
       done();
     });
   });
   describe('with master repo', function() {
     beforeEach(function(done) {
+      ctx.repoName = 'Dat-middleware';
+      ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
+      require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
+      require('../../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
       var body = {
         repo: ctx.fullRepoName,
         branch: 'master',
@@ -83,6 +87,10 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
   });
   describe('with additionalRepo repo', function() {
     beforeEach(function(done) {
+      ctx.repoName = 'conire';
+      ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
+      require('../../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
+      require('../../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
       var body = {
         repo: ctx.fullRepoName,
         branch: 'master',
@@ -91,38 +99,77 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
       };
       var username = ctx.user.attrs.accounts.github.login;
       require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
-      ctx.appCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
+      ctx.addAppCodeVersion = ctx.contextVersion.addGithubRepo(body, done);
     });
     it('it should update an appCodeVersion\'s branch', function (done) {
       var body = {
         branch: 'feature1'
       };
-      var expected = ctx.appCodeVersion.json();
+      var expected = ctx.addAppCodeVersion.json();
       expected.branch = body.branch;
       expected.lowerBranch = body.branch.toLowerCase();
       expected.additionalRepo = true;
-      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+      ctx.addAppCodeVersion.update(body, expects.success(200, expected, function (err) {
+        if (err) { return done(err); }
+        ctx.contextVersion.fetch(function (err, cv) {
+          if (err) { return done(err); }
+          expect(cv.appCodeVersions.length).to.equal(2);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !!appCodeVersion.additionalRepo;
+          })).to.deep.contain(expected);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !appCodeVersion.additionalRepo;
+          })).to.deep.contain(ctx.mainAppCodeVersion);
+          done();
+        });
+      }));
     });
-    it('it should update an appCodeVersion\'s commit', function (done) {
+    it('it should update an addAppCodeVersion\'s commit', function (done) {
       var body = {
         commit: 'abcdef'
       };
-      var expected = ctx.appCodeVersion.json();
+      var expected = ctx.addAppCodeVersion.json();
       expected.commit = body.commit;
       expected.additionalRepo = true;
-      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+      ctx.addAppCodeVersion.update(body, expects.success(200, expected, function (err) {
+        if (err) { return done(err); }
+        ctx.contextVersion.fetch(function (err, cv) {
+          if (err) { return done(err); }
+          expect(cv.appCodeVersions.length).to.equal(2);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !!appCodeVersion.additionalRepo;
+          })).to.deep.contain(expected);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !appCodeVersion.additionalRepo;
+          })).to.deep.contain(ctx.mainAppCodeVersion);
+          done();
+        });
+      }));
     });
-    it('it should update an appCodeVersion\'s commit and branch', function (done) {
+    it('it should update an addAppCodeVersion\'s commit and branch', function (done) {
       var body = {
         branch: 'other-feature',
         commit: 'abcdef'
       };
-      var expected = ctx.appCodeVersion.json();
+      var expected = ctx.addAppCodeVersion.json();
       expected.commit = body.commit;
       expected.branch = body.branch;
       expected.lowerBranch = body.branch.toLowerCase();
       expected.additionalRepo = true;
-      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+      ctx.addAppCodeVersion.update(body, expects.success(200, expected, function (err) {
+        if (err) { return done(err); }
+        ctx.contextVersion.fetch(function (err, cv) {
+          if (err) { return done(err); }
+          expect(cv.appCodeVersions.length).to.equal(2);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !!appCodeVersion.additionalRepo;
+          })).to.deep.contain(expected);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !appCodeVersion.additionalRepo;
+          })).to.deep.contain(ctx.mainAppCodeVersion);
+          done();
+        });
+      }));
     });
     it('it should NOT update additionalRepo', function (done) {
       var body = {
@@ -130,12 +177,25 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
         commit: 'abcdef',
         additionalRepo: false
       };
-      var expected = ctx.appCodeVersion.json();
+      var expected = ctx.addAppCodeVersion.json();
       expected.commit = body.commit;
       expected.branch = body.branch;
       expected.lowerBranch = body.branch.toLowerCase();
       expected.additionalRepo = true;
-      ctx.appCodeVersion.update(body, expects.success(200, expected, done));
+      ctx.addAppCodeVersion.update(body, expects.success(200, expected, function (err) {
+        if (err) { return done(err); }
+        ctx.contextVersion.fetch(function (err, cv) {
+          if (err) { return done(err); }
+          expect(cv.appCodeVersions.length).to.equal(2);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !!appCodeVersion.additionalRepo;
+          })).to.deep.contain(expected);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !appCodeVersion.additionalRepo;
+          })).to.deep.contain(ctx.mainAppCodeVersion);
+          done();
+        });
+      }));
     });
   });
 });
