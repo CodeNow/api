@@ -467,27 +467,18 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(body._id).to.exist();
                 ctx.settingsId = body._id;
-                ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err, copiedInstance) {
+                ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
                   expect(err).to.be.null();
                   primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
                     if (err) { return done(err); }
                     primus.expectAction('start', {}, done);
-                    ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
-                      expect(err).to.be.null();
-                      ctx.instance2 = copiedInstance;
-                      ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({
-                        masterPod: true
-                      }, function (err) {
-                        expect(err).to.be.null();
-                      });
-                    });
                   });
                 });
               });
             });
           });
 
-          it('should fork 2 instance from 2 master instances', function (done) {
+          it('should fork 2 instances from 2 master instances', function (done) {
             var baseDeploymentId = 1234567;
             sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
               var cb = Array.prototype.slice.apply(arguments).pop();
