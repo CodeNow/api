@@ -55,7 +55,7 @@ describe('PATCH 400 - /instances/:id', function () {
           name: 'env',
           type: 'array',
           itemType: 'string',
-          itemRegExp: /^([A-Za-z]+[A-Za-z0-9_]*)=('(\n[^']*')|("[^"]*")|([^\s#]+))$/,
+          itemRegExp: /^([A-z]+\W*)=.*$/,
           invalidValues: [
             'string1',
             '1=X',
