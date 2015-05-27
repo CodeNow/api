@@ -251,7 +251,7 @@ describe('Github - /actions/github', function () {
             var newDeploymentId = baseDeploymentId;
             cb(null, { id: newDeploymentId });
           });
-          var count = cbCount(1, function () {
+          var count = cbCount(2, function () {
             // restore what we stubbed
             expect(PullRequest.prototype.createAndStartDeployment.calledOnce).to.equal(true);
             PullRequest.prototype.createAndStartDeployment.restore();
@@ -274,6 +274,8 @@ describe('Github - /actions/github', function () {
           var options = hooks(data).push;
           var username = acv.repo.split('/')[0];
           require('./fixtures/mocks/github/users-username')(101, username);
+          // wait for create worker background work to finish
+          primus.expectActionCount('start', 1, count.next);
           request.post(options, function (err, res, cvsIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -353,7 +355,7 @@ describe('Github - /actions/github', function () {
           var countOnCallback = function () {
             count.next();
           };
-          var count = cbCount(3, function () {
+          var count = cbCount(4, function () {
             // restore what we stubbed
             expect(PullRequest.prototype.createAndStartDeployment.calledOnce).to.equal(true);
             PullRequest.prototype.createAndStartDeployment.restore();
@@ -379,6 +381,8 @@ describe('Github - /actions/github', function () {
             owner: 'anton'
           };
           var options = hooks(data).push;
+          // wait for container create worker to finish
+          primus.expectActionCount('start', 1, count.next);
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -417,7 +421,7 @@ describe('Github - /actions/github', function () {
             var countOnCallback = function () {
               count.next();
             };
-            var count = cbCount(2, function () {
+            var count = cbCount(3, function () {
               var slackStub = Slack.prototype.notifyOnAutoFork;
               expect(slackStub.calledOnce).to.equal(true);
               expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
@@ -438,6 +442,8 @@ describe('Github - /actions/github', function () {
             sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
             var options = hooks(data).push;
             require('./fixtures/mocks/github/users-username')(101, username);
+            // wait for container create worker to finish
+            primus.expectActionCount('start', 1, count.next);
             request.post(options, function (err, res, cvIds) {
               if (err) { return done(err); }
               finishAllIncompleteVersions();
@@ -491,7 +497,7 @@ describe('Github - /actions/github', function () {
             var countOnCallback = function () {
               count.next();
             };
-            var count = cbCount(4, function () {
+            var count = cbCount(5, function () {
               // restore what we stubbed
               expect(PullRequest.prototype.createAndStartDeployment.calledTwice).to.equal(true);
               PullRequest.prototype.createAndStartDeployment.restore();
@@ -518,6 +524,8 @@ describe('Github - /actions/github', function () {
             var options = hooks(data).push;
             var username = user.login;
             require('./fixtures/mocks/github/users-username')(101, username);
+            // wait for the auto-launched instances workers to finish
+            primus.expectActionCount('start', 2, countOnCallback);
             request.post(options, function (err, res, cvIds) {
               if (err) { return done(err); }
               finishAllIncompleteVersions();
@@ -574,7 +582,7 @@ describe('Github - /actions/github', function () {
               .to.equal(ctx.user.attrs.accounts.github.access_token);
             cb(null, {id: newDeploymentId});
           });
-          var count = cbCount(3, function () {
+          var count = cbCount(4, function () {
             var expected = {
               'contextVersion.build.started': exists,
               'contextVersion.build.completed': exists,
@@ -626,6 +634,8 @@ describe('Github - /actions/github', function () {
           options.json.created = false;
           var username = user.login;
           require('./fixtures/mocks/github/users-username')(101, username);
+          // wait for container create worker to finish
+          primus.expectActionCount('start', 1, count.next);
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
