@@ -114,10 +114,10 @@ describe('Runnable', function () {
     it('should call #updateInstance if autodeploy is enabled', function (done) {
       var runnable = new Runnable({});
       sinon.stub(Instance, 'isAutoDeployOn', function (id, cb) {
-        cb(null, true);
+        cb(null, true, {shortHash: 'x6123'});
       });
-      sinon.stub(Runnable.prototype, 'updateInstance', function (id, payload) {
-        expect(id).to.equal('507f1f77bcf86cd799439011');
+      sinon.stub(Runnable.prototype, 'updateInstance', function (shortHash, payload) {
+        expect(shortHash).to.equal('x6123');
         expect(payload.json.build).to.equal('2132173812');
         Instance.isAutoDeployOn.restore();
         Runnable.prototype.updateInstance.restore();
