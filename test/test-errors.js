@@ -7,6 +7,8 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
+var sinon = require('sinon');
+var error = require('error');
 var expect = Code.expect;
 
 var multi = require('./fixtures/multi-factory');
@@ -36,6 +38,29 @@ describe('Errors', function () {
         expect(body.message).to.equal('An internal server error occurred');
         ctx.user.client.get('/', done); // make sure server is still up
       });
+    });
+  });
+
+  describe('GET /test/errors/runtime/background', function () {
+    afterEach(function (done) {
+      error.errorHandler.restore();
+      done();
+    });
+
+    it('should respond the error', function (done) {
+      var errorHandler = error.errorHandler.bind(error);
+      sinon.stub(error, 'errorHandler', errorHandlerStub);
+      ctx.user.client.get('test/errors/runtime/background', function (err, res) {
+        if (err) { return done(err); }
+        expect(res.statusCode).to.equal(200);
+      });
+
+      function errorHandlerStub () {
+        // call original function and
+        // make sure the server does not crash
+        errorHandler.apply(null, arguments);
+        ctx.user.client.get('/', done); // make sure server is still up
+      }
     });
   });
 

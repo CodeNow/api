@@ -20,6 +20,8 @@ var createCount = require('callback-count');
 var error = require('error');
 var Graph = require('models/apis/graph');
 var pluck = require('101/pluck');
+var find = require('101/find');
+var hasProps = require('101/has-properties');
 
 var Instance = require('models/mongo/instance');
 var dock = require('../../../test/fixtures/dock');
@@ -618,6 +620,7 @@ describe('Instance', function () {
         props: {
           id: instances[0].id.toString(),
           shortHash: instances[0].shortHash.toString(),
+          name: instances[0].name,
           lowerName: instances[0].lowerName,
           owner_github: instances[0].owner.github,
           contextVersion_context: instances[0].contextVersion.context.toString()
@@ -668,11 +671,13 @@ describe('Instance', function () {
 
     describe('with instances in the graph', function () {
       var nodeFields = [
+        'contextVersion',
+        'hostname',
         'id',
-        'shortHash',
         'lowerName',
+        'name',
         'owner',
-        'contextVersion'
+        'shortHash'
       ];
       beforeEach(function (done) {
         async.forEach(
@@ -710,7 +715,7 @@ describe('Instance', function () {
         i.addDependency(d, 'somehostname', function (err, limitedInstance) {
           expect(err).to.be.null();
           expect(limitedInstance).to.exist();
-          expect(Object.keys(limitedInstance)).to.contain(nodeFields);
+          expect(Object.keys(limitedInstance)).to.only.contain(nodeFields);
           expect(limitedInstance).to.deep.equal(shortD);
           i.getDependencies(function (err, deps) {
             expect(err).to.be.null();
@@ -792,6 +797,86 @@ describe('Instance', function () {
                 done();
               });
             });
+          });
+        });
+
+        describe('with chained depedencies', function () {
+          beforeEach(function (done) {
+            instances[1].addDependency(instances[2], 'somehostname2', done);
+          });
+
+          it('should be able to recurse dependencies', function (done) {
+            var i = instances[0];
+            i.getDependencies({ recurse: true }, function (err, deps) {
+              if (err) { return done(err); }
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(1);
+              expect(deps[0].id).to.equal(instances[1].id.toString());
+              expect(deps[0].dependencies).to.be.an.array();
+              expect(deps[0].dependencies).to.have.length(1);
+              expect(deps[0].dependencies[0].id).to.equal(instances[2].id.toString());
+              done();
+            });
+          });
+
+          it('should be able to flatten recursed dependencies', function (done) {
+            var i = instances[0];
+            i.getDependencies({ recurse: true, flatten: true }, function (err, deps) {
+              if (err) { return done(err); }
+              expect(deps).to.be.an.array();
+              expect(deps).to.have.length(2);
+              expect(deps.map(pluck('id'))).to.only.include([
+                instances[1].id.toString(),
+                instances[2].id.toString()
+              ]);
+              var dep1 = find(deps, hasProps({ id: instances[1].id.toString() }));
+              var dep2 = find(deps, hasProps({ id: instances[2].id.toString() }));
+              expect(dep1.dependencies).to.have.length(1);
+              expect(dep1.dependencies[0].id).to.equal(instances[2].id.toString());
+              expect(dep2.dependencies).to.have.length(0);
+              done();
+            });
+          });
+
+          it('should not follow circles while flattening', function (done) {
+            async.series([
+              function (cb) {
+                instances[2].addDependency(instances[0], 'circlehost', cb);
+              },
+              function (cb) {
+                var i = instances[0];
+                i.getDependencies({ recurse: true, flatten: true }, function (err, deps) {
+                  if (err) { return done(err); }
+                  expect(deps).to.be.an.array();
+                  expect(deps).to.have.length(3);
+                  expect(deps.map(pluck('id'))).to.only.include(instances.map(pluck('id')));
+                  cb();
+                });
+              }
+            ], done);
+          });
+
+          it('should not follow circles', function (done) {
+            async.series([
+              function (cb) {
+                instances[2].addDependency(instances[0], 'circlehost', cb);
+              },
+              function (cb) {
+                var i = instances[0];
+                i.getDependencies({ recurse: true }, function (err, deps) {
+                  if (err) { return done(err); }
+                  expect(deps).to.be.an.array();
+                  expect(deps).to.have.length(1);
+                  expect(deps[0].id).to.equal(instances[1].id.toString());
+                  expect(deps[0].dependencies).to.be.an.array();
+                  expect(deps[0].dependencies).to.have.length(1);
+                  expect(deps[0].dependencies[0].id).to.equal(instances[2].id.toString());
+                  expect(deps[0].dependencies[0].dependencies)
+                    .to.be.an.array(instances[0].id.toString());
+                  cb();
+                });
+              }
+            ], done);
           });
         });
       });

@@ -88,14 +88,13 @@ describe('Context - /contexts/:id', function () {
         });
       });
     });
-    ['context'].forEach(function (destroyName) {
-      describe('not founds', function() {
-        beforeEach(function (done) {
-          ctx[destroyName].destroy(done);
-        });
-        it('should not get the context if missing (404 '+destroyName+')', function (done) {
-          ctx.context.fetch(expects.errorStatus(404, done));
-        });
+
+    describe('not founds', function() {
+      beforeEach(function (done) {
+        ctx.context.destroy(done);
+      });
+      it('should not get the context if missing (404 context)', function (done) {
+        ctx.user.fetchContext(ctx.context.id(), expects.errorStatus(404, done));
       });
     });
   });
@@ -145,17 +144,17 @@ describe('Context - /contexts/:id', function () {
         });
       });
     });
-    ['context'].forEach(function (destroyName) {
-      describe('not founds', function() {
-        beforeEach(function (done) {
-          ctx[destroyName].destroy(done);
-        });
-        updates.forEach(function (json) {
-          var keys = Object.keys(json);
-          var vals = keys.map(function (key) { return json[key]; });
-          it('should not update context\'s '+keys+' to '+vals+' (404 not found)', function (done) {
-            ctx.context.update({ json: json }, expects.errorStatus(404, done));
-          });
+
+    describe('not founds', function() {
+      beforeEach(function (done) {
+        ctx.context.destroy(done);
+      });
+      updates.forEach(function (json) {
+        var keys = Object.keys(json);
+        var vals = keys.map(function (key) { return json[key]; });
+        it('should not update context\'s '+keys+' to '+vals+' (404 not found)', function (done) {
+          ctx.user.updateContext(
+            ctx.context.id(), { json: json }, expects.errorStatus(404, done));
         });
       });
     });
@@ -186,14 +185,12 @@ describe('Context - /contexts/:id', function () {
         });
       });
     });
-    ['context'].forEach(function (destroyName) {
-      describe('not founds', function() {
-        beforeEach(function (done) {
-          ctx[destroyName].destroy(done);
-        });
-        it('should not delete the context if missing (404 '+destroyName+')', function (done) {
-          ctx.context.destroy(expects.errorStatus(404, done));
-        });
+    describe('not founds', function() {
+      beforeEach(function (done) {
+        ctx.context.destroy(done);
+      });
+      it('should not delete the context if missing (404 context)', function (done) {
+        ctx.user.destroyContext(ctx.context.id(), expects.errorStatus(404, done));
       });
     });
   });
