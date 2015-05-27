@@ -101,6 +101,8 @@ describe('Infracode Versions', function () {
         if (err) { return done(err); }
         expect(infracode.findFs.calledWith(filepath)).to.be.true();
         expect(infracode.updateFile.calledWith(filepath, body)).to.be.true();
+        infracode.findFs.restore();
+        infracode.updateFile.restore();
         done();
       });
     });
@@ -119,6 +121,8 @@ describe('Infracode Versions', function () {
           path: '/etc',
           body: body
         })).to.be.true();
+        infracode.findFs.restore();
+        infracode.createFs.restore();
         done();
       });
     });
@@ -132,6 +136,8 @@ describe('Infracode Versions', function () {
       sinon.stub(infracode, 'findFs').yieldsAsync(null, { isDir: true });
       infracode.upsertFs(filepath, body, function (err) {
         expect(err).to.equal(boomObject);
+        infracode.findFs.restore();
+        Boom.badRequest.restore();
         done();
       });
     });
@@ -144,6 +150,7 @@ describe('Infracode Versions', function () {
       sinon.stub(infracode, 'findFs').yieldsAsync(error);
       infracode.upsertFs(filepath, body, function (err) {
         expect(err).to.equal(error);
+        infracode.findFs.restore();
         done();
       });
     });
