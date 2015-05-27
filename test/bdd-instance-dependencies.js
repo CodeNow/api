@@ -17,6 +17,9 @@ var multi = require('./fixtures/multi-factory');
 // var expects = require('./fixtures/expects');
 var async = require('async');
 var primus = require('./fixtures/primus');
+var pluck = require('101/pluck');
+var find = require('101/find');
+var hasProps = require('101/has-properties');
 
 describe('BDD - Instance Dependencies', function () {
   var ctx = {};
@@ -78,6 +81,27 @@ describe('BDD - Instance Dependencies', function () {
   });
 
   describe('from none to 1 -> 1 relations', function () {
+    describe('as master pod environment relations with ports', function () {
+      beforeEach(function (done) {
+        var envs = ctx.webInstance.attrs.env || [];
+        envs.push('API=' + ctx.apiInstance.attrs.lowerName + '-staging-' +
+          ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN + ':909');
+        ctx.webInstance.update({ env: envs }, done);
+      });
+
+      it('should catch dependencies via environment variables', function (done) {
+        ctx.webInstance.fetchDependencies(function (err, deps) {
+          if (err) { return done(err); }
+          expect(deps).to.have.length(1);
+          expect(deps[0]).to.deep.contain({
+            lowerName: 'api-instance',
+            id: ctx.apiInstance.attrs._id.toString()
+          });
+          done();
+        });
+      });
+    });
+
     describe('as master pod environment relations', function () {
       beforeEach(function (done) {
         var envs = ctx.webInstance.attrs.env || [];
@@ -228,6 +252,42 @@ describe('BDD - Instance Dependencies', function () {
         envs.push('API=' + ctx.webInstance.attrs.lowerName + '-staging-' +
           ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN);
         ctx.apiInstance.update({ env: envs }, done);
+      });
+
+      it('should allow recursive deps', function (done) {
+        ctx.webInstance.fetchDependencies({ recurse: true }, function (err, deps) {
+          if (err) { return done(err); }
+          expect(deps).to.have.length(1);
+          expect(deps[0].lowerName).to.equal(ctx.apiInstance.attrs.lowerName);
+          expect(deps[0].dependencies).to.be.an.array();
+          expect(deps[0].dependencies).to.have.length(1);
+          expect(deps[0].dependencies[0]).to.deep.contain({
+            id: ctx.webInstance.attrs._id,
+            shortHash: ctx.webInstance.attrs.shortHash,
+            lowerName: ctx.webInstance.attrs.lowerName
+          });
+          expect(deps[0].dependencies[0].dependencies).to.have.length(0);
+          done();
+        });
+      });
+
+      it('should allow recursive, flat deps', function (done) {
+        // asking web for dependencies recursivly and flat, we can expect to see ourselves in the 
+        // top level when it's circular
+        ctx.webInstance.fetchDependencies({ recurse: true, flatten: true }, function (err, deps) {
+          if (err) { return done(err); }
+          expect(deps).to.have.length(2);
+          expect(deps.map(pluck('lowerName'))).to.only.contain([
+            ctx.apiInstance.attrs.lowerName,
+            ctx.webInstance.attrs.lowerName
+          ]);
+          var apiDep = find(deps, hasProps({ id: ctx.apiInstance.attrs.id.toString() }));
+          var webDep = find(deps, hasProps({ id: ctx.webInstance.attrs.id.toString() }));
+          expect(apiDep.dependencies).to.have.length(1);
+          expect(apiDep.dependencies[0].id).to.equal(ctx.webInstance.attrs.id.toString());
+          expect(webDep.dependencies).to.have.length(0);
+          done();
+        });
       });
 
       it('should update the deps of an instance', function (done) {
