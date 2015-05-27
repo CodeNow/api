@@ -70,7 +70,7 @@ Api.prototype.start = function (cb) {
       return;
     }
     debug('API started');
-    //console.log('API started');
+    console.log('API started');
     if (cb) {
       cb();
     }
