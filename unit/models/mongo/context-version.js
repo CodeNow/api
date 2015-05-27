@@ -56,7 +56,8 @@ describe('Context Version', function () {
 
         ContextVersion.findOne({ _id: ctx.cv._id }, function (findErr, doc) {
           if (findErr) { return done(findErr); }
-          expect(doc.appCodeVersions[0].defaultBranch).to.equal('not-master');
+          expect(ContextVersion.getMainAppCodeVersion(doc.appCodeVersions).defaultBranch)
+            .to.equal('not-master');
           done();
         });
       });

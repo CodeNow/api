@@ -12,6 +12,7 @@ var exists = require('101/exists');
 var Docker = require('models/apis/docker');
 var NaviEntry = require('navi-entry');
 var runnableHostname = require('runnable-hostname');
+var Instance = require('models/mongo/instance');
 NaviEntry.setRedisClient(require('models/redis'));
 
 var expects = module.exports = function (keypath) {
@@ -179,7 +180,7 @@ expects.updatedDnsEntry = function (username, instanceName, instance) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var elasticUrl, directUrl;
-  var branch = instance.getBranchName();
+  var branch = instance.getMainBranchName();
   var opts = {
     masterPod: instance.attrs.masterPod,
     branch: branch,
@@ -211,7 +212,7 @@ expects.updatedNaviEntries = function (username, instance, container, cb) {
     return cb();
   }
   var instanceName = instance.attrs.lowerName;
-  var branch = keypather.get(instance.attrs, 'contextVersion.appCodeVersions[0].lowerBranch');
+  var branch = instance.getMainBranchName();
   var ownerGithub = instance.attrs.owner.github;
   var masterPod = instance.attrs.masterPod;
   Object.keys(container.ports).forEach(function (containerPort) {
@@ -272,7 +273,7 @@ expects.deletedDnsEntry = function (username, instanceName, instance) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var elasticUrl, directUrl;
-  var branch = instance.getBranchName();
+  var branch = instance.getMainBranchName();
   var opts = {
     masterPod: instance.attrs.masterPod,
     branch: branch,
@@ -304,7 +305,7 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
     return cb();
   }
   var instanceName = instance.attrs.lowerName;
-  var branch = keypather.get(instance.attrs, 'contextVersion.appCodeVersions[0].lowerBranch');
+  var branch = Instance.getMainBranchName(instance);
   var ownerGithub = instance.attrs.owner.github;
   var masterPod = instance.attrs.masterPod;
   Object.keys(container.ports).forEach(function (containerPort) {

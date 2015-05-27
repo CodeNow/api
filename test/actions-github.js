@@ -192,7 +192,7 @@ describe('Github - /actions/github', function () {
             Runnable.prototype.createBuild.restore();
             done();
           });
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var acv = ContextVersion.getMainAppCodeVersion(ctx.contextVersion.attrs.appCodeVersions);
           var user = ctx.user.attrs.accounts.github;
           var data = {
             branch: 'master',
@@ -222,7 +222,7 @@ describe('Github - /actions/github', function () {
             Runnable.prototype.buildBuild.restore();
             done();
           });
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var acv = ContextVersion.getMainAppCodeVersion(ctx.contextVersion.attrs.appCodeVersions);
           var user = ctx.user.attrs.accounts.github;
           var data = {
             branch: 'master',
@@ -263,7 +263,7 @@ describe('Github - /actions/github', function () {
             .yields(Boom.notFound('Instance update failed'));
 
           sinon.stub(PullRequest.prototype, 'deploymentErrored', count.next);
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var acv = ContextVersion.getMainAppCodeVersion(ctx.contextVersion.attrs.appCodeVersions);
           var data = {
             branch: 'master',
             repo: acv.repo
@@ -306,7 +306,7 @@ describe('Github - /actions/github', function () {
       });
 
       it('should send 202 and message if autoforking disabled', function (done) {
-        var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+        var acv = ContextVersion.getMainAppCodeVersion(ctx.contextVersion.attrs.appCodeVersions);
         var user = ctx.user.attrs.accounts.github;
         var data = {
           branch: 'feature-1',
@@ -368,7 +368,7 @@ describe('Github - /actions/github', function () {
           });
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
           sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var acv = ContextVersion.getMainAppCodeVersion(ctx.contextVersion.attrs.appCodeVersions);
           var data = {
             branch: 'feature-1',
             repo: acv.repo,
@@ -401,7 +401,7 @@ describe('Github - /actions/github', function () {
           });
 
           it('should return 1 instancesIds if 1 instance was deleted', function (done) {
-            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+            var acv = ContextVersion.getMainAppCodeVersion(ctx.contextVersion.attrs.appCodeVersions);
             var user = ctx.user.attrs.accounts.github;
             var data = {
               branch: 'feature-1',
@@ -505,7 +505,7 @@ describe('Github - /actions/github', function () {
             });
             sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
             sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+            var acv = ContextVersion.getMainAppCodeVersion(ctx.contextVersion.attrs.appCodeVersions);
             var user = ctx.user.attrs.accounts.github;
             var data = {
               branch: 'feature-1',
@@ -612,7 +612,7 @@ describe('Github - /actions/github', function () {
           sinon.stub(Slack.prototype, 'notifyOnAutoDeploy', function () {
             count.next();
           });
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var acv = ContextVersion.getMainAppCodeVersion(ctx.contextVersion.attrs.appCodeVersions);
           var user = ctx.user.attrs.accounts.github;
           var data = {
             branch: 'master',

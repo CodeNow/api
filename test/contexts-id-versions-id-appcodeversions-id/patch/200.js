@@ -18,6 +18,7 @@ var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var uuid = require('uuid');
 var primus = require('../../fixtures/primus');
+var ContextVersion = require('models/mongo/context-version');
 
 describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function () {
   var ctx = {};
@@ -35,7 +36,7 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, user) {
       ctx.contextVersion = contextVersion;
-      ctx.mainAppCodeVersion = contextVersion.attrs.appCodeVersions[0];
+      ctx.mainAppCodeVersion = ContextVersion.getMainAppCodeVersion(contextVersion.attrs.appCodeVersions);
       ctx.context = context;
       ctx.user = user;
       done();

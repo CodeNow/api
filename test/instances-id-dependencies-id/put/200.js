@@ -46,7 +46,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
         var count = createCount(done);
         ctx.elasticHostname = ctx.instance.getElasticHostname();
         // setting name and masterPod here emulates an auto-forked instance
-        var branch = ctx.instance.attrs.contextVersion.appCodeVersions[0].branch;
+        var branch = ctx.instance.getMainBranchName();
         var body2 = {
           name: branch+'-'+ctx.instance.attrs.name,
           build: ctx.build.id(),
