@@ -93,7 +93,7 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
         { action: 'rename', source: 'extreme', dest: 'x-treme' }
       ]
     };
-    ctx.appCodeVersion.setTransformRules(transformRules, function (err, body, code, res) {
+    ctx.appCodeVersion.setTransformRules(transformRules, function (err, body, code) {
       if (err) { return done(err); }
       expect(code).to.equal(200);
       expect(body.transformRules.exclude).to.deep.contain(transformRules.exclude);

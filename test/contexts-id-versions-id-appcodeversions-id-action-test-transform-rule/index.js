@@ -12,8 +12,6 @@ var expect = require('code').expect;
 var sinon = require('sinon');
 
 var optimus = require('optimus/client');
-var path = require('path');
-var uuid = require('uuid');
 var last = require('101/last');
 
 var api = require('../fixtures/api-control');
@@ -87,11 +85,6 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
       ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
       require('../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
       require('../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
-      var body = {
-        repo: ctx.fullRepoName,
-        branch: 'master',
-        commit: uuid()
-      };
       var username = ctx.user.attrs.accounts.github.login;
       require('../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
       ctx.appCodeVersion = ctx.contextVersion.appCodeVersions.models[0];
@@ -260,7 +253,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
   it('should report a bad gateway (502) when optimus returns a 5XX', function(done) {
     var errMessage = 'Dis ist zee errorz';
     optimus.transform.yieldsAsync(null, { statusCode: 500, body: errMessage });
-    ctx.appCodeVersion.testTransformRule(ctx.replaceRule, function (err, body, code, res) {
+    ctx.appCodeVersion.testTransformRule(ctx.replaceRule, function (err) {
       expect(err.data.res.statusCode).to.equal(502);
       expect(err.data.res.body.message).to.equal(errMessage);
       done();

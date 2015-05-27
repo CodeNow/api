@@ -15,7 +15,6 @@ var optimus = require('optimus/client');
 var api = require('../fixtures/api-control');
 var dock = require('../fixtures/dock');
 var multi = require('../fixtures/multi-factory');
-var uuid = require('uuid');
 var primus = require('../fixtures/primus');
 
 var InfraCodeVersion = require('../../lib/models/mongo/infra-code-version');
@@ -73,11 +72,6 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
       ctx.fullRepoName = ctx.user.json().accounts.github.login+'/'+ctx.repoName;
       require('../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName);
       require('../fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, ctx.repoName);
-      var body = {
-        repo: ctx.fullRepoName,
-        branch: 'master',
-        commit: uuid()
-      };
       var username = ctx.user.attrs.accounts.github.login;
       require('../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
       ctx.appCodeVersion = ctx.contextVersion.appCodeVersions.models[0];
@@ -96,7 +90,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
   });
 
   it('should construct rule set and request results from optimus', function(done) {
-    ctx.appCodeVersion.runTransformRules(function (err, body, code, res) {
+    ctx.appCodeVersion.runTransformRules(function (err, body, code) {
       if (err) { return done(err); }
       expect(code).to.equal(200);
       expect(optimus.transform.calledOnce).to.be.true();
@@ -111,7 +105,8 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
   });
 
   it('should save the script to the build files', function(done) {
-    ctx.appCodeVersion.runTransformRules(function (err, body, code, res) {
+    ctx.appCodeVersion.runTransformRules(function (err) {
+      if (err) { return done(err); }
       expect(ctx.upsertFs.calledOnce).to.be.true();
       expect(ctx.upsertFs.calledWith(
         '/translation_rules.sh',
@@ -133,7 +128,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
   it('should report a bad gateway (502) when optimus returns a 5XX', function(done) {
     var errMessage = 'Dis ist zee errorz';
     optimus.transform.yieldsAsync(null, { statusCode: 500, body: errMessage });
-    ctx.appCodeVersion.runTransformRules(function (err, body, code, res) {
+    ctx.appCodeVersion.runTransformRules(function (err) {
       expect(err.data.res.statusCode).to.equal(502);
       expect(err.data.res.body.message).to.equal(errMessage);
       done();
