@@ -14,8 +14,6 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
-var RedisList = require('redis-types').List;
-var Url = require('url');
 var api = require('./fixtures/api-control');
 var async = require('async');
 var createCount = require('callback-count');
@@ -23,7 +21,6 @@ var dock = require('./fixtures/dock');
 var expects = require('./fixtures/expects');
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
-var isObject = require('101/is-object');
 var multi = require('./fixtures/multi-factory');
 var pick = require('101/pick');
 var primus = require('./fixtures/primus');
@@ -531,42 +528,3 @@ describe('BDD - Create Build and Deploy Instance', function () {
     });
   });
 });
-
-// KEEP THIS UPDATED.
-function expectHipacheHostsForContainers (instance, cb) {
-  var containers = instance.containers;
-  var allUrls = [];
-  containers.forEach(function (container) {
-    var ports = container.json().ports;
-    if (isObject(ports)) {
-      Object.keys(ports).forEach(function (port) {
-        var portNumber = port.split('/')[0];
-        var instanceName = instance.attrs.lowerName;
-        var ownerUsername = instance.attrs.owner.username;
-        allUrls.push([portNumber, '.',
-          instanceName, '-',
-          ownerUsername, '.',
-          process.env.USER_CONTENT_DOMAIN].join('').toLowerCase());
-      });
-    }
-  });
-  async.forEach(allUrls, function (url, cb) {
-    var exposedPort = url.split('.')[0];
-    var hipacheEntry = new RedisList('frontend:'+url);
-    hipacheEntry.lrange(0, -1, function (err, backends) {
-      if (err) {
-        cb(err);
-      }
-      else if (backends.length !== 2 || ! /^https?:\/\/[^\:]+:[\d]+$/.test(backends[1].toString())) {
-        cb(new Error('Backends invalid for '+url));
-      }
-      else {
-        var u = Url.parse(backends[1].toString());
-        if (exposedPort === '443' && u.protocol !== 'https:') {
-          return cb(new Error('https is not on port 443 ' + backends[1].toString));
-        }
-        cb();
-      }
-    });
-  }, cb);
-}
