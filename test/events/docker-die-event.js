@@ -19,6 +19,8 @@ var dockerEvents = require('models/events/docker');
 var Docker = require('models/apis/docker');
 var createCount = require('callback-count');
 var UserStoppedContainer = require('models/redis/user-stopped-container');
+var sinon = require('sinon');
+var messenger = require('socket/messenger');
 
 describe('EVENT runnable:docker:events:die', function () {
   var ctx = {};
@@ -46,9 +48,11 @@ describe('EVENT runnable:docker:events:die', function () {
     describe('container die event handler', function() {
       beforeEach(function (done) {
         ctx.originalUserStoppedContainerUnLock = UserStoppedContainer.prototype.unlock;
+        sinon.spy(messenger, 'emitInstanceUpdate');
         done();
       });
       afterEach(function (done) {
+        messenger.emitInstanceUpdate.restore();
         UserStoppedContainer.prototype.unlock = ctx.originalUserStoppedContainerUnLock;
         done();
       });
@@ -75,6 +79,7 @@ describe('EVENT runnable:docker:events:die', function () {
         var userStoppedContainer = new UserStoppedContainer(ctx.instance.attrs.container.inspect.Id);
         UserStoppedContainer.prototype.unlock = function (cb) {
           ctx.originalUserStoppedContainerUnLock.bind(userStoppedContainer)(function (err, success) {
+            expect(messenger.emitInstanceUpdate.calledOnce).to.be.true();
             ctx.instance.fetch(function (err, instance) {
               if (err) { return done(err); }
               expect(instance.container.inspect.State.Running).to.equal(false);
