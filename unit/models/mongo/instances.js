@@ -46,6 +46,7 @@ describe('Instance', function () {
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
 
   function createNewVersion(opts) {
+    // jshint maxcomplexity:10
     var mainRepo = {
       repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
       lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
@@ -80,7 +81,7 @@ describe('Instance', function () {
         dockerImage: "testing",
         dockerTag: "adsgasdfgasdf"
       },
-      appCodeVersions: [mainRepo]
+      appCodeVersions: [mainRepo, additionalRepo]
     });
   }
 
