@@ -111,7 +111,7 @@ describe('Instance - /instances/:id', function () {
             ctx.nonOwner = multi.createUser(done);
           });
           it('should get the instance', function (done) {
-            ctx.nonOwner.fetchInstance(ctx.instance.id(), expects.success(200, ctx.expected, done));
+            ctx.nonOwner.fetchInstance(ctx.instance.attrs.shortHash, expects.success(200, ctx.expected, done));
           });
         });
         describe('moderator', function () {
@@ -119,7 +119,7 @@ describe('Instance - /instances/:id', function () {
             ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
-            ctx.moderator.fetchInstance(ctx.instance.id(), expects.success(200, ctx.expected, done));
+            ctx.moderator.fetchInstance(ctx.instance.attrs.shortHash, expects.success(200, ctx.expected, done));
           });
         });
       });
@@ -146,7 +146,7 @@ describe('Instance - /instances/:id', function () {
             ctx.nonOwner = multi.createUser(done);
           });
           it('should not get the instance (403 forbidden)', function (done) {
-            ctx.nonOwner.fetchInstance(ctx.instance.id(), expects.error(403, /Access denied/, done));
+            ctx.nonOwner.fetchInstance(ctx.instance.attrs.shortHash, expects.error(403, /Access denied/, done));
           });
         });
         describe('moderator', function () {
@@ -154,7 +154,7 @@ describe('Instance - /instances/:id', function () {
             ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
-            ctx.moderator.fetchInstance(ctx.instance.id(), expects.success(200, ctx.expected, done));
+            ctx.moderator.fetchInstance(ctx.instance.attrs.shortHash, expects.success(200, ctx.expected, done));
           });
         });
       });
@@ -167,7 +167,7 @@ describe('Instance - /instances/:id', function () {
       });
       it('should not get the instance if missing (404)', function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.instance.fetch(expects.error(404, done));
+        ctx.user.fetchInstance(ctx.instance.id(), expects.error(404, done));
       });
     });
   });

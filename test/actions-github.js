@@ -187,8 +187,7 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.string,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.createBuild.restore();
             done();
@@ -218,8 +217,7 @@ describe('Github - /actions/github', function () {
           sinon.stub(PullRequest.prototype, 'buildErrored', function () {
             var stub = PullRequest.prototype.buildErrored;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.string,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.buildBuild.restore();
             done();
@@ -256,8 +254,7 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createAndStartDeployment.restore();
             var errorStub = PullRequest.prototype.deploymentErrored;
             expect(errorStub.calledOnce).to.equal(true);
-            expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-             sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.object)).to.equal(true);
             errorStub.restore();
             Runnable.prototype.updateInstance.restore();
             done();
@@ -359,8 +356,7 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createAndStartDeployment.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledOnce).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
             successStub.restore();
             var slackStub = Slack.prototype.notifyOnAutoFork;
             expect(slackStub.calledOnce).to.equal(true);
@@ -468,7 +464,7 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(body._id).to.exist();
                 ctx.settingsId = body._id;
-                ctx.user.copyInstance(ctx.instance.id(), {}, function (err, copiedInstance) {
+                ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err, copiedInstance) {
                   expect(err).to.be.null();
                   ctx.instance2 = copiedInstance;
                   ctx.user.newInstance(copiedInstance.shortHash).setInMasterPod({ masterPod: true }, function (err) {
@@ -499,8 +495,7 @@ describe('Github - /actions/github', function () {
               PullRequest.prototype.createAndStartDeployment.restore();
               var successStub = PullRequest.prototype.deploymentSucceeded;
               expect(successStub.calledTwice).to.equal(true);
-              expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-                sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+              expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
               successStub.restore();
               var slackStub = Slack.prototype.notifyOnAutoFork;
               expect(slackStub.calledTwice).to.equal(true);
@@ -566,7 +561,7 @@ describe('Github - /actions/github', function () {
       });
 
       it('should redeploy two instances with new build', function (done) {
-        ctx.instance2 = ctx.user.copyInstance(ctx.instance.id(), {}, function (err) {
+        ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
           if (err) { return done(err); }
           var baseDeploymentId = 1234567;
           sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
@@ -599,10 +594,8 @@ describe('Github - /actions/github', function () {
             PullRequest.prototype.createAndStartDeployment.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledTwice).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any,
-              sinon.match(/https:\/\/runnable\.io/))).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
+            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any)).to.equal(true);
             successStub.restore();
             var slackStub = Slack.prototype.notifyOnAutoDeploy;
             expect(slackStub.calledOnce).to.equal(true);
