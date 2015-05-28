@@ -84,6 +84,31 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
       expected.lowerBranch = body.branch.toLowerCase();
       ctx.appCodeVersion.update(body, expects.success(200, expected, done));
     });
+    it('should update an appCodeVersion\'s transformRules', function(done) {
+      var transformRules = {
+        exclude: ['a.txt'],
+        replace: [
+          { action: 'replace', search: 'hello', replace: '\'allo' },
+          { action: 'replace', search: 'friend', replace: 'poppet' }
+        ],
+        rename: [
+          { action: 'rename', source: 'foo', dest: 'bar' },
+          { action: 'rename', source: 'extreme', dest: 'x-treme' }
+        ]
+      };
+      ctx.appCodeVersion.setTransformRules(transformRules, function (err, body, code) {
+        if (err) { return done(err); }
+        expect(code).to.equal(200);
+        expect(body.transformRules.exclude).to.deep.contain(transformRules.exclude);
+        transformRules.replace.forEach(function (rule, index) {
+          expect(body.transformRules.replace[index]).to.deep.contain(rule);
+        });
+        transformRules.rename.forEach(function (rule, index) {
+          expect(body.transformRules.rename[index]).to.deep.contain(rule);
+        });
+        done();
+      });
+    });
   });
   describe('with additionalRepo repo', function() {
     beforeEach(function(done) {
@@ -196,53 +221,6 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
           done();
         });
       }));
-    });
-  });
-
-  it('should update an appCodeVersion\'s commit', function (done) {
-    var body = {
-      commit: 'abcdef'
-    };
-    var expected = ctx.appCodeVersion.json();
-    expected.commit = body.commit;
-    ctx.appCodeVersion.update(body, expects.success(200, expected, done));
-  });
-
-  it('should update an appCodeVersion\'s commit and branch', function (done) {
-    var body = {
-      branch: 'other-feature',
-      commit: 'abcdef'
-    };
-    var expected = ctx.appCodeVersion.json();
-    expected.commit = body.commit;
-    expected.branch = body.branch;
-    expected.lowerBranch = body.branch.toLowerCase();
-    ctx.appCodeVersion.update(body, expects.success(200, expected, done));
-  });
-
-  it('should update an appCodeVersion\'s transformRules', function(done) {
-    var transformRules = {
-      exclude: ['a.txt'],
-      replace: [
-        { action: 'replace', search: 'hello', replace: '\'allo' },
-        { action: 'replace', search: 'friend', replace: 'poppet' }
-      ],
-      rename: [
-        { action: 'rename', source: 'foo', dest: 'bar' },
-        { action: 'rename', source: 'extreme', dest: 'x-treme' }
-      ]
-    };
-    ctx.appCodeVersion.setTransformRules(transformRules, function (err, body, code) {
-      if (err) { return done(err); }
-      expect(code).to.equal(200);
-      expect(body.transformRules.exclude).to.deep.contain(transformRules.exclude);
-      transformRules.replace.forEach(function (rule, index) {
-        expect(body.transformRules.replace[index]).to.deep.contain(rule);
-      });
-      transformRules.rename.forEach(function (rule, index) {
-        expect(body.transformRules.rename[index]).to.deep.contain(rule);
-      });
-      done();
     });
   });
 });
