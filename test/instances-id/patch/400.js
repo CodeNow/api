@@ -55,7 +55,7 @@ describe('PATCH 400 - /instances/:id', function () {
           name: 'env',
           type: 'array',
           itemType: 'string',
-          itemRegExp: /^([A-z]+\W*)=.*$/,
+          itemRegExp: /^([A-z]+[A-z0-9]*)=.*$/,
           invalidValues: [
             'string1',
             '1=X',
@@ -78,17 +78,5 @@ describe('PATCH 400 - /instances/:id', function () {
       ctx.instance.update(body, cb);
     });
 
-    // it('should not update dns and hosts', function (done) {
-    //   ctx.instance.update(body, expects.error(400, function (err) {
-    //     if (err) { return done(err); }
-    //     expect(instance.attrs.containers[0]).to.exist();
-    //     var count = createCount(done);
-    //     expects.updatedHipacheHosts(
-    //       ctx.user, instance, count.inc().next);
-    //     var container = instance.containers.models[0];
-    //     expects.updatedWeaveHost(
-    //       container, instance.attrs.network.hostIp, count.inc().next);
-    //   }));
-    // });
   });
 });

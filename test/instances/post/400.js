@@ -73,7 +73,7 @@ describe('400 POST /instances', function () {
           name: 'env',
           type: 'array',
           itemType: 'string',
-          itemRegExp: /^([A-z]+\W*)=.*$/,
+          itemRegExp: /^([A-z]+[A-z0-9]*)=.*$/,
           itemValues: [
             'string1',
             '1=X',
