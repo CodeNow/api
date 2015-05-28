@@ -13,6 +13,7 @@ var Docker = require('models/apis/docker');
 var NaviEntry = require('navi-entry');
 var runnableHostname = require('runnable-hostname');
 NaviEntry.setRedisClient(require('models/redis'));
+var Instance = require('models/mongo/instance');
 
 var expects = module.exports = function (keypath) {
   return function (val) {
@@ -179,7 +180,7 @@ expects.updatedDnsEntry = function (username, instanceName, instance) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var elasticUrl, directUrl;
-  var branch = instance.getMainBranchName();
+  var branch = Instance.getMainBranchName(instance.attrs);
   var opts = {
     masterPod: instance.attrs.masterPod,
     branch: branch,
@@ -272,7 +273,7 @@ expects.deletedDnsEntry = function (username, instanceName, instance) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var elasticUrl, directUrl;
-  var branch = instance.getMainBranchName();
+  var branch = Instance.getMainBranchName(instance.attrs);
   var opts = {
     masterPod: instance.attrs.masterPod,
     branch: branch,
