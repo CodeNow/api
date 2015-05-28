@@ -147,7 +147,10 @@ describe('PUT /instances/:id/actions/restart', function () {
           done();
         });
         afterEach(function (done) {
-          Docker.prototype.startContainer.restore();
+          // have to check this because some test require this to be restored to work
+          if (Docker.prototype.startContainer.restore) {
+            Docker.prototype.startContainer.restore();
+          }
           done();
         });
 
@@ -202,7 +205,9 @@ describe('PUT /instances/:id/actions/restart', function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should restart an instance', function (done) {
-      if (Docker.prototype.startContainer.restore) { // restore docker back to normal - immediately exiting container will now start
+      // restore docker back to normal - immediately exiting container will now start
+      if (Docker.prototype.startContainer.restore) {
+        Docker.prototype.startContainer.restore();
         ctx.expected['containers[0].inspect.State.Running'] = true;
       }
       if (ctx.expectNoContainerErr) {
