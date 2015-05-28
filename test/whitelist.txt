@@ -30,6 +30,8 @@
 ./test/contexts-id-versions-id-appcodeversions-id/patch/400.js
 ./test/contexts-id-versions-id-appcodeversions/post/400.js
 ./test/contexts-id-versions-id-appcodeversions/post/index.js
+./test/contexts-id-versions-id-appcodeversions-id-action-apply-transform-rules/index.js
+./test/contexts-id-versions-id-appcodeversions-id-action-test-transform-rule/index.js
 ./test/contexts-id-versions-id-files-id.js
 ./test/contexts-id-versions-id-files-id/delete/index.js
 ./test/contexts-id-versions-id-files-id/patch/400.js
