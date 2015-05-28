@@ -15,18 +15,16 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 var exists = require('101/exists');
-var last = require('101/last');
-var isFunction = require('101/is-function');
-var tailBuildStream = require('../../fixtures/tail-build-stream');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
 var uuid = require('uuid');
 var Docker = require('models/apis/docker');
-var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
+var sinon = require('sinon');
 
 describe('PUT /instances/:id/actions/restart', function () {
   var ctx = {};
@@ -44,37 +42,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       });
     }
   };
-  var forceCreateContainerErr = function () {
-    var cb = last(arguments);
-    var createErr = new Error("server error");
-    extend(createErr, {
-      statusCode : 500,
-      reason     : "server error",
-      json       : "No command specified\n"
-    });
-    if (isFunction(cb)) {
-      cb(createErr);
-    }
-  };
-  var dontReportCreateError = function () {
-    // for cleaner test logs
-    var args = Array.prototype.slice.call(arguments);
-    var cb = args.pop();
-    args.push(function (err) {
-      if (err) { err.data.report = false; }
-      cb.apply(this, arguments);
-    });
-    ctx.originalDockerCreateContainer.apply(this, args);
-  };
-  var delayContainerLogsBy = function (ms, originalContainerLogs) {
-    return function () {
-      var container = this;
-      var args = arguments;
-      setTimeout(function () {
-        originalContainerLogs.apply(container, args);
-      }, ms);
-    };
-  };
+
   beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -108,15 +76,6 @@ describe('PUT /instances/:id/actions/restart', function () {
 
   describe('for User', function () {
     describe('create instance with in-progress build', function () {
-      beforeEach(function (done) { // delay container log time to make build time longer
-        ctx.originalContainerLogs = Container.prototype.logs;
-        Container.prototype.logs = delayContainerLogsBy(500, ctx.originalContainerLogs);
-        done();
-      });
-      afterEach(function (done) { // restore original container log method
-        Container.prototype.logs = ctx.originalContainerLogs;
-        done();
-      });
       beforeEach(function (done) {
         multi.createContextVersion(function (err, contextVersion, context, build, user) {
           if (err) { return done(err); }
@@ -126,18 +85,23 @@ describe('PUT /instances/:id/actions/restart', function () {
           ctx.build.build({ message: uuid() }, expects.success(201, done));
         });
       });
-      beforeEach(function (done) {
-        // make sure build finishes before moving on to the next test
-        ctx.afterAssert = function (done) {
-          tailBuildStream(ctx.cv.id(), done);
-        };
-        done();
+      beforeEach(function(done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
       });
       beforeEach(function (done) {
         initExpected(function () {
           ctx.expectNoContainerErr = true;
           done();
         });
+      });
+      beforeEach(function (done) {
+        // make sure build finishes before moving on to the next test
+        ctx.afterAssert = function (done) {
+          console.log('AE');
+          primus.onceVersionComplete(ctx.cv.id(), done);
+          dockerMockEvents.emitBuildComplete(ctx.cv);
+        };
+        done();
       });
       createInstanceAndRunTests(ctx);
     });
@@ -178,12 +142,12 @@ describe('PUT /instances/:id/actions/restart', function () {
             'containers[0].inspect.State.Running': false
           });
           ctx.originalStart = Docker.prototype.startContainer;
-          Docker.prototype.startContainer = stopContainerRightAfterStart;
+          sinon.stub(Docker.prototype, 'startContainer', stopContainerRightAfterStart);
           done();
         });
         afterEach(function (done) {
           // restore docker.startContainer back to normal
-          Docker.prototype.startContainer = ctx.originalStart;
+          Docker.prototype.startContainer.restore();
           done();
         });
 
@@ -194,16 +158,11 @@ describe('PUT /instances/:id/actions/restart', function () {
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
           ctx.expectNoContainerErr = true;
-          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
-          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
-          Dockerode.prototype.createContainer = forceCreateContainerErr;
-          Docker.prototype.createContainer = dontReportCreateError;
+          sinon.stub(Dockerode.prototype, 'createContainer').yieldsAsync(new Error("server error"));
           done();
         });
         afterEach(function (done) {
-          // restore dockerODE.createContainer` back to normal
-          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
-          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+          Dockerode.prototype.createContainer.restore();
           done();
         });
 
@@ -211,9 +170,6 @@ describe('PUT /instances/:id/actions/restart', function () {
       });
     });
   });
-  // describe('for Organization by member', function () {
-    // TODO
-  // });
   function createInstanceAndRunTests (ctx) {
     describe('and env.', function() {
       beforeEach(function (done) {
@@ -246,8 +202,7 @@ describe('PUT /instances/:id/actions/restart', function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should restart an instance', function (done) {
-      if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
-        Docker.prototype.startContainer = ctx.originalStart;
+      if (Docker.prototype.startContainer.restore) { // restore docker back to normal - immediately exiting container will now start
         ctx.expected['containers[0].inspect.State.Running'] = true;
       }
       if (ctx.expectNoContainerErr) {
