@@ -12,6 +12,8 @@ var expect = Code.expect;
 var validation = require('./fixtures/validation')(lab);
 
 var InfracodeVersion = require('../lib/models/mongo/infra-code-version');
+var Boom = require('dat-middleware').Boom;
+var sinon = require('sinon');
 
 describe('Infracode Versions', function () {
   before(require('./fixtures/mongo').connect);
@@ -38,8 +40,6 @@ describe('Infracode Versions', function () {
       done();
     });
   });
-
-
 
   it('should be create a copy, and keep the originals env as its parentEnv', function (done) {
     var infracode = createNewInfracodeVersion();
@@ -84,6 +84,73 @@ describe('Infracode Versions', function () {
         if (err) { return done(err); }
         expect(childInfracode).to.exist();
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
+        done();
+      });
+    });
+  });
+
+
+  describe('upsertFs', function() {
+    it('should call `update` when path exists', function(done) {
+      var infracode = createNewInfracodeVersion();
+      sinon.stub(infracode, 'findFs').yieldsAsync(null, { isDir: false });
+      sinon.stub(infracode, 'updateFile').yieldsAsync();
+      var filepath = '/translation_rules.sh';
+      var body = 'file body';
+      infracode.upsertFs(filepath, body, function (err) {
+        if (err) { return done(err); }
+        expect(infracode.findFs.calledWith(filepath)).to.be.true();
+        expect(infracode.updateFile.calledWith(filepath, body)).to.be.true();
+        infracode.findFs.restore();
+        infracode.updateFile.restore();
+        done();
+      });
+    });
+
+    it('should call `createFs` path does not exist', function(done) {
+      var infracode = createNewInfracodeVersion();
+      sinon.stub(infracode, 'findFs').yieldsAsync();
+      sinon.stub(infracode, 'createFs').yieldsAsync();
+      var filepath = '/etc/translation_rules.sh';
+      var body = 'file body';
+      infracode.upsertFs(filepath, body, function (err) {
+        if (err) { return done(err); }
+        expect(infracode.findFs.calledWith(filepath)).to.be.true();
+        expect(infracode.createFs.calledWith({
+          name: 'translation_rules.sh',
+          path: '/etc',
+          body: body
+        })).to.be.true();
+        infracode.findFs.restore();
+        infracode.createFs.restore();
+        done();
+      });
+    });
+
+    it('should boom when path is a directory', function(done) {
+      var infracode = createNewInfracodeVersion();
+      var boomObject = { boom: true };
+      var filepath = '/dang/dat/is/a/sweet/earth.yml';
+      var body = 'much body, such wow';
+      sinon.stub(Boom, 'badRequest').returns(boomObject);
+      sinon.stub(infracode, 'findFs').yieldsAsync(null, { isDir: true });
+      infracode.upsertFs(filepath, body, function (err) {
+        expect(err).to.equal(boomObject);
+        infracode.findFs.restore();
+        Boom.badRequest.restore();
+        done();
+      });
+    });
+
+    it('should yield error if findFs fails', function(done) {
+      var infracode = createNewInfracodeVersion();
+      var error = new Error('wow');
+      var filepath = '/coolbeans.yml';
+      var body = 'abcdef123';
+      sinon.stub(infracode, 'findFs').yieldsAsync(error);
+      infracode.upsertFs(filepath, body, function (err) {
+        expect(err).to.equal(error);
+        infracode.findFs.restore();
         done();
       });
     });
