@@ -11,9 +11,9 @@ function emitBuildComplete (cv, failure) {
   }
   var containerId = cv.build && cv.build.dockerContainer;
   if (!containerId) {
-    ContextVersion.findById(cv._id, function (err) {
+    ContextVersion.findById(cv._id, function (err, acv) {
       if (err) { throw err; }
-      emitBuildComplete(cv, failure);
+      emitBuildComplete(acv || cv, failure);
     });
     return;
   }

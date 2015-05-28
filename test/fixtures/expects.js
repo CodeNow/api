@@ -12,7 +12,6 @@ var exists = require('101/exists');
 var Docker = require('models/apis/docker');
 var NaviEntry = require('navi-entry');
 var runnableHostname = require('runnable-hostname');
-var Instance = require('models/mongo/instance');
 NaviEntry.setRedisClient(require('models/redis'));
 
 var expects = module.exports = function (keypath) {
@@ -305,7 +304,7 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
     return cb();
   }
   var instanceName = instance.attrs.lowerName;
-  var branch = Instance.getMainBranchName(instance);
+  var branch = instance.getMainBranchName();
   var ownerGithub = instance.attrs.owner.github;
   var masterPod = instance.attrs.masterPod;
   Object.keys(container.ports).forEach(function (containerPort) {

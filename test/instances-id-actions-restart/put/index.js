@@ -97,8 +97,9 @@ describe('PUT /instances/:id/actions/restart', function () {
       beforeEach(function (done) {
         // make sure build finishes before moving on to the next test
         ctx.afterAssert = function (done) {
-          console.log('AE');
-          primus.onceVersionComplete(ctx.cv.id(), done);
+          primus.onceVersionComplete(ctx.cv.id(), function () {
+            done();
+          });
           dockerMockEvents.emitBuildComplete(ctx.cv);
         };
         done();
@@ -146,7 +147,6 @@ describe('PUT /instances/:id/actions/restart', function () {
           done();
         });
         afterEach(function (done) {
-          // restore docker.startContainer back to normal
           Docker.prototype.startContainer.restore();
           done();
         });
