@@ -46,6 +46,25 @@ describe('Instance', function () {
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
 
   function createNewVersion(opts) {
+    // jshint maxcomplexity:10
+    var mainRepo = {
+      repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+      lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+      branch: opts.branch || 'master',
+      defaultBranch: opts.defaultBranch || 'master',
+      commit: 'deadbeef'
+    };
+    if (opts.mainRepo) {
+      mainRepo.additionalRepo = false;
+    }
+    var additionalRepo = {
+      repo: opts.additionalRepo || 'podviaznikov/hellonode',
+      lowerRepo: opts.additionalRepo || 'podviaznikov/hellonode',
+      branch: opts.additionalBranch || 'master',
+      defaultBranch: opts.additionalDefaultBranch || 'master',
+      commit: 'deadbeef',
+      additionalRepo: true
+    };
     return new Version({
       message: "test",
       owner: { github: validation.VALID_GITHUB_ID },
@@ -62,13 +81,7 @@ describe('Instance', function () {
         dockerImage: "testing",
         dockerTag: "adsgasdfgasdf"
       },
-      appCodeVersions: [{
-        repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        branch: opts.branch || 'master',
-        defaultBranch: opts.defaultBranch || 'master',
-        commit: 'deadbeef'
-      }]
+      appCodeVersions: [mainRepo, additionalRepo]
     });
   }
 
@@ -432,7 +445,7 @@ describe('Instance', function () {
     var savedInstance2 = null;
     var savedInstance3 = null;
     before(function (done) {
-      var instance = createNewInstance('instance1');
+      var instance = createNewInstance('instance1', {additionalRepo: false});
       instance.save(function (err, instance) {
         if (err) { return done(err); }
         expect(instance).to.exist();
@@ -472,6 +485,13 @@ describe('Instance', function () {
 
     it('should not find instance using repo name and branch if it was locked', function (done) {
       Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
+        if (err) { return done(err); }
+        expect(insts.length).to.equal(0);
+        done();
+      });
+    });
+    it('should not find instance using repo name and branch when searching using additionalRepo', function (done) {
+      Instance.findInstancesLinkedToBranch('podviaznikov/hellonode', 'master', function (err, insts) {
         if (err) { return done(err); }
         expect(insts.length).to.equal(0);
         done();
@@ -560,6 +580,14 @@ describe('Instance', function () {
           done();
         });
       });
+      it('should return [] for additionalRepo=true', function (done) {
+        var repo = 'podviaznikov/hellonode';
+        Instance.findForkableMasterInstances(repo, 'feature1', function (err, instances) {
+          expect(err).to.be.null();
+          expect(instances.length).to.equal(0);
+          done();
+        });
+      });
       it('should return [] when branch equals masterPod branch', function (done) {
         var repo = 'podviaznikov/hello-2';
         Instance.findForkableMasterInstances(repo, 'master', function (err, instances) {
@@ -573,7 +601,8 @@ describe('Instance', function () {
         var opts = {
           locked: true,
           masterPod: true,
-          repo: repo
+          repo: repo,
+          additionalRepo: false
         };
         var instance2 = createNewInstance('instance-name-3', opts);
         instance2.save(function (err, instance) {
