@@ -41,7 +41,6 @@ describe('dns', function () {
     // master instance w/ branch
     var master = clone(masterNoBranch);
     keypather.set(master, 'contextVersion.appCodeVersions[0].lowerBranch', 'branch');
-    keypather.set(master, 'contextVersion.appCodeVersions[0].branch', 'branch');
     // non master instance
     var nonMaster = clone(master);
     nonMaster.masterPod = false;

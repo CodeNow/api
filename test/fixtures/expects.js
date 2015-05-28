@@ -179,7 +179,7 @@ expects.updatedDnsEntry = function (username, instanceName, instance) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var elasticUrl, directUrl;
-  var branch = instance.getMainBranchName();
+  var branch = instance.getBranchName();
   var opts = {
     masterPod: instance.attrs.masterPod,
     branch: branch,
@@ -211,7 +211,7 @@ expects.updatedNaviEntries = function (username, instance, container, cb) {
     return cb();
   }
   var instanceName = instance.attrs.lowerName;
-  var branch = instance.getMainBranchName();
+  var branch = keypather.get(instance.attrs, 'contextVersion.appCodeVersions[0].lowerBranch');
   var ownerGithub = instance.attrs.owner.github;
   var masterPod = instance.attrs.masterPod;
   Object.keys(container.ports).forEach(function (containerPort) {
@@ -272,7 +272,7 @@ expects.deletedDnsEntry = function (username, instanceName, instance) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var elasticUrl, directUrl;
-  var branch = instance.getMainBranchName();
+  var branch = instance.getBranchName();
   var opts = {
     masterPod: instance.attrs.masterPod,
     branch: branch,
@@ -304,7 +304,7 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
     return cb();
   }
   var instanceName = instance.attrs.lowerName;
-  var branch = instance.getMainBranchName();
+  var branch = keypather.get(instance.attrs, 'contextVersion.appCodeVersions[0].lowerBranch');
   var ownerGithub = instance.attrs.owner.github;
   var masterPod = instance.attrs.masterPod;
   Object.keys(container.ports).forEach(function (containerPort) {

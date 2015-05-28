@@ -106,6 +106,7 @@ describe('201 POST /instances', function () {
       },
       contextVersions: exists,
       'contextVersions[0]._id': ctx.cv.id(),
+      // 'contextVersions[0].appCodeVersions[0]': ctx.cv.attrs.appCodeVersions[0],
       'network.networkIp': exists,
       'network.hostIp': exists
     };

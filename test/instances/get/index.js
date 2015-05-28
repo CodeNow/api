@@ -19,7 +19,6 @@ var primus = require('../../fixtures/primus');
 var createCount = require('callback-count');
 var pluck = require('101/pluck');
 var async = require('async');
-var ContextVersion = require('models/mongo/context-version');
 
 describe('GET /instances', function () {
   var ctx = {};
@@ -166,8 +165,7 @@ describe('GET /instances', function () {
       require('../../fixtures/mocks/github/user')(ctx.user);
       require('../../fixtures/mocks/github/user')(ctx.user2);
       var query = {
-        'contextVersion.appCodeVersions.repo': ContextVersion
-          .getMainAppCodeVersion(ctx.instance.attrs.contextVersion.appCodeVersions).repo,
+        'contextVersion.appCodeVersions.repo': ctx.instance.attrs.contextVersion.appCodeVersions[0].repo,
         owner: {
           github: ctx.user.attrs.accounts.github.id
         }
@@ -183,8 +181,7 @@ describe('GET /instances', function () {
         (ctx.user.json().accounts.github.id, ctx.user.attrs.accounts.github.username);
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
       var query2 = {
-        'contextVersion.appCodeVersions.repo': ContextVersion
-          .getMainAppCodeVersion(ctx.instance2.attrs.contextVersion.appCodeVersions).repo,
+        'contextVersion.appCodeVersions.repo': ctx.instance2.attrs.contextVersion.appCodeVersions[0].repo,
         owner: {
           github: ctx.user2.attrs.accounts.github.id
         }

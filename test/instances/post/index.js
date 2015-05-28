@@ -25,7 +25,6 @@ var uuid = require('uuid');
 var createCount = require('callback-count');
 var Build = require('models/mongo/build');
 var randStr = require('randomstring').generate;
-var ContextVersion = require('models/mongo/context-version');
 
 describe('POST /instances', function () {
   var ctx = {};
@@ -115,8 +114,7 @@ describe('POST /instances', function () {
             'owner.github': ctx.user.attrs.accounts.github.id,
             contextVersions: exists,
             'contextVersions[0]._id': ctx.cv.id(),
-            'contextVersions[0].appCodeVersions[0]._id': ContextVersion
-              .getMainAppCodeVersion(ctx.cv.json().appCodeVersions)._id,
+            'contextVersions[0].appCodeVersions[0]._id': ctx.cv.json().appCodeVersions[0]._id,
             'network.networkIp': exists,
             'network.hostIp': exists
           };

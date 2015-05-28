@@ -30,7 +30,6 @@ describe('Hosts', function () {
       keypather.set(ctx.instance, 'network.hostIp', '10.6.4.1');
       ctx.branch = 'some-branch';
       keypather.set(ctx.instance, 'contextVersion.appCodeVersions[0].lowerBranch', ctx.branch);
-      keypather.set(ctx.instance, 'contextVersion.appCodeVersions[0].branch', ctx.branch);
 
       ctx.instanceName = ctx.branch + '-instance-name';
       ctx.username = 'user-name';
