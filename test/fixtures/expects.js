@@ -179,7 +179,7 @@ expects.updatedDnsEntry = function (username, instanceName, instance) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var elasticUrl, directUrl;
-  var branch = instance.getBranchName();
+  var branch = instance.getMainBranchName();
   var opts = {
     masterPod: instance.attrs.masterPod,
     branch: branch,
@@ -272,7 +272,7 @@ expects.deletedDnsEntry = function (username, instanceName, instance) {
   // FIXME: mock get request to route53, and verify using that
   var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
   var elasticUrl, directUrl;
-  var branch = instance.getBranchName();
+  var branch = instance.getMainBranchName();
   var opts = {
     masterPod: instance.attrs.masterPod,
     branch: branch,
