@@ -111,6 +111,7 @@ describe('Instance', function () {
         hostIp: '1.1.1.100'
       }
     });
+    /*jshint maxcomplexity:5 */
   }
 
   it('should not save an instance with the same (lower) name and owner', function (done) {
