@@ -42,76 +42,77 @@ function newObjectId () {
   return new mongoose.Types.ObjectId();
 }
 
-describe('Instance', function () {
+function createNewVersion (opts) {
+  return new Version({
+    message: "test",
+    owner: { github: validation.VALID_GITHUB_ID },
+    createdBy: { github: validation.VALID_GITHUB_ID },
+    config: validation.VALID_OBJECT_ID,
+    created: Date.now(),
+    context: validation.VALID_OBJECT_ID,
+    files:[{
+      Key: "test",
+      ETag: "test",
+      VersionId: validation.VALID_OBJECT_ID
+    }],
+    build: {
+      dockerImage: "testing",
+      dockerTag: "adsgasdfgasdf"
+    },
+    appCodeVersions: [{
+      repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+      lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+      branch: opts.branch || 'master',
+      defaultBranch: opts.defaultBranch || 'master',
+      commit: 'deadbeef'
+    }]
+  });
+}
 
+function createNewInstance (name, opts) {
+  // jshint maxcomplexity:8
+  opts = opts || {};
+  var container = {
+    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
+    dockerHost: opts.dockerHost || 'http://localhost:4243',
+    inspect: {
+      State: {
+        'ExitCode': 0,
+        'FinishedAt': '0001-01-01T00:00:00Z',
+        'Paused': false,
+        'Pid': 889,
+        'Restarting': false,
+        'Running': true,
+        'StartedAt': '2014-11-25T22:29:50.23925175Z'
+      },
+    }
+  };
+  return new Instance({
+    name: name || 'name',
+    shortHash: getNextHash(),
+    locked: opts.locked || false,
+    public: false,
+    masterPod: opts.masterPod || false,
+    parent: opts.parent,
+    autoForked: opts.autoForked || false,
+    owner: { github: validation.VALID_GITHUB_ID },
+    createdBy: { github: validation.VALID_GITHUB_ID },
+    build: validation.VALID_OBJECT_ID,
+    created: Date.now(),
+    contextVersion: createNewVersion(opts),
+    container: container,
+    containers: [],
+    network: {
+      networkIp: '1.1.1.1',
+      hostIp: '1.1.1.100'
+    }
+  });
+}
+
+describe('Instance', function () {
+  // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
-
-  function createNewVersion (opts) {
-    return new Version({
-      message: "test",
-      owner: { github: validation.VALID_GITHUB_ID },
-      createdBy: { github: validation.VALID_GITHUB_ID },
-      config: validation.VALID_OBJECT_ID,
-      created: Date.now(),
-      context: validation.VALID_OBJECT_ID,
-      files:[{
-        Key: "test",
-        ETag: "test",
-        VersionId: validation.VALID_OBJECT_ID
-      }],
-      build: {
-        dockerImage: "testing",
-        dockerTag: "adsgasdfgasdf"
-      },
-      appCodeVersions: [{
-        repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        branch: opts.branch || 'master',
-        defaultBranch: opts.defaultBranch || 'master',
-        commit: 'deadbeef'
-      }]
-    });
-  }
-
-  function createNewInstance (name, opts) {
-    /*jshint maxcomplexity:8 */
-    opts = opts || {};
-    return new Instance({
-      name: name || 'name',
-      shortHash: getNextHash(),
-      locked: opts.locked || false,
-      public: false,
-      masterPod: opts.masterPod || false,
-      parent: opts.parent,
-      autoForked: opts.autoForked || false,
-      owner: { github: validation.VALID_GITHUB_ID },
-      createdBy: { github: validation.VALID_GITHUB_ID },
-      build: validation.VALID_OBJECT_ID,
-      created: Date.now(),
-      contextVersion: createNewVersion(opts),
-      container: {
-        dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
-        dockerHost: opts.dockerHost || 'http://localhost:4243',
-        inspect: {
-          State: {
-            'ExitCode': 0,
-            'FinishedAt': '0001-01-01T00:00:00Z',
-            'Paused': false,
-            'Pid': 889,
-            'Restarting': false,
-            'Running': true,
-            'StartedAt': '2014-11-25T22:29:50.23925175Z'
-          },
-        }
-      },
-      containers: [],
-      network: {
-        networkIp: '1.1.1.1',
-        hostIp: '1.1.1.100'
-      }
-    });
-  }
 
   it('should not save an instance with the same (lower) name and owner', function (done) {
     var instance = createNewInstance('hello');
