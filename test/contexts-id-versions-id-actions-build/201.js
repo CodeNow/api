@@ -11,17 +11,19 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
+var Context = require('models/mongo/context');
+var ContextVersion = require('models/mongo/context-version');
 var api = require('../fixtures/api-control');
+var blacklight = require('blacklight');
 var dock = require('../fixtures/dock');
-var multi = require('../fixtures/multi-factory');
-var expects = require('../fixtures/expects');
+var dockerHost = require('../fixtures/docker-host');
+var dockerMockEvents = require('../fixtures/docker-mock-events');
 var exists = require('101/exists');
+var expects = require('../fixtures/expects');
 var multi = require('../fixtures/multi-factory');
 var primus = require('../fixtures/primus');
-var dockerMockEvents = require('../fixtures/docker-mock-events');
-var Context = require('models/mongo/context');
-var blacklight = require('blacklight');
-var dockerHost = require('../fixtures/docker-host');
+
+var ObjectId = require('mongoose').Types.ObjectId;
 
 describe('201 POST /contexts/:id/versions/:id/actions/build', function() {
   var ctx = {};
@@ -206,6 +208,46 @@ function buildTheVersionTests (ctx) {
             done();
           }
         });
+
+        describe('first build completed w/ error', function() {
+          beforeEach(function (done) {
+            require('../fixtures/mocks/github/user')(ctx.user);
+            ctx.cv.build(expects.success(201, ctx.expected, function (err) {
+              if (err) { return done(err); }
+              waitForCvBuildToComplete(ctx.cv, done);
+            }));
+          });
+
+          it('should NOT dedupe if runnable specific error occured', function (done) {
+            // throw wrench here
+            ContextVersion.findById(new ObjectId(ctx.cv.id()), function (err, cv) {
+              if (err) { return done(err); }
+
+              cv.build.completed = new Date();
+              cv.build.error = {
+                type: {
+                  message: 'Could not create container',
+                  stack: '...'
+                }
+              };
+              cv.save(function (err) {
+                if (err) { return done(err); }
+                ctx.cv2.build(function (err) {
+                  if (err) { return done(err); }
+                  waitForCvBuildToComplete(ctx.cv2, function (err) {
+                    if (err) { return done(err); }
+                    expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build);
+                    expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId);
+                    expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
+                    done();
+                  });
+                });
+              });
+
+            });
+          });
+        });
+
         describe('first build completed', function() {
           beforeEach(function (done) {
             require('../fixtures/mocks/github/user')(ctx.user);
