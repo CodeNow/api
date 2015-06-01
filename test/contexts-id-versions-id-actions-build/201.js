@@ -12,7 +12,6 @@ var Code = require('code');
 var expect = Code.expect;
 
 var ObjectId = require('mongoose').Types.ObjectId;
-var createCount = require('callback-count');
 
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
