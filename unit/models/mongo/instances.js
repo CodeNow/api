@@ -45,73 +45,77 @@ function newObjectId () {
 before(dock.start);
 after(dock.stop);
 
-describe('Instance', function () {
+function createNewVersion (opts) {
+  return new Version({
+    message: "test",
+    owner: { github: validation.VALID_GITHUB_ID },
+    createdBy: { github: validation.VALID_GITHUB_ID },
+    config: validation.VALID_OBJECT_ID,
+    created: Date.now(),
+    context: validation.VALID_OBJECT_ID,
+    files:[{
+      Key: "test",
+      ETag: "test",
+      VersionId: validation.VALID_OBJECT_ID
+    }],
+    build: {
+      dockerImage: "testing",
+      dockerTag: "adsgasdfgasdf"
+    },
+    appCodeVersions: [{
+      repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+      lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+      branch: opts.branch || 'master',
+      defaultBranch: opts.defaultBranch || 'master',
+      commit: 'deadbeef'
+    }]
+  });
+}
 
+function createNewInstance (name, opts) {
+  // jshint maxcomplexity:8
+  opts = opts || {};
+  var container = {
+    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
+    dockerHost: opts.dockerHost || 'http://localhost:4243',
+    inspect: {
+      State: {
+        'ExitCode': 0,
+        'FinishedAt': '0001-01-01T00:00:00Z',
+        'Paused': false,
+        'Pid': 889,
+        'Restarting': false,
+        'Running': true,
+        'StartedAt': '2014-11-25T22:29:50.23925175Z'
+      },
+    }
+  };
+  return new Instance({
+    name: name || 'name',
+    shortHash: getNextHash(),
+    locked: opts.locked || false,
+    public: false,
+    masterPod: opts.masterPod || false,
+    parent: opts.parent,
+    autoForked: opts.autoForked || false,
+    owner: { github: validation.VALID_GITHUB_ID },
+    createdBy: { github: validation.VALID_GITHUB_ID },
+    build: validation.VALID_OBJECT_ID,
+    created: Date.now(),
+    contextVersion: createNewVersion(opts),
+    container: container,
+    containers: [],
+    network: {
+      networkIp: '1.1.1.1',
+      hostIp: '1.1.1.100'
+    }
+  });
+}
+
+describe('Instance', function () {
+  // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
-
-  function createNewVersion(opts) {
-    return new Version({
-      message: "test",
-      owner: { github: validation.VALID_GITHUB_ID },
-      createdBy: { github: validation.VALID_GITHUB_ID },
-      config: validation.VALID_OBJECT_ID,
-      created: Date.now(),
-      context: validation.VALID_OBJECT_ID,
-      files:[{
-        Key: "test",
-        ETag: "test",
-        VersionId: validation.VALID_OBJECT_ID
-      }],
-      build: {
-        dockerImage: "testing",
-        dockerTag: "adsgasdfgasdf"
-      },
-      appCodeVersions: [{
-        repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        branch: opts.branch || 'master',
-        defaultBranch: opts.defaultBranch || 'master',
-        commit: 'deadbeef'
-      }]
-    });
-  }
-
-  function createNewInstance(name, opts) {
-    opts = opts || {};
-    return new Instance({
-      name: name || 'name',
-      shortHash: getNextHash(),
-      locked: opts.locked || false,
-      public: false,
-      masterPod: opts.masterPod || false,
-      owner: { github: validation.VALID_GITHUB_ID },
-      createdBy: { github: validation.VALID_GITHUB_ID },
-      build: validation.VALID_OBJECT_ID,
-      created: Date.now(),
-      contextVersion: createNewVersion(opts),
-      container: {
-        dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
-        dockerHost: opts.dockerHost || 'http://localhost:4243',
-        inspect: {
-          State: {
-            'ExitCode': 0,
-            'FinishedAt': '0001-01-01T00:00:00Z',
-            'Paused': false,
-            'Pid': 889,
-            'Restarting': false,
-            'Running': true,
-            'StartedAt': '2014-11-25T22:29:50.23925175Z'
-          },
-        }
-      },
-      containers: [],
-      network: {
-        networkIp: '1.1.1.1',
-        hostIp: '1.1.1.100'
-      }
-    });
-  }
 
   it('should not save an instance with the same (lower) name and owner', function (done) {
     var instance = createNewInstance('hello');
@@ -276,7 +280,6 @@ describe('Instance', function () {
         });
       });
     });
-
   });
 
   describe('modifyContainerCreateErr', function () {
@@ -500,6 +503,136 @@ describe('Instance', function () {
     });
   });
 
+  describe('#findInstancesByParent', function () {
+    it('should return empty [] for if no children were found', function (done) {
+      Instance.findInstancesByParent('a5agn3', function (err, instances) {
+        expect(err).to.be.null();
+        expect(instances.length).to.equal(0);
+        done();
+      });
+    });
+
+    it('should return empty [] for if no autoForked was false', function (done) {
+      var repo = 'podviaznikov/hello-2';
+      var opts = {
+        autoForked: false,
+        masterPod: false,
+        repo: repo,
+        parent: 'a1b2c4'
+      };
+      var instance = createNewInstance('instance-name-325', opts);
+      instance.save(function (err) {
+        if (err) { return done(err); }
+        Instance.findInstancesByParent('a1b2c4', function (err, instances) {
+          expect(err).to.be.null();
+          expect(instances.length).to.equal(0);
+          done();
+        });
+      });
+    });
+
+    it('should return array with instance that has matching parent', function (done) {
+      var repo = 'podviaznikov/hello-2';
+      var opts = {
+        autoForked: true,
+        masterPod: false,
+        repo: repo,
+        parent: 'a1b2c3'
+      };
+      var instance = createNewInstance('instance-name-324', opts);
+      instance.save(function (err) {
+        if (err) { return done(err); }
+        Instance.findInstancesByParent('a1b2c3', function (err, instances) {
+          expect(err).to.be.null();
+          expect(instances.length).to.equal(1);
+          done();
+        });
+      });
+    });
+  });
+  describe('#removeSelfFromGraph', function () {
+    /*
+      instance2(C) is master pod of instance4(D)
+      instance0(A): dependsOn instance4(D)
+      instance1(B): dependsOn instance4(D)
+     */
+    var instances = [];
+
+    beforeEach(function (done) {
+      var names = ['A', 'B', 'C', 'D'];
+      while (instances.length < names.length) {
+        instances.push(createNewInstance(names[instances.length]));
+      }
+      done();
+    });
+    // instance2(C) is master pod of instance4(D)
+    beforeEach(function (done) {
+      var opts = {
+        autoForked: true,
+        masterPod: false,
+        branch: 'some-branch',
+        parent: instances[2].shortHash
+      };
+      instances.push(createNewInstance('B-some-branch', opts));
+      done();
+    });
+    beforeEach(function (done) {
+      async.each(instances, function (instance, cb) {
+        instance.save(cb);
+      }, done);
+    });
+    // instance0(A): dependsOn instance4(D)
+    beforeEach(function (done) {
+      instances[0].addDependency(instances[4], 'somehostname', done);
+    });
+    // instance1(B): dependsOn instance4(D)
+    beforeEach(function (done) {
+      instances[1].addDependency(instances[4], 'somehostname', done);
+    });
+    // TODO: why can you not removeSelfFromGraph if node has a dep
+    // // instance4(D): dependsOn instance3
+    // beforeEach(function (done) {
+    //   instances[4].addDependency(instances[3], 'otherhost', done);
+    // });
+
+    it('should remove itself from graph and reset dependents to master', function (done) {
+      /*
+      instance2(C) is master pod of instance4(D)
+      instance0(A): dependsOn instance2(C)
+      instance1(B): dependsOn instance2(C)
+     */
+      var node = instances[4];
+      var masterPod = instances[2];
+      var count = createCount(4, done);
+      node.removeSelfFromGraph(function (err) {
+        if (err) { return done(err); }
+        instances[0].getDependencies(function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(1);
+          expect(deps[0].id.toString()).to.equal(masterPod._id.toString());
+          count.next();
+        });
+        instances[1].getDependencies(function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(1);
+          expect(deps[0].id.toString()).to.equal(masterPod._id.toString());
+          count.next();
+        });
+        instances[2].getDependencies(function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps.length).to.equal(0);
+          count.next();
+        });
+        instances[3].getDependencies(function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps.length).to.equal(0);
+          count.next();
+        });
+      });
+    });
+  });
 
   describe('#findForkableMasterInstances', function () {
 
@@ -768,6 +901,24 @@ describe('Instance', function () {
           });
         });
 
+        it('should be able to get dependent', function (done) {
+          var dependent = instances[0];
+          var dependency = instances[1];
+          var shortD = pick(dependent.toJSON(), nodeFields);
+          shortD.contextVersion = {
+            context: shortD.contextVersion.context.toString()
+          };
+          shortD.hostname = 'somehostname';
+          dependency.getDependents(function (err, dependents) {
+            expect(err).to.be.null();
+            expect(dependents).to.be.an.array();
+            expect(dependents).to.have.length(1);
+            expect(Object.keys(dependents[0])).to.contain(nodeFields);
+            expect(shortD).to.deep.contain(dependents[0]);
+            done();
+          });
+        });
+
         it('should be able to chain dependencies', function (done) {
           var i = instances[1];
           var d = instances[2];
@@ -793,6 +944,36 @@ describe('Instance', function () {
                 expect(deps).to.have.length(1);
                 done();
               });
+            });
+          });
+        });
+        describe('instance with 2 dependents', function() {
+          beforeEach(function (done) {
+            instances[2].addDependency(instances[1], 'somehostname', done);
+          });
+          it('should be able to get dependents', function (done) {
+            var dependent1 = instances[0];
+            var dependent2 = instances[2];
+            var dependency = instances[1];
+            var shortD1 = pick(dependent1.toJSON(), nodeFields);
+            shortD1.contextVersion = {
+              context: shortD1.contextVersion.context.toString()
+            };
+            shortD1.hostname = 'somehostname';
+            var shortD2 = pick(dependent2.toJSON(), nodeFields);
+            shortD2.contextVersion = {
+              context: shortD2.contextVersion.context.toString()
+            };
+            shortD2.hostname = 'somehostname';
+            dependency.getDependents(function (err, dependents) {
+              expect(err).to.be.null();
+              expect(dependents).to.be.an.array();
+              expect(dependents).to.have.length(2);
+              expect(Object.keys(dependents[0])).to.contain(nodeFields);
+              expect(Object.keys(dependents[1])).to.contain(nodeFields);
+              expect(dependents).to.deep.contain(shortD1);
+              expect(dependents).to.deep.contain(shortD2);
+              done();
             });
           });
         });
