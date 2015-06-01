@@ -241,7 +241,6 @@ function buildTheVersionTests (ctx) {
           });
 
           it('should NOT dedupe if runnable specific error occured', function (done) {
-            // throw wrench here
             ctx.cv2.build(function (err) {
               if (err) { return done(err); }
               expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build);
