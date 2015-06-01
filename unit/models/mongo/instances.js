@@ -553,7 +553,89 @@ describe('Instance', function () {
       });
     });
   });
+  describe('#removeSelfFromGraph', function () {
+    /*
+      instance2(C) is master pod of instance4(D)
+      instance0(A): dependsOn instance4(D)
+      instance1(B): dependsOn instance4(D)
+     */
+    var instances = [];
 
+    beforeEach(function (done) {
+      var names = ['A', 'B', 'C', 'D'];
+      while (instances.length < names.length) {
+        instances.push(createNewInstance(names[instances.length]));
+      }
+      done();
+    });
+    // instance2(C) is master pod of instance4(D)
+    beforeEach(function (done) {
+      var opts = {
+        autoForked: true,
+        masterPod: false,
+        branch: 'some-branch',
+        parent: instances[2].shortHash
+      };
+      instances.push(createNewInstance('B-some-branch', opts));
+      done();
+    });
+    beforeEach(function (done) {
+      async.each(instances, function (instance, cb) {
+        instance.save(cb);
+      }, done);
+    });
+    // instance0(A): dependsOn instance4(D)
+    beforeEach(function (done) {
+      instances[0].addDependency(instances[4], 'somehostname', done);
+    });
+    // instance1(B): dependsOn instance4(D)
+    beforeEach(function (done) {
+      instances[1].addDependency(instances[4], 'somehostname', done);
+    });
+    // TODO: why can you not removeSelfFromGraph if node has a dep
+    // // instance4(D): dependsOn instance3
+    // beforeEach(function (done) {
+    //   instances[4].addDependency(instances[3], 'otherhost', done);
+    // });
+
+    it('should remove itself from graph and reset dependents to master', function (done) {
+      /*
+      instance2(C) is master pod of instance4(D)
+      instance0(A): dependsOn instance2(C)
+      instance1(B): dependsOn instance2(C)
+     */
+      var node = instances[4];
+      var masterPod = instances[2];
+      var count = createCount(4, done);
+      node.removeSelfFromGraph(function (err) {
+        if (err) { return done(err); }
+        instances[0].getDependencies(function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(1);
+          expect(deps[0].id.toString()).to.equal(masterPod._id.toString());
+          count.next();
+        });
+        instances[1].getDependencies(function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps).to.be.an.array();
+          expect(deps).to.have.length(1);
+          expect(deps[0].id.toString()).to.equal(masterPod._id.toString());
+          count.next();
+        });
+        instances[2].getDependencies(function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps.length).to.equal(0);
+          count.next();
+        });
+        instances[3].getDependencies(function (err, deps) {
+          expect(err).to.be.null();
+          expect(deps.length).to.equal(0);
+          count.next();
+        });
+      });
+    });
+  });
 
   describe('#findForkableMasterInstances', function () {
 
@@ -822,6 +904,24 @@ describe('Instance', function () {
           });
         });
 
+        it('should be able to get dependent', function (done) {
+          var dependent = instances[0];
+          var dependency = instances[1];
+          var shortD = pick(dependent.toJSON(), nodeFields);
+          shortD.contextVersion = {
+            context: shortD.contextVersion.context.toString()
+          };
+          shortD.hostname = 'somehostname';
+          dependency.getDependents(function (err, dependents) {
+            expect(err).to.be.null();
+            expect(dependents).to.be.an.array();
+            expect(dependents).to.have.length(1);
+            expect(Object.keys(dependents[0])).to.contain(nodeFields);
+            expect(shortD).to.deep.contain(dependents[0]);
+            done();
+          });
+        });
+
         it('should be able to chain dependencies', function (done) {
           var i = instances[1];
           var d = instances[2];
@@ -847,6 +947,36 @@ describe('Instance', function () {
                 expect(deps).to.have.length(1);
                 done();
               });
+            });
+          });
+        });
+        describe('instance with 2 dependents', function() {
+          beforeEach(function (done) {
+            instances[2].addDependency(instances[1], 'somehostname', done);
+          });
+          it('should be able to get dependents', function (done) {
+            var dependent1 = instances[0];
+            var dependent2 = instances[2];
+            var dependency = instances[1];
+            var shortD1 = pick(dependent1.toJSON(), nodeFields);
+            shortD1.contextVersion = {
+              context: shortD1.contextVersion.context.toString()
+            };
+            shortD1.hostname = 'somehostname';
+            var shortD2 = pick(dependent2.toJSON(), nodeFields);
+            shortD2.contextVersion = {
+              context: shortD2.contextVersion.context.toString()
+            };
+            shortD2.hostname = 'somehostname';
+            dependency.getDependents(function (err, dependents) {
+              expect(err).to.be.null();
+              expect(dependents).to.be.an.array();
+              expect(dependents).to.have.length(2);
+              expect(Object.keys(dependents[0])).to.contain(nodeFields);
+              expect(Object.keys(dependents[1])).to.contain(nodeFields);
+              expect(dependents).to.deep.contain(shortD1);
+              expect(dependents).to.deep.contain(shortD2);
+              done();
             });
           });
         });
