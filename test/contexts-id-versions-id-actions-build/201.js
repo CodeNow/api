@@ -11,6 +11,9 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
+var ObjectId = require('mongoose').Types.ObjectId;
+var createCount = require('callback-count');
+
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var api = require('../fixtures/api-control');
@@ -22,8 +25,6 @@ var exists = require('101/exists');
 var expects = require('../fixtures/expects');
 var multi = require('../fixtures/multi-factory');
 var primus = require('../fixtures/primus');
-
-var ObjectId = require('mongoose').Types.ObjectId;
 
 describe('201 POST /contexts/:id/versions/:id/actions/build', function() {
   var ctx = {};
@@ -201,6 +202,7 @@ function buildTheVersionTests (ctx) {
             done();
           });
         });
+
         beforeEach(function (done) {
           if (ctx.noAppCodeVersions) {
             ctx.cv2.appCodeVersions.models[0].destroy(done);
@@ -214,36 +216,38 @@ function buildTheVersionTests (ctx) {
             require('../fixtures/mocks/github/user')(ctx.user);
             ctx.cv.build(expects.success(201, ctx.expected, function (err) {
               if (err) { return done(err); }
-              waitForCvBuildToComplete(ctx.cv, done);
-            }));
-          });
-
-          it('should NOT dedupe if runnable specific error occured', function (done) {
-            // throw wrench here
-            ContextVersion.findById(new ObjectId(ctx.cv.id()), function (err, cv) {
-              if (err) { return done(err); }
-
-              cv.build.completed = new Date();
-              cv.build.error = {
-                type: {
-                  message: 'Could not create container',
-                  stack: '...'
-                }
-              };
-              cv.save(function (err) {
-                if (err) { return done(err); }
-                ctx.cv2.build(function (err) {
+              waitForCvBuildToComplete(ctx.cv, function () {
+                ContextVersion.findById(new ObjectId(ctx.cv.id()), function (err, cv) {
                   if (err) { return done(err); }
-                  waitForCvBuildToComplete(ctx.cv2, function (err) {
+                  cv.build.completed = new Date();
+                  cv.build.error = {
+                    message: 'Could not create container',
+                    stack: '...'
+                  };
+                  cv.save(function (err) {
                     if (err) { return done(err); }
-                    expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build);
-                    expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId);
-                    expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
                     done();
                   });
                 });
               });
+            }));
+          });
 
+          beforeEach(function (done) {
+            ctx.cv2 = ctx.cv.copy({qs: {deep: true}}, function (err) {
+              if (err) { return done(err); }
+              done();
+            });
+          });
+
+          it('should NOT dedupe if runnable specific error occured', function (done) {
+            // throw wrench here
+            ctx.cv2.build(function (err) {
+              if (err) { return done(err); }
+              expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build);
+              expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId);
+              expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id);
+              done();
             });
           });
         });
