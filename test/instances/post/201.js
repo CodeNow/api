@@ -266,8 +266,7 @@ describe('201 POST /instances', function () {
           extend(ctx.expected, {
             containers: exists,
             'containers[0].error.message': exists,
-            'containers[0].error.stack': exists,
-            'containers[0].error.imageIsPulling': true
+            'containers[0].error.stack': exists
           });
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
           ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
