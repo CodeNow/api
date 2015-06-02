@@ -503,18 +503,8 @@ describe('200 PATCH /instances/:id', function () {
             done();
           });
           beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
-          beforeEach(function afterEachAssertDeletedNewDnsEntry (done) {
+          beforeEach(function (done) {
             ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
-            ctx.afterPatchAsserts.push(function (done) {
-              try {
-                var instance = ctx.instance;
-                expects.deletedDnsEntry(ctx.user, instance.attrs.name);
-                done();
-              }
-              catch (e) {
-                done(e);
-              }
-            });
             done();
           });
           afterEach(function (done) {

@@ -9,8 +9,6 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 var keypather = require('keypather')();
-var sinon = require('sinon');
-var Dns = require('models/apis/dns');
 
 require('loadenv')();
 
@@ -23,8 +21,6 @@ describe('Hosts', function () {
       ctx.hosts = new Hosts();
       ctx.port = '80/tcp';
       ctx.instance = { masterPod: true, owner: { github: 101 }, shortHash: 'abcdef' };
-      sinon.stub(Dns.prototype, 'putEntryForInstance').yieldsAsync();
-      sinon.stub(Dns.prototype, 'deleteEntryForInstance').yieldsAsync();
       keypather.set(ctx.instance, 'container.dockerHost', 'http://10.0.0.1:4242');
       keypather.set(ctx.instance, 'container.ports["80/tcp"][0].HostPort', 49201);
       keypather.set(ctx.instance, 'network.hostIp', '10.6.4.1');
@@ -39,11 +35,6 @@ describe('Hosts', function () {
     afterEach(function (done) {
       ctx.hosts.removeHostsForInstance(
         ctx.username, ctx.instance, ctx.instanceName, ctx.instance.container, done);
-    });
-    afterEach(function (done) {
-      Dns.prototype.putEntryForInstance.restore();
-      Dns.prototype.deleteEntryForInstance.restore();
-      done();
     });
 
     it('should parse a username from a container hostname', function (done) {
