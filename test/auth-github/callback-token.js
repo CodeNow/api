@@ -57,7 +57,7 @@ describe('/auth/github routes', function () {
     describe('when requireToken was set in session', function () {
       var testRedir = 'http://thisredir:9283/datPath?thisqs=great';
       var j = request.jar();
-      beforeEach(function (done) {
+      it('should pass one time use token', function (done) {
         require('../fixtures/mocks/github/user')(ctx.user, null, testToken);
         request.get({
           jar: j,
@@ -67,14 +67,6 @@ describe('/auth/github routes', function () {
             requiresToken: 'true',
             redirect: testRedir
           }
-        }, done);
-      });
-      it('should pass one time use token', function (done) {
-        request.get({
-          jar: j,
-          url: target,
-          followRedirect: false,
-          qs: { code: testToken }
         }, function (err, res) {
           if (err) { return done(err); }
           expect(res.statusCode).to.equal(302);
