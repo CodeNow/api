@@ -79,7 +79,7 @@ module.exports = {
   expectAction: function(action, expected, cb) {
     debug('expectAction');
     if (isFunction(expected)) {
-      expected = cb;
+      cb = expected;
       expected = null;
     }
     if (!ctx.primus) { return cb(new Error('can not primus.expectAction if not connected')); }
