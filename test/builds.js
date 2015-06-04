@@ -1,19 +1,23 @@
 'use strict';
 
 var Lab = require('lab');
+var Code = require('code');
+
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
+var BuildHistory = require('models/mongo/build-history');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var multi = require('./fixtures/multi-factory');
-var expects = require('./fixtures/expects');
 var exists = require('101/exists');
+var expects = require('./fixtures/expects');
+var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 
 describe('Builds - /builds', function () {
@@ -25,7 +29,7 @@ describe('Builds - /builds', function () {
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  afterEach(require('./fixtures/clean-mongo').removeEverything);
+  //afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
@@ -35,7 +39,7 @@ describe('Builds - /builds', function () {
 
   describe('POST', function () {
     describe('empty body', function() {
-      it('should create a build', function (done) {
+      it('should create a build and log result in build-histories', function (done) {
         var expected = {
           _id: exists,
           'owner.github': ctx.user.attrs.accounts.github.id,
@@ -107,6 +111,27 @@ describe('Builds - /builds', function () {
         });
       });
     });
+  });
+  describe('Logs', function () {
+    beforeEach(function (done) {
+      multi.createBuiltBuild(function (err, build, user, modelArr, srcArr) {
+        if (err) { return done(err); }
+        ctx.builtBuild = build;
+        ctx.user2 = user;
+        ctx.context2 = modelArr[1];
+        ctx.srcContextVersion = srcArr[0];
+        ctx.unbuiltBuild = ctx.user2.createBuild({}, done);
+      });
+    });
+
+    it('should create a build and log result in build-histories', function (done) {
+      BuildHistory.find(function (err, bh) {
+        if (err) { return done(err); }
+        expect(bh.length).to.equal(1);
+        done()
+      });
+    });
+
   });
   describe('GET', function () {
     beforeEach(function (done) {
