@@ -25,7 +25,7 @@ describe('Builds - /builds', function () {
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  afterEach(require('./fixtures/clean-mongo').removeEverything);
+//  afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
