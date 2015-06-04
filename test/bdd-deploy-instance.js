@@ -3,30 +3,27 @@
  */
 'use strict';
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
 var Code = require('code');
-var expect = Code.expect;
-
-var api = require('./fixtures/api-control');
+var Lab = require('lab');
 var async = require('async');
 var createCount = require('callback-count');
-var dock = require('./fixtures/dock');
-var expects = require('./fixtures/expects');
 var find = require('101/find');
 var hasKeypaths = require('101/has-keypaths');
-var multi = require('./fixtures/multi-factory');
 var pick = require('101/pick');
-var primus = require('./fixtures/primus');
+
+var lab = exports.lab = Lab.script();
+
+var after = lab.after;
+var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
+var expects = require('./fixtures/expects');
 var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 
@@ -38,6 +35,8 @@ describe('BDD - Create Build and Deploy Instance', function () {
   after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
+  before(require('./fixtures/mocks/api-client').setup);
+  after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
@@ -58,7 +57,14 @@ describe('BDD - Create Build and Deploy Instance', function () {
     });
 
     describe('duplicate build', function() {
+      // 1
       it('should deploy an instance deduped context versions', function (done) {
+
+        require('./fixtures/mocks/github/user-orgs')(11111, 'Runnable');
+
+        var count = createCount(2, done);
+        primus.expectAction('start', count.next);
+
         async.waterfall([
           createVersion,
           addAppCodeVersions,
@@ -67,7 +73,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         ], function (err, newBuild) {
           if (err) { return done(err); }
           expect(ctx.instance.build._id).to.equal(newBuild._id);
-          expects.updatedHosts(ctx.user, ctx.instance, done);
+          expects.updatedHosts(ctx.user, ctx.instance, count.next);
         });
         function createVersion (cb) {
           var newVersion = ctx.context.createVersion({
@@ -123,7 +129,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
     describe('modified build', function() {
       describe('appCodeVersions', function() {
         describe('change commit', function() {
+          // 2
           it('should deploy an instance with new context versions', function (done) {
+
+            require('./fixtures/mocks/github/user-orgs')(11111, 'Runnable');
+
             async.waterfall([
               createVersion,
               addAppCodeVersions,
@@ -194,6 +204,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
           });
         });
         describe('change branch', function() {
+          // 3
           it('should deploy an instance with new context versions (with same docker image)', function (done) {
             async.waterfall([
               createVersion,
@@ -274,6 +285,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         }
       });
       describe('edit dockerfile (infraCodeVersion)', function() {
+        // 4
         it('should deploy an instance with new context versions', function (done) {
           async.waterfall([
             createVersion,
@@ -372,6 +384,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
       beforeEach(function (done) {
         ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done);
       });
+      // 5
       it('should deploy an instance with new context versions', function (done) {
         async.waterfall([
           createVersion,
@@ -450,6 +463,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
       beforeEach(function (done) {
         ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done);
       });
+      // 6
       it('should deploy an instance with new context versions', function (done) {
         async.waterfall([
           createVersion,
