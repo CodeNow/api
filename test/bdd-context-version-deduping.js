@@ -1,24 +1,29 @@
+/**
+ * @module test/bdd-context-version-deduping
+ */
 'use strict';
 
+var Code = require('code');
 var Lab = require('lab');
+var async = require('async');
+var createCount = require('callback-count');
+var randStr = require('randomstring').generate;
+var uuid = require('uuid');
+
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
-var Code = require('code');
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
 var expect = Code.expect;
+var it = lab.it;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var multi = require('./fixtures/multi-factory');
-var uuid = require('uuid');
-var createCount = require('callback-count');
 var dockerMockEvents = require('./fixtures/docker-mock-events');
+var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
-var randStr = require('randomstring').generate;
 
 /**
  * This tests many of the different possibilities that can happen during build, namely when deduping
@@ -68,21 +73,28 @@ describe('Building - Context Version Deduping', function () {
     it('should fork the instance, and both should be deployed when the build is finished', function (done) {
       // Add it to an instance
       var json = { build: ctx.build.id(), name: randStr(5) };
+
+      var count = createCount(1, function () {
+        async.parallel([
+          instance.fetch.bind(instance),
+          forkedInstance.fetch.bind(forkedInstance)
+        ], function (err) {
+          if (err) { return done(err); }
+          expect(instance.attrs.containers[0].inspect.State.Running).to.exist();
+          expect(forkedInstance.attrs.containers[0].inspect.State.Running).to.exist();
+          done();
+        });
+      });
+      primus.expectActionCount('start', 2, count.next);
+
+      var forkedInstance;
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
         // Now fork that instance
-        var forkedInstance = instance.copy(function (err) {
+        forkedInstance = instance.copy(function (err) {
           if (err) { return done(err); }
           // Now tail both and make sure they both start
-          var count = createCount(2, done);
           dockerMockEvents.emitBuildComplete(ctx.cv);
-          multi.tailInstance(ctx.user, instance, next);
-          multi.tailInstance(ctx.user, forkedInstance, next);
-          function next (err, instance) {
-            if (err) { return count.next(err); }
-            expect(instance.attrs.containers[0].inspect.State.Running).to.exist();
-            count.next();
-          }
         });
       });
     });
@@ -148,20 +160,24 @@ describe('Building - Context Version Deduping', function () {
       // start the build
       // Add it to an instance
       var json = { build: ctx.build.id(), name: randStr(5) };
+      var count = createCount(1, function () {
+        async.parallel([
+          instance.fetch.bind(instance),
+          forkedInstance.fetch.bind(forkedInstance)
+        ], function (err) {
+          if (err) { return done(err); }
+          expect(instance.attrs.containers[0].inspect.State.Running).to.exist();
+          expect(forkedInstance.attrs.containers[0].inspect.State.Running).to.exist();
+          done();
+        });
+      });
+      primus.expectActionCount('start', 2, count.next);
+
+      var forkedInstance;
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
-
-        var forkedInstance = instance.copy(function (err) {
+        forkedInstance = instance.copy(function (err) {
           if (err) { return done(err); }
-          // Now tail both and make sure they both start
-          var count = createCount(2, done);
-          multi.tailInstance(ctx.user, instance, next);
-          multi.tailInstance(ctx.user, forkedInstance, next);
-          function next(err, instance) {
-            if (err) { return done(err); }
-            expect(instance.attrs.containers[0].inspect.State.Running).to.exist();
-            count.next();
-          }
         });
       });
     });
