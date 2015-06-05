@@ -80,20 +80,6 @@ describe('200 PATCH /instances/:id', function () {
       }, ms);
     };
   };
-  beforeEach(function (done) {
-    Docker.prototype._origionalPushImageToRegistry = Docker.prototype.pushImageToRegistry;
-    Docker.prototype.pushImageToRegistry = function () {
-      var cb = Array.prototype.slice(arguments).pop();
-      if (typeof cb === 'function') {
-         cb();
-      }
-    };
-    done();
-  });
-  afterEach(function (done) {
-    Docker.prototype.pushImageToRegistry = Docker.prototype._origionalPushImageToRegistry;
-    done();
-  });
   beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
