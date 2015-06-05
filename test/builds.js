@@ -1,7 +1,7 @@
 'use strict';
 
-var Lab = require('lab');
 var Code = require('code');
+var Lab = require('lab');
 
 var lab = exports.lab = Lab.script();
 var after = lab.after;
@@ -13,6 +13,7 @@ var expect = Code.expect;
 var it = lab.it;
 
 var BuildHistory = require('models/mongo/build-history');
+var ContextVersion = require('models/mongo/context-version');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var exists = require('101/exists');
@@ -29,7 +30,7 @@ describe('Builds - /builds', function () {
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-  //afterEach(require('./fixtures/clean-mongo').removeEverything);
+  afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
@@ -112,26 +113,27 @@ describe('Builds - /builds', function () {
       });
     });
   });
+
   describe('Logs', function () {
-    beforeEach(function (done) {
+    it('should create a build and log result in build-histories', function (done) {
       multi.createBuiltBuild(function (err, build, user, modelArr, srcArr) {
         if (err) { return done(err); }
         ctx.builtBuild = build;
         ctx.user2 = user;
         ctx.context2 = modelArr[1];
         ctx.srcContextVersion = srcArr[0];
-        ctx.unbuiltBuild = ctx.user2.createBuild({}, done);
+        BuildHistory.find(function (err, bh) {
+          if (err) { return done(err); }
+          expect(bh.length).to.equal(1);
+          ContextVersion.findBy('build._id', bh[0].build._id, function (err, cv) {
+            if (err) { return done(err); }
+            expect(cv.length).to.equal(1);
+            expect(cv[0].build).to.deep.include(bh[0].build);
+            done();
+          });
+        });
       });
     });
-
-    it('should create a build and log result in build-histories', function (done) {
-      BuildHistory.find(function (err, bh) {
-        if (err) { return done(err); }
-        expect(bh.length).to.equal(1);
-        done()
-      });
-    });
-
   });
   describe('GET', function () {
     beforeEach(function (done) {
