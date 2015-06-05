@@ -6,8 +6,9 @@ var describe = lab.describe;
 var it = lab.it;
 var Code = require('code');
 var expect = Code.expect;
-
+var sinon = require('sinon');
 var containerFs = require('middlewares/apis/container-fs');
+var containerFsAPI = require('models/apis/container-fs');
 
 describe('container-fs', function () {
   describe('#parseParams', function () {
@@ -81,6 +82,23 @@ describe('container-fs', function () {
         expect(req.params.isDir).to.equal(false);
         done();
       });
+    });
+  });
+
+  describe('#handlePatch', function () {
+
+    it('should take all the data from req.params', function (done) {
+      var req = {
+        params: {
+          container: 'container-id',
+          path: '/root',
+          newPath: '/root-id',
+          content: 'some data'
+        }
+      };
+      var stub = sinon.stub(containerFsAPI, 'patch');
+      stub.restore();
+      done();
     });
   });
 });
