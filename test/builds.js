@@ -40,7 +40,7 @@ describe('Builds - /builds', function () {
 
   describe('POST', function () {
     describe('empty body', function() {
-      it('should create a build and log result in build-histories', function (done) {
+      it('should create a build', function (done) {
         var expected = {
           _id: exists,
           'owner.github': ctx.user.attrs.accounts.github.id,
