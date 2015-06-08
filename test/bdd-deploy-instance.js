@@ -120,9 +120,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
+          var count = createCount(cb);
+          primus.expectAction('start', count.inc().next);
           ctx.instance.update({
             build: newBuild.id()
-          }, cb);
+          }, count.inc().next);
         }
       });
     });
@@ -191,9 +193,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
               require('./fixtures/mocks/github/user')(ctx.user);
               require('./fixtures/mocks/github/user')(ctx.user);
               require('./fixtures/mocks/github/user-orgs')(11111, 'Runnable');
+              var count = createCount(cb);
+              primus.expectAction('start', count.inc().next);
               ctx.instance.update({
                 build: newBuild.id()
-              }, cb);
+              }, count.inc().next);
             }
             function tailInstance (newBuild, cb) {
               multi.tailInstance(ctx.user, ctx.instance, function (err) {
@@ -264,9 +268,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
               require('./fixtures/mocks/github/user')(ctx.user);
               require('./fixtures/mocks/github/user')(ctx.user);
               require('./fixtures/mocks/github/user')(ctx.user);
+              var count = createCount(cb);
+              primus.expectAction('start', count.inc().next);
               ctx.instance.update({
                 build: newBuild.id()
-              }, cb);
+              }, count.inc().next);
             }
           });
         });
@@ -357,9 +363,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
             require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
             require('./fixtures/mocks/github/user')(ctx.user);
+            var count = createCount(cb);
+            primus.expectAction('start', count.inc().next);
             ctx.instance.update({
               build: newBuild.id()
-            }, cb);
+            }, count.inc().next);
           }
         });
       });
@@ -447,9 +455,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
+          var count = createCount(cb);
+          primus.expectAction('start', count.inc().next);
           ctx.instance.update({
             build: newBuild.id()
-          }, cb);
+          }, count.inc().next);
         }
       });
     });
@@ -527,9 +537,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
+          var count = createCount(cb);
+          primus.expectAction('start', count.inc().next);
           ctx.instance.update({
             build: newBuild.id()
-          }, cb);
+          }, count.inc().next);
         }
         function tailInstance (newBuild, cb) {
           multi.tailInstance(ctx.user, ctx.instance, function (err) {
