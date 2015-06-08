@@ -1,1 +1,1 @@
-./test/bdd-deploy-instance.js
+./test/instances/post/201.js

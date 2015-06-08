@@ -199,7 +199,7 @@ describe('201 POST /instances', function () {
               instanceShortHash: body.shortHash,
               ownerUsername: ctx.user.attrs.accounts.github.login,
               type: 'user-container',
-              userGithubId: ctx.user.attrs.accounts.github.id
+              userGithubId: ctx.user.attrs.accounts.github.id.toString()
             }
           });
           done();
