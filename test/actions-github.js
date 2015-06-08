@@ -256,10 +256,10 @@ describe('Github - /actions/github', function () {
             expect(errorStub.calledOnce).to.equal(true);
             expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.object)).to.equal(true);
             errorStub.restore();
-            Runnable.prototype.updateInstance.restore();
+            Runnable.prototype.autoDeployBuildToInstance.restore();
             done();
           });
-          sinon.stub(Runnable.prototype, 'updateInstance')
+          sinon.stub(Runnable.prototype, 'autoDeployBuildToInstance')
             .yields(Boom.notFound('Instance update failed'));
 
           sinon.stub(PullRequest.prototype, 'deploymentErrored', count.next);

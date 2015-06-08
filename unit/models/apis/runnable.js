@@ -3,6 +3,7 @@
 var sinon = require('sinon');
 var noop = require('101/noop');
 var Boom = require('dat-middleware').Boom;
+var Instance = require('models/mongo/instance');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -79,5 +80,54 @@ describe('Runnable', function () {
       });
       runnable.forkMasterInstance(master, 'build1', 'b1', noop);
     });
+  });
+
+  describe('#autoDeployBuildToInstance', function () {
+
+    it('should return error if Instance#isAutoDeployOn returned error', function (done) {
+      var runnable = new Runnable({});
+      var error = Boom.create(400, 'Some error');
+      sinon.stub(Instance, 'isAutoDeployOn', function (id, cb) {
+        cb(error);
+      });
+      runnable.autoDeployBuildToInstance('507f1f77bcf86cd799439011', '2132173812', function (err) {
+        expect(err.output.statusCode).to.equal(400);
+        expect(err.output.payload.message).to.equal('Some error');
+        Instance.isAutoDeployOn.restore();
+        done();
+      });
+    });
+
+    it('should return null if autodeploy is disabled', function (done) {
+      var runnable = new Runnable({});
+      sinon.stub(Instance, 'isAutoDeployOn', function (id, cb) {
+        cb(null, false);
+      });
+      runnable.autoDeployBuildToInstance('507f1f77bcf86cd799439011', '2132173812', function (err, updated) {
+        expect(err).to.be.null();
+        expect(updated).to.be.undefined();
+        Instance.isAutoDeployOn.restore();
+        done();
+      });
+    });
+
+    it('should call #updateInstance if autodeploy is enabled', function (done) {
+      var runnable = new Runnable({});
+      sinon.stub(Instance, 'isAutoDeployOn', function (id, cb) {
+        cb(null, true, {shortHash: 'x6123'});
+      });
+      sinon.stub(Runnable.prototype, 'updateInstance', function (shortHash, payload) {
+        expect(shortHash).to.equal('x6123');
+        expect(payload.json.build).to.equal('2132173812');
+        Instance.isAutoDeployOn.restore();
+        Runnable.prototype.updateInstance.restore();
+        done();
+      });
+      runnable.autoDeployBuildToInstance('507f1f77bcf86cd799439011', '2132173812', function (err, updated) {
+        expect(err).to.be.null();
+        expect(updated).to.be.undefined();
+      });
+    });
+
   });
 });
