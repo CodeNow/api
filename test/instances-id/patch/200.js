@@ -89,9 +89,9 @@ describe('200 PATCH /instances', function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
-  // afterEach(require('../../fixtures/clean-mongo').removeEverything);
-  // afterEach(require('../../fixtures/clean-ctx')(ctx));
-  // afterEach(require('../../fixtures/clean-nock'));
+  afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-nock'));
 
   describe('For User', function () {
     describe('with in-progress build', function () {
