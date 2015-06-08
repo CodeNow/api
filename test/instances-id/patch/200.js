@@ -8,7 +8,8 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var Docker = require('dockerode');
-var sinon = require('sinon');
+var createCount = require('callback-count');
+//var sinon = require('sinon');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -60,6 +61,7 @@ function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
 
 describe('200 PATCH /instances', function () {
   var ctx = {};
+  var docker;
   // before
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -67,10 +69,14 @@ describe('200 PATCH /instances', function () {
   beforeEach(primus.connect);
   before(function (done) {
     // container to update test w/ later
-    var docker = ctx.docker = new Docker({
+    docker = ctx.docker = new Docker({
       host: 'localhost',
       port: 4243
     });
+    done();
+  });
+
+  beforeEach(function (done) {
     docker.createContainer({
       Image: 'ubuntu',
       Cmd: ['/bin/bash'],
@@ -84,6 +90,7 @@ describe('200 PATCH /instances', function () {
       });
     });
   });
+
   // after
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
@@ -96,7 +103,7 @@ describe('200 PATCH /instances', function () {
   describe('For User', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {
-        ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
+        //ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
         multi.createContextVersion(function (err, cv, context, build, user) {
           if (err) { return done(err); }
           ctx.build = build;
@@ -126,7 +133,9 @@ describe('200 PATCH /instances', function () {
       });
       afterEach(function (done) {
         // TODO: wait for event first, make sure everything finishes.. then drop db
-        ctx.createUserContainerSpy.restore();
+        try{
+          ctx.createUserContainerSpy.restore();
+        } catch (e) {}
         require('../../fixtures/clean-mongo').removeEverything(done);
       });
 
