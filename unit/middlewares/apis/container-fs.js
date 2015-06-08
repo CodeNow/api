@@ -4,10 +4,12 @@ var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
+var noop = require('101/noop');
 var Code = require('code');
 var expect = Code.expect;
-
+var sinon = require('sinon');
 var containerFs = require('middlewares/apis/container-fs');
+var containerFsAPI = require('models/apis/container-fs');
 
 describe('container-fs', function () {
   describe('#parseParams', function () {
@@ -81,6 +83,49 @@ describe('container-fs', function () {
         expect(req.params.isDir).to.equal(false);
         done();
       });
+    });
+  });
+
+  describe('#handlePatch', function () {
+    it('should take all the data from req.params', function (done) {
+      var req = {
+        params: {
+          container: 'container-id',
+          path: '/root',
+          newPath: '/root-id',
+          content: 'some data'
+        }
+      };
+      var stub = sinon.stub(containerFsAPI, 'patch');
+      containerFs.handlePatch(req, {}, noop);
+      expect(stub.calledOnce).to.be.true();
+      expect(stub.getCall(0).args[0]).to.equal(req.params.container);
+      expect(stub.getCall(0).args[1]).to.equal(req.params.path);
+      expect(stub.getCall(0).args[2].content).to.equal(req.params.content);
+      expect(stub.getCall(0).args[2].newPath).to.equal(req.params.newPath);
+      stub.restore();
+      done();
+    });
+    it('should take optionally take newPath from req.body', function (done) {
+      var req = {
+        params: {
+          container: 'container-id',
+          path: '/root',
+          content: 'some data'
+        },
+        body: {
+          newPath: '/root/id/'
+        }
+      };
+      var stub = sinon.stub(containerFsAPI, 'patch');
+      containerFs.handlePatch(req, {}, noop);
+      expect(stub.calledOnce).to.be.true();
+      expect(stub.getCall(0).args[0]).to.equal(req.params.container);
+      expect(stub.getCall(0).args[1]).to.equal(req.params.path);
+      expect(stub.getCall(0).args[2].content).to.equal(req.params.content);
+      expect(stub.getCall(0).args[2].newPath).to.equal(req.body.newPath);
+      stub.restore();
+      done();
     });
   });
 });
