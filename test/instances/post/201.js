@@ -186,6 +186,8 @@ describe('201 POST /instances', function () {
       });
 
       it('should create an instance with a build', function (done) {
+        var count = createCount(2, done);
+        primus.expectActionCount('start', 1, count.next);
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
@@ -199,14 +201,17 @@ describe('201 POST /instances', function () {
               instanceShortHash: body.shortHash,
               ownerUsername: ctx.user.attrs.accounts.github.login,
               type: 'user-container',
-              userGithubId: ctx.user.attrs.accounts.github.id.toString()
+              creatorGithubId: ctx.user.attrs.accounts.github.id.toString(),
+              ownerGithubId: ctx.user.attrs.accounts.github.id.toString(),
             }
           });
-          done();
+          count.next();
         });
       });
 
       it('should create an instance with a name, build, env', function (done) {
+        var count = createCount(2, done);
+        primus.expectActionCount('start', 1, count.next);
         var name = 'CustomName';
         var env = ['one=one','two=two','three=three'];
         ctx.user.createInstance({ build: ctx.build.id(), name: name, env: env }, function (err, body, statusCode) {
@@ -214,7 +219,7 @@ describe('201 POST /instances', function () {
           expect(body.name).to.equal(name);
           expect(body.env).to.deep.equal(env);
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
-          done();
+          count.next();
         });
       });
     });
