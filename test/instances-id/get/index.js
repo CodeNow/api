@@ -79,7 +79,7 @@ describe('Instance - /instances/:id', function () {
     });
     it('should inspect the containers', function (done) {
       var expected = {
-        'containers[0].inspect.State.Running': true
+        'containers[0].inspect.State.Running': false
       };
       ctx.instance.fetch(expects.success(200, expected, done));
     });

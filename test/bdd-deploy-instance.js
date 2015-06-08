@@ -1,26 +1,31 @@
+/**
+ * @module test/bdd-deploy-instance
+ */
 'use strict';
 
+var Code = require('code');
 var Lab = require('lab');
+var async = require('async');
+var createCount = require('callback-count');
+var find = require('101/find');
+var hasKeypaths = require('101/has-keypaths');
+var pick = require('101/pick');
+
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
+
 var after = lab.after;
 var afterEach = lab.afterEach;
-var Code = require('code');
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
 var expect = Code.expect;
+var it = lab.it;
 
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var multi = require('./fixtures/multi-factory');
 var expects = require('./fixtures/expects');
-var async = require('async');
-var find = require('101/find');
-var hasKeypaths = require('101/has-keypaths');
+var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
-var createCount = require('callback-count');
-var pick = require('101/pick');
 
 describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {};
@@ -30,13 +35,16 @@ describe('BDD - Create Build and Deploy Instance', function () {
   after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
+  before(require('./fixtures/mocks/api-client').setup);
+  after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
 
   describe('create a cv to test dudupe logic with', function () {
+
     beforeEach(function (done) {
-      multi.createInstance(function (err, instance, build, user, modelsArr) {
+      multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
         if (err) { return done(err); }
         ctx.instance = instance;
         ctx.build = build;
@@ -47,18 +55,25 @@ describe('BDD - Create Build and Deploy Instance', function () {
         done();
       });
     });
+
     describe('duplicate build', function() {
+      // 1
       it('should deploy an instance deduped context versions', function (done) {
+
+        require('./fixtures/mocks/github/user-orgs')(11111, 'Runnable');
+
+        var count = createCount(2, done);
+        primus.expectAction('start', count.next);
+
         async.waterfall([
           createVersion,
           addAppCodeVersions,
           createBuild,
-          buildBuild,
-          tailInstance
+          buildBuild
         ], function (err, newBuild) {
           if (err) { return done(err); }
           expect(ctx.instance.build._id).to.equal(newBuild._id);
-          expects.updatedHosts(ctx.user, ctx.instance, done);
+          expects.updatedHosts(ctx.user, ctx.instance, count.next);
         });
         function createVersion (cb) {
           var newVersion = ctx.context.createVersion({
@@ -109,18 +124,16 @@ describe('BDD - Create Build and Deploy Instance', function () {
             build: newBuild.id()
           }, cb);
         }
-        function tailInstance (newBuild, cb) {
-          multi.tailInstance(ctx.user, ctx.instance, function (err) {
-            expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(ctx.oldDockerContainer);
-            cb(err, newBuild);
-          });
-        }
       });
     });
     describe('modified build', function() {
       describe('appCodeVersions', function() {
         describe('change commit', function() {
+          // 2
           it('should deploy an instance with new context versions', function (done) {
+
+            require('./fixtures/mocks/github/user-orgs')(11111, 'Runnable');
+
             async.waterfall([
               createVersion,
               addAppCodeVersions,
@@ -191,13 +204,13 @@ describe('BDD - Create Build and Deploy Instance', function () {
           });
         });
         describe('change branch', function() {
+          // 3
           it('should deploy an instance with new context versions (with same docker image)', function (done) {
             async.waterfall([
               createVersion,
               addAppCodeVersions,
               createBuild,
-              buildBuild,
-              tailInstance
+              buildBuild
             ], function (err, newBuild) {
               if (err) { return done(err); }
               expect(ctx.instance.build._id).to.equal(newBuild._id);
@@ -255,12 +268,6 @@ describe('BDD - Create Build and Deploy Instance', function () {
                 build: newBuild.id()
               }, cb);
             }
-            function tailInstance (newBuild, cb) {
-              multi.tailInstance(ctx.user, ctx.instance, function (err) {
-                expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(ctx.oldDockerContainer);
-                cb(err, newBuild);
-              });
-            }
           });
         });
         function expectVersionBuildsToBeEql (user, build1, build2, cb) {
@@ -278,14 +285,14 @@ describe('BDD - Create Build and Deploy Instance', function () {
         }
       });
       describe('edit dockerfile (infraCodeVersion)', function() {
+        // 4
         it('should deploy an instance with new context versions', function (done) {
           async.waterfall([
             createVersion,
             modifyDockerfile,
             addAppCodeVersions,
             createBuild,
-            buildBuild,
-            tailInstance
+            buildBuild
           ], function (err, newBuild) {
             if (err) { return done(err); }
             expect(ctx.instance.build._id).to.equal(newBuild._id);
@@ -354,12 +361,6 @@ describe('BDD - Create Build and Deploy Instance', function () {
               build: newBuild.id()
             }, cb);
           }
-          function tailInstance (newBuild, cb) {
-            multi.tailInstance(ctx.user, ctx.instance, function (err) {
-              expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(ctx.oldDockerContainer);
-              cb(err, newBuild);
-            });
-          }
         });
       });
     });
@@ -383,14 +384,14 @@ describe('BDD - Create Build and Deploy Instance', function () {
       beforeEach(function (done) {
         ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done);
       });
+      // 5
       it('should deploy an instance with new context versions', function (done) {
         async.waterfall([
           createVersion,
           addAppCodeVersions,
           patchVersion,
           createBuild,
-          buildBuild,
-          tailInstance
+          buildBuild
         ], function (err, newBuild) {
           if (err) { return done(err); }
           expect(ctx.instance.build._id).to.equal(newBuild._id);
@@ -450,13 +451,6 @@ describe('BDD - Create Build and Deploy Instance', function () {
             build: newBuild.id()
           }, cb);
         }
-        function tailInstance (newBuild, cb) {
-          multi.tailInstance(ctx.user, ctx.instance, function (err) {
-            // false wins.
-            expect(ctx.instance.attrs.contextVersion.advanced).to.equal(false);
-            cb(err, newBuild);
-          });
-        }
       });
     });
     describe('duplicate cv w/ advanced:false with cv w/ advance:true', function() {
@@ -469,6 +463,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
       beforeEach(function (done) {
         ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done);
       });
+      // 6
       it('should deploy an instance with new context versions', function (done) {
         async.waterfall([
           createVersion,
@@ -547,4 +542,3 @@ describe('BDD - Create Build and Deploy Instance', function () {
     });
   });
 });
-

@@ -149,11 +149,13 @@ describe('204 DELETE /instances/:id', function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
+            /*
             'containers[0]': exists,
             'containers[0].ports': exists,
             'containers[0].dockerHost': exists,
             'containers[0].dockerContainer': exists,
             'containers[0].inspect.State.Running': true
+            */
           });
           ctx.waitForDestroy = true;
           done();
@@ -165,10 +167,12 @@ describe('204 DELETE /instances/:id', function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
+            /*
             'containers[0]': exists,
             'containers[0].dockerHost': exists,
             'containers[0].dockerContainer': exists,
             'containers[0].inspect.State.Running': false
+            */
           });
           ctx.expectAlreadyStopped = true;
           ctx.originalStart = Docker.prototype.startContainer;
@@ -186,8 +190,10 @@ describe('204 DELETE /instances/:id', function () {
       });
       describe('Container create error (Invalid dockerfile CMD)', function () {
         beforeEach(function (done) {
+          /*
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
+          */
           ctx.expectNoContainerErr = true;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
           ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
