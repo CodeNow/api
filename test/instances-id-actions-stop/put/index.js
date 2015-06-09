@@ -1,3 +1,6 @@
+/**
+ * @module test/instances-id-actions-stop/put/index
+ */
 'use strict';
 
 var Lab = require('lab');
@@ -9,16 +12,16 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 
-var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
+var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
+var tailBuildStream = require('../../fixtures/tail-build-stream');
+
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
-var tailBuildStream = require('../../fixtures/tail-build-stream');
-var primus = require('../../fixtures/primus');
-
 var uuid = require('uuid');
 var createCount = require('callback-count');
 var uuid = require('uuid');
@@ -142,6 +145,7 @@ describe('PUT /instances/:id/actions/stop', function () {
       });
       createInstanceAndRunTests(ctx);
     });
+
     describe('create instance with built build', function () {
       beforeEach(function (done) {
         multi.createBuiltBuild(function (err, build, user, modelsArr) {
@@ -157,25 +161,29 @@ describe('PUT /instances/:id/actions/stop', function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
+            /*
             'containers[0]': exists,
             'containers[0].ports': exists,
             'containers[0].dockerHost': exists,
             'containers[0].dockerContainer': exists,
             'containers[0].inspect.State.Running': true
+            */
           });
+          ctx.expectAlreadyStopped = false;
           done();
         });
-
         createInstanceAndRunTests(ctx);
       });
       describe('Immediately exiting container (first time only)', function() {
         beforeEach(function (done) {
           extend(ctx.expected, {
             containers: exists,
+            /*
             'containers[0]': exists,
             'containers[0].dockerHost': exists,
             'containers[0].dockerContainer': exists,
             'containers[0].inspect.State.Running': false
+            */
           });
           ctx.expectAlreadyStopped = true;
           ctx.originalStart = Docker.prototype.startContainer;
@@ -187,13 +195,14 @@ describe('PUT /instances/:id/actions/stop', function () {
           Docker.prototype.startContainer = ctx.originalStart;
           done();
         });
-
         createInstanceAndRunTests(ctx);
       });
       describe('Container create error (Invalid dockerfile CMD)', function() {
         beforeEach(function (done) {
+          /*
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
+          */
           ctx.expectNoContainerErr = true;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
           ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
@@ -207,14 +216,12 @@ describe('PUT /instances/:id/actions/stop', function () {
           Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
           done();
         });
-
         createInstanceAndRunTests(ctx);
       });
     });
   });
-  // describe('for Organization by member', function () {
-    // TODO
-  // });
+
+
   function createInstanceAndRunTests (ctx) {
     describe('and env.', function() {
       beforeEach(function (done) {
@@ -224,7 +231,19 @@ describe('PUT /instances/:id/actions/stop', function () {
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        }
+        else {
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            var count = createCount(2, function () {
+              ctx.instance.fetch(done);
+            });
+            primus.expectAction('start', {}, count.next);
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
+          });
+        }
       });
       stopInstanceTests(ctx);
     });
@@ -233,7 +252,19 @@ describe('PUT /instances/:id/actions/stop', function () {
         var body = {
           build: ctx.build.id()
         };
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        }
+        else {
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            var count = createCount(2, function () {
+              ctx.instance.fetch(done);
+            });
+            primus.expectAction('start', {}, count.next);
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
+          });
+        }
       });
       stopInstanceTests(ctx);
     });
@@ -260,22 +291,34 @@ describe('PUT /instances/:id/actions/stop', function () {
       }
       function startStopAssert (err) {
         if (err) { return done(err); }
-        var count = createCount(4, done);
+        var count = createCount(3, done);
         // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
         expects.deletedHosts(ctx.user, ctx.instance, count.next);
         // try stop and start
         var instance = ctx.instance;
         var container = instance.containers.models[0];
-        instance.start(function (err) {
-          if (err) { return count.next(err); }
-          instance.stop(expects.success(200, ctx.expected, function (err) {
+        if (!container) {
+          // note to self/casey: switch to primus
+          multi.tailInstance(ctx.user, ctx.instance, function (err, instance) {
+            if (err) { return done(err); }
+            container = instance.containers.models[0];
+            startStop();
+          });
+        }
+        else {
+          startStop();
+        }
+        function startStop () {
+          instance.start(function (err) {
             if (err) { return count.next(err); }
-            expects.deletedWeaveHost(container, count.next);
-            expects.deletedHosts(ctx.user, instance, count.next);
-            if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }
-            count.next();
-          }));
-        });
+            instance.stop(expects.success(200, ctx.expected, function (err) {
+              if (err) { return count.next(err); }
+              expects.deletedWeaveHost(container, count.next);
+              expects.deletedHosts(ctx.user, instance, count.next);
+              if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }
+            }));
+          });
+        }
       }
     });
   }

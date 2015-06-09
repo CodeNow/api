@@ -1,30 +1,33 @@
 'use strict';
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
 var Code = require('code');
-var expect = Code.expect;
-
-var expects = require('../../fixtures/expects');
+var Lab = require('lab');
 var clone = require('101/clone');
+var createCount = require('callback-count');
+var equals = require('101/equals');
+var exists = require('101/exists');
+var noop = require('101/noop');
+var not = require('101/not');
+var randStr = require('randomstring').generate;
+var uuid = require('uuid');
+
+var Build = require('models/mongo/build');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
-var dockerMockEvents = require('../../fixtures/docker-mock-events');
-var exists = require('101/exists');
-var not = require('101/not');
-var equals = require('101/equals');
-var uuid = require('uuid');
-var createCount = require('callback-count');
-var Build = require('models/mongo/build');
-var randStr = require('randomstring').generate;
+
+var lab = exports.lab = Lab.script();
+
+var after = lab.after;
+var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 describe('POST /instances', function () {
   var ctx = {};
@@ -208,12 +211,12 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user')(ctx.user);
-            var instance = ctx.user.createInstance({ json: json }, function (err, body, code, res) {
+            ctx.user.createInstance({ json: json }, function (err, body, code, res) {
               if (err) { return done(err); }
               dockerMockEvents.emitBuildComplete(ctx.cv);
               expects.success(201, expected, function(err) {
                 if (err) { done(err); }
-                multi.tailInstance(ctx.user, instance, ctx.orgId, done);
+                done();
               })(err, body, code, res);
             });
           });
@@ -255,6 +258,9 @@ describe('POST /instances', function () {
         });
       });
       describe('with built versions', function () {
+        beforeEach(function (done) {
+          primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, done);
+        });
         it('should default the name to a short hash', function (done) {
           var json = {
             build: ctx.build.id()
@@ -296,18 +302,19 @@ describe('POST /instances', function () {
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
           var instance = ctx.user.createInstance(json,
-            expects.success(201, expected, function (err) {
+            expects.success(201, {}, function (err) {
               if (err) { return done(err); }
-              multi.tailInstance(ctx.user, instance, function (err) {
-                if (err) { return done(err); }
-                var container = instance.containers.models[0];
-                var count = createCount(2, done);
-                expects.updatedHosts(
-                  ctx.user, instance, count.next);
-                expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.next);
-              });
             }));
+          primus.expectAction('start', expected, function () {
+            instance.fetch(function () {
+              var container = instance.containers.models[0];
+              var count = createCount(2, done);
+              expects.updatedHosts(
+                ctx.user, instance, count.next);
+              expects.updatedWeaveHost(
+                container, instance.attrs.network.hostIp, count.next);
+            });
+          });
         });
         describe('body.env', function() {
           it('should create an instance, with ENV', function (done) {
@@ -335,7 +342,8 @@ describe('POST /instances', function () {
             };
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
-              expects.success(201, expected, done));
+              expects.success(201, {}, noop));
+            primus.expectAction('start', expected, done);
           });
           it('should error if body.env is not an array of strings', function(done) {
             var json = {
@@ -372,7 +380,8 @@ describe('POST /instances', function () {
             };
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
-              expects.success(201, expected, done));
+              expects.success(201, {}, noop));
+            primus.expectAction('start', expected, done);
           });
           it('should error if body.env contains an invalid variable', function (done) {
             var json = {

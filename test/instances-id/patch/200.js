@@ -1,637 +1,187 @@
+/**
+ * @module test/instances-id/patch/200
+ */
 'use strict';
 
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
 
-var expects = require('../../fixtures/expects');
+var Code = require('code');
+var Docker = require('dockerode');
+//var sinon = require('sinon');
+
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
-var clone = require('101/clone');
-var exists = require('101/exists');
-var last = require('101/last');
-var not = require('101/not');
-var isFunction = require('101/is-function');
-var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var primus = require('../../fixtures/primus');
 
-var uuid = require('uuid');
-var createCount = require('callback-count');
-var Docker = require('models/apis/docker');
-var Instance = require('models/mongo/instance');
-var Container = require('dockerode/lib/container');
-var Dockerode = require('dockerode');
-var extend = require('extend');
-var redisCleaner = require('../../fixtures/redis-cleaner');
-var dockerEvents = require('models/events/docker');
-var keypather = require('keypather')();
+var after = lab.after;
+var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
-describe('200 PATCH /instances/:id', function () {
+function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
+  user = user.json();
+  build = build.json();
+  cv = cv.json();
+  var owner = {
+    github:   user.accounts.github.id,
+    username: user.accounts.github.login,
+    gravatar: user.gravatar
+
+  };
+  expect(body._id).to.exist();
+  expect(body.shortHash).to.exist();
+  expect(body.network).to.exist();
+  expect(body.network.networkIp).to.exist();
+  expect(body.network.hostIp).to.exist();
+  expect(body.name).to.exist();
+  expect(body.lowerName).to.equal(body.name.toLowerCase());
+  var deepContain = {
+    build: build,
+    contextVersion: cv,
+    contextVersions: [ cv ], // legacy support for now
+    owner: owner,
+    containers: [ ],
+    autoForked: false,
+    masterPod : false
+  };
+  if (container) {
+    delete deepContain.containers;
+    expect(body.containers[0].inspect.Id).to.equal(container.Id);
+    expect(body.containers[0].dockerHost).to.equal('http://127.0.0.1:4243');
+    expect(body.containers[0].dockerContainer).to.equal(container.Id);
+  }
+  expect(body).deep.contain(deepContain);
+}
+
+describe('200 PATCH /instances', function () {
   var ctx = {};
-  var stopContainerRightAfterStart = function () {
-    var self = this;
-    var args = Array.prototype.slice.call(arguments);
-    var container = args[0];
-    var cb = args.pop();
-    args.push(stopContainer);
-    return ctx.originalStart.apply(this, args);
-    function stopContainer (err, start) {
-      if (err) { return cb(err); }
-      self.stopContainer(container, function (err) {
-        if (err) { return cb(err); }
-        cb(err, start);
-      });
-    }
-  };
-  var forceCreateContainerErr = function () {
-    var cb = last(arguments);
-    var createErr = new Error("server error");
-    extend(createErr, {
-      statusCode : 500,
-      reason     : "server error",
-      json       : "No command specified\n"
-    });
-    if (isFunction(cb)) {
-      cb(createErr);
-    }
-  };
-  var dontReportCreateError = function () {
-    // for cleaner test logs
-    var args = Array.prototype.slice.call(arguments);
-    var cb = args.pop();
-    args.push(function (err) {
-      if (err) { err.data.report = false; }
-      cb.apply(this, arguments);
-    });
-    ctx.originalDockerCreateContainer.apply(this, args);
-  };
-  var delayContainerLogsBy = function (ms, originalContainerLogs) {
-    return function () {
-      var container = this;
-      var args = arguments;
-      setTimeout(function () {
-        originalContainerLogs.apply(container, args);
-      }, ms);
-    };
-  };
-  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
+  var docker;
+  // before
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   beforeEach(primus.connect);
+  before(function (done) {
+    // container to update test w/ later
+    docker = ctx.docker = new Docker({
+      host: 'localhost',
+      port: 4243
+    });
+    done();
+  });
+
+  beforeEach(function (done) {
+    docker.createContainer({
+      Image: 'ubuntu',
+      Cmd: ['/bin/bash'],
+      name: 'fight-frustration'
+    }, function (err, container) {
+      if (err) { return done(err); }
+      container.inspect(function (err, data) {
+        if (err) { return done(err); }
+        ctx.container = data;
+        done();
+      });
+    });
+  });
+
+  // after
   afterEach(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
+  afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-nock'));
 
-  function initExpected (done) {
-    ctx.expected = {
-      _id: exists,
-      shortHash: exists,
-      'createdBy.github': ctx.user.attrs.accounts.github.id,
-      'createdBy.username': ctx.user.attrs.accounts.github.username,
-      'createdBy.gravatar': ctx.user.attrs.gravatar,
-      name: exists,
-      env: [],
-      owner: {
-        username: ctx.user.json().accounts.github.login,
-        github: ctx.user.json().accounts.github.id,
-        gravatar: ctx.user.json().gravatar
-      },
-      contextVersions: exists,
-      'network.networkIp': exists,
-      'network.hostIp': exists,
-      'build._id': ctx.build.id(),
-      'contextVersions[0]._id': ctx.cv.id()
-    };
-    done();
-  }
-
-  describe('for User', function () {
-    describe('create instance with in-progress build', function () {
+  describe('For User', function () {
+    describe('with in-progress build', function () {
       beforeEach(function (done) {
-        multi.createContextVersion(function (err, contextVersion, context, build, user) {
+        //ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
+        multi.createContextVersion(function (err, cv, context, build, user) {
           if (err) { return done(err); }
           ctx.build = build;
+          ctx.cv = cv;
           ctx.user = user;
-          ctx.cv = contextVersion;
-          ctx.build.build({ message: uuid() }, expects.success(201, done));
+          done();
         });
       });
       beforeEach(function (done) {
-        // make sure build finishes before moving on to the next test
-        var firstBuildId = ctx.build.id();
-        ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
-        ctx.afterPatchAsserts.push(function (done) {
-          if (ctx.instance.build.id() === firstBuildId) {
-            // instance was NOT patched with a new build, make sure to log until
-            // redeploy route completes (after build completes) before moving on to next test.
-            multi.tailInstance(ctx.user, ctx.instance, done);
-          }
-          else { // instance has been patched with a new build
-            primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, function () {
-              primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
-                done();
-              });
-            });
-          }
-          dockerMockEvents.emitBuildComplete(ctx.cv);
-        });
-        done();
+        primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, done);
       });
-      beforeEach(initExpected);
-      createInstanceAndRunTests(ctx);
-    });
-    describe('create instance with built build', function () {
       beforeEach(function (done) {
-        multi.createBuiltBuild(function (err, build, user, modelsArr) {
+        ctx.build.build(function (err) {
           if (err) { return done(err); }
-          ctx.build = build;
-          ctx.user = user;
-          ctx.cv = modelsArr[0];
+          ctx.cv.fetch(done); // used in assertions
+        });
+      });
+      beforeEach(function (done) {
+        // create instance
+        ctx.instance = ctx.user.createInstance({
+          json: {
+            build: ctx.build.id()
+          }
+        }, function (err) {
+          done(err);
+        });
+      });
+      afterEach(function (done) {
+        // TODO: wait for event first, make sure everything finishes.. then drop db
+        try{
+          ctx.createUserContainerSpy.restore();
+        } catch (e) {}
+        require('../../fixtures/clean-mongo').removeEverything(done);
+      });
+
+      it('should update an instance with a build', function (done) {
+        ctx.instance.update({
+          env: ['ENV=OLD'],
+          build: ctx.build.id(),
+        }, function (err, body, statusCode) {
+          expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
         });
       });
-      beforeEach(initExpected);
-      describe('Long running container', function() {
-        beforeEach(function (done) {
-          extend(ctx.expected, {
-            containers: exists,
-            'containers[0]': exists,
-            'containers[0].ports': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': true
-          });
+
+      it('should update an instance with name, build, env', function (done) {
+        var name = 'CustomName';
+        var env = ['one=one','two=two','three=three'];
+        ctx.instance.update({
+          build: ctx.build.id(),
+          name: name,
+          env: env
+        }, function (err, body, statusCode) {
+          if (err) { return done(err); }
+          expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           done();
         });
-
-        createInstanceAndRunTests(ctx);
       });
-      describe('Immediately exiting container', function() {
-        beforeEach(function (done) {
-          extend(ctx.expected, {
-            containers: exists,
-            'containers[0]': exists,
-            'containers[0].dockerHost': exists,
-            'containers[0].dockerContainer': exists,
-            'containers[0].inspect.State.Running': false
-          });
-          ctx.originalStart = Docker.prototype.startContainer;
-          Docker.prototype.startContainer = stopContainerRightAfterStart;
-          done();
-        });
-        afterEach(function (done) {
-          // restore docker.startContainer back to normal
-          Docker.prototype.startContainer = ctx.originalStart;
-          done();
-        });
 
-        createInstanceAndRunTests(ctx);
-      });
-      describe('Container create error (Invalid dockerfile CMD)', function() {
-        beforeEach(function (done) {
-          ctx.expected['containers[0].error.message'] = exists;
-          ctx.expected['containers[0].error.stack'] = exists;
-          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
-          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
-          Dockerode.prototype.createContainer = forceCreateContainerErr;
-          Docker.prototype.createContainer = dontReportCreateError;
+      it('should update an instance with a container and context version', function (done) {
+        var container = {
+          dockerHost: 'http://127.0.0.1:4243',
+          dockerContainer: ctx.container.Id
+        };
+        // required when updating container in PATCH route
+        var contextVersion = ctx.cv.id();
+        var opts = {
+          json: {
+            container: container
+          },
+          qs: {
+            'contextVersion._id': contextVersion
+          }
+        };
+        ctx.instance.update(opts, function (err, body, statusCode) {
+          expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv, ctx.container);
           done();
         });
-        afterEach(function (done) {
-          // restore dockerode.createContainer back to normal
-          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
-          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
-          done();
-        });
-
-        createInstanceAndRunTests(ctx);
       });
     });
   });
-  // describe('for Organization by member', function () {
-    // TODO
-  // });
-  function createInstanceAndRunTests (ctx) {
-    describe('and env.', function() {
-      beforeEach(function (done) {
-        var body = {
-          env: ['ENV=OLD'],
-          build: ctx.build.id(),
-          masterPod: true
-        };
-        ctx.expected.env = body.env;
-        ctx.expected['build._id'] = body.build;
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
-      });
-      stoppedOrRunningContainerThenPatchInstanceTests(ctx);
-    });
-    describe('and no env.', function() {
-      beforeEach(function (done) {
-        var body = {
-          build: ctx.build.id(),
-          masterPod: true
-        };
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
-      });
-      stoppedOrRunningContainerThenPatchInstanceTests(ctx);
-    });
-  }
-
-  function stoppedOrRunningContainerThenPatchInstanceTests (ctx) {
-    describe('and the container naturally stops (if there is a container)', function() {
-      beforeEach(function (done) {
-        if (keypather.get(ctx.instance, 'attrs.container.dockerContainer')) {
-          var docker = new Docker(ctx.instance.attrs.container.dockerHost);
-          docker
-            .stopContainer(ctx.instance.attrs.container, function () {
-              // ignore error we just want it stopped..
-              ctx.expected['containers[0].inspect.State.Running'] = false;
-              Instance.findById(ctx.instance.attrs._id, function (err, instance) {
-                if (err) { return done(err); }
-                instance.setContainerFinishedState(new Date().toISOString(), 0, done);
-              });
-            });
-        }
-        else {
-          // KEEP THIS LOG
-          console.warn('(does not have container so does not stop)');
-          done();
-        }
-      });
-      patchInstanceTests(ctx);
-    });
-    describe('with the container running normally', function () {
-      patchInstanceTests(ctx);
-    });
-  }
-
-  function patchInstanceTests (ctx) {
-    describe('Patch without build:', function() {
-      afterEach(require('../../fixtures/clean-mongo').removeEverything);
-      afterEach(require('../../fixtures/clean-ctx')(ctx));
-      afterEach(require('../../fixtures/clean-nock'));
-      it('should update an instance with new env', function (done) {
-        var body = {
-          env: [
-            'ENV=NEW'
-          ]
-        };
-        extend(ctx.expected, body);
-        ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
-      });
-      describe('update name:', function() {
-        beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
-        beforeEach(afterEachAssertUpdatedNewHostsAndNetwork);
-        it('should update an instance with new name', function (done) {
-          var body = {
-            name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ-'
-          };
-          extend(ctx.expected, body);
-          ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
-        });
-        it('should update an instance with new name and env', function (done) {
-          var body = {
-            name: 'PATCH1-GHIJKLMNOPQRSTUVWYXZ-',
-            env: [
-              'ENV=NEW'
-            ]
-          };
-          extend(ctx.expected, body);
-          ctx.instance.update(body, expects.success(200, ctx.expected, afterPatchAssertions(done)));
-        });
-      });
-      function afterPatchAssertions (done) {
-        return function (err) {
-          if (err) { return done(err); }
-          if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {
-            return done();
-          }
-          var count = createCount(ctx.afterPatchAsserts.length, done);
-          ctx.afterPatchAsserts.forEach(function (assert) {
-            assert(function (err) {
-              count.next(err);
-            });
-          });
-        };
-      }
-    });
-
-    describe('Patch with build:', function() {
-      function initPatchExpected (done) {
-        var patchCv = ctx.patchBuild.contextVersions.models[0];
-        initExpected(function () {
-          extend(ctx.expected, {
-            'env': ctx.instance.attrs.env,
-            'build._id': ctx.patchBuild.id(),
-            'contextVersions[0]._id': patchCv.id()
-          });
-        });
-        done();
-      }
-      beforeEach(function (done) {
-        if (ctx.originalStart) { Docker.prototype.startContainer = ctx.originalStart; }
-        if (ctx.originalCreateContainer) { Dockerode.prototype.createContainer = ctx.originalCreateContainer; }
-        if (ctx.originalDockerCreateContainer) { Docker.prototype.createContainer = ctx.originalDockerCreateContainer; }
-        if (ctx.originalContainerLogs) { Container.prototype.logs = ctx.originalContainerLogs; }
-        done();
-      });
-
-      describe('in-progress build,', function () {
-        beforeEach(function (done) { // delay container log time to make build time longer
-          ctx.originalContainerLogs = Container.prototype.logs;
-          Container.prototype.logs = delayContainerLogsBy(300, ctx.originalContainerLogs);
-          done();
-        });
-        afterEach(function (done) { // restore original container log method
-          Container.prototype.logs = ctx.originalContainerLogs;
-          done();
-        });
-        beforeEach(function (done) {
-          ctx.patchBuild = ctx.build.deepCopy(function (err) {
-            if (err) { return done(err); }
-            var update = { json: {body:'FROM dockerfile/node.js'}}; // invalidate dedupe
-            ctx.patchBuild.contextVersions.models[0].updateFile('/Dockerfile', update, function (err) {
-              if (err) { return done(err); }
-              ctx.patchBuild.build({ message: uuid() }, expects.success(201, done));
-            });
-          });
-        });
-        beforeEach(initPatchExpected);
-        beforeEach(function (done) {
-          ctx.expected['containers[0]'] = not(exists); // this works bc build takes 100ms
-          done();
-        });
-        beforeEach(function (done) {
-          var oldInstance = clone(ctx.instance);
-          var oldContainer = keypather.get(ctx.instance, 'containers.models[0]');
-          ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
-          ctx.afterPatchAsserts.push(function (done) {
-            var instance = ctx.instance;
-            multi.tailInstance(ctx.user, instance, function (err) {
-              if (err) { return done(err); }
-              try {
-                var count = createCount(1, done);
-                // assert old values are deleted - technically these are delete on PATCH
-                if (oldContainer && oldContainer.dockerContainer) {
-                  expects.deletedHosts(ctx.user, oldInstance, oldContainer, count.inc().next);
-                  expects.deletedWeaveHost(oldContainer, count.inc().next);
-                }
-                // assert new values
-                expects.updatedHosts(ctx.user, instance, count.inc().next);
-                var container = instance.containers.models[0];
-                expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.inc().next);
-                 count.next();
-              }
-              catch (e) {
-                done(e);
-              }
-            });
-            var patchCv = ctx.patchBuild.contextVersions.models[0];
-            dockerMockEvents.emitBuildComplete(patchCv);
-          });
-          done();
-        });
-
-        patchInstanceWithBuildTests(ctx);
-      });
-
-      describe('built-build,', function () {
-        beforeEach(function (done) {
-          ctx.patchBuild = ctx.build.deepCopy(function (err) {
-            if (err) { return done(err); }
-            var update = { json: {body:'FROM dockerfile/node.js'}}; // invalidate dedupe
-            ctx.patchBuild.contextVersions.models[0].updateFile('/Dockerfile', update, function (err) {
-              if (err) { return done(err); }
-              multi.buildTheBuild(ctx.user, ctx.patchBuild, done);
-            });
-          });
-        });
-        beforeEach(initPatchExpected);
-
-        describe('Long-running container', function() {
-          beforeEach(function (done) {
-            extend(ctx.expected, {
-              containers: exists,
-              'containers[0]': exists,
-              'containers[0].ports': exists,
-              'containers[0].dockerHost': exists,
-              'containers[0].dockerContainer': exists,
-              'containers[0].inspect.State.Running': true
-            });
-            done();
-          });
-          beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
-          beforeEach(afterEachAssertUpdatedNewHostsAndNetwork);
-
-          patchInstanceWithBuildTests(ctx);
-        });
-
-        describe('Immediately exiting container', function() {
-          beforeEach(function (done) {
-            extend(ctx.expected, {
-              containers: exists,
-              'containers[0]': exists,
-              'containers[0].ports': not(exists),
-              'containers[0].dockerHost': exists,
-              'containers[0].dockerContainer': exists,
-              'containers[0].inspect.State.Running': false
-            });
-            done();
-          });
-          beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
-          beforeEach(function afterEachAssertDeletedNewHostsAndNetwork (done) {
-            ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
-            ctx.afterPatchAsserts.push(function (done) {
-              try {
-                var instance = ctx.instance;
-                var count = createCount(2, done);
-                expects.deletedHosts(ctx.user, instance, count.next);
-                var container = instance.containers.models[0];
-                expects.deletedWeaveHost(container, count.next);
-              }
-              catch (e) {
-                done(e);
-              }
-            });
-            done();
-          });
-          beforeEach(function (done) {
-            ctx.originalStart = Docker.prototype.startContainer;
-            Docker.prototype.startContainer = stopContainerRightAfterStart;
-            done();
-          });
-          afterEach(function (done) {
-            // restore docker.startContainer back to normal
-            Docker.prototype.startContainer = ctx.originalStart;
-            done();
-          });
-
-          patchInstanceWithBuildTests(ctx);
-        });
-
-        describe('Container create error (invalid dockerfile)', function() {
-          beforeEach(function (done) {
-            ctx.expected['containers[0].error.message'] = exists;
-            ctx.expected['containers[0].error.stack'] = exists;
-            ctx.originalCreateContainer = Dockerode.prototype.createContainer;
-            ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
-            Dockerode.prototype.createContainer = forceCreateContainerErr;
-            Docker.prototype.createContainer = dontReportCreateError;
-            done();
-          });
-          beforeEach(afterEachAssertDeletedOldHostsAndNetwork);
-          beforeEach(function afterEachAssertDeletedNewDnsEntry (done) {
-            ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
-            ctx.afterPatchAsserts.push(function (done) {
-              try {
-                var instance = ctx.instance;
-                expects.deletedDnsEntry(ctx.user, instance.attrs.name);
-                done();
-              }
-              catch (e) {
-                done(e);
-              }
-            });
-            done();
-          });
-          afterEach(function (done) {
-            // restore dockerode.createContainer back to normal
-            Dockerode.prototype.createContainer = ctx.originalCreateContainer;
-            Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
-            done();
-          });
-
-          patchInstanceWithBuildTests(ctx);
-        });
-      });
-    });
-    // patch helpers
-    function afterEachAssertDeletedOldHostsAndNetwork (done) {
-      var oldInstanceBuildBuilt = ctx.instance.attrs.build && ctx.instance.attrs.build.completed;
-      var oldInstanceBuildId = ctx.instance.attrs.build && ctx.instance.attrs.build._id;
-      var oldInstance = clone(ctx.instance);
-      var oldContainer = keypather.get(ctx.instance, 'containers.models[0]');
-      ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
-      ctx.afterPatchAsserts.push(function (done) {
-        var oldContainerExists = oldContainer && oldContainer.dockerContainer; // not an error
-        if (oldInstanceBuildBuilt && oldContainerExists) {
-          dockerEvents.once('destroy', function () {
-            checkOldContainerDeleted(done);
-          });
-        }
-        else {
-          done();
-        }
-        function checkOldContainerDeleted (done) {
-          try {
-            var count = createCount(1, done);
-            // NOTE!: timeout is required for the following tests, bc container deletion occurs in bg
-            // User create instance with built build Long running container and env.
-            // Patch with build: in-progress build, should update an instance ______.
-            if (ctx.instance.attrs.name !== oldInstance.attrs.name) {
-              // if name changed
-              expects.deletedHosts(ctx.user, oldInstance, oldContainer, count.inc().next);
-            } // else assert updated values for same entries next beforeEach
-            var newInstanceBuildId = ctx.instance.attrs.build && ctx.instance.attrs.build._id;
-            if (newInstanceBuildId !== oldInstanceBuildId) {
-              expects.deletedWeaveHost(oldContainer, count.inc().next);
-              expects.deletedContainer(oldContainer.json(), count.inc().next);
-            }
-            count.next();
-          }
-          catch (e) {
-            done(e);
-          }
-        }
-      });
-      done();
-    }
-    function afterEachAssertUpdatedNewHostsAndNetwork (done) {
-      ctx.afterPatchAsserts = ctx.afterPatchAsserts || [];
-      ctx.afterPatchAsserts.push(function (done) {
-        try {
-          var instance = ctx.instance;
-          var count = createCount(1, done);
-          ctx.instance.fetch(function (err) {
-            if (err) { return done(err); }
-            expects.updatedHosts(ctx.user, instance, count.inc().next);
-            var container = instance.containers.models[0];
-            if (container && container.attrs.ports) {
-              expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
-            }
-            count.next();
-          });
-        }
-        catch (e) {
-          done(e);
-        }
-      });
-      done();
-    }
-  }
-
-  function patchInstanceWithBuildTests (ctx) {
-    afterEach(require('../../fixtures/clean-ctx')(ctx));
-    afterEach(require('../../fixtures/clean-nock'));
-    afterEach(require('../../fixtures/clean-mongo').removeEverything);
-
-    it('should update an instance with new env and build', function (done) {
-      var body = {
-        env: [
-          'ENV=NEW'
-        ],
-        build: ctx.patchBuild.id()
-      };
-      ctx.expected.env = body.env;
-      ctx.expected['build._id'] = body.build;
-
-      assertUpdate(body, done);
-    });
-    it('should update an instance with new build and name', function (done) {
-      var body = {
-        name: 'PATCH2-ABCDEFGHIJKLMNOPQRSTUVWYXZ-',
-        build: ctx.patchBuild.id()
-      };
-      ctx.expected.name = body.name;
-      ctx.expected['build._id'] = body.build;
-      assertUpdate(body, done);
-    });
-    it('should update an instance with new name, env and build', function (done) {
-      var body = {
-        name: 'PATCH2-ABCDEFGHIJKLMNOPQRSTUVWYXZ-FOO',
-        env: [
-          'ENV=NEW'
-        ],
-        build: ctx.patchBuild.id()
-      };
-      ctx.expected.name = body.name;
-      ctx.expected.env  = body.env;
-      ctx.expected['build._id'] = body.build;
-
-      assertUpdate(body, done);
-    });
-  }
-  function assertUpdate (body, done) {
-    ctx.instance.update(body, expects.success(200, ctx.expected, function (err) {
-      if (err) { return done(err); }
-      if (!ctx.afterPatchAsserts || ctx.afterPatchAsserts.length === 0) {
-        return done();
-      }
-      var count = createCount(ctx.afterPatchAsserts.length, done);
-      ctx.afterPatchAsserts.forEach(function (assert) {
-        assert(function () {
-          count.next();
-        });
-      });
-    }));
-  }
 });

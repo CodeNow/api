@@ -26,12 +26,12 @@
 ./test/builds.js
 ./test/builds/post/400.js
 ./test/contexts-id-versions-id-actions-build/201.js
+./test/contexts-id-versions-id-appcodeversions-id-action-apply-transform-rules/index.js
+./test/contexts-id-versions-id-appcodeversions-id-action-test-transform-rule/index.js
 ./test/contexts-id-versions-id-appcodeversions-id/patch/200.js
 ./test/contexts-id-versions-id-appcodeversions-id/patch/400.js
 ./test/contexts-id-versions-id-appcodeversions/post/400.js
 ./test/contexts-id-versions-id-appcodeversions/post/index.js
-./test/contexts-id-versions-id-appcodeversions-id-action-apply-transform-rules/index.js
-./test/contexts-id-versions-id-appcodeversions-id-action-test-transform-rule/index.js
 ./test/contexts-id-versions-id-files-id.js
 ./test/contexts-id-versions-id-files-id/delete/index.js
 ./test/contexts-id-versions-id-files-id/patch/400.js
@@ -81,3 +81,4 @@
 ./test/users-id-routes-id/index.js
 ./test/users-id-routes/index.js
 ./test/users-id.js
+./test/workers/container-create/post/201.js

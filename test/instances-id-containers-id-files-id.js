@@ -142,7 +142,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    multi.createContainer(function (err, container, instance) {
+    multi.createAndTailContainer(primus, function (err, container, instance) {
       if (err) { return done(err); }
       ctx.container = container;
       ctx.instanceId = instance.id();
@@ -152,7 +152,6 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
       ctx.krain = krain.listen(process.env.KRAIN_PORT, done);
     });
   });
-
 
   describe('GET', function () {
     it('should read a file', function (done) {

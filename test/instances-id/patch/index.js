@@ -1,33 +1,38 @@
+/**
+ * @module test/instances-id/patch/index
+ */
 'use strict';
 
 var Lab = require('lab');
+var Code = require('code');
 var lab = exports.lab = Lab.script();
+
 var describe = lab.describe;
 var it = lab.it;
 var before = lab.before;
 var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
-var Code = require('code');
 var expect = Code.expect;
 
-var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
-var multi = require('../../fixtures/multi-factory');
-var expects = require('../../fixtures/expects');
-var primus = require('../../fixtures/primus');
-var dockerMockEvents = require('../../fixtures/docker-mock-events');
-var uuid = require('uuid');
 var async = require('async');
-var exists = require('101/exists');
-var not = require('101/not');
+var createCount = require('callback-count');
 var equals = require('101/equals');
-var Build = require('models/mongo/build');
+var exists = require('101/exists');
 var extend = require('extend');
 var nock = require('nock');
-var createCount = require('callback-count');
+var noop = require('101/noop');
+var not = require('101/not');
 var randStr = require('randomstring').generate;
+var uuid = require('uuid');
 
+var Build = require('models/mongo/build');
+var api = require('../../fixtures/api-control');
+var dock = require('../../fixtures/dock');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+var expects = require('../../fixtures/expects');
+var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
 
 describe('Instance - /instances/:id', function () {
   var ctx = {};
@@ -54,16 +59,13 @@ describe('Instance - /instances/:id', function () {
         ctx.orgId = 1001;
         multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
           //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
-          if (err) {
-            return done(err);
-          }
+          if (err) { return done(err); }
           ctx.instance = instance;
           ctx.build = build;
           ctx.user = user;
           ctx.cv = mdlArray[0];
           ctx.context = mdlArray[1];
           ctx.srcArray = srcArray;
-
           multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build) {
             if (err) {
               done(err);
@@ -83,14 +85,15 @@ describe('Instance - /instances/:id', function () {
           build: ctx.otherBuild.id().toString()
         };
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-        ctx.instance.update(update, expects.error(400, done));
+        ctx.instance.update(update, expects.error(403, done));
       });
     });
+
     describe('User', function() {
       beforeEach(function (done) {
-        multi.createInstance(function (err, instance, build, user, mdlArray, srcArray) {
-          //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
+        multi.createAndTailInstance(primus, function (err, instance, build, user, mdlArray, srcArray) {
           if (err) { return done(err); }
+          //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
           ctx.instance = instance;
           ctx.build = build;
           ctx.user = user;
@@ -114,6 +117,8 @@ describe('Instance - /instances/:id', function () {
               var update = {
                 build: ctx.newBuild.id().toString()
               };
+              var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
+              var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
                 shortHash: ctx.instance.attrs.shortHash,
@@ -121,28 +126,32 @@ describe('Instance - /instances/:id', function () {
                 'owner.github': ctx.user.attrs.accounts.github.id,
                 'owner.username': ctx.user.attrs.accounts.github.login,
                 // this represents a new docker container! :)
-                'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer)),
+                // containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer)),
                 'network.networkIp': exists,
                 'network.hostIp': exists
               };
-              var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
-              var oldContainer = ctx.instance.containers.models[0];
-              ctx.instance.update({json: update}, expects.success(200, expected, function (err) {
+
+              primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
                 if (err) { return done(err); }
-                multi.tailInstance(ctx.user, ctx.instance, function (err) {
-                  if (err) { return done(err); }
-                  var container = ctx.instance.containers.models[0];
-                  expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
-                  expect(container.attrs.inspect.Env).to.deep.equal([]);
-                  var count = createCount(done);
-                  expects.deletedWeaveHost(oldContainer, count.inc().next);
-                  expects.updatedWeaveHost(
-                    container, ctx.instance.attrs.network.hostIp, count.inc().next);
+                primus.expectAction('start', {}, function () {
+                  expected['containers[0].dockerContainer'] = not(equals(oldDockerContainer));
+                  ctx.instance.fetch(expects.success(200, expected, function (err) {
+                    if (err) { return done(err); }
+                    var container = ctx.instance.containers.models[0];
+                    expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
+                    expect(container.attrs.inspect.Env).to.deep.equal([]);
+                    var count = createCount(2, done);
+                    expects.deletedWeaveHost(oldContainer, count.next);
+                    expects.updatedWeaveHost(
+                      container, ctx.instance.attrs.network.hostIp, count.next);
+                  }));
                 });
-              }));
+                ctx.instance.update({json: update}, expects.success(200, expected, noop));
+              });
+
             });
             describe('with env', function() {
               beforeEach(function (done) {
@@ -161,21 +170,31 @@ describe('Instance - /instances/:id', function () {
                   'owner.github': ctx.user.attrs.accounts.github.id,
                   'owner.username': ctx.user.attrs.accounts.github.login,
                   // this represents a new docker container! :)
-                  'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
+                  // 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
                 };
                 var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
+                var oldContainer = ctx.instance.containers.models[0];
                 require('../../fixtures/mocks/github/user')(ctx.user);
                 require('../../fixtures/mocks/github/user')(ctx.user);
                 require('../../fixtures/mocks/github/user')(ctx.user);
-                ctx.instance.update({json: update}, expects.success(200, expected, function (err) {
+
+                primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
                   if (err) { return done(err); }
-                  multi.tailInstance(ctx.user, ctx.instance, function (err) {
-                    if (err) { return done(err); }
-                    expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(oldDockerContainer);
-                    expect(ctx.instance.attrs.containers[0].inspect.Env).to.deep.equal(['ONE=1']);
-                    done();
+                  primus.expectAction('start', {}, function () {
+                    expected['containers[0].dockerContainer'] = not(equals(oldDockerContainer));
+                    ctx.instance.fetch(expects.success(200, expected, function (err) {
+                      if (err) { return done(err); }
+                      var container = ctx.instance.containers.models[0];
+                      expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
+                      expect(ctx.instance.attrs.containers[0].inspect.Env).to.deep.equal(['ONE=1']);
+                      var count = createCount(2, done);
+                      expects.deletedWeaveHost(oldContainer, count.next);
+                      expects.updatedWeaveHost(
+                        container, ctx.instance.attrs.network.hostIp, count.next);
+                    }));
                   });
-                }));
+                  ctx.instance.update({json: update}, expects.success(200, expected, noop));
+                });
               });
             });
           });
@@ -200,17 +219,36 @@ describe('Instance - /instances/:id', function () {
               var update = {
                 build: ctx.newBuild.id().toString()
               };
+              var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
+              var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
                 shortHash: ctx.instance.attrs.shortHash,
                 'build._id': ctx.newBuild.id(),
                 // this represents a new docker container! :)
-                'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
+                //'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
               };
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
-              ctx.instance.update({json: update}, expects.success(200, expected, done));
+
+              primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+                if (err) { return done(err); }
+                primus.expectAction('start', {}, function () {
+                  expected['containers[0].dockerContainer'] = not(equals(oldDockerContainer));
+                  ctx.instance.fetch(expects.success(200, expected, function (err) {
+                    if (err) { return done(err); }
+                    var container = ctx.instance.containers.models[0];
+                    expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
+                    var count = createCount(2, done);
+                    expects.deletedWeaveHost(oldContainer, count.next);
+                    expects.updatedWeaveHost(
+                      container, ctx.instance.attrs.network.hostIp, count.next);
+                  }));
+                });
+                ctx.instance.update({json: update}, expects.success(200, expected, noop));
+              });
+
             });
           });
           describe('WITH changes in infracodeversion', function () {
@@ -231,17 +269,36 @@ describe('Instance - /instances/:id', function () {
               var update = {
                 build: ctx.newBuild.id().toString()
               };
+              var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
+              var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
                 shortHash: ctx.instance.attrs.shortHash,
                 'build._id': ctx.newBuild.id(),
                 // this represents a new docker container! :)
-                'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
+                // 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
               };
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
-              ctx.instance.update({json: update}, expects.success(200, expected, done));
+
+              primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+                if (err) { return done(err); }
+                primus.expectAction('start', {}, function () {
+                  expected['containers[0].dockerContainer'] = not(equals(oldDockerContainer));
+                  ctx.instance.fetch(expects.success(200, expected, function (err) {
+                    if (err) { return done(err); }
+                    var container = ctx.instance.containers.models[0];
+                    expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
+                    var count = createCount(2, done);
+                    expects.deletedWeaveHost(oldContainer, count.next);
+                    expects.updatedWeaveHost(
+                      container, ctx.instance.attrs.network.hostIp, count.next);
+                  }));
+                });
+                ctx.instance.update({json: update}, expects.success(200, expected, noop));
+              });
+
             });
           });
           describe('WITH changes in infracodeversion AND appcodeversion', function () {
@@ -268,17 +325,36 @@ describe('Instance - /instances/:id', function () {
               var update = {
                 build: ctx.newBuild.id().toString()
               };
+              var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
+              var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
                 shortHash: ctx.instance.attrs.shortHash,
                 'build._id': ctx.newBuild.id(),
                 // this represents a new docker container! :)
-                'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
+                // 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
               };
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
-              ctx.instance.update({json: update}, expects.success(200, expected, done));
+
+              primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+                if (err) { return done(err); }
+                primus.expectAction('start', {}, function () {
+                  expected['containers[0].dockerContainer'] = not(equals(oldDockerContainer));
+                  ctx.instance.fetch(expects.success(200, expected, function (err) {
+                    if (err) { return done(err); }
+                    var container = ctx.instance.containers.models[0];
+                    expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
+                    var count = createCount(2, done);
+                    expects.deletedWeaveHost(oldContainer, count.next);
+                    expects.updatedWeaveHost(
+                      container, ctx.instance.attrs.network.hostIp, count.next);
+                  }));
+                });
+                ctx.instance.update({json: update}, expects.success(200, expected, noop));
+              });
+
             });
           });
         });
@@ -319,25 +395,43 @@ describe('Instance - /instances/:id', function () {
             ctx.otherBuild = ctx.build.deepCopy(done);
           });
           it('should allow a build that has everything started', function (done) {
+            var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
+            var oldContainer = ctx.instance.containers.models[0];
             var expected = {
               // Since the containers are not removed until the otherBuild has finished, we should
               // still see them running
-              'containers[0].inspect.State.Running': true,
+              // 'containers[0].inspect.State.Running': true,
               'build._id': ctx.otherBuild.id()
             };
             multi.buildTheBuild(ctx.user, ctx.otherBuild, function () {
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
-              ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
+              primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+                if (err) { return done(err); }
+                primus.expectAction('start', {}, function () {
+                  expected['containers[0].dockerContainer'] = not(equals(oldDockerContainer));
+                  expected['containers[0].inspect.State.Running'] = true;
+                  ctx.instance.fetch(expects.success(200, expected, function (err) {
+                    if (err) { return done(err); }
+                    var container = ctx.instance.containers.models[0];
+                    expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
+                    var count = createCount(2, done);
+                    expects.deletedWeaveHost(oldContainer, count.next);
+                    expects.updatedWeaveHost(
+                      container, ctx.instance.attrs.network.hostIp, count.next);
+                  }));
+                });
+                ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, noop));
+              });
             });
           });
         });
         describe('Testing appcode copying during patch', function () {
           beforeEach(function(done) {
             // We need to deploy the container first before each test.
-            multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build, user,
-                                                                                mdlArray) {
+            multi.createBuiltBuild(ctx.user.attrs.accounts.github.id,
+                                   function (err, build, user, mdlArray) {
               if (err) { done(err); }
               ctx.otherCv = mdlArray[0];
               ctx.otherBuild = build;
@@ -345,20 +439,40 @@ describe('Instance - /instances/:id', function () {
             });
           });
           it('should copy the context version app codes during the patch ', function (done) {
+            var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
+            var oldContainer = ctx.instance.containers.models[0];
             var acv = ctx.otherCv.attrs.appCodeVersions[0];
             var expected = {
               // Since the containers are not removed until the otherBuild has finished, we should
               // still see them running
-              'containers[0].inspect.State.Running': true,
+              // 'containers[0].inspect.State.Running': true,
               build: ctx.otherBuild.json(),
-              'contextVersions[0]._id': ctx.otherCv.id(),
-              'contextVersions[0].appCodeVersions[0]': acv
+              // 'contextVersions[0]._id': ctx.otherCv.id(),
+              // 'contextVersions[0].appCodeVersions[0]': acv
             };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
-            ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, done));
+            primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+              if (err) { return done(err); }
+              primus.expectAction('start', {}, function () {
+                expected['containers[0].dockerContainer'] = not(equals(oldDockerContainer));
+                expected['containers[0].inspect.State.Running'] = true;
+                expected['contextVersions[0].appCodeVersions[0]'] = acv;
+                expected['contextVersions[0]._id'] = ctx.otherCv.id();
+                ctx.instance.fetch(expects.success(200, expected, function (err) {
+                  if (err) { return done(err); }
+                  var container = ctx.instance.containers.models[0];
+                  expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
+                  var count = createCount(2, done);
+                  expects.deletedWeaveHost(oldContainer, count.next);
+                  expects.updatedWeaveHost(
+                    container, ctx.instance.attrs.network.hostIp, count.next);
+                }));
+              });
+              ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, noop));
+            });
           });
         });
         describe('Testing all patching possibilities', function () {
@@ -403,7 +517,7 @@ describe('Instance - /instances/:id', function () {
             var vals = keys.map(function (key) { return json[key]; });
             it('should update instance\'s '+keys+' to '+vals, function (done) {
               var expected = {
-                'containers[0].inspect.State.Running': true
+              //  'containers[0].inspect.State.Running': true
               };
               keys.forEach(function (key) {
                 if (key === 'build') {
@@ -418,7 +532,24 @@ describe('Instance - /instances/:id', function () {
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
-              ctx.instance.update({ json: json }, expects.success(200, expected, done));
+
+              if (~keys.indexOf('build')) {
+                primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+                  if (err) { return done(err); }
+                  primus.expectAction('start', {}, function () {
+                    expected['containers[0].inspect.State.Running'] = true;
+                    ctx.instance.fetch(expects.success(200, expected, function (err) {
+                      if (err) { return done(err); }
+                      done();
+                    }));
+                  });
+                  ctx.instance.update({ json: json }, expects.success(200, expected, noop));
+                });
+              }
+              else {
+                ctx.instance.update({ json: json }, expects.success(200, expected, done));
+              }
+
             });
           });
         });
@@ -477,6 +608,7 @@ describe('Instance - /instances/:id', function () {
           });
         });
       });
+
       describe('env', function () {
         it('should update the env', function (done) {
           var body = {
@@ -568,6 +700,7 @@ describe('Instance - /instances/:id', function () {
           });
         });
       });
+
       describe('hipache changes', function () {
         beforeEach(function (done) {
           var newName = ctx.newName = randStr(5);
