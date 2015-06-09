@@ -690,7 +690,7 @@ describe('Instance - /instances/:id', function () {
             var vals = keys.map(function (key) { return json[key]; });
             it('should update instance\'s '+keys+' to '+vals, function (done) {
               ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
-              var expected = extend(expected, {
+              var expected = extend(json, {
                 'containers[0].inspect.State.Running': true
               });
               require('../../fixtures/mocks/github/user')(ctx.user);
