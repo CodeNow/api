@@ -52,14 +52,13 @@ describe('201 POST /workers/container-create', function () {
   beforeEach(primus.connect);
   // after
   afterEach(primus.disconnect);
-  after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../../fixtures/mocks/api-client').clean);
   after(require('../../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../../fixtures/clean-nock'));
   after(function (done) {
     containerCreate.worker.restore();
-    done();
+    api.stop(done);
   });
 
   beforeEach(function (done) {
