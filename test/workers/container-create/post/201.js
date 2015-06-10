@@ -32,7 +32,8 @@ var it = lab.it;
 var containerCreate = require('workers/container-create');
 
 var ctx = {};
-var originalContainCreateWorker;
+
+var originalContainerCreateWorker = require('workers/container-create').worker;
 
 describe('201 POST /workers/container-create', function () {
   // before
@@ -68,7 +69,6 @@ describe('201 POST /workers/container-create', function () {
       if (labels.type === 'user-container') {
         ctx.jobData = data;
         count.next();
-        console.log('p2');
         emitter.removeAllListeners('container-create');
       }
     });
@@ -76,7 +76,6 @@ describe('201 POST /workers/container-create', function () {
       if (err) { return done(err); }
       ctx.instance = instance;
       ctx.user = user;
-      console.log('p1');
       count.next();
     });
   });
@@ -84,6 +83,7 @@ describe('201 POST /workers/container-create', function () {
   beforeEach(function(done){
     primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
   });
+
   it('should update instance with container information', {timeout: 10000}, function (done) {
     // this is essentially all the worker callback does, invoke this method
     // containerInspect is sample data collected from actual docker-listener created job
@@ -98,12 +98,11 @@ describe('201 POST /workers/container-create', function () {
       function (cb) {
         var count = createCount(cb);
         primus.expectAction('start', {}, count.inc().next);
-        originalContainCreateWorker(ctx.jobData, count.inc().next);
+        originalContainerCreateWorker(ctx.jobData, count.inc().next);
       },
       function (cb) {
         //assert instance has no container
         Instance.findById(ctx.instance.attrs._id, function (err, instance) {
-          console.log('final fetch instance', instance.container);
           expect(instance.container).to.be.an.object();
           expect(instance.container.inspect).to.be.an.object();
           expect(instance.container.dockerContainer).to.be.a.string();
