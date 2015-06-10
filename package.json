@@ -73,7 +73,7 @@
     "request": "2.42.0",
     "rollbar": "0.5.4",
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v3.1.0",
-    "runnable-hermes": "^1.1.0",
+    "runnable-hermes": "^1.1.1",
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "s3-stream-upload": "0.0.6",
     "sauron-client": "git+ssh://git@github.com:codenow/sauron-client.git#v1.0.2",
