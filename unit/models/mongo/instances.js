@@ -42,6 +42,9 @@ function newObjectId () {
   return new mongoose.Types.ObjectId();
 }
 
+before(dock.start);
+after(dock.stop);
+
 function createNewVersion (opts) {
   return new Version({
     message: "test",
@@ -59,13 +62,29 @@ function createNewVersion (opts) {
       dockerImage: "testing",
       dockerTag: "adsgasdfgasdf"
     },
-    appCodeVersions: [{
-      repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-      lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-      branch: opts.branch || 'master',
-      defaultBranch: opts.defaultBranch || 'master',
-      commit: 'deadbeef'
-    }]
+    appCodeVersions: [
+      {
+        additionalRepo: false,
+        repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+        lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+        branch: opts.branch || 'master',
+        defaultBranch: opts.defaultBranch || 'master',
+        commit: 'deadbeef'
+      },
+      {
+        additionalRepo: true,
+        commit: '4dd22d12b4b3b846c2e2bbe454b89cb5be68f71d',
+        branch: 'master',
+        lowerBranch: 'master',
+        repo: 'Nathan219/yash-node',
+        lowerRepo: 'nathan219/yash-node',
+        _id: '5575f6c43074151a000e8e27',
+        privateKey: 'Nathan219/yash-node.key',
+        publicKey: 'Nathan219/yash-node.key.pub',
+        defaultBranch: 'master',
+        transformRules: { rename: [], replace: [], exclude: [] }
+      }
+    ]
   });
 }
 
@@ -129,6 +148,24 @@ describe('Instance', function () {
     });
   });
 
+  describe('getMainBranchName', function() {
+    it('should return null when there is no main AppCodeVersion', function(done) {
+      var instance = createNewInstance('no-main-app-code-version');
+      instance.contextVersion.appCodeVersions[0].additionalRepo = true;
+      expect(Instance.getMainBranchName(instance)).to.be.null();
+      done();
+    });
+
+    it('should return the main AppCodeVersion', function(done) {
+      var expectedBranchName = 'somebranchomg';
+      var instance = createNewInstance('no-main-app-code-version', {
+        branch: expectedBranchName
+      });
+      expect(Instance.getMainBranchName(instance)).to.equal(expectedBranchName);
+      done();
+    });
+  });
+
   describe('modifyContainer', function () {
     var savedInstance = null;
     var instance = null;
@@ -169,9 +206,6 @@ describe('Instance', function () {
   });
 
   describe('inspectAndUpdate', function () {
-    before(dock.start);
-    after(dock.stop);
-
     var savedInstance = null;
     var instance = null;
     beforeEach(function (done) {
@@ -231,9 +265,6 @@ describe('Instance', function () {
   });
 
   describe('inspectAndUpdateByContainer', function () {
-    before(dock.start);
-    after(dock.stop);
-
     var savedInstance = null;
     var instance = null;
     beforeEach(function (done) {

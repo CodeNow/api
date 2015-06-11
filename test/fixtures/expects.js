@@ -1,3 +1,6 @@
+/**
+ * @module test/fixtures/expects
+ */
 'use strict';
 
 var Code = require('code');

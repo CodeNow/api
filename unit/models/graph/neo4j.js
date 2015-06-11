@@ -377,7 +377,7 @@ describe('neo4j driver', function () {
       done();
     });
 
-    it('should make a query to delete the node and incoming connections', function (done) {
+    it('should make a query to delete the node and all connections', function (done) {
       var node = {
         label: 'Instance',
         props: {
@@ -386,8 +386,8 @@ describe('neo4j driver', function () {
       };
       var expectedQuery = [
         'MATCH (n:Instance {id: {props}.id})',
-        'OPTIONAL MATCH ()-[r]->(n)',
-        'DELETE r,n'
+        'OPTIONAL MATCH (n)-[r]-()',
+        'DELETE n,r'
       ].join('\n');
       graph.deleteNodeAndConnections(node, function (err) {
         expect(err).to.be.null();

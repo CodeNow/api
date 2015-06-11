@@ -1,24 +1,27 @@
 'use strict';
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
 var Code = require('code');
-var expect = Code.expect;
+var Lab = require('lab');
+var async = require('async');
+var createCount = require('callback-count');
+var noop = require('101/noop');
+var pluck = require('101/pluck');
 
-var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
+var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
-var createCount = require('callback-count');
-var pluck = require('101/pluck');
-var async = require('async');
+
+var lab = exports.lab = Lab.script();
+
+var after = lab.after;
+var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 describe('GET /instances', function () {
   var ctx = {};
@@ -35,12 +38,12 @@ describe('GET /instances', function () {
 
   describe('GET', function () {
     beforeEach(function (done) {
-      multi.createInstance(function (err, instance, build, user) {
+      multi.createAndTailInstance(primus, function (err, instance, build, user) {
         if (err) { return done(err); }
         ctx.instance = instance;
         ctx.build = build; // builtBuild
         ctx.user = user;
-        multi.createInstance(function (err, instance, build, user) {
+        multi.createAndTailInstance(primus, function (err, instance, build, user) {
           if (err) { return done(err); }
           ctx.instance2 = instance;
           ctx.build2 = build;
@@ -341,14 +344,18 @@ describe('GET /instances', function () {
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.instance.update({ name: 'InstanceNumber1' }, function (err) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
           if (err) { return done(err); }
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.instance3 = ctx.user.createInstance({
-            name: 'InstanceNumber3',
-            build: ctx.instance.attrs.build._id
-          }, done);
+          ctx.instance.update({ name: 'InstanceNumber1' }, function (err) {
+            if (err) { return done(err); }
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user')(ctx.user);
+            ctx.instance3 = ctx.user.createInstance({
+              name: 'InstanceNumber3',
+              build: ctx.instance.attrs.build._id
+            }, noop);
+            primus.expectAction('start', {}, done);
+          });
         });
       });
       it('should list instances by owner.github and name', function (done) {
