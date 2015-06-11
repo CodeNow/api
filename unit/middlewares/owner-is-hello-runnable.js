@@ -27,15 +27,24 @@ describe('owner-is-hello-runnable unit test', function () {
       var testReq = clone(req);
       var testValue = 'cool_user';
       testReq.validKey = testValue;
-      ownerIsHelloRunnable('validKey')(testReq, {}, done);
+      ownerIsHelloRunnable('validKey')(testReq, {}, function (err) {
+        expect(err).to.not.exist();
+        done();
+      });
     });
     it('should next no error if owner is on model key', function(done) {
       var testReq = clone(req);
       testReq.validKey = process.env.HELLO_RUNNABLE_GITHUB_ID;
-      ownerIsHelloRunnable('validKey')(testReq, {}, done);
+      ownerIsHelloRunnable('validKey')(testReq, {}, function (err) {
+        expect(err).to.not.exist();
+        done();
+      });
     });
     it('should next no error if owner is not on model key', function(done) {
-      ownerIsHelloRunnable('validKey')(req, {}, done);
+      ownerIsHelloRunnable('validKey')(req, {}, function (err) {
+        expect(err).to.not.exist();
+        done();
+      });
     });
   });
   describe('with random session user', function() {
@@ -64,7 +73,10 @@ describe('owner-is-hello-runnable unit test', function () {
           github: process.env.HELLO_RUNNABLE_GITHUB_ID
         }
       };
-      ownerIsHelloRunnable('validKey')(testReq, {}, done);
+      ownerIsHelloRunnable('validKey')(testReq, {}, function (err) {
+        expect(err).to.not.exist();
+        done();
+      });
     });
     it('should next error if owner is not on model key', function(done) {
       ownerIsHelloRunnable('validKey')(req, {}, function (err) {
