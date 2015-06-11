@@ -178,6 +178,13 @@ describe('BDD - Instance Dependencies', function () {
       });
     });
 
+    describe('deleting the top level instance', function () {
+      it('should delete succesfully', function (done) {
+        // it deletes all nodes - a sanity test to make sure that that works
+        ctx.webInstance.destroy(done);
+      });
+    });
+
     describe('changing the name of the dependent instance', function () {
       beforeEach(function (done) {
         var update = {
@@ -272,7 +279,7 @@ describe('BDD - Instance Dependencies', function () {
       });
 
       it('should allow recursive, flat deps', function (done) {
-        // asking web for dependencies recursivly and flat, we can expect to see ourselves in the 
+        // asking web for dependencies recursivly and flat, we can expect to see ourselves in the
         // top level when it's circular
         ctx.webInstance.fetchDependencies({ recurse: true, flatten: true }, function (err, deps) {
           if (err) { return done(err); }
