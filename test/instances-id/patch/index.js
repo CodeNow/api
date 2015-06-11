@@ -113,6 +113,34 @@ describe('Instance - /instances/:id', function () {
             beforeEach(function (done) {
               multi.buildTheBuild(ctx.user, ctx.newBuild, done);
             });
+            it('should not deploy if body.oldBuild doesnot equal to instance.build', function (done) {
+              var update = {
+                build: ctx.newBuild.id().toString(),
+                oldBuild: 'some-old-build-id'
+              };
+              var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
+              var oldContainer = ctx.instance.containers.models[0];
+              var expected = {
+                _id: ctx.instance.json()._id,
+                shortHash: ctx.instance.attrs.shortHash,
+                'build._id': ctx.newBuild.id(),
+                'owner.github': ctx.user.attrs.accounts.github.id,
+                'owner.username': ctx.user.attrs.accounts.github.login,
+                // this represents a new docker container! :)
+                // containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer)),
+                'network.networkIp': exists,
+                'network.hostIp': exists
+              };
+              require('../../fixtures/mocks/github/user')(ctx.user);
+              require('../../fixtures/mocks/github/user')(ctx.user);
+              require('../../fixtures/mocks/github/user')(ctx.user);
+
+              ctx.instance.update({json: update}, function (err) {
+                expect(err.output.statusCode).to.equal(409);
+                expect(err.output.payload.message).to.equal('Cancel update if oldBuild doesn\'t match instance.build');
+                done();
+              });
+            });
             it('should deploy the copied build', function (done) {
               var update = {
                 build: ctx.newBuild.id().toString()
@@ -151,7 +179,6 @@ describe('Instance - /instances/:id', function () {
                 });
                 ctx.instance.update({json: update}, expects.success(200, expected, noop));
               });
-
             });
             describe('with env', function() {
               beforeEach(function (done) {
