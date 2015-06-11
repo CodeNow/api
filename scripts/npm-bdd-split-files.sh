@@ -60,5 +60,5 @@ then
   fi
 fi
 
-npm run _bdd -- --threshold 80 ${extra_args[@]} $indexes ${all_files[@]}
+npm run _bdd -- --threshold 75 ${extra_args[@]} $indexes ${all_files[@]}
 exit $?
