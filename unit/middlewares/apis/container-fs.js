@@ -84,6 +84,39 @@ describe('container-fs', function () {
         done();
       });
     });
+    it('should parse newPath from body.path for PATCH', function (done) {
+      var req = {
+        params: {
+          container: 'container-id',
+          path: '/oldPath/name', // old FULL path
+          content: 'some data'
+        },
+        body: {
+          path: '/newPath' // new path
+        },
+        method: 'PATCH'
+      };
+      containerFs.parseBody(req, {}, noop);
+      expect(req.params.newPath).to.equal('/newPath/name');
+      done();
+    });
+    it('should parse newPath from body.path and body.name for PATCH', function (done) {
+      var req = {
+        params: {
+          container: 'container-id',
+          path: '/oldPath/oldName', // old FULL path
+          content: 'some data'
+        },
+        body: {
+          path: '/newPath', // new path
+          name: 'newName' // new name
+        },
+        method: 'PATCH'
+      };
+      containerFs.parseBody(req, {}, noop);
+      expect(req.params.newPath).to.equal('/newPath/newName');
+      done();
+    });
   });
 
   describe('#handlePatch', function () {
@@ -103,27 +136,6 @@ describe('container-fs', function () {
       expect(stub.getCall(0).args[1]).to.equal(req.params.path);
       expect(stub.getCall(0).args[2].content).to.equal(req.params.content);
       expect(stub.getCall(0).args[2].newPath).to.equal(req.params.newPath);
-      stub.restore();
-      done();
-    });
-    it('should take optionally take newPath from req.body', function (done) {
-      var req = {
-        params: {
-          container: 'container-id',
-          path: '/root',
-          content: 'some data'
-        },
-        body: {
-          newPath: '/root/id/'
-        }
-      };
-      var stub = sinon.stub(containerFsAPI, 'patch');
-      containerFs.handlePatch(req, {}, noop);
-      expect(stub.calledOnce).to.be.true();
-      expect(stub.getCall(0).args[0]).to.equal(req.params.container);
-      expect(stub.getCall(0).args[1]).to.equal(req.params.path);
-      expect(stub.getCall(0).args[2].content).to.equal(req.params.content);
-      expect(stub.getCall(0).args[2].newPath).to.equal(req.body.newPath);
       stub.restore();
       done();
     });
