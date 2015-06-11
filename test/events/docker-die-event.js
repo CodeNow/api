@@ -37,14 +37,16 @@ describe('EVENT runnable:docker:events:die', function () {
   describe('container dies naturally', function() {
 
     beforeEach(function (done) {
-      multi.createContainer(function (err, container, instance) {
+      multi.createAndTailInstance(primus, function (err, instance) {
         if (err) { return done(err); }
+        var container = instance.newContainer(instance.json().containers[0]);
         ctx.instance = instance;
         ctx.container = container;
         expect(instance.attrs.container.inspect.State.Running).to.equal(true);
         done();
       });
     });
+
     describe('container die event handler', function() {
       beforeEach(function (done) {
         ctx.originalUserStoppedContainerUnLock = UserStoppedContainer.prototype.unlock;
@@ -56,7 +58,6 @@ describe('EVENT runnable:docker:events:die', function () {
         UserStoppedContainer.prototype.unlock = ctx.originalUserStoppedContainerUnLock;
         done();
       });
-      // beforeEach(dockerEvents.close.bind(dockerEvents));
 
       it('should receive the docker die event', function (done) {
         var count = createCount(2, done);
@@ -78,7 +79,9 @@ describe('EVENT runnable:docker:events:die', function () {
         var count = createCount(2, done);
         var userStoppedContainer = new UserStoppedContainer(ctx.instance.attrs.container.inspect.Id);
         UserStoppedContainer.prototype.unlock = function (cb) {
+          // here
           ctx.originalUserStoppedContainerUnLock.bind(userStoppedContainer)(function (err, success) {
+            if (err) { return done(err); }
             expect(messenger.emitInstanceUpdate.calledOnce).to.be.true();
             ctx.instance.fetch(function (err, instance) {
               if (err) { return done(err); }

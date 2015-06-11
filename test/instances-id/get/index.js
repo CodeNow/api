@@ -32,7 +32,7 @@ describe('Instance - /instances/:id', function () {
   describe('ORG INSTANCES', function () {
     beforeEach(function (done) {
       ctx.orgId = 1001;
-      multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
+      multi.createAndTailInstance(primus, ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
         //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
         if (err) { return done(err); }
         ctx.instance = instance;
@@ -58,7 +58,7 @@ describe('Instance - /instances/:id', function () {
   });
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user, mdlArray, srcArray) {
+    multi.createAndTailInstance(primus, function (err, instance, build, user, mdlArray, srcArray) {
       //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
       if (err) { return done(err); }
       ctx.instance = instance;
