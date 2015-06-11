@@ -136,7 +136,7 @@
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs app.js",
     "coverage": "NODE_PATH=./lib NODE_ENV=test lab -vl -m 60000 -e test -c -r html test/*.js > coverage.html && if [ $CIRCLE_ARTIFACTS ]; then cp coverage.html $CIRCLE_ARTIFACTS; fi",
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
-    "unit": "npm run clear; NODE_PATH=./lib lab --assert code --leaks --verbose unit/",
+    "unit": "npm run clear; NODE_PATH=./lib lab --threshold 90 --assert code --leaks --verbose unit/",
     "unit-watch": "nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "clean": "rm -rf docs coverage.html node_modules",
