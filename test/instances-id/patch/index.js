@@ -118,19 +118,6 @@ describe('Instance - /instances/:id', function () {
                 build: ctx.newBuild.id().toString(),
                 oldBuild: 'some-old-build-id'
               };
-              var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
-              var oldContainer = ctx.instance.containers.models[0];
-              var expected = {
-                _id: ctx.instance.json()._id,
-                shortHash: ctx.instance.attrs.shortHash,
-                'build._id': ctx.newBuild.id(),
-                'owner.github': ctx.user.attrs.accounts.github.id,
-                'owner.username': ctx.user.attrs.accounts.github.login,
-                // this represents a new docker container! :)
-                // containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer)),
-                'network.networkIp': exists,
-                'network.hostIp': exists
-              };
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
