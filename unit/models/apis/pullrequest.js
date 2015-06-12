@@ -52,7 +52,7 @@ describe('PullRequest', function () {
         expect(repo).to.equal(gitInfo.repo);
         expect(payload.id).to.equal('deployment-id');
         expect(payload.state).to.equal('error');
-        expect(payload.target_url).to.equal('https://runnable3.net/codenow/inst-1');
+        expect(payload.target_url).to.equal('https://' + process.env.DOMAIN + '/codenow/inst-1');
         expect(payload.description).to.equal('Failed to deploy to inst-1 on Runnable.');
         GitHub.prototype.createDeploymentStatus.restore();
         done();
@@ -77,7 +77,7 @@ describe('PullRequest', function () {
         expect(repo).to.equal(gitInfo.repo);
         expect(payload.id).to.equal('deployment-id');
         expect(payload.state).to.equal('success');
-        expect(payload.target_url).to.equal('https://runnable3.net/codenow/inst-1');
+        expect(payload.target_url).to.equal('https://' + process.env.DOMAIN + '/codenow/inst-1');
         expect(payload.description).to.equal('Deployed to inst-1 on Runnable.');
         GitHub.prototype.createDeploymentStatus.restore();
         done();
@@ -102,7 +102,7 @@ describe('PullRequest', function () {
         expect(repo).to.equal(gitInfo.repo);
         expect(payload.id).to.equal('deployment-id');
         expect(payload.state).to.equal('pending');
-        expect(payload.target_url).to.equal('https://runnable3.net/codenow/inst-1');
+        expect(payload.target_url).to.equal('https://' + process.env.DOMAIN + '/codenow/inst-1');
         expect(payload.description).to.equal('Deploying to inst-1 on Runnable.');
         GitHub.prototype.createDeploymentStatus.restore();
         done();
@@ -178,7 +178,7 @@ describe('PullRequest', function () {
         expect(payload.context).to.equal('runnable/' + instance.name);
         expect(payload.state).to.equal('pending');
         expect(payload.sha).to.equal(gitInfo.commit);
-        expect(payload.target_url).to.equal('https://runnable3.net/codenow/inst-1');
+        expect(payload.target_url).to.equal('https://' + process.env.DOMAIN + '/codenow/inst-1');
         expect(payload.description).to.equal('This commit is building on Runnable.');
         GitHub.prototype.createBuildStatus.restore();
         done();
@@ -216,7 +216,7 @@ describe('PullRequest', function () {
         expect(payload.context).to.equal('runnable/' + instance.name);
         expect(payload.state).to.equal('success');
         expect(payload.sha).to.equal(gitInfo.commit);
-        expect(payload.target_url).to.equal('https://runnable3.net/codenow/inst-1');
+        expect(payload.target_url).to.equal('https://' + process.env.DOMAIN + '/codenow/inst-1');
         expect(payload.description).to.equal('This commit is ready to run on Runnable.');
         GitHub.prototype.createBuildStatus.restore();
         done();
@@ -254,7 +254,7 @@ describe('PullRequest', function () {
         expect(payload.context).to.equal('runnable/' + instance.name);
         expect(payload.state).to.equal('error');
         expect(payload.sha).to.equal(gitInfo.commit);
-        expect(payload.target_url).to.equal('https://runnable3.net/codenow/inst-1');
+        expect(payload.target_url).to.equal('https://' + process.env.DOMAIN + '/codenow/inst-1');
         expect(payload.description).to.equal('This commit has failed to build on Runnable.');
         GitHub.prototype.createBuildStatus.restore();
         done();

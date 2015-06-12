@@ -14,9 +14,7 @@ var debug = require('debug')('runnable-api:testing:fixtures:expects');
 var exists = require('101/exists');
 var Docker = require('models/apis/docker');
 var NaviEntry = require('navi-entry');
-var runnableHostname = require('runnable-hostname');
 NaviEntry.setRedisClient(require('models/redis'));
-var Instance = require('models/mongo/instance');
 
 var expects = module.exports = function (keypath) {
   return function (val) {
@@ -152,12 +150,11 @@ function expectKeypaths (body, expectedKeypaths) {
 var Sauron = require('models/apis/sauron');
 
 /**
- * assert updated dns and hipache entries
+ * assert updated hipache entries
  * NOTE: if instance is provided for instanceOrName args are: (user, instance, cb)
  * @param  {String|Object}  userOrUsername  user client model or string owner
  * @param  {Object}         instanceOrName  instance client model
  * @param  {Object}         container       container client model
- * @param  {String}         hostIp          expected dns hostIp value
  * @param  {Function}       cb              callback
  */
 // jshint maxcomplexity:8
@@ -166,48 +163,13 @@ expects.updatedHosts = function (userOrUsername, instance, cb) {
   if (isObject(userOrUsername)) {
     username = userOrUsername.attrs.accounts.github.username;
   }
-  var instanceName = instance.attrs.lowerName;
   var container = instance.containers.models[0];
   container = container && container.toJSON ? container.toJSON() : container;
   if (!container || !container.ports) {
     process.nextTick(cb);
     return;
   }
-  expects.updatedDnsEntry(username, instanceName, instance);
   expects.updatedNaviEntries(username, instance, container, cb);
-};
-// jshint maxcomplexity:6
-expects.updatedDnsEntry = function (username, instanceName, instance) {
-  var hostIp = instance.attrs.network.hostIp;
-  // dns entry
-  // FIXME: mock get request to route53, and verify using that
-  var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var elasticUrl, directUrl;
-  var branch = Instance.getMainBranchName(instance.attrs);
-  var opts = {
-    masterPod: instance.attrs.masterPod,
-    branch: branch,
-    instanceName: instanceName,
-    ownerUsername: username,
-    shortHash: instance.attrs.shortHash,
-    userContentDomain: process.env.USER_CONTENT_DOMAIN,
-  };
-  if (opts.masterPod) {
-    if (opts.branch) {
-      elasticUrl = runnableHostname.elastic(opts);
-      directUrl = runnableHostname.direct(opts);
-      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.equal(hostIp);
-      expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.equal(hostIp);
-    }
-    else {
-      elasticUrl = runnableHostname.elastic(opts);
-      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.equal(hostIp);
-    }
-  }
-  else {
-    directUrl = runnableHostname.direct(opts);
-    expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.equal(hostIp);
-  }
 };
 
 expects.updatedNaviEntries = function (username, instance, container, cb) {
@@ -239,12 +201,11 @@ expects.updatedNaviEntries = function (username, instance, container, cb) {
 };
 
 /**
- * assert updated dns and hipache entries are non-existant
+ * assert updated hipache entries are non-existant
  * NOTE: if instance is provided for instanceOrName args are: (user, instance, cb)
  * @param  {Object}   userOrUsername  user client model OR username
  * @param  {Object}   instance        instance client model
  * @param  {Object}   container       container client model
- * @param  {String}   hostIp          expected dns hostIp value
  * @param  {Function} cb              callback
  */
 // jshint maxcomplexity:8
@@ -253,7 +214,6 @@ expects.deletedHosts = function (userOrUsername, instance, container, cb) {
   if (isObject(userOrUsername)) {
     username = userOrUsername.attrs.accounts.github.username;
   }
-  var instanceName = instance.attrs.name;
 
   if (isFunction(container)) {
     cb = container;
@@ -267,40 +227,7 @@ expects.deletedHosts = function (userOrUsername, instance, container, cb) {
     process.nextTick(cb);
     return;
   }
-  expects.deletedDnsEntry(username, instanceName, instance);
   expects.deletedNaviEntries(username, instance, container, cb) ;
-};
-// jshint maxcomplexity:6
-expects.deletedDnsEntry = function (username, instanceName, instance) {
-  // dns entry
-  // FIXME: mock get request to route53, and verify using that
-  var mockRoute53 = require('./route53'); // must require here, else dns mocks will break
-  var elasticUrl, directUrl;
-  var branch = Instance.getMainBranchName(instance.attrs);
-  var opts = {
-    masterPod: instance.attrs.masterPod,
-    branch: branch,
-    instanceName: instanceName,
-    ownerUsername: username,
-    shortHash: instance.attrs.shortHash,
-    userContentDomain: process.env.USER_CONTENT_DOMAIN,
-  };
-  if (opts.masterPod) {
-    if (opts.branch) {
-      elasticUrl = runnableHostname.elastic(opts);
-      directUrl = runnableHostname.direct(opts);
-      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.not.exist();
-      expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.not.exist();
-    }
-    else {
-      elasticUrl = runnableHostname.elastic(opts);
-      expect(mockRoute53.findRecordIp(elasticUrl), 'dns record ' + elasticUrl).to.not.exist();
-    }
-  }
-  else {
-    directUrl = runnableHostname.direct(opts);
-    expect(mockRoute53.findRecordIp(directUrl), 'dns record ' + directUrl).to.not.exist();
-  }
 };
 
 expects.deletedNaviEntries = function (username, instance, container, cb) {
