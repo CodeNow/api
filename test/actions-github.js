@@ -16,6 +16,7 @@ var expect = Code.expect;
 var it = lab.it;
 
 var Boom = require('dat-middleware').Boom;
+var SocketClientMw = require('middlewares/socket/client');
 var ContextVersion = require('models/mongo/context-version');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
@@ -351,6 +352,10 @@ describe('Github - /actions/github', function () {
             baseDeploymentId++;
             var newDeploymentId = baseDeploymentId;
             cb(null, {id: newDeploymentId});
+          });
+          // emulate instance deploy event
+          sinon.stub(SocketClientMw, 'onInstanceDeployed', function (instance, buildId, socketClient, cb) {
+            cb(null, instance);
           });
           var countOnCallback = function () {
             count.next();
