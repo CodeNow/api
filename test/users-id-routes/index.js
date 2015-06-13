@@ -50,6 +50,24 @@ describe('/users/:id/routes', function () {
         });
       });
     });
+    describe('with hello runnable', function() {
+      beforeEach(function(done) {
+        ctx.helloRunnable = multi.createHelloRunnableUser(done);
+      });
+      it('should not create a route mapping', function (done) {
+        ctx.helloRunnable.createRoute({
+          srcHostname: testHost,
+          destInstanceId: testDest
+        }, function (err) {
+          expect(err.data.statusCode).to.equal(400);
+          ctx.helloRunnable.fetch(function (err, body) {
+            if (err) { return done(err); }
+            expect(body.routes).to.have.length(0);
+            done();
+          });
+        });
+      });
+    });
     describe('with existing mapping', function() {
       beforeEach(function(done) {
         ctx.user.createRoute({

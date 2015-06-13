@@ -5,7 +5,6 @@ EXPOSE <user-specified-ports>
 # Install Rails (and its dependencies)
 RUN apt-get update && apt-get install -y nodejs --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-
 # see http://guides.rubyonrails.org/command_line.html#rails-dbconsole
 RUN apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
@@ -13,16 +12,9 @@ RUN apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 
 ENV RAILS_VERSION <rails-version>
 RUN gem install rails --version "$RAILS_VERSION"
 
-# Add repository files to server
-ADD ./<repo-name> /<repo-name>
-WORKDIR /<repo-name>
-
-# Install dependencies
-RUN apt-get update
-<add-dependencies>
-
-RUN bundle install
-
+<before-main-repo>
+#default run:bundle install
+<after-main-repo>
 
 # Command to start the app
 CMD <start-command>
