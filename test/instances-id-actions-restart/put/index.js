@@ -277,9 +277,14 @@ describe('PUT /instances/:id/actions/restart', function () {
         ctx.instance.restart(expects.error(400, /not have a container/, done));
       }
       else { // success
-        ctx.instance.restart(expects.success(200, ctx.expected, stopRetartAssert));
+        var count = createCount(3, stopRestartAssert);
+        primus.expectAction('start', count.next);
+        primus.expectAction('starting', {
+          container: {inspect: {starting: true}}
+        }, count.next);
+        ctx.instance.restart(expects.success(200, ctx.expected, stopRestartAssert));
       }
-      function stopRetartAssert (err) {
+      function stopRestartAssert (err) {
         if (err) { return done(err); }
         var count = createCount(done);
         var instance = ctx.instance;
@@ -290,6 +295,12 @@ describe('PUT /instances/:id/actions/restart', function () {
         expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
         expects.updatedHosts(ctx.user, instance, count.inc().next);
         // try stop and start
+
+        count.inc();
+        primus.expectAction('stopping', {
+          container: {inspect: {stopping: true}}
+        }, count.next);
+
         instance.stop(expects.success(200, function (err) {
           if (err) { return count.next(err); }
           instance.restart(expects.success(200, ctx.expected, function (err) {

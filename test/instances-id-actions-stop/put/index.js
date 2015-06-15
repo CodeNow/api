@@ -291,7 +291,7 @@ describe('PUT /instances/:id/actions/stop', function () {
       }
       function startStopAssert (err) {
         if (err) { return done(err); }
-        var count = createCount(3, done);
+        var count = createCount(4, done);
         // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
         expects.deletedHosts(ctx.user, ctx.instance, count.next);
         // try stop and start
@@ -311,6 +311,9 @@ describe('PUT /instances/:id/actions/stop', function () {
         function startStop () {
           instance.start(function (err) {
             if (err) { return count.next(err); }
+            primus.expectAction('stopping', {
+              container: {inspect: {stopping: true}}
+            }, count.next);
             instance.stop(expects.success(200, ctx.expected, function (err) {
               if (err) { return count.next(err); }
               expects.deletedWeaveHost(container, count.next);

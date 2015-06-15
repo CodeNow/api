@@ -282,12 +282,12 @@ describe('PUT /instances/:id/actions/start', function () {
         ctx.instance.start(expects.error(400, /not have a container/, done));
       }
       else { // success
+
         var assertions = false ? //ctx.expectAlreadyStarted ?
           expects.error(304, stopStartAssert) :
           expects.success(200, ctx.expected, stopStartAssert);
         ctx.instance.start(assertions);
       }
-
       function stopStartAssert (err) {
         if (err) { return done(err); }
         var count = createCount(4, done);
@@ -296,6 +296,15 @@ describe('PUT /instances/:id/actions/start', function () {
         // try stop and start
         var instance = ctx.instance;
         var container = instance.containers.models[0];
+
+        primus.expectAction('stopping', {
+          container: {inspect: {stopping: true}}
+        }, count.inc().next);
+/*
+        primus.expectAction('starting', {
+          container: {inspect: {starting: true}}
+        }, count.inc().next);
+*/
         instance.stop(function (err) {
           if (err) { return count.next(err); }
           instance.start(expects.success(200, ctx.expected, function (err) {
