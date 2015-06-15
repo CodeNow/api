@@ -25,18 +25,20 @@ async.waterfall([
   function upsertFiles (files, cb) {
     async.map(files, function (file, eachCb) {
       var templateData = require('./' + file);
+      // set template name from the name of the file
+      templateData.name = file.replace('.json', '');
       var query = {
-        from: templateData.from
+        lowerName: templateData.name.toLowerCase()
       };
       var opts = {
-        overwrite: true,
         upsert: true
       };
       if (dryRun) {
         console.log('dry run, finding', query.from);
         Template.findOne(query, eachCb);
       } else {
-        Template.update(query, templateData, opts, eachCb);
+        console.log('updating', query.lowerName);
+        Template.findOneAndUpdate(query, templateData, opts, eachCb);
       }
     }, cb);
   },
