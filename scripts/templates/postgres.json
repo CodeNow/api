@@ -2,7 +2,7 @@
   "from": "postgres",
   "defaultTag": "9.4",
   "ports": [5432],
-  "envs": {
+  "env": {
     "MYSQL_USER": "postgres",
     "MYSQL_PASSWORD": "postgres"
   },

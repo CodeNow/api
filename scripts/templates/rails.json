@@ -1,7 +1,7 @@
 {
   "from": "ruby",
   "ports": [],
-  "templateEnvs": [
+  "templateEnv": [
     "RAILS_VERSION"
   ],
   "generalCommands": [
