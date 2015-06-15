@@ -127,7 +127,12 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
 
   it('should report a bad gateway (502) when optimus returns a 5XX', function(done) {
     var errMessage = 'Dis ist zee errorz';
-    optimus.transform.yieldsAsync(null, { statusCode: 500, body: errMessage });
+    optimus.transform.yieldsAsync(null, {
+      statusCode: 500,
+      body: {
+        message: errMessage
+      }
+    });
     ctx.appCodeVersion.runTransformRules(function (err) {
       expect(err.data.res.statusCode).to.equal(502);
       expect(err.data.res.body.message).to.equal(errMessage);
@@ -137,7 +142,12 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
 
   it('should directly respond with 4XXs given by optimus', function(done) {
     var errMessage = 'Parameter `commitish` is required.';
-    optimus.transform.yieldsAsync(null, { statusCode: 400, body: errMessage });
+    optimus.transform.yieldsAsync(null, {
+      statusCode: 400,
+      body: {
+        message: errMessage
+      }
+    });
     ctx.appCodeVersion.runTransformRules(function (err) {
       expect(err.data.res.statusCode).to.equal(400);
       expect(err.data.res.body.message).to.equal(errMessage);
