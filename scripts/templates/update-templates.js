@@ -1,3 +1,10 @@
+/*
+ * This script updates the database for a given environment with the template information in
+ * scripts/templates/*.json. It updates any documents already in mongo while adding any that don't
+ * exist. It does not remove templates that were removed in the scripts/templates folder. Use the
+ * 'deleted' flag to 'remove' them from the database
+ */
+
 'use strict';
 
 require('loadenv')();
