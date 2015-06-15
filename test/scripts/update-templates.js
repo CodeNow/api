@@ -47,7 +47,6 @@ describe('template update script', function () {
     nodejsData.cmd = 'node server.js';
     // this is set in the script from the filename, so we do it here
     nodejsData.name = 'nodejs';
-    console.log(nodejsData);
     var nodejs = new Template(nodejsData);
     nodejs.save(done);
   });
