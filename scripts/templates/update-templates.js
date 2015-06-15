@@ -1,0 +1,58 @@
+'use strict';
+
+require('loadenv')();
+
+var mongoose = require('models/mongo/mongoose-control');
+var Template = require('models/mongo/template');
+var async = require('async');
+var fs = require('fs');
+var exists = require('101/exists');
+
+var dryRun = !process.env.ACTUALLY_RUN;
+console.log('dryRun?', !!dryRun);
+console.log('mongo', process.env.MONGO);
+
+async.waterfall([
+  mongoose.start.bind(mongoose),
+  function readDirectory (cb) {
+    fs.readdir(__dirname, function (err, files) {
+      if (err) { return cb(err); }
+      cb(null, files.filter(function (n) {
+        return /.+\.json$/.test(n);
+      }));
+    });
+  },
+  function upsertFiles (files, cb) {
+    async.map(files, function (file, eachCb) {
+      var templateData = require('./' + file);
+      var query = {
+        from: templateData.from
+      };
+      var opts = {
+        overwrite: true,
+        upsert: true
+      };
+      if (dryRun) {
+        console.log('dry run, finding', query.from);
+        Template.findOne(query, eachCb);
+      } else {
+        Template.update(query, templateData, opts, eachCb);
+      }
+    }, cb);
+  },
+  function printUpdates (templates, cb) {
+    if (dryRun) {
+      var count = templates.filter(exists).length;
+      console.log('found dis many', count);
+    } else {
+      console.log('updated dis many', templates.length);
+    }
+    cb();
+  }
+], function (err) {
+  if (err) {
+    throw err;
+  } else {
+    process.exit(0);
+  }
+});
