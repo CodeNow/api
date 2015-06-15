@@ -297,7 +297,7 @@ function createInstance (data, build, cb) {
   console.log('createInstance (', data.name, ')');
   ctx.user.createInstance({
     build: build.id(),
-    name: ((data.isTemplate) ? 'TEMPLATE_' : '') + data.name,
+    name: ((data.isTemplate) ? 'TEMPLATE-' : '') + data.name,
     owner: createdBy
   }, function (err) {
     console.log('Created Instance (done) (', data.name, ')', err);
