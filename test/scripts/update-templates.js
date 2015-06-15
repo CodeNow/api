@@ -5,10 +5,6 @@
 var Code = require('code');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
-var after = lab.after;
-var afterEach = lab.afterEach;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
 var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
