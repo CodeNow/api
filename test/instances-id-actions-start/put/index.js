@@ -4,13 +4,17 @@
 'use strict';
 
 var Lab = require('lab');
+var Code = require('code');
+
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
+
 var after = lab.after;
 var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -303,8 +307,14 @@ describe('PUT /instances/:id/actions/start', function () {
 
         instance.stop(function (err) {
           if (err) { return count.next(err); }
+          // expect temporary property to not be in final response
+          expect(instance.json().container.inspect.stopping).to.be.undefined();
+          expect(instance.json().container.inspect.starting).to.be.undefined();
           instance.start(expects.success(200, ctx.expected, function (err) {
             if (err) { return count.next(err); }
+            // expect temporary property to not be in final response
+            expect(instance.json().container.inspect.stopping).to.be.undefined();
+            expect(instance.json().container.inspect.starting).to.be.undefined();
             expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.next);
             expects.updatedHosts(ctx.user, instance, count.next);
             if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }
