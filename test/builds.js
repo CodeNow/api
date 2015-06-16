@@ -1,19 +1,24 @@
 'use strict';
 
+var Code = require('code');
 var Lab = require('lab');
+
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
+var BuildHistory = require('models/mongo/build-history');
+var ContextVersion = require('models/mongo/context-version');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
-var multi = require('./fixtures/multi-factory');
-var expects = require('./fixtures/expects');
 var exists = require('101/exists');
+var expects = require('./fixtures/expects');
+var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 
 describe('Builds - /builds', function () {
@@ -104,6 +109,28 @@ describe('Builds - /builds', function () {
           };
           require('./fixtures/mocks/github/user-orgs')(2, 'otherorg');
           ctx.user.createBuild(body, expects.error(400, /owner/, done));
+        });
+      });
+    });
+  });
+
+  describe('Logs', function () {
+    it('should create a build and log result in build-histories', function (done) {
+      multi.createBuiltBuild(function (err, build, user, modelArr, srcArr) {
+        if (err) { return done(err); }
+        ctx.builtBuild = build;
+        ctx.user2 = user;
+        ctx.context2 = modelArr[1];
+        ctx.srcContextVersion = srcArr[0];
+        BuildHistory.find(function (err, bh) {
+          if (err) { return done(err); }
+          expect(bh.length).to.equal(1);
+          ContextVersion.findBy('build._id', bh[0].build._id, function (err, cv) {
+            if (err) { return done(err); }
+            expect(cv.length).to.equal(1);
+            expect(cv[0].build).to.deep.include(bh[0].build);
+            done();
+          });
         });
       });
     });
