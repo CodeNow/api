@@ -1,0 +1,11 @@
+{
+  "from": "python",
+  "ports": [],
+  "generalCommands": [],
+  "defaultMainCommands": [
+    "pip install -r 'requirements.txt'"
+  ],
+  "defaultWorkDir": "home",
+  "cmd": "",
+  "entryPoint": ""
+}
