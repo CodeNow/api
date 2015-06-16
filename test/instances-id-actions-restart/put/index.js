@@ -4,13 +4,17 @@
 'use strict';
 
 var Lab = require('lab');
+var Code = require('code');
+
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
+
 var after = lab.after;
 var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 var Docker = require('models/apis/docker');
 var api = require('../../fixtures/api-control');
@@ -233,21 +237,7 @@ describe('PUT /instances/:id/actions/restart', function () {
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
-
         ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
-        /*
-        ctx.instance = ctx.user.createInstance(body, function (err, body, statusCode) {
-          multi.tailInstance(ctx.user, ctx.instance, function (err, instance) {
-            if (err) { return done(err); }
-            //expects.success(201, ctx.expected, done)(err, instance.json(), statusCode);
-            ctx.instance = instance;
-            //expect(instance.json()).to.deep.include(ctx.expected);
-
-            done();
-          });
-        });
-        */
-
       });
       restartInstanceTests(ctx);
     });
@@ -277,9 +267,14 @@ describe('PUT /instances/:id/actions/restart', function () {
         ctx.instance.restart(expects.error(400, /not have a container/, done));
       }
       else { // success
-        ctx.instance.restart(expects.success(200, ctx.expected, stopRetartAssert));
+        var count = createCount(3, stopRestartAssert);
+        primus.expectAction('start', count.next);
+        primus.expectAction('starting', {
+          container: {inspect: {starting: true}}
+        }, count.next);
+        ctx.instance.restart(expects.success(200, ctx.expected, stopRestartAssert));
       }
-      function stopRetartAssert (err) {
+      function stopRestartAssert (err) {
         if (err) { return done(err); }
         var count = createCount(done);
         var instance = ctx.instance;
@@ -290,10 +285,22 @@ describe('PUT /instances/:id/actions/restart', function () {
         expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
         expects.updatedHosts(ctx.user, instance, count.inc().next);
         // try stop and start
+
+        count.inc();
+        primus.expectAction('stopping', {
+          container: {inspect: {stopping: true}}
+        }, count.next);
+
         instance.stop(expects.success(200, function (err) {
           if (err) { return count.next(err); }
+          // expect temporary property to not be in final response
+          expect(instance.json().container.inspect.stopping).to.be.undefined();
+          expect(instance.json().container.inspect.starting).to.be.undefined();
           instance.restart(expects.success(200, ctx.expected, function (err) {
             if (err) { return count.next(err); }
+            // expect temporary property to not be in final response
+            expect(instance.json().container.inspect.stopping).to.be.undefined();
+            expect(instance.json().container.inspect.starting).to.be.undefined();
             expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
             expects.updatedHosts(ctx.user, instance, count.next);
           }));
