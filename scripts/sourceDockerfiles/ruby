@@ -4,7 +4,6 @@ FROM ruby:<ruby-version-normalized>
 EXPOSE <user-specified-ports>
 
 ## Install Ruby
-ENV RUBY_MAJOR <ruby-major>
 ENV RUBY_VERSION <ruby-version> 
 
 ## Install Ruby via rvm
