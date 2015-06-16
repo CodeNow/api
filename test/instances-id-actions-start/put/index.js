@@ -300,11 +300,7 @@ describe('PUT /instances/:id/actions/start', function () {
         primus.expectAction('stopping', {
           container: {inspect: {stopping: true}}
         }, count.inc().next);
-/*
-        primus.expectAction('starting', {
-          container: {inspect: {starting: true}}
-        }, count.inc().next);
-*/
+
         instance.stop(function (err) {
           if (err) { return count.next(err); }
           instance.start(expects.success(200, ctx.expected, function (err) {
