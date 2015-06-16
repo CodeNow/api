@@ -51,6 +51,7 @@ describe('POST /instances', function () {
           done(err);
         });
       });
+
       it('should error if the build has unbuilt versions', function(done) {
         var json = { build: ctx.build.id(), name: randStr(5) };
         require('../../fixtures/mocks/github/user')(ctx.user);
@@ -71,6 +72,7 @@ describe('POST /instances', function () {
       beforeEach(function(done){
         primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
       });
+
       describe('user owned', function () {
         describe('check messenger', function() {
           beforeEach(function(done) {
@@ -79,7 +81,7 @@ describe('POST /instances', function () {
           });
 
           it('should emit post and deploy events', function(done) {
-            var countDown = createCount(3, done);
+            var countDown = createCount(4, done);
             var expected = {
               shortHash: exists,
               'createdBy.github': ctx.user.attrs.accounts.github.id,
@@ -98,6 +100,7 @@ describe('POST /instances', function () {
 
             primus.expectAction('post', expected, countDown.next);
             primus.expectAction('deploy', expected, countDown.next);
+            primus.expectAction('start', expected, countDown.next);
             ctx.user.createInstance({ json: json }, function(err) {
               if (err) { return countDown.next(err); }
               primus.onceVersionComplete(ctx.cv.id(), function (/*data*/) {
@@ -127,9 +130,11 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
+            var countDown = createCount(2, done);
+            primus.expectAction('start', expected, countDown.next);
             ctx.user.createInstance({ json: json }, function(err) {
               if (err) { return done(err); }
-              primus.expectAction('deploy', expected, done);
+              primus.expectAction('deploy', expected, countDown.next);
               dockerMockEvents.emitBuildComplete(ctx.cv);
             });
           });
@@ -188,6 +193,10 @@ describe('POST /instances', function () {
               done(err);
             });
         });
+        beforeEach(function(done){
+          primus.joinOrgRoom(ctx.orgId, done);
+        });
+
         it('should create a new instance', function(done) {
           var json = { build: ctx.build.id(), name: randStr(5) };
           var expected = {
@@ -203,21 +212,19 @@ describe('POST /instances', function () {
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
-            if (err) {
-              done(err);
-            }
+            if (err) { return done(err); }
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user')(ctx.user);
+            var countDown = createCount(2, done);
+            var next = countDown.next;
+            primus.expectAction('start', next);
             ctx.user.createInstance({ json: json }, function (err, body, code, res) {
-              if (err) { return done(err); }
+              if (err) { return next(err); }
               dockerMockEvents.emitBuildComplete(ctx.cv);
-              expects.success(201, expected, function(err) {
-                if (err) { done(err); }
-                done();
-              })(err, body, code, res);
+              expects.success(201, expected, next)(err, body, code, res);
             });
           });
         });
@@ -272,13 +279,16 @@ describe('POST /instances', function () {
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
+          var countDown = createCount(2, done);
+          var next = countDown.next;
+          primus.expectAction('start', next);
           var instance = ctx.user.createInstance(json,
             expects.success(201, expected, function (err, instanceData) {
-              if (err) { return done(err); }
+              if (err) { return next(err); }
               expect(instanceData.name).to.equal('Instance1');
               expect(instanceData.shortHash).to.equal(instance.attrs.shortHash);
               expect(/[a-z0-9]+/.test(instanceData.shortHash)).to.equal(true);
-              done();
+              next();
             }));
         });
         it('should create an instance, and start it', function (done) {
@@ -407,7 +417,7 @@ describe('POST /instances', function () {
             });
           });
           it('should generate unique names (by owner) and hashes an instance', function (done) {
-            var json = {
+            var body = {
               build: ctx.build.id()
             };
             var expected = {
@@ -423,18 +433,14 @@ describe('POST /instances', function () {
               containers: exists,
               shortHash: exists
             };
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            ctx.user.createInstance(json, expects.success(201, expected, function (err, body1) {
+            createInstanceWith(ctx.user, body, expected, function (err, res1) {
               if (err) { return done(err); }
               expected.name = 'Instance2';
               expected.shortHash = function (shortHash) {
-                expect(shortHash).to.not.equal(body1.shortHash);
+                expect(shortHash).to.not.equal(res1.shortHash);
                 return true;
               };
-              require('../../fixtures/mocks/github/user')(ctx.user);
-              require('../../fixtures/mocks/github/user')(ctx.user);
-              ctx.user.createInstance(json, expects.success(201, expected, function (err, body2) {
+              createInstanceWith(ctx.user, body, expected, function (err, res2) {
                 if (err) { return done(err); }
                 var expected2 = {
                   _id: exists,
@@ -449,19 +455,27 @@ describe('POST /instances', function () {
                   containers: exists,
                   shortHash: function (shortHash) {
                     expect(shortHash)
-                      .to.not.equal(body1.shortHash)
-                      .to.not.equal(body2.shortHash);
+                      .to.not.equal(res1.shortHash)
+                      .to.not.equal(res2.shortHash);
                     return true;
                   }
                 };
-                var json2 = {
+                var body2 = {
                   build: ctx.build2.id()
                 };
-                require('../../fixtures/mocks/github/user')(ctx.user2);
-                require('../../fixtures/mocks/github/user')(ctx.user2);
-                ctx.user2.createInstance(json2, expects.success(201, expected2, done));
-              }));
-            }));
+                createInstanceWith(ctx.user2, body2, expected2, done);
+              });
+            });
+            function createInstanceWith (user, body, expected, cb) {
+              var next = createCount(2, complete).next;
+              primus.expectAction('start', next);
+              require('../../fixtures/mocks/github/user')(user);
+              require('../../fixtures/mocks/github/user')(user);
+              var instance = user.createInstance(body, expects.success(201, expected, next));
+              function complete (err) {
+                cb(err, instance && instance.toJSON());
+              }
+            }
           });
         });
       });
@@ -492,18 +506,17 @@ describe('POST /instances', function () {
         });
       });
     });
-  /// // TODO: in next block beforeEach(function(done){
-        //primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
-      //});
+
     describe('Create instance from parent instance', function() {
       beforeEach(function (done) {
-        multi.createInstance(function (err, instance, build, user) {
+        multi.createAndTailInstance(primus, function (err, instance, build, user) {
           ctx.instance = instance;
           ctx.build = build;
           ctx.user = user;
           done(err);
         });
       });
+
       it('should have the parent instance set in the new one', function (done) {
         var json = {
           build: ctx.build.id(),
@@ -526,7 +539,8 @@ describe('POST /instances', function () {
           'network.hostIp': not(equals(ctx.instance.attrs.network.hostIp))
         };
         require('../../fixtures/mocks/github/user')(ctx.user);
-        ctx.user.createInstance(json, expects.success(201, expected, done));
+        primus.expectAction('start', expected, done);
+        ctx.user.createInstance(json, expects.success(201, expected, noop));
       });
     });
   });
