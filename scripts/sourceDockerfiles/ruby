@@ -1,16 +1,24 @@
-FROM ruby:<ruby-version>
+FROM ruby:<ruby-version-normalized>
+
 # Open up ports on the server
 EXPOSE <user-specified-ports>
 
-# Install Rails (and its dependencies)
-RUN apt-get update && apt-get install -y nodejs --no-install-recommends && rm -rf /var/lib/apt/lists/*
+## Install Ruby
+ENV RUBY_MAJOR <ruby-major>
+ENV RUBY_VERSION <ruby-version> 
 
-# see http://guides.rubyonrails.org/command_line.html#rails-dbconsole
-RUN apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 --no-install-recommends && rm -rf /var/lib/apt/lists/*
+## Install Ruby via rvm
+RUN apt-get update \
+	&& gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 \
+	&& curl -sSL https://get.rvm.io | bash -s stable --ruby=$RUBY_VERSION
+
+RUN echo "source /usr/local/rvm/scripts/rvm" >> /root/.bashrc && \
+    echo "rvm use $RUBY_VERSION" >> /root/.bashrc
 
 <before-main-repo>
-#default run:bundle install
+#default run:bundle install # runnable-cache
 <after-main-repo>
+
 
 # Command to start the app
 CMD <start-command>
