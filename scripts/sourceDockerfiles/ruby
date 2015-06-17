@@ -17,7 +17,7 @@ RUN echo "source /usr/local/rvm/scripts/rvm" >> /root/.bashrc && \
 # Install environmental dependencies
 RUN apt-get install -y libtokyocabinet-dev libxml2-dev libpq-dev libxslt1-dev git curl libmysqlclient-dev nodejs --no-install-recommends mysql-client postgresql-client sqlite3 --no-install-recommends
 
-RUN gem install ZenTest-4.5.0 \
+RUN gem install ZenTest -v 4.5.0 \
 	&& gem install bundler -v 1.0.21
 
 <before-main-repo>
