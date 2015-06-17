@@ -15,7 +15,7 @@
     "defaultVersion": "4.2.0",
     "dependencies": ["ruby"],
     "ports": "3000, 80",
-    "startCommand": "rails server",
+    "startCommand": ["rails server"],
     "preEnvMarker": "<%= ENV[\"",
     "postEnvMarker": "]%>\""
   },
@@ -151,7 +151,7 @@
     "defaultVersion": "0.10.35",
     "defaultNpmVersion": "0.2.0",
     "ports": "80, 8000, 8080, 3000",
-    "startCommand": "npm start",
+    "startCommand": ["npm start", "node app.js"],
     "preEnvMarker": "process.env",
     "postEnvMarker": ""
   },
@@ -185,7 +185,7 @@
     ],
     "defaultVersion": "3.4.3",
     "ports": "80",
-    "startCommand": "python main.py",
+    "startCommand": ["python main.py"],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']"
   },
@@ -212,7 +212,7 @@
     ],
     "defaultVersion": "2.2.1",
     "ports": "3000, 80",
-    "startCommand": ["ruby main.rb", "bundle exec rake server"],
+    "startCommand": ["/bin/bash -l -c 'bundle exec rake server'", "/bin/bash -l -c 'ruby main.rb'"],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']"
   },
@@ -329,7 +329,7 @@
     ],
     "defaultVersion": "5.6.7-apache",
     "ports": "80, 8080, 8000",
-    "startCommand": "apache2 -DFOREGROUND",
+    "startCommand": ["apache2 -DFOREGROUND"],
     "preEnvMarker": "",
     "postEnvMarker": ""
   }
