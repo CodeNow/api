@@ -212,7 +212,7 @@
     ],
     "defaultVersion": "2.2.1",
     "ports": "3000, 80",
-    "startCommand": "ruby main.rb",
+    "startCommand": ["ruby main.rb", "bundle exec rake server"],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']"
   },
