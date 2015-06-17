@@ -429,39 +429,6 @@ module.exports = {
     return dispatch;
   },
 
-  tailInstance: function (user, instance, ownerId, cb) {
-    if (typeof ownerId === 'function') {
-      cb = ownerId;
-      ownerId = null;
-    }
-    fetchInstanceAndCheckContainers();
-    function fetchInstanceAndCheckContainers () {
-      if (ownerId) {
-        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
-        require('./mocks/github/user-orgs')(ownerId, 'Runnable');
-      }
-      else {
-        require('./mocks/github/user')(user);
-      }
-      // instead of polling for deployed, hook into redis events?
-      instance.deployed(function (err, deployed) {
-        if (err) {
-          cb(err);
-        }
-        else if (!deployed) {
-          setTimeout(function () {
-            fetchInstanceAndCheckContainers();
-          }, 50);
-        }
-        else {
-          instance.fetch(function (err) {
-            cb(err, instance);
-          });
-        }
-      });
-    }
-  },
-
   createContextPath: function (user, contextId) {
     debug('createContextPath', formatArgs(arguments));
     return user

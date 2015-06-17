@@ -148,10 +148,17 @@ describe('POST /instances', function () {
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
             require('../../fixtures/mocks/github/user')(ctx.user);
-            var instance = ctx.user.createInstance({ json: json }, function (err) {
+
+            var count = createCount(2, fetchInstanceAndAssertHosts);
+            primus.expectAction('start', {}, count.next);
+            var instance = ctx.user.createInstance({ json: json }, function(err) {
               if (err) { return done(err); }
+              primus.expectAction('deploy', {}, count.next);
               dockerMockEvents.emitBuildComplete(ctx.cv);
-              multi.tailInstance(ctx.user, instance, function (err) {
+            });
+            function fetchInstanceAndAssertHosts (err) {
+              if (err) { return done(err); }
+              instance.fetch(function (err) {
                 if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.exist();
                 var count = createCount(2, done);
@@ -161,7 +168,7 @@ describe('POST /instances', function () {
                 expects.updatedWeaveHost(
                   container, instance.attrs.network.hostIp, count.next);
               });
-            });
+            }
           });
         });
         describe('without a started context version', function () {

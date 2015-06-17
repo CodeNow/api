@@ -301,17 +301,7 @@ describe('PUT /instances/:id/actions/stop', function () {
         // try stop and start
         var instance = ctx.instance;
         var container = instance.containers.models[0];
-        if (!container) {
-          // note to self/casey: switch to primus
-          multi.tailInstance(ctx.user, ctx.instance, function (err, instance) {
-            if (err) { return done(err); }
-            container = instance.containers.models[0];
-            startStop();
-          });
-        }
-        else {
-          startStop();
-        }
+        startStop();
         function startStop () {
           instance.start(function (err) {
             if (err) { return count.next(err); }

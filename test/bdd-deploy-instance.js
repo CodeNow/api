@@ -140,8 +140,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
               createVersion,
               addAppCodeVersions,
               createBuild,
-              buildBuild,
-              tailInstance
+              buildBuild
             ], function (err, newBuild) {
               if (err) { return done(err); }
               expect(ctx.instance.build._id).to.equal(newBuild._id);
@@ -198,12 +197,6 @@ describe('BDD - Create Build and Deploy Instance', function () {
               ctx.instance.update({
                 build: newBuild.id()
               }, count.inc().next);
-            }
-            function tailInstance (newBuild, cb) {
-              multi.tailInstance(ctx.user, ctx.instance, function (err) {
-                expect(ctx.instance.attrs.containers[0].dockerContainer).to.not.equal(ctx.oldDockerContainer);
-                cb(err, newBuild);
-              });
             }
           });
         });
@@ -480,8 +473,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
           addAppCodeVersions,
           patchVersion,
           createBuild,
-          buildBuild,
-          tailInstance
+          buildBuild
         ], function (err, newBuild) {
           if (err) { return done(err); }
           expect(ctx.instance.build._id).to.equal(newBuild._id);
@@ -542,13 +534,6 @@ describe('BDD - Create Build and Deploy Instance', function () {
           ctx.instance.update({
             build: newBuild.id()
           }, count.inc().next);
-        }
-        function tailInstance (newBuild, cb) {
-          multi.tailInstance(ctx.user, ctx.instance, function (err) {
-            // false wins.
-            expect(ctx.instance.attrs.contextVersion.advanced).to.equal(false);
-            cb(err, newBuild);
-          });
         }
       });
     });
