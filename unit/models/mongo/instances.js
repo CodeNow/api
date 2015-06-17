@@ -610,7 +610,7 @@ describe('Instance', function () {
       instances.push(createNewInstance('B-some-branch', opts));
       done();
     });
-    beforeEach(function (done) {
+    beforeEach({ timeout: 10000 }, function (done) {
       async.each(instances, function (instance, cb) {
         instance.save(cb);
       }, done);
