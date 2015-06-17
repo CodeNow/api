@@ -7,6 +7,8 @@ var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
+var after = lab.after;
+var before = lab.before;
 var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
@@ -35,9 +37,10 @@ var opts = {
 
 describe('template update script', function () {
   var ctx = {};
-  beforeEach(mongoose.start.bind(mongoose));
+  before(mongoose.start.bind(mongoose));
   beforeEach(require('../fixtures/clean-mongo').removeEverything);
   afterEach(require('../fixtures/clean-mongo').removeEverything);
+  after(mongoose.stop.bind(mongoose));
 
   beforeEach(function (done) {
     var nodejsData = require(path.resolve(__dirname, '../../scripts/templates/nodejs.json'));
