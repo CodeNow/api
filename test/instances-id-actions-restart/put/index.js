@@ -237,7 +237,19 @@ describe('PUT /instances/:id/actions/restart', function () {
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        }
+        else {
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            var count = createCount(2, function () {
+              ctx.instance.fetch(done);
+            });
+            primus.expectAction('start', {}, count.next);
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
+          });
+        }
       });
       restartInstanceTests(ctx);
     });
@@ -247,7 +259,19 @@ describe('PUT /instances/:id/actions/restart', function () {
           build: ctx.build.id(),
           masterPod: true
         };
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        }
+        else {
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            var count = createCount(2, function () {
+              ctx.instance.fetch(done);
+            });
+            primus.expectAction('start', {}, count.next);
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
+          });
+        }
       });
       restartInstanceTests(ctx);
     });
