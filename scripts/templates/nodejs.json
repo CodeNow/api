@@ -1,0 +1,11 @@
+{
+  "from": "nodejs",
+  "ports": [],
+  "generalCommands": [],
+  "defaultMainCommands": [
+    "npm install"
+  ],
+  "defaultWorkDir": "",
+  "cmd": "",
+  "entryPoint": ""
+}

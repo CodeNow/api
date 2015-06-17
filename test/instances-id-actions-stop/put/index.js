@@ -4,13 +4,17 @@
 'use strict';
 
 var Lab = require('lab');
+var Code = require('code');
+
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
+
 var after = lab.after;
 var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -291,28 +295,27 @@ describe('PUT /instances/:id/actions/stop', function () {
       }
       function startStopAssert (err) {
         if (err) { return done(err); }
-        var count = createCount(3, done);
+        var count = createCount(4, done);
         // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
         expects.deletedHosts(ctx.user, ctx.instance, count.next);
         // try stop and start
         var instance = ctx.instance;
         var container = instance.containers.models[0];
-        if (!container) {
-          // note to self/casey: switch to primus
-          multi.tailInstance(ctx.user, ctx.instance, function (err, instance) {
-            if (err) { return done(err); }
-            container = instance.containers.models[0];
-            startStop();
-          });
-        }
-        else {
-          startStop();
-        }
+        startStop();
         function startStop () {
           instance.start(function (err) {
             if (err) { return count.next(err); }
+            // expect temporary property to not be in final response
+            expect(instance.json().container.inspect.stopping).to.be.undefined();
+            expect(instance.json().container.inspect.starting).to.be.undefined();
+            primus.expectAction('stopping', {
+              container: {inspect: {stopping: true}}
+            }, count.next);
             instance.stop(expects.success(200, ctx.expected, function (err) {
               if (err) { return count.next(err); }
+              // expect temporary property to not be in final response
+              expect(instance.json().container.inspect.stopping).to.be.undefined();
+              expect(instance.json().container.inspect.starting).to.be.undefined();
               expects.deletedWeaveHost(container, count.next);
               expects.deletedHosts(ctx.user, instance, count.next);
               if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }

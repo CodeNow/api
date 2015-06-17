@@ -76,6 +76,7 @@
 ./test/settings/patch/index.js
 ./test/settings/post/201.js
 ./test/settings/post/400.js
+./test/templates/get/200.js
 ./test/terminal-stream.js
 ./test/test-errors.js
 ./test/users-id-routes-id/index.js

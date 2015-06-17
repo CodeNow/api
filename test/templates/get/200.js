@@ -43,6 +43,7 @@ describe('GET /templates', function () {
     describe('some templates', function () {
       beforeEach(function (done) {
         ctx.template = new Template({
+          name: 'Nodejs',
           from: 'nodeJs',
           ports: [8080],
           generalCommands: ['apt-get update'],
@@ -55,7 +56,7 @@ describe('GET /templates', function () {
         ctx.user.fetchTemplates(function (err, docs) {
           if (err) { return done(err); }
           expect(docs).to.have.length(1);
-          expect(docs[0].lowerFrom).to.equal('nodejs');
+          expect(docs[0].lowerName).to.equal('nodejs');
           expect(Date.parse(docs[0].created)).to.be.about(Date.now(), 5000);
           expect(Date.parse(docs[0].updated)).to.be.about(Date.now(), 5000);
           done();
@@ -76,6 +77,21 @@ describe('GET /templates', function () {
               expect(updatedDocs[0].cmd).to.equal('node server.js');
               done();
             });
+          });
+        });
+      });
+
+      describe('deleted template', function () {
+        beforeEach(function (done) {
+          ctx.template.deleted = true;
+          ctx.template.save(done);
+        });
+
+        it('should not return any docs', function (done) {
+          ctx.user.fetchTemplates(function (err, docs) {
+            if (err) { return done(err); }
+            expect(docs).to.have.length(0);
+            done();
           });
         });
       });

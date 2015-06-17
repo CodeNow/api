@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.2.5",
+  "version": "2.3.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -47,7 +47,7 @@
     "ip": "^0.3.2",
     "json-hash": "0.0.4",
     "json-stable-stringify": "^1.0.0",
-    "keypather": "^1.8.1",
+    "keypather": "^1.10.1",
     "middleware-flow": "^0.7.0",
     "middlewarize": "0.0.1",
     "mixpanel": "^0.1.0",

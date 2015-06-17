@@ -4,13 +4,17 @@
 'use strict';
 
 var Lab = require('lab');
+var Code = require('code');
+
 var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
+
 var after = lab.after;
 var afterEach = lab.afterEach;
+var before = lab.before;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -282,12 +286,12 @@ describe('PUT /instances/:id/actions/start', function () {
         ctx.instance.start(expects.error(400, /not have a container/, done));
       }
       else { // success
+
         var assertions = false ? //ctx.expectAlreadyStarted ?
           expects.error(304, stopStartAssert) :
           expects.success(200, ctx.expected, stopStartAssert);
         ctx.instance.start(assertions);
       }
-
       function stopStartAssert (err) {
         if (err) { return done(err); }
         var count = createCount(4, done);
@@ -296,10 +300,21 @@ describe('PUT /instances/:id/actions/start', function () {
         // try stop and start
         var instance = ctx.instance;
         var container = instance.containers.models[0];
+
+        primus.expectAction('stopping', {
+          container: {inspect: {stopping: true}}
+        }, count.inc().next);
+
         instance.stop(function (err) {
           if (err) { return count.next(err); }
+          // expect temporary property to not be in final response
+          expect(instance.json().container.inspect.stopping).to.be.undefined();
+          expect(instance.json().container.inspect.starting).to.be.undefined();
           instance.start(expects.success(200, ctx.expected, function (err) {
             if (err) { return count.next(err); }
+            // expect temporary property to not be in final response
+            expect(instance.json().container.inspect.stopping).to.be.undefined();
+            expect(instance.json().container.inspect.starting).to.be.undefined();
             expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.next);
             expects.updatedHosts(ctx.user, instance, count.next);
             if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }

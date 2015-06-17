@@ -494,63 +494,6 @@ describe('Github - /actions/github', function () {
               });
             });
           });
-
-          it('should fork 2 instances from 2 master instances', function (done) {
-            var baseDeploymentId = 1234567;
-            sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
-              var cb = Array.prototype.slice.apply(arguments).pop();
-              expect(this.github.config.token)
-                .to.equal(ctx.user.attrs.accounts.github.access_token);
-              baseDeploymentId++;
-              var newDeploymentId = baseDeploymentId;
-              cb(null, {id: newDeploymentId});
-            });
-            // emulate instance deploy event
-            sinon.stub(SocketClientMw, 'onInstanceDeployed', function (instance, buildId, socketClient, cb) {
-              cb(null, instance);
-            });
-            var countOnCallback = function () {
-              count.next();
-            };
-            var count = cbCount(5, function () {
-              // restore what we stubbed
-              expect(PullRequest.prototype.createAndStartDeployment.calledTwice).to.equal(true);
-              PullRequest.prototype.createAndStartDeployment.restore();
-              var successStub = PullRequest.prototype.deploymentSucceeded;
-              expect(successStub.calledTwice).to.equal(true);
-              expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
-              successStub.restore();
-              var slackStub = Slack.prototype.notifyOnAutoFork;
-              expect(slackStub.calledTwice).to.equal(true);
-              expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
-              slackStub.restore();
-              SocketClientMw.onInstanceDeployed.restore();
-              done();
-            });
-            sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
-            sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-            var user = ctx.user.attrs.accounts.github;
-            var data = {
-              branch: 'feature-1',
-              repo: acv.repo,
-              ownerId: user.id,
-              owner: user.login
-            };
-            var options = hooks(data).push;
-            var username = user.login;
-            require('./fixtures/mocks/github/users-username')(101, username);
-            // wait for the auto-launched instances workers to finish
-            primus.expectActionCount('start', 2, countOnCallback);
-            request.post(options, function (err, res, cvIds) {
-              if (err) { return done(err); }
-              finishAllIncompleteVersions();
-              expect(res.statusCode).to.equal(200);
-              expect(cvIds).to.exist();
-              expect(cvIds).to.be.an.array();
-              expect(cvIds).to.have.length(2);
-            });
-          });
         });
       });
     });
@@ -662,7 +605,7 @@ describe('Github - /actions/github', function () {
           });
         });
       });
-      
+
       it('should report to mixpanel when a registered user pushes to a repo', function (done) {
         sinon.stub(Mixpanel.prototype, 'track', function (eventName, eventData) {
           expect(eventName).to.equal('github-push');
