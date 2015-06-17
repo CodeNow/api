@@ -584,7 +584,7 @@ describe('Instance', function () {
       });
     });
   });
-  describe('#removeSelfFromGraph', function () {
+  describe('#removeSelfFromGraph', { timeout: 10000 }, function () {
     /*
       instance2(C) is master pod of instance4(D)
       instance0(A): dependsOn instance4(D)
@@ -610,7 +610,7 @@ describe('Instance', function () {
       instances.push(createNewInstance('B-some-branch', opts));
       done();
     });
-    beforeEach({ timeout: 10000 }, function (done) {
+    beforeEach(function (done) {
       async.each(instances, function (instance, cb) {
         instance.save(cb);
       }, done);
@@ -759,7 +759,7 @@ describe('Instance', function () {
   });
 
 
-  describe('dependencies', function () {
+  describe('dependencies', { timeout: 10000 }, function () {
     var instances = [];
     beforeEach(function (done) {
       var names = ['A', 'B', 'C'];
