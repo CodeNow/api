@@ -298,7 +298,6 @@ describe('Instance - /instances/:id', function () {
                 });
                 ctx.instance.update({json: update}, expects.success(200, expected, noop));
               });
-
             });
           });
           describe('WITH changes in infracodeversion AND appcodeversion', function () {
@@ -354,7 +353,6 @@ describe('Instance - /instances/:id', function () {
                 });
                 ctx.instance.update({json: update}, expects.success(200, expected, noop));
               });
-
             });
           });
         });
