@@ -1,7 +1,7 @@
 'use strict';
 require('loadenv')();
 
-var ContextVersions = require('models/mongo/context-version');
+var ContextVersion = require('models/mongo/context-version');
 var Context = require('models/mongo/context');
 
 var dryRun = !process.env.ACTUALLY_RUN;
@@ -14,7 +14,7 @@ mongoose.connect(process.env.MONGO);
 
 async.waterfall([
   function getAllCv (cb) {
-    ContextVersions.find({ owner: { $exists: false }}, cb);
+    ContextVersion.find({ owner: { $exists: false }}, cb);
   },
   function updateCv (cvs, cb) {
     if (typeof cvs !== 'object') {
@@ -30,17 +30,17 @@ async.waterfall([
         count++;
         if (err) {
           console.log('Context find err', err, count+'/'+cvs.length);
-          return eachCb();
+          return eachCb(err);
         }
         if (!context) {
           console.log('nothing found for context', count+'/'+cvs.length);
-          return eachCb();
+          return eachCb(new Error('no context found'));
         }
         console.log('updating cv', cv._id, 'with owner', context.owner, count+'/'+cvs.length);
         if (dryRun) {
           return eachCb();
         }
-        ContextVersions.update({_id: cv._id}, {
+        ContextVersion.update({_id: cv._id}, {
           $set: {'owner': context.owner }
         }, eachCb);
       });
