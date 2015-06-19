@@ -701,21 +701,6 @@ describe('Instance - /instances/:id', function () {
         });
       });
 
-      describe('hipache changes', function () {
-        beforeEach(function (done) {
-          var newName = ctx.newName = randStr(5);
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.instance.update({ json: { name: newName, masterPod: true }}, done);
-        });
-        it('should update hipache entries when the name is updated', function (done) {
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.instance.fetch(function (err) {
-            if (err) { return done(err); }
-            expects.updatedHosts(ctx.user, ctx.instance, done);
-          });
-        });
-      });
       describe('not founds', function () {
         beforeEach(function (done) {
           ctx.instance.destroy(done);
