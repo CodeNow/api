@@ -294,7 +294,7 @@ describe('PUT /instances/:id/actions/restart', function () {
         var count = createCount(3, stopRestartAssert);
         primus.expectAction('start', count.next);
         primus.expectAction('starting', {
-          container: {inspect: {starting: true}}
+          container: {inspect: {State: {Starting: true}}}
         }, count.next);
         ctx.instance.restart(expects.success(200, ctx.expected, stopRestartAssert));
       }
@@ -312,19 +312,19 @@ describe('PUT /instances/:id/actions/restart', function () {
 
         count.inc();
         primus.expectAction('stopping', {
-          container: {inspect: {stopping: true}}
+          container: {inspect: {State: {Stopping: true}}}
         }, count.next);
 
         instance.stop(expects.success(200, function (err) {
           if (err) { return count.next(err); }
           // expect temporary property to not be in final response
-          expect(instance.json().container.inspect.stopping).to.be.undefined();
-          expect(instance.json().container.inspect.starting).to.be.undefined();
+          expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
+          expect(instance.json().container.inspect.State.Starting).to.be.undefined();
           instance.restart(expects.success(200, ctx.expected, function (err) {
             if (err) { return count.next(err); }
             // expect temporary property to not be in final response
-            expect(instance.json().container.inspect.stopping).to.be.undefined();
-            expect(instance.json().container.inspect.starting).to.be.undefined();
+            expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
+            expect(instance.json().container.inspect.State.Starting).to.be.undefined();
             expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
             expects.updatedHosts(ctx.user, instance, count.next);
           }));
