@@ -48,6 +48,9 @@ describe('PullRequest', function () {
           username: 'codenow'
         }
       };
+      sinon.stub(PullRequest.prototype, 'createDeployment', function (gitInfo, instance, cb) {
+        cb(null, { id: 'deployment-id'});
+      });
       sinon.stub(GitHub.prototype, 'createDeploymentStatus', function (repo, payload) {
         expect(repo).to.equal(gitInfo.repo);
         expect(payload.id).to.equal('deployment-id');
@@ -55,9 +58,10 @@ describe('PullRequest', function () {
         expect(payload.target_url).to.equal('https://' + process.env.DOMAIN + '/codenow/inst-1');
         expect(payload.description).to.equal('Deployed to inst-1 on Runnable.');
         GitHub.prototype.createDeploymentStatus.restore();
+        PullRequest.prototype.createDeployment.restore();
         done();
       });
-      pullRequest.deploymentSucceeded(gitInfo, 'deployment-id', instance);
+      pullRequest.deploymentSucceeded(gitInfo, instance);
     });
   });
 
