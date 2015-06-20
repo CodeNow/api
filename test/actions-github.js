@@ -184,17 +184,17 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it('should set build status to error if error happened build create',
+      it('should call deleteSocketClient if error happened build create',
         function (done) {
           sinon.stub(Runnable.prototype, 'createBuild')
             .yields(Boom.notFound('Build create failed'));
-          sinon.stub(PullRequest.prototype, 'buildErrored', function () {
-            var stub = PullRequest.prototype.buildErrored;
+          sinon.stub(SocketClientMw, 'deleteSocketClient', function (orgId) {
+            var stub = SocketClientMw.deleteSocketClient;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.createBuild.restore();
             done();
+            return SocketClientMw.deleteSocketClient(orgId);
           });
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var user = ctx.user.attrs.accounts.github;
@@ -214,17 +214,17 @@ describe('Github - /actions/github', function () {
           });
       });
 
-      it('should set build status to error if error happened during build build',
+      it('should call deleteSocketClient if error happened during build build',
         function (done) {
           sinon.stub(Runnable.prototype, 'buildBuild')
             .yields(Boom.notFound('Build build failed'));
-          sinon.stub(PullRequest.prototype, 'buildErrored', function () {
-            var stub = PullRequest.prototype.buildErrored;
+          sinon.stub(SocketClientMw, 'deleteSocketClient', function (orgId) {
+            var stub = SocketClientMw.deleteSocketClient;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.buildBuild.restore();
             done();
+            return SocketClientMw.deleteSocketClient(orgId);
           });
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var user = ctx.user.attrs.accounts.github;
