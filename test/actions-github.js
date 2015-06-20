@@ -242,50 +242,6 @@ describe('Github - /actions/github', function () {
             expect(instancesIds.length).to.equal(0);
           });
       });
-
-      it('should set deployment status to error if error happened during instance update',
-        function (done) {
-          var baseDeploymentId = 1234567;
-          sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            baseDeploymentId++;
-            var newDeploymentId = baseDeploymentId;
-            cb(null, { id: newDeploymentId });
-          });
-          var count = cbCount(2, function () {
-            // restore what we stubbed
-            expect(PullRequest.prototype.createAndStartDeployment.calledOnce).to.equal(true);
-            PullRequest.prototype.createAndStartDeployment.restore();
-            var errorStub = PullRequest.prototype.deploymentErrored;
-            expect(errorStub.calledOnce).to.equal(true);
-            expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.object)).to.equal(true);
-            errorStub.restore();
-            Runnable.prototype.updateInstance.restore();
-            done();
-          });
-          sinon.stub(Runnable.prototype, 'updateInstance')
-            .yields(Boom.notFound('Instance update failed'));
-
-          sinon.stub(PullRequest.prototype, 'deploymentErrored', count.next);
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'master',
-            repo: acv.repo
-          };
-          var options = hooks(data).push;
-          var username = acv.repo.split('/')[0];
-          require('./fixtures/mocks/github/users-username')(101, username);
-          // wait for create worker background work to finish
-          primus.expectActionCount('start', 1, count.next);
-          request.post(options, function (err, res, cvsIds) {
-            if (err) { return done(err); }
-            finishAllIncompleteVersions();
-            expect(res.statusCode).to.equal(200);
-            expect(cvsIds).to.exist();
-            expect(cvsIds).to.be.an.array();
-            expect(cvsIds).to.have.length(1);
-          });
-      });
     });
 
     describe('autofork', function () {
