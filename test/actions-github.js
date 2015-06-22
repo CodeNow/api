@@ -529,7 +529,7 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it('should redeploy two instances with new build', function (done) {
+      it('should redeploy two instances with the new build', function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
           if (err) { return done(err); }
           var baseDeploymentId = 1234567;
@@ -539,7 +539,7 @@ describe('Github - /actions/github', function () {
             var newDeploymentId = baseDeploymentId;
             expect(this.github.config.token)
               .to.equal(ctx.user.attrs.accounts.github.access_token);
-            cb(null, {id: newDeploymentId});
+            cb(null, { id: newDeploymentId });
           });
           var count = cbCount(4, function () {
             var expected = {
