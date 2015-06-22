@@ -334,42 +334,23 @@ module.exports = {
       }
     });
   },
-  createInstance: function (buildOwnerId, buildOwnerName, createBody, cb) {
+  createInstance: function (buildOwnerId, buildOwnerName, cb) {
     debug('createInstance', formatArgs(arguments));
     if (typeof buildOwnerId === 'function') {
       cb = buildOwnerId;
       buildOwnerId = null;
     }
-    else if (typeof buildOwnerId === 'object') {
-      cb = buildOwnerName;
-      createBody = buildOwnerId;
-      buildOwnerName = null;
-      buildOwnerId = null;
-    }
     if (typeof buildOwnerName === 'function') {
       cb = buildOwnerName;
-      buildOwnerName = null;
+      buildOwnerName = 'Runnable';
     }
-    else if (typeof buildOwnerName === 'object') {
-      cb = createBody;
-      createBody = buildOwnerName;
-      buildOwnerName = null;
-    }
-    if (typeof createBody === 'function') {
-      cb = createBody;
-      createBody = null;
-    }
-    createBody = createBody || {};
-    buildOwnerName = buildOwnerName || 'Runnable';
-    console.log('createInstance');
-    console.log(buildOwnerId, buildOwnerName, createBody);
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err); }
-      var body = defaults(createBody, {
+      var body = {
         name: randStr(5),
         build: build.id(),
         masterPod: true
-      });
+      };
       if (buildOwnerId) {
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
