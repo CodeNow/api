@@ -1,4 +1,5 @@
 FROM ruby:<ruby-version>
+
 # Open up ports on the server
 EXPOSE <user-specified-ports>
 
@@ -13,8 +14,9 @@ ENV RAILS_VERSION <rails-version>
 RUN gem install rails --version "$RAILS_VERSION"
 
 <before-main-repo>
-#default run:bundle install
+#default run:bundle install # runnable-cache
 <after-main-repo>
+
 
 # Command to start the app
 CMD <start-command>

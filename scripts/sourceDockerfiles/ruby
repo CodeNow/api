@@ -1,16 +1,37 @@
-FROM ruby:<ruby-version>
+#Based from ruby:<ruby-version-normalized>
+FROM ubuntu:14.04
+
 # Open up ports on the server
 EXPOSE <user-specified-ports>
 
-# Install Rails (and its dependencies)
-RUN apt-get update && apt-get install -y nodejs --no-install-recommends && rm -rf /var/lib/apt/lists/*
+## Install Ruby
+ENV RUBY_VERSION <ruby-version> 
 
-# see http://guides.rubyonrails.org/command_line.html#rails-dbconsole
-RUN apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 --no-install-recommends && rm -rf /var/lib/apt/lists/*
+## Install Ruby via rvm
+## Install Ruby
+ENV RUBY_VERSION 1.8.6-p420 
+ENV DEBIAN_FRONTEND noninteractive 
+ENV PATH /usr/local/rvm/scripts/rvm:$PATH
+## Install Ruby via rvm
+RUN apt-get update \
+    && apt-get upgrade -y\
+    && apt-get install -y wget libtokyocabinet-dev libxml2-dev libbz2-dev libpq-dev libxslt1-dev git curl libmysqlclient-dev nodejs --no-install-recommends mysql-client postgresql-client sqlite3 --no-install-recommends 
+
+RUN apt-get install -y ca-certificates
+RUN /bin/bash -l -c "gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3  && curl -sL --insecure https://get.rvm.io | bash -s stable --ruby=$RUBY_VERSION"
+
+RUN echo "source /usr/local/rvm/scripts/rvm" >> /root/.bashrc && \
+    echo "rvm use $RUBY_VERSION" >> /root/.bashrc
+
+RUN  /bin/bash -l -c "/usr/local/rvm/bin/rvm use 1.8.6"
+RUN  /bin/bash -l -c "gem install ZenTest -v 4.5.0"
+RUN  /bin/bash -l -c "gem install bundler -v 1.0.21"
+
 
 <before-main-repo>
-#default run:bundle install
+#default run:/bin/bash -l -c "bundle install" # runnable-cache
 <after-main-repo>
+
 
 # Command to start the app
 CMD <start-command>
