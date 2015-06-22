@@ -5,6 +5,7 @@ var mavisApp = require('mavis');
 var sauron = require('sauron');
 var dockerModuleMock = require('./mocks/docker-model');
 process.env.AUTO_RECONNECT = false; // needed for test
+process.env.HOST_TAGS='default'; // needed for test
 var dockerListener = require('docker-listener');
 
 var url = require('url');

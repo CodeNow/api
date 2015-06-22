@@ -47,7 +47,8 @@ describe('Versions - /contexts/:contextid/versions', function () {
     });
     it('should create a new version', function (done) {
       var expected = {
-        infraCodeVersion: exists
+        infraCodeVersion: exists,
+        owner: exists
       };
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
       ctx.context.createVersion({}, expects.success(201, expected, done));
@@ -55,7 +56,8 @@ describe('Versions - /contexts/:contextid/versions', function () {
     describe('toBuild query', function() {
       it('should create a new version', function (done) {
         var expected = {
-          infraCodeVersion: exists
+          infraCodeVersion: exists,
+          owner: exists
         };
         var body = {};
         var opts = {
@@ -89,7 +91,8 @@ describe('Versions - /contexts/:contextid/versions', function () {
       });
       it('should create a contextVersion with infraCodeVersion', function (done) {
         var expected = {
-          infraCodeVersion: not(equals(ctx.infraCodeVersionId))
+          infraCodeVersion: not(equals(ctx.infraCodeVersionId)),
+          owner: exists
         };
         ctx.context.createVersion({
           infraCodeVersion: ctx.infraCodeVersionId
@@ -254,7 +257,8 @@ describe('Versions - /contexts/:contextid/versions', function () {
         });
         it('should it if we give both repos', function (done) {
           var expected = [{
-            _id: ctx.contextVersion.id()
+            _id: ctx.contextVersion.id(),
+            owner: exists
           }];
           var query = {
             appCodeVersions: [{
@@ -307,7 +311,8 @@ describe('Versions - /contexts/:contextid/versions', function () {
     describe('via infraCodeVersion', function () {
       it('should return us our version', function (done) {
         var expected = [{
-          _id: ctx.contextVersion.id()
+          _id: ctx.contextVersion.id(),
+          owner: exists
         }];
         var query = {
           infraCodeVersion: ctx.contextVersion.json().infraCodeVersion
