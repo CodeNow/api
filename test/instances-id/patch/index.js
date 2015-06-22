@@ -57,6 +57,8 @@ describe('Instance - /instances/:id', function () {
     describe('Orgs', function () {
       beforeEach(function (done) {
         ctx.orgId = 1001;
+        var count = createCount(2, done);
+        primus.expectAction('start', count.next);
         multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
           //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
           if (err) { return done(err); }
@@ -71,7 +73,8 @@ describe('Instance - /instances/:id', function () {
               done(err);
             }
             ctx.otherBuild = build;
-            done();
+            count.next();
+            //done();
           });
         });
       });
@@ -361,7 +364,6 @@ describe('Instance - /instances/:id', function () {
         describe('Patching an unbuilt build', function () {
           beforeEach(function (done) {
             var data = {
-              name: randStr(5),
               owner: { github: ctx.user.attrs.accounts.github.id }
             };
             ctx.otherBuild = ctx.user.createBuild(data, done);
@@ -477,32 +479,24 @@ describe('Instance - /instances/:id', function () {
         });
         describe('Testing all patching possibilities', function () {
           var updates = [{
-            name: randStr(5)
-          }, {
             public: true
           }, {
             build: 'newBuild'
           }, {
             env: ['ONE=1']
-          },
-            {
+          }, {
             public: true,
             build: 'newBuild'
           }, {
-            name: randStr(5),
             build: 'newBuild'
           }, {
-            name: randStr(5),
-              env: ['sdfasdfasdfadsf=asdfadsfasdfasdf']
-            },
-            {
-              name: randStr(5),
+            env: ['sdfasdfasdfadsf=asdfadsfasdfasdf']
+          }, {
             public: true
           }, {
-            name: randStr(5),
             build: 'newBuild',
-              public: true,
-              env: ['THREE=1asdfsdf', 'TWO=dsfasdfas']
+            public: true,
+            env: ['THREE=1asdfsdf', 'TWO=dsfasdfas']
           }];
           beforeEach(function(done) {
             // We need to deploy the container first before each test.
@@ -565,12 +559,6 @@ describe('Instance - /instances/:id', function () {
             require('models/mongo/instance').find({
               lowerName: 'hello'
             }, done);
-          });
-          it('should not allow changing the name to one that exists (lowername)', function (done) {
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            ctx.instance.update({ name: 'HELLO' }, expects.errorStatus(409, /exists/, done));
           });
         });
         describe('Locking instance', function () {
@@ -643,11 +631,7 @@ describe('Instance - /instances/:id', function () {
       });
 
       var updates = [{
-        name: randStr(5)
-      }, {
         public: true
-      }, {
-        public: false
       }];
       describe('permissions', function () {
         describe('owner', function () {
