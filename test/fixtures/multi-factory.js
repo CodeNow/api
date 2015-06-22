@@ -8,8 +8,10 @@ var createCount = require('callback-count');
 var debug = require('debug')('runnable-api:multi-factory');
 var formatArgs = require('format-args');
 var isFunction = require('101/is-function');
+var isObject = require('101/is-object');
 var randStr = require('randomstring').generate;
 var uuid = require('uuid');
+var defaults = require('101/defaults');
 
 var MongoUser = require('models/mongo/user');
 var dockerMockEvents = require('./docker-mock-events');
@@ -250,30 +252,50 @@ module.exports = {
    * instance has completed deploying via background worker
    * process.
    * @param {Object} primus - already connected primus fixture
-   * @param {Function} finalCb
+   * @param {Function} cb
    */
-  createAndTailInstance: function (primus, buildOwnerId, buildOwnerName, finalCb) {
-    debug('createAndTailInstance');
-    if (typeof buildOwnerId === 'function') {
-      finalCb = buildOwnerId;
+  createAndTailInstance: function (primus, buildOwnerId, buildOwnerName, createBody, cb) {
+    debug('createAndTailInstance', buildOwnerId, buildOwnerName, createBody, typeof cb);
+    if (isFunction(buildOwnerId)) {
+      cb = buildOwnerId;
       buildOwnerId = null;
+      debug('createAndTailInstance args1', buildOwnerId, buildOwnerName, createBody, typeof cb);
     }
-    if (typeof buildOwnerName === 'function') {
-      finalCb = buildOwnerName;
-      buildOwnerName = 'Runnable';
+    else if (isObject(buildOwnerId)) {
+      cb = buildOwnerName;
+      createBody = buildOwnerId;
+      buildOwnerName = null;
+      buildOwnerId = null;
+      debug('createAndTailInstance args2', buildOwnerId, buildOwnerName, createBody, typeof cb);
     }
+    if (isFunction(buildOwnerName)) {
+      cb = buildOwnerName;
+      buildOwnerName = null;
+      debug('createAndTailInstance args3', buildOwnerId, buildOwnerName, createBody, typeof cb);
+    }
+    else if (isObject(buildOwnerName)) {
+      cb = createBody;
+      createBody = buildOwnerName;
+      buildOwnerName = null;
+      debug('createAndTailInstance args4', buildOwnerId, buildOwnerName, createBody, typeof cb);
+    }
+    if (isFunction(createBody)) {
+      cb = createBody;
+      createBody = null;
+    }
+    debug('createAndTailInstance args', buildOwnerId, buildOwnerName, createBody, typeof cb);
     var ctx = {};
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
-      if (err) { return finalCb(err); }
+      if (err) { return cb(err); }
       ctx.build = build;
       ctx.user = user;
       ctx.modelsArr = modelsArr;
       ctx.srcArr = srcArr;
-      var body = {
+      var body = defaults(createBody, {
         name: uuid(),
         build: build.id(),
         masterPod: true
-      };
+      });
       if (buildOwnerId) {
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
@@ -289,40 +311,65 @@ module.exports = {
         require('./mocks/github/user')(user);
       }
       require('./mocks/github/user')(user);
-      function CountCallback () {
-        ctx.instance.fetch(function (err) {
-          if (err) { return finalCb(err); }
-          finalCb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.scrArr);
-        });
-      }
-      var count = createCount(2, CountCallback);
+      var next = createCount(2, done).next;
       primus.joinOrgRoom(user.json().accounts.github.id, function (err) {
-        if (err) { return finalCb(err); }
-        primus.expectAction('start', {}, count.next);
+        debug('createAndTailInstance', 'joined room');
+        if (err) { return next(err); }
+        primus.expectAction('start', {}, function () {
+          debug('createAndTailInstance', 'instance started');
+          next();
+        });
         ctx.instance = user.createInstance(body, function (err) {
-          if (err) { return finalCb(err); }
-          count.next();
+          debug('createAndTailInstance', 'created instance');
+          if (err) { return next(err); }
+          next();
         });
       });
+      function done () {
+        debug('createAndTailInstance', 'done');
+        ctx.instance.fetch(function (err) {
+          if (err) { return cb(err); }
+          cb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.scrArr);
+        });
+      }
     });
   },
-  createInstance: function (buildOwnerId, buildOwnerName, cb) {
+  createInstance: function (buildOwnerId, buildOwnerName, createBody, cb) {
     debug('createInstance', formatArgs(arguments));
     if (typeof buildOwnerId === 'function') {
       cb = buildOwnerId;
       buildOwnerId = null;
     }
+    else if (typeof buildOwnerId === 'object') {
+      cb = buildOwnerName;
+      createBody = buildOwnerId;
+      buildOwnerName = null;
+      buildOwnerId = null;
+    }
     if (typeof buildOwnerName === 'function') {
       cb = buildOwnerName;
-      buildOwnerName = 'Runnable';
+      buildOwnerName = null;
     }
+    else if (typeof buildOwnerName === 'object') {
+      cb = createBody;
+      createBody = buildOwnerName;
+      buildOwnerName = null;
+    }
+    if (typeof createBody === 'function') {
+      cb = createBody;
+      createBody = null;
+    }
+    createBody = createBody || {};
+    buildOwnerName = buildOwnerName || 'Runnable';
+    console.log('createInstance');
+    console.log(buildOwnerId, buildOwnerName, createBody);
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err); }
-      var body = {
+      var body = defaults(createBody, {
         name: randStr(5),
         build: build.id(),
         masterPod: true
-      };
+      });
       if (buildOwnerId) {
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
