@@ -14,7 +14,45 @@ var after = lab.after;
 var PullRequest = require('models/apis/pullrequest');
 var GitHub = require('models/apis/github');
 describe('PullRequest', function () {
+  var ctx = {};
+  before(function (done) {
+    ctx.originalStatusFlag = process.env.ENABLE_GITHUB_PR_STATUSES;
+    process.env.ENABLE_GITHUB_PR_STATUSES = 'true';
+    done();
+  });
+  after(function (done) {
+    process.env.ENABLE_GITHUB_PR_STATUSES = ctx.originalStatusFlag;
+    done();
+  });
   describe('#_deploymentStatus', function () {
+    describe('disabled statuses', function () {
+      before(function (done) {
+        ctx.originalStatusFlag = process.env.ENABLE_GITHUB_PR_STATUSES;
+        process.env.ENABLE_GITHUB_PR_STATUSES = 'false';
+        done();
+      });
+      after(function (done) {
+        process.env.ENABLE_GITHUB_PR_STATUSES = ctx.originalStatusFlag;
+        done();
+      });
+      it('should do nothing if statuses are disabled', function (done) {
+        var pullRequest = new PullRequest('anton-token');
+        var gitInfo = {
+          repo: 'codenow/hellonode'
+        };
+        var instance = {
+          name: 'inst-1',
+          owner: {
+            username: 'codenow'
+          }
+        };
+        pullRequest._deploymentStatus(gitInfo, 'some-id', 'error', 'descr',
+          instance, function (error) {
+            expect(error).to.be.null();
+            done();
+          });
+      });
+    });
     it('should fail if deploymentId is null', function (done) {
       var pullRequest = new PullRequest('anton-token');
       var gitInfo = {
