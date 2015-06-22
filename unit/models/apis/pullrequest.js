@@ -47,8 +47,9 @@ describe('PullRequest', function () {
           }
         };
         pullRequest._deploymentStatus(gitInfo, 'some-id', 'error', 'descr',
-          instance, function (error) {
+          instance, function (error, resp) {
             expect(error).to.be.null();
+            expect(resp).to.be.undefined();
             done();
           });
       });
