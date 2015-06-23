@@ -240,7 +240,7 @@
     ],
     "defaultVersion": "1.4rc2",
     "ports": "3000, 80",
-    "startCommand": ["go main.go"],
+    "startCommand": ["./main"],
     "preEnvMarker": "os.Getenv('",
     "postEnvMarker": "')"
   },
