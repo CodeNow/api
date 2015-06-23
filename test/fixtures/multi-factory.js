@@ -329,7 +329,7 @@ module.exports = {
         debug('createAndTailInstance', 'done');
         ctx.instance.fetch(function (err) {
           if (err) { return cb(err); }
-          cb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.scrArr);
+          cb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.srcArr);
         });
       }
     });
