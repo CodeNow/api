@@ -109,7 +109,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
       if (err) { return done(err); }
       expect(ctx.upsertFs.calledOnce).to.be.true();
       expect(ctx.upsertFs.calledWith(
-        '/translation_rules.sh',
+        '/find_and_replace.sh',
         ctx.optimusResponse.script
       )).to.be.true();
       done();
