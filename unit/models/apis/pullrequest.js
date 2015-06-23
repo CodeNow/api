@@ -16,23 +16,23 @@ var GitHub = require('models/apis/github');
 describe('PullRequest', function () {
   var ctx = {};
   before(function (done) {
-    ctx.originalStatusFlag = process.env.ENABLE_GITHUB_PR_STATUSES;
-    process.env.ENABLE_GITHUB_PR_STATUSES = 'true';
+    ctx.originalStatusFlag = process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES;
+    process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES = 'true';
     done();
   });
   after(function (done) {
-    process.env.ENABLE_GITHUB_PR_STATUSES = ctx.originalStatusFlag;
+    process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES = ctx.originalStatusFlag;
     done();
   });
   describe('#_deploymentStatus', function () {
     describe('disabled statuses', function () {
       before(function (done) {
-        ctx.originalStatusFlag = process.env.ENABLE_GITHUB_PR_STATUSES;
-        process.env.ENABLE_GITHUB_PR_STATUSES = 'false';
+        ctx.originalStatusFlag = process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES;
+        process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES = 'false';
         done();
       });
       after(function (done) {
-        process.env.ENABLE_GITHUB_PR_STATUSES = ctx.originalStatusFlag;
+        process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES = ctx.originalStatusFlag;
         done();
       });
       it('should do nothing if statuses are disabled', function (done) {
@@ -107,12 +107,12 @@ describe('PullRequest', function () {
   describe('#createDeployment', function () {
     var ctx = {};
     before(function (done) {
-      ctx.originalFlag = process.env.ENABLE_GITHUB_PR_STATUSES;
-      process.env.ENABLE_GITHUB_PR_STATUSES = 'true';
+      ctx.originalFlag = process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES;
+      process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES = 'true';
       done();
     });
     after(function (done) {
-      process.env.ENABLE_GITHUB_PR_STATUSES = ctx.originalFlag;
+      process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES = ctx.originalFlag;
       done();
     });
     it('should call github method with correct payload', function (done) {
