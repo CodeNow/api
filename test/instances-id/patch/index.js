@@ -57,6 +57,8 @@ describe('Instance - /instances/:id', function () {
     describe('Orgs', function () {
       beforeEach(function (done) {
         ctx.orgId = 1001;
+        var count = createCount(2, done);
+        primus.expectAction('start', count.next);
         multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
           //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
           if (err) { return done(err); }
@@ -71,7 +73,8 @@ describe('Instance - /instances/:id', function () {
               done(err);
             }
             ctx.otherBuild = build;
-            done();
+            count.next();
+            //done();
           });
         });
       });
@@ -617,14 +620,9 @@ describe('Instance - /instances/:id', function () {
         });
       });
 
-      var updates = [
-        {
-          public: true
-        },
-        {
-          public: false
-        }
-      ];
+      var updates = [{
+        public: true
+      }];
       describe('permissions', function () {
         describe('owner', function () {
           updates.forEach(function (json) {
