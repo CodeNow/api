@@ -84,10 +84,7 @@ describe('Instance - /instances/:id', function () {
           build: ctx.otherBuild.id().toString()
         };
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-        ctx.instance.update(update, (function () {
-          console.log(arguments);
-          done();
-        }));
+        ctx.instance.update(update, expects.error(400, /owner/, done));
       });
     });
 
