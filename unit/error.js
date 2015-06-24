@@ -25,11 +25,11 @@ var ctx = {};
 describe('Error', function () {
   before(function (done) {
     // this keeps it from printing lots of bogus stuff while trying to test
-    sinon.stub(error, 'printError').returns();
+    sinon.stub(error, 'print').returns();
     done();
   });
   after(function (done) {
-    error.printError.restore();
+    error.print.restore();
     done();
   });
 
