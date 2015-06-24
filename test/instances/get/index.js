@@ -38,7 +38,7 @@ describe('GET /instances', function () {
 
   describe('GET', function () {
     beforeEach(function (done) {
-      multi.createAndTailInstance(primus, function (err, instance, build, user) {
+      multi.createAndTailInstance(primus, { name: 'InstanceNumber1' }, function (err, instance, build, user) {
         if (err) { return done(err); }
         ctx.instance = instance;
         ctx.build = build; // builtBuild
@@ -346,16 +346,13 @@ describe('GET /instances', function () {
         require('../../fixtures/mocks/github/user')(ctx.user);
         primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
           if (err) { return done(err); }
-          ctx.instance.update({ name: 'InstanceNumber1' }, function (err) {
-            if (err) { return done(err); }
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            ctx.instance3 = ctx.user.createInstance({
-              name: 'InstanceNumber3',
-              build: ctx.instance.attrs.build._id
-            }, noop);
-            primus.expectAction('start', {}, done);
-          });
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user')(ctx.user);
+          ctx.instance3 = ctx.user.createInstance({
+            name: 'InstanceNumber3',
+            build: ctx.instance.attrs.build._id
+          }, noop);
+          primus.expectAction('start', {}, done);
         });
       });
       it('should list instances by owner.github and name', function (done) {
@@ -519,7 +516,7 @@ describe('GET /instances', function () {
       var orgInfo = require('../../fixtures/mocks/github/user-orgs')();
       ctx.orgId = orgInfo.orgId;
       ctx.orgName = orgInfo.orgName;
-      multi.createInstance(ctx.orgId, ctx.orgName, function (err, instance, build, user) {
+      multi.createAndTailInstance(primus, ctx.orgId, ctx.orgName, function (err, instance, build, user) {
         ctx.user = user;
         ctx.instance = instance;
         done(err);

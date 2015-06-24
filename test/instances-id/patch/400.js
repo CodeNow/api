@@ -61,14 +61,6 @@ describe('PATCH 400 - /instances/:id', function () {
             '1=X',
             'a!=x'
           ]
-        },
-        {
-          name: 'name',
-          type: 'string',
-          invalidValues: [
-            'has!',
-            'has.x2'
-          ]
         }
       ]
     };

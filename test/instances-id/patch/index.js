@@ -57,9 +57,11 @@ describe('Instance - /instances/:id', function () {
     describe('Orgs', function () {
       beforeEach(function (done) {
         ctx.orgId = 1001;
-        multi.createInstance(ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
+        var next = createCount(2, done).next;
+        primus.expectAction('start', next);
+        multi.createAndTailInstance(primus, ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
           //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
-          if (err) { return done(err); }
+          if (err) { return next(err); }
           ctx.instance = instance;
           ctx.build = build;
           ctx.user = user;
@@ -67,16 +69,13 @@ describe('Instance - /instances/:id', function () {
           ctx.context = mdlArray[1];
           ctx.srcArray = srcArray;
           multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build) {
-            if (err) {
-              done(err);
-            }
+            if (err) { return next(err); }
             ctx.otherBuild = build;
-            done();
+            next();
           });
         });
       });
-      it('should not allow a build owned by a user to be patched into an instance ' +
-        'owned by its org', function (done) {
+      it('should not allow a user-owned build to be patched to an org-owned instance', function (done) {
         nock.cleanAll();
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
@@ -85,7 +84,7 @@ describe('Instance - /instances/:id', function () {
           build: ctx.otherBuild.id().toString()
         };
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-        ctx.instance.update(update, expects.error(403, done));
+        ctx.instance.update(update, expects.error(400, /owner/, done));
       });
     });
 
@@ -359,7 +358,6 @@ describe('Instance - /instances/:id', function () {
         describe('Patching an unbuilt build', function () {
           beforeEach(function (done) {
             var data = {
-              name: randStr(5),
               owner: { github: ctx.user.attrs.accounts.github.id }
             };
             ctx.otherBuild = ctx.user.createBuild(data, done);
@@ -474,34 +472,35 @@ describe('Instance - /instances/:id', function () {
           });
         });
         describe('Testing all patching possibilities', function () {
-          var updates = [{
-            name: randStr(5)
-          }, {
-            public: true
-          }, {
-            build: 'newBuild'
-          }, {
-            env: ['ONE=1']
-          },
+          var updates = [
             {
-            public: true,
-            build: 'newBuild'
-          }, {
-            name: randStr(5),
-            build: 'newBuild'
-          }, {
-            name: randStr(5),
+              public: true
+            },
+            {
+              build: 'newBuild'
+            },
+            {
+              env: ['ONE=1']
+            },
+            {
+              public: true,
+              build: 'newBuild'
+            },
+            {
+              build: 'newBuild'
+            },
+            {
               env: ['sdfasdfasdfadsf=asdfadsfasdfasdf']
             },
             {
-              name: randStr(5),
-            public: true
-          }, {
-            name: randStr(5),
-            build: 'newBuild',
+              public: true
+            },
+            {
+              build: 'newBuild',
               public: true,
               env: ['THREE=1asdfsdf', 'TWO=dsfasdfas']
-          }];
+            }
+          ];
           beforeEach(function(done) {
             // We need to deploy the container first before each test.
             multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build) {
@@ -551,37 +550,12 @@ describe('Instance - /instances/:id', function () {
             });
           });
         });
-        describe('Testing lowername', function () {
-          beforeEach(function (done) {
-            // We need to deploy the container first before each test.
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            ctx.otherInstance = ctx.user.createInstance({
-              build: ctx.build.attrs._id,
-              name: 'hello'}, done);
-          });
-          beforeEach(function (done) {
-            require('models/mongo/instance').find({
-              lowerName: 'hello'
-            }, done);
-          });
-          it('should not allow changing the name to one that exists (lowername)', function (done) {
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            ctx.instance.update({ name: 'HELLO' }, expects.errorStatus(409, /exists/, done));
-          });
-        });
         describe('Locking instance', function () {
           beforeEach(function (done) {
             // We need to deploy the container first before each test.
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.otherInstance = ctx.user.createInstance({
-              build: ctx.build.attrs._id,
-              name: 'hello'}, done);
-          });
-          beforeEach(function (done) {
-            require('models/mongo/instance').find({
-              lowerName: 'hello'
+              build: ctx.build.attrs._id
             }, done);
           });
           it('should be able to set locked to true', function (done) {
@@ -641,11 +615,7 @@ describe('Instance - /instances/:id', function () {
       });
 
       var updates = [{
-        name: randStr(5)
-      }, {
         public: true
-      }, {
-        public: false
       }];
       describe('permissions', function () {
         describe('owner', function () {
@@ -699,21 +669,6 @@ describe('Instance - /instances/:id', function () {
         });
       });
 
-      describe('hipache changes', function () {
-        beforeEach(function (done) {
-          var newName = ctx.newName = randStr(5);
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.instance.update({ json: { name: newName, masterPod: true }}, done);
-        });
-        it('should update hipache entries when the name is updated', function (done) {
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.instance.fetch(function (err) {
-            if (err) { return done(err); }
-            expects.updatedHosts(ctx.user, ctx.instance, done);
-          });
-        });
-      });
       describe('not founds', function () {
         beforeEach(function (done) {
           ctx.instance.destroy(done);
