@@ -20,6 +20,7 @@ var primus = require('./fixtures/primus');
 var pluck = require('101/pluck');
 var find = require('101/find');
 var hasProps = require('101/has-properties');
+var createCount = require('callback-count');
 
 describe('BDD - Instance Dependencies', function () {
   var ctx = {};
@@ -51,7 +52,7 @@ describe('BDD - Instance Dependencies', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user) {
+    multi.createAndTailInstance(primus, { name: 'web-instance' }, function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.webInstance = instance;
       ctx.user = user;
@@ -60,14 +61,15 @@ describe('BDD - Instance Dependencies', function () {
       require('./fixtures/mocks/github/user')(ctx.user);
       require('./fixtures/mocks/github/user')(ctx.user);
       require('./fixtures/mocks/github/user')(ctx.user);
+      var count = createCount(2, done);
+      primus.expectAction('start', {}, function () {
+        count.next();
+      });
       ctx.apiInstance = ctx.user.createInstance({
         name: 'api-instance',
         build: ctx.build.id(),
         masterPod: true
-      }, function (err) {
-        if (err) { return done(err); }
-        ctx.webInstance.update({ name: 'web-instance' }, done);
-      });
+      }, count.next);
     });
   });
 
@@ -159,49 +161,10 @@ describe('BDD - Instance Dependencies', function () {
       ctx.webInstance.update({ env: envs }, done);
     });
 
-    describe('changing the name of the depending instance', function () {
-      beforeEach(function (done) {
-        var update = {
-          name: 'kayne-web'
-        };
-        ctx.webInstance.update(update, done);
-      });
-
-      it('should keep the dependencies', function (done) {
-        ctx.webInstance.fetchDependencies(function (err, deps) {
-          expect(err).to.be.null();
-          expect(deps).to.be.an.array();
-          expect(deps).to.have.length(1);
-          expect(deps[0].id).to.equal(ctx.apiInstance.attrs.id.toString());
-          done();
-        });
-      });
-    });
-
     describe('deleting the top level instance', function () {
       it('should delete succesfully', function (done) {
         // it deletes all nodes - a sanity test to make sure that that works
         ctx.webInstance.destroy(done);
-      });
-    });
-
-    describe('changing the name of the dependent instance', function () {
-      beforeEach(function (done) {
-        var update = {
-          name: 'kayne-api'
-        };
-        ctx.apiInstance.update(update, done);
-      });
-
-      it('should keep the dependencies', function (done) {
-        ctx.webInstance.fetchDependencies(function (err, deps) {
-          expect(err).to.be.null();
-          expect(deps).to.be.an.array();
-          expect(deps).to.have.length(1);
-          expect(deps[0].id).to.equal(ctx.apiInstance.attrs.id.toString());
-          expect(deps[0].lowerName).to.equal('kayne-api');
-          done();
-        });
       });
     });
 
@@ -219,39 +182,6 @@ describe('BDD - Instance Dependencies', function () {
         });
       });
     });
-
-    // describe('changing the name of the dependent instance', function () {
-    //   beforeEach(function (done) {
-    //     var update = {
-    //       name: 'a-new-and-awesome-name'
-    //     };
-    //     ctx.apiInstance.update(update, expects.updateSuccess(update, done));
-    //   });
-
-    //   it('should keep the same dependencies, and have updated props on the dep', function (done) {
-    //     ctx.webInstance.fetchDependencies(function (err, deps) {
-    //       expect(err).to.be.null();
-    //       expect(deps).to.be.an.array();
-    //       expect(deps).to.have.length(1);
-    //       expect(deps[0]).to.deep.contain({
-    //         id: ctx.apiInstance.attrs._id.toString(),
-    //         shortHash: ctx.apiInstance.id().toString(),
-    //         hostname: [
-    //           'api-instance-staging-',
-    //           ctx.user.attrs.accounts.github.username.toLowerCase(),
-    //           '.' + process.env.USER_CONTENT_DOMAIN
-    //         ].join(''),
-    //         lowerName: 'a-new-and-awesome-name',
-    //         name: 'a-new-and-awesome-name',
-    //         owner: { github: ctx.apiInstance.attrs.owner.github },
-    //       });
-    //       expect(deps[0].contextVersion).to.deep.contain({
-    //         context: ctx.apiInstance.attrs.contextVersion.context
-    //       });
-    //       done();
-    //     });
-    //   });
-    // });
 
     describe('from a -> b to a -> b -> a (circular) relations', function () {
       beforeEach(function (done) {
