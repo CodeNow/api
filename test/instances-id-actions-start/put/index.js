@@ -23,7 +23,6 @@ var multi = require('../../fixtures/multi-factory');
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
-var tailBuildStream = require('../../fixtures/tail-build-stream');
 var primus = require('../../fixtures/primus');
 
 var uuid = require('uuid');
@@ -134,13 +133,7 @@ describe('PUT /instances/:id/actions/start', function () {
           ctx.build.build({ message: uuid() }, expects.success(201, done));
         });
       });
-      beforeEach(function (done) {
-        // make sure build finishes before moving on to the next test
-        ctx.afterAssert = function (done) {
-          tailBuildStream(ctx.cv.id(), done);
-        };
-        done();
-      });
+
       beforeEach(function (done) {
         initExpected(function () {
           ctx.expectNoContainerErr = true;
@@ -317,7 +310,6 @@ describe('PUT /instances/:id/actions/start', function () {
             expect(instance.json().container.inspect.State.Starting).to.be.undefined();
             expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.next);
             expects.updatedHosts(ctx.user, instance, count.next);
-            if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }
             count.next();
           }));
         });

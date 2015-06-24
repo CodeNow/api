@@ -135,9 +135,6 @@ describe('PUT /instances/:id/actions/restart', function () {
       beforeEach(function (done) {
         primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
       });
-      // beforeEach(function (done) {
-      //   ctx.build.build({ message: uuid() }, expects.success(201, done));
-      // });
       beforeEach(function (done) {
         initExpected(function () {
           ctx.expectNoContainerErr = true;
@@ -296,7 +293,6 @@ describe('PUT /instances/:id/actions/restart', function () {
             }));
           });
         });
-
       }
       else { // success
         var count = createCount(3, stopRestartAssert);
