@@ -17,6 +17,7 @@ var it = lab.it;
 
 var Boom = require('dat-middleware').Boom;
 var SocketClient = require('socket/socket-client');
+var SocketClientMw = require('middlewares/socket').client;
 var ContextVersion = require('models/mongo/context-version');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');

@@ -145,7 +145,6 @@ describe('201 POST /instances', function () {
         //ctx.expected.name = name;
         //ctx.expected.masterPod = true;
         assertCreate(body, function () {
-          console.log('body!', body);
           //expect(ctx.instance.attrs.public).to.equal(false);
           //expect(ctx.instance.attrs.masterPod).to.equal(true);
           primus.onceVersionComplete(ctx.cv.id(), function () {
