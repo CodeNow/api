@@ -242,6 +242,9 @@ describe('PUT /instances/:id/actions/start', function () {
   function createInstanceAndRunTests (ctx) {
     describe('and env.', function() {
       beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+      beforeEach(function (done) {
         var body = {
           env: ['ENV=OLD'],
           build: ctx.build.id(),
@@ -250,29 +253,26 @@ describe('PUT /instances/:id/actions/start', function () {
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
         if (ctx.expectNoContainerErr) {
-          primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
+          done();
         } else {
-          primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, function (err) {
-            if (err) { return done(err); }
-            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
-          });
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
         }
       });
       startInstanceTests(ctx);
     });
     describe('and no env.', function() {
       beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+      beforeEach(function (done) {
         var body = {
           build: ctx.build.id(),
           masterPod: true
         };
         if (ctx.expectNoContainerErr) {
-          primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
+          done();
         } else {
-          primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, function (err) {
-            if (err) { return done(err); }
-            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
-          });
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
         }
       });
       startInstanceTests(ctx);
