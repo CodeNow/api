@@ -277,7 +277,7 @@ describe('PUT /instances/:id/actions/stop', function () {
         Docker.prototype.startContainer = ctx.originalStart;
       }
       if (ctx.expectNoContainerErr) {
-        ctx.build.build({ message: uuid() }, function (err) {
+        ctx.build.build({ message: uuid() }, function () {
           var body = {
             build: ctx.build.id()
           };
