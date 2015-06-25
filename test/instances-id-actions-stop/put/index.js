@@ -229,10 +229,7 @@ describe('PUT /instances/:id/actions/stop', function () {
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
         if (ctx.expectNoContainerErr) {
-          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
-            if (err) { return done(err); }
-            done();
-          });
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
         }
         else {
           primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
@@ -253,10 +250,7 @@ describe('PUT /instances/:id/actions/stop', function () {
           build: ctx.build.id()
         };
         if (ctx.expectNoContainerErr) {
-          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
-            if (err) { return done(err); }
-            done();
-          });
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
         }
         else {
           primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
