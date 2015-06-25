@@ -9,13 +9,12 @@ ENV RUBY_VERSION <ruby-version>
 
 ## Install Ruby via rvm
 ## Install Ruby
-ENV RUBY_VERSION 1.8.6-p420 
 ENV DEBIAN_FRONTEND noninteractive 
 ENV PATH /usr/local/rvm/scripts/rvm:$PATH
 ## Install Ruby via rvm
 RUN apt-get update \
     && apt-get upgrade -y\
-    && apt-get install -y wget libtokyocabinet-dev libxml2-dev libbz2-dev libpq-dev libxslt1-dev git curl libmysqlclient-dev nodejs --no-install-recommends mysql-client postgresql-client sqlite3 --no-install-recommends 
+    && apt-get install -y wget libtokyocabinet-dev libxml2-dev libbz2-dev libpq-dev libxslt1-dev git curl libmysqlclient-dev npm nodejs --no-install-recommends mysql-client postgresql-client sqlite3 --no-install-recommends 
 
 RUN apt-get install -y ca-certificates
 RUN /bin/bash -l -c "gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3  && curl -sL --insecure https://get.rvm.io | bash -s stable --ruby=$RUBY_VERSION"
