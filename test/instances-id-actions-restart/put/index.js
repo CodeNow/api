@@ -133,9 +133,6 @@ describe('PUT /instances/:id/actions/restart', function () {
         });
       });
       beforeEach(function (done) {
-        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
-      });
-      beforeEach(function (done) {
         initExpected(function () {
           ctx.expectNoContainerErr = true;
           done();
@@ -234,14 +231,20 @@ describe('PUT /instances/:id/actions/restart', function () {
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
         if (ctx.expectNoContainerErr) {
-          done();
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            done();
+          });
         }
         else {
-          var count = createCount(2, function () {
-            ctx.instance.fetch(done);
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            var count = createCount(2, function () {
+              ctx.instance.fetch(done);
+            });
+            primus.expectAction('start', {}, count.next);
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
           });
-          primus.expectAction('start', {}, count.next);
-          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
         }
       });
       restartInstanceTests(ctx);
@@ -253,14 +256,20 @@ describe('PUT /instances/:id/actions/restart', function () {
           masterPod: true
         };
         if (ctx.expectNoContainerErr) {
-          done();
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            done();
+          });
         }
         else {
-          var count = createCount(2, function () {
-            ctx.instance.fetch(done);
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            var count = createCount(2, function () {
+              ctx.instance.fetch(done);
+            });
+            primus.expectAction('start', {}, count.next);
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
           });
-          primus.expectAction('start', {}, count.next);
-          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
         }
       });
       restartInstanceTests(ctx);

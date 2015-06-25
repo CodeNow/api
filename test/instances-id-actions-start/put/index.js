@@ -24,6 +24,7 @@ var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
 var primus = require('../../fixtures/primus');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
@@ -130,10 +131,9 @@ describe('PUT /instances/:id/actions/start', function () {
           ctx.build = build;
           ctx.user = user;
           ctx.cv = contextVersion;
-          ctx.build.build({ message: uuid() }, expects.success(201, done));
+          done();
         });
       });
-
       beforeEach(function (done) {
         initExpected(function () {
           ctx.expectNoContainerErr = true;
@@ -249,7 +249,14 @@ describe('PUT /instances/:id/actions/start', function () {
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
+        } else {
+          primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+          });
+        }
       });
       startInstanceTests(ctx);
     });
@@ -259,7 +266,14 @@ describe('PUT /instances/:id/actions/start', function () {
           build: ctx.build.id(),
           masterPod: true
         };
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, done);
+        } else {
+          primus.joinOrgRoom.bind(ctx)(ctx.user.json().accounts.github.id, function (err) {
+            if (err) { return done(err); }
+            ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+          });
+        }
       });
       startInstanceTests(ctx);
     });
@@ -276,7 +290,22 @@ describe('PUT /instances/:id/actions/start', function () {
       //  ctx.expected['containers[0].inspect.State.Running'] = true;
       }
       if (ctx.expectNoContainerErr) {
-        ctx.instance.start(expects.error(400, /not have a container/, done));
+        ctx.build.build({ message: uuid() }, function () {
+          var body = {
+            env: ctx.expected.env,
+            build: ctx.build.id(),
+            masterPod: true
+          };
+          ctx.instance = ctx.user.createInstance(body, function (err) {
+            if (err) { return done(err); }
+            ctx.instance.start(expects.error(400, /not have a container/, function () {
+              primus.onceVersionComplete(ctx.cv.id(), function () {
+                done();
+              });
+              dockerMockEvents.emitBuildComplete(ctx.cv);
+            }));
+          });
+        });
       }
       else { // success
 
