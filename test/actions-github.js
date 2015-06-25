@@ -184,17 +184,17 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it('should set build status to error if error happened build create',
+      it('should call deleteSocketClient if error happened build create',
         function (done) {
           sinon.stub(Runnable.prototype, 'createBuild')
             .yields(Boom.notFound('Build create failed'));
-          sinon.stub(PullRequest.prototype, 'buildErrored', function () {
-            var stub = PullRequest.prototype.buildErrored;
+          sinon.stub(SocketClientMw, 'deleteSocketClient', function (orgId) {
+            var stub = SocketClientMw.deleteSocketClient;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.createBuild.restore();
             done();
+            return SocketClientMw.deleteSocketClient(orgId);
           });
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var user = ctx.user.attrs.accounts.github;
@@ -214,17 +214,17 @@ describe('Github - /actions/github', function () {
           });
       });
 
-      it('should set build status to error if error happened during build build',
+      it('should call deleteSocketClient if error happened during build build',
         function (done) {
           sinon.stub(Runnable.prototype, 'buildBuild')
             .yields(Boom.notFound('Build build failed'));
-          sinon.stub(PullRequest.prototype, 'buildErrored', function () {
-            var stub = PullRequest.prototype.buildErrored;
+          sinon.stub(SocketClientMw, 'deleteSocketClient', function (orgId) {
+            var stub = SocketClientMw.deleteSocketClient;
             expect(stub.calledOnce).to.equal(true);
-            expect(stub.calledWith(sinon.match.any, sinon.match.object)).to.equal(true);
             stub.restore();
             Runnable.prototype.buildBuild.restore();
             done();
+            return SocketClientMw.deleteSocketClient(orgId);
           });
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var user = ctx.user.attrs.accounts.github;
@@ -240,50 +240,6 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(instancesIds.length).to.equal(0);
-          });
-      });
-
-      it('should set deployment status to error if error happened during instance update',
-        function (done) {
-          var baseDeploymentId = 1234567;
-          sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            baseDeploymentId++;
-            var newDeploymentId = baseDeploymentId;
-            cb(null, { id: newDeploymentId });
-          });
-          var count = cbCount(2, function () {
-            // restore what we stubbed
-            expect(PullRequest.prototype.createAndStartDeployment.calledOnce).to.equal(true);
-            PullRequest.prototype.createAndStartDeployment.restore();
-            var errorStub = PullRequest.prototype.deploymentErrored;
-            expect(errorStub.calledOnce).to.equal(true);
-            expect(errorStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.object)).to.equal(true);
-            errorStub.restore();
-            Runnable.prototype.updateInstance.restore();
-            done();
-          });
-          sinon.stub(Runnable.prototype, 'updateInstance')
-            .yields(Boom.notFound('Instance update failed'));
-
-          sinon.stub(PullRequest.prototype, 'deploymentErrored', count.next);
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var data = {
-            branch: 'master',
-            repo: acv.repo
-          };
-          var options = hooks(data).push;
-          var username = acv.repo.split('/')[0];
-          require('./fixtures/mocks/github/users-username')(101, username);
-          // wait for create worker background work to finish
-          primus.expectActionCount('start', 1, count.next);
-          request.post(options, function (err, res, cvsIds) {
-            if (err) { return done(err); }
-            finishAllIncompleteVersions();
-            expect(res.statusCode).to.equal(200);
-            expect(cvsIds).to.exist();
-            expect(cvsIds).to.be.an.array();
-            expect(cvsIds).to.have.length(1);
           });
       });
     });
@@ -344,15 +300,6 @@ describe('Github - /actions/github', function () {
         });
 
         it('should fork instance from master', function (done) {
-          var baseDeploymentId = 1234567;
-          sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            expect(this.github.config.token)
-              .to.equal(ctx.user.attrs.accounts.github.access_token);
-            baseDeploymentId++;
-            var newDeploymentId = baseDeploymentId;
-            cb(null, {id: newDeploymentId});
-          });
           // emulate instance deploy event
           sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
             cb(null, instance);
@@ -362,11 +309,8 @@ describe('Github - /actions/github', function () {
           };
           var count = cbCount(4, function () {
             // restore what we stubbed
-            expect(PullRequest.prototype.createAndStartDeployment.calledOnce).to.equal(true);
-            PullRequest.prototype.createAndStartDeployment.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledOnce).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
             successStub.restore();
             var slackStub = Slack.prototype.notifyOnAutoFork;
             expect(slackStub.calledOnce).to.equal(true);
@@ -532,15 +476,6 @@ describe('Github - /actions/github', function () {
       it('should redeploy two instances with new build', function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
           if (err) { return done(err); }
-          var baseDeploymentId = 1234567;
-          sinon.stub(PullRequest.prototype, 'createAndStartDeployment', function () {
-            var cb = Array.prototype.slice.apply(arguments).pop();
-            baseDeploymentId++;
-            var newDeploymentId = baseDeploymentId;
-            expect(this.github.config.token)
-              .to.equal(ctx.user.attrs.accounts.github.access_token);
-            cb(null, {id: newDeploymentId});
-          });
           var count = cbCount(4, function () {
             var expected = {
               'contextVersion.build.started': exists,
@@ -559,12 +494,8 @@ describe('Github - /actions/github', function () {
                 options.json.head_commit.id
             };
             // restore what we stubbed
-            expect(PullRequest.prototype.createAndStartDeployment.calledTwice).to.equal(true);
-            PullRequest.prototype.createAndStartDeployment.restore();
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledTwice).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234568), sinon.match.any)).to.equal(true);
-            expect(successStub.calledWith(sinon.match.any, sinon.match(1234569), sinon.match.any)).to.equal(true);
             successStub.restore();
             var slackStub = Slack.prototype.notifyOnAutoDeploy;
             expect(slackStub.calledOnce).to.equal(true);
