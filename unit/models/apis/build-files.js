@@ -49,7 +49,7 @@ describe('build-files', function() {
 
     beforeEach(function (done) {
       sinon.stub(model.s3, 'getObject').returns({
-        createReadStream: function () { return readStream }
+        createReadStream: function () { return readStream; }
       });
       sinon.stub(model, 'putFileStream').yieldsAsync();
       done();
@@ -59,7 +59,7 @@ describe('build-files', function() {
       model.s3.getObject.restore();
       model.putFileStream.restore();
       done();
-    })
+    });
 
     it('should use s3 object streams to perform the copy', function(done) {
       model.copyObject('sourceKey', 'version', 'destKey', function (err) {
