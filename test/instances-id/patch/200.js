@@ -145,10 +145,10 @@ describe('200 PATCH /instances', function () {
         }, function (err, body, statusCode) {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           // wait until build is ready to finish the test
-          dockerMockEvents.emitBuildComplete(ctx.cv);
           primus.onceVersionComplete(ctx.cv.id(), function () {
             done();
           });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
 
@@ -163,12 +163,11 @@ describe('200 PATCH /instances', function () {
           if (err) { return done(err); }
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           // wait until build is ready to finish the test
-          dockerMockEvents.emitBuildComplete(ctx.cv);
           primus.onceVersionComplete(ctx.cv.id(), function () {
             done();
           });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
-
       });
 
       it('should update an instance with a container and context version', function (done) {
@@ -189,10 +188,10 @@ describe('200 PATCH /instances', function () {
         ctx.instance.update(opts, function (err, body, statusCode) {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv, ctx.container);
           // wait until build is ready to finish the test
-          dockerMockEvents.emitBuildComplete(ctx.cv);
           primus.onceVersionComplete(ctx.cv.id(), function () {
             done();
           });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
     });

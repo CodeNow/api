@@ -201,10 +201,10 @@ function buildTheBuildTests (ctx) {
         it('should start building the build', function (done) {
           ctx.build.build(ctx.body, expects.success(201, ctx.expectStarted, function (err) {
             if (err) { return done(err); }
-            dockerMockEvents.emitBuildComplete(ctx.cv);
             primus.onceVersionComplete(ctx.cv.id(), function () {
               done();
             });
+            dockerMockEvents.emitBuildComplete(ctx.cv);
           }));
         });
       });
