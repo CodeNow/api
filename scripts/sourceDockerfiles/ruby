@@ -16,6 +16,7 @@ RUN apt-get update \
     && apt-get upgrade -y\
     && apt-get install -y wget libtokyocabinet-dev libxml2-dev libbz2-dev libpq-dev libxslt1-dev git curl libmysqlclient-dev npm nodejs --no-install-recommends mysql-client postgresql-client sqlite3 --no-install-recommends 
 RUN ln -s /usr/bin/nodejs /usr/bin/node
+RUN npm install -g grunt grunt-cli
 RUN apt-get install -y ca-certificates
 RUN /bin/bash -l -c "gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3  && curl -sL --insecure https://get.rvm.io | bash -s stable --ruby=$RUBY_VERSION"
 
