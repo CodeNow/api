@@ -16,7 +16,8 @@ var expect = Code.expect;
 var it = lab.it;
 
 var Boom = require('dat-middleware').Boom;
-var SocketClientMw = require('middlewares/socket/client');
+var SocketClient = require('socket/socket-client');
+var SocketClientMw = require('middlewares/socket').client;
 var ContextVersion = require('models/mongo/context-version');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
@@ -301,7 +302,7 @@ describe('Github - /actions/github', function () {
 
         it('should fork instance from master', function (done) {
           // emulate instance deploy event
-          sinon.stub(SocketClientMw, 'onInstanceDeployed', function (instance, buildId, socketClient, cb) {
+          sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
             cb(null, instance);
           });
           var countOnCallback = function () {
@@ -318,7 +319,7 @@ describe('Github - /actions/github', function () {
             var forkedInstance = slackStub.args[0][1];
             expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name);
             slackStub.restore();
-            SocketClientMw.onInstanceDeployed.restore();
+            SocketClient.prototype.onInstanceDeployed.restore();
             done();
           });
           sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
@@ -372,7 +373,7 @@ describe('Github - /actions/github', function () {
               count.next();
             };
             // emulate instance deploy event
-            sinon.stub(SocketClientMw, 'onInstanceDeployed', function (instance, buildId, socketClient, cb) {
+            sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
               cb(null, instance);
             });
             var count = cbCount(3, function () {
@@ -380,7 +381,7 @@ describe('Github - /actions/github', function () {
               expect(slackStub.calledOnce).to.equal(true);
               expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
               slackStub.restore();
-              SocketClientMw.onInstanceDeployed.restore();
+              SocketClient.prototype.onInstanceDeployed.restore();
 
 
               var deleteOptions = hooks(data).push;
