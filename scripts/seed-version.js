@@ -84,6 +84,9 @@ var sources = [{
     '# Full list of versions available here:'+
     ' https://registry.hub.docker.com/_/rabbitmq/tags/manage/\n'+
     'FROM rabbitmq:3.4.2\n'
+}, {
+  name: 'RethinkDB',
+  body: fs.readFileSync('./scripts/sourceDockerfiles/rethinkdb').toString()
 }];
 var createdBy = { github: process.env.HELLO_RUNNABLE_GITHUB_ID };
 
