@@ -3,7 +3,10 @@
  * @module app
  */
 'use strict';
-
+require('nodetime').profile({
+  accountKey: 'ce5e71db1f93bd15b7aff013ad4b0287da1f0fcf',
+  appName: 'api' + process.env.NODE_ENV
+});
 require('loadenv')();
 var Boom = require('dat-middleware').Boom;
 var createCount = require('callback-count');
