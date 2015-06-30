@@ -3,6 +3,7 @@
  * @module app
  */
 'use strict';
+require('loadenv')();
 if (process.env.NODETIME_KEY) {
   require('nodetime').profile({
     accountKey: process.env.NODETIME_KEY,
@@ -20,7 +21,6 @@ if (process.env.APPDYNAMICS_KEY) {
       nodeName: 'process'
   });
 }
-require('loadenv')();
 var Boom = require('dat-middleware').Boom;
 var createCount = require('callback-count');
 var debug = require('debug')('runnable-api');
