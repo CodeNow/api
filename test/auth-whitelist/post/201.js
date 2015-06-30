@@ -36,10 +36,7 @@ describe('POST /auth/whitelist', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
   it('should add a name to the whitelist', function (done) {
-    require('../../fixtures/mocks/github/user-memberships-org').isMember(
-      ctx.user.attrs.accounts.github.id,
-      ctx.user.attrs.accounts.github.username,
-      'Runnable');
+    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable');
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
@@ -60,4 +57,3 @@ describe('POST /auth/whitelist', function () {
     });
   });
 });
-
