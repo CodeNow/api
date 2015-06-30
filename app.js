@@ -4,17 +4,17 @@
  */
 'use strict';
 require('nodetime').profile({
-  accountKey: 'ce5e71db1f93bd15b7aff013ad4b0287da1f0fcf',
-  appName: 'api' + process.env.NODE_ENV
+  accountKey: process.env.NODETIME_KEY,
+  appName: 'api-' + process.env.NODE_ENV
 });
-require("appdynamics").profile({
-    controllerHostName: 'paid138.saas.appdynamics.com',
-    controllerPort: 80, // If SSL, be sure to enable the next line     controllerSslEnabled: true // Optional - use if connecting to controller via SSL
-    accountName: 'runnable', // Required for a controller running in multi-tenant mode
-    accountAccessKey: '9y6mczvuowbx', // Required for a controller running in multi-tenant mode
-    applicationName: 'api',
-    tierName: 'staging',
-    nodeName: 'process' // The controller will automatically append the node name with a unique number
+require('appdynamics').profile({
+    controllerHostName: process.end.APPDYNAMICS_URL,
+    controllerPort: 80,
+    accountName: 'runnable',
+    accountAccessKey: process.end.APPDYNAMICS_KEY,
+    applicationName: 'api-' + process.env.NODE_ENV,
+    tierName: process.env.NODE_ENV,
+    nodeName: 'process'
 });
 require('loadenv')();
 var Boom = require('dat-middleware').Boom;
