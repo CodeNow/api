@@ -133,7 +133,7 @@
     "docs": "jsdoc -r -d docs lib/ && if [ $CIRCLE_ARTIFACTS ]; then cp -r docs $CIRCLE_ARTIFACTS; fi",
     "fixme": "grep -nR FIXME lib test",
     "todo": "grep -nR TODO lib test",
-    "start": "NODE_PATH=./lib node app.js | bunyan",
+    "start": "NODE_PATH=./lib node app.js",
     "start-debug": "NODE_PATH=./lib node --debug app.js",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs app.js",
     "coverage": "NODE_PATH=./lib NODE_ENV=test lab -vl -m 60000 -e test -c -r html test/*.js > coverage.html && if [ $CIRCLE_ARTIFACTS ]; then cp coverage.html $CIRCLE_ARTIFACTS; fi",
