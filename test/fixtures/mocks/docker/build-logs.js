@@ -14,7 +14,7 @@ buffer[7] = 0x53;
 
 // This mock is currently used with docker container die event
 // for an image builder container.
-// The docker host information is used from the instance doccument mongo (mavis).
+// The docker host information is used from the instance document mongo (mavis).
 // Mavis get's it's docker host info from docker listener.
 // Docker listener uses emits data with docker's external host
 

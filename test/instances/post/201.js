@@ -14,7 +14,7 @@ var dock = require('../../fixtures/dock');
 var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
-
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var lab = exports.lab = Lab.script();
 
 var after = lab.after;
@@ -77,10 +77,11 @@ describe('201 POST /instances', function () {
   before(require('../../fixtures/mocks/api-client').setup);
   beforeEach(primus.connect);
   // after
-  afterEach(primus.disconnect);
+
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
+  afterEach(primus.disconnect);
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   // afterEach(require('../../fixtures/clean-ctx')(ctx));
   // afterEach(require('../../fixtures/clean-nock'));
@@ -127,7 +128,10 @@ describe('201 POST /instances', function () {
         assertCreate(body, function () {
           expect(ctx.instance.attrs.public).to.equal(false);
           expect(ctx.instance.attrs.masterPod).to.equal(false);
-          done();
+          primus.onceVersionComplete(ctx.cv.id(), function () {
+            done();
+          });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
 
@@ -141,10 +145,12 @@ describe('201 POST /instances', function () {
         //ctx.expected.name = name;
         //ctx.expected.masterPod = true;
         assertCreate(body, function () {
-          console.log('body!', body);
           //expect(ctx.instance.attrs.public).to.equal(false);
           //expect(ctx.instance.attrs.masterPod).to.equal(true);
-          done();
+          primus.onceVersionComplete(ctx.cv.id(), function () {
+            done();
+          });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
 
@@ -152,7 +158,10 @@ describe('201 POST /instances', function () {
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
-          done();
+          primus.onceVersionComplete(ctx.cv.id(), function () {
+            done();
+          });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
 
@@ -162,7 +171,10 @@ describe('201 POST /instances', function () {
         ctx.user.createInstance({ build: ctx.build.id(), name: name, env: env }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
-          done();
+          primus.onceVersionComplete(ctx.cv.id(), function () {
+            done();
+          });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
     });

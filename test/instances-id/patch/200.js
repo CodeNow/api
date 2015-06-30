@@ -8,12 +8,12 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var Docker = require('dockerode');
-//var sinon = require('sinon');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
 
 var after = lab.after;
 var afterEach = lab.afterEach;
@@ -144,7 +144,11 @@ describe('200 PATCH /instances', function () {
           build: ctx.build.id(),
         }, function (err, body, statusCode) {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
-          done();
+          // wait until build is ready to finish the test
+          primus.onceVersionComplete(ctx.cv.id(), function () {
+            done();
+          });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
 
@@ -158,7 +162,11 @@ describe('200 PATCH /instances', function () {
         }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
-          done();
+          // wait until build is ready to finish the test
+          primus.onceVersionComplete(ctx.cv.id(), function () {
+            done();
+          });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
 
@@ -179,7 +187,11 @@ describe('200 PATCH /instances', function () {
         };
         ctx.instance.update(opts, function (err, body, statusCode) {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv, ctx.container);
-          done();
+          // wait until build is ready to finish the test
+          primus.onceVersionComplete(ctx.cv.id(), function () {
+            done();
+          });
+          dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
     });
