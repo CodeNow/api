@@ -3,19 +3,23 @@
  * @module app
  */
 'use strict';
-require('nodetime').profile({
-  accountKey: process.env.NODETIME_KEY,
-  appName: 'api-' + process.env.NODE_ENV
-});
-require('appdynamics').profile({
-    controllerHostName: process.end.APPDYNAMICS_URL,
-    controllerPort: 80,
-    accountName: 'runnable',
-    accountAccessKey: process.end.APPDYNAMICS_KEY,
-    applicationName: 'api-' + process.env.NODE_ENV,
-    tierName: process.env.NODE_ENV,
-    nodeName: 'process'
-});
+if (process.env.NODETIME_KEY) {
+  require('nodetime').profile({
+    accountKey: process.env.NODETIME_KEY,
+    appName: 'api-' + process.env.NODE_ENV
+  });
+}
+if (process.end.APPDYNAMICS_KEY) {
+  require('appdynamics').profile({
+      controllerHostName: process.end.APPDYNAMICS_URL,
+      controllerPort: 80,
+      accountName: 'runnable',
+      accountAccessKey: process.end.APPDYNAMICS_KEY,
+      applicationName: 'api-' + process.env.NODE_ENV,
+      tierName: process.env.NODE_ENV,
+      nodeName: 'process'
+  });
+}
 require('loadenv')();
 var Boom = require('dat-middleware').Boom;
 var createCount = require('callback-count');
