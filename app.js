@@ -9,12 +9,12 @@ if (process.env.NODETIME_KEY) {
     appName: 'api-' + process.env.NODE_ENV
   });
 }
-if (process.end.APPDYNAMICS_KEY) {
+if (process.env.APPDYNAMICS_KEY) {
   require('appdynamics').profile({
-      controllerHostName: process.end.APPDYNAMICS_URL,
+      controllerHostName: process.env.APPDYNAMICS_URL,
       controllerPort: 80,
       accountName: 'runnable',
-      accountAccessKey: process.end.APPDYNAMICS_KEY,
+      accountAccessKey: process.env.APPDYNAMICS_KEY,
       applicationName: 'api-' + process.env.NODE_ENV,
       tierName: process.env.NODE_ENV,
       nodeName: 'process'
