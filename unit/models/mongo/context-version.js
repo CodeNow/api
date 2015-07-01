@@ -27,6 +27,7 @@ describe('Context Version', function () {
       ctx.c = new Context();
       ctx.cv = new ContextVersion({
         createdBy: { github: 1000 },
+        owner: {github: 2874589},
         context: ctx.c._id
       });
       ctx.cv.save(done);
