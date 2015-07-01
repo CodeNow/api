@@ -15,7 +15,7 @@
     "defaultVersion": "4.2.0",
     "dependencies": ["ruby"],
     "ports": "3000, 80",
-    "startCommand": ["rails server"],
+    "startCommand": ["rails server -b 0.0.0.0"],
     "preEnvMarker": "<%= ENV[\"",
     "postEnvMarker": "]%>\""
   },
