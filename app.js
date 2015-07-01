@@ -3,6 +3,7 @@
  * @module app
  */
 'use strict';
+require("newrelic");
 require('loadenv')();
 // order matters here, app dynamics needs to be before nodetime
 if (process.env.APPDYNAMICS_KEY) {
