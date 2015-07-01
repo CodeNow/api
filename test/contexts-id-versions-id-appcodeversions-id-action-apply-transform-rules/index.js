@@ -104,14 +104,14 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
     });
   });
 
-  it('should save the script to the build files', function(done) {
+  it('should not save the script to the build files', function(done) {
     ctx.appCodeVersion.runTransformRules(function (err) {
       if (err) { return done(err); }
-      expect(ctx.upsertFs.calledOnce).to.be.true();
+      expect(ctx.upsertFs.calledOnce).to.be.false();
       expect(ctx.upsertFs.calledWith(
         '/translation_rules.sh',
         ctx.optimusResponse.script
-      )).to.be.true();
+      )).to.be.false();
       done();
     });
   });
