@@ -4,18 +4,6 @@
  */
 'use strict';
 require('loadenv')();
-// order matters here, app dynamics needs to be before nodetime
-if (process.env.APPDYNAMICS_KEY) {
-  require('appdynamics').profile({
-      controllerHostName: process.env.APPDYNAMICS_URL,
-      controllerPort: 80,
-      accountName: 'runnable',
-      accountAccessKey: process.env.APPDYNAMICS_KEY,
-      applicationName: 'api-' + process.env.NODE_ENV,
-      tierName: process.env.NODE_ENV,
-      nodeName: 'process'
-  });
-}
 if (process.env.NODETIME_KEY) {
   require('nodetime').profile({
     accountKey: process.env.NODETIME_KEY,
