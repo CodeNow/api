@@ -39,7 +39,6 @@ describe('Context Version', function () {
         context: c._id
       });
       cv.save(next);
-
     });
   });
 
