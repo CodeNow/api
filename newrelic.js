@@ -1,5 +1,3 @@
-var loadenv = require('loadenv');
-loadenv();
 /**
  * New Relic agent configuration.
  *
@@ -10,17 +8,17 @@ exports.config = {
   /**
    * Array of application names.
    */
-  app_name : [process.env.NEWRELIC_NAME],
+  app_name: ['api-staging'],
   /**
    * Your New Relic license key.
    */
-  license_key : process.env.NEWRELIC_KEY,
-  logging : {
+  license_key: '338516e0826451c297d44dc60aeaf0a0ca4bfead',
+  logging: {
     /**
      * Level at which to log. 'trace' is most useful to New Relic when diagnosing
      * issues with the agent, 'info' and higher will impose the least overhead on
      * production applications.
      */
-    level : process.env.NEWRELIC_LEVEL
+    level: 'info'
   }
-};
+}
