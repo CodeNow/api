@@ -14,13 +14,34 @@ var Github = require('models/apis/github');
 
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
-
+var cbCount = require('callback-count');
+var error = require('error');
 var sinon = require('sinon');
 
 var ctx = {};
 describe('Context Version', function () {
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
+
+  describe('save context version hook', function () {
+    it('should call post save hook and report error when owner is undefiend', function (done) {
+      var next = cbCount(2, done).next;
+      sinon.stub(error, 'log', function (err) {
+        expect(err.output.statusCode).to.equal(500);
+        expect(err.message).to.equal('context version was saved without owner');
+        expect(err.data.cv._id).to.exist();
+        error.log.restore();
+        next();
+      });
+      var c = new Context();
+      var cv = new ContextVersion({
+        createdBy: { github: 1000 },
+        context: c._id
+      });
+      cv.save(next);
+
+    });
+  });
 
   describe('addGithubRepoToVersion', function () {
     beforeEach(function (done) {
