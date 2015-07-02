@@ -5,7 +5,7 @@ EXPOSE <user-specified-ports>
 
 # Add repository files to container
 <before-main-repo>
-#default run:go build -o main
+#default run: go build -o main
 <after-main-repo>
 
 # Command to start the app
