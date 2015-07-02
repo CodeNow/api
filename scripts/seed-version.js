@@ -53,6 +53,8 @@ var sources = [{
   body: fs.readFileSync('./scripts/sourceDockerfiles/postgresSql').toString()
 }, {
   name: 'Go',
+  isTemplate: true,
+  isSource: true,
   body: fs.readFileSync('./scripts/sourceDockerfiles/golang').toString()
 }, {
   name: 'MySQL',
