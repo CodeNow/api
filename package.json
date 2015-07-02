@@ -15,7 +15,7 @@
     "blacklight": "^1.1.1",
     "body-parser": "^1.4.3",
     "bunyan": "^1.4.0",
-    "bunyan-redis": "^0.1.4",
+    "bunyan-logentries": "^1.1.2",
     "busboy": "^0.2.8",
     "callback-count": "~0.1.0",
     "cayley": "^0.2.0",
