@@ -303,6 +303,7 @@ function createInstance (data, build, cb) {
   ctx.user.createInstance({
     build: build.id(),
     name: ((data.isTemplate) ? 'TEMPLATE-' : '') + data.name,
+    masterPod: true,
     owner: createdBy
   }, function (err) {
     console.log('Created Instance (done) (', data.name, ')', err);
