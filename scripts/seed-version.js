@@ -273,6 +273,7 @@ function createCV (data, context, icv, cb) {
   var cv = new ContextVersion({
     createdBy: createdBy,
     context  : context._id,
+    advanced : true,
     created  : new Date(),
     infraCodeVersion: icv._id
   });
