@@ -7,15 +7,11 @@ var before = lab.before;
 var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
-var it = lab.it;
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
-
-var Code = require('code');
-var expect = Code.expect;
 
 var typesTests = require('../../fixtures/types-test-util');
 
