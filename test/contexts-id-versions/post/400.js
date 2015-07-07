@@ -14,6 +14,8 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 
+var Code = require('code');
+var expect = Code.expect;
 
 var typesTests = require('../../fixtures/types-test-util');
 
@@ -124,7 +126,7 @@ describe('400 POST /contexts/:contextid/versions', function () {
     it('should rollback to the newestCv after updating again to advanced', function (done) {
       ctx.build3 = ctx.build2.deepCopy(function () {
         var advancedCv = ctx.build3.contextVersions.models[0];
-        advancedCv.update({advanced: true}, function (err, body, statusCode) {
+        advancedCv.update({advanced: true}, function (err) {
           if (err) {
             return done(err);
           }
