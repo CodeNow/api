@@ -331,27 +331,30 @@ describe('Versions - /contexts/:contextid/versions', function () {
     beforeEach(function (done) {
       ctx.build1 = ctx.build.deepCopy(function () {
         ctx.advancedCv = ctx.build1.contextVersions.models[0];
-        ctx.advancedCv.update({advanced: true}, function (err, body, statusCode) {
+        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt');
+        ctx.advancedCv.createFile({
+          json: {
+            name: 'file.txt',
+            path: '/',
+            body: 'asdf'
+          }
+        }, function (err) {
           if (err) {
             return done(err);
           }
-          expect(statusCode).to.equal(200);
-          multi.buildTheBuild(ctx.user, ctx.build1, done);
+          ctx.advancedCv.update({advanced: true}, function (err, body, statusCode) {
+            if (err) {
+              return done(err);
+            }
+            expect(statusCode).to.equal(200);
+            multi.buildTheBuild(ctx.user, ctx.build1, done);
+          });
         });
+
       });
     });
-    beforeEach(function (done) {
-      ctx.build2 = ctx.build1.deepCopy(function () {
-        ctx.newestCv = ctx.build2.contextVersions.models[0];
-        ctx.newestCv.update({advanced: false}, function (err, body, statusCode) {
-          if (err) {
-            return done(err);
-          }
-          expect(statusCode).to.equal(200);
-          multi.buildTheBuild(ctx.user, ctx.build2, done);
-        });
-      });
-    });
+
     it('should rollback to the very first cv', function (done) {
       var rollback = ctx.advancedCv.rollback(function (err, body, statusCode) {
         if (err) {
@@ -368,29 +371,72 @@ describe('Versions - /contexts/:contextid/versions', function () {
           return done(err);
         }
         expect(statusCode).to.equal(200);
-        expect(rollback).to.not.be.ok;
+        expect(rollback.destroyed).to.equal(true);
+        expect(body.length).to.equal(0);
         done();
       });
     });
-    it('should rollback to the newestCv after updating again to advanced', function (done) {
-      ctx.build3 = ctx.build2.deepCopy(function () {
-        var advancedCv = ctx.build3.contextVersions.models[0];
-        advancedCv.update({advanced: true}, function (err) {
-          if (err) {
-            return done(err);
-          }
-          multi.buildTheBuild(ctx.user, ctx.build3, function () {
-            var rolledBack = advancedCv.rollback(function (err, body, statusCode) {
+    describe('Longer history', function () {
+      beforeEach(function (done) {
+        ctx.build2 = ctx.build1.deepCopy(function () {
+          ctx.newestCv = ctx.build2.contextVersions.models[0];
+          ctx.newestCv.update({advanced: false}, function (err, body, statusCode) {
+            if (err) {
+              return done(err);
+            }
+            expect(statusCode).to.equal(200);
+            multi.buildTheBuild(ctx.user, ctx.build2, done);
+          });
+        });
+      });
+      beforeEach(function (done) {
+        ctx.build3 = ctx.build2.deepCopy(function () {
+          ctx.advancedCv3 = ctx.build3.contextVersions.models[0];
+          var advancedCv = ctx.advancedCv3;
+          require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file2.txt');
+          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file2.txt');
+          advancedCv.createFile({
+            json: {
+              name: 'file2.txt',
+              path: '/',
+              body: '341234513452345'
+            }
+          }, function (err) {
+            if (err) {
+              return done(err);
+            }
+            advancedCv.update({advanced: true}, function (err) {
               if (err) {
                 return done(err);
               }
-              expect(statusCode).to.equal(200);
-              var build2Cv = ctx.build2.contextVersions.models[0];
-              expect(rolledBack.attrs._id).to.not.equal(advancedCv.attrs._id);
-              expect(rolledBack.attrs._id).to.equal(build2Cv.attrs._id);
-              done();
+              multi.buildTheBuild(ctx.user, ctx.build3, done);
             });
           });
+        });
+      });
+      it('should rollback to the build2Cv after updating again to advanced', function (done) {
+        var rolledBack = ctx.advancedCv3.rollback(function (err, body, statusCode) {
+          if (err) {
+            return done(err);
+          }
+          expect(statusCode).to.equal(200);
+          var build2Cv = ctx.build2.contextVersions.models[0];
+          expect(rolledBack.attrs._id).to.not.equal(ctx.advancedCv3.attrs._id);
+          expect(rolledBack.attrs._id).to.equal(build2Cv.attrs._id);
+          done();
+        });
+      });
+      it('should rollback to the newestCv even when rolling back the first', function (done) {
+        var rolledBack = ctx.advancedCv.rollback(function (err, body, statusCode) {
+          if (err) {
+            return done(err);
+          }
+          expect(statusCode).to.equal(200);
+          var build2Cv = ctx.build2.contextVersions.models[0];
+          expect(rolledBack.attrs._id).to.not.equal(ctx.advancedCv3.attrs._id);
+          expect(rolledBack.attrs._id).to.not.equal(ctx.contextVersion.attrs._id);
+          expect(rolledBack.attrs._id).to.equal(build2Cv.attrs._id);
+          done();
         });
       });
     });
