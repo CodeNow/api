@@ -8,6 +8,8 @@ var before = lab.before;
 var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
+var Code = require('code');
+var expect = Code.expect;
 
 var expects = require('./fixtures/expects');
 var api = require('./fixtures/api-control');
@@ -93,6 +95,69 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
         });
       });
     });
+  });
+  describe('Rollback', function () {
+    beforeEach(function (done) {
+      ctx.build1 = ctx.build.deepCopy(function () {
+        ctx.advancedCv = ctx.build1.contextVersions.models[0];
+        ctx.advancedCv.update({advanced: true}, function (err, body, statusCode) {
+          if (err) {
+            return done(err);
+          }
+          expect(statusCode).to.equal(200);
+          multi.buildTheBuild(ctx.user, ctx.build1, done);
+        });
+      });
+    });
+    beforeEach(function (done) {
+      ctx.build2 = ctx.build1.deepCopy(function () {
+        ctx.newestCv = ctx.build2.contextVersions.models[0];
+        ctx.newestCv.update({advanced: false}, function (err, body, statusCode) {
+          if (err) {
+            return done(err);
+          }
+          expect(statusCode).to.equal(200);
+          multi.buildTheBuild(ctx.user, ctx.build2, done);
+        });
+      });
+    });
+    it('should rollback to the very first cv', function (done) {
+      ctx.advancedCv.rollback(function (err, body, statusCode) {
+        if (err) {
+          return done(err);
+        }
+        expect(statusCode).to.equal(200);
+        expect(body._id).to.equal(ctx.contextVersion.attrs._id);
+        done();
+      });
+    });
+    it('should rollback to nothing if there is nothing to rollback to', function (done) {
+      ctx.contextVersion.rollback(expects.error(404, 'No previous basic version found', done));
+    });
+    it('should rollback to the newestCv after updating again to advanced', function (done) {
+      ctx.build3 = ctx.build2.deepCopy(function () {
+        var advancedCv = ctx.build3.contextVersions.models[0];
+        advancedCv.update({advanced: true}, function (err, body, statusCode) {
+          if (err) {
+            return done(err);
+          }
+          multi.buildTheBuild(ctx.user, ctx.build3, function () {
+            advancedCv.rollback(function (err, body, statusCode) {
+              if (err) {
+                return done(err);
+              }
+              expect(statusCode).to.equal(200);
+              var build2Cv = ctx.build2.contextVersions.models[0];
+              expect(body._id).to.not.equal(advancedCv.attrs._id);
+              expect(body._id).to.equal(build2Cv.attrs._id);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+
   });
 
   describe('DELETE', function () {
