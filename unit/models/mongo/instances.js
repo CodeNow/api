@@ -10,6 +10,7 @@ var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
+var sinon = require('sinon');
 
 var validation = require('../../fixtures/validation')(lab);
 var Hashids = require('hashids');
@@ -22,12 +23,15 @@ var Graph = require('models/apis/graph');
 var pluck = require('101/pluck');
 var find = require('101/find');
 var hasProps = require('101/has-properties');
+var async = require('async');
 
 var Instance = require('models/mongo/instance');
 var dock = require('../../../test/fixtures/dock');
 var Version = require('models/mongo/context-version');
+var pubsub = require('models/redis/pubsub');
 
 var Docker = require('models/apis/docker');
+
 
 var id = 0;
 function getNextId () {
@@ -89,7 +93,7 @@ function createNewVersion (opts) {
 }
 
 function createNewInstance (name, opts) {
-  // jshint maxcomplexity:8
+  // jshint maxcomplexity:9
   opts = opts || {};
   var container = {
     dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
@@ -122,7 +126,7 @@ function createNewInstance (name, opts) {
     container: container,
     containers: [],
     network: {
-      networkIp: '1.1.1.1',
+      networkIp: opts.networkIp || '1.1.1.1',
       hostIp: '1.1.1.100'
     }
   });
@@ -1094,4 +1098,101 @@ describe('Instance', function () {
       });
     });
   });
+
+  describe('dnsInvalidateNetworkIp', function() {
+    it('should use redis pubsub to send invalidation messages', function(done) {
+      var networkIp = '1.2.3.4';
+      var instance = createNewInstance('hola', { networkIp: networkIp });
+      sinon.spy(pubsub, 'publish');
+      instance.dnsInvalidateNetworkIp();
+      expect(pubsub.publish.calledWith(
+        'dns.invalidate.networkIp',
+        networkIp
+      )).to.be.true();
+      pubsub.publish.restore();
+      done();
+    });
+  });
+
+  describe('setDependenciesFromEnvironment', function() {
+    var networkIp = '10.20.10.20';
+    var ownerName = 'someowner';
+    var instance = createNewInstance('wooosh', { networkIp: networkIp });
+
+    beforeEach(function (done) {
+      sinon.spy(instance, 'dnsInvalidateNetworkIp');
+      sinon.stub(instance, 'getDependencies').yieldsAsync(null, []);
+      sinon.stub(Instance, 'find').yieldsAsync(null, []);
+      done();
+    });
+
+    afterEach(function (done) {
+      instance.dnsInvalidateNetworkIp.restore();
+      instance.getDependencies.restore();
+      Instance.find.restore();
+      done();
+    });
+
+    it('should invalidate dns cache entries for the networkIp', function(done) {
+      instance.setDependenciesFromEnvironment(ownerName, function (err) {
+        if (err) { done(err); }
+        expect(instance.dnsInvalidateNetworkIp.calledOnce).to.be.true();
+        done();
+      });
+    });
+  });
+
+  describe('addDependency', function() {
+    var networkIp = '120.220.120.220';
+    var instance = createNewInstance('goooush', { networkIp: networkIp });
+    var dependant = createNewInstance('splooosh');
+
+    beforeEach(function (done) {
+      sinon.spy(instance, 'dnsInvalidateNetworkIp');
+      sinon.stub(async, 'series').yieldsAsync();
+      done();
+    });
+
+    afterEach(function (done) {
+      instance.dnsInvalidateNetworkIp.restore();
+      async.series.restore();
+      done();
+    });
+
+    it('should invalidate dns cache entries for the networkIp', function(done) {
+      instance.addDependency(dependant, 'wooo.com', function (err) {
+        if (err) { done(err); }
+        expect(instance.dnsInvalidateNetworkIp.calledOnce).to.be.true();
+        done();
+      });
+    });
+  });
+
+  describe('removeDependency', function() {
+    var Neo4j = require('models/graph/neo4j');
+    var networkIp = '2.3.5.7';
+    var instance = createNewInstance('boooush', { networkIp: networkIp });
+    var dependant = createNewInstance('mighty');
+
+    beforeEach(function (done) {
+      sinon.spy(instance, 'dnsInvalidateNetworkIp');
+      sinon.stub(Neo4j.prototype, 'deleteConnection').yieldsAsync();
+      done();
+    });
+
+    afterEach(function (done) {
+      instance.dnsInvalidateNetworkIp.restore();
+      Neo4j.prototype.deleteConnection.restore();
+      done();
+    });
+
+    it('should invalidate dns cache entries for the networkIp', function(done) {
+      instance.removeDependency(dependant, function (err) {
+        if (err) { done(err); }
+        expect(instance.dnsInvalidateNetworkIp.calledOnce).to.be.true();
+        done();
+      });
+    });
+  });
+
 });
