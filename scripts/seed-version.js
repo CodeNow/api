@@ -52,6 +52,11 @@ var sources = [{
   name: 'PostgreSQL',
   body: fs.readFileSync('./scripts/sourceDockerfiles/postgresSql').toString()
 }, {
+  name: 'Go',
+  isTemplate: true,
+  isSource: true,
+  body: fs.readFileSync('./scripts/sourceDockerfiles/golang').toString()
+}, {
   name: 'MySQL',
   body: fs.readFileSync('./scripts/sourceDockerfiles/mysql').toString()
 }, {
@@ -271,6 +276,7 @@ function createCV (data, context, icv, cb) {
   var cv = new ContextVersion({
     createdBy: createdBy,
     context  : context._id,
+    advanced : true,
     created  : new Date(),
     infraCodeVersion: icv._id
   });
@@ -301,6 +307,7 @@ function createInstance (data, build, cb) {
   ctx.user.createInstance({
     build: build.id(),
     name: ((data.isTemplate) ? 'TEMPLATE-' : '') + data.name,
+    masterPod: true,
     owner: createdBy
   }, function (err) {
     console.log('Created Instance (done) (', data.name, ')', err);
