@@ -63,6 +63,6 @@ describe('400 POST /contexts/:contextid/versions', function () {
       ctx.context.createVersion(body, cb);
     });
 
-  });
 
+  });
 });
