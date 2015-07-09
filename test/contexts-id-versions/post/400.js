@@ -13,6 +13,7 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 
+
 var typesTests = require('../../fixtures/types-test-util');
 
 describe('400 POST /contexts/:contextid/versions', function () {
@@ -61,7 +62,6 @@ describe('400 POST /contexts/:contextid/versions', function () {
     typesTests.makeTestFromDef(def, ctx, lab, function(body, cb) {
       ctx.context.createVersion(body, cb);
     });
-
 
   });
 
