@@ -23,8 +23,8 @@ var multi = require('../../fixtures/multi-factory');
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
-var tailBuildStream = require('../../fixtures/tail-build-stream');
 var primus = require('../../fixtures/primus');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
@@ -131,15 +131,8 @@ describe('PUT /instances/:id/actions/start', function () {
           ctx.build = build;
           ctx.user = user;
           ctx.cv = contextVersion;
-          ctx.build.build({ message: uuid() }, expects.success(201, done));
+          done();
         });
-      });
-      beforeEach(function (done) {
-        // make sure build finishes before moving on to the next test
-        ctx.afterAssert = function (done) {
-          tailBuildStream(ctx.cv.id(), done);
-        };
-        done();
       });
       beforeEach(function (done) {
         initExpected(function () {
@@ -249,6 +242,9 @@ describe('PUT /instances/:id/actions/start', function () {
   function createInstanceAndRunTests (ctx) {
     describe('and env.', function() {
       beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+      beforeEach(function (done) {
         var body = {
           env: ['ENV=OLD'],
           build: ctx.build.id(),
@@ -256,17 +252,28 @@ describe('PUT /instances/:id/actions/start', function () {
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          done();
+        } else {
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        }
       });
       startInstanceTests(ctx);
     });
     describe('and no env.', function() {
       beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+      beforeEach(function (done) {
         var body = {
           build: ctx.build.id(),
           masterPod: true
         };
-        ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        if (ctx.expectNoContainerErr) {
+          done();
+        } else {
+          ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
+        }
       });
       startInstanceTests(ctx);
     });
@@ -283,7 +290,22 @@ describe('PUT /instances/:id/actions/start', function () {
       //  ctx.expected['containers[0].inspect.State.Running'] = true;
       }
       if (ctx.expectNoContainerErr) {
-        ctx.instance.start(expects.error(400, /not have a container/, done));
+        ctx.build.build({ message: uuid() }, function () {
+          var body = {
+            env: ctx.expected.env,
+            build: ctx.build.id(),
+            masterPod: true
+          };
+          ctx.instance = ctx.user.createInstance(body, function (err) {
+            if (err) { return done(err); }
+            ctx.instance.start(expects.error(400, /not have a container/, function () {
+              primus.onceVersionComplete(ctx.cv.id(), function () {
+                done();
+              });
+              dockerMockEvents.emitBuildComplete(ctx.cv);
+            }));
+          });
+        });
       }
       else { // success
 
@@ -317,7 +339,6 @@ describe('PUT /instances/:id/actions/start', function () {
             expect(instance.json().container.inspect.State.Starting).to.be.undefined();
             expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.next);
             expects.updatedHosts(ctx.user, instance, count.next);
-            if (ctx.afterAssert) { ctx.afterAssert(count.inc().next); }
             count.next();
           }));
         });

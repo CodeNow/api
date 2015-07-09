@@ -553,13 +553,6 @@ describe('Instance - /instances/:id', function () {
           });
         });
         describe('Locking instance', function () {
-          beforeEach(function (done) {
-            // We need to deploy the container first before each test.
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            ctx.otherInstance = ctx.user.createInstance({
-              build: ctx.build.attrs._id
-            }, done);
-          });
           it('should be able to set locked to true', function (done) {
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);

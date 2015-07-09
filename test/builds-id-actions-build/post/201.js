@@ -199,7 +199,13 @@ function buildTheBuildTests (ctx) {
 
       describe('when a duplicate exists (github build duplicate)', function () {
         it('should start building the build', function (done) {
-          ctx.build.build(ctx.body, expects.success(201, ctx.expected, done));
+          ctx.build.build(ctx.body, expects.success(201, ctx.expectStarted, function (err) {
+            if (err) { return done(err); }
+            primus.onceVersionComplete(ctx.cv.id(), function () {
+              done();
+            });
+            dockerMockEvents.emitBuildComplete(ctx.cv);
+          }));
         });
       });
     }

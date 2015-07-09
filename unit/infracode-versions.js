@@ -37,6 +37,8 @@ describe('Infracode Versions', function () {
     infracode.save(function (err, infracode) {
       if (err) { return done(err); }
       expect(infracode).to.exist();
+      expect(infracode.files.length).to.equal(1);
+      expect(infracode.files[0].created).to.be.a.date();
       done();
     });
   });
@@ -48,6 +50,8 @@ describe('Infracode Versions', function () {
         if (err) { return done(err); }
         expect(childInfracode).to.exist();
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
+        expect(childInfracode.files.length).to.equal(1);
+        expect(childInfracode.files[0].created).to.be.a.date();
         done();
       });
     });
@@ -60,6 +64,8 @@ describe('Infracode Versions', function () {
         if (err) { return done(err); }
         expect(childInfracode).to.exist();
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
+        expect(childInfracode.files.length).to.equal(1);
+        expect(childInfracode.files[0].created).to.be.a.date();
         done();
       });
     });
@@ -72,6 +78,8 @@ describe('Infracode Versions', function () {
         if (err) { return done(err); }
         expect(childInfracode).to.exist();
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
+        expect(childInfracode.files.length).to.equal(1);
+        expect(childInfracode.files[0].created).to.be.a.date();
         done();
       });
     });
@@ -84,6 +92,8 @@ describe('Infracode Versions', function () {
         if (err) { return done(err); }
         expect(childInfracode).to.exist();
         expect(childInfracode.parent.toString()).to.equal(infracode._id.toString());
+        expect(childInfracode.files.length).to.equal(1);
+        expect(childInfracode.files[0].created).to.be.a.date();
         done();
       });
     });
