@@ -52,6 +52,11 @@ var sources = [{
   name: 'PostgreSQL',
   body: fs.readFileSync('./scripts/sourceDockerfiles/postgresSql').toString()
 }, {
+  name: 'Go',
+  isTemplate: true,
+  isSource: true,
+  body: fs.readFileSync('./scripts/sourceDockerfiles/golang').toString()
+}, {
   name: 'MySQL',
   body: fs.readFileSync('./scripts/sourceDockerfiles/mysql').toString()
 }, {
@@ -84,6 +89,9 @@ var sources = [{
     '# Full list of versions available here:'+
     ' https://registry.hub.docker.com/_/rabbitmq/tags/manage/\n'+
     'FROM rabbitmq:3.4.2\n'
+}, {
+  name: 'RethinkDB',
+  body: fs.readFileSync('./scripts/sourceDockerfiles/rethinkdb').toString()
 }];
 var createdBy = { github: process.env.HELLO_RUNNABLE_GITHUB_ID };
 
@@ -268,6 +276,7 @@ function createCV (data, context, icv, cb) {
   var cv = new ContextVersion({
     createdBy: createdBy,
     context  : context._id,
+    advanced : true,
     created  : new Date(),
     infraCodeVersion: icv._id
   });
@@ -298,6 +307,7 @@ function createInstance (data, build, cb) {
   ctx.user.createInstance({
     build: build.id(),
     name: ((data.isTemplate) ? 'TEMPLATE-' : '') + data.name,
+    masterPod: true,
     owner: createdBy
   }, function (err) {
     console.log('Created Instance (done) (', data.name, ')', err);

@@ -47,6 +47,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
     });
     it('should create a new version', function (done) {
       var expected = {
+        owner: exists,
         infraCodeVersion: exists
       };
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/');
@@ -55,6 +56,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
     describe('toBuild query', function() {
       it('should create a new version', function (done) {
         var expected = {
+          owner: exists,
           infraCodeVersion: exists
         };
         var body = {};
@@ -89,6 +91,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
       });
       it('should create a contextVersion with infraCodeVersion', function (done) {
         var expected = {
+          owner: exists,
           infraCodeVersion: not(equals(ctx.infraCodeVersionId))
         };
         ctx.context.createVersion({
@@ -254,6 +257,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
         });
         it('should it if we give both repos', function (done) {
           var expected = [{
+            owner: exists,
             _id: ctx.contextVersion.id()
           }];
           var query = {
@@ -307,6 +311,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
     describe('via infraCodeVersion', function () {
       it('should return us our version', function (done) {
         var expected = [{
+          owner: exists,
           _id: ctx.contextVersion.id()
         }];
         var query = {
