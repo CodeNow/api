@@ -24,6 +24,7 @@ describe('Versions', function () {
     return new Version({
       message: "test",
       createdBy: { github: validation.VALID_GITHUB_ID },
+      owner: { github: validation.VALID_GITHUB_ID },
       config: validation.VALID_OBJECT_ID,
       created: Date.now(),
       context: validation.VALID_OBJECT_ID,
