@@ -98,9 +98,12 @@ describe('201 POST /workers/container-create', function () {
         var count = createCount(cb);
         primus.expectAction('start', {}, count.inc().next);
         originalContainerCreateWorker(ctx.jobData, function (err, res/*, body*/) {
-          //expect(res._headers['runnable-tid']).to.match(/(\w{8}(-\w{4}){3}-\w{12}?)/);
-          expect(res._headers['runnable-tid'].length).to.not.equal(0);
-          expect(res._headers['runnable-tid']).to.not.equal('undefined');
+          if (!process.env.TID_POST_WORKERS_CONTAINER_CREATE) {
+            expect(res._headers['runnable-tid']).to.match(/(\w{8}(-\w{4}){3}-\w{12}?)/);
+          }
+          else{
+            expect(res._headers['runnable-tid']).to.equal(process.env.TID_POST_WORKERS_CONTAINER_CREATE);
+          }
         }, count.inc().next);
       },
       function (cb) {
