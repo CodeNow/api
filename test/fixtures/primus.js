@@ -6,6 +6,7 @@ var expect = Code.expect;
 
 var uuid = require('uuid');
 var expects = require('./expects');
+var logger = require('middlewares/logger')(__filename);
 var isFunction = require('101/is-function');
 var Primus = require('primus');
 var Socket = Primus.createSocket({
@@ -15,13 +16,14 @@ var Socket = Primus.createSocket({
   },
   parser: 'JSON'
 });
-var debug = require('debug')('runnable_api:fixtures:primus');
+
+var log = logger.log;
 
 var ctx = {};
 
 module.exports = {
   joinOrgRoom: function (orgId, cb) {
-    debug('joinOrgRoom');
+    log.trace('joinOrgRoom');
     if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
     ctx.primus.write({
       id: uuid(), // needed for uniqueness
@@ -40,7 +42,7 @@ module.exports = {
     });
   },
   connect: function (cb) {
-    debug('connect');
+    log.trace('connect');
     var token = process.env.PRIMUS_AUTH_TOKEN;
     var url = process.env.FULL_API_DOMAIN + ':' + process.env.PORT +
       '?token=' + token;
@@ -56,16 +58,16 @@ module.exports = {
     ctx.primus.once('open', cb);
   },
   disconnect: function (cb) {
-    debug('disconnect');
+    log.trace('disconnect');
     if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
     ctx.primus.once('end', cb);
     ctx.primus.end();
   },
   onceRoomMessage: function (event, action, cb) {
-    debug('onceRoomMessage');
+    log.trace('onceRoomMessage');
     if (!ctx.primus) { return cb(new Error('can not primus.onceRoomMessage if not connected')); }
     ctx.primus.on('data', function handler (data) {
-      debug(data.event === 'ROOM_MESSAGE',
+      log.trace(data.event === 'ROOM_MESSAGE',
         data.data.event, data.data.action,
         event, action);
       if (data.event === 'ROOM_MESSAGE' &&
@@ -77,18 +79,18 @@ module.exports = {
     });
   },
   expectAction: function(action, expected, cb) {
-    debug('expectAction');
+    log.trace('expectAction');
     if (isFunction(expected)) {
       cb = expected;
       expected = null;
     }
     if (!ctx.primus) { return cb(new Error('can not primus.expectAction if not connected')); }
     ctx.primus.on('data', function check (data) {
-      debug('primus expect:',
+      log.trace('primus expect:',
         'ROOM_MESSAGE', action,
         data.event, data.data.action);
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
-        debug('primus expected data:', expected, data.data.data);
+        log.trace('primus expected data:', expected, data.data.data);
         expect(data.type).to.equal('org');
         expect(data.event).to.equal('ROOM_MESSAGE');
         expect(data.data.event).to.equal('INSTANCE_UPDATE');
@@ -101,12 +103,12 @@ module.exports = {
     });
   },
   expectActionCount: function (action, count, cb) {
-    debug('expectActionCount', action, count);
+    log.trace('expectActionCount', action, count);
     var cbCount = createCount(count, done);
     ctx.primus.on('data', handleData);
     function handleData (data) {
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
-        debug('expectActionCount', action, cbCount.count);
+        log.trace('expectActionCount', action, cbCount.count);
         cbCount.next();
       }
     }
@@ -116,7 +118,7 @@ module.exports = {
     }
   },
   onceInstanceUpdate: function (instanceId, action, cb) {
-    debug('onceInstanceUpdate');
+    log.trace('onceInstanceUpdate');
     var self = this;
     if (typeof instanceId === 'function') {
       cb = instanceId;
@@ -139,7 +141,7 @@ module.exports = {
     }
   },
   onceVersionComplete: function (versionId, cb) {
-    debug('onceVersionComplete');
+    log.trace('onceVersionComplete');
     var self = this;
     if (typeof versionId === 'function') {
       cb = versionId;
