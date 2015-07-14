@@ -27,7 +27,6 @@
     "cors": "^2.4.1",
     "cypher-stream": "^0.2.1",
     "dat-middleware": "^1.10.3",
-    "debug": "^1.0.2",
     "defaults": "^1.0.0",
     "docker-frame": "^1.0.0",
     "docker-stream-cleanser": "^0.2.0",
