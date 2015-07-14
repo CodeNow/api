@@ -19,10 +19,8 @@ var mongoose = require('mongoose');
 
 var Github = require('models/apis/github');
 var UserSchema = require('models/mongo/schemas/user');
-var logger = require('middlewares/logger')(__filename);
-
+var log = require('logger').child({ module: 'models:mongo:user' }, true);
 var Users;
-var log = logger.log;
 
 var publicFields = {
   _id: 1,
