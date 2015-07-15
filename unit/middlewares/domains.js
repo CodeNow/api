@@ -45,7 +45,10 @@ describe('middlewares/domains unit test', function () {
       ctx.fakeReq = {
         sessionUser: null
       };
-      ctx.fakeRes = {};
+      ctx.fakeRes = {
+        '_headers': {},
+        set: function () {}
+      };
       done();
     });
 
@@ -63,7 +66,10 @@ describe('middlewares/domains unit test', function () {
       ctx.fakeReq = {
         sessionUser: null
       };
-      ctx.fakeRes = {};
+      ctx.fakeRes = {
+        '_headers': {},
+        set: function () {}
+      };
       done();
     });
 
