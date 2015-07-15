@@ -16,6 +16,9 @@ var api = require('../../fixtures/api-control');
 var request = require('request');
 var uuid = require('uuid');
 var randStr = require('randomstring').generate;
+var sinon = require('sinon');
+var GitHub = require('models/apis/github');
+var Boom = require('dat-middleware').Boom;
 
 var ctx = {};
 describe('DELETE /auth/whitelist/:name - 404', function () {
@@ -40,19 +43,15 @@ describe('DELETE /auth/whitelist/:name - 404', function () {
       body: { name: ctx.name },
       jar: ctx.j
     };
-    require('../../fixtures/mocks/github/user-memberships-org').isMember(
-      ctx.user.attrs.accounts.github.id,
-      ctx.user.attrs.accounts.github.username,
-      'Runnable');
+    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable');
     request(opts, done);
   });
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
   it('should not remove a name if the user making the request is not authorized', function (done) {
-    require('../../fixtures/mocks/github/user-memberships-org').notMember(
-      ctx.user.attrs.accounts.github.id,
-      ctx.user.attrs.accounts.github.username,
-      'Runnable');
+    sinon.stub(GitHub.prototype, 'isOrgMember', function (orgName, cb) {
+      cb(Boom.notFound('user is not a member of org', { org: orgName }));
+    });
     var opts = {
       method: 'DELETE',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist/' + uuid(),
@@ -65,15 +64,13 @@ describe('DELETE /auth/whitelist/:name - 404', function () {
       expect(res.statusCode).to.equal(404);
       expect(body.error).to.match(/^not found$/i);
       expect(body.message).to.match(/not a member of org/);
+      GitHub.prototype.isOrgMember.restore();
       require('../../fixtures/check-whitelist')([ctx.name], done);
     });
   });
 
   it('should not remove a name that is not there', function (done) {
-    require('../../fixtures/mocks/github/user-memberships-org').isMember(
-      ctx.user.attrs.accounts.github.id,
-      ctx.user.attrs.accounts.github.username,
-      'Runnable');
+    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable');
     var opts = {
       method: 'DELETE',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist/' + uuid(),
@@ -90,4 +87,3 @@ describe('DELETE /auth/whitelist/:name - 404', function () {
     });
   });
 });
-
