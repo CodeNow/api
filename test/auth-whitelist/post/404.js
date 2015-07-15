@@ -34,14 +34,8 @@ describe('POST /auth/whitelist - 409', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
   it('should not allow unauthorized users', function (done) {
-    require('../../fixtures/mocks/github/user-memberships-org').notMember(
-      ctx.user.attrs.accounts.github.id,
-      ctx.user.attrs.accounts.github.username,
-      'Runnable');
-    require('../../fixtures/mocks/github/user-memberships-org').notMember(
-      ctx.user.attrs.accounts.github.id,
-      ctx.user.attrs.accounts.github.username,
-      'CodeNow');
+    require('../../fixtures/mocks/github/user-orgs')(69631, 'Facebook');
+    require('../../fixtures/mocks/github/user-orgs')(1342004, 'Google');
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
@@ -59,4 +53,3 @@ describe('POST /auth/whitelist - 409', function () {
     });
   });
 });
-
