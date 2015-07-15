@@ -96,18 +96,23 @@ describe('Docker Events', function () {
         var requireInject = require('require-inject');
         var count = 0;
         var de = requireInject('models/events/docker', {
-          'debug': function () {
-            return function (message) {
-              if (count === 0) {
-                expect(message).to.equal('handleDie');
+          'middlewares/logger': function () {
+            return {
+              log: {
+                trace: function (data, message) {
+                  if (count === 0) {
+                    expect(message).to.equal('handleDie');
+                  }
+                  if (count === 1) {
+                    expect(message).to.equal('events are stopping');
+                    done();
+                  }
+                  count++;
+                }
               }
-              if (count === 1) {
-                expect(message).to.equal('events are stopping');
-                done();
-              }
-              count++;
             };
-        } });
+          }
+        });
         de.closeHandler = function () {};
         de.handleDie();
       });
@@ -136,18 +141,23 @@ describe('Docker Events', function () {
         var requireInject = require('require-inject');
         var count = 0;
         var de = requireInject('models/events/docker', {
-          'debug': function () {
-            return function (message) {
-              if (count === 0) {
-                expect(message).to.equal('handleDie');
+          'middlewares/logger': function () {
+            return {
+              log: {
+                trace: function (data, message) {
+                  if (count === 0) {
+                    expect(message).to.equal('handleDie');
+                  }
+                  if (count === 1) {
+                    expect(message).to.equal('not active api');
+                    done();
+                  }
+                  count++;
+                }
               }
-              if (count === 1) {
-                expect(message).to.equal('not active api');
-                done();
-              }
-              count++;
             };
-        } });
+          }
+        });
         var data = {
           uuid: 'some-uuid',
           id: 'some-id',

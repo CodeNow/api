@@ -71,6 +71,7 @@
 ./test/instances/post/index.js
 ./test/json-body-parser.js
 ./test/messenger.js
+./test/scripts/add-owner-to-context-versions.js
 ./test/scripts/update-templates.js
 ./test/settings/get/index.js
 ./test/settings/patch/400.js
