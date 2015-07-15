@@ -1,3 +1,6 @@
+/**
+ * @module unit/middlewares/owner-is-hello-runnable
+ */
 'use strict';
 
 require('loadenv')();
