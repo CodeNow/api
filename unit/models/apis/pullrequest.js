@@ -121,12 +121,6 @@ describe('PullRequest', function () {
         repo: 'codenow/hellonode',
         commit: 'somecommitsha'
       };
-      var instance = {
-        name: 'inst-1',
-        owner: {
-          username: 'codenow'
-        }
-      };
       sinon.stub(GitHub.prototype, 'createDeployment', function (repo, payload) {
         expect(repo).to.equal(gitInfo.repo);
         expect(payload.auto_merge).to.equal(false);
@@ -138,7 +132,7 @@ describe('PullRequest', function () {
         GitHub.prototype.createDeployment.restore();
         done();
       });
-      pullRequest.createDeployment(gitInfo, instance, noop);
+      pullRequest.createDeployment(gitInfo, 'inst-1', noop);
     });
   });
 });

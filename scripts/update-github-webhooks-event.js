@@ -3,7 +3,6 @@ require('loadenv')();
 
 var async = require('async');
 var request = require('request');
-var debug = require('debug')('script');
 var Instance = require('models/mongo/instance');
 var GitHub = require('models/apis/github');
 var ContextVersion = require('models/mongo/context-version');
@@ -48,7 +47,7 @@ function findUser (users, cb) {
 
 
 function findUsersForRepos(repos, cb) {
-  debug('findUsersForRepos', 'total repos num:', repos.length);
+  console.log('findUsersForRepos', 'total repos num:', repos.length);
   async.map(repos, function (repo, callback) {
     findUser(repo.creators, function (err, user) {
       if (err) { return callback(err); }
@@ -60,11 +59,11 @@ function findUsersForRepos(repos, cb) {
 
 
 function updateHooksEvents(repos, cb) {
-  debug('updateHooksEvents', 'total repos num:', repos.length);
+  console.log('updateHooksEvents', 'total repos num:', repos.length);
   async.mapLimit(repos, 50, function(repo, callback) {
-    debug('processing repo', repo);
+    console.log('processing repo', repo);
     if (!repo.user) {
-      debug('user not found for the repo', repo);
+      console.log('user not found for the repo', repo);
       return callback();
     }
     var github = new GitHub({token: repo.user.accounts.github.accessToken});
@@ -73,11 +72,11 @@ function updateHooksEvents(repos, cb) {
       if (err) {
         allErrors.push(err);
         if(err.output.statusCode === 404) {
-          debug('repos not found. just skip it', repo);
+          console.log('repos not found. just skip it', repo);
           callback(null);
         }
         else if(err.output.statusCode === 502) {
-          debug('access token removed. just skip it', repo);
+          console.log('access token removed. just skip it', repo);
           callback(null);
         }
         else {

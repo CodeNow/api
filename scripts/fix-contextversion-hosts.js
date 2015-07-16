@@ -1,7 +1,6 @@
 'use strict';
 require('loadenv')();
 var ContextVersion = require('models/mongo/context-version.js');
-var debug = require('debug')('script');
 var mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO);
 var async = require('async');
@@ -48,7 +47,7 @@ async.waterfall([
 });
 
 function getAllContextVersion (cb) {
-  debug('getAllContextVersion');
+  console.log('getAllContextVersion');
   ContextVersion.find({
     'dockerHost': {
       $exists: true
@@ -60,7 +59,7 @@ function getAllContextVersion (cb) {
 }
 
 function eachContextVersion (cvs, cb) {
-  debug('eachContextVersion');
+  console.log('eachContextVersion');
   if(!cvs || cvs.length === 0) {
     return cb();
   }

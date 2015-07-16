@@ -31,10 +31,7 @@ describe('DELETE /auth/whitelist/:name', function () {
     });
   });
   beforeEach(function (done) {
-    require('../../fixtures/mocks/github/user-memberships-org').isMember(
-      ctx.user.attrs.accounts.github.id,
-      ctx.user.attrs.accounts.github.username,
-      'Runnable');
+    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable');
     ctx.name = randStr(5);
     var opts = {
       method: 'POST',
@@ -48,10 +45,7 @@ describe('DELETE /auth/whitelist/:name', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
   it('should remove a name from the whitelist', function (done) {
-    require('../../fixtures/mocks/github/user-memberships-org').isMember(
-      ctx.user.attrs.accounts.github.id,
-      ctx.user.attrs.accounts.github.username,
-      'Runnable');
+    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable');
     var opts = {
       method: 'DELETE',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist/' + ctx.name,
@@ -67,4 +61,3 @@ describe('DELETE /auth/whitelist/:name', function () {
     });
   });
 });
-
