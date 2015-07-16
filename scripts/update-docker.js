@@ -10,7 +10,6 @@ var user = new Runnable('localhost:80');
 var saveKey = 'migrateDock:' + process.env.TARGET_DOCK;
 var MongoUser = require('models/mongo/user');
 var Instance = require('models/mongo/instance');
-var debug = require('debug')('script');
 
 var mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO);
@@ -25,7 +24,7 @@ var ERRORS = [];
 });
 
 function login (cb) {
-  debug('login');
+  console.log('login');
   var thisUser = user.githubLogin('f914c65e30f6519cfb4d10d0aa81e235dd9b3652', function(err) {
     if (err) { return cb(err); }
     MongoUser.updateById(thisUser.id(), { $set: { permissionLevel: 5 } }, cb);
@@ -34,7 +33,7 @@ function login (cb) {
 
 //  remove dock from mavis
 function removeFromMavis(cb) {
-  debug('removeFromMavis');
+  console.log('removeFromMavis');
   request({
     method: 'DELETE',
     url: process.env.MAVIS_HOST + '/docks',
@@ -54,7 +53,7 @@ function removeFromMavis(cb) {
 var thisList = {};
 
 function saveList(cb) {
-  debug('saveList');
+  console.log('saveList');
   Instance.find({
     'container.dockerHost': fullUrl,
     'container.inspect.State.Running': true,
@@ -72,7 +71,7 @@ function saveList(cb) {
 
 //  stop all containers
 function stopAllContainers(cb) {
-  debug('stopAllContainers');
+  console.log('stopAllContainers');
   async.eachLimit(thisList, 10, function(instance, next) {
     stopInstance(instance.shortHash, next);
   }, cb);
@@ -121,12 +120,12 @@ function saveAndKill (cb) {
 ////////////////////////////////////////////////////
 var ctx = {numStarted: 0};
 function getAllContainers(cb) {
-  debug('getAllContainers');
+  console.log('getAllContainers');
   redis.lrange(saveKey, 0, -1, cb);
 }
 
 function startAllContainers(instances, cb) {
-  debug('instances');
+  console.log('instances');
   ctx.retry = [];
   async.eachLimit(instances, 10, function(shortHash, next) {
     startInstance(shortHash, next);
@@ -168,14 +167,14 @@ function retryStart (cb) {
 
 //  put back into mavis
 function addToMavis (cb) {
-  debug('addToMavis');
+  console.log('addToMavis');
   mavisRequst('PUT', {host: fullUrl}, function() {
     mavisRequst('POST', {host: fullUrl, numContainer: ctx.numStarted}, cb);
   });
 }
 
 function mavisRequst(type, data, cb) {
-  debug('mavisRequst', type, data);
+  console.log('mavisRequst', type, data);
   request({
     method: type,
     url: process.env.MAVIS_HOST + '/docks',

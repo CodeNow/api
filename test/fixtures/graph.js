@@ -1,7 +1,9 @@
 var spawn = require('child_process').spawn;
 var exec = require('child_process').exec;
 var join = require('path').join;
-var debug = require('debug')('runnable-api:test:fixtures:graph');
+
+var logger = require('middlewares/logger')(__filename);
+var log = logger.log;
 
 module.exports._graph;
 module.exports.started = false;
@@ -33,10 +35,10 @@ module.exports.start = function (cb) {
         module.exports._graph.removeListener('close', earlyClose);
         module.exports._graph.on('close', function () {
           module.exports.started = false;
-          debug('cayley exit');
+          log.trace({}, 'cayley exit');
           cb();
         });
-        debug('stopping cayley');
+        log.trace({}, 'stopping cayley');
         module.exports._graph.kill();
       } else {
         cb();
@@ -46,7 +48,9 @@ module.exports.start = function (cb) {
     module.exports._graph = spawn(graphExec, graphArgs, opts);
     module.exports._graph.stdout.on('data', function (d) {
       if (!module.exports.started) {
-        debug('cayley start data: ' + d.toString());
+        log.trace({
+          data: d
+        }, 'cayley start');
         module.exports.started = true;
         cb();
       }
@@ -66,9 +70,16 @@ module.exports.start = function (cb) {
     module.exports.stop = function (cb) {
       if (module.exports.started) {
         exec(graphExec + ' stop', opts, function (err, stdout, stderr) {
-          if (err) { debug('err: ' + err.toString()); return cb(err); }
-          debug('stop stdout: ' + stdout.toString());
-          debug('stop stderr: ' + stderr.toString());
+          if (err) {
+            log.error({
+              err: err
+            }, 'exec error');
+            return cb(err);
+          }
+          log.trace({
+            stdout: stdout.toString(),
+            stderr: stderr.toString(),
+          }, 'stop');
           module.exports.started = false;
           cb();
         });
@@ -78,9 +89,16 @@ module.exports.start = function (cb) {
     };
 
     exec(graphExec + ' start', opts, function (err, stdout, stderr) {
-      if (err) { debug('err: ' + err.toString()); return cb(err); }
-      debug('stdout: ' + stdout.toString());
-      debug('stderr: ' + stderr.toString());
+      if (err) {
+        log.trace({
+          err: err
+        }, 'exec error');
+        return cb(err);
+      }
+      log.trace({
+        stdout: stdout.toString(),
+        stderr: stderr.toString(),
+      }, 'stop');
       if (!module.exports.started) {
         module.exports.started = true;
         // this needs a split second so that it doesn't try to call neo4j before it's ready
