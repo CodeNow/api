@@ -21,6 +21,7 @@ describe('Moderate - /moderate/:username', function () {
   before(api.start.bind(ctx));
   after(api.stop.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
+  after(require('../../fixtures/mocks/api-client').clean);
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
