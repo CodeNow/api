@@ -64,9 +64,13 @@ module.exports = {
     });
     return user;
   },
-  createModerator: function (cb) {
+  createModerator: function (opts, cb) {
     debug('createModerator', formatArgs(arguments));
-    return this.createUser(function (err, user) {
+    if (isFunction(opts)) {
+      cb = opts;
+      opts = {};
+    }
+    return this.createUser(opts, function (err, user) {
       if (err) { return cb(err); }
       var $set = {
         permissionLevel: 5
