@@ -301,10 +301,8 @@ describe('PUT /instances/:id/actions/stop', function () {
         if (err) { return done(err); }
         var count = createCount(4, done);
         // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
-        expects.deletedHosts(ctx.user, ctx.instance, count.next);
         // try stop and start
         var instance = ctx.instance;
-        var container = instance.containers.models[0];
         startStop();
         function startStop () {
           instance.start(function (err) {
@@ -320,8 +318,6 @@ describe('PUT /instances/:id/actions/stop', function () {
               // expect temporary property to not be in final response
               expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
               expect(instance.json().container.inspect.State.Starting).to.be.undefined();
-              expects.deletedWeaveHost(container, count.next);
-              expects.deletedHosts(ctx.user, instance, count.next);
             }));
           });
         }
