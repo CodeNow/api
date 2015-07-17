@@ -61,6 +61,7 @@ describe('BDD - Instance Dependencies', function () {
       require('./fixtures/mocks/github/user')(ctx.user);
       require('./fixtures/mocks/github/user')(ctx.user);
       require('./fixtures/mocks/github/user')(ctx.user);
+      require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
       var count = createCount(2, done);
       primus.expectAction('start', {}, function () {
         count.next();
@@ -269,4 +270,3 @@ describe('BDD - Instance Dependencies', function () {
     });
   });
 });
-
