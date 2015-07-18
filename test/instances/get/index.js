@@ -4,6 +4,7 @@ var Code = require('code');
 var Lab = require('lab');
 var async = require('async');
 var createCount = require('callback-count');
+var exists = require('101/exists');
 var noop = require('101/noop');
 var pluck = require('101/pluck');
 
@@ -68,7 +69,8 @@ describe('GET /instances', function () {
         'containers[0].inspect.State.Running': true,
         'owner.github': ctx.user.json().accounts.github.id,
         'owner.username': ctx.user.json().accounts.github.login,
-        'createdBy.username': ctx.user.json().accounts.github.login,
+        'owner.gravatar': exists,
+        'createdBy.username': exists,
         'createdBy.gravatar': ctx.user.json().accounts.github.avatar_url
       }];
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
@@ -84,7 +86,8 @@ describe('GET /instances', function () {
         'containers[0].inspect.State.Running': true,
         'owner.github': ctx.user2.json().accounts.github.id,
         'owner.username': ctx.user2.json().accounts.github.login,
-        'createdBy.username': ctx.user2.json().accounts.github.login,
+        'owner.gravatar': exists,
+        'createdBy.username': exists,
         'createdBy.gravatar': ctx.user2.json().accounts.github.avatar_url
       }];
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
@@ -105,7 +108,8 @@ describe('GET /instances', function () {
         'containers[0].inspect.State.Running': true,
         'owner.github': ctx.user.json().accounts.github.id,
         'owner.username': ctx.user.json().accounts.github.login,
-        'createdBy.username': ctx.user.json().accounts.github.login,
+        'owner.gravatar': exists,
+        'createdBy.username': exists,
         'createdBy.gravatar': ctx.user.json().accounts.github.avatar_url
       }];
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
@@ -121,7 +125,7 @@ describe('GET /instances', function () {
         'containers[0].inspect.State.Running': true,
         'owner.github': ctx.user2.json().accounts.github.id,
         'owner.username': ctx.user2.json().accounts.github.login,
-        'createdBy.username': ctx.user2.json().accounts.github.login,
+        'createdBy.username': exists,
         'createdBy.gravatar': ctx.user2.json().accounts.github.avatar_url
       }];
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
@@ -214,7 +218,8 @@ describe('GET /instances', function () {
         {}
       ];
       expected[0]['build._id'] = ctx.build.id();
-      expected[0]['owner.username'] = ctx.user.json().accounts.github.username;
+      expected[0]['owner.username'] = ctx.user.json().accounts.github.login;
+      expected[0]['owner.gravatar'] = exists;
       expected[0]['owner.github'] = ctx.user.json().accounts.github.id;
       expected[0]['containers[0].inspect.State.Running'] = true;
       // FIXME: chai is messing up with eql check:
@@ -227,7 +232,8 @@ describe('GET /instances', function () {
       };
       var expected2 = [{}];
       expected2[0]['build._id'] = ctx.build2.id();
-      expected2[0]['owner.username'] = ctx.user2.json().accounts.github.username;
+      expected2[0]['owner.username'] = ctx.user2.json().accounts.github.login;
+      expected2[0]['owner.gravatar'] = exists;
       expected2[0]['owner.github'] = ctx.user2.json().accounts.github.id;
       expected[0]['containers[0].inspect.State.Running'] = true;
       // FIXME: chai is messing up with eql check:
@@ -235,7 +241,7 @@ describe('GET /instances', function () {
     });
 
     describe('masterPod', function () {
-      it('should get instance by masterPod', function (done) {
+      it('should get instance by masterPod and owner', function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/users-username')(
           ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
@@ -251,18 +257,19 @@ describe('GET /instances', function () {
         }));
       });
 
-      it('should get instance by masterPod', function (done) {
+      it('should get instance by masterPod and hostname', function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/users-username')(
           ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
         var hostname = [
-          ctx.instance.attrs.name, '-staging-', ctx.user.attrs.accounts.github.username, '.',
+          ctx.instance.attrs.name, '-staging-', ctx.user.json().accounts.github.login, '.',
           process.env.USER_CONTENT_DOMAIN
         ].join('');
         var query = {
           masterPod: true,
           hostname: hostname
         };
+
         ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
           if (err) { return done(err); }
           expect(body.length).to.equal(1);
@@ -277,7 +284,7 @@ describe('GET /instances', function () {
       require('../../fixtures/mocks/github/users-username')(
         ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
       var hostname = [
-        ctx.instance.attrs.name, '-staging-', ctx.user.attrs.accounts.github.username, '.',
+        ctx.instance.attrs.name, '-staging-', ctx.user.json().accounts.github.login, '.',
         process.env.USER_CONTENT_DOMAIN
       ].join('');
       var query = {
@@ -306,7 +313,7 @@ describe('GET /instances', function () {
       }));
     });
 
-    it('should get instance by network.hostIp', function (done) {
+    it('should get instance by network.hostIp and owner', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user);
       require('../../fixtures/mocks/github/users-username')(
         ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.login);
@@ -369,7 +376,8 @@ describe('GET /instances', function () {
         ];
         expected[0]['build._id'] = ctx.build.id(); // instance3's build
         expected[0].name = 'InstanceNumber3';
-        expected[0]['owner.username'] = ctx.user.json().accounts.github.username;
+        expected[0]['owner.username'] = ctx.user.json().accounts.github.login;
+        expected[0]['owner.gravatar'] = exists;
         expected[0]['owner.github'] = ctx.user.json().accounts.github.id;
         expected[0]['containers[0].inspect.State.Running'] = true;
         // FIXME: chai is messing up with eql check:
@@ -387,7 +395,8 @@ describe('GET /instances', function () {
         ];
         expected[0]['build._id'] = ctx.build.id(); // instance3's build
         expected[0].name = 'InstanceNumber3';
-        expected[0]['owner.username'] = ctx.user.json().accounts.github.username;
+        expected[0]['owner.username'] = ctx.user.json().accounts.github.login;
+        expected[0]['owner.gravatar'] = exists;
         expected[0]['owner.github'] = ctx.user.json().accounts.github.id;
         expected[0]['containers[0].inspect.State.Running'] = true;
         // FIXME: chai is messing up with eql check:
@@ -532,7 +541,7 @@ describe('GET /instances', function () {
           {}
         ];
         expected[0].name = ctx.instance.attrs.name;
-        // expected[0]['owner.username'] = ctx.orgName;
+        expected[0]['owner.username'] = ctx.user.attrs.accounts.github.login;
         expected[0]['owner.github'] = ctx.orgId;
         require('../../fixtures/mocks/github/users-username')(ctx.orgId, ctx.orgName);
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
@@ -558,7 +567,7 @@ describe('GET /instances', function () {
           {}
         ];
         expected[0].name = ctx.instance.attrs.name;
-        // expected[0]['owner.username'] = ctx.orgName;
+        expected[0]['owner.username'] = ctx.user.attrs.accounts.github.login;
         expected[0]['owner.github'] = ctx.orgId;
         require('../../fixtures/mocks/github/users-username')(ctx.orgId, ctx.orgName);
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
