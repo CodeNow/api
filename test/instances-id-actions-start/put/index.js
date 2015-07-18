@@ -101,8 +101,7 @@ describe('PUT /instances/:id/actions/start', function () {
       name: exists,
       env: [],
       owner: {
-        username: ctx.user.json().accounts.github.login,
-        gravatar: ctx.user.json().gravatar,
+        username: 'Runnable',
         github: ctx.user.json().accounts.github.id
       },
       contextVersions: exists,
@@ -111,6 +110,7 @@ describe('PUT /instances/:id/actions/start', function () {
       'build._id': ctx.build.id(),
       'contextVersions[0]._id': ctx.cv.id()
     };
+    ctx.expected['owner.gravatar'] = exists;
     done();
   }
 
@@ -207,6 +207,7 @@ describe('PUT /instances/:id/actions/start', function () {
           afterEach(require('../../fixtures/clean-mongo').removeEverything);
           it('should send message on simple start', function(done) {
             var countDown = createCount(2, done);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
             primus.expectAction.bind(ctx)('start', ctx.expected, countDown.next);
             ctx.instance.start(countDown.next);
           });
@@ -285,6 +286,7 @@ describe('PUT /instances/:id/actions/start', function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should start an instance', function (done) {
+      require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
       if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
         Docker.prototype.startContainer = ctx.originalStart;
       //  ctx.expected['containers[0].inspect.State.Running'] = true;
@@ -318,7 +320,7 @@ describe('PUT /instances/:id/actions/start', function () {
         if (err) { return done(err); }
         var count = createCount(4, done);
         // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
-        expects.updatedHosts(ctx.user, ctx.instance, count.next);
+        expects.updatedHosts('Runnable', ctx.instance, count.next);
         // try stop and start
         var instance = ctx.instance;
         var container = instance.containers.models[0];
@@ -338,7 +340,7 @@ describe('PUT /instances/:id/actions/start', function () {
             expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
             expect(instance.json().container.inspect.State.Starting).to.be.undefined();
             expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.next);
-            expects.updatedHosts(ctx.user, instance, count.next);
+            expects.updatedHosts('Runnable', instance, count.next);
             count.next();
           }));
         });

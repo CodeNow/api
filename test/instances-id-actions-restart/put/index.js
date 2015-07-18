@@ -99,8 +99,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       name: exists,
       env: [],
       owner: {
-        username: ctx.user.json().accounts.github.login,
-        gravatar: ctx.user.json().accounts.github.avatar_url,
+        username: 'Runnable',
         github: ctx.user.json().accounts.github.id
       },
       contextVersions: exists,
@@ -109,6 +108,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       'build._id': ctx.build.id(),
       'contextVersions[0]._id': ctx.cv.id()
     };
+    ctx.expected['owner.gravatar'] = exists;
     done();
   }
 
@@ -274,6 +274,7 @@ describe('PUT /instances/:id/actions/restart', function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should restart an instance', function (done) {
+      require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
       if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
         Docker.prototype.startContainer = ctx.originalStart;
         ctx.expected['containers[0].inspect.State.Running'] = true;
@@ -312,7 +313,7 @@ describe('PUT /instances/:id/actions/restart', function () {
         count.inc();
 
         expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
-        expects.updatedHosts(ctx.user, instance, count.inc().next);
+        expects.updatedHosts('Runnable', instance, count.inc().next);
         // try stop and start
 
         count.inc();
@@ -331,7 +332,7 @@ describe('PUT /instances/:id/actions/restart', function () {
             expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
             expect(instance.json().container.inspect.State.Starting).to.be.undefined();
             expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
-            expects.updatedHosts(ctx.user, instance, count.next);
+            expects.updatedHosts('Runnable', instance, count.next);
           }));
         }));
       }
