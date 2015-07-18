@@ -97,6 +97,7 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
 
             primus.expectAction('post', expected, countDown.next);
             primus.expectAction('deploy', expected, countDown.next);
@@ -130,6 +131,7 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
             var countDown = createCount(2, done);
             primus.expectAction('start', expected, countDown.next);
             ctx.user.createInstance({ json: json }, function(err) {
@@ -145,6 +147,7 @@ describe('POST /instances', function () {
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
             require('../../fixtures/mocks/github/user')(ctx.user);
@@ -163,7 +166,7 @@ describe('POST /instances', function () {
                 expect(instance.attrs.containers[0]).to.exist();
                 var count = createCount(2, done);
                 expects.updatedHosts(
-                  ctx.user, instance, count.next);
+                  'Runnable', instance, count.next);
                 var container = instance.containers.models[0];
                 expects.updatedWeaveHost(
                   container, instance.attrs.network.hostIp, count.next);
@@ -183,6 +186,7 @@ describe('POST /instances', function () {
             var json = { build: ctx.build.id(), name: randStr(5) };
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
             ctx.user.createInstance({ json: json }, expects.error(400, done));
           });
         });
@@ -217,6 +221,9 @@ describe('POST /instances', function () {
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user')(ctx.user);
+          require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
+          require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
+          require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
@@ -308,7 +315,7 @@ describe('POST /instances', function () {
             _id: exists,
             name: json.name,
             'owner.github': ctx.user.json().accounts.github.id,
-            'owner.username': ctx.user.json().accounts.github.login,
+            'owner.username': 'Runnable',
             public: false,
             'build._id': ctx.build.id(),
             containers: exists,
@@ -327,7 +334,7 @@ describe('POST /instances', function () {
               var container = instance.containers.models[0];
               var count = createCount(2, done);
               expects.updatedHosts(
-                ctx.user, instance, count.next);
+                'Runnable', instance, count.next);
               expects.updatedWeaveHost(
                 container, instance.attrs.network.hostIp, count.next);
             });
@@ -349,14 +356,14 @@ describe('POST /instances', function () {
               env: json.env,
               owner: {
                 github: ctx.user.json().accounts.github.id,
-                gravatar: ctx.user.json().accounts.github.avatar_url,
-                username: ctx.user.json().accounts.github.login
+                username: 'Runnable'
               },
               public: false,
               'build._id': ctx.build.id(),
               containers: exists,
               'containers[0]': exists
             };
+            expected['owner.gravatar'] = exists;
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
               expects.success(201, {}, noop));
@@ -387,14 +394,14 @@ describe('POST /instances', function () {
               env: ['ONE=1'],
               owner: {
                 github: ctx.user.json().accounts.github.id,
-                gravatar: ctx.user.json().accounts.github.avatar_url,
-                username: ctx.user.json().accounts.github.login
+                username: 'Runnable'
               },
               public: false,
               'build._id': ctx.build.id(),
               containers: exists,
               'containers[0]': exists
             };
+            expected['owner.gravatar'] = exists;
             require('../../fixtures/mocks/github/user')(ctx.user);
             ctx.user.createInstance(json,
               expects.success(201, {}, noop));
@@ -432,14 +439,14 @@ describe('POST /instances', function () {
               name: 'Instance1',
               owner: {
                 github: ctx.user.json().accounts.github.id,
-                gravatar: ctx.user.json().accounts.github.avatar_url,
-                username: ctx.user.json().accounts.github.login
+                username: 'Runnable'
               },
               public: false,
               'build._id': ctx.build.id(),
               containers: exists,
               shortHash: exists
             };
+            expected['owner.gravatar'] = exists;
             createInstanceWith(ctx.user, body, expected, function (err, res1) {
               if (err) { return done(err); }
               expected.name = 'Instance2';
@@ -454,8 +461,7 @@ describe('POST /instances', function () {
                   name: 'Instance1',
                   owner: {
                     github: ctx.user2.json().accounts.github.id,
-                    gravatar: ctx.user2.json().accounts.github.avatar_url,
-                    username: ctx.user2.json().accounts.github.login
+                    username: 'Runnable'
                   },
                   public: false,
                   'build._id': ctx.build2.id(),
@@ -467,6 +473,7 @@ describe('POST /instances', function () {
                     return true;
                   }
                 };
+                expected2['owner.gravatar'] = exists;
                 var body2 = {
                   build: ctx.build2.id()
                 };
@@ -478,6 +485,7 @@ describe('POST /instances', function () {
               primus.expectAction('start', next);
               require('../../fixtures/mocks/github/user')(user);
               require('../../fixtures/mocks/github/user')(user);
+              require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
               var instance = user.createInstance(body, expects.success(201, expected, next));
               function complete (err) {
                 cb(err, instance && instance.toJSON());
