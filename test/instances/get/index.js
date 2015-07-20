@@ -114,7 +114,7 @@ describe('GET /instances', function () {
       }];
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
       var query2 = {
-        shortHash: ctx.instance2.json().shortHash,
+        _id: ctx.instance2.json()._id,
         owner: {
           github: ctx.user2.attrs.accounts.github.id
         }
