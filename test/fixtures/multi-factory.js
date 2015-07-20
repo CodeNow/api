@@ -5,8 +5,6 @@
 
 var EventEmitter = require('events').EventEmitter;
 var createCount = require('callback-count');
-var debug = require('debug')('runnable-api:multi-factory');
-var formatArgs = require('format-args');
 var isFunction = require('101/is-function');
 var isObject = require('101/is-object');
 var randStr = require('randomstring').generate;
@@ -16,7 +14,10 @@ var defaults = require('101/defaults');
 var MongoUser = require('models/mongo/user');
 var dockerMockEvents = require('./docker-mock-events');
 var generateKey = require('./key-factory');
+var logger = require('middlewares/logger')(__filename);
 var primus = require('./primus');
+
+var log = logger.log;
 
 module.exports = {
   createUser: function (opts, cb) {
@@ -24,7 +25,7 @@ module.exports = {
       cb = opts;
       opts = {};
     }
-    debug('createUser', formatArgs(arguments));
+    log.trace({}, 'createUser');
     var host = require('./host');
     var token = uuid();
     var name = opts.username || randStr(5);
@@ -45,7 +46,7 @@ module.exports = {
     return user;
   },
   createHelloRunnableUser: function (cb) {
-    debug('createUser', formatArgs(arguments));
+    log.trace({}, 'createUser');
     var host = require('./host');
     var token = uuid();
     require('./mocks/github/action-auth')(token,
@@ -65,7 +66,7 @@ module.exports = {
     return user;
   },
   createModerator: function (cb) {
-    debug('createModerator', formatArgs(arguments));
+    log.trace({}, 'createModerator');
     return this.createUser(function (err, user) {
       if (err) { return cb(err); }
       var $set = {
@@ -77,7 +78,7 @@ module.exports = {
     });
   },
   createContext: function (ownerId, cb) {
-    debug('createContext', formatArgs(arguments));
+    log.trace({}, 'createContext');
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -96,7 +97,7 @@ module.exports = {
     });
   },
   createSourceContext: function (cb) {
-    debug('createSourceContext', formatArgs(arguments));
+    log.trace({}, 'createSourceContext');
     this.createModerator(function (err, moderator) {
       if (err) { return cb(err); }
       var body = {
@@ -110,7 +111,7 @@ module.exports = {
     });
   },
   createSourceContextVersion: function (cb) {
-    debug('createSourceContextVersion', formatArgs(arguments));
+    log.trace({}, 'createSourceContextVersion');
     this.createSourceContext(function (err, context, moderator) {
       if (err) { return cb(err); }
       require('./mocks/s3/put-object')(context.id(), '/');
@@ -129,7 +130,7 @@ module.exports = {
     });
   },
   createBuild: function (ownerId, cb) {
-    debug('createBuild', formatArgs(arguments));
+    log.trace({}, 'createBuild');
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -152,7 +153,7 @@ module.exports = {
     });
   },
   createContextVersion: function (ownerId, cb) {
-    debug('createContextVersion', formatArgs(arguments));
+    log.trace({}, 'createContextVersion');
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -221,7 +222,7 @@ module.exports = {
     });
   },
   createBuiltBuild: function (ownerId, cb) {
-    debug('createBuiltBuild', formatArgs(arguments));
+    log.trace({}, 'createBuiltBuild');
     require('nock').cleanAll();
     if (typeof ownerId === 'function') {
       cb = ownerId;
@@ -230,15 +231,15 @@ module.exports = {
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
     var self = this;
-    debug('this.createContextVersion', ownerId);
+    log.trace({}, 'this.createContextVersion', ownerId);
     this.createContextVersion(ownerId, function (err, contextVersion, context, build, user, srcArray) {
       if (err) { return cb(err); }
-      debug('self.buildTheBuild', user.id(), build.id(), ownerId);
+      log.trace({}, 'self.buildTheBuild', user.id(), build.id(), ownerId);
       self.buildTheBuild(user, build, ownerId, function (err) {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
-        debug('contextVersion.fetch', contextVersion.id());
+        log.trace({}, 'contextVersion.fetch', contextVersion.id());
         contextVersion.fetch(function (err) {
           cb(err, build, user,
               [contextVersion, context, build, user],
@@ -255,35 +256,35 @@ module.exports = {
    * @param {Function} cb
    */
   createAndTailInstance: function (primus, buildOwnerId, buildOwnerName, createBody, cb) {
-    debug('createAndTailInstance', buildOwnerId, buildOwnerName, createBody, typeof cb);
+    log.trace({}, 'createAndTailInstance', buildOwnerId, buildOwnerName, createBody, typeof cb);
     if (isFunction(buildOwnerId)) {
       cb = buildOwnerId;
       buildOwnerId = null;
-      debug('createAndTailInstance args1', buildOwnerId, buildOwnerName, createBody, typeof cb);
+      log.trace({}, 'createAndTailInstance args1', buildOwnerId, buildOwnerName, createBody, typeof cb);
     }
     else if (isObject(buildOwnerId)) {
       cb = buildOwnerName;
       createBody = buildOwnerId;
       buildOwnerName = null;
       buildOwnerId = null;
-      debug('createAndTailInstance args2', buildOwnerId, buildOwnerName, createBody, typeof cb);
+      log.trace({}, 'createAndTailInstance args2', buildOwnerId, buildOwnerName, createBody, typeof cb);
     }
     if (isFunction(buildOwnerName)) {
       cb = buildOwnerName;
       buildOwnerName = null;
-      debug('createAndTailInstance args3', buildOwnerId, buildOwnerName, createBody, typeof cb);
+      log.trace({}, 'createAndTailInstance args3', buildOwnerId, buildOwnerName, createBody, typeof cb);
     }
     else if (isObject(buildOwnerName)) {
       cb = createBody;
       createBody = buildOwnerName;
       buildOwnerName = null;
-      debug('createAndTailInstance args4', buildOwnerId, buildOwnerName, createBody, typeof cb);
+      log.trace({}, 'createAndTailInstance args4', buildOwnerId, buildOwnerName, createBody, typeof cb);
     }
     if (isFunction(createBody)) {
       cb = createBody;
       createBody = null;
     }
-    debug('createAndTailInstance args', buildOwnerId, buildOwnerName, createBody, typeof cb);
+    log.trace({}, 'createAndTailInstance args', buildOwnerId, buildOwnerName, createBody, typeof cb);
     var ctx = {};
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err); }
@@ -313,20 +314,20 @@ module.exports = {
       require('./mocks/github/user')(user);
       var next = createCount(2, done).next;
       primus.joinOrgRoom(user.json().accounts.github.id, function (err) {
-        debug('createAndTailInstance', 'joined room');
+        log.trace({}, 'createAndTailInstance', 'joined room');
         if (err) { return next(err); }
         primus.expectAction('start', {}, function () {
-          debug('createAndTailInstance', 'instance started');
+          log.trace({}, 'createAndTailInstance', 'instance started');
           next();
         });
         ctx.instance = user.createInstance(body, function (err) {
-          debug('createAndTailInstance', 'created instance');
+          log.trace({}, 'createAndTailInstance', 'created instance');
           if (err) { return next(err); }
           next();
         });
       });
       function done () {
-        debug('createAndTailInstance', 'done');
+        log.trace({}, 'createAndTailInstance', 'done');
         ctx.instance.fetch(function (err) {
           if (err) { return cb(err); }
           cb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.srcArr);
@@ -335,7 +336,7 @@ module.exports = {
     });
   },
   createInstance: function (buildOwnerId, buildOwnerName, cb) {
-    debug('createInstance', formatArgs(arguments));
+    log.trace({}, 'createInstance');
     if (typeof buildOwnerId === 'function') {
       cb = buildOwnerId;
       buildOwnerId = null;
@@ -380,7 +381,7 @@ module.exports = {
   },
 
   createAndTailContainer: function (primus, cb) {
-    debug('createAndTailContainer', formatArgs(arguments));
+    log.trace({}, 'createAndTailContainer');
     this.createAndTailInstance(primus, function (err, instance, build, user, modelsArray, srcArr) {
       if (err) { return cb(err); }
       var container = instance.newContainer(instance.json().containers[0]);
@@ -389,7 +390,7 @@ module.exports = {
   },
 
   createContainer: function (cb) {
-    debug('createContainer', formatArgs(arguments));
+    log.trace({}, 'createContainer');
     var _this = this;
     this.createAndTailInstance(function (err, instance, build, user, modelsArray, srcArr) {
       if (err) { return cb(err); }
@@ -402,7 +403,7 @@ module.exports = {
   },
 
   buildTheBuild: function (user, build, ownerId, cb) {
-    debug('buildTheBuild', formatArgs(arguments));
+    log.trace({}, 'buildTheBuild');
     require('nock').cleanAll();
     var dispatch = new EventEmitter();
     if (typeof ownerId === 'function') {
@@ -420,28 +421,28 @@ module.exports = {
       // build fetch
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
-    debug('build.fetch', build.id());
+    log.trace({}, 'build.fetch', build.id());
     build.fetch(function (err) {
       if (err) { return cb(err); }
-      debug('build.contextVersions.models[0].fetch');
+      log.trace({}, 'build.contextVersions.models[0].fetch');
       build.contextVersions.models[0].fetch(function (err, cv) {
         if (err) { return cb(err); }
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
-        debug('build.build', build.id());
+        log.trace({}, 'build.build', build.id());
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);
           if (err) { return cb(err); }
           cv = build.contextVersions.models[0]; // cv may have been deduped
-          debug('cv.fetch', cv.id());
+          log.trace({}, 'cv.fetch', cv.id());
           cv.fetch(function (err) {
             if (err) { return cb(err); }
             cv = cv.toJSON();
             if (cv.build.completed) { return cb(); }
-            debug('primus.joinOrgRoom', ownerId || user.json().accounts.github.id);
+            log.trace({}, 'primus.joinOrgRoom', ownerId || user.json().accounts.github.id);
             primus.joinOrgRoom(ownerId || user.json().accounts.github.id, function() {
-              debug('primus.onceVersionComplete', cv._id);
+              log.trace({}, 'primus.onceVersionComplete', cv._id);
               primus.onceVersionComplete(cv._id, function() {
-                debug('version complete', cv._id);
+                log.trace({}, 'version complete', cv._id);
                 require('./mocks/github/user')(user);
                 var count = createCount(2, cb);
                 build.contextVersions.models[0].fetch(count.next);
@@ -458,20 +459,20 @@ module.exports = {
   },
 
   createContextPath: function (user, contextId) {
-    debug('createContextPath', formatArgs(arguments));
+    log.trace({}, 'createContextPath');
     return user
       .newContext(contextId);
   },
 
   createContextVersionPath: function (user, contextId, contextVersionId) {
-    debug('createContextVersionPath', formatArgs(arguments));
+    log.trace({}, 'createContextVersionPath');
     return user
       .newContext(contextId)
       .newVersion(contextVersionId);
   },
 
   createContainerPath: function (user, instanceId, containerId) {
-    debug('createContainerPath', formatArgs(arguments));
+    log.trace({}, 'createContainerPath');
     return user
       .newInstance(instanceId)
       .newContainer(containerId);
