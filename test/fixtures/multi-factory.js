@@ -239,6 +239,7 @@ module.exports = {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+        require('./mocks/github/user-id')(ownerId, 'Runnable');
         log.trace({}, 'contextVersion.fetch', contextVersion.id());
         contextVersion.fetch(function (err) {
           cb(err, build, user,
@@ -320,6 +321,11 @@ module.exports = {
           log.trace({}, 'createAndTailInstance', 'instance started');
           next();
         });
+        require('./mocks/github/user-id')(user.json().accounts.github.id,
+          user.json().accounts.github.login);
+        require('./mocks/github/user-id')(user.json().accounts.github.id, user.json().accounts.github.login);
+        require('./mocks/github/user-id')(user.json().accounts.github.id, user.json().accounts.github.login);
+        require('./mocks/github/user-id')(user.json().accounts.github.id, user.json().accounts.github.login);
         ctx.instance = user.createInstance(body, function (err) {
           log.trace({}, 'createAndTailInstance', 'created instance');
           if (err) { return next(err); }
@@ -367,15 +373,12 @@ module.exports = {
         require('./mocks/github/user')(user);
       }
       require('./mocks/github/user')(user);
+      require('./mocks/github/user-id')(user.json().accounts.github.id, user.json().accounts.github.login);
+      require('./mocks/github/user-id')(buildOwnerId, buildOwnerName);
       var instance = user.createInstance(body, function (err) {
         if (err) { return cb(err); }
         // hold until instance worker completes
         cb(err, instance, build, user, modelsArr, srcArr);
-        /*
-        module.exports.tailInstance(user, instance, function (err, instance) {
-          console.log('tail instancep', arguments);
-        });
-        */
       });
     });
   },

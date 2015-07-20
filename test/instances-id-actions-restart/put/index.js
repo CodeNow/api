@@ -226,6 +226,8 @@ describe('PUT /instances/:id/actions/restart', function () {
         primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
       });
       beforeEach(function (done) {
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
         var body = {
           env: ['ENV=OLD'],
           build: ctx.build.id(),
@@ -250,6 +252,8 @@ describe('PUT /instances/:id/actions/restart', function () {
         primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
       });
       beforeEach(function (done) {
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
         var body = {
           build: ctx.build.id(),
           masterPod: true

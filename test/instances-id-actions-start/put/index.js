@@ -208,6 +208,7 @@ describe('PUT /instances/:id/actions/start', function () {
           it('should send message on simple start', function(done) {
             var countDown = createCount(2, done);
             require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
             primus.expectAction.bind(ctx)('start', ctx.expected, countDown.next);
             ctx.instance.start(countDown.next);
           });
@@ -246,6 +247,8 @@ describe('PUT /instances/:id/actions/start', function () {
         primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
       });
       beforeEach(function (done) {
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
         var body = {
           env: ['ENV=OLD'],
           build: ctx.build.id(),
@@ -266,6 +269,8 @@ describe('PUT /instances/:id/actions/start', function () {
         primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
       });
       beforeEach(function (done) {
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
         var body = {
           build: ctx.build.id(),
           masterPod: true
@@ -286,7 +291,6 @@ describe('PUT /instances/:id/actions/start', function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should start an instance', function (done) {
-      require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
       if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
         Docker.prototype.startContainer = ctx.originalStart;
       //  ctx.expected['containers[0].inspect.State.Running'] = true;
