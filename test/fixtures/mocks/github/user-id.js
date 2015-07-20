@@ -16,7 +16,7 @@ module.exports = function (userId, username) {
 
 
   nock('https://api.github.com:443')
-    .filteringPath(/\/user\/[^\/]+\?.+/, '/user/' + userId)
+    .filteringPath(/\/user\/[\d]+\?.+/, '/user/' + userId)
     .get('/user/' + userId)
     .reply(200, {
       'login': username,

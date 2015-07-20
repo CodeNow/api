@@ -516,6 +516,7 @@ describe('POST /instances', function () {
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName);
+          require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
           ctx.user.createInstance(json,
             expects.errorStatus(400, /owner must match/, done));
         });

@@ -219,7 +219,6 @@ describe('201 POST /instances', function () {
               instanceName: body.name,
               instanceShortHash: body.shortHash,
               ownerUsername: 'Runnable',
-              type: 'user-container',
               creatorGithubId: ctx.user.attrs.accounts.github.id.toString(),
               ownerGithubId: ctx.user.attrs.accounts.github.id.toString(),
               type: 'user-container',
