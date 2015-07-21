@@ -299,7 +299,7 @@ describe('PUT /instances/:id/actions/stop', function () {
       }
       function startStopAssert (err) {
         if (err) { return done(err); }
-        var count = createCount(4, done);
+        var count = createCount(2, done);
         // expects.updatedWeaveHost(container, ctx.instance.attrs.network.hostIp, count.inc().next);
         // try stop and start
         var instance = ctx.instance;
@@ -318,6 +318,7 @@ describe('PUT /instances/:id/actions/stop', function () {
               // expect temporary property to not be in final response
               expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
               expect(instance.json().container.inspect.State.Starting).to.be.undefined();
+              count.next();
             }));
           });
         }
