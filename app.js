@@ -28,7 +28,7 @@ var log = logger.log;
 // express server, handles web HTTP requests
 var apiServer = new ApiServer();
 
-if (process.env.NEWRELIC_KEY) {
+if (process.env.NEWRELIC_NAME && process.env.NEWRELIC_KEY) {
   require('newrelic');
 }
 
