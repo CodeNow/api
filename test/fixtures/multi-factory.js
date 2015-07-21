@@ -221,15 +221,19 @@ module.exports = {
       });
     });
   },
-  createBuiltBuild: function (ownerId, cb) {
+  createBuiltBuild: function (ownerId, ownerName, cb) {
     log.trace({}, 'createBuiltBuild');
     require('nock').cleanAll();
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
-    } else {
-      require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+      ownerName = 'Runnable';
     }
+    else if (typeof ownerName === 'function') {
+      cb = ownerName;
+      ownerName = 'Runnable';
+    }
+    require('./mocks/github/user-orgs')(ownerId, ownerName);
     var self = this;
     log.trace({}, 'this.createContextVersion', ownerId);
     this.createContextVersion(ownerId, function (err, contextVersion, context, build, user, srcArray) {
@@ -239,6 +243,7 @@ module.exports = {
         if (err) { return cb(err); }
         require('./mocks/github/user')(user);
         require('./mocks/github/user-orgs')(ownerId, 'Runnable');
+        require('./mocks/github/user-id')(ownerId, 'Runnable');
         log.trace({}, 'contextVersion.fetch', contextVersion.id());
         contextVersion.fetch(function (err) {
           cb(err, build, user,
@@ -320,6 +325,12 @@ module.exports = {
           log.trace({}, 'createAndTailInstance', 'instance started');
           next();
         });
+        require('./mocks/github/user-id')(user.json().accounts.github.id,
+          user.json().accounts.github.login);
+        require('./mocks/github/user-id')(user.json().accounts.github.id,
+          user.json().accounts.github.login);
+        require('./mocks/github/user-id')(user.json().accounts.github.id,
+          user.json().accounts.github.login);
         ctx.instance = user.createInstance(body, function (err) {
           log.trace({}, 'createAndTailInstance', 'created instance');
           if (err) { return next(err); }
@@ -340,12 +351,13 @@ module.exports = {
     if (typeof buildOwnerId === 'function') {
       cb = buildOwnerId;
       buildOwnerId = null;
+      buildOwnerName = 'Runnable';
     }
     if (typeof buildOwnerName === 'function') {
       cb = buildOwnerName;
       buildOwnerName = 'Runnable';
     }
-    this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
+    this.createBuiltBuild(buildOwnerId, buildOwnerName, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err); }
       var body = {
         name: randStr(5),
@@ -362,6 +374,7 @@ module.exports = {
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName);
+        require('./mocks/github/user-id')(buildOwnerId, buildOwnerName);
       } else {
         require('./mocks/github/user')(user);
         require('./mocks/github/user')(user);
@@ -371,11 +384,6 @@ module.exports = {
         if (err) { return cb(err); }
         // hold until instance worker completes
         cb(err, instance, build, user, modelsArr, srcArr);
-        /*
-        module.exports.tailInstance(user, instance, function (err, instance) {
-          console.log('tail instancep', arguments);
-        });
-        */
       });
     });
   },

@@ -58,11 +58,21 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           ],
           build: ctx.build.id()
         };
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         ctx.instance2 = ctx.user.createInstance(body2, count.inc().next);
         ctx.instanceWithDep = ctx.user.createInstance(depBody, count.inc().next);
       });
 
       it('should return a depedency', function (done) {
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         var deps = ctx.instanceWithDep.fetchDependencies(function (err, data) {
           if (err) { return done(err); }
           expectInstanceDep(data, ctx.instance);
@@ -72,6 +82,8 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           }, function (err, data, code) {
             if (err) { return done(err); }
             expect(code).to.equal(200);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+              ctx.user.attrs.accounts.github.login);
             ctx.instanceWithDep.fetchDependencies(function (err, data) {
               if (err) { return done(err); }
               expectInstanceDep(data, ctx.instance2);

@@ -49,15 +49,16 @@ function expectInstanceCreated (body, statusCode, user, build, cv) {
   cv = cv.json();
   var owner = {
     github:   user.accounts.github.id,
-    username: user.accounts.github.login,
-    gravatar: user.gravatar
+    username: 'Runnable'
   };
+
   expect(body._id).to.exist();
   expect(body.shortHash).to.exist();
   expect(body.network).to.exist();
   expect(body.network.networkIp).to.exist();
   expect(body.network.hostIp).to.exist();
   expect(body.name).to.exist();
+  expect(body.owner.gravatar).to.exist();
   expect(body.lowerName).to.equal(body.name.toLowerCase());
   expect(body).deep.contain({
     build: build,
@@ -84,7 +85,7 @@ describe('201 POST /instances', function () {
   afterEach(primus.disconnect);
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   // afterEach(require('../../fixtures/clean-ctx')(ctx));
-  // afterEach(require('../../fixtures/clean-nock'));
+  afterEach(require('../../fixtures/clean-nock'));
 
   describe('For User', function () {
     describe('with in-progress build', function () {
@@ -114,6 +115,7 @@ describe('201 POST /instances', function () {
         //done();
       });
       it('should create a private instance by default', function (done) {
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
         var name = uuid();
         var env = [
           'FOO=BAR'
@@ -136,6 +138,7 @@ describe('201 POST /instances', function () {
       });
 
       it('should make a master pod instance', function (done) {
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
         var name = uuid();
         var body = {
           name: name,
@@ -155,6 +158,7 @@ describe('201 POST /instances', function () {
       });
 
       it('should create an instance with a build', function (done) {
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
@@ -168,6 +172,7 @@ describe('201 POST /instances', function () {
       it('should create an instance with name, build, env', function (done) {
         var name = 'CustomName';
         var env = ['one=one','two=two','three=three'];
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
         ctx.user.createInstance({ build: ctx.build.id(), name: name, env: env }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
@@ -213,7 +218,7 @@ describe('201 POST /instances', function () {
               instanceId: body._id,
               instanceName: body.name,
               instanceShortHash: body.shortHash,
-              ownerUsername: ctx.user.attrs.accounts.github.login,
+              ownerUsername: 'Runnable',
               creatorGithubId: ctx.user.attrs.accounts.github.id.toString(),
               ownerGithubId: ctx.user.attrs.accounts.github.id.toString(),
               type: 'user-container',

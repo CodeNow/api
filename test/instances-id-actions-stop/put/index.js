@@ -101,8 +101,7 @@ describe('PUT /instances/:id/actions/stop', function () {
       name: exists,
       env: [],
       owner: {
-        username: ctx.user.json().accounts.github.login,
-        gravatar: ctx.user.json().gravatar,
+        username: 'Runnable',
         github: ctx.user.json().accounts.github.id
       },
       contextVersions: exists,
@@ -111,6 +110,7 @@ describe('PUT /instances/:id/actions/stop', function () {
       'build._id': ctx.build.id(),
       'contextVersions[0]._id': ctx.cv.id()
     };
+    ctx.expected['owner.gravatar'] = exists;
     done();
   }
 
@@ -271,6 +271,7 @@ describe('PUT /instances/:id/actions/stop', function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should stop an instance', function (done) {
+      require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, 'Runnable');
       if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
         Docker.prototype.startContainer = ctx.originalStart;
       }

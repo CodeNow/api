@@ -383,6 +383,8 @@ describe('BDD - Create Build and Deploy Instance', function () {
         multi.buildTheBuild(ctx.user, ctx.build, done);
       });
       beforeEach(function (done) {
+        require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done);
       });
       // 5
@@ -448,6 +450,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
           require('./fixtures/mocks/github/user')(ctx.user);
+          //require('./fixtures/mocks/github/user-id')(ctx.user);
           var count = createCount(cb);
           primus.expectAction('start', count.inc().next);
           ctx.instance.update({
@@ -464,6 +467,8 @@ describe('BDD - Create Build and Deploy Instance', function () {
         multi.buildTheBuild(ctx.user, ctx.build, done);
       });
       beforeEach(function (done) {
+        require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done);
       });
       // 6

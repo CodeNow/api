@@ -85,8 +85,8 @@ describe('204 DELETE /instances/:id', function () {
       'createdBy.github': ctx.user.attrs.accounts.github.id,
       name: exists,
       env: [],
-      'owner.username': ctx.user.json().accounts.github.login,
-      'owner.gravatar': ctx.user.json().accounts.github.avatar_url,
+      'owner.username': exists,
+      'owner.gravatar': exists,
       'owner.github': ctx.user.json().accounts.github.id,
       contextVersions: exists,
       'network.networkIp': exists,
@@ -225,6 +225,8 @@ describe('204 DELETE /instances/:id', function () {
         };
         ctx.expected.env = body.env;
         ctx.expected['build._id'] = body.build;
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         if (ctx.expectNoContainerErr) {
           ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
         }
@@ -246,6 +248,8 @@ describe('204 DELETE /instances/:id', function () {
         var body = {
           build: ctx.build.id()
         };
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         if (ctx.expectNoContainerErr) {
           ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, done));
         }

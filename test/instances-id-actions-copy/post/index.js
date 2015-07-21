@@ -177,6 +177,8 @@ describe('POST /instances/:id/actions/copy', function () {
         require('../../fixtures/mocks/github/user')(ctx.user);
         require('../../fixtures/mocks/github/user')(ctx.user);
         primus.expectActionCount('start', 1, count.next);
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         ctx.user.copyInstance(
           ctx.instance.attrs.shortHash, {owner:{github:ctx.orgId}}, expects.success(201, expected, count.next));
       });
@@ -194,6 +196,8 @@ describe('POST /instances/:id/actions/copy', function () {
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user')(ctx.nonOwner);
           primus.expectActionCount('start', 1, count.next);
+          require('../../fixtures/mocks/github/user-id')(ctx.nonOwner.attrs.accounts.github.id,
+            ctx.nonOwner.attrs.accounts.github.login);
           ctx.otherInstance = ctx.user.copyInstance(ctx.instance.attrs.shortHash, count.next);
         });
         it('should copy the instance when part of the same org as the owner', function (done) {
@@ -216,7 +220,14 @@ describe('POST /instances/:id/actions/copy', function () {
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+          require('../../fixtures/mocks/github/user-id')(ctx.orgId, 'Runnable');
           primus.expectActionCount('start', 1, count.next);
+          require('../../fixtures/mocks/github/user-id')(ctx.nonOwner.attrs.accounts.github.id,
+            ctx.nonOwner.attrs.accounts.github.login);
+          require('../../fixtures/mocks/github/user-id')(ctx.nonOwner.attrs.accounts.github.id,
+            ctx.nonOwner.attrs.accounts.github.login);
+          require('../../fixtures/mocks/github/user-id')(ctx.nonOwner.attrs.accounts.github.id,
+            ctx.nonOwner.attrs.accounts.github.login);
           ctx.nonOwner.copyInstance(ctx.otherInstance.id(), expects.success(201, expected, count.next));
         });
       });

@@ -88,6 +88,8 @@ describe('Building - Context Version Deduping', function () {
       primus.expectActionCount('start', 2, count.next);
 
       var forkedInstance;
+      require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+        ctx.user.attrs.accounts.github.login);
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
         // Now fork that instance
@@ -101,6 +103,8 @@ describe('Building - Context Version Deduping', function () {
     it('should fork the instance, and but not deploy since the build will fail', function (done) {
       // Add it to an instance
       var json = { build: ctx.build.id(), name: randStr(5) };
+      require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+        ctx.user.attrs.accounts.github.login);
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
         // Now fork that instance
@@ -125,6 +129,8 @@ describe('Building - Context Version Deduping', function () {
     it('should fork after failure, so the instance should not deploy', function (done) {
       // Add it to an instance
       var json = { build: ctx.build.id(), name: randStr(5) };
+      require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+        ctx.user.attrs.accounts.github.login);
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
         // finish the build
