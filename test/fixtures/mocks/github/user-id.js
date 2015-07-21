@@ -1,6 +1,5 @@
 var nock = require('nock');
 var multiline = require('multiline');
-var isObject = require('101/is-object');
 var randStr = require('randomstring').generate;
 
 var userId = 0;

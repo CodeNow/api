@@ -112,8 +112,10 @@ describe('Instance - /instances/:id', function () {
             ctx.nonOwner = multi.createUser(done);
           });
           it('should get the instance', function (done) {
-            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
-            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+              ctx.user.attrs.accounts.github.login);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+              ctx.user.attrs.accounts.github.login);
             ctx.nonOwner.fetchInstance(ctx.instance.attrs.shortHash, expects.success(200, ctx.expected, done));
           });
         });
@@ -122,8 +124,10 @@ describe('Instance - /instances/:id', function () {
             ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
-            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
-            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+              ctx.user.attrs.accounts.github.login);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+              ctx.user.attrs.accounts.github.login);
             ctx.moderator.fetchInstance(ctx.instance.attrs.shortHash, expects.success(200, ctx.expected, done));
           });
         });
@@ -151,7 +155,8 @@ describe('Instance - /instances/:id', function () {
             ctx.nonOwner = multi.createUser(done);
           });
           it('should not get the instance (403 forbidden)', function (done) {
-            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+              ctx.user.attrs.accounts.github.login);
             ctx.nonOwner.fetchInstance(ctx.instance.attrs.shortHash, expects.error(403, /Access denied/, done));
           });
         });
@@ -160,8 +165,10 @@ describe('Instance - /instances/:id', function () {
             ctx.moderator = multi.createModerator(done);
           });
           it('should get the instance', function (done) {
-            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
-            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+              ctx.user.attrs.accounts.github.login);
+            require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+              ctx.user.attrs.accounts.github.login);
             ctx.moderator.fetchInstance(ctx.instance.attrs.shortHash, expects.success(200, ctx.expected, done));
           });
         });

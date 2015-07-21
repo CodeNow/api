@@ -148,7 +148,8 @@ describe('Instance - /instances/:id', function () {
                       container, ctx.instance.attrs.network.hostIp, count.next);
                   }));
                 });
-                require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
+                require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+                  ctx.user.attrs.accounts.github.login);
                 ctx.instance.update({json: update}, expects.success(200, expected, noop));
               });
 
@@ -193,7 +194,8 @@ describe('Instance - /instances/:id', function () {
                         container, ctx.instance.attrs.network.hostIp, count.next);
                     }));
                   });
-                  require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
+                  require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+                    ctx.user.attrs.accounts.github.login);
                   ctx.instance.update({json: update}, expects.success(200, expected, noop));
                 });
               });
@@ -660,8 +662,10 @@ describe('Instance - /instances/:id', function () {
               });
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
-              require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
-              require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
+              require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+                ctx.user.attrs.accounts.github.login);
+              require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+                ctx.user.attrs.accounts.github.login);
               ctx.instance.update({ json: json }, expects.success(200, expected, done));
             });
           });

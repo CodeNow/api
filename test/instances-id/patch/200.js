@@ -122,7 +122,8 @@ describe('200 PATCH /instances', function () {
       });
       beforeEach(function (done) {
         // create instance
-        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id, ctx.user.attrs.accounts.github.login);
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         ctx.instance = ctx.user.createInstance({
           json: {
             build: ctx.build.id()
