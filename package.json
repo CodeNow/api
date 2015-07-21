@@ -63,7 +63,6 @@
     "node-dogstatsd": "0.0.5",
     "node-forge": "^0.6.12",
     "node-uuid": "^1.4.3",
-    "nodetime": "^0.8.15",
     "optimus": "git+ssh://git@github.com/CodeNow/optimus.git#v1.0.0",
     "passport": "~0.2.0",
     "passport-github": "~0.1.5",
