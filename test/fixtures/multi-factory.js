@@ -327,9 +327,12 @@ module.exports = {
         });
         require('./mocks/github/user-id')(user.json().accounts.github.id,
           user.json().accounts.github.login);
-        require('./mocks/github/user-id')(user.json().accounts.github.id, user.json().accounts.github.login);
-        // require('./mocks/github/user-id')(user.json().accounts.github.id, user.json().accounts.github.login);
-        // require('./mocks/github/user-id')(user.json().accounts.github.id, user.json().accounts.github.login);
+        require('./mocks/github/user-id')(user.json().accounts.github.id,
+          user.json().accounts.github.login);
+        require('./mocks/github/user-id')(user.json().accounts.github.id,
+          user.json().accounts.github.login);
+        // require('./mocks/github/user-id')(user.json().accounts.github.id,
+        //   user.json().accounts.github.login);
         ctx.instance = user.createInstance(body, function (err) {
           log.trace({}, 'createAndTailInstance', 'created instance');
           if (err) { return next(err); }
