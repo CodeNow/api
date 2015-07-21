@@ -270,6 +270,8 @@ describe('204 DELETE /instances/:id', function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should delete an instance', function (done) {
+      require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+        ctx.user.attrs.accounts.github.login);
       var instance = clone(ctx.instance);
       var container = ctx.instance.containers.models[0];
       if (ctx.waitForDestroy) {
