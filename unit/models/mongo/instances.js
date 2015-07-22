@@ -519,28 +519,6 @@ describe('Instance', function () {
     });
   });
 
-  describe('findContextVersionsForRepo', function () {
-    var ctx = {};
-    before(function (done) {
-      var instance = createNewInstance('instance-name', {locked: true, repo: 'podviaznikov/hello'});
-      instance.save(function (err, instance) {
-        if (err) { return done(err); }
-        expect(instance).to.exist();
-        ctx.savedInstance = instance;
-        done();
-      });
-    });
-
-    it('should find context versions using repo name', function (done) {
-      Instance.findContextVersionsForRepo('podviaznikov/hello', function (err, cvs) {
-        if (err) { return done(err); }
-        expect(cvs.length).to.equal(1);
-        expect(cvs[0].toString()).to.equal(ctx.savedInstance.contextVersion._id.toString());
-        done();
-      });
-    });
-  });
-
   describe('#findInstancesByParent', function () {
     it('should return empty [] for if no children were found', function (done) {
       Instance.findInstancesByParent('a5agn3', function (err, instances) {

@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.13.0",
+  "version": "2.20.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -59,7 +59,7 @@
     "morgan": "^1.1.1",
     "multiparty": "^3.3.2",
     "navi-entry": "git+ssh://git@github.com/CodeNow/navi-entry.git#v3.0.2",
-    "newrelic": "^1.12.2",
+    "newrelic": "^1.21.1",
     "node-dogstatsd": "0.0.5",
     "node-forge": "^0.6.12",
     "node-uuid": "^1.4.3",
