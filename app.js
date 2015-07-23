@@ -10,6 +10,10 @@ if (process.env.NODETIME_KEY) {
     appName: 'api-' + process.env.NODE_ENV
   });
 }
+if (process.env.NEW_RELIC_LICENSE_KEY) {
+  require('newrelic');
+}
+
 var Boom = require('dat-middleware').Boom;
 var createCount = require('callback-count');
 var envIs = require('101/env-is');
@@ -27,10 +31,6 @@ var log = logger.log;
 
 // express server, handles web HTTP requests
 var apiServer = new ApiServer();
-
-if (process.env.NEW_RELIC_LICENSE_KEY) {
-  require('newrelic');
-}
 
 /**
  * @class
