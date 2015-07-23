@@ -163,6 +163,8 @@ describe('Instance - /instances/:id', function () {
     describe('not founds', function () {
       beforeEach(function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         ctx.instance.destroy(done);
       });
       it('should not get the instance if missing (404)', function (done) {
