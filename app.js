@@ -129,7 +129,7 @@ if (!module.parent) { // npm start
 
 // should not occur in practice, using domains to catch errors
 process.on('uncaughtException', function(err) {
-  log.error({
+  log.fatal({
     err: err
   }, 'stopping app due too uncaughtException');
   error.log(err);
