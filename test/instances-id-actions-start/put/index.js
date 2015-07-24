@@ -166,14 +166,17 @@ describe('PUT /instances/:id/actions/start', function () {
 
       it('should error if already starting', function(done) {
         console.log('in the test!', ctx.instance.attrs.container);
-        primus.expectAction('starting', function () {
+        primus.expectAction('starting', startInstanceAgain);
+        // first start
+        ctx.instance.start(done);
+        function startInstanceAgain () {
+          // second start
           ctx.instance.start(function (err) {
             expect(err.message).to.equal('Instance is already starting');
+            // call the first container.start callback, so that done will be called
             ctx.startContainerCallbacks.forEach(function (cb) { cb(); });
-            done();
           });
-        });
-        ctx.instance.start(noop);
+        }
       });
     });
 
