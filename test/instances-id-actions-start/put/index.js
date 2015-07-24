@@ -116,37 +116,65 @@ describe('PUT /instances/:id/actions/start', function () {
   }
 
   describe('for User', function () {
-
     describe('already starting', function () {
+      afterEach(require('../../fixtures/clean-ctx')(ctx));
+      afterEach(require('../../fixtures/clean-nock'));
+      afterEach(require('../../fixtures/clean-mongo').removeEverything);
+
       beforeEach(function (done) {
-        ctx.startContainerCallbacks = []
+        multi.createBuiltBuild(function (err, build, user, modelsArr) {
+          if (err) { return done(err); }
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = modelsArr[0];
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+
+      beforeEach(function (done) {
+        multi.createAndTailInstance(primus, function (err, instance) {
+          ctx.instance = instance;
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        ctx.startContainerCallbacks = [];
+        ctx.stopContainerCallbacks = [];
         sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
           ctx.startContainerCallbacks.push(cb);
         });
         done();
       });
+
       beforeEach(function (done) {
-        ctx.instance.start(noop);
-        done();
+        primus.expectAction('stopping', function () {
+          console.log('stopping!');
+          ctx.instance.fetch(done);
+        });
+        ctx.instance.stop(noop);
       });
+
       afterEach(function (done) {
         Docker.prototype.startContainer.restore();
         done();
       });
 
       it('should error if already starting', function(done) {
-        ctx.instance.start(function (err) {
-          /// expect something about the error
+        console.log('in the test!', ctx.instance.attrs.container);
+        primus.expectAction('starting', function () {
+          ctx.instance.start(function (err) {
+            expect(err.message).to.equal('Instance is already starting');
+            ctx.startContainerCallbacks.forEach(function (cb) { cb(); });
+            done();
+          });
         });
-        ctx.startContainerCallbacks.forEach(function (cb) {
-          cb();
-        });
-        done();
+        ctx.instance.start(noop);
       });
-    });
-
-    describe('instance stopping', function () {
-
     });
 
     describe('create instance with in-progress build', function () {
