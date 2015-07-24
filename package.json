@@ -97,6 +97,7 @@
     "console-trace": "git://github.com/numbcoder/console-trace.git",
     "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v0.4.0",
     "docker-mock": "^2.0.0",
+    "docker-modem": "^0.2.6",
     "eslint": "^0.20.0",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
