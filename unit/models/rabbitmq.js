@@ -5,7 +5,6 @@ var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
 var beforeEach = lab.beforeEach;
-var Code = require('code');
 var RabbitMQ = require('models/rabbitmq');
 
 describe('RabbitMQ Model', function () {
@@ -16,9 +15,9 @@ describe('RabbitMQ Model', function () {
     done();
   });
 
-  describe('stop', function() {
+  describe('close', function() {
     it('should just callback if the rabbitmq is not started', function(done) {
-      ctx.rabbitmq.stop(done);
+      ctx.rabbitmq.close(done);
     });
   });
 
