@@ -23,6 +23,7 @@ var exists = require('101/exists');
 var extend = require('extend');
 var isFunction = require('101/is-function');
 var last = require('101/last');
+var sinon = require('sinon');
 var uuid = require('uuid');
 
 var Docker = require('models/apis/docker');
@@ -282,9 +283,25 @@ describe('PUT /instances/:id/actions/start', function () {
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
     it('should return error if instance already starting', function (done) {
-      if (!ctx.originalStart) {
-        sinon.stub();
-      done();
+      if (ctx.instance) {
+
+        var cb1;
+        sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
+          cb1 = cb;
+        });
+
+        primus.expectAction('starting', function () {
+          cb1();
+          Docker.prototype.startContainer.restore();
+          done();
+        });
+        ctx.instance.start(function () {
+          console.log('p2', arguments);
+         // done();
+        });
+
+      }
+      else { done(); }
     });
 
     it('should start an instance', function (done) {
