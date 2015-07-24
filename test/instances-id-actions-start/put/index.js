@@ -23,6 +23,7 @@ var exists = require('101/exists');
 var extend = require('extend');
 var isFunction = require('101/is-function');
 var last = require('101/last');
+var noop = require('101/noop');
 var sinon = require('sinon');
 var uuid = require('uuid');
 
@@ -115,6 +116,39 @@ describe('PUT /instances/:id/actions/start', function () {
   }
 
   describe('for User', function () {
+
+    describe('already starting', function () {
+      beforeEach(function (done) {
+        ctx.startContainerCallbacks = []
+        sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
+          ctx.startContainerCallbacks.push(cb);
+        });
+        done();
+      });
+      beforeEach(function (done) {
+        ctx.instance.start(noop);
+        done();
+      });
+      afterEach(function (done) {
+        Docker.prototype.startContainer.restore();
+        done();
+      });
+
+      it('should error if already starting', function(done) {
+        ctx.instance.start(function (err) {
+          /// expect something about the error
+        });
+        ctx.startContainerCallbacks.forEach(function (cb) {
+          cb();
+        });
+        done();
+      });
+    });
+
+    describe('instance stopping', function () {
+
+    });
+
     describe('create instance with in-progress build', function () {
       beforeEach(function (done) { // delay container log time to make build time longer
         ctx.originalContainerLogs = Container.prototype.logs;
@@ -281,28 +315,6 @@ describe('PUT /instances/:id/actions/start', function () {
     afterEach(require('../../fixtures/clean-ctx')(ctx));
     afterEach(require('../../fixtures/clean-nock'));
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
-
-    it('should return error if instance already starting', function (done) {
-      if (ctx.instance) {
-
-        var cb1;
-        sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
-          cb1 = cb;
-        });
-
-        primus.expectAction('starting', function () {
-          cb1();
-          Docker.prototype.startContainer.restore();
-          done();
-        });
-        ctx.instance.start(function () {
-          console.log('p2', arguments);
-         // done();
-        });
-
-      }
-      else { done(); }
-    });
 
     it('should start an instance', function (done) {
       if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
