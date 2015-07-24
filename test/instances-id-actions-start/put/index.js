@@ -16,23 +16,22 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-var expects = require('../../fixtures/expects');
-var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
-var multi = require('../../fixtures/multi-factory');
-var exists = require('101/exists');
-var last = require('101/last');
-var isFunction = require('101/is-function');
-var primus = require('../../fixtures/primus');
-var dockerMockEvents = require('../../fixtures/docker-mock-events');
-
-var uuid = require('uuid');
-var createCount = require('callback-count');
-var uuid = require('uuid');
-var Docker = require('models/apis/docker');
 var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
+var createCount = require('callback-count');
+var exists = require('101/exists');
 var extend = require('extend');
+var isFunction = require('101/is-function');
+var last = require('101/last');
+var uuid = require('uuid');
+
+var Docker = require('models/apis/docker');
+var api = require('../../fixtures/api-control');
+var dock = require('../../fixtures/dock');
+var dockerMockEvents = require('../../fixtures/docker-mock-events');
+var expects = require('../../fixtures/expects');
+var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 
 describe('PUT /instances/:id/actions/start', function () {
@@ -281,6 +280,12 @@ describe('PUT /instances/:id/actions/start', function () {
     afterEach(require('../../fixtures/clean-ctx')(ctx));
     afterEach(require('../../fixtures/clean-nock'));
     afterEach(require('../../fixtures/clean-mongo').removeEverything);
+
+    it('should return error if instance already starting', function (done) {
+      if (!ctx.originalStart) {
+        sinon.stub();
+      done();
+    });
 
     it('should start an instance', function (done) {
       if (ctx.originalStart) { // restore docker back to normal - immediately exiting container will now start
