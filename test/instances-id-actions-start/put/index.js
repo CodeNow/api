@@ -140,7 +140,6 @@ describe('PUT /instances/:id/actions/start', function () {
           done();
         });
       });
-
       createInstanceAndRunTests(ctx);
     });
     describe('create instance with built build', function () {
@@ -169,7 +168,6 @@ describe('PUT /instances/:id/actions/start', function () {
           ctx.expectAlreadyStarted = false;
           done();
         });
-
         createInstanceAndRunTests(ctx);
       });
       describe('Immediately exiting container (first time only)', function() {
@@ -308,7 +306,6 @@ describe('PUT /instances/:id/actions/start', function () {
         });
       }
       else { // success
-
         var assertions = false ? //ctx.expectAlreadyStarted ?
           expects.error(304, stopStartAssert) :
           expects.success(200, ctx.expected, stopStartAssert);
