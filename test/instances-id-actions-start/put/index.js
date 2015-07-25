@@ -116,6 +116,65 @@ describe('PUT /instances/:id/actions/start', function () {
   }
 
   describe('for User', function () {
+    describe('start failure rollback', function () {
+      afterEach(require('../../fixtures/clean-ctx')(ctx));
+      afterEach(require('../../fixtures/clean-nock'));
+      afterEach(require('../../fixtures/clean-mongo').removeEverything);
+
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, user, modelsArr) {
+          if (err) { return done(err); }
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = modelsArr[0];
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+
+      beforeEach(function (done) {
+        multi.createAndTailInstance(primus, function (err, instance) {
+          ctx.instance = instance;
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
+          cb(new Error());
+        });
+        done();
+      });
+
+      beforeEach(function (done) {
+        primus.expectAction('stopping', function () {
+          ctx.instance.fetch(done);
+        });
+        ctx.instance.stop(noop);
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.startContainer.restore();
+        done();
+      });
+
+      it('should revert starting state if start request returns error', function (done) {
+        var count = createCount(2, done);
+        primus.expectAction('start-error', function (err, data) {
+          expect(data.data.data.container.inspect.State.Running).to.equal(false);
+          expect(data.data.data.container.inspect.State.Starting).to.be.undefined();
+          expect(data.data.data.container.inspect.State.Stopping).to.be.undefined();
+          count.next();
+        });
+        ctx.instance.start(function () {
+          count.next();
+        });
+      });
+    });
+
     describe('already starting', function () {
       afterEach(require('../../fixtures/clean-ctx')(ctx));
       afterEach(require('../../fixtures/clean-nock'));
@@ -144,7 +203,6 @@ describe('PUT /instances/:id/actions/start', function () {
 
       beforeEach(function (done) {
         ctx.startContainerCallbacks = [];
-        ctx.stopContainerCallbacks = [];
         sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
           ctx.startContainerCallbacks.push(cb);
         });
@@ -153,7 +211,6 @@ describe('PUT /instances/:id/actions/start', function () {
 
       beforeEach(function (done) {
         primus.expectAction('stopping', function () {
-          console.log('stopping!');
           ctx.instance.fetch(done);
         });
         ctx.instance.stop(noop);
@@ -165,7 +222,6 @@ describe('PUT /instances/:id/actions/start', function () {
       });
 
       it('should error if already starting', function(done) {
-        console.log('in the test!', ctx.instance.attrs.container);
         primus.expectAction('starting', startInstanceAgain);
         // first start
         ctx.instance.start(done);
@@ -177,6 +233,61 @@ describe('PUT /instances/:id/actions/start', function () {
             ctx.startContainerCallbacks.forEach(function (cb) { cb(); });
           });
         }
+      });
+    });
+
+    describe('already stopping', function () {
+      afterEach(require('../../fixtures/clean-ctx')(ctx));
+      afterEach(require('../../fixtures/clean-nock'));
+      afterEach(require('../../fixtures/clean-mongo').removeEverything);
+
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, user, modelsArr) {
+          if (err) { return done(err); }
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = modelsArr[0];
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+
+      beforeEach(function (done) {
+        multi.createAndTailInstance(primus, function (err, instance) {
+          ctx.instance = instance;
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        ctx.stopContainerCallbacks = [];
+        sinon.stub(Docker.prototype, 'stopContainer', function (containerId, opts, cb) {
+          ctx.stopContainerCallbacks.push(cb);
+        });
+        done();
+      });
+
+      beforeEach(function (done) {
+        primus.expectAction('stopping', function () {
+          ctx.instance.fetch(done);
+        });
+        ctx.instance.stop(noop);
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.stopContainer.restore();
+        done();
+      });
+
+      it('should error if already stopping', function(done) {
+        ctx.instance.start(function (err) {
+          expect(err.message).to.equal('Instance is already stopping');
+          ctx.stopContainerCallbacks.forEach(function (cb) { cb(); });
+          done();
+        });
       });
     });
 
