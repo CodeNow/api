@@ -43,19 +43,22 @@ function Api () {}
 Api.prototype.start = function (cb) {
   var count = createCount(callback);
   log.trace('start');
-  // start github ssh key generator
-  keyGen.start();
-  // start sending socket count
-  dogstatsd.monitorStart();
-  // connect to mongoose
-  mongooseControl.start(count.inc().next);
-  // start listening to events
-  count.inc();
-  activeApi.setAsMe(function (err) {
-    if (err) { return count.next(err); }
-    events.listen();
-    count.next();
-  });
+  // FIXME: remove dependence on isMaster check
+  if (require('cluster').isMaster) {
+    // start github ssh key generator
+    keyGen.start();
+    // start sending socket count
+    dogstatsd.monitorStart();
+    // connect to mongoose
+    mongooseControl.start(count.inc().next);
+    // start listening to events
+    count.inc();
+    activeApi.setAsMe(function (err) {
+      if (err) { return count.next(err); }
+      events.listen();
+      count.next();
+    });
+  }
   // express server start
   apiServer.start(count.inc().next);
   // all started callback
@@ -119,19 +122,5 @@ Api.prototype.getPrimusSocket = function () {
 var api = module.exports = new Api();
 
 if (!module.parent) { // npm start
-  api.start();
+  require('process/clustering')(api);
 }
-
-// should not occur in practice, using domains to catch errors
-process.on('uncaughtException', function(err) {
-  log.fatal({
-    err: err
-  }, 'stopping app due too uncaughtException');
-  error.log(err);
-  var oldApi = api;
-  oldApi.stop(function() {
-    log.trace('API stopped');
-  });
-  api = new ApiServer();
-  api.start();
-});
