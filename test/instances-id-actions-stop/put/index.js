@@ -23,7 +23,6 @@ var exists = require('101/exists');
 var extend = require('extend');
 var isFunction = require('101/is-function');
 var last = require('101/last');
-var noop = require('101/noop');
 var sinon = require('sinon');
 var uuid = require('uuid');
 
