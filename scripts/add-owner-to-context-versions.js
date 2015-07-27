@@ -14,7 +14,7 @@ mongoose.connect(process.env.MONGO);
 
 async.waterfall([
   function getAllCv (cb) {
-    ContextVersion.find({ owner: { $exists: false }}, cb);
+    ContextVersion.find({ 'owner.github': { $exists: false }}, cb);
   },
   function updateCv (cvs, cb) {
     if (typeof cvs !== 'object') {
