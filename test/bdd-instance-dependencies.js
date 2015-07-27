@@ -139,6 +139,8 @@ describe('BDD - Instance Dependencies', function () {
       });
 
       it('should remove dependencies that are deleted', function (done) {
+        require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         async.series([
           ctx.apiInstance.destroy.bind(ctx.apiInstance),
           ctx.webInstance.fetchDependencies.bind(ctx.webInstance)
@@ -164,6 +166,8 @@ describe('BDD - Instance Dependencies', function () {
     describe('deleting the top level instance', function () {
       it('should delete succesfully', function (done) {
         // it deletes all nodes - a sanity test to make sure that that works
+        require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         ctx.webInstance.destroy(done);
       });
     });
@@ -269,4 +273,3 @@ describe('BDD - Instance Dependencies', function () {
     });
   });
 });
-
