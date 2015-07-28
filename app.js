@@ -4,12 +4,7 @@
  */
 'use strict';
 require('loadenv')();
-if (process.env.NODETIME_KEY) {
-  require('nodetime').profile({
-    accountKey: process.env.NODETIME_KEY,
-    appName: 'api-' + process.env.NODE_ENV
-  });
-}
+
 if (process.env.NEW_RELIC_LICENSE_KEY) {
   require('newrelic');
 }
