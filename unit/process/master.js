@@ -135,8 +135,6 @@ describe('Master', function () {
 
       describe('enabled', function () {
         beforeEach(function (done) {
-          ctx.setTimeout = setTimeout;
-          setTimeout = sinon.stub().returns({ id: 400 });
           ctx.setInterval = setInterval;
           setInterval = sinon.stub().returns({ id: 500 });
           process.env.ENABLE_CLUSTERING = true;
@@ -144,7 +142,6 @@ describe('Master', function () {
           done();
         });
         afterEach(function (done) {
-          setTimeout = ctx.setTimeout;
           setInterval = ctx.setInterval;
           done();
         });
@@ -226,6 +223,44 @@ describe('Master', function () {
       });
     });
 
+    describe('stopOldestWorker', function() {
+      beforeEach(function (done) {
+        ctx.mockWorker = {
+          id: 1,
+          process: {
+            kill: sinon.stub()
+          }
+        };
+        ctx.master.workers = [ctx.mockWorker];
+        ctx.setTimeout = setTimeout;
+        ctx.mockTimer = { id: 10 };
+        setTimeout = sinon.stub().returns(ctx.mockTimer);
+        sinon.stub(Master.prototype, 'logWorkerEvent');
+        done();
+      });
+      afterEach(function (done) {
+        setTimeout = ctx.setTimeout;
+        Master.prototype.logWorkerEvent.restore();
+        done();
+      });
+
+      it('should stop oldest worker', function (done) {
+        ctx.master.stopOldestWorker();
+        sinon.assert.calledOnce(Master.prototype.logWorkerEvent);
+        sinon.assert.calledWith(
+          Master.prototype.logWorkerEvent,
+          sinon.match(/kill by interval/),
+          ctx.mockWorker
+        );
+        sinon.assert.calledOnce(setTimeout);
+        sinon.assert.calledWith(setTimeout, sinon.match.func, process.env.WORKER_KILL_TIMEOUT);
+        expect(ctx.master.workerKillTimeouts[ctx.mockWorker.id]).to.equals(ctx.mockTimer);
+        sinon.assert.calledOnce(ctx.mockWorker.process.kill);
+        sinon.assert.calledWith(ctx.mockWorker.process.kill, 'SIGINT');
+        done();
+      });
+    });
+
     describe('handleUncaughtException', function() {
       beforeEach(function (done) {
         sinon.stub(Bunyan.prototype, 'fatal');
@@ -241,6 +276,36 @@ describe('Master', function () {
         ctx.master.handleUncaughtException(mockErr);
         sinon.assert.calledOnce(Bunyan.prototype.fatal);
         sinon.assert.calledWith(Bunyan.prototype.fatal, {err:mockErr}, sinon.match(/uncaught exception/));
+        done();
+      });
+    });
+
+    describe('handleWorkerKillTimeout', function() {
+      beforeEach(function (done) {
+        ctx.mockWorker = {
+          id: 1,
+          process: {
+            kill: sinon.stub()
+          }
+        };
+        sinon.stub(Master.prototype, 'logWorkerEvent');
+        done();
+      });
+      afterEach(function (done) {
+        Master.prototype.logWorkerEvent.restore();
+        done();
+      });
+
+      it('it should log and hard kill the process', function (done) {
+        ctx.master.handleWorkerKillTimeout(ctx.mockWorker);
+        sinon.assert.calledOnce(Master.prototype.logWorkerEvent);
+        sinon.assert.calledWith(
+          Master.prototype.logWorkerEvent,
+          sinon.match(/kill timed out/),
+          ctx.mockWorker
+        );
+        sinon.assert.calledOnce(ctx.mockWorker.process.kill);
+        sinon.assert.calledWith(ctx.mockWorker.process.kill, 1);
         done();
       });
     });
