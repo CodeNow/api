@@ -47,10 +47,6 @@ Api.prototype.start = function (cb) {
   if (require('cluster').isMaster) {
     // start github ssh key generator
     keyGen.start();
-    // start sending socket count
-    dogstatsd.monitorStart();
-    // connect to mongoose
-    mongooseControl.start(count.inc().next);
     // start listening to events
     count.inc();
     activeApi.setAsMe(function (err) {
@@ -59,6 +55,10 @@ Api.prototype.start = function (cb) {
       count.next();
     });
   }
+  // start sending socket count
+  dogstatsd.monitorStart();
+  // connect to mongoose
+  mongooseControl.start(count.inc().next);
   // express server start
   apiServer.start(count.inc().next);
   // all started callback
