@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.21.0",
+  "version": "2.22.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -63,7 +63,6 @@
     "node-dogstatsd": "0.0.5",
     "node-forge": "^0.6.12",
     "node-uuid": "^1.4.3",
-    "nodetime": "^0.8.15",
     "optimus": "git+ssh://git@github.com/CodeNow/optimus.git#v1.0.0",
     "passport": "~0.2.0",
     "passport-github": "~0.1.5",
