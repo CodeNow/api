@@ -386,7 +386,8 @@ describe('Github - /actions/github', function () {
 
               var deleteOptions = hooks(data).push;
               deleteOptions.json.deleted = true;
-
+              require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+                ctx.user.attrs.accounts.github.login);
               request.post(deleteOptions, function (err, res, body) {
                 if (err) { return done(err); }
                 expect(res.statusCode).to.equal(201);
@@ -473,7 +474,7 @@ describe('Github - /actions/github', function () {
           });
         });
       });
-      
+
       it('should not redeploy locked instance', function (done) {
         ctx.instance.update({ locked: true }, function (err) {
           if (err) { return done(err); }

@@ -4,12 +4,11 @@
  */
 'use strict';
 require('loadenv')();
-if (process.env.NODETIME_KEY) {
-  require('nodetime').profile({
-    accountKey: process.env.NODETIME_KEY,
-    appName: 'api-' + process.env.NODE_ENV
-  });
+
+if (process.env.NEW_RELIC_LICENSE_KEY) {
+  require('newrelic');
 }
+
 var Boom = require('dat-middleware').Boom;
 var createCount = require('callback-count');
 var envIs = require('101/env-is');
@@ -27,10 +26,6 @@ var log = logger.log;
 
 // express server, handles web HTTP requests
 var apiServer = new ApiServer();
-
-if (process.env.NEWRELIC_KEY) {
-  require('newrelic');
-}
 
 /**
  * @class
@@ -129,7 +124,7 @@ if (!module.parent) { // npm start
 
 // should not occur in practice, using domains to catch errors
 process.on('uncaughtException', function(err) {
-  log.error({
+  log.fatal({
     err: err
   }, 'stopping app due too uncaughtException');
   error.log(err);
