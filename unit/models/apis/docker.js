@@ -26,7 +26,7 @@ describe('docker', function () {
       expect(opts.Dns.length).to.equal(1);
       done();
     });
-    model.startUserContainer({}, {}, noop);
+    model.startUserContainer({}, '', {}, noop);
   });
 
   it('should include charon as the first dns when evn is set', function (done) {
@@ -37,6 +37,18 @@ describe('docker', function () {
       delete process.env.CHARON_HOST;
       done();
     });
-    model.startUserContainer({}, {}, noop);
+    model.startUserContainer({}, '', {}, noop);
+  });
+
+  it('should use the charon weave ip for codenow', function(done) {
+    var owner = process.env.CODENOW_GITHUB_ID;
+    var host = process.env.CODENOW_CHARON_WEAVE_IP = '1.1.1.1';
+    sinon.stub(model, 'startContainer', function (container, opts) {
+      expect(opts.Dns.length).to.equal(2);
+      expect(opts.Dns[0]).to.equal(host);
+      delete process.env.CODENOW_CHARON_WEAVE_IP;
+      done();
+    });
+    model.startUserContainer({}, owner, {}, noop);
   });
 });
