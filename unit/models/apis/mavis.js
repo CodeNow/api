@@ -50,7 +50,7 @@ describe('mavis.js unit test', function () {
         ctx.mavis.findDockForBuild({}, testContext, function () {
           expect(ctx.mavis.findDock.calledWith({
             type: 'container_build',
-            tags: testOrgId+',build',
+            tags: testOrgId+'',
             prevDuration: 0,
             prevImage: null
           })).to.be.true();
@@ -66,7 +66,7 @@ describe('mavis.js unit test', function () {
         }, testContext, function () {
           expect(ctx.mavis.findDock.calledWith({
             type: 'container_build',
-            tags: testOrgId+',build',
+            tags: testOrgId+'',
             prevDuration: testDur,
             prevImage: testTag
           })).to.be.true();
@@ -105,7 +105,7 @@ describe('mavis.js unit test', function () {
         ctx.mavis.findDockForContainer({}, testContext, function () {
           expect(ctx.mavis.findDock.calledWith({
             type: 'container_run',
-            tags: testOrgId+',run',
+            tags: testOrgId+'',
             prevDock: null
           })).to.be.true();
           done();
@@ -118,7 +118,7 @@ describe('mavis.js unit test', function () {
         }, testContext, function () {
           expect(ctx.mavis.findDock.calledWith({
             type: 'container_run',
-            tags: testOrgId+',run',
+            tags: testOrgId+'',
             prevDock: testHost
           })).to.be.true();
           done();
