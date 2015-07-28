@@ -135,34 +135,31 @@ describe('Master', function () {
 
       describe('enabled', function () {
         beforeEach(function (done) {
-          ctx.clock = sinon.useFakeTimers();
+          ctx.setTimeout = setTimeout;
+          setTimeout = sinon.stub().returns({ id: 400 });
+          ctx.setInterval = setInterval;
+          setInterval = sinon.stub().returns({ id: 500 });
           process.env.ENABLE_CLUSTERING = true;
           process.env.WORKER_LIFE_INTERVAL = 20;
           done();
         });
         afterEach(function (done) {
-          ctx.clock.restore();
+          setTimeout = ctx.setTimeout;
+          setInterval = ctx.setInterval;
           done();
         });
 
         it('should setInterval and start killing workers', function (done) {
-          var mockWorker = {
-            id: 1,
-            process: { kill: killMock }
-          };
+          var mockWorker = { id: 1 };
           ctx.master.workers = [mockWorker];
           // unmock cycleWorkers and invoke it
           Master.prototype.cycleWorkers.restore();
           var interval = ctx.master.cycleWorkers();
           expect(interval).to.be.an.object();
           sinon.stub(Master.prototype, 'cycleWorkers');
-          // go forward in time, using mock clock
-          ctx.clock.tick(process.env.WORKER_LIFE_INTERVAL+1);
-          function killMock () {
-            clearInterval(interval);
-            sinon.assert.calledWith(Bunyan.prototype.info, {worker:1}, sinon.match(/worker kill/));
-            done();
-          }
+          sinon.assert.calledOnce(setInterval);
+          sinon.assert.calledWith(setInterval, sinon.match.func, process.env.WORKER_LIFE_INTERVAL);
+          done();
         });
       });
 
@@ -209,10 +206,13 @@ describe('Master', function () {
         sinon.stub(Master.prototype, 'createWorker');
         ctx.mockWorker = { id: 1 };
         ctx.master.workers = [ctx.mockWorker];
+        ctx.clearTimeout = clearTimeout;
+        clearTimeout = sinon.spy();
         done();
       });
       afterEach(function (done) {
-        Master.prototype.restore();
+        Master.prototype.createWorker.restore();
+        clearTimeout = ctx.clearTimeout;
         done();
       });
 
@@ -221,6 +221,7 @@ describe('Master', function () {
         ctx.master.handleWorkerExit(mockWorker);
         expect(ctx.master.workers).to.be.empty();
         sinon.assert.calledOnce(Master.prototype.createWorker);
+        sinon.assert.calledOnce(clearTimeout);
         done();
       });
     });
