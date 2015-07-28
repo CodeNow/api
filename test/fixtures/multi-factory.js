@@ -65,9 +65,13 @@ module.exports = {
     });
     return user;
   },
-  createModerator: function (cb) {
+  createModerator: function (opts, cb) {
     log.trace({}, 'createModerator');
-    return this.createUser(function (err, user) {
+    if (isFunction(opts)) {
+      cb = opts;
+      opts = {};
+    }
+    return this.createUser(opts, function (err, user) {
       if (err) { return cb(err); }
       var $set = {
         permissionLevel: 5
