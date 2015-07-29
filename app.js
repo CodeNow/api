@@ -4,15 +4,13 @@
  */
 'use strict';
 require('loadenv')();
-if (process.env.NODETIME_KEY) {
-  require('nodetime').profile({
-    accountKey: process.env.NODETIME_KEY,
-    appName: 'api-' + process.env.NODE_ENV
-  });
+
+if (process.env.NEW_RELIC_LICENSE_KEY) {
+  require('newrelic');
 }
+
 var Boom = require('dat-middleware').Boom;
 var createCount = require('callback-count');
-var debug = require('debug')('runnable-api');
 var envIs = require('101/env-is');
 
 var ApiServer = require('server');
@@ -21,14 +19,13 @@ var dogstatsd = require('models/datadog');
 var error = require('error');
 var events = require('models/events');
 var keyGen = require('key-generator');
+var logger = require('middlewares/logger')(__filename);
 var mongooseControl = require('models/mongo/mongoose-control');
+
+var log = logger.log;
 
 // express server, handles web HTTP requests
 var apiServer = new ApiServer();
-
-if (process.env.NEWRELIC_KEY) {
-  require('newrelic');
-}
 
 /**
  * @class
@@ -45,7 +42,7 @@ function Api () {}
  */
 Api.prototype.start = function (cb) {
   var count = createCount(callback);
-  debug('start');
+  log.trace('start');
   // start github ssh key generator
   keyGen.start();
   // start sending socket count
@@ -64,7 +61,9 @@ Api.prototype.start = function (cb) {
   // all started callback
   function callback (err) {
     if (err) {
-      debug('fatal error: API failed to start', err);
+      log.error({
+        err: err
+      }, 'fatal error: API failed to start');
       error.log(err);
       if (cb) {
         cb(err);
@@ -74,7 +73,7 @@ Api.prototype.start = function (cb) {
       }
       return;
     }
-    debug('API started');
+    log.trace('API started');
     console.log('API started');
     if (cb) {
       cb();
@@ -87,7 +86,7 @@ Api.prototype.start = function (cb) {
  * @param {Function} cb
  */
 Api.prototype.stop = function (cb) {
-  debug('stop');
+  log.trace('stop');
   cb = cb || error.logIfErr;
   activeApi.isMe(function (err, meIsActiveApi) {
     if (err) { return cb(err); }
@@ -125,11 +124,13 @@ if (!module.parent) { // npm start
 
 // should not occur in practice, using domains to catch errors
 process.on('uncaughtException', function(err) {
-  debug('stopping app due too uncaughtException:',err);
+  log.fatal({
+    err: err
+  }, 'stopping app due too uncaughtException');
   error.log(err);
   var oldApi = api;
   oldApi.stop(function() {
-    debug('API stopped');
+    log.trace('API stopped');
   });
   api = new ApiServer();
   api.start();

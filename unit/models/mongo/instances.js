@@ -519,28 +519,6 @@ describe('Instance', function () {
     });
   });
 
-  describe('findContextVersionsForRepo', function () {
-    var ctx = {};
-    before(function (done) {
-      var instance = createNewInstance('instance-name', {locked: true, repo: 'podviaznikov/hello'});
-      instance.save(function (err, instance) {
-        if (err) { return done(err); }
-        expect(instance).to.exist();
-        ctx.savedInstance = instance;
-        done();
-      });
-    });
-
-    it('should find context versions using repo name', function (done) {
-      Instance.findContextVersionsForRepo('podviaznikov/hello', function (err, cvs) {
-        if (err) { return done(err); }
-        expect(cvs.length).to.equal(1);
-        expect(cvs[0].toString()).to.equal(ctx.savedInstance.contextVersion._id.toString());
-        done();
-      });
-    });
-  });
-
   describe('#findInstancesByParent', function () {
     it('should return empty [] for if no children were found', function (done) {
       Instance.findInstancesByParent('a5agn3', function (err, instances) {
@@ -901,6 +879,18 @@ describe('Instance', function () {
           instances[0].addDependency(instances[1], 'somehostname', done);
         });
 
+        it('should give the network for a dependency', function(done) {
+          var network = { hostIp: '1.2.3.4', networkIp: '1.2.3.0' };
+          sinon.stub(Instance, 'findById').yieldsAsync(null, { network: network });
+          var i = instances[0];
+          i.getDependencies(function (err, deps) {
+            if (err) { return done(err); }
+            expect(deps[0].network).to.deep.equal(network);
+            Instance.findById.restore();
+            done();
+          });
+        });
+
         it('should allow us to remove the dependency', function (done) {
           var i = instances[0];
           var d = instances[1];
@@ -985,6 +975,7 @@ describe('Instance', function () {
             });
           });
         });
+
         describe('instance with 2 dependents', function() {
           beforeEach(function (done) {
             instances[2].addDependency(instances[1], 'somehostname', done);

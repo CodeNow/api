@@ -194,27 +194,32 @@ describe('201 POST /instances', function () {
         // TODO: wait for event first, make sure everything finishes.. then drop db
         // instance "deployed"onceInstanceUpdate
         ctx.createUserContainerSpy.restore();
+        delete process.env.TID_POST_INSTANCES;
         done();
       });
 
       it('should create an instance with a build', function (done) {
         var count = createCount(2, done);
         primus.expectActionCount('start', 1, count.next);
+        process.env.TID_POST_INSTANCES = 'a708f8ec-9f19-4202-a64a-f1b33b503080';
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           expect(ctx.createUserContainerSpy.calledOnce).to.be.true();
           expect(ctx.createUserContainerSpy.args[0][1]).to.deep.equal({
-            Env: [],
+            Env: [
+              'RUNNABLE_BRANCH_ID=' + ctx.instance.attrs.shortHash
+            ],
             Labels: {
               contextVersionId: ctx.cv.id(),
               instanceId: body._id,
               instanceName: body.name,
               instanceShortHash: body.shortHash,
               ownerUsername: ctx.user.attrs.accounts.github.login,
-              type: 'user-container',
               creatorGithubId: ctx.user.attrs.accounts.github.id.toString(),
               ownerGithubId: ctx.user.attrs.accounts.github.id.toString(),
+              type: 'user-container',
+              tid: process.env.TID_POST_INSTANCES
             }
           });
           count.next();

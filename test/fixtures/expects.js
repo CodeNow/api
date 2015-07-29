@@ -10,7 +10,6 @@ var isFunction = require('101/is-function');
 var isString = require('101/is-string');
 var isObject = require('101/is-object');
 var keypather = require('keypather')();
-var debug = require('debug')('runnable-api:testing:fixtures:expects');
 var exists = require('101/exists');
 var Docker = require('models/apis/docker');
 var NaviEntry = require('navi-entry');
@@ -85,7 +84,6 @@ expects.errorStatus = function (code, messageMatch, done) {
     messageMatch = null;
   }
   return function (err) {
-    debug('errorStatus', err);
     expect(err, 'Expected ' + code + ' error response').to.satisfy(exists);
     expect(err.output.statusCode).to.equal(code);
     if (messageMatch instanceof RegExp) {

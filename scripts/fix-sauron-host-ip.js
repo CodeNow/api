@@ -1,7 +1,6 @@
 'use strict';
 require('loadenv')();
 var Instance = require('models/mongo/instance.js');
-var debug = require('debug')('script');
 var mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO);
 var async = require('async');
@@ -19,7 +18,7 @@ async.waterfall([
 });
 
 function getAllInstance (cb) {
-  debug('getAllInstance');
+  console.log('getAllInstance');
   Instance.find({
     'network.hostIp': {
       $exists: true
@@ -28,7 +27,7 @@ function getAllInstance (cb) {
 }
 
 function eachInstance (instances, cb) {
-  debug('eachInstance');
+  console.log('eachInstance');
   if(!instances || instances.length === 0) {
     return cb();
   }
@@ -36,7 +35,7 @@ function eachInstance (instances, cb) {
   redis.hgetall(key, function(err, containersMapped) {
     if (err) {return cb(err); }
     async.eachLimit(instances, 1000, function (instance, cb) {
-      debug('eachInstance:instance', instance._id);
+      console.log('eachInstance:instance', instance._id);
       var mongoContainer = instance.container && instance.container.dockerContainer;
       var redisContainer = containersMapped[instance.network.hostIp];
       if (!mongoContainer && redisContainer) {

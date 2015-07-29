@@ -44,6 +44,8 @@ describe('DELETE /instances/:id', function () {
     describe('permissions', function () {
       describe('owner', function () {
         it('should delete the instance', function (done) {
+          require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+            ctx.user.attrs.accounts.github.login);
           ctx.instance.destroy(expects.success(204, done));
         });
       });
@@ -55,6 +57,8 @@ describe('DELETE /instances/:id', function () {
         });
         it('should not delete the instance (403 forbidden)', function (done) {
           ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
+          // require('../../fixtures/mocks/github/user-id')(ctx.nonOwner.attrs.accounts.github.id,
+          //   ctx.nonOwner.attrs.accounts.github.login);
           ctx.instance.destroy(expects.errorStatus(403, done));
         });
       });
@@ -64,6 +68,8 @@ describe('DELETE /instances/:id', function () {
         });
         it('should delete the instance', function (done) {
           ctx.instance.client = ctx.moderator.client; // swap auth to moderator's
+          require('../../fixtures/mocks/github/user-id')(ctx.moderator.attrs.accounts.github.id,
+            ctx.moderator.attrs.accounts.github.login);
           ctx.instance.destroy(expects.success(204, done));
         });
       });
@@ -71,6 +77,8 @@ describe('DELETE /instances/:id', function () {
 
     describe('not founds', function () {
       beforeEach(function (done) {
+        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+          ctx.user.attrs.accounts.github.login);
         ctx.instance.destroy(done);
       });
       it('should not delete the instance if missing (404 instance)', function (done) {
