@@ -357,6 +357,27 @@ describe('docker', function () {
         done();
       });
     });
+    it('should cb if target is same as host', function (done) {
+      var testTarget = 'http://fake.host.com';
+      var testErr = new Error('attack by Saruman');
+      Modem.prototype.followProgress.yieldsAsync();
+      Dockerode.prototype.pull.yieldsAsync();
+      mockObj.get.yieldsAsync();
+      Dockerode.prototype.loadImage.yieldsAsync(testErr);
+      mockObj.push.yieldsAsync(testErr);
+      model.transferImage(testImage, testTarget, function (err) {
+        expect(err).to.not.exist();
+        expect(mockObj.get
+          .calledOnce).to.be.false();
+        expect(Dockerode.prototype.loadImage
+          .calledOnce).to.be.false();
+        expect(mockObj.push
+          .calledOnce).to.be.false();
+        expect(Dockerode.prototype.pull
+          .calledOnce).to.be.false();
+        done();
+      });
+    });
   }); // end transferImage
 
   describe('directTransferImage', function () {
