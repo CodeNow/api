@@ -221,6 +221,22 @@ describe('Master', function () {
         sinon.assert.calledOnce(clearTimeout);
         done();
       });
+
+      describe('worker w/ dontCreateReplacement', function() {
+        beforeEach(function (done) {
+          ctx.mockWorker.dontCreateReplacement = true;
+          done();
+        });
+
+        it('should not call createWorker', function(done) {
+          var mockWorker = ctx.mockWorker;
+          ctx.master.handleWorkerExit(mockWorker);
+          expect(ctx.master.workers).to.be.empty();
+          sinon.assert.notCalled(Master.prototype.createWorker);
+          sinon.assert.calledOnce(clearTimeout);
+          done();
+        });
+      });
     });
 
     describe('stopOldestWorker', function() {
@@ -236,11 +252,13 @@ describe('Master', function () {
         ctx.mockTimer = { id: 10 };
         setTimeout = sinon.stub().returns(ctx.mockTimer);
         sinon.stub(Master.prototype, 'logWorkerEvent');
+        sinon.stub(Master.prototype, 'createWorker');
         done();
       });
       afterEach(function (done) {
         setTimeout = ctx.setTimeout;
         Master.prototype.logWorkerEvent.restore();
+        Master.prototype.createWorker.restore();
         done();
       });
 
@@ -252,12 +270,26 @@ describe('Master', function () {
           sinon.match(/kill by interval/),
           ctx.mockWorker
         );
+        sinon.assert.calledOnce(Master.prototype.createWorker);
+        expect(ctx.mockWorker.dontCreateReplacement).to.be.true();
         sinon.assert.calledOnce(setTimeout);
         sinon.assert.calledWith(setTimeout, sinon.match.func, process.env.WORKER_KILL_TIMEOUT);
         expect(ctx.master.workerKillTimeouts[ctx.mockWorker.id]).to.equals(ctx.mockTimer);
         sinon.assert.calledOnce(ctx.mockWorker.process.kill);
         sinon.assert.calledWith(ctx.mockWorker.process.kill, 'SIGINT');
         done();
+      });
+
+      describe('no workers', function() {
+        beforeEach(function (done) {
+          ctx.master.workers = [];
+          done();
+        });
+
+        it('should do nothing', function(done) {
+          sinon.assert.notCalled(Master.prototype.logWorkerEvent);
+          done();
+        });
       });
     });
 
