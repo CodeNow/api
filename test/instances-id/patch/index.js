@@ -400,16 +400,21 @@ describe('Instance - /instances/:id', function () {
           it('should allow a build that has everything started', function (done) {
             var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
             var oldContainer = ctx.instance.containers.models[0];
-            var expected = {
-              // Since the containers are not removed until the otherBuild has finished, we should
-              // still see them running
-              // 'containers[0].inspect.State.Running': true,
-              'build._id': ctx.otherBuild.id()
-            };
             multi.buildTheBuild(ctx.user, ctx.otherBuild, function () {
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
+
+              var oldCvId = ctx.instance.contextVersion.id();
+              var expected = {
+                // Since the containers are not removed until the otherBuild has finished, we should
+                // still see them running
+                // 'containers[0].inspect.State.Running': true,
+                'lastBuiltSimpleContextVersion.id': oldCvId,
+                'lastBuiltSimpleContextVersion.created': exists,
+                'build._id': ctx.otherBuild.id()
+              };
+
               primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
                 if (err) { return done(err); }
                 primus.expectAction('start', {}, function () {
