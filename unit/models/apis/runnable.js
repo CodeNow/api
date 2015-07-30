@@ -57,7 +57,7 @@ describe('Runnable', function () {
       runnable.forkMasterInstance(master, 'build1', 'a1/b2/c3-d4,e5.f6 g7_h7', noop);
     });
 
-    it('should create new instance and append -1 if name exists', function (done) {
+    it('should fail if instance create failed', function (done) {
       var runnable = new Runnable({});
       var master = {
         shortHash: 'd1as6213a',
@@ -66,18 +66,14 @@ describe('Runnable', function () {
         owner: { github: { id: 1 } }
       };
       sinon.stub(Runnable.prototype, 'createInstance', function (inst, cb) {
-        var err = Boom.conflict('instance with lowerName already exists');
-        sinon.stub(Runnable.prototype, 'forkMasterInstance',
-          function (masterInst, buildId, branch) {
-            expect(branch).to.equal('b1');
-            expect(masterInst.name).to.equal('inst1-1');
-            Runnable.prototype.createInstance.restore();
-            Runnable.prototype.forkMasterInstance.restore();
-            done();
-          });
+        var err = Boom.notFound('Error happened');
         cb(err);
       });
-      runnable.forkMasterInstance(master, 'build1', 'b1', noop);
+      runnable.forkMasterInstance(master, 'build1', 'b1', function (err) {
+        expect(err).to.exist();
+        expect(err.output.payload.message).to.equal('Error happened');
+        done();
+      });
     });
   });
 });
