@@ -141,7 +141,9 @@ describe('Instance - /instances/:id', function () {
                     if (err) { return done(err); }
                     var container = ctx.instance.containers.models[0];
                     expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
-                    expect(container.attrs.inspect.Env).to.deep.equal([]);
+                    expect(container.attrs.inspect.Env).to.deep.equal([
+                      'RUNNABLE_BRANCH_ID=' + ctx.instance.attrs.shortHash
+                    ]);
                     var count = createCount(2, done);
                     expects.deletedWeaveHost(oldContainer, count.next);
                     expects.updatedWeaveHost(
@@ -185,7 +187,10 @@ describe('Instance - /instances/:id', function () {
                       if (err) { return done(err); }
                       var container = ctx.instance.containers.models[0];
                       expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
-                      expect(ctx.instance.attrs.containers[0].inspect.Env).to.deep.equal(['ONE=1']);
+                      expect(ctx.instance.attrs.containers[0].inspect.Env).to.deep.equal([
+                        'ONE=1',
+                        'RUNNABLE_BRANCH_ID=' + ctx.instance.attrs.shortHash
+                      ]);
                       var count = createCount(2, done);
                       expects.deletedWeaveHost(oldContainer, count.next);
                       expects.updatedWeaveHost(
@@ -395,16 +400,21 @@ describe('Instance - /instances/:id', function () {
           it('should allow a build that has everything started', function (done) {
             var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
             var oldContainer = ctx.instance.containers.models[0];
-            var expected = {
-              // Since the containers are not removed until the otherBuild has finished, we should
-              // still see them running
-              // 'containers[0].inspect.State.Running': true,
-              'build._id': ctx.otherBuild.id()
-            };
             multi.buildTheBuild(ctx.user, ctx.otherBuild, function () {
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
+
+              var oldCvId = ctx.instance.contextVersion.id();
+              var expected = {
+                // Since the containers are not removed until the otherBuild has finished, we should
+                // still see them running
+                // 'containers[0].inspect.State.Running': true,
+                'lastBuiltSimpleContextVersion.id': oldCvId,
+                'lastBuiltSimpleContextVersion.created': exists,
+                'build._id': ctx.otherBuild.id()
+              };
+
               primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
                 if (err) { return done(err); }
                 primus.expectAction('start', {}, function () {
@@ -666,6 +676,8 @@ describe('Instance - /instances/:id', function () {
 
       describe('not founds', function () {
         beforeEach(function (done) {
+          require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+            ctx.user.attrs.accounts.github.login);
           ctx.instance.destroy(done);
         });
         updates.forEach(function (json) {

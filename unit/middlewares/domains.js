@@ -43,7 +43,8 @@ describe('middlewares/domains unit test', function () {
   describe('initialization', function () {
     beforeEach(function (done) {
       ctx.fakeReq = {
-        sessionUser: null
+        sessionUser: null,
+        method: 'POST'
       };
       ctx.fakeRes = {
         '_headers': {},
@@ -64,7 +65,8 @@ describe('middlewares/domains unit test', function () {
   describe('updates after-session initialized', function () {
     beforeEach(function (done) {
       ctx.fakeReq = {
-        sessionUser: null
+        sessionUser: null,
+        method: 'POST'
       };
       ctx.fakeRes = {
         '_headers': {},
