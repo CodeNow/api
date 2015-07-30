@@ -85,4 +85,4 @@
 ./test/users-id-routes-id/index.js
 ./test/users-id-routes/index.js
 ./test/users-id.js
-./test/workers/container-create/post/201.js
+./test/workers/on-instance-container-create/post/201.js
