@@ -4,9 +4,7 @@ var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
-var before = lab.before;
 var beforeEach = lab.beforeEach;
-var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
@@ -23,15 +21,6 @@ var ctx = {};
 // `test` to get this to work. Let's see what happens...
 
 describe('Error', function () {
-  before(function (done) {
-    // this keeps it from printing lots of bogus stuff while trying to test
-    sinon.stub(error, 'print').returns();
-    done();
-  });
-  after(function (done) {
-    error.print.restore();
-    done();
-  });
 
   describe('should send to rollbar', function () {
     beforeEach(function (done) {
