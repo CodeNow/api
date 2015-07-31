@@ -285,6 +285,7 @@ describe('PUT /instances/:id/actions/start', function () {
       it('should error if already stopping', function(done) {
         ctx.instance.start(function (err) {
           expect(err.message).to.equal('Instance is already stopping');
+          // This will trigger startrequest completion, allowing after test api drain to complete
           ctx.stopContainerCallbacks.forEach(function (cb) { cb(); });
           done();
         });

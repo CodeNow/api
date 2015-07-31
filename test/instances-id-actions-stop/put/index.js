@@ -263,6 +263,7 @@ describe('PUT /instances/:id/actions/stop', function () {
         primus.expectAction('stopping', function () {
           ctx.instance.stop(function (err) {
             expect(err.message).to.equal('Instance is already stopping');
+            // This will trigger stop request completion and invoke done
             ctx.stopContainerCallbacks.forEach(function (cb) { cb(); });
           });
         });
