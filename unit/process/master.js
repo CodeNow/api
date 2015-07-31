@@ -55,7 +55,6 @@ describe('Master', function () {
       process.removeAllListeners('uncaughtException');
       cluster.removeAllListeners('fork');
       cluster.removeAllListeners('online');
-      cluster.removeAllListeners('listening');
       cluster.removeAllListeners('exit');
       cluster.removeAllListeners('disconnect');
       done();
@@ -282,23 +281,6 @@ describe('Master', function () {
       });
 
       describe('disabled', function() {
-
-        describe('ENABLE_CLUSTERING = false', function() {
-          beforeEach(function (done) {
-            process.env.ENABLE_CLUSTERING = false;
-            process.env.WORKER_LIFE_INTERVAL = 20;
-            done();
-          });
-
-          it('should do nothing', function(done) {
-            // unmock cycleWorkers and invoke it
-            Master.prototype.cycleWorkers.restore();
-            var ret = ctx.master.cycleWorkers();
-            sinon.stub(Master.prototype, 'cycleWorkers');
-            expect(ret).to.be.false();
-            done();
-          });
-        });
 
         describe('WORKER_LIFE_INTERVAL is undefined', function() {
           beforeEach(function (done) {
