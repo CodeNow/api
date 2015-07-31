@@ -1,7 +1,7 @@
 /**
- * Tests for POST /workers/container-create
+ * Tests for POST /workers/on-instance-container-create
  * - Internal route
- * @module test/workers/container-create/post/201
+ * @module test/workers/on-instance-container-create/post/201
  */
 'use strict';
 
@@ -29,18 +29,18 @@ var beforeEach = lab.beforeEach;
 var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
-var containerCreate = require('workers/container-create');
+var onInstanceContainerCreate = require('workers/on-instance-container-create');
 
 var ctx = {};
 
-var originalContainerCreateWorker = require('workers/container-create').worker;
+var originalContainerCreateWorker = require('workers/on-instance-container-create').worker;
 
-describe('201 POST /workers/container-create', function () {
+describe('201 POST /workers/on-instance-container-create', function () {
   // before
   before(function (done) {
     // unsubscribe rabbitmq event
-    sinon.stub(containerCreate, 'worker', function (data, ack) {
-      emitter.emit('container-create', data);
+    sinon.stub(onInstanceContainerCreate, 'worker', function (data, ack) {
+      emitter.emit('on-instance-container-create', data);
       ack();
     });
     done();
@@ -57,18 +57,18 @@ describe('201 POST /workers/container-create', function () {
   after(require('../../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../../fixtures/clean-nock'));
   after(function (done) {
-    containerCreate.worker.restore();
+    onInstanceContainerCreate.worker.restore();
     api.stop(done);
   });
 
   beforeEach(function (done) {
     var count = createCount(2, done);
-    emitter.on('container-create', function (data) {
+    emitter.on('on-instance-container-create', function (data) {
       var labels = keypath.get(data, 'inspectData.Config.Labels');
       if (labels.type === 'user-container') {
         ctx.jobData = data;
         count.next();
-        emitter.removeAllListeners('container-create');
+        emitter.removeAllListeners('on-instance-container-create');
       }
     });
     multi.createInstance(function (err, instance, build, user) {
