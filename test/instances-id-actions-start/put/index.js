@@ -223,7 +223,7 @@ describe('PUT /instances/:id/actions/start', function () {
 
       it('should error if already starting', function(done) {
         primus.expectAction('starting', startInstanceAgain);
-        // first start
+        // first start, this will complete with startContainerCallbacks invoked below
         ctx.instance.start(done);
         function startInstanceAgain () {
           // second start
