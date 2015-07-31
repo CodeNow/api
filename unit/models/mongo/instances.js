@@ -137,6 +137,42 @@ describe('Instance', function () {
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
 
+  describe('InstanceSchema.methods.isStartingOrStopping', function () {
+    var instance;
+
+    beforeEach(function (done) {
+      instance = createNewInstance('hellllloooooo');
+      done();
+    });
+    it('should not error if container is not starting or stopping', function (done) {
+      instance.isStartingOrStopping(function (err) {
+        expect(err).to.be.null();
+        done();
+      });
+    });
+    it('should error if no container', function (done) {
+      instance.container = {};
+      instance.isStartingOrStopping(function (err) {
+        expect(err.message).to.equal('Instance does not have a container');
+        done();
+      });
+    });
+    it('should error if container starting', function (done) {
+      instance.container.inspect.State.Starting = true;
+      instance.isStartingOrStopping(function (err) {
+        expect(err.message).to.equal('Instance is already starting');
+        done();
+      });
+    });
+    it('should error if container stopping', function (done) {
+      instance.container.inspect.State.Stopping = true;
+      instance.isStartingOrStopping(function (err) {
+        expect(err.message).to.equal('Instance is already stopping');
+        done();
+      });
+    });
+  });
+
   it('should not save an instance with the same (lower) name and owner', function (done) {
     var instance = createNewInstance('hello');
     instance.save(function (err, instance) {
