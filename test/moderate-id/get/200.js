@@ -104,7 +104,7 @@ describe('Moderate - /moderate', function () {
           };
           request(requestOpts, function (patchErr, patchRes) {
             if (patchErr) { return done(patchErr); }
-            expect(patchRes.statusCode).to.equal(200);
+            expect(patchRes.statusCode).to.equal(204);
             request({
               url: process.env.FULL_API_DOMAIN + '/users/me',
               json: true,
