@@ -12,26 +12,23 @@ var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
 
-var validation = require('../../fixtures/validation')(lab);
+var Graph = require('models/apis/graph');
 var Hashids = require('hashids');
 var async = require('async');
-var mongoose = require('mongoose');
-var pick = require('101/pick');
 var createCount = require('callback-count');
 var error = require('error');
-var Graph = require('models/apis/graph');
-var pluck = require('101/pluck');
 var find = require('101/find');
 var hasProps = require('101/has-properties');
-var async = require('async');
-
-var Instance = require('models/mongo/instance');
-var dock = require('../../../test/fixtures/dock');
-var Version = require('models/mongo/context-version');
-var pubsub = require('models/redis/pubsub');
+var mongoose = require('mongoose');
+var pick = require('101/pick');
+var pluck = require('101/pluck');
 
 var Docker = require('models/apis/docker');
-
+var Instance = require('models/mongo/instance');
+var Version = require('models/mongo/context-version');
+var dock = require('../../../test/fixtures/dock');
+var pubsub = require('models/redis/pubsub');
+var validation = require('../../fixtures/validation')(lab);
 
 var id = 0;
 function getNextId () {
@@ -137,39 +134,35 @@ describe('Instance', function () {
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
 
-  describe('InstanceSchema.methods.isStartingOrStopping', function () {
-    var instance;
-
-    beforeEach(function (done) {
-      instance = createNewInstance('hellllloooooo');
+  it('should not error if container is not starting or stopping', function (done) {
+    var instance = createNewInstance('container-not-starting-or-stopping');
+    instance.isNotStartingOrStopping(function (err) {
+      expect(err).to.be.null();
       done();
     });
-    it('should not error if container is not starting or stopping', function (done) {
-      instance.isStartingOrStopping(function (err) {
-        expect(err).to.be.null();
-        done();
-      });
+  });
+  it('should error if no container', function (done) {
+    var instance = createNewInstance('no-container');
+    instance.container = {};
+    instance.isNotStartingOrStopping(function (err) {
+      expect(err.message).to.equal('Instance does not have a container');
+      done();
     });
-    it('should error if no container', function (done) {
-      instance.container = {};
-      instance.isStartingOrStopping(function (err) {
-        expect(err.message).to.equal('Instance does not have a container');
-        done();
-      });
+  });
+  it('should error if container starting', function (done) {
+    var instance = createNewInstance('container-starting');
+    instance.container.inspect.State.Starting = true;
+    instance.isNotStartingOrStopping(function (err) {
+      expect(err.message).to.equal('Instance is already starting');
+      done();
     });
-    it('should error if container starting', function (done) {
-      instance.container.inspect.State.Starting = true;
-      instance.isStartingOrStopping(function (err) {
-        expect(err.message).to.equal('Instance is already starting');
-        done();
-      });
-    });
-    it('should error if container stopping', function (done) {
-      instance.container.inspect.State.Stopping = true;
-      instance.isStartingOrStopping(function (err) {
-        expect(err.message).to.equal('Instance is already stopping');
-        done();
-      });
+  });
+  it('should error if container stopping', function (done) {
+    var instance = createNewInstance('container-stopping');
+    instance.container.inspect.State.Stopping = true;
+    instance.isNotStartingOrStopping(function (err) {
+      expect(err.message).to.equal('Instance is already stopping');
+      done();
     });
   });
 
