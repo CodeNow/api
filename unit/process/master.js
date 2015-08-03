@@ -13,22 +13,8 @@ var Bunyan = require('bunyan');
 var sinon = require('sinon');
 var Master = require('process/master');
 var dogstatsd = require('models/datadog');
-var cachedGlobals = {
-  setTimeout: setTimeout,
-  setInterval: setInterval,
-  clearTimeout: clearTimeout,
-  clearInterval: clearInterval
-};
-var stubGlobal = function (name) {
-  if (global[name] !== cachedGlobals[name]) {
-    throw new Error(name+' already stubbed');
-  }
-  var stub = global[name] = sinon.stub();
-  return stub;
-};
-var restoreGlobal = function (name) {
-  global[name] = cachedGlobals[name];
-};
+var stubGlobal = require('../fixtures/stub-global');
+var restoreGlobal = require('../fixtures/restore-global');
 
 describe('Master', function () {
   var ctx;
