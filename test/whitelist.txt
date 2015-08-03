@@ -3,6 +3,8 @@
 ./test/actions-analyze/get/400.js
 ./test/actions-github.js
 ./test/actions-kill.js
+./test/actions-moderate/delete/204.js
+./test/actions-moderate/post/200.js
 ./test/actions-redirect.js
 ./test/auth-github/callback-token.js
 ./test/auth-github/token.js
@@ -71,7 +73,6 @@
 ./test/instances/post/index.js
 ./test/json-body-parser.js
 ./test/messenger.js
-./test/moderate-id/get/200.js
 ./test/scripts/add-owner-to-context-versions.js
 ./test/scripts/update-templates.js
 ./test/settings/get/index.js
