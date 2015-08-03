@@ -15,7 +15,7 @@ var api = require('../../fixtures/api-control');
 var multi = require('../../fixtures/multi-factory');
 var request = require('request');
 
-describe('Moderate - /moderate', function () {
+describe('De-Moderate - /actions/demoderate', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -41,7 +41,7 @@ describe('Moderate - /moderate', function () {
     var username = ctx.user.attrs.accounts.github.username;
     var requestOpts = {
       method: 'POST',
-      url: process.env.FULL_API_DOMAIN + '/moderate',
+      url: process.env.FULL_API_DOMAIN + '/actions/moderate',
       json: true,
       body: { username: username },
       jar: ctx.moderatorJar
@@ -56,7 +56,7 @@ describe('Moderate - /moderate', function () {
     require('../../fixtures/mocks/github/user')(ctx.mod);
     var requestOpts = {
       method: 'POST',
-      url: process.env.FULL_API_DOMAIN + '/demoderate',
+      url: process.env.FULL_API_DOMAIN + '/actions/demoderate',
       json: true,
       jar: ctx.moderatorJar
     };
