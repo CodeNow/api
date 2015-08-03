@@ -134,36 +134,83 @@ describe('Instance', function () {
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
 
-  it('should not error if container is not starting or stopping', function (done) {
-    var instance = createNewInstance('container-not-starting-or-stopping');
-    instance.isNotStartingOrStopping(function (err) {
-      expect(err).to.be.null();
-      done();
+  describe('starting or stopping state detection', function () {
+    it('should not error if container is not starting or stopping', function (done) {
+      var instance = createNewInstance('container-not-starting-or-stopping');
+      instance.isNotStartingOrStopping(function (err) {
+        expect(err).to.be.null();
+        done();
+      });
+    });
+    it('should error if no container', function (done) {
+      var instance = createNewInstance('no-container');
+      instance.container = {};
+      instance.isNotStartingOrStopping(function (err) {
+        expect(err.message).to.equal('Instance does not have a container');
+        done();
+      });
+    });
+    it('should error if container starting', function (done) {
+      var instance = createNewInstance('container-starting');
+      instance.container.inspect.State.Starting = true;
+      instance.isNotStartingOrStopping(function (err) {
+        expect(err.message).to.equal('Instance is already starting');
+        done();
+      });
+    });
+    it('should error if container stopping', function (done) {
+      var instance = createNewInstance('container-stopping');
+      instance.container.inspect.State.Stopping = true;
+      instance.isNotStartingOrStopping(function (err) {
+        expect(err.message).to.equal('Instance is already stopping');
+        done();
+      });
     });
   });
-  it('should error if no container', function (done) {
-    var instance = createNewInstance('no-container');
-    instance.container = {};
-    instance.isNotStartingOrStopping(function (err) {
-      expect(err.message).to.equal('Instance does not have a container');
-      done();
+
+  describe('atomic set container state', function () {
+    it('should not set container state to Starting if container on instance has changed', function (done) {
+      var instance = createNewInstance('container-stopping');
+      instance.save(function (err) {
+        if (err) { throw err; }
+        // change model data in DB without going through model
+        Instance.findOneAndUpdate({
+          '_id': instance._id
+        }, {
+          '$set': {
+            'container.dockerContainer': 'fooo'
+          }
+        }, function (err) {
+          if (err) { throw err; }
+          instance.setContainerStateToStarting(function (err, result) {
+            expect(result).to.be.null();
+            done();
+          });
+        });
+      });
     });
-  });
-  it('should error if container starting', function (done) {
-    var instance = createNewInstance('container-starting');
-    instance.container.inspect.State.Starting = true;
-    instance.isNotStartingOrStopping(function (err) {
-      expect(err.message).to.equal('Instance is already starting');
-      done();
+
+    it('should not set container state to Stopping if container on instance has changed', function (done) {
+      var instance = createNewInstance('container-stopping');
+      instance.save(function (err) {
+        if (err) { throw err; }
+        // change model data in DB without going through model
+        Instance.findOneAndUpdate({
+          '_id': instance._id
+        }, {
+          '$set': {
+            'container.dockerContainer': 'fooo'
+          }
+        }, function (err) {
+          if (err) { throw err; }
+          instance.setContainerStateToStopping(function (err, result) {
+            expect(result).to.be.null();
+            done();
+          });
+        });
+      });
     });
-  });
-  it('should error if container stopping', function (done) {
-    var instance = createNewInstance('container-stopping');
-    instance.container.inspect.State.Stopping = true;
-    instance.isNotStartingOrStopping(function (err) {
-      expect(err.message).to.equal('Instance is already stopping');
-      done();
-    });
+
   });
 
   it('should not save an instance with the same (lower) name and owner', function (done) {
