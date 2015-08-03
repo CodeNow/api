@@ -12,7 +12,6 @@ var expect = require('code').expect;
 var Bunyan = require('bunyan');
 var sinon = require('sinon');
 var Master = require('process/master');
-var workerFactory = require('process/worker-factory');
 var dogstatsd = require('models/datadog');
 var cachedGlobals = {
   setTimeout: setTimeout,
@@ -37,34 +36,18 @@ describe('Master', function () {
     ctx = {};
     done();
   });
-  beforeEach(function (done) {
-    sinon.stub(Master.prototype, 'forkWorkers');
-    sinon.stub(Master.prototype, 'cycleWorkers');
-    sinon.stub(Master.prototype, 'monitorWorkers');
-    done();
-  });
-  afterEach(function (done) {
-    Master.prototype.forkWorkers.restore();
-    Master.prototype.cycleWorkers.restore();
-    Master.prototype.monitorWorkers.restore();
-    done();
-  });
 
   describe('constructor', function () {
-    afterEach(function (done) {
-      process.removeAllListeners('uncaughtException');
-      cluster.removeAllListeners('fork');
-      cluster.removeAllListeners('online');
-      cluster.removeAllListeners('exit');
-      cluster.removeAllListeners('disconnect');
-      done();
-    });
-
     it('should create master process and workers', function (done) {
-      ctx.master = new Master();
-      sinon.assert.calledOnce(Master.prototype.forkWorkers);
-      sinon.assert.calledOnce(Master.prototype.cycleWorkers);
-      sinon.assert.calledOnce(Master.prototype.monitorWorkers);
+      var master = ctx.master = new Master();
+      expect(master.workers)
+        .to.be.an.array()
+        .to.be.empty();
+      expect(master.dyingWorkers)
+        .to.be.an.object()
+        .to.be.empty();
+      expect(master.numWorkers)
+        .to.be.a.number();
       done();
     });
   });
@@ -75,23 +58,100 @@ describe('Master', function () {
       done();
     });
 
-    describe('monitorWorkers', function() {
+    describe('start', function () {
       beforeEach(function (done) {
-        Master.prototype.monitorWorkers.restore(); // unmock for this test
-        // stub setInterval
-        ctx.setInterval = setInterval;
-        setInterval = sinon.stub();
+        sinon.stub(Master.prototype, 'listenToProcessEvents');
+        sinon.stub(Master.prototype, 'listenToSignals');
+        sinon.stub(Master.prototype, 'forkWorkers');
+        ctx.cycleInt = {};
+        ctx.monitorInt = {};
+        sinon.stub(Master.prototype, 'cycleWorkers').returns(ctx.cycleInt);
+        sinon.stub(Master.prototype, 'monitorWorkers').returns(ctx.monitorInt);
         done();
       });
       afterEach(function (done) {
-        // restore setInterval
-        setInterval = ctx.setInterval;
+        Master.prototype.listenToProcessEvents.restore();
+        Master.prototype.listenToSignals.restore();
+        Master.prototype.forkWorkers.restore();
+        Master.prototype.cycleWorkers.restore();
+        Master.prototype.monitorWorkers.restore();
+        done();
+      });
+
+      it('should start workers', function (done) {
+        ctx.master.start(function (err) {
+          if (err) { return done(err); }
+          sinon.assert.calledOnce(Master.prototype.listenToProcessEvents);
+          sinon.assert.calledOnce(Master.prototype.listenToSignals);
+          sinon.assert.calledOnce(Master.prototype.forkWorkers);
+          sinon.assert.calledOnce(Master.prototype.cycleWorkers);
+          sinon.assert.calledOnce(Master.prototype.monitorWorkers);
+          expect(ctx.master.cycleInterval).to.equal(ctx.cycleInt);
+          expect(ctx.master.monitorInterval).to.equal(ctx.monitorInt);
+          done();
+        });
+      });
+    });
+
+    describe('stop', function () {
+      beforeEach(function (done) {
+        sinon.stub(cluster, 'on');
+        sinon.stub(Master.prototype, 'killWorker');
+        sinon.stub(cluster, 'removeAllListeners');
+        sinon.stub(process, 'removeAllListeners');
+        ctx.master.cycleInterval = {};
+        ctx.master.monitorInterval = {};
+        ctx.mockWorker = { id: 1 };
+        ctx.master.workers = [ ctx.mockWorker ];
+        stubGlobal('clearInterval');
+        done();
+      });
+      afterEach(function (done) {
+        cluster.on.restore();
+        Master.prototype.killWorker.restore();
+        cluster.removeAllListeners.restore();
+        process.removeAllListeners.restore();
+        restoreGlobal('clearInterval');
+        done();
+      });
+
+      it('should stop all the workers and intervals', function (done) {
+        ctx.master.stop(stoppedAssertions);
+        sinon.assert.calledWith(clearInterval, ctx.master.cycleInterval);
+        sinon.assert.calledWith(clearInterval, ctx.master.monitorInterval);
+        sinon.assert.calledWith(cluster.on, 'exit', sinon.match.func);
+        expect(ctx.mockWorker.dontCreateReplacement).to.be.true();
+        sinon.assert.calledWith(Master.prototype.killWorker, ctx.mockWorker);
+        process.nextTick(function () { // mock worker exit
+          var handleWorkerExit = cluster.on.firstCall.args[1];
+          handleWorkerExit(ctx.mockWorker);
+        });
+        function stoppedAssertions (err) {
+          if (err) { return done(err); }
+          sinon.assert.calledWith(process.removeAllListeners, 'uncaughtException');
+          sinon.assert.calledWith(process.removeAllListeners, 'SIGINT');
+          sinon.assert.calledWith(process.removeAllListeners, 'SIGTERM');
+          sinon.assert.calledWith(cluster.removeAllListeners, 'fork');
+          sinon.assert.calledWith(cluster.removeAllListeners, 'online');
+          sinon.assert.calledWith(cluster.removeAllListeners, 'exit');
+          sinon.assert.calledWith(cluster.removeAllListeners, 'disconnect');
+          done();
+        }
+      });
+    });
+
+    describe('monitorWorkers', function() {
+      beforeEach(function (done) {
+        stubGlobal('setInterval');
+        done();
+      });
+      afterEach(function (done) {
+        restoreGlobal('setInterval');
         done();
       });
 
       it('should setInterval to reportWorkerCount', function(done) {
         ctx.master.monitorWorkers();
-        sinon.stub(Master.prototype, 'monitorWorkers'); // remock
         sinon.assert.calledOnce(setInterval);
         sinon.assert.calledWith(setInterval, sinon.match.func, process.env.MONITOR_INTERVAL);
         done();
@@ -140,7 +200,6 @@ describe('Master', function () {
 
     describe('forkWorkers', function () {
       beforeEach(function (done) {
-        Master.prototype.forkWorkers.restore(); // unstub for this test
         sinon.stub(Master.prototype, 'createWorker');
         done();
       });
@@ -152,7 +211,6 @@ describe('Master', function () {
       it('should call createWorker "numWorker" times', function (done) {
         var master = ctx.master;
         master.forkWorkers();
-        sinon.stub(Master.prototype, 'forkWorkers'); // restub
         sinon.assert.callCount(master.createWorker, master.numWorkers);
         done();
       });
@@ -161,17 +219,17 @@ describe('Master', function () {
     describe('createWorker', function () {
       beforeEach(function (done) {
         ctx.mockWorker = {};
-        sinon.stub(workerFactory, 'create').returns(ctx.mockWorker);
+        sinon.stub(cluster, 'fork').returns(ctx.mockWorker);
         done();
       });
       afterEach(function (done) {
-        workerFactory.create.restore();
+        cluster.fork.restore();
         done();
       });
 
       it('should call create worker and push it to workers', function (done) {
         ctx.master.createWorker();
-        sinon.assert.calledOnce(workerFactory.create);
+        sinon.assert.calledOnce(cluster.fork);
         expect(ctx.master.workers.length).to.equal(1);
         expect(ctx.master.workers[0]).to.equal(ctx.mockWorker);
         done();
@@ -188,36 +246,27 @@ describe('Master', function () {
         };
         ctx.master.workers = [ctx.mockWorker];
         sinon.stub(Master.prototype, 'removeWorker');
-        ctx.mockTimer = {};
-        stubGlobal('setTimeout').returns(ctx.mockTimer);
         done();
       });
       afterEach(function (done) {
         Master.prototype.removeWorker.restore();
-        restoreGlobal('setTimeout');
         done();
       });
 
       it('should move worker to dyingWorkers, kill it, and set kill timer', function(done) {
-        ctx.master.killWorker(ctx.mockWorker);
-        expect(ctx.master.dyingWorkers['1']).to.equal(ctx.mockWorker);
-        sinon.assert.calledOnce(setTimeout);
-        sinon.assert.calledWith(setTimeout, sinon.match.func, process.env.WORKER_KILL_TIMEOUT);
+        ctx.master.killWorker(ctx.mockWorker, 'SIGINT');
+        expect(ctx.master.dyingWorkers[ctx.mockWorker.id]).to.equal(ctx.mockWorker);
         sinon.assert.calledOnce(ctx.mockWorker.process.kill);
-        sinon.assert.calledWith(ctx.mockWorker.process.kill, 1);
-        expect(ctx.mockWorker.killTimer).to.equal(ctx.mockTimer);
+        sinon.assert.calledWith(ctx.mockWorker.process.kill, 'SIGINT');
         done();
       });
 
       describe('w/ signal', function() {
         it('should move worker to dyingWorkers, kill it, and set kill timer', function(done) {
-          ctx.master.killWorker(ctx.mockWorker, 'SIGINT');
+          ctx.master.killWorker(ctx.mockWorker, 'SIGKILL');
           expect(ctx.master.dyingWorkers['1']).to.equal(ctx.mockWorker);
-          sinon.assert.calledOnce(setTimeout);
-          sinon.assert.calledWith(setTimeout, sinon.match.func, process.env.WORKER_KILL_TIMEOUT);
           sinon.assert.calledOnce(ctx.mockWorker.process.kill);
-          sinon.assert.calledWith(ctx.mockWorker.process.kill, 'SIGINT');
-          expect(ctx.mockWorker.killTimer).to.equal(ctx.mockTimer);
+          sinon.assert.calledWith(ctx.mockWorker.process.kill, 'SIGKILL');
           done();
         });
       });
@@ -270,10 +319,8 @@ describe('Master', function () {
           var mockWorker = { id: 1 };
           ctx.master.workers = [mockWorker];
           // unmock cycleWorkers and invoke it
-          Master.prototype.cycleWorkers.restore();
           var interval = ctx.master.cycleWorkers();
           expect(interval).to.be.an.object();
-          sinon.stub(Master.prototype, 'cycleWorkers');
           sinon.assert.calledOnce(setInterval);
           sinon.assert.calledWith(setInterval, sinon.match.func, process.env.WORKER_LIFE_INTERVAL);
           done();
@@ -291,9 +338,7 @@ describe('Master', function () {
 
           it('should do nothing', function(done) {
             // unmock cycleWorkers and invoke it
-            Master.prototype.cycleWorkers.restore();
             var ret = ctx.master.cycleWorkers();
-            sinon.stub(Master.prototype, 'cycleWorkers');
             expect(ret).to.be.false();
             done();
           });
@@ -307,11 +352,12 @@ describe('Master', function () {
           id: 1,
           process: {
             kill: sinon.stub()
-          }
+          },
+          once: sinon.stub()
         };
         ctx.master.workers = [ctx.mockWorker];
         sinon.stub(Master.prototype, 'logWorkerEvent');
-        sinon.stub(Master.prototype, 'createWorker');
+        sinon.stub(Master.prototype, 'createWorker').returns(ctx.mockWorker);
         sinon.stub(Master.prototype, 'killWorker');
         done();
       });
@@ -331,9 +377,10 @@ describe('Master', function () {
           ctx.mockWorker
         );
         sinon.assert.calledOnce(Master.prototype.createWorker);
-        sinon.assert.calledOnce(Master.prototype.killWorker);
-        sinon.assert.calledWith(Master.prototype.killWorker, ctx.mockWorker);
+        var handleOnline = ctx.mockWorker.once.firstCall.args[1];
+        handleOnline(ctx.mockWorker);
         expect(ctx.mockWorker.dontCreateReplacement).to.be.true();
+        sinon.assert.calledWith(Master.prototype.killWorker, ctx.mockWorker, 'SIGINT');
         done();
       });
 
@@ -352,7 +399,7 @@ describe('Master', function () {
 
     describe('handleWorkerExit', function () {
       beforeEach(function (done) {
-        ctx.mockWorker = { id: 1, killTimer: {} };
+        ctx.mockWorker = { id: 1 };
         ctx.master.dyingWorkers[ctx.mockWorker.id] = ctx.mockWorker;
         sinon.stub(Master.prototype, 'logWorkerEvent');
         sinon.stub(Master.prototype, 'createWorker');
@@ -369,22 +416,8 @@ describe('Master', function () {
       it('should remove the worker from workers and create a new worker', function (done) {
         ctx.master.handleWorkerExit(ctx.mockWorker);
         expect(ctx.master.dyingWorkers[ctx.mockWorker.id]).to.be.undefined();
-        sinon.assert.calledOnce(clearTimeout);
-        sinon.assert.calledWith(clearTimeout, ctx.mockWorker.killTimer);
         sinon.assert.calledOnce(Master.prototype.createWorker);
         done();
-      });
-
-      describe('worker w/out killTimer', function() {
-        beforeEach(function (done) {
-          delete ctx.mockWorker.killTimer;
-          done();
-        });
-
-        it('should not call createWorker', function(done) {
-          sinon.assert.notCalled(clearTimeout);
-          done();
-        });
       });
 
       describe('worker w/ dontCreateReplacement', function() {
@@ -397,7 +430,6 @@ describe('Master', function () {
           var mockWorker = ctx.mockWorker;
           ctx.master.handleWorkerExit(mockWorker);
           sinon.assert.notCalled(Master.prototype.createWorker);
-          sinon.assert.calledOnce(clearTimeout);
           done();
         });
       });
@@ -422,35 +454,6 @@ describe('Master', function () {
       });
     });
 
-    describe('handleWorkerKillTimeout', function() {
-      beforeEach(function (done) {
-        ctx.mockWorker = {
-          id: 1,
-          process: {
-            kill: sinon.stub()
-          }
-        };
-        sinon.stub(Master.prototype, 'logWorkerEvent');
-        done();
-      });
-      afterEach(function (done) {
-        Master.prototype.logWorkerEvent.restore();
-        done();
-      });
-
-      it('it should log and hard kill the process', function (done) {
-        ctx.master.handleWorkerKillTimeout(ctx.mockWorker);
-        sinon.assert.calledOnce(Master.prototype.logWorkerEvent);
-        sinon.assert.calledWith(
-          Master.prototype.logWorkerEvent,
-          sinon.match(/kill timed out/),
-          ctx.mockWorker
-        );
-        sinon.assert.calledOnce(ctx.mockWorker.process.kill);
-        sinon.assert.calledWith(ctx.mockWorker.process.kill, 1);
-        done();
-      });
-    });
   });
 
 });
