@@ -37,7 +37,7 @@ function getNextId () {
 }
 function getNextHash () {
   var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
-  return hashids.encrypt(getNextId())[0];
+  return hashids.encrypt(getNextId());
 }
 function newObjectId () {
   return new mongoose.Types.ObjectId();
