@@ -1,6 +1,5 @@
 'use strict';
 
-var cluster = require('cluster');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -8,8 +7,6 @@ var it = lab.it;
 var beforeEach = lab.beforeEach;
 var afterEach = lab.afterEach;
 
-var cluster = require('cluster');
-var Bunyan = require('bunyan');
 var sinon = require('sinon');
 var last = require('101/last');
 var Worker = require('process/worker');
@@ -21,8 +18,6 @@ var activeApi = require('models/redis/active-api');
 var redisClient = require('models/redis');
 var events = require('models/events');
 var pubsub = require('models/redis/pubsub');
-var stubGlobal = require('../fixtures/stub-global');
-var restoreGlobal = require('../fixtures/restore-global');
 var getCallback = function (stub) {
   sinon.assert.calledOnce(stub);
   return last(stub.firstCall.args);
