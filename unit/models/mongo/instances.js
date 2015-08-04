@@ -183,7 +183,8 @@ describe('Instance', function () {
         }, function (err) {
           if (err) { throw err; }
           instance.setContainerStateToStarting(function (err, result) {
-            expect(result).to.be.null();
+            expect(err.message).to.equal('container is already starting or stopping');
+            expect(result).to.be.undefined();
             done();
           });
         });
@@ -204,7 +205,8 @@ describe('Instance', function () {
         }, function (err) {
           if (err) { throw err; }
           instance.setContainerStateToStopping(function (err, result) {
-            expect(result).to.be.null();
+            expect(err.message).to.equal('container is already starting or stopping');
+            expect(result).to.be.undefined();
             done();
           });
         });
