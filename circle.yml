@@ -2,6 +2,10 @@ machine:
   environment:
     NODE_ENV: testing
     LOG_LEVEL: none
+    services:
+    - cassandra
+    - mongodb
+    - mysql
 dependencies:
   cache_directories:
     - neo4j-community-2.1.8
