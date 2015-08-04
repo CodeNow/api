@@ -3,8 +3,6 @@ machine:
     NODE_ENV: testing
     LOG_LEVEL: none
     services:
-    - cassandra
-    - mongodb
     - mysql
 dependencies:
   cache_directories:
