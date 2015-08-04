@@ -67,6 +67,7 @@
     "passport-github": "~0.1.5",
     "passport-strategy": "^1.0.0",
     "primus": "2.3.0",
+    "primus-cluster": "^1.1.0",
     "primus-redis-rooms": "^0.3.1",
     "redis": "0.9.2",
     "redis-pubsub-emitter": "^0.4.0",
