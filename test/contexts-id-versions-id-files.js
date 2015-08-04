@@ -19,7 +19,7 @@ var multi = require('./fixtures/multi-factory');
 var createCount = require('callback-count');
 var primus = require('./fixtures/primus');
 
-function createFile (contextId, path, name, isDir) {
+function createFile (contextId, path, name, isDir, isHidden) {
   var key = (isDir) ? join(contextId, 'source', path, name, '/') : join(contextId, 'source', path, name);
   return {
     _id: exists,
@@ -28,7 +28,8 @@ function createFile (contextId, path, name, isDir) {
     Key: key,
     name: name,
     path: path,
-    isDir: isDir || false
+    isDir: isDir || false,
+    isHidden: isHidden || false
   };
 }
 
@@ -163,6 +164,27 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           name: 'file.txt',
           path: '/',
           body: 'content'
+        }}, expects.success(201, createExpected, function (err) {
+          if (err) { return done(err); }
+          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+          ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done));
+        })
+      );
+    });
+    it('should create a file which can be listed, but is hidden', function (done) {
+      var createExpected = createFile(ctx.context.id(), '/', 'file.txt', false, true);
+      var expected = [
+        createFile(ctx.context.id(), '/', 'Dockerfile'),
+        createFile(ctx.context.id(), '/', 'file.txt', false, true)
+      ];
+      require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt');
+      ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
+          name: 'file.txt',
+          path: '/',
+          body: 'content',
+          isHidden: true
         }}, expects.success(201, createExpected, function (err) {
           if (err) { return done(err); }
           require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
