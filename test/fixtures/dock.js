@@ -1,11 +1,9 @@
-var dockerModel = require('models/apis/docker');
 var createCount = require('callback-count');
 var docker = require('./docker');
 var redis = require('models/redis');
 var mavisApp = require('mavis');
 var sauron = require('sauron');
 var dockerModuleMock = require('./mocks/docker-model');
-var sinon = require('sinon');
 
 process.env.AUTO_RECONNECT = false; // needed for test
 process.env.HOST_TAGS='default'; // needed for test
@@ -22,7 +20,6 @@ var started = false;
 function startDock (done) {
   if(started) { return done(); }
   // FIXME: hack because docker-mock does not add image to its store for image-builder creates
-  sinon.stub(dockerModel.prototype, 'transferImage').yieldsAsync();
   started = true;
   var count = createCount(done);
   ctx.sauron = sauron.listen(process.env.SAURON_PORT);
@@ -43,7 +40,6 @@ function startDock (done) {
 }
 function stopDock (done) {
   if(!started) { return done(); }
-  dockerModel.prototype.transferImage.restore();
   started = false;
   var count = createCount(done);
   ctx.mavis.close(count.inc().next);
