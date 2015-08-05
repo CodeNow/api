@@ -75,15 +75,7 @@ describe('PUT /instances/:id/actions/start', function () {
     });
     ctx.originalDockerCreateContainer.apply(this, args);
   };
-  var delayContainerLogsBy = function (ms, originalContainerLogs) {
-    return function () {
-      var container = this;
-      var args = arguments;
-      setTimeout(function () {
-        originalContainerLogs.apply(container, args);
-      }, ms);
-    };
-  };
+
   beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -293,15 +285,6 @@ describe('PUT /instances/:id/actions/start', function () {
     });
 
     describe('create instance with in-progress build', function () {
-      beforeEach(function (done) { // delay container log time to make build time longer
-        ctx.originalContainerLogs = Container.prototype.logs;
-        Container.prototype.logs = delayContainerLogsBy(500, ctx.originalContainerLogs);
-        done();
-      });
-      afterEach(function (done) { // restore original container log method
-        Container.prototype.logs = ctx.originalContainerLogs;
-        done();
-      });
       beforeEach(function (done) {
         multi.createContextVersion(function (err, contextVersion, context, build, user) {
           if (err) { return done(err); }
