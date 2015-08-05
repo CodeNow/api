@@ -29,7 +29,7 @@ function createFile (contextId, path, name, isDir, fileType) {
     name: name,
     path: path,
     isDir: isDir || false,
-    isHidden: fileType
+    fileType: fileType
   };
 }
 
