@@ -178,7 +178,6 @@ describe('Context Version', function () {
               if (err) {
                 return done(err);
               }
-              console.log('xxxx', newCv.appCodeVersions);
               require('../../../test/fixtures/mocks/github/repos-username-repo-branches-branch')(newCv);
               newCv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
                 expect(err).to.be.null();
