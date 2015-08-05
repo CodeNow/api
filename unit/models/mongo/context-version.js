@@ -169,7 +169,8 @@ describe('Context Version', function () {
         if (err) {
           return done(err);
         }
-        cv.update({$pushAll: {appCodeVersions: [acv1, acv2, acv3, acv4]}},{ safe: true, upsert: true },
+        cv.update({$pushAll: {appCodeVersions: [acv1, acv2, acv3, acv4]}},
+          { safe: true, upsert: true },
           function (err) {
             if (err) {
               return done(err);
