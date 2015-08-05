@@ -42,9 +42,7 @@ Api.prototype.start = function (cb) {
 
 Api.prototype.stop = function (cb) {
   cb = cb || noop;
-  if (process.env.ENABLE_CLUSTERING) {
-    this.taskManager.stop(cb);
-  }
+  this.taskManager.stop(cb);
 };
 
 var api = module.exports = new Api();
