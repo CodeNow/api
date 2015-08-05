@@ -19,7 +19,7 @@ var multi = require('./fixtures/multi-factory');
 var createCount = require('callback-count');
 var primus = require('./fixtures/primus');
 
-function createFile (contextId, path, name, isDir, isHidden) {
+function createFile (contextId, path, name, isDir, fileType) {
   var key = (isDir) ? join(contextId, 'source', path, name, '/') : join(contextId, 'source', path, name);
   return {
     _id: exists,
@@ -29,7 +29,7 @@ function createFile (contextId, path, name, isDir, isHidden) {
     name: name,
     path: path,
     isDir: isDir || false,
-    isHidden: isHidden || false
+    isHidden: fileType
   };
 }
 
@@ -171,11 +171,12 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         })
       );
     });
-    it('should create a file which can be listed, but is hidden', function (done) {
-      var createExpected = createFile(ctx.context.id(), '/', 'file.txt', false, true);
+    it('should create a file which knows its file type', function (done) {
+      var fileType = 'textFile';
+      var createExpected = createFile(ctx.context.id(), '/', 'file.txt', false, fileType);
       var expected = [
         createFile(ctx.context.id(), '/', 'Dockerfile'),
-        createFile(ctx.context.id(), '/', 'file.txt', false, true)
+        createFile(ctx.context.id(), '/', 'file.txt', false, fileType)
       ];
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt');
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
@@ -184,7 +185,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
           name: 'file.txt',
           path: '/',
           body: 'content',
-          isHidden: true
+          fileType: fileType
         }}, expects.success(201, createExpected, function (err) {
           if (err) { return done(err); }
           require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/');
