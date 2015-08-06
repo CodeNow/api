@@ -28,6 +28,7 @@ var sinon = require('sinon');
 var uuid = require('uuid');
 
 var Docker = require('models/apis/docker');
+var Instance = require('models/mongo/instance');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var dockerMockEvents = require('../../fixtures/docker-mock-events');
@@ -36,6 +37,108 @@ var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 
+describe('PUT /instances/:id/actions/start', function () {
+  var ctx = {};
+
+  before(api.start.bind(ctx));
+  before(dock.start.bind(ctx));
+  beforeEach(primus.connect);
+  afterEach(primus.disconnect);
+  after(api.stop.bind(ctx));
+  after(dock.stop.bind(ctx));
+  before(require('../../fixtures/mocks/api-client').setup);
+  after(require('../../fixtures/mocks/api-client').clean);
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-nock'));
+  afterEach(require('../../fixtures/clean-mongo').removeEverything);
+
+  beforeEach(function (done) {
+    multi.createBuiltBuild(function (err, build, user, modelsArr) {
+      if (err) { return done(err); }
+      ctx.build = build;
+      ctx.user = user;
+      ctx.cv = modelsArr[0];
+      done();
+    });
+  });
+
+  beforeEach(function (done) {
+    primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+  });
+
+  beforeEach(function (done) {
+    multi.createAndTailInstance(primus, function (err, instance) {
+      ctx.instance = instance;
+      done();
+    });
+  });
+
+  it('should error if instance not found', function (done) {
+    Instance.findOneAndRemove({
+      '_id': ctx.instance.attrs._id
+    }, {}, function (err) {
+      if (err) { throw err; }
+      ctx.instance.start(function (err) {
+        expect(err.data.message).to.equal('Instance not found');
+        expect(err.data.statusCode).to.equal(404);
+        done();
+      });
+    });
+  });
+
+  it('should error if instance does not have a container', function (done) {
+    Instance.findOneAndUpdate({
+      '_id': ctx.instance.attrs._id
+    }, {
+      '$unset': {
+        container: 1
+      }
+    }, function (err) {
+      if (err) { throw err; }
+      ctx.instance.start(function (err) {
+        expect(err.message).to.equal('Instance does not have a container');
+        expect(err.output.statusCode).to.equal(400);
+        done();
+      });
+    });
+  });
+
+  it('should error if user it not owner of instance', function (done) {
+  });
+
+/*
+  it('should succeed if user is a moderator', function (done) {
+  });
+
+  it('should start a container and remove the starting property', function (done) {
+  });
+
+  it('should return error if container is already starting', function (done) {
+  });
+
+  it('should set a starting property and emit a starting event', function (done) {
+  });
+
+  it('should remove the starting property if docker container start fails', function (done) {
+  });
+*/
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 describe('PUT /instances/:id/actions/start', function () {
   var ctx = {};
 
@@ -202,37 +305,21 @@ describe('PUT /instances/:id/actions/start', function () {
       });
 
       beforeEach(function (done) {
-        ctx.startContainerCallbacks = [];
-        sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
-          ctx.startContainerCallbacks.push(cb);
-        });
-        done();
-      });
-
-      beforeEach(function (done) {
-        primus.expectAction('stopping', function () {
-          ctx.instance.fetch(done);
-        });
-        ctx.instance.stop(noop);
-      });
-
-      afterEach(function (done) {
-        Docker.prototype.startContainer.restore();
-        done();
+        Instance.findOneAndUpdate({
+          '_id': ctx.instance.attrs._id
+        }, {
+          '$set': {
+            'container.inspect.State.Starting': true
+          }
+        }, done);
       });
 
       it('should error if already starting', function(done) {
-        primus.expectAction('starting', startInstanceAgain);
         // first start, this will complete with startContainerCallbacks invoked below
-        ctx.instance.start(done);
-        function startInstanceAgain () {
-          // second start
-          ctx.instance.start(function (err) {
-            expect(err.message).to.equal('Instance is already starting');
-            // call the first container.start callback, so that done will be called
-            ctx.startContainerCallbacks.forEach(function (cb) { cb(); });
-          });
-        }
+        ctx.instance.start(function (err) {
+          expect(err.message).to.equal('Instance is already starting');
+          done();
+        });
       });
     });
 
@@ -263,30 +350,18 @@ describe('PUT /instances/:id/actions/start', function () {
       });
 
       beforeEach(function (done) {
-        ctx.stopContainerCallbacks = [];
-        sinon.stub(Docker.prototype, 'stopContainer', function (containerId, opts, cb) {
-          ctx.stopContainerCallbacks.push(cb);
-        });
-        done();
-      });
-
-      beforeEach(function (done) {
-        primus.expectAction('stopping', function () {
-          ctx.instance.fetch(done);
-        });
-        ctx.instance.stop(noop);
-      });
-
-      afterEach(function (done) {
-        Docker.prototype.stopContainer.restore();
-        done();
+        Instance.findOneAndUpdate({
+          '_id': ctx.instance.attrs._id
+        }, {
+          '$set': {
+            'container.inspect.State.Stopping': true
+          }
+        }, done);
       });
 
       it('should error if already stopping', function(done) {
         ctx.instance.start(function (err) {
           expect(err.message).to.equal('Instance is already stopping');
-          // This will trigger startrequest completion, allowing after test api drain to complete
-          ctx.stopContainerCallbacks.forEach(function (cb) { cb(); });
           done();
         });
       });
@@ -340,7 +415,6 @@ describe('PUT /instances/:id/actions/start', function () {
             'containers[0].dockerHost': exists,
             'containers[0].dockerContainer': exists,
             'containers[0].inspect.State.Running': false
-            */
           });
           ctx.expectAlreadyStarted = false;
           done();
@@ -356,7 +430,6 @@ describe('PUT /instances/:id/actions/start', function () {
             'containers[0].dockerHost': exists,
             'containers[0].dockerContainer': exists,
             'containers[0].inspect.State.Running': false
-            */
           });
           ctx.originalStart = Docker.prototype.startContainer;
           Docker.prototype.startContainer = stopContainerRightAfterStart;
@@ -393,7 +466,6 @@ describe('PUT /instances/:id/actions/start', function () {
           /*
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
-          */
           ctx.expectNoContainerErr = true;
           ctx.originalCreateContainer = Dockerode.prototype.createContainer;
           ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
@@ -483,10 +555,18 @@ describe('PUT /instances/:id/actions/start', function () {
         });
       }
       else { // success
+
+        console.log('ctx.expectAlreadyStarted', ctx.expectAlreadyStarted);
+
         var assertions = false ? //ctx.expectAlreadyStarted ?
           expects.error(304, stopStartAssert) :
           expects.success(200, ctx.expected, stopStartAssert);
-        ctx.instance.start(assertions);
+
+        ctx.instance.start(function (err) {
+          expect(err.message).to.equal('instance is already starting or stopping');
+          console.log('args', arguments);
+          done();
+        });
       }
       function stopStartAssert (err) {
         if (err) { return done(err); }
@@ -520,3 +600,4 @@ describe('PUT /instances/:id/actions/start', function () {
     });
   }
 });
+*/
