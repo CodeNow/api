@@ -29,7 +29,7 @@ describe('PATCH 400 - /instances/:id', function () {
 
   describe('invalid types', function () {
     beforeEach(function (done) {
-      multi.createInstance(function (err, instance) {
+      multi.createAndTailInstance(primus, function (err, instance) {
         if (err) { return done(err); }
         ctx.instance = instance;
         done();

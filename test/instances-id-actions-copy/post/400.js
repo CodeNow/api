@@ -27,7 +27,7 @@ describe('400  POST /instances/:id/actions/copy', function () {
   after(require('../../fixtures/mocks/api-client').clean);
 
   beforeEach(function (done) {
-    multi.createInstance(function (err, instance, build, user) {
+    multi.createAndTailInstance(primus, function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.instance = instance;
       ctx.build = build;
