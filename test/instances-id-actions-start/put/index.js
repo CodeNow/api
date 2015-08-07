@@ -16,13 +16,10 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-var Container = require('dockerode/lib/container');
 var Dockerode = require('dockerode');
 var createCount = require('callback-count');
 var exists = require('101/exists');
 var extend = require('extend');
-var isFunction = require('101/is-function');
-var last = require('101/last');
 var noop = require('101/noop');
 var sinon = require('sinon');
 var uuid = require('uuid');
@@ -234,37 +231,7 @@ describe('PUT /instances/:id/actions/start', function () {
       });
     }
   };
-  var forceCreateContainerErr = function () {
-    var cb = last(arguments);
-    var createErr = new Error("server error");
-    extend(createErr, {
-      statusCode : 500,
-      reason     : "server error",
-      json       : "No command specified\n"
-    });
-    if (isFunction(cb)) {
-      cb(createErr);
-    }
-  };
-  var dontReportCreateError = function () {
-    // for cleaner test logs
-    var args = Array.prototype.slice.call(arguments);
-    var cb = args.pop();
-    args.push(function (err) {
-      if (err) { err.data.report = false; }
-      cb.apply(this, arguments);
-    });
-    ctx.originalDockerCreateContainer.apply(this, args);
-  };
-  var delayContainerLogsBy = function (ms, originalContainerLogs) {
-    return function () {
-      var container = this;
-      var args = arguments;
-      setTimeout(function () {
-        originalContainerLogs.apply(container, args);
-      }, ms);
-    };
-  };
+
   beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -446,15 +413,6 @@ describe('PUT /instances/:id/actions/start', function () {
     });
 
     describe('create instance with in-progress build', function () {
-      beforeEach(function (done) { // delay container log time to make build time longer
-        ctx.originalContainerLogs = Container.prototype.logs;
-        Container.prototype.logs = delayContainerLogsBy(500, ctx.originalContainerLogs);
-        done();
-      });
-      afterEach(function (done) { // restore original container log method
-        Container.prototype.logs = ctx.originalContainerLogs;
-        done();
-      });
       beforeEach(function (done) {
         multi.createContextVersion(function (err, contextVersion, context, build, user) {
           if (err) { return done(err); }
@@ -545,16 +503,17 @@ describe('PUT /instances/:id/actions/start', function () {
           ctx.expected['containers[0].error.message'] = exists;
           ctx.expected['containers[0].error.stack'] = exists;
           ctx.expectNoContainerErr = true;
-          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
-          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
-          Dockerode.prototype.createContainer = forceCreateContainerErr;
-          Docker.prototype.createContainer = dontReportCreateError;
+          var createErr = new Error("server error");
+          extend(createErr, {
+            statusCode : 500,
+            reason     : "server error",
+            json       : "No command specified\n"
+          });
+          sinon.stub(Dockerode.prototype, 'createContainer').yieldsAsync(createErr);
           done();
         });
         afterEach(function (done) {
-          // restore dockerODE.createContainer` back to normal
-          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
-          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
+          Dockerode.prototype.createContainer.restore();
           done();
         });
         createInstanceAndRunTests(ctx);
