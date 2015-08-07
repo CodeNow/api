@@ -32,7 +32,6 @@ var cleanMongo = module.exports = {
     var self = cleanMongo;
     var collectionNames = Object.keys(mongoose.connection.collections);
     var count = createCount(collectionNames.length, cb);
-
     collectionNames.forEach(function (name) {
       self.removeDocsInCollection(name, count.next);
     });

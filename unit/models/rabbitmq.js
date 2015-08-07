@@ -5,13 +5,14 @@ var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
 var beforeEach = lab.beforeEach;
-var RabbitMQ = require('models/rabbitmq');
+
+var rabbitMQ = require('models/rabbitmq');
 
 describe('RabbitMQ Model', function () {
   var ctx;
   beforeEach(function (done) {
     ctx = {};
-    ctx.rabbitmq = new RabbitMQ();
+    ctx.rabbitmq = rabbitMQ;
     done();
   });
 

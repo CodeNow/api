@@ -134,7 +134,9 @@ module.exports = {
     });
   },
   createBuild: function (ownerId, cb) {
-    log.trace({}, 'createBuild');
+    log.info({
+      ownerId: ownerId
+    }, 'createBuild');
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -157,7 +159,9 @@ module.exports = {
     });
   },
   createContextVersion: function (ownerId, cb) {
-    log.trace({}, 'createContextVersion');
+    log.info({
+      ownerId: ownerId
+    }, 'createContextVersion');
     if (typeof ownerId === 'function') {
       cb = ownerId;
       ownerId = null;
@@ -226,7 +230,9 @@ module.exports = {
     });
   },
   createBuiltBuild: function (ownerId, cb) {
-    log.trace({}, 'createBuiltBuild');
+    log.info({
+      ownerId: ownerId
+    }, 'createBuiltBuild');
     require('nock').cleanAll();
     if (typeof ownerId === 'function') {
       cb = ownerId;
@@ -260,7 +266,11 @@ module.exports = {
    * @param {Function} cb
    */
   createAndTailInstance: function (primus, buildOwnerId, buildOwnerName, createBody, cb) {
-    log.trace({}, 'createAndTailInstance', buildOwnerId, buildOwnerName, createBody, typeof cb);
+    log.info({
+      buildOwnerId: buildOwnerId,
+      buildOwnerName: buildOwnerName,
+      createBody: createBody
+    }, 'createAndTailInstance');
     if (isFunction(buildOwnerId)) {
       cb = buildOwnerId;
       buildOwnerId = null;
