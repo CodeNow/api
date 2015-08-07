@@ -71,7 +71,7 @@ describe('201 POST /workers/on-instance-container-create', function () {
         emitter.removeAllListeners('on-instance-container-create');
       }
     });
-    multi.createAndTailInstance(primus, function (err, instance, build, user) {
+    multi.createInstance(function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.instance = instance;
       ctx.user = user;
