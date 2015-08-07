@@ -31,7 +31,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
 
   describe('User Instances', function () {
     beforeEach(function (done) {
-      multi.createInstance(function (err, instance, build, user) {
+      multi.createAndTailInstance(primus, function (err, instance, build, user) {
         //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
         if (err) { return done(err); }
         ctx.instance = instance;
