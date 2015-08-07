@@ -41,17 +41,17 @@ var redisCleaner = require('../../fixtures/redis-cleaner');
 describe('PUT /instances/:id/actions/start', function () {
   var ctx = {};
 
-  before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
+  beforeEach(api.start.bind(ctx));
+  beforeEach(dock.start.bind(ctx));
+  before(require('../../fixtures/mocks/api-client').setup);
   beforeEach(primus.connect);
   afterEach(primus.disconnect);
-  after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
-  before(require('../../fixtures/mocks/api-client').setup);
-  after(require('../../fixtures/mocks/api-client').clean);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  afterEach(api.stop.bind(ctx));
+  afterEach(dock.stop.bind(ctx));
+  after(require('../../fixtures/mocks/api-client').clean);
 
   beforeEach(function (done) {
     multi.createBuiltBuild(function (err, build, user, modelsArr) {
@@ -74,7 +74,6 @@ describe('PUT /instances/:id/actions/start', function () {
     });
   });
 
-/*
   it('should error if instance not found', function (done) {
     Instance.findOneAndRemove({
       '_id': ctx.instance.attrs._id
@@ -138,8 +137,6 @@ describe('PUT /instances/:id/actions/start', function () {
       });
     });
   });
-*/
-
 
 /*
   it('should succeed if user is !owner and is a moderator', function (done) {
@@ -170,9 +167,8 @@ describe('PUT /instances/:id/actions/start', function () {
 */
 
   it('should start a container and remove the starting property', function (done) {
-//    var count = createCount(done, 3);
-    return done();
-/*
+    var count = createCount(done, 3);
+
     primus.expectAction('stopping', function (err, data) {
       console.log('stopping');
       expect(data.data.data.container.inspect.State.Stopping).to.equal(true);
@@ -191,7 +187,7 @@ describe('PUT /instances/:id/actions/start', function () {
       console.log('callback!', arguments);
       count.next();
     });
-*/
+
   });
 
 /*
