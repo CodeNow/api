@@ -20,7 +20,7 @@ test:
   override:
     - npm run lint
     - timeout 5m npm run unit
-    - timeout 15m ./scripts/npm-bdd-split-files.sh:
+    - timeout 15m ./scripts/npm-bdd-split-files.sh | bunyan:
         parallel: true
   post:
     - npm run eslint-changes-errors || true
