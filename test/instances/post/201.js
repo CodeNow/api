@@ -219,7 +219,8 @@ describe('201 POST /instances', function () {
               creatorGithubId: ctx.user.attrs.accounts.github.id.toString(),
               ownerGithubId: ctx.user.attrs.accounts.github.id.toString(),
               sessionUserUsername: ctx.user.attrs.accounts.github.login,
-              sessionUserId: ctx.user.attrs.accounts.github.id,
+              sessionUserId: ctx.user.id.toString(),
+              sessionUserGitHubId: ctx.user.attrs.accounts.github.id,
               type: 'user-container',
               tid: process.env.TID_POST_INSTANCES
             }
