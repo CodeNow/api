@@ -16,23 +16,21 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-var expects = require('../../fixtures/expects');
+var Dockerode = require('dockerode');
+var createCount = require('callback-count');
+var exists = require('101/exists');
+var extend = require('extend');
+var noop = require('101/noop');
+var sinon = require('sinon');
+var uuid = require('uuid');
+
+var Docker = require('models/apis/docker');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
-var multi = require('../../fixtures/multi-factory');
-var exists = require('101/exists');
-var last = require('101/last');
-var isFunction = require('101/is-function');
-var primus = require('../../fixtures/primus');
 var dockerMockEvents = require('../../fixtures/docker-mock-events');
-
-var uuid = require('uuid');
-var createCount = require('callback-count');
-var uuid = require('uuid');
-var Docker = require('models/apis/docker');
-var Container = require('dockerode/lib/container');
-var Dockerode = require('dockerode');
-var extend = require('extend');
+var expects = require('../../fixtures/expects');
+var multi = require('../../fixtures/multi-factory');
+var primus = require('../../fixtures/primus');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 
 describe('PUT /instances/:id/actions/start', function () {
@@ -52,37 +50,7 @@ describe('PUT /instances/:id/actions/start', function () {
       });
     }
   };
-  var forceCreateContainerErr = function () {
-    var cb = last(arguments);
-    var createErr = new Error("server error");
-    extend(createErr, {
-      statusCode : 500,
-      reason     : "server error",
-      json       : "No command specified\n"
-    });
-    if (isFunction(cb)) {
-      cb(createErr);
-    }
-  };
-  var dontReportCreateError = function () {
-    // for cleaner test logs
-    var args = Array.prototype.slice.call(arguments);
-    var cb = args.pop();
-    args.push(function (err) {
-      if (err) { err.data.report = false; }
-      cb.apply(this, arguments);
-    });
-    ctx.originalDockerCreateContainer.apply(this, args);
-  };
-  var delayContainerLogsBy = function (ms, originalContainerLogs) {
-    return function () {
-      var container = this;
-      var args = arguments;
-      setTimeout(function () {
-        originalContainerLogs.apply(container, args);
-      }, ms);
-    };
-  };
+
   beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS+'*'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
@@ -115,16 +83,183 @@ describe('PUT /instances/:id/actions/start', function () {
   }
 
   describe('for User', function () {
+    describe('start failure rollback', function () {
+      afterEach(require('../../fixtures/clean-ctx')(ctx));
+      afterEach(require('../../fixtures/clean-nock'));
+      afterEach(require('../../fixtures/clean-mongo').removeEverything);
+
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, user, modelsArr) {
+          if (err) { return done(err); }
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = modelsArr[0];
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+
+      beforeEach(function (done) {
+        multi.createAndTailInstance(primus, function (err, instance) {
+          ctx.instance = instance;
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
+          cb(new Error());
+        });
+        done();
+      });
+
+      beforeEach(function (done) {
+        primus.expectAction('stopping', function () {
+          ctx.instance.fetch(done);
+        });
+        ctx.instance.stop(noop);
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.startContainer.restore();
+        done();
+      });
+
+      it('should revert starting state if start request returns error', function (done) {
+        var count = createCount(2, done);
+        primus.expectAction('start-error', function (err, data) {
+          expect(data.data.data.container.inspect.State.Running).to.equal(false);
+          expect(data.data.data.container.inspect.State.Starting).to.be.undefined();
+          expect(data.data.data.container.inspect.State.Stopping).to.be.undefined();
+          count.next();
+        });
+        ctx.instance.start(function () {
+          count.next();
+        });
+      });
+    });
+
+    describe('already starting', function () {
+      afterEach(require('../../fixtures/clean-ctx')(ctx));
+      afterEach(require('../../fixtures/clean-nock'));
+      afterEach(require('../../fixtures/clean-mongo').removeEverything);
+
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, user, modelsArr) {
+          if (err) { return done(err); }
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = modelsArr[0];
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+
+      beforeEach(function (done) {
+        multi.createAndTailInstance(primus, function (err, instance) {
+          ctx.instance = instance;
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        ctx.startContainerCallbacks = [];
+        sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
+          ctx.startContainerCallbacks.push(cb);
+        });
+        done();
+      });
+
+      beforeEach(function (done) {
+        primus.expectAction('stopping', function () {
+          ctx.instance.fetch(done);
+        });
+        ctx.instance.stop(noop);
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.startContainer.restore();
+        done();
+      });
+
+      it('should error if already starting', function(done) {
+        primus.expectAction('starting', startInstanceAgain);
+        // first start, this will complete with startContainerCallbacks invoked below
+        ctx.instance.start(done);
+        function startInstanceAgain () {
+          // second start
+          ctx.instance.start(function (err) {
+            expect(err.message).to.equal('Instance is already starting');
+            // call the first container.start callback, so that done will be called
+            ctx.startContainerCallbacks.forEach(function (cb) { cb(); });
+          });
+        }
+      });
+    });
+
+    describe('already stopping', function () {
+      afterEach(require('../../fixtures/clean-ctx')(ctx));
+      afterEach(require('../../fixtures/clean-nock'));
+      afterEach(require('../../fixtures/clean-mongo').removeEverything);
+
+      beforeEach(function (done) {
+        multi.createBuiltBuild(function (err, build, user, modelsArr) {
+          if (err) { return done(err); }
+          ctx.build = build;
+          ctx.user = user;
+          ctx.cv = modelsArr[0];
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+      });
+
+      beforeEach(function (done) {
+        multi.createAndTailInstance(primus, function (err, instance) {
+          ctx.instance = instance;
+          done();
+        });
+      });
+
+      beforeEach(function (done) {
+        ctx.stopContainerCallbacks = [];
+        sinon.stub(Docker.prototype, 'stopContainer', function (containerId, opts, cb) {
+          ctx.stopContainerCallbacks.push(cb);
+        });
+        done();
+      });
+
+      beforeEach(function (done) {
+        primus.expectAction('stopping', function () {
+          ctx.instance.fetch(done);
+        });
+        ctx.instance.stop(noop);
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.stopContainer.restore();
+        done();
+      });
+
+      it('should error if already stopping', function(done) {
+        ctx.instance.start(function (err) {
+          expect(err.message).to.equal('Instance is already stopping');
+          // This will trigger startrequest completion, allowing after test api drain to complete
+          ctx.stopContainerCallbacks.forEach(function (cb) { cb(); });
+          done();
+        });
+      });
+    });
+
     describe('create instance with in-progress build', function () {
-      beforeEach(function (done) { // delay container log time to make build time longer
-        ctx.originalContainerLogs = Container.prototype.logs;
-        Container.prototype.logs = delayContainerLogsBy(500, ctx.originalContainerLogs);
-        done();
-      });
-      afterEach(function (done) { // restore original container log method
-        Container.prototype.logs = ctx.originalContainerLogs;
-        done();
-      });
       beforeEach(function (done) {
         multi.createContextVersion(function (err, contextVersion, context, build, user) {
           if (err) { return done(err); }
@@ -140,7 +275,6 @@ describe('PUT /instances/:id/actions/start', function () {
           done();
         });
       });
-
       createInstanceAndRunTests(ctx);
     });
     describe('create instance with built build', function () {
@@ -169,7 +303,6 @@ describe('PUT /instances/:id/actions/start', function () {
           ctx.expectAlreadyStarted = false;
           done();
         });
-
         createInstanceAndRunTests(ctx);
       });
       describe('Immediately exiting container (first time only)', function() {
@@ -220,16 +353,17 @@ describe('PUT /instances/:id/actions/start', function () {
           ctx.expected['containers[0].error.stack'] = exists;
           */
           ctx.expectNoContainerErr = true;
-          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
-          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
-          Dockerode.prototype.createContainer = forceCreateContainerErr;
-          Docker.prototype.createContainer = dontReportCreateError;
+          var createErr = new Error("server error");
+          extend(createErr, {
+            statusCode : 500,
+            reason     : "server error",
+            json       : "No command specified\n"
+          });
+          sinon.stub(Dockerode.prototype, 'createContainer').yieldsAsync(createErr);
           done();
         });
         afterEach(function (done) {
-          // restore dockerODE.createContainer` back to normal
-          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
-          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
+          Dockerode.prototype.createContainer.restore();
           done();
         });
         createInstanceAndRunTests(ctx);
@@ -308,7 +442,6 @@ describe('PUT /instances/:id/actions/start', function () {
         });
       }
       else { // success
-
         var assertions = false ? //ctx.expectAlreadyStarted ?
           expects.error(304, stopStartAssert) :
           expects.success(200, ctx.expected, stopStartAssert);

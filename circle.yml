@@ -2,6 +2,7 @@ machine:
   environment:
     NODE_ENV: testing
     LOG_LEVEL: none
+    LOG_LEVEL_STDOUT: none
 dependencies:
   cache_directories:
     - neo4j-community-2.1.8
@@ -18,8 +19,8 @@ test:
     - ulimit -n 10240
   override:
     - npm run lint
-    - npm run unit
-    - ./scripts/npm-bdd-split-files.sh:
+    - timeout 5m npm run unit
+    - timeout 15m ./scripts/npm-bdd-split-files.sh:
         parallel: true
   post:
     - npm run eslint-changes-errors || true
