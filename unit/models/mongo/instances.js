@@ -146,7 +146,7 @@ describe('Instance', function () {
       var instance = createNewInstance('no-container');
       instance.container = {};
       instance.isNotStartingOrStopping(function (err) {
-        expect(err.message).to.equal('Instance does not have a container');
+        expect(err.message).to.equal('instance does not have a container');
         done();
       });
     });
@@ -154,7 +154,7 @@ describe('Instance', function () {
       var instance = createNewInstance('container-starting');
       instance.container.inspect.State.Starting = true;
       instance.isNotStartingOrStopping(function (err) {
-        expect(err.message).to.equal('Instance is already starting');
+        expect(err.message).to.equal('instance is already starting');
         done();
       });
     });
@@ -162,7 +162,7 @@ describe('Instance', function () {
       var instance = createNewInstance('container-stopping');
       instance.container.inspect.State.Stopping = true;
       instance.isNotStartingOrStopping(function (err) {
-        expect(err.message).to.equal('Instance is already stopping');
+        expect(err.message).to.equal('instance is already stopping');
         done();
       });
     });
