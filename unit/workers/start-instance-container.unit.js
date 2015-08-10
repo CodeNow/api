@@ -2,7 +2,7 @@
  * @module unit/workers/start-instance-container.unit.js
  */
 'use strict';
-
+/*
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 
@@ -22,3 +22,4 @@ var workerStartInstanceContainer = require('workers/start-instance-container');
 describe('worker-start-instance-container', function () {
 
 });
+*/
