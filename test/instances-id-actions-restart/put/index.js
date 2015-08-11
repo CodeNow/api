@@ -216,7 +216,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       it('should error if already starting', function(done) {
         primus.expectAction('starting', function () {
           ctx.instance.restart(function (err) {
-            expect(err.message).to.equal('Instance is already starting');
+            expect(err.message).to.equal('instance is already starting');
             // trigger start request to complete
             ctx.startContainerCallbacks.forEach(function (cb) { cb(); });
           });
@@ -273,7 +273,7 @@ describe('PUT /instances/:id/actions/restart', function () {
 
       it('should error if already stopping', function(done) {
         ctx.instance.restart(function (err) {
-          expect(err.message).to.equal('Instance is already stopping');
+          expect(err.message).to.equal('instance is already stopping');
           ctx.stopContainerCallbacks.forEach(function (cb) { cb(); });
           done();
         });

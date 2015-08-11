@@ -4,9 +4,7 @@ var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
-var before = lab.before;
 var beforeEach = lab.beforeEach;
-var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
@@ -89,7 +87,6 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   var filePath = "/";
   function createModUser(done) {
     ctx.moderator = multi.createModerator(done);
-
   }
   function createNonOwner(done) {
     ctx.nonOwner = multi.createUser(done);
@@ -131,15 +128,15 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
     rimraf.sync(containerRoot(ctx));
     ctx.krain.close(done);
   });
-  before(dock.start.bind(ctx));
-  before(api.start.bind(ctx));
+  beforeEach(dock.start.bind(ctx));
+  beforeEach(api.start.bind(ctx));
   beforeEach(primus.connect);
-  afterEach(primus.disconnect);
-  after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
+  afterEach(primus.disconnect);
+  afterEach(api.stop.bind(ctx));
+  afterEach(dock.stop.bind(ctx));
 
   beforeEach(function (done) {
     multi.createAndTailContainer(primus, function (err, container, instance) {
@@ -157,10 +154,8 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
     it('should read a file', function (done) {
       createFile(ctx, fileName, filePath, fileContent, function(err) {
         if (err) { return done(err); }
-
         ctx.file.fetch(function (err, body, code) {
           if (err) { return done(err); }
-
           expect(code).to.equal(200);
           expect(body).to.deep.contain({
             name: fileName,

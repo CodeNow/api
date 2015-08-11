@@ -262,7 +262,7 @@ describe('PUT /instances/:id/actions/stop', function () {
       it('should error if already stopping', function(done) {
         primus.expectAction('stopping', function () {
           ctx.instance.stop(function (err) {
-            expect(err.message).to.equal('Instance is already stopping');
+            expect(err.message).to.equal('instance is already stopping');
             // This will trigger stop request completion and invoke done
             ctx.stopContainerCallbacks.forEach(function (cb) { cb(); });
           });
@@ -465,7 +465,7 @@ describe('PUT /instances/:id/actions/stop', function () {
             if (err) { return count.next(err); }
             // expect temporary property to not be in final response
             expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
-            expect(instance.json().container.inspect.State.Starting).to.be.undefined();
+            expect(instance.json().container.inspect.State.Starting).to.equal(true);
             primus.expectAction('stopping', {
               container: {inspect: {State: {Stopping: true}}}
             }, count.next);
