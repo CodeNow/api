@@ -22,7 +22,7 @@ var started = false;
 function startDock (done) {
   if(started) { return done(); }
   // FIXME: hack because docker-mock does not add image to its store for image-builder creates
-  sinon.stub(dockerModel.prototype, 'transferImage').yieldsAsync();
+  sinon.stub(dockerModel.prototype, 'pullImage').yieldsAsync();
   started = true;
   var count = createCount(done);
   ctx.sauron = sauron.listen(process.env.SAURON_PORT);
@@ -43,7 +43,7 @@ function startDock (done) {
 }
 function stopDock (done) {
   if(!started) { return done(); }
-  dockerModel.prototype.transferImage.restore();
+  dockerModel.prototype.pullImage.restore();
   started = false;
   var count = createCount(done);
   ctx.mavis.close(count.inc().next);
