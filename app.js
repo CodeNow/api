@@ -11,16 +11,19 @@ if (process.env.NEW_RELIC_LICENSE_KEY) {
 
 var Boom = require('dat-middleware').Boom;
 var createCount = require('callback-count');
-var envIs = require('101/env-is');
 
 var ApiServer = require('server');
 var activeApi = require('models/redis/active-api');
 var dogstatsd = require('models/datadog');
+var envIs = require('101/env-is');
 var error = require('error');
 var events = require('models/events');
 var keyGen = require('key-generator');
 var logger = require('middlewares/logger')(__filename);
 var mongooseControl = require('models/mongo/mongoose-control');
+var noop = require('101/noop');
+var redisClient = require('models/redis');
+var redisPubSub = require('models/redis/pubsub');
 
 var log = logger.log;
 
@@ -95,11 +98,11 @@ Api.prototype.stop = function (cb) {
   var self = this;
   activeApi.isMe(function (err, meIsActiveApi) {
     if (err) { return cb(err); }
-    if (meIsActiveApi && !envIs('test')) {
-      // if this is the active api, block stop
-      return cb(Boom.create(500, 'Cannot stop current activeApi'));
-    }
-    var count = createCount(done);
+    // if (meIsActiveApi && !envIs('test')) {
+    //   // if this is the active api, block stop
+    //   return cb(Boom.create(500, 'Cannot stop current activeApi'));
+    // }
+    var count = createCount(closeDbConnections);
     // stop github ssh key generator
     keyGen.stop(count.inc().next);
     // stop sending socket count
@@ -108,15 +111,26 @@ Api.prototype.stop = function (cb) {
     events.close(count.inc().next);
     apiServer.stop(count.inc().next);
   });
-  function done (err) {
+  function closeDbConnections (err) {
     if (!err) {
       // so far the stop was successful
       // finally disconnect from he databases
-      return mongooseControl.stop(function (err) {
-        if (err) { return cb(err); }
+      var dbCount = createCount(cb);
+      // FIXME: redis clients cannot be reconnected once they are quit; this breaks the tests.
+      if (!envIs('test')) {
+        // disconnect from redis
+        redisClient.quit();
+        redisClient.on('end', dbCount.inc().next);
+        redisPubSub.quit();
+        redisPubSub.on('end', dbCount.inc().inc().next); // calls twice
+      }
+      var next = dbCount.inc().next;
+      mongooseControl.stop(function (err) {
+        if (err) { return next(err); }
         self.stopListeningToSignals();
-        cb();
+        self.waitForActiveHandles(next);
       });
+      return;
     }
     cb(err);
   }
@@ -153,6 +167,30 @@ Api.prototype._handleStopSignal = function () {
     }
     log.info('STOP SIGNAL: stop succeeded, wait some time to ensure the process has drained');
   });
+};
+
+/**
+ * wait for active handles to reach 2 or less
+ */
+Api.prototype.waitForActiveHandles = function (cb) {
+  cb = cb || noop;
+  var poller = setInterval(function () {
+    console.log(
+      process._getActiveHandles().map(function (h) {
+        if (h.remoteAddress) {
+          return console.log(h.removeAddress);
+        }
+        console.log(h);
+      })
+    );
+    if (process._getActiveHandles().length <= 2) {
+      // there are 2 active handles
+      // 1 is the interval and 1 is the clustered process
+      clearInterval(poller);
+      log.info('worker process exited cleanly');
+      process.exit(); // clean exit
+    }
+  }, 500);
 };
 
 
