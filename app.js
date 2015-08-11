@@ -8,19 +8,20 @@ require('loadenv')();
 if (process.env.NEW_RELIC_LICENSE_KEY) {
   require('newrelic');
 }
-
 var Boom = require('dat-middleware').Boom;
+var cluster = require('cluster');
 var createCount = require('callback-count');
-var envIs = require('101/env-is');
 
 var ApiServer = require('server');
 var activeApi = require('models/redis/active-api');
 var dogstatsd = require('models/datadog');
+var envIs = require('101/env-is');
 var error = require('error');
 var events = require('models/events');
 var keyGen = require('key-generator');
 var logger = require('middlewares/logger')(__filename);
 var mongooseControl = require('models/mongo/mongoose-control');
+var noop = require('101/noop');
 var redisClient = require('models/redis');
 var redisPubSub = require('models/redis/pubsub');
 
@@ -101,7 +102,7 @@ Api.prototype.stop = function (cb) {
       // if this is the active api, block stop
       return cb(Boom.create(500, 'Cannot stop current activeApi'));
     }
-    var count = createCount(done);
+    var count = createCount(closeDbConnections);
     // stop github ssh key generator
     keyGen.stop(count.inc().next);
     // stop sending socket count
@@ -110,7 +111,7 @@ Api.prototype.stop = function (cb) {
     events.close(count.inc().next);
     apiServer.stop(count.inc().next);
   });
-  function done (err) {
+  function closeDbConnections (err) {
     if (!err) {
       // so far the stop was successful
       // finally disconnect from he databases
@@ -156,6 +157,7 @@ Api.prototype.stopListeningToSignals = function () {
  */
 Api.prototype._handleStopSignal = function () {
   log.info('STOP SIGNAL: recieved');
+  var self = this;
   process.removeAllListeners('uncaughtException');
   this.stop(function (err) {
     if (err) {
@@ -164,8 +166,30 @@ Api.prototype._handleStopSignal = function () {
       }, 'STOP SIGNAL: stop failed');
       return;
     }
-    log.info('STOP SIGNAL: stop succeeded, wait some time to ensure the process has drained');
+    log.info('STOP SIGNAL: stop succeeded, process should exit gracefully');
+    if (cluster.isWorker) {
+      // workers need to be exited manually
+      self._waitForActiveHandlesAndExit();
+    }
   });
+};
+
+/**
+ * wait for active handles to reach 2 or less
+ */
+Api.prototype._waitForActiveHandlesAndExit = function (cb) {
+  cb = cb || noop;
+  var poller = setInterval(function () {
+    var handles = process._getActiveHandles();
+    log.info({ count: handles.length, items: handles }, 'Active handles');
+    if (process._getActiveHandles().length <= 2) {
+      // there are 2 active handles
+      // 1 is the interval and 1 is the clustered process
+      clearInterval(poller);
+      log.info('Worker process exited gracefully');
+      process.exit(); // clean exit
+    }
+  }, 1000);
 };
 
 
