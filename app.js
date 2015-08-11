@@ -8,8 +8,8 @@ require('loadenv')();
 if (process.env.NEW_RELIC_LICENSE_KEY) {
   require('newrelic');
 }
-
 var Boom = require('dat-middleware').Boom;
+var cluster = require('cluster');
 var createCount = require('callback-count');
 
 var ApiServer = require('server');
@@ -157,6 +157,7 @@ Api.prototype.stopListeningToSignals = function () {
  */
 Api.prototype._handleStopSignal = function () {
   log.info('STOP SIGNAL: recieved');
+  var self = this;
   process.removeAllListeners('uncaughtException');
   this.stop(function (err) {
     if (err) {
@@ -166,23 +167,21 @@ Api.prototype._handleStopSignal = function () {
       return;
     }
     log.info('STOP SIGNAL: stop succeeded, wait some time to ensure the process has drained');
+    if (cluster.isWorker) {
+      // workers need to be exited manually
+      self.waitForActiveHandlesAndExit();
+    }
   });
 };
 
 /**
  * wait for active handles to reach 2 or less
  */
-Api.prototype.waitForActiveHandles = function (cb) {
+Api.prototype.waitForActiveHandlesAndExit = function (cb) {
   cb = cb || noop;
   var poller = setInterval(function () {
-    console.log(
-      process._getActiveHandles().map(function (h) {
-        if (h.remoteAddress) {
-          return console.log(h.removeAddress);
-        }
-        console.log(h);
-      })
-    );
+    var handles = process._getActiveHandles();
+    log.info({ count: handles.length, items: handles }, 'Active handles');
     if (process._getActiveHandles().length <= 2) {
       // there are 2 active handles
       // 1 is the interval and 1 is the clustered process
@@ -190,7 +189,7 @@ Api.prototype.waitForActiveHandles = function (cb) {
       log.info('worker process exited cleanly');
       process.exit(); // clean exit
     }
-  }, 500);
+  }, 1000);
 };
 
 
