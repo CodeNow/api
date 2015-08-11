@@ -71,6 +71,8 @@ describe('201 POST /workers/on-instance-container-create', function () {
         emitter.removeAllListeners('on-instance-container-create');
       }
     });
+    // Note: this usage of multi.createInstance is right,
+    // elsewhere use multi.createAndTailInstance
     multi.createInstance(function (err, instance, build, user) {
       if (err) { return done(err); }
       ctx.instance = instance;
