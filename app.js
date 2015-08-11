@@ -21,6 +21,8 @@ var events = require('models/events');
 var keyGen = require('key-generator');
 var logger = require('middlewares/logger')(__filename);
 var mongooseControl = require('models/mongo/mongoose-control');
+var redisClient = require('models/redis');
+var redisPubSub = require('models/redis/pubsub');
 
 var log = logger.log;
 
@@ -112,11 +114,22 @@ Api.prototype.stop = function (cb) {
     if (!err) {
       // so far the stop was successful
       // finally disconnect from he databases
-      return mongooseControl.stop(function (err) {
-        if (err) { return cb(err); }
+      var dbCount = createCount(cb);
+      // FIXME: redis clients cannot be reconnected once they are quit; this breaks the tests.
+      if (!envIs('test')) {
+        // disconnect from redis
+        redisClient.quit();
+        redisClient.on('end', dbCount.inc().next);
+        redisPubSub.quit();
+        redisPubSub.on('end', dbCount.inc().inc().next); // calls twice
+      }
+      var next = dbCount.inc().next;
+      mongooseControl.stop(function (err) {
+        if (err) { return next(err); }
         self.stopListeningToSignals();
-        cb();
+        next();
       });
+      return;
     }
     cb(err);
   }
