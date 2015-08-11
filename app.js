@@ -98,10 +98,10 @@ Api.prototype.stop = function (cb) {
   var self = this;
   activeApi.isMe(function (err, meIsActiveApi) {
     if (err) { return cb(err); }
-    // if (meIsActiveApi && !envIs('test')) {
-    //   // if this is the active api, block stop
-    //   return cb(Boom.create(500, 'Cannot stop current activeApi'));
-    // }
+    if (meIsActiveApi && !envIs('test')) {
+      // if this is the active api, block stop
+      return cb(Boom.create(500, 'Cannot stop current activeApi'));
+    }
     var count = createCount(closeDbConnections);
     // stop github ssh key generator
     keyGen.stop(count.inc().next);
