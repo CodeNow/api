@@ -21,6 +21,8 @@ var events = require('models/events');
 var keyGen = require('key-generator');
 var logger = require('middlewares/logger')(__filename);
 var mongooseControl = require('models/mongo/mongoose-control');
+var redisClient = require('models/redis');
+var redisPubSub = require('models/redis/pubsub');
 
 var log = logger.log;
 
@@ -30,7 +32,10 @@ var apiServer = new ApiServer();
 /**
  * @class
  */
-function Api () {}
+function Api () {
+  // bind `this` so it can be used directly as event handler
+  this._handleStopSignal = this._handleStopSignal.bind(this);
+}
 
 /**
  * - Listen to incoming HTTP requests
@@ -41,6 +46,8 @@ function Api () {}
  * @param {Function} cb
  */
 Api.prototype.start = function (cb) {
+  cb = cb || error.logIfErr;
+  var self = this;
   var count = createCount(callback);
   log.trace('start');
   // start github ssh key generator
@@ -75,9 +82,8 @@ Api.prototype.start = function (cb) {
     }
     log.trace('API started');
     console.log('API started');
-    if (cb) {
-      cb();
-    }
+    self.listenToSignals();
+    cb();
   }
 };
 
@@ -88,23 +94,80 @@ Api.prototype.start = function (cb) {
 Api.prototype.stop = function (cb) {
   log.trace('stop');
   cb = cb || error.logIfErr;
+  var self = this;
   activeApi.isMe(function (err, meIsActiveApi) {
     if (err) { return cb(err); }
     if (meIsActiveApi && !envIs('test')) {
       // if this is the active api, block stop
       return cb(Boom.create(500, 'Cannot stop current activeApi'));
     }
-    var count = createCount(cb);
+    var count = createCount(done);
     // stop github ssh key generator
     keyGen.stop(count.inc().next);
     // stop sending socket count
     dogstatsd.monitorStop();
     // express server
-    mongooseControl.stop(count.inc().next);
     events.close(count.inc().next);
     apiServer.stop(count.inc().next);
   });
+  function done (err) {
+    if (!err) {
+      // so far the stop was successful
+      // finally disconnect from he databases
+      var dbCount = createCount(cb);
+      // FIXME: redis clients cannot be reconnected once they are quit; this breaks the tests.
+      if (!envIs('test')) {
+        // disconnect from redis
+        redisClient.quit();
+        redisClient.on('end', dbCount.inc().next);
+        redisPubSub.quit();
+        redisPubSub.on('end', dbCount.inc().inc().next); // calls twice
+      }
+      var next = dbCount.inc().next;
+      mongooseControl.stop(function (err) {
+        if (err) { return next(err); }
+        self.stopListeningToSignals();
+        next();
+      });
+      return;
+    }
+    cb(err);
+  }
 };
+
+/**
+ * listen to process SIGINT
+ */
+Api.prototype.listenToSignals = function () {
+  process.on('SIGINT', this._handleStopSignal);
+  process.on('SIGTERM', this._handleStopSignal);
+};
+
+/**
+ * stop listening to process SIGINT
+ */
+Api.prototype.stopListeningToSignals = function () {
+  process.removeListener('SIGINT', this._handleStopSignal);
+  process.removeListener('SIGTERM', this._handleStopSignal);
+};
+
+/**
+ * SIGINT event handler
+ */
+Api.prototype._handleStopSignal = function () {
+  log.info('STOP SIGNAL: recieved');
+  process.removeAllListeners('uncaughtException');
+  this.stop(function (err) {
+    if (err) {
+      log.error({
+        err: err
+      }, 'STOP SIGNAL: stop failed');
+      return;
+    }
+    log.info('STOP SIGNAL: stop succeeded, wait some time to ensure the process has drained');
+  });
+};
+
 
 /**
  * Returns PrimusSocket constructor function that can be used for
