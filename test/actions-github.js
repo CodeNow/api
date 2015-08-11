@@ -19,6 +19,7 @@ var Boom = require('dat-middleware').Boom;
 var SocketClient = require('socket/socket-client');
 var SocketClientMw = require('middlewares/socket').client;
 var ContextVersion = require('models/mongo/context-version');
+var RabbitMQ = require('models/rabbitmq');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
 var Runnable = require('models/apis/runnable');
@@ -372,6 +373,7 @@ describe('Github - /actions/github', function () {
             var countOnCallback = function () {
               count.next();
             };
+            var publishRabbitSpy = sinon.spy(RabbitMQ, 'publish');
             // emulate instance deploy event
             sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
               cb(null, instance);
@@ -392,6 +394,11 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(res.statusCode).to.equal(201);
                 expect(body.length).to.equal(1);
+                expect(publishRabbitSpy.getCall(0).args[0]).to.equal('delete-instance');
+                expect(publishRabbitSpy.getCall(0).args[1].instanceId).to.exist();
+                expect(publishRabbitSpy.getCall(0).args[1].instanceShortHash).to.exist();
+                expect(publishRabbitSpy.getCall(0).args[1].creatorGitHubId).to.exist();
+                expect(publishRabbitSpy.getCall(0).args[1].pushUserId).to.equal(ctx.user.id());
                 done();
               });
 
