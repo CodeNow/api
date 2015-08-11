@@ -97,7 +97,7 @@ Api.prototype.stop = function (cb) {
   var self = this;
   activeApi.isMe(function (err, meIsActiveApi) {
     if (err) { return cb(err); }
-    if (meIsActiveApi && !envIs('test')) {
+    if (meIsActiveApi && !envIs('test', 'development')) {
       // if this is the active api, block stop
       return cb(Boom.create(500, 'Cannot stop current activeApi'));
     }
