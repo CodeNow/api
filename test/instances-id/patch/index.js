@@ -189,7 +189,7 @@ describe('Instance - /instances/:id', function () {
                       expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
                       expect(ctx.instance.attrs.containers[0].inspect.Env).to.deep.equal([
                         'ONE=1',
-                        'RUNNABLE_BRANCH_ID=' + ctx.instance.attrs.shortHash
+                        'RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash
                       ]);
                       var count = createCount(2, done);
                       expects.deletedWeaveHost(oldContainer, count.next);
