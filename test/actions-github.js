@@ -19,7 +19,7 @@ var Boom = require('dat-middleware').Boom;
 var SocketClient = require('socket/socket-client');
 var SocketClientMw = require('middlewares/socket').client;
 var ContextVersion = require('models/mongo/context-version');
-var RabbitMQ = require('models/rabbitmq');
+// var RabbitMQ = require('models/rabbitmq');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
 var Runnable = require('models/apis/runnable');
@@ -373,7 +373,7 @@ describe('Github - /actions/github', function () {
             var countOnCallback = function () {
               count.next();
             };
-            var publishRabbitSpy = sinon.spy(RabbitMQ, 'publish');
+            // var publishRabbitSpy = sinon.spy(RabbitMQ, 'publish');
             // emulate instance deploy event
             sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
               cb(null, instance);
