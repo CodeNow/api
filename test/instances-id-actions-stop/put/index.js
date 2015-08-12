@@ -323,8 +323,9 @@ describe('PUT /instances/:id/actions/stop', function () {
       });
       describe('Immediately exiting container (first time only)', function() {
         beforeEach(function (done) {
+          // container no longer exists in response
           extend(ctx.expected, {
-            containers: exists,
+            //containers: exists,
             /*
             'containers[0]': exists,
             'containers[0].dockerHost': exists,
@@ -442,9 +443,9 @@ describe('PUT /instances/:id/actions/stop', function () {
       }
       else { // success
         //ctx.expected['containers[0].inspect.State.Running'] = false;
-        var assertions = ctx.expectAlreadyStopped ?
-          expects.error(304, startStopAssert) :
-          expects.success(200, ctx.expected, startStopAssert);
+        //var assertions = ctx.expectAlreadyStopped ?
+          //expects.error(304, startStopAssert) :
+        var assertions = expects.success(200, ctx.expected, startStopAssert);
         ctx.instance.stop(assertions);
       }
       function startStopAssert (err) {
@@ -455,21 +456,20 @@ describe('PUT /instances/:id/actions/stop', function () {
         var instance = ctx.instance;
         startStop();
         function startStop () {
+          primus.expectAction('start', function () {
+            primus.expectAction('stopping', {
+            //  container: {inspect: {State: {Stopping: true}}}
+            }, count.next);
+            instance.stop(expects.success(200, {}, /*ctx.expected,*/ function (err) {
+              if (err) { return count.next(err); }
+              count.next();
+            }));
+          });
           instance.start(function (err) {
             if (err) { return count.next(err); }
             // expect temporary property to not be in final response
             //expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
             //expect(instance.json().container.inspect.State.Starting).to.be.true();
-            primus.expectAction('stopping', {
-              container: {inspect: {State: {Stopping: true}}}
-            }, count.next);
-            instance.stop(expects.success(200, ctx.expected, function (err) {
-              if (err) { return count.next(err); }
-              // expect temporary property to not be in final response
-              //expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
-              //expect(instance.json().container.inspect.State.Starting).to.be.undefined();
-              count.next();
-            }));
           });
         }
       }
