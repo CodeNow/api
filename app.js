@@ -191,7 +191,7 @@ Api.prototype._waitForActiveHandlesAndExit = function (cb) {
       // 1 is the interval and 1 is the clustered process
       clearInterval(poller);
       log.info('Worker process exited gracefully');
-      process.exit(); // clean exit
+      process.exit(0); // clean exit
     }
   }, 1000);
 };
