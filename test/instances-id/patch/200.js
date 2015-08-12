@@ -8,7 +8,6 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var Docker = require('dockerode');
-var sinon = require('sinon');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -103,7 +102,6 @@ describe('200 PATCH /instances', function () {
   describe('For User', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {
-        ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
         multi.createContextVersion(function (err, cv, context, build, user) {
           if (err) { return done(err); }
           ctx.build = build;
@@ -132,7 +130,6 @@ describe('200 PATCH /instances', function () {
         });
       });
       afterEach(function (done) {
-        ctx.createUserContainerSpy.restore();
         require('../../fixtures/clean-mongo').removeEverything(done);
       });
 
