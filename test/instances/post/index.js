@@ -148,7 +148,6 @@ describe('POST /instances', function () {
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
             require('../../fixtures/mocks/github/user')(ctx.user);
-
             var count = createCount(2, fetchInstanceAndAssertHosts);
             primus.expectAction('start', {}, count.next);
             var instance = ctx.user.createInstance({ json: json }, function(err) {
