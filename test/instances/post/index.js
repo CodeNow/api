@@ -166,7 +166,9 @@ describe('POST /instances', function () {
                   ctx.user, instance, count.next);
                 var container = instance.containers.models[0];
                 expects.updatedWeaveHost(
-                  container, instance.attrs.network.hostIp, count.next);
+                  container,
+                  instance.attrs.network.hostIp,
+                  count.next);
               });
             }
           });
