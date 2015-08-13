@@ -168,6 +168,51 @@ describe('Instance', function () {
     });
   });
 
+  describe('#findActiveInstancesByDockerHost', function() {
+    var instance1, instance2, instance3, instance4;
+    var testHost = 'http://10.0.0.1:4242';
+
+    beforeEach(function (done) {
+      instance1 = createNewInstance('one', {
+        dockerHost: testHost
+      });
+      instance2 = createNewInstance('two', {
+        dockerHost: testHost
+      });
+      instance3 = createNewInstance('three', {
+        dockerHost: testHost
+      });
+      instance4 = createNewInstance('four', {
+        dockerHost: testHost
+      });
+      instance4.container.inspect.State.Starting = false;
+      instance4.container.inspect.State.Running = false;
+      done();
+    });
+    beforeEach(function (done) {
+      instance1.save(done);
+    });
+    beforeEach(function (done) {
+      instance2.save(done);
+    });
+    beforeEach(function (done) {
+      instance3.save(done);
+    });
+    beforeEach(function (done) {
+      instance4.save(done);
+    });
+    it('should get all instances from testHost', function(done) {
+      Instance.findActiveInstancesByDockerHost(testHost, function (err, instances) {
+        expect(err).to.be.null();
+        expect(instances.length).to.equal(3);
+        instances.forEach(function (instance) {
+          expect(instance._id).to.not.equal(instance4._id);
+        });
+        done();
+      });
+    });
+  }); // end findActiveInstancesByDockerHost
+
   describe('atomic set container state', function () {
     it('should not set container state to Starting if container on instance has changed', function (done) {
       var instance = createNewInstance('container-stopping');
