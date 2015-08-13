@@ -16,18 +16,9 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-//var Container = require('dockerode/lib/container');
-//var Dockerode = require('dockerode');
-//var createCount = require('callback-count');
 var exists = require('101/exists');
-//var extend = require('extend');
-//var isFunction = require('101/is-function');
-//var last = require('101/last');
 var sinon = require('sinon');
-//var uuid = require('uuid');
 
-//var Docker = require('models/apis/docker');
-//var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var expects = require('../../fixtures/expects');
 var Instance = require('models/mongo/instance');
 var api = require('../../fixtures/api-control');
