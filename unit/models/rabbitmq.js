@@ -1,3 +1,6 @@
+/**
+ * @module unit/models/rabbitmq
+ */
 'use strict';
 
 var Lab = require('lab');
