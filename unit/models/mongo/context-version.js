@@ -84,6 +84,151 @@ describe('Context Version', function () {
     });
   });
 
+  describe('modifyAppCodeVersion', function () {
+    it('should return cv updated with branch', function (done) {
+      var c = new Context();
+      var acv1 = {
+        repo: 'codenow/hellonow',
+        branch: 'master'
+      };
+      var cv = new ContextVersion({
+        createdBy: { github: 1000 },
+        owner: {github: 2874589},
+        context: c._id
+      });
+      cv.save(function  (err) {
+        if (err) {
+          return done(err);
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1]}},{ safe: true, upsert: true },
+          function (err) {
+            if (err) {
+              return done(err);
+            }
+            ContextVersion.findById(cv._id, function (err, newCv) {
+              if (err) {
+                return done(err);
+              }
+              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id,
+                {branch: 'Some-branch'},
+                function (err, updatedCv) {
+                  expect(err).to.be.null();
+                  expect(updatedCv.appCodeVersions[0].branch).to.equal('Some-branch');
+                  expect(updatedCv.appCodeVersions[0].lowerBranch).to.equal('some-branch');
+                  done();
+                });
+            });
+          });
+      });
+    });
+    it('should return cv updated with commit', function (done) {
+      var c = new Context();
+      var acv1 = {
+        repo: 'codenow/hellonow',
+        branch: 'master'
+      };
+      var cv = new ContextVersion({
+        createdBy: { github: 1000 },
+        owner: {github: 2874589},
+        context: c._id
+      });
+      cv.save(function  (err) {
+        if (err) {
+          return done(err);
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1]}},{ safe: true, upsert: true },
+          function (err) {
+            if (err) {
+              return done(err);
+            }
+            ContextVersion.findById(cv._id, function (err, newCv) {
+              if (err) {
+                return done(err);
+              }
+              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id,
+                {commit: 'd5a527f959342c2e00151612be973c89b9fa7078'},
+                function (err, updatedCv) {
+                  expect(err).to.be.null();
+                  expect(updatedCv.appCodeVersions[0].commit).to.equal('d5a527f959342c2e00151612be973c89b9fa7078');
+                  done();
+                });
+            });
+          });
+      });
+    });
+    it('should return cv updated with useLatest flag', function (done) {
+      var c = new Context();
+      var acv1 = {
+        repo: 'codenow/hellonow',
+        branch: 'master'
+      };
+      var cv = new ContextVersion({
+        createdBy: { github: 1000 },
+        owner: {github: 2874589},
+        context: c._id
+      });
+      cv.save(function  (err) {
+        if (err) {
+          return done(err);
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1]}},{ safe: true, upsert: true },
+          function (err) {
+            if (err) {
+              return done(err);
+            }
+            ContextVersion.findById(cv._id, function (err, newCv) {
+              if (err) {
+                return done(err);
+              }
+              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id, {useLatest: true}, function (err, updatedCv) {
+                expect(err).to.be.null();
+                expect(updatedCv.appCodeVersions[0].useLatest).to.be.true();
+                done();
+              });
+            });
+          });
+      });
+    });
+    it('should return cv updated with transformRules', function (done) {
+      var c = new Context();
+      var acv1 = {
+        repo: 'codenow/hellonow',
+        branch: 'master'
+      };
+      var cv = new ContextVersion({
+        createdBy: { github: 1000 },
+        owner: {github: 2874589},
+        context: c._id
+      });
+      cv.save(function  (err) {
+        if (err) {
+          return done(err);
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1]}},{ safe: true, upsert: true },
+          function (err) {
+            if (err) {
+              return done(err);
+            }
+            ContextVersion.findById(cv._id, function (err, newCv) {
+              if (err) {
+                return done(err);
+              }
+              var transformRules = {
+                exclude: ['a.txt']
+              };
+              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id,
+                {transformRules: transformRules},
+                function (err, updatedCv) {
+                  expect(err).to.be.null();
+                  expect(updatedCv.appCodeVersions[0].transformRules.exclude).to.deep.equal(transformRules.exclude);
+                  done();
+                });
+            });
+          });
+      });
+    });
+  });
+
   describe('modifyAppCodeVersionWithLatestCommit', function () {
     it('should return current same cv if no acs were found', function (done) {
       var c = new Context();
