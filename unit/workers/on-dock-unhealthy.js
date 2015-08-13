@@ -20,7 +20,7 @@ var Worker = require('workers/on-dock-unhealthy');
 describe('worker: on-dock-unhealthy unit test', function () {
   var worker;
 
-  describe('#onDockUnhealthy', function() {
+  describe('#handle', function() {
     var testHost = 'goku';
     var testData = {
       host: testHost
@@ -43,7 +43,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
       });
 
       it('should cb err', function(done) {
-        worker.onDockUnhealthy({}, function (err) {
+        worker.handle({}, function (err) {
           expect(err).to.equal(testErr);
           expect(
             Runnable.prototype.githubLogin
@@ -75,7 +75,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
         });
 
         it('should cb err', function(done) {
-          worker.onDockUnhealthy(testData, function (err) {
+          worker.handle(testData, function (err) {
             expect(
               Runnable.prototype.githubLogin
               .withArgs(process.env.HELLO_RUNNABLE_GITHUB_ID)
@@ -97,7 +97,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
         });
 
         it('should cb right away', function(done) {
-          worker.onDockUnhealthy(testData, function (err) {
+          worker.handle(testData, function (err) {
             expect(err).to.be.undefined();
             expect(
               Runnable.prototype.githubLogin
@@ -124,7 +124,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
         });
 
         it('should call _redeployContainers', function(done) {
-          worker.onDockUnhealthy(testData, function (err) {
+          worker.handle(testData, function (err) {
             expect(err).to.be.undefined();
             expect(
               Runnable.prototype.githubLogin
@@ -143,7 +143,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
         });
       }); // end findActiveInstancesByDockerHost returns array
     }); // end github login works
-  }); // end #onDockUnhealthy
+  }); // end #handle
 
   describe('#_redeployContainers', function() {
     var testErr = 'fire';
