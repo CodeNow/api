@@ -47,7 +47,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
           expect(err).to.equal(testErr);
           expect(
             Runnable.prototype.githubLogin
-            .withArgs(process.env.HELLO_RUNNABLE_GITHUB_ID)
+            .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
             .calledOnce).to.be.true();
           done();
         });
@@ -78,7 +78,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
           worker.handle(testData, function (err) {
             expect(
               Runnable.prototype.githubLogin
-              .withArgs(process.env.HELLO_RUNNABLE_GITHUB_ID)
+              .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
               .calledOnce).to.be.true();
             expect(
               Instance.findActiveInstancesByDockerHost
@@ -101,7 +101,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
             expect(err).to.be.undefined();
             expect(
               Runnable.prototype.githubLogin
-              .withArgs(process.env.HELLO_RUNNABLE_GITHUB_ID)
+              .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
               .calledOnce).to.be.true();
             expect(
               Instance.findActiveInstancesByDockerHost
@@ -128,7 +128,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
             expect(err).to.be.undefined();
             expect(
               Runnable.prototype.githubLogin
-              .withArgs(process.env.HELLO_RUNNABLE_GITHUB_ID)
+              .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
               .calledOnce).to.be.true();
             expect(
               Instance.findActiveInstancesByDockerHost
