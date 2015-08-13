@@ -102,7 +102,6 @@ describe('200 PATCH /instances', function () {
   describe('For User', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {
-        //ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
         multi.createContextVersion(function (err, cv, context, build, user) {
           if (err) { return done(err); }
           ctx.build = build;
@@ -131,10 +130,6 @@ describe('200 PATCH /instances', function () {
         });
       });
       afterEach(function (done) {
-        // TODO: wait for event first, make sure everything finishes.. then drop db
-        try{
-          ctx.createUserContainerSpy.restore();
-        } catch (e) {}
         require('../../fixtures/clean-mongo').removeEverything(done);
       });
 
