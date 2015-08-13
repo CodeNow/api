@@ -11,12 +11,26 @@ var before = lab.before;
 var Code = require('code');
 var expect = Code.expect;
 
-var through = require('through');
 var sinon = require('sinon');
 var Docker = require('models/apis/docker');
 var stream = require('stream');
+var createCount = require('callback-count');
+var createFrame = require('docker-frame');
+var EventEmitter = require('events').EventEmitter;
+var util = require('util');
 
 var BuildStream = require('socket/build-stream').BuildStream;
+
+function ClientStream () {
+  EventEmitter.call(this);
+  this.jsonBuffer = [];
+  this.stream = true;
+}
+util.inherits(ClientStream, EventEmitter);
+ClientStream.prototype.write = function (data) {
+  this.jsonBuffer.push(data);
+};
+ClientStream.prototype.end = function () { this.emit('end'); };
 
 var ctx = {};
 describe('build stream', function () {
@@ -32,32 +46,43 @@ describe('build stream', function () {
   });
 
   it('should pipe docker logs to a client stream', function (done) {
+    var count = createCount(1, function (err) {
+      Docker.prototype.getLogs.restore();
+      ctx.buildStream._writeErr.restore();
+      done(err);
+    });
+
+    var frames = [
+      createFrame(1, '{ "type": "log", "content": "RUN echo hello" }'),
+      createFrame(1, '{ "type": "log", "content": "RUN echo world" }')
+    ];
+
     var readableStream = new stream.PassThrough();
-    var b = new Buffer('010000000000002f', 'hex');
-    var c = new Buffer('49676e20687474703a2f2f617263686976652e7562756e747' +
-      '52e636f6d2074727573747920496e52656c656173650a', 'hex');
-    readableStream.write(b);
-    readableStream.write(c);
-    readableStream.end();
-    sinon.stub(Docker.prototype, 'getLogs').yieldsAsync(null, readableStream);
+    sinon.stub(Docker.prototype, 'getLogs').onCall(0).yieldsAsync(null, readableStream);
+
     sinon.spy(ctx.buildStream, '_writeErr');
-    var writeStream = through();
-    writeStream.stream = true;
+    var writeStream = new ClientStream();
     var version = {
       dockerHost: 'http://example.com:4242',
       containerId: 55
     };
 
     ctx.buildStream._pipeBuildLogsToClient(version, writeStream);
-    expect(ctx.buildStream._writeErr.callCount).to.equal(0);
-
-    Docker.prototype.getLogs.restore();
-    ctx.buildStream._writeErr.restore();
-
-    writeStream.on('data', function (data) {
-      console.log('data: ' + data);
+    setTimeout(function () {
+      readableStream.write(frames[0]);
+      readableStream.write(frames[1]);
+      readableStream.end();
     });
-    done();
+
+    writeStream.on('end', function () {
+      expect(writeStream.jsonBuffer).to.deep.equal([
+        { type: 'log', content: 'RUN echo hello' },
+        { type: 'log', content: 'RUN echo world' }
+      ]);
+      expect(ctx.buildStream._writeErr.callCount).to.equal(0);
+
+      count.next();
+    });
   });
   // after(function (done) {});
 });
