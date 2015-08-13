@@ -208,7 +208,7 @@ describe('201 POST /instances', function () {
           expect(ctx.createUserContainerSpy.calledOnce).to.be.true();
           expect(ctx.createUserContainerSpy.args[0][1]).to.deep.equal({
             Env: [
-              'RUNNABLE_BRANCH_ID=' + ctx.instance.attrs.shortHash
+              'RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash
             ],
             Labels: {
               contextVersionId: ctx.cv.id(),
