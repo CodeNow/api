@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.27.3",
+  "version": "2.28.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -76,7 +76,7 @@
     "request": "2.42.0",
     "rollbar": "0.5.4",
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.2.2",
-    "runnable-hermes": "^3.2.0",
+    "hermes-private": "git+ssh://git@github.com:CodeNow/hermes-private#v4.0.0",
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "s3-stream-upload": "0.0.6",
     "sauron-client": "git+ssh://git@github.com:codenow/sauron-client.git#v1.0.2",
@@ -95,7 +95,7 @@
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.6",
     "code": "^1.4.0",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
-    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v0.8.0",
+    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v0.8.1",
     "docker-mock": "^2.0.0",
     "docker-modem": "^0.2.6",
     "eslint": "^0.20.0",
