@@ -197,7 +197,6 @@ describe('201 POST /instances', function () {
       it('should create an instance with a build', function (done) {
         var count = createCount(2, done);
         primus.expectActionCount('start', 1, count.next);
-        process.env.TID_POST_INSTANCES = 'a708f8ec-9f19-4202-a64a-f1b33b503080';
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
@@ -215,7 +214,7 @@ describe('201 POST /instances', function () {
               creatorGithubId: ctx.user.attrs.accounts.github.id.toString(),
               ownerGithubId: ctx.user.attrs.accounts.github.id.toString(),
               type: 'user-container',
-              tid: process.env.TID_POST_INSTANCES
+              tid: null
             }
           });
           count.next();
