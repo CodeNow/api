@@ -214,6 +214,12 @@ process.on('uncaughtException', function(err) {
   log.fatal({
     err: err
   }, 'stopping app due too uncaughtException');
+
+  // hack to force loggly to release buffer
+  for(var i = 0; i<parseInt(process.env.BUNYAN_BATCH_LOG_COUNT); i++) {
+    log.info('---');
+  }
+
   error.log(err);
   var oldApi = api;
   oldApi.stop(function() {
