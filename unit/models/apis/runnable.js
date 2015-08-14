@@ -12,34 +12,6 @@ var expect = Code.expect;
 
 var Runnable = require('models/apis/runnable');
 describe('Runnable', function () {
-
-  describe('#redeployInstance', function() {
-    var runnable = new Runnable({});
-    var testShortHash = 'd1as6213a';
-    var testInstance = {
-      shortHash: testShortHash,
-    };
-    var testOps = {
-      test: 'ops'
-    };
-
-    it('should call instance models redeploy method', function(done) {
-      var redeployStub = sinon.stub().yields();
-      sinon.stub(runnable, 'newInstance')
-        .withArgs(testShortHash)
-        .returns({
-          redeploy: redeployStub
-        });
-
-      runnable.redeployInstance(testInstance, testOps, function () {
-        expect(redeployStub
-          .withArgs(testOps)
-          .calledOnce).to.be.true();
-        done();
-      });
-    });
-  });
-
   describe('#forkMasterInstance', function () {
     it('should create new instance with branch-masterName pattern', function (done) {
       var runnable = new Runnable({});
@@ -103,5 +75,5 @@ describe('Runnable', function () {
         done();
       });
     });
-  }); // end forkMasterInstance
+  });
 });
