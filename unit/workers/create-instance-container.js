@@ -66,13 +66,13 @@ describe('Worker: create-instance-container', function () {
       var error = Boom.badRequest('Some error');
       var inst = {
         _id: 'some-instance-id',
-        modifyContainerCreateErr: function (cvId, err, cb) {
+        modifyContainerCreateErr: function (cvId, err) {
           expect(cvId).to.equal('some-cv-id');
           expect(err).to.deep.equal(error);
           Instance.findById.restore();
           done();
         }
-      }
+      };
       sinon.stub(Instance, 'findById', function (id, cb) {
         cb(null, inst);
       });
@@ -81,6 +81,58 @@ describe('Worker: create-instance-container', function () {
         expect(err).to.exist();
         expect(err.output.statusCode).to.equal(404);
         expect(err.output.payload.message).to.equal('Instance was not found inside create container job');
+      });
+    });
+  });
+  describe('#_handle404', function () {
+    it('should return error if _findUserAndInstance returned error', function (done) {
+      var worker = new CreateInstanceContainer();
+      worker._findUserAndInstance = function (userId, instanceId, cb) {
+        cb(new Error('Some error'));
+      };
+      var data = {
+        instanceId: 'some-instance-id',
+        userId: 'user-id'
+      };
+      var error = Boom.notFound('Docker error');
+      worker._handle404({}, data, error, function (err) {
+        expect(err).to.exist();
+        expect(err.message).to.equal('Some error');
+        done();
+      });
+    });
+    it('should return error if user was not found', function (done) {
+      var worker = new CreateInstanceContainer();
+      worker._findUserAndInstance = function (userId, instanceId, cb) {
+        cb(null, {instance: {_id: instanceId}});
+      };
+      var data = {
+        instanceId: 'some-instance-id',
+        userId: 'user-id'
+      };
+      var error = Boom.notFound('Docker error');
+      worker._handle404({}, data, error, function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('User was not found inside create container job');
+        done();
+      });
+    });
+    it('should return error if instance was not found', function (done) {
+      var worker = new CreateInstanceContainer();
+      worker._findUserAndInstance = function (userId, instanceId, cb) {
+        cb(null, {user: {_id: userId}});
+      };
+      var data = {
+        instanceId: 'some-instance-id',
+        userId: 'user-id'
+      };
+      var error = Boom.notFound('Docker error');
+      worker._handle404({}, data, error, function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('Instance was not found inside create container job');
+        done();
       });
     });
   });
