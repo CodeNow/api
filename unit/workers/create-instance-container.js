@@ -304,5 +304,50 @@ describe('Worker: create-instance-container', function () {
       });
     });
 
+    it('should return error if 504 occured 5 times', function (done) {
+      var worker = new CreateInstanceContainer();
+      var data = {
+        cvId: 'some-cv-id',
+        sessionUserId: 'some-user-id',
+        buildId: 'some-build-id',
+        dockerHost: 'http://localhost:4242',
+        instanceEnvs: ['RUNNABLE_CONTAINER_ID=yd3as6'],
+        labels: {
+          contextVersionId : 'some-cv-id',
+          instanceId       : 'some-instance-id',
+          instanceName     : 'master',
+          instanceShortHash: 'yd3as6',
+          ownerUsername    : 'anton',
+          creatorGithubId  : 123123,
+          ownerGithubId    : 812933
+        }
+      };
+      sinon.stub(ContextVersion, 'findById', function (id, cb) {
+        cb(null, {_id: 'some-cv-id' });
+      });
+      sinon.stub(Docker.prototype, 'createUserContainer', function (cv, payload, cb) {
+        expect(cv._id).to.equal(data.cvId);
+        expect(payload.Env).to.deep.equal(data.instanceEnvs);
+        expect(payload.Labels).to.deep.equal(data.labels);
+        cb(Boom.create(504, 'Docker timeout'));
+      });
+      sinon.spy(worker, '_handleAppError');
+      sinon.spy(worker, '_handle404');
+      worker.handle(data, function (err, cv) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(504);
+        expect(err.output.payload.message).to.equal('Docker timeout');
+        expect(cv).to.not.exist();
+        expect(Docker.prototype.createUserContainer.callCount).to.equal(5);
+        expect(worker._handle404.callCount).to.equal(0);
+        expect(worker._handleAppError.callCount).to.equal(0);
+        ContextVersion.findById.restore();
+        worker._handle404.restore();
+        worker._handleAppError.restore();
+        Docker.prototype.createUserContainer.restore();
+        done();
+      });
+    });
+
   });
 });
