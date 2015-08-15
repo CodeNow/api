@@ -9,6 +9,7 @@ var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
 
+var Boom = require('dat-middleware').Boom;
 var CreateInstanceContainer = require('workers/create-instance-container');
 var User = require('models/mongo/user');
 var Instance = require('models/mongo/instance');
@@ -58,6 +59,28 @@ describe('Worker: create-instance-container', function () {
         expect(err.output.payload.message).to.equal('Instance was not found inside create container job');
         Instance.findById.restore();
         done();
+      });
+    });
+    it('should call instance.modifyContainerCreateErr ', function (done) {
+      var worker = new CreateInstanceContainer();
+      var error = Boom.badRequest('Some error');
+      var inst = {
+        _id: 'some-instance-id',
+        modifyContainerCreateErr: function (cvId, err, cb) {
+          expect(cvId).to.equal('some-cv-id');
+          expect(err).to.deep.equal(error);
+          Instance.findById.restore();
+          done();
+        }
+      }
+      sinon.stub(Instance, 'findById', function (id, cb) {
+        cb(null, inst);
+      });
+
+      worker._handleAppError('some-instance-id', 'some-cv-id', error, function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('Instance was not found inside create container job');
       });
     });
   });
