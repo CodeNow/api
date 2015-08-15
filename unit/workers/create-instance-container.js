@@ -11,8 +11,10 @@ var sinon = require('sinon');
 
 var Boom = require('dat-middleware').Boom;
 var CreateInstanceContainer = require('workers/create-instance-container');
+var Docker = require('models/apis/docker');
 var User = require('models/mongo/user');
 var Instance = require('models/mongo/instance');
+var ContextVersion = require('models/mongo/context-version');
 
 describe('Worker: create-instance-container', function () {
 
@@ -135,5 +137,76 @@ describe('Worker: create-instance-container', function () {
         done();
       });
     });
+  });
+  describe('#handle', function () {
+    it('should return nothing if context version was not found because of error', function (done) {
+      var worker = new CreateInstanceContainer();
+      sinon.stub(ContextVersion, 'findById', function (id, cb) {
+        cb(new Error('Some mongo error'));
+      });
+      sinon.spy(Docker.prototype, 'createUserContainer');
+      worker.handle({}, function (err, cv) {
+        expect(err).to.not.exist();
+        expect(cv).to.not.exist();
+        expect(Docker.prototype.createUserContainer.callCount).to.equal(0);
+        ContextVersion.findById.restore();
+        Docker.prototype.createUserContainer.restore();
+        done();
+      });
+    });
+
+    it('should return nothing if context version was not found', function (done) {
+      var worker = new CreateInstanceContainer();
+      sinon.stub(ContextVersion, 'findById', function (id, cb) {
+        cb(null, null);
+      });
+      sinon.spy(Docker.prototype, 'createUserContainer');
+      worker.handle({}, function (err, cv) {
+        expect(err).to.not.exist();
+        expect(cv).to.not.exist();
+        expect(Docker.prototype.createUserContainer.callCount).to.equal(0);
+        ContextVersion.findById.restore();
+        Docker.prototype.createUserContainer.restore();
+        done();
+      });
+    });
+
+    it('should call Docker.createUserContainer and return nothing if everything was fine', function (done) {
+      var worker = new CreateInstanceContainer();
+      var data = {
+        cvId: 'some-cv-id',
+        sessionUserId: 'some-user-id',
+        buildId: 'some-build-id',
+        dockerHost: 'http://localhost:4242',
+        instanceEnvs: ['RUNNABLE_CONTAINER_ID=yd3as6'],
+        labels: {
+          contextVersionId : 'some-cv-id',
+          instanceId       : 'some-instance-id',
+          instanceName     : 'master',
+          instanceShortHash: 'yd3as6',
+          ownerUsername    : 'anton',
+          creatorGithubId  : 123123,
+          ownerGithubId    : 812933
+        }
+      };
+      sinon.stub(ContextVersion, 'findById', function (id, cb) {
+        cb(null, {_id: 'some-cv-id' });
+      });
+      sinon.stub(Docker.prototype, 'createUserContainer', function (cv, payload, cb) {
+        expect(cv._id).to.equal(data.cvId);
+        expect(payload.Env).to.deep.equal(data.instanceEnvs);
+        expect(payload.Labels).to.deep.equal(data.labels);
+        cb(null);
+      });
+      worker.handle(data, function (err, cv) {
+        expect(err).to.not.exist();
+        expect(cv).to.not.exist();
+        expect(Docker.prototype.createUserContainer.callCount).to.equal(1);
+        ContextVersion.findById.restore();
+        Docker.prototype.createUserContainer.restore();
+        done();
+      });
+    });
+
   });
 });
