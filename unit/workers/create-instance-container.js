@@ -198,11 +198,107 @@ describe('Worker: create-instance-container', function () {
         expect(payload.Labels).to.deep.equal(data.labels);
         cb(null);
       });
+      sinon.spy(worker, '_handle404');
+      sinon.spy(worker, '_handleAppError');
       worker.handle(data, function (err, cv) {
         expect(err).to.not.exist();
         expect(cv).to.not.exist();
         expect(Docker.prototype.createUserContainer.callCount).to.equal(1);
+        expect(worker._handle404.callCount).to.equal(0);
+        expect(worker._handleAppError.callCount).to.equal(0);
         ContextVersion.findById.restore();
+        worker._handle404.restore();
+        worker._handleAppError.restore();
+        Docker.prototype.createUserContainer.restore();
+        done();
+      });
+    });
+
+    it('should call _handle404 if we got 404 from docker', function (done) {
+      var worker = new CreateInstanceContainer();
+      var data = {
+        cvId: 'some-cv-id',
+        sessionUserId: 'some-user-id',
+        buildId: 'some-build-id',
+        dockerHost: 'http://localhost:4242',
+        instanceEnvs: ['RUNNABLE_CONTAINER_ID=yd3as6'],
+        labels: {
+          contextVersionId : 'some-cv-id',
+          instanceId       : 'some-instance-id',
+          instanceName     : 'master',
+          instanceShortHash: 'yd3as6',
+          ownerUsername    : 'anton',
+          creatorGithubId  : 123123,
+          ownerGithubId    : 812933
+        }
+      };
+      sinon.stub(ContextVersion, 'findById', function (id, cb) {
+        cb(null, {_id: 'some-cv-id' });
+      });
+      sinon.stub(Docker.prototype, 'createUserContainer', function (cv, payload, cb) {
+        expect(cv._id).to.equal(data.cvId);
+        expect(payload.Env).to.deep.equal(data.instanceEnvs);
+        expect(payload.Labels).to.deep.equal(data.labels);
+        cb(Boom.notFound('Docker error'));
+      });
+      sinon.stub(worker, '_handle404', function (contextVersion, data, appError, cb) {
+        cb(null);
+      });
+      sinon.spy(worker, '_handleAppError');
+      worker.handle(data, function (err, cv) {
+        expect(err).to.not.exist();
+        expect(cv).to.not.exist();
+        expect(Docker.prototype.createUserContainer.callCount).to.equal(1);
+        expect(worker._handle404.callCount).to.equal(1);
+        expect(worker._handleAppError.callCount).to.equal(0);
+        ContextVersion.findById.restore();
+        worker._handle404.restore();
+        worker._handleAppError.restore();
+        Docker.prototype.createUserContainer.restore();
+        done();
+      });
+    });
+
+    it('should call _handleAppError if we got not 404 or 504 from docker', function (done) {
+      var worker = new CreateInstanceContainer();
+      var data = {
+        cvId: 'some-cv-id',
+        sessionUserId: 'some-user-id',
+        buildId: 'some-build-id',
+        dockerHost: 'http://localhost:4242',
+        instanceEnvs: ['RUNNABLE_CONTAINER_ID=yd3as6'],
+        labels: {
+          contextVersionId : 'some-cv-id',
+          instanceId       : 'some-instance-id',
+          instanceName     : 'master',
+          instanceShortHash: 'yd3as6',
+          ownerUsername    : 'anton',
+          creatorGithubId  : 123123,
+          ownerGithubId    : 812933
+        }
+      };
+      sinon.stub(ContextVersion, 'findById', function (id, cb) {
+        cb(null, {_id: 'some-cv-id' });
+      });
+      sinon.stub(Docker.prototype, 'createUserContainer', function (cv, payload, cb) {
+        expect(cv._id).to.equal(data.cvId);
+        expect(payload.Env).to.deep.equal(data.instanceEnvs);
+        expect(payload.Labels).to.deep.equal(data.labels);
+        cb(Boom.conflict('Some docker error'));
+      });
+      sinon.stub(worker, '_handleAppError', function (instanceId, cvId, appError, cb) {
+        cb(null);
+      });
+      sinon.spy(worker, '_handle404');
+      worker.handle(data, function (err, cv) {
+        expect(err).to.not.exist();
+        expect(cv).to.not.exist();
+        expect(Docker.prototype.createUserContainer.callCount).to.equal(1);
+        expect(worker._handle404.callCount).to.equal(0);
+        expect(worker._handleAppError.callCount).to.equal(1);
+        ContextVersion.findById.restore();
+        worker._handle404.restore();
+        worker._handleAppError.restore();
         Docker.prototype.createUserContainer.restore();
         done();
       });
