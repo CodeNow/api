@@ -9,7 +9,6 @@ var lab = exports.lab = Lab.script();
 var Code = require('code');
 var async = require('async');
 var noop = require('101/noop');
-var put = require('101/put');
 var rewire = require('rewire');
 var sinon = require('sinon');
 
@@ -36,6 +35,16 @@ describe('StartInstanceContainerWorker', function () {
 
     // spies
     ctx.removeStartingStoppingStatesSpy = sinon.spy(function (cb) { cb(); });
+    ctx.modifyContainerInspectSpy =
+      sinon.spy(function (dockerContainerId, inspect, cb) {
+      cb(null, ctx.mockContainer);
+    });
+    ctx.modifyContainerInspectErrSpy = sinon.spy(function (dockerContainerId, error, cb) {
+      cb(null);
+    });
+
+    ctx.populateModelsSpy = sinon.spy(function (cb) { cb(null); });
+    ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (user, cb) { cb(null, ctx.mockInstance); });
 
     ctx.data = {
       dockerContainer: 'abc123',
@@ -60,7 +69,11 @@ describe('StartInstanceContainerWorker', function () {
         username: '',
         gravatar: ''
       },
-      removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy
+      removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
+      modifyContainerInspect: ctx.modifyContainerInspectSpy,
+      modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy,
+      populateModels: ctx.populateModelsSpy,
+      populateOwnerAndCreatedBy: ctx.populateOwnerAndCreatedBySpy
     };
     ctx.mockContainer = {
       dockerContainer: ctx.data.dockerContainer,
@@ -97,6 +110,7 @@ describe('StartInstanceContainerWorker', function () {
       });
       it('should query mongo for instance w/ container', function (done) {
         ctx.worker._findInstance(function (err) {
+          expect(err).to.be.null();
           expect(Instance.findOne.callCount).to.equal(1);
           expect(Instance.findOne.args[0][0]).to.only.contain({
             '_id': ctx.data.instanceId,
@@ -182,7 +196,8 @@ describe('StartInstanceContainerWorker', function () {
         done();
       });
       it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err, user) {
+        ctx.worker._findUser(function (err) {
+          expect(err).to.be.null();
           expect(User.findByGithubId.callCount).to.equal(1);
           expect(User.findByGithubId.args[0][0]).to.equal(ctx.data.sessionUserGithubId);
           expect(User.findByGithubId.args[0][1]).to.be.a.function();
@@ -203,7 +218,7 @@ describe('StartInstanceContainerWorker', function () {
         done();
       });
       it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err, user) {
+        ctx.worker._findUser(function (err) {
           expect(err).to.be.null();
           expect(ctx.worker.user).to.equal(ctx.mockUser);
           done();
@@ -223,7 +238,7 @@ describe('StartInstanceContainerWorker', function () {
         done();
       });
       it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err, user) {
+        ctx.worker._findUser(function (err) {
           expect(err.message).to.equal('user not found');
           expect(ctx.worker.user).to.be.undefined();
           done();
@@ -243,7 +258,7 @@ describe('StartInstanceContainerWorker', function () {
         done();
       });
       it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err, user) {
+        ctx.worker._findUser(function (err) {
           expect(err.message).to.equal('mongoose error');
           expect(ctx.worker.user).to.be.undefined();
           done();
@@ -254,7 +269,7 @@ describe('StartInstanceContainerWorker', function () {
 
   describe('_startContainer', function () {
     beforeEach(function (done) {
-      // set by _findInstance & _findUser normally
+      // normally set by _findInstance & _findUser
       ctx.worker.instance = ctx.mockInstance;
       ctx.worker.user = ctx.mockUser;
       done();
@@ -305,533 +320,162 @@ describe('StartInstanceContainerWorker', function () {
   });
 
   describe('_inspectContainerAndUpdate', function () {
+    beforeEach(function (done) {
+      // normally set by _findInstance & _findUser
+      ctx.worker.instance = ctx.mockInstance;
+      ctx.worker.user = ctx.mockUser;
+      done();
+    });
+
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
+          cb(null, ctx.mockContainer);
+        });
+        done();
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+
+      it('should inspect a container and update the database', function (done) {
+        ctx.worker._inspectContainerAndUpdate(function (err) {
+          expect(err).to.be.undefined();
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
+          done();
+        });
+      });
+    });
+
+    describe('error inspect', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
+          cb(new Error('docker inspect error'));
+        });
+        done();
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+
+      it('should inspect a container and update the database', function (done) {
+        ctx.worker._inspectContainerAndUpdate(function (err) {
+          expect(err.message).to.equal('docker inspect error');
+          expect(Docker.prototype.inspectContainer.callCount)
+            .to.equal(parseInt(process.env.WORKER_INSPECT_CONTAINER_NUMBER_RETRY_ATTEMPTS));
+          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(0);
+          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(1);
+          done();
+        });
+      });
+    });
+
+    describe('error update mongo', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
+          cb(null, ctx.mockContainer);
+        });
+        ctx.modifyContainerInspectSpy = sinon.spy(function (dockerContainerId, inspect, cb) {
+          cb(new Error('mongoose error'));
+        });
+        ctx.mockInstance.modifyContainerInspect = ctx.modifyContainerInspectSpy;
+        done();
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+
+      it('should inspect a container and update the database', function (done) {
+        ctx.worker._inspectContainerAndUpdate(function (err) {
+          expect(err.message).to.equal('mongoose error');
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
+          done();
+        });
+      });
+    });
   });
 
   describe('_attachContainerToNetwork', function () {
+    beforeEach(function (done) {
+      // normally set by _findInstance & _findUser
+      ctx.worker.instance = ctx.mockInstance;
+      ctx.worker.user = ctx.mockUser;
+      done();
+    });
+
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(Sauron.prototype, 'attachHostToContainer',
+                   function (networkIp, hostIp, containerId, cb) {
+          cb(null);
+        });
+        sinon.stub(Hosts.prototype, 'upsertHostsForInstance',
+                  function (ownerUsername, instance, cb) {
+          cb(null);
+        });
+        done();
+      });
+
+      afterEach(function (done) {
+        Sauron.prototype.attachHostToContainer.restore();
+        Hosts.prototype.upsertHostsForInstance.restore();
+        done();
+      });
+
+      it('should attach to weave and register with navi', function (done) {
+        ctx.worker._attachContainerToNetwork(function (err) {
+          expect(err).to.be.undefined();
+          expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
+          expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
+          done();
+        });
+      });
+    });
   });
 
   describe('_updateFrontend', function () {
-  });
-
-
-  //---------------------------------------------------
-/*
-  describe('findInstance error', function () {
     beforeEach(function (done) {
-      sinon.stub(User, 'findByGithubId', function () {});
-      sinon.stub(Instance, 'findOne', function (data, cb) {
-        cb(null, null);
-      });
+      // normally set by _findInstance & _findUser
+      ctx.worker.instance = ctx.mockInstance;
+      ctx.worker.user = ctx.mockUser;
       done();
     });
 
-    afterEach(function (done) {
-      User.findByGithubId.restore();
-      Instance.findOne.restore();
-      done();
-    });
-
-    it('should callback error if instance w/ dockerContainer not found', function (done) {
-      // signifies container may have changed on instance since request initiated
-      StartInstanceContainerWorker.worker(ctx.data, function (err) {
-        expect(err.message).to.equal('instance not found');
-        expect(User.findByGithubId.callCount).to.equal(0);
-        expect(Instance.findOne.callCount).to.equal(1);
-        expect(Instance.findOne.args[0][0]).to.only.contain({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.data.dockerContainer
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(Instance, 'findById', function (query, cb) {
+          cb(null, ctx.mockInstance);
         });
-      }, done);
-    });
-  });
-
-  describe('findInstance success - findUser error', function () {
-    beforeEach(function (done) {
-      ctx.populateModelsSpy = sinon.spy(function (cb) { cb(null); });
-      ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (data, cb) {
-        cb(null, ctx.mockInstance);
+        sinon.stub(messenger, 'emitInstanceUpdate', function () {});
+        done();
       });
-      ctx.mockInstance = {
-        _id: ctx.data.instanceId,
-        owner: {
-          github: '',
-          username: 'foo',
-          gravatar: ''
-        },
-        createdBy: {
-          github: '',
-          username: '',
-          gravatar: ''
-        },
-        populateModels: ctx.populateModelsSpy,
-        populateOwnerAndCreatedBy: ctx.populateOwnerAndCreatedBySpy
-      };
-      sinon.stub(User, 'findByGithubId', function (githubId, cb) {
-        expect(githubId).to.equal(ctx.data.sessionUserGithubId);
-        cb(null, null);
+
+      afterEach(function (done) {
+        Instance.findById.restore();
+        messenger.emitInstanceUpdate.restore();
+        done();
       });
-      sinon.stub(Instance, 'findOne', function (data, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Instance, 'findById', function (instanceId, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Docker.prototype, 'startUserContainer', function () {});
-      sinon.stub(messenger, 'emitInstanceUpdate', function () {});
-      done();
-    });
 
-    afterEach(function (done) {
-      User.findByGithubId.restore();
-      Instance.findOne.restore();
-      Instance.findById.restore();
-      Docker.prototype.startUserContainer.restore();
-      messenger.emitInstanceUpdate.restore();
-      done();
-    });
-
-    it('should callback error if user not found', function (done) {
-      // signifies container may have changed on instance since request initiated
-      StartInstanceContainerWorker.worker(ctx.data, function (err) {
-        expect(err.message).to.equal('user not found');
-        expect(Docker.prototype.startUserContainer.callCount).to.equal(0);
-
-        expect(User.findByGithubId.callCount).to.equal(1);
-
-        expect(Instance.findOne.callCount).to.equal(1);
-        expect(Instance.findOne.args[0][0]).to.only.contain({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.data.dockerContainer
-        });
-        expect(Instance.findOne.args[0][1]).to.be.a.function();
-
+      it('should fetch instance and notify frontend via primus instance has started',
+      function (done) {
+        ctx.worker._updateFrontend();
         expect(Instance.findById.callCount).to.equal(1);
-        //expect(Instance.findById.args[0][0]).to.equal();
+        expect(Instance.findById.args[0][0]).to.equal(ctx.data.instanceId);
         expect(ctx.populateModelsSpy.callCount).to.equal(1);
         expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-      }, done);
+        expect(messenger.emitInstanceUpdate.callCount).to.equal(1);
+        done();
+      });
     });
   });
-
-  describe('findInstance & findUser success - startContainer error', function () {
-    beforeEach(function (done) {
-      ctx.populateModelsSpy = sinon.spy(function (cb) { cb(null); });
-      ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (data, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      ctx.removeStartingStoppingStatesSpy = sinon.spy(function (cb) { cb(); });
-      ctx.userToJSONSpy = sinon.spy(function () {
-        var copy = put({}, ctx.mockUser);
-        delete copy.toJSON;
-        return copy;
-      });
-      ctx.mockInstance = {
-        _id: ctx.data.instanceId,
-        owner: {
-          github: '',
-          username: 'foo',
-          gravatar: ''
-        },
-        createdBy: {
-          github: '',
-          username: '',
-          gravatar: ''
-        },
-        populateModels: ctx.populateModelsSpy,
-        populateOwnerAndCreatedBy: ctx.populateOwnerAndCreatedBySpy,
-        removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy
-      };
-      ctx.mockUser = {
-        _id: 'foo',
-        toJSON: ctx.userToJSONSpy
-      };
-      sinon.stub(User, 'findByGithubId', function (githubId, cb) {
-        expect(githubId).to.equal(ctx.data.sessionUserGithubId);
-        cb(null, ctx.mockUser);
-      });
-      sinon.stub(Instance, 'findOne', function (data, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Instance, 'findById', function (instanceId, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Docker.prototype, 'startUserContainer', function (containerId, ownerId, cb) {
-        cb(new Error('start container docker error'));
-      });
-      sinon.stub(messenger, 'emitInstanceUpdate', function () {});
-      done();
-    });
-
-    afterEach(function (done) {
-      User.findByGithubId.restore();
-      Instance.findOne.restore();
-      Instance.findById.restore();
-      Docker.prototype.startUserContainer.restore();
-      messenger.emitInstanceUpdate.restore();
-      done();
-    });
-
-    it('should callback error if startContainer fails repeatedly', function (done) {
-      // signifies container may have changed on instance since request initiated
-      StartInstanceContainerWorker.worker(ctx.data, function (err) {
-        expect(err.message).to.equal('start container docker error');
-        expect(Docker.prototype.startUserContainer.callCount)
-          .to.equal(parseInt(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS));
-
-        expect(User.findByGithubId.callCount).to.equal(1);
-
-        expect(Instance.findOne.callCount).to.equal(1);
-        expect(Instance.findOne.args[0][0]).to.only.contain({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.data.dockerContainer
-        });
-        expect(Instance.findOne.args[0][1]).to.be.a.function();
-
-        expect(Instance.findById.callCount).to.equal(1);
-        expect(ctx.populateModelsSpy.callCount).to.equal(1);
-        expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-        expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
-      }, done);
-    });
-  });
-
-  describe('findInstance & findUser & startContainer success - inspectContainerAndUpdate error', function () {
-    beforeEach(function (done) {
-      ctx.populateModelsSpy = sinon.spy(function (cb) { cb(null); });
-      ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (data, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      ctx.removeStartingStoppingStatesSpy = sinon.spy(function (cb) { cb(); });
-      ctx.modifyContainerInspectErrSpy = sinon.spy(function (container, err, cb) { cb(); });
-      ctx.userToJSONSpy = sinon.spy(function () {
-        var copy = put({}, ctx.mockUser);
-        delete copy.toJSON;
-        return copy;
-      });
-      ctx.mockInstance = {
-        _id: ctx.data.instanceId,
-        owner: {
-          github: '',
-          username: 'foo',
-          gravatar: ''
-        },
-        createdBy: {
-          github: '',
-          username: '',
-          gravatar: ''
-        },
-        populateModels: ctx.populateModelsSpy,
-        populateOwnerAndCreatedBy: ctx.populateOwnerAndCreatedBySpy,
-        removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
-        modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy
-      };
-      ctx.mockUser = {
-        _id: 'foo',
-        toJSON: ctx.userToJSONSpy
-      };
-      sinon.stub(User, 'findByGithubId', function (githubId, cb) {
-        expect(githubId).to.equal(ctx.data.sessionUserGithubId);
-        cb(null, ctx.mockUser);
-      });
-      sinon.stub(Instance, 'findOne', function (data, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Instance, 'findById', function (instanceId, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Docker.prototype, 'startUserContainer', function (containerId, ownerId, cb) {
-        cb(null);
-      });
-      sinon.stub(Docker.prototype, 'inspectContainer', function (containerId, cb) {
-        cb(new Error('inspect container docker error'));
-      });
-      sinon.stub(messenger, 'emitInstanceUpdate', function () {});
-      done();
-    });
-
-    afterEach(function (done) {
-      User.findByGithubId.restore();
-      Instance.findOne.restore();
-      Instance.findById.restore();
-      Docker.prototype.startUserContainer.restore();
-      Docker.prototype.inspectContainer.restore();
-      messenger.emitInstanceUpdate.restore();
-      done();
-    });
-
-    it('should callback error inspect operation fails repeatedly', function (done) {
-      // signifies container may have changed on instance since request initiated
-      StartInstanceContainerWorker.worker(ctx.data, function (err) {
-        expect(err.message).to.equal('inspect container docker error');
-        expect(Docker.prototype.startUserContainer.callCount).to.equal(1);
-        expect(Docker.prototype.inspectContainer.callCount)
-          .to.equal(process.env.WORKER_INSPECT_CONTAINER_NUMBER_RETRY_ATTEMPTS);
-        expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(1);
-
-        expect(User.findByGithubId.callCount).to.equal(1);
-
-        expect(Instance.findOne.callCount).to.equal(1);
-        expect(Instance.findOne.args[0][0]).to.only.contain({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.data.dockerContainer
-        });
-        expect(Instance.findOne.args[0][1]).to.be.a.function();
-
-        expect(Instance.findById.callCount).to.equal(1);
-        expect(ctx.populateModelsSpy.callCount).to.equal(1);
-        expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-        expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
-
-      }, done);
-    });
-  });
-
-  describe('findInstance & findUser & startContainer & inspectContainerAndUpdate success '+
-           '- attachContainerToNetwork error', function () {
-    beforeEach(function (done) {
-      ctx.populateModelsSpy = sinon.spy(function (cb) { cb(null); });
-      ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (data, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      ctx.removeStartingStoppingStatesSpy = sinon.spy(function (cb) { cb(); });
-      ctx.modifyContainerInspectErrSpy = sinon.spy(function (container, err, cb) { cb(); });
-      ctx.modifyContainerInspectSpy = sinon.spy(function (container, err, cb) {
-        cb(null, {
-          inspect: {}
-        });
-      });
-      ctx.userToJSONSpy = sinon.spy(function () {
-        var copy = put({}, ctx.mockUser);
-        delete copy.toJSON;
-        return copy;
-      });
-      ctx.mockInstance = {
-        _id: ctx.data.instanceId,
-        owner: {
-          github: '',
-          username: 'foo',
-          gravatar: ''
-        },
-        createdBy: {
-          github: '',
-          username: '',
-          gravatar: ''
-        },
-        populateModels: ctx.populateModelsSpy,
-        populateOwnerAndCreatedBy: ctx.populateOwnerAndCreatedBySpy,
-        removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
-        modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy,
-        modifyContainerInspect: ctx.modifyContainerInspectSpy
-      };
-      ctx.mockUser = {
-        _id: 'foo',
-        toJSON: ctx.userToJSONSpy
-      };
-      sinon.stub(User, 'findByGithubId', function (githubId, cb) {
-        expect(githubId).to.equal(ctx.data.sessionUserGithubId);
-        cb(null, ctx.mockUser);
-      });
-      sinon.stub(Instance, 'findOne', function (data, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Instance, 'findById', function (instanceId, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Docker.prototype, 'startUserContainer', function (containerId, ownerId, cb) {
-        cb(null);
-      });
-      sinon.stub(Docker.prototype, 'inspectContainer', function (containerId, cb) {
-        cb(null);
-      });
-      sinon.stub(Sauron.prototype, 'attachHostToContainer', function (networKIp, hostIp, dockerContainer, cb) {
-        cb(new Error('sauron error'));
-      });
-      sinon.stub(Hosts.prototype, 'upsertHostsForInstance', function (ownerUsername, instance, cb) {
-        cb();
-      });
-      sinon.stub(messenger, 'emitInstanceUpdate', function () {});
-      done();
-    });
-
-    afterEach(function (done) {
-      User.findByGithubId.restore();
-      Instance.findOne.restore();
-      Instance.findById.restore();
-      Docker.prototype.startUserContainer.restore();
-      Docker.prototype.inspectContainer.restore();
-      messenger.emitInstanceUpdate.restore();
-      Sauron.prototype.attachHostToContainer.restore();
-      Hosts.prototype.upsertHostsForInstance.restore();
-      done();
-    });
-
-    it('should callback error sauron.attachHostToContainer failure', function (done) {
-      // signifies container may have changed on instance since request initiated
-      StartInstanceContainerWorker.worker(ctx.data, function (err) {
-        expect(err.message).to.equal('sauron error');
-        expect(Docker.prototype.startUserContainer.callCount).to.equal(1);
-        expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-        expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
-        expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
-
-        expect(User.findByGithubId.callCount).to.equal(1);
-
-        expect(Instance.findOne.callCount).to.equal(1);
-        expect(Instance.findOne.args[0][0]).to.only.contain({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.data.dockerContainer
-        });
-        expect(Instance.findOne.args[0][1]).to.be.a.function();
-
-        expect(Instance.findById.callCount).to.equal(1);
-        expect(ctx.populateModelsSpy.callCount).to.equal(1);
-        expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-        expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
-      }, done);
-    });
-
-    it('should callback error hosts.upsertHostsForInstance failure', function (done) {
-      Sauron.prototype.attachHostToContainer.restore();
-      sinon.stub(Sauron.prototype, 'attachHostToContainer', function (networKIp, hostIp, dockerContainer, cb) {
-        cb(null);
-      });
-      Hosts.prototype.upsertHostsForInstance.restore();
-      sinon.stub(Hosts.prototype, 'upsertHostsForInstance', function (ownerUsername, instance, cb) {
-        cb(new Error('hosts error'));
-      });
-      // signifies container may have changed on instance since request initiated
-      StartInstanceContainerWorker.worker(ctx.data, function (err) {
-        expect(err.message).to.equal('hosts error');
-        expect(Docker.prototype.startUserContainer.callCount).to.equal(1);
-        expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-        expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
-        expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
-
-        expect(User.findByGithubId.callCount).to.equal(1);
-
-        expect(Instance.findOne.callCount).to.equal(1);
-        expect(Instance.findOne.args[0][0]).to.only.contain({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.data.dockerContainer
-        });
-        expect(Instance.findOne.args[0][1]).to.be.a.function();
-
-        expect(Instance.findById.callCount).to.equal(1);
-        expect(ctx.populateModelsSpy.callCount).to.equal(1);
-        expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-        expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
-      }, done);
-    });
-  });
-
-  describe('findInstance & findUser & startContainer & inspectContainerAndUpdate & '+
-           'attachContainerToNetwork success', function () {
-    beforeEach(function (done) {
-      ctx.populateModelsSpy = sinon.spy(function (cb) { cb(null); });
-      ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (data, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      ctx.removeStartingStoppingStatesSpy = sinon.spy(function (cb) { cb(); });
-      ctx.modifyContainerInspectErrSpy = sinon.spy(function (container, err, cb) { cb(); });
-      ctx.modifyContainerInspectSpy = sinon.spy(function (container, err, cb) {
-        cb(null, {
-          inspect: {}
-        });
-      });
-      ctx.userToJSONSpy = sinon.spy(function () {
-        var copy = put({}, ctx.mockUser);
-        delete copy.toJSON;
-        return copy;
-      });
-      ctx.mockInstance = {
-        _id: ctx.data.instanceId,
-        owner: {
-          github: '',
-          username: 'foo',
-          gravatar: ''
-        },
-        createdBy: {
-          github: '',
-          username: '',
-          gravatar: ''
-        },
-        populateModels: ctx.populateModelsSpy,
-        populateOwnerAndCreatedBy: ctx.populateOwnerAndCreatedBySpy,
-        removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
-        modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy,
-        modifyContainerInspect: ctx.modifyContainerInspectSpy
-      };
-      ctx.mockUser = {
-        _id: 'foo',
-        toJSON: ctx.userToJSONSpy
-      };
-      sinon.stub(User, 'findByGithubId', function (githubId, cb) {
-        expect(githubId).to.equal(ctx.data.sessionUserGithubId);
-        cb(null, ctx.mockUser);
-      });
-      sinon.stub(Instance, 'findOne', function (data, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Instance, 'findById', function (instanceId, cb) {
-        cb(null, ctx.mockInstance);
-      });
-      sinon.stub(Docker.prototype, 'startUserContainer', function (containerId, ownerId, cb) {
-        cb(null);
-      });
-      sinon.stub(Docker.prototype, 'inspectContainer', function (containerId, cb) {
-        cb(null);
-      });
-      sinon.stub(Sauron.prototype, 'attachHostToContainer', function (networKIp, hostIp, dockerContainer, cb) {
-        cb();
-      });
-      sinon.stub(Hosts.prototype, 'upsertHostsForInstance', function (ownerUsername, instance, cb) {
-        cb();
-      });
-      sinon.stub(messenger, 'emitInstanceUpdate', function () {});
-      done();
-    });
-
-    afterEach(function (done) {
-      User.findByGithubId.restore();
-      Instance.findOne.restore();
-      Instance.findById.restore();
-      Docker.prototype.startUserContainer.restore();
-      Docker.prototype.inspectContainer.restore();
-      messenger.emitInstanceUpdate.restore();
-      Sauron.prototype.attachHostToContainer.restore();
-      Hosts.prototype.upsertHostsForInstance.restore();
-      done();
-    });
-
-    it('should callback error hosts.upsertHostsForInstance failure', function (done) {
-      // signifies container may have changed on instance since request initiated
-      StartInstanceContainerWorker.worker(ctx.data, function (err) {
-        expect(err).to.be.undefined();
-
-        expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
-        expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
-
-        expect(Docker.prototype.startUserContainer.callCount).to.equal(1);
-        expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-
-        expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
-        expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
-
-        expect(User.findByGithubId.callCount).to.equal(1);
-
-        expect(Instance.findOne.callCount).to.equal(1);
-        expect(Instance.findOne.args[0][0]).to.only.contain({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.data.dockerContainer
-        });
-        expect(Instance.findOne.args[0][1]).to.be.a.function();
-
-        expect(Instance.findById.callCount).to.equal(1);
-        expect(ctx.populateModelsSpy.callCount).to.equal(1);
-        expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-        expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
-      }, done);
-    });
-  });
-*/
 });
