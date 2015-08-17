@@ -188,10 +188,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       });
 
       beforeEach(function (done) {
-        ctx.startContainerCallbacks = [];
-        sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
-          ctx.startContainerCallbacks.push(cb);
-        });
+        sinon.stub(Docker.prototype, 'startContainer', function () {});
         done();
       });
 
@@ -211,8 +208,6 @@ describe('PUT /instances/:id/actions/restart', function () {
         primus.expectAction('starting', function () {
           ctx.instance.restart(function (err) {
             expect(err.message).to.equal('Instance is already starting');
-            // trigger start request to complete
-            ctx.startContainerCallbacks.forEach(function (cb) { cb(); });
           });
         });
         ctx.instance.start(done);
