@@ -42,12 +42,73 @@ describe('Context Version', function () {
     });
   });
 
+  describe('log streams primus', function () {
+    it('should write objects to primus from a string log', function (done) {
+      var cv = new ContextVersion({
+        build: { log: 'hello\nworld\n' }
+      });
+      var cache = [];
+      var stream = {
+        write: function (data) { cache.push(data); },
+        end: sinon.stub()
+      };
+      cv.writeLogsToPrimusStream(stream, function (err) {
+        if (err) { return done(err); }
+        expect(cache).to.have.length(3);
+        expect(cache).to.deep.equal([{
+          type: 'log',
+          content: 'hello'
+        }, {
+          type: 'log',
+          content: 'world'
+        }, {
+          type: 'log',
+          content: ''
+        }]);
+        expect(stream.end.callCount).to.equal(1);
+        done();
+      });
+    });
+
+    it('should return objects from an array of objects', function (done) {
+      var cv = new ContextVersion({
+        build: {
+          log: [{
+            type: 'log',
+            content: 'hello'
+          }, {
+            type: 'log',
+            content: 'world'
+          }]
+        }
+      });
+      var cache = [];
+      var stream = {
+        write: function (data) { cache.push(data); },
+        end: sinon.stub()
+      };
+      cv.writeLogsToPrimusStream(stream, function (err) {
+        if (err) { return done(err); }
+        expect(cache).to.have.length(2);
+        expect(cache).to.deep.equal([{
+          type: 'log',
+          content: 'hello'
+        }, {
+          type: 'log',
+          content: 'world'
+        }]);
+        expect(stream.end.callCount).to.equal(1);
+        done();
+      });
+    });
+  });
+
   describe('addGithubRepoToVersion', function () {
     beforeEach(function (done) {
       ctx.c = new Context();
       ctx.cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
+        owner: { github: 2874589 },
         context: ctx.c._id
       });
       ctx.cv.save(done);
