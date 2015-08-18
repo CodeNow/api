@@ -120,7 +120,8 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
         repo: ctx.fullRepoName,
         branch: 'master',
         commit: uuid(),
-        additionalRepo: true
+        additionalRepo: true,
+        useLatest: true
       };
       var username = ctx.user.attrs.accounts.github.login;
       require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true);
@@ -134,6 +135,7 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
       expected.branch = body.branch;
       expected.lowerBranch = body.branch.toLowerCase();
       expected.additionalRepo = true;
+      expected.useLatest = true;
       ctx.addAppCodeVersion.update(body, expects.success(200, expected, function (err) {
         if (err) { return done(err); }
         ctx.contextVersion.fetch(function (err, cv) {
@@ -156,6 +158,7 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
       var expected = ctx.addAppCodeVersion.json();
       expected.commit = body.commit;
       expected.additionalRepo = true;
+      expected.useLatest = true;
       ctx.addAppCodeVersion.update(body, expects.success(200, expected, function (err) {
         if (err) { return done(err); }
         ctx.contextVersion.fetch(function (err, cv) {
@@ -180,6 +183,34 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
       expected.commit = body.commit;
       expected.branch = body.branch;
       expected.lowerBranch = body.branch.toLowerCase();
+      expected.additionalRepo = true;
+      expected.useLatest = true;
+      ctx.addAppCodeVersion.update(body, expects.success(200, expected, function (err) {
+        if (err) { return done(err); }
+        ctx.contextVersion.fetch(function (err, cv) {
+          if (err) { return done(err); }
+          expect(cv.appCodeVersions.length).to.equal(2);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !!appCodeVersion.additionalRepo;
+          })).to.deep.contain(expected);
+          expect(find(cv.appCodeVersions, function (appCodeVersion) {
+            return !appCodeVersion.additionalRepo;
+          })).to.deep.contain(ctx.mainAppCodeVersion);
+          done();
+        });
+      }));
+    });
+    it('it should update an addAppCodeVersion\'s commit, branch and useLatest', function (done) {
+      var body = {
+        branch: 'other-feature',
+        commit: 'abcdef',
+        useLatest: false
+      };
+      var expected = ctx.addAppCodeVersion.json();
+      expected.commit = body.commit;
+      expected.branch = body.branch;
+      expected.lowerBranch = body.branch.toLowerCase();
+      expected.useLatest = body.useLatest;
       expected.additionalRepo = true;
       ctx.addAppCodeVersion.update(body, expects.success(200, expected, function (err) {
         if (err) { return done(err); }

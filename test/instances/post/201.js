@@ -89,7 +89,6 @@ describe('201 POST /instances', function () {
   describe('For User', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {
-        ctx.createUserContainerSpy = sinon.spy(require('models/apis/docker').prototype, 'createUserContainer');
         multi.createContextVersion(function (err,  cv, context, build, user) {
           if (err) { return done(err); }
           ctx.user = user;
@@ -108,10 +107,7 @@ describe('201 POST /instances', function () {
         });
       });
       afterEach(function (done) {
-        // TODO: wait for event first, make sure everything finishes.. then drop db
-        ctx.createUserContainerSpy.restore();
         require('../../fixtures/clean-mongo').removeEverything(done);
-        //done();
       });
       it('should create a private instance by default', function (done) {
         var name = uuid();
