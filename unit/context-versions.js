@@ -158,9 +158,6 @@ describe('Versions', function () {
       validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.branch');
       validation.stringLengthValidationChecking(createNewVersion, 'appCodeVersions.0.branch', 200);
     });
-    describe('Commit', function () {
-      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.commit');
-    });
   });
 
   describe('findAllRepos', function () {
