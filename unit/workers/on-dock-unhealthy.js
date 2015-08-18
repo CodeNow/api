@@ -14,41 +14,50 @@ var expect = Code.expect;
 
 var sinon = require('sinon');
 var Instance = require('models/mongo/instance');
-var Runnable = require('models/apis/runnable');
 var Worker = require('workers/on-dock-unhealthy');
 
 describe('worker: on-dock-unhealthy unit test', function () {
   var worker;
+  beforeEach(function(done) {
+    worker = new Worker();
+    done();
+  });
 
   describe('#handle', function() {
     var testHost = 'goku';
     var testData = {
       host: testHost
     };
+
     beforeEach(function(done) {
-      worker = new Worker();
-      sinon.stub(Runnable.prototype, 'githubLogin');
+      sinon.stub(worker.runnableClient, 'githubLogin');
+      sinon.stub(Instance, 'findActiveInstancesByDockerHost');
       done();
     });
+
     afterEach(function(done) {
-      Runnable.prototype.githubLogin.restore();
+      worker.runnableClient.githubLogin.restore();
+      Instance.findActiveInstancesByDockerHost.restore();
       done();
     });
 
     describe('github login fails', function() {
       var testErr = 'spirit bomb';
       beforeEach(function(done) {
-        Runnable.prototype.githubLogin.yieldsAsync(testErr);
+        worker.runnableClient.githubLogin.yieldsAsync(testErr);
         done();
       });
 
       it('should cb err', function(done) {
         worker.handle({}, function (err) {
-          expect(err).to.equal(testErr);
+          expect(err).to.not.exist();
           expect(
-            Runnable.prototype.githubLogin
+            worker.runnableClient.githubLogin
             .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
             .calledOnce).to.be.true();
+          expect(
+            Instance.findActiveInstancesByDockerHost
+            .called).to.be.false();
           done();
         });
       });
@@ -57,13 +66,12 @@ describe('worker: on-dock-unhealthy unit test', function () {
     describe('github login works', function() {
       var testErr = 'kamehameha';
       beforeEach(function(done) {
-        Runnable.prototype.githubLogin.yieldsAsync();
-        sinon.stub(Instance, 'findActiveInstancesByDockerHost');
+        worker.runnableClient.githubLogin.yieldsAsync();
         sinon.stub(Worker.prototype, '_redeployContainers');
         done();
       });
+
       afterEach(function(done) {
-        Instance.findActiveInstancesByDockerHost.restore();
         Worker.prototype._redeployContainers.restore();
         done();
       });
@@ -77,14 +85,14 @@ describe('worker: on-dock-unhealthy unit test', function () {
         it('should cb err', function(done) {
           worker.handle(testData, function (err) {
             expect(
-              Runnable.prototype.githubLogin
+              worker.runnableClient.githubLogin
               .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
               .calledOnce).to.be.true();
             expect(
               Instance.findActiveInstancesByDockerHost
               .withArgs(testHost)
               .calledOnce).to.be.true();
-            expect(err).to.equal(testErr);
+            expect(err).to.not.exist();
             done();
           });
         });
@@ -100,7 +108,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
           worker.handle(testData, function (err) {
             expect(err).to.be.undefined();
             expect(
-              Runnable.prototype.githubLogin
+              worker.runnableClient.githubLogin
               .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
               .calledOnce).to.be.true();
             expect(
@@ -127,7 +135,7 @@ describe('worker: on-dock-unhealthy unit test', function () {
           worker.handle(testData, function (err) {
             expect(err).to.be.undefined();
             expect(
-              Runnable.prototype.githubLogin
+              worker.runnableClient.githubLogin
               .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
               .calledOnce).to.be.true();
             expect(
@@ -152,22 +160,26 @@ describe('worker: on-dock-unhealthy unit test', function () {
     }, {
       id: '2'
     }];
+    var redeployStub;
     beforeEach(function(done) {
-      worker.runnableClient.redeployInstance = sinon.stub();
+      redeployStub = sinon.stub();
+      worker.runnableClient.newInstance = sinon.stub().returns( {
+        redeploy: redeployStub
+      });
       done();
     });
 
     describe('redeploy fails for one instance', function() {
       beforeEach(function(done) {
-        worker.runnableClient.redeployInstance.onCall(0).yieldsAsync(testErr);
-        worker.runnableClient.redeployInstance.onCall(1).yieldsAsync();
+        redeployStub.onCall(0).yieldsAsync(testErr);
+        redeployStub.onCall(1).yieldsAsync();
         done();
       });
 
       it('should callback with no error', function(done) {
         worker._redeployContainers(testData, function (err) {
           expect(err).to.be.undefined();
-          expect(worker.runnableClient.redeployInstance
+          expect(redeployStub
             .calledTwice).to.be.true();
           done();
         });
@@ -176,15 +188,15 @@ describe('worker: on-dock-unhealthy unit test', function () {
 
     describe('redeploy passes', function() {
       beforeEach(function(done) {
-        worker.runnableClient.redeployInstance.onCall(0).yieldsAsync();
-        worker.runnableClient.redeployInstance.onCall(1).yieldsAsync();
+        redeployStub.onCall(0).yieldsAsync();
+        redeployStub.onCall(1).yieldsAsync();
         done();
       });
 
       it('should callback with no error', function(done) {
         worker._redeployContainers(testData, function (err) {
           expect(err).to.be.undefined();
-          expect(worker.runnableClient.redeployInstance
+          expect(redeployStub
             .calledTwice).to.be.true();
           done();
         });
