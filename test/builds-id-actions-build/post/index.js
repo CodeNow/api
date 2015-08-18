@@ -20,6 +20,7 @@ var primus = require('./../../fixtures/primus');
 var createCount = require('callback-count');
 var exists = require('101/exists');
 var equals = require('101/equals');
+var last = require('101/last');
 var uuid = require('uuid');
 
 describe('Build - /builds/:id/actions/build', function () {
@@ -62,7 +63,7 @@ describe('Build - /builds/:id/actions/build', function () {
           expect(body).to.exist();
           dockerMockEvents.emitBuildComplete(ctx.cv);
           primus.onceVersionComplete(ctx.cv.id(), function (data) {
-            expect(data.data.data.build.log).to.contain('Successfully built');
+            expect(last(data.data.data.build.log).content).to.contain('Successfully built');
 
             var count = createCount(2, done);
             var buildExpected = {
@@ -110,7 +111,7 @@ describe('Build - /builds/:id/actions/build', function () {
 
               primus.onceVersionComplete(ctx.cv.id(), function (data) {
                 if (err) { return done(err); }
-                expect(data.data.data.build.log).to.contain('Successfully built');
+                expect(last(data.data.data.build.log).content).to.contain('Successfully built');
                 var buildExpected = {
                   completed: exists,
                   duration: exists,
