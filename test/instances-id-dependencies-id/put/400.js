@@ -43,7 +43,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
 
     describe('Instance has a env dependency', function() {
       beforeEach(function (done) {
-        var count = createCount(done);
+        var count = createCount(3, done);
         ctx.elasticHostname = ctx.instance.getElasticHostname();
         // setting name and masterPod here emulates an auto-forked instance
         var branch = ctx.instance.attrs.contextVersion.appCodeVersions[0].branch;
@@ -58,9 +58,9 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           ],
           build: ctx.build.id()
         };
-        primus.expectAction('start', count.inc().next);
-        ctx.instance2 = ctx.user.createInstance(body2, count.inc().next);
-        ctx.instanceWithDep = ctx.user.createInstance(depBody, count.inc().next);
+        primus.expectAction('start', count.next);
+        ctx.instance2 = ctx.user.createInstance(body2, count.next);
+        ctx.instanceWithDep = ctx.user.createInstance(depBody, count.next);
       });
 
       it('should return 400 if invalid hostname', function (done) {
