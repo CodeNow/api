@@ -311,7 +311,7 @@ describe('StartInstanceContainerWorker', function () {
         ctx.worker._startContainer(function (err) {
           expect(err.message).to.equal('docker error');
           expect(Docker.prototype.startUserContainer.callCount)
-            .to.equal(parseInt(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS));
+            .to.equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
           done();
         });
@@ -368,7 +368,7 @@ describe('StartInstanceContainerWorker', function () {
         ctx.worker._inspectContainerAndUpdate(function (err) {
           expect(err.message).to.equal('docker inspect error');
           expect(Docker.prototype.inspectContainer.callCount)
-            .to.equal(parseInt(process.env.WORKER_INSPECT_CONTAINER_NUMBER_RETRY_ATTEMPTS));
+            .to.equal(process.env.WORKER_INSPECT_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(ctx.modifyContainerInspectSpy.callCount).to.equal(0);
           expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(1);
           done();

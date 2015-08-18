@@ -216,7 +216,7 @@ process.on('uncaughtException', function(err) {
   }, 'stopping app due too uncaughtException');
 
   // hack to force loggly to release buffer
-  for(var i = 0; i<parseInt(process.env.BUNYAN_BATCH_LOG_COUNT); i++) {
+  for(var i = 0; i<process.env.BUNYAN_BATCH_LOG_COUNT; i++) {
     log.info('---');
   }
 
