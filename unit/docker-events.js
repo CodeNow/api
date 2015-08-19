@@ -149,7 +149,7 @@ describe('Docker Events', function () {
                     expect(message).to.equal('Docker.prototype.handleDie');
                   }
                   if (count === 1) {
-                    expect(message).to.equal('not active api');
+                    expect(message).to.equal('handleDie: !meIsActiveApi');
                     done();
                   }
                   count++;
