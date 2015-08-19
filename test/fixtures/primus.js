@@ -43,9 +43,7 @@ module.exports = {
   },
   connect: function (cb) {
     log.trace('connect');
-    var token = process.env.PRIMUS_AUTH_TOKEN;
-    var url = process.env.FULL_API_DOMAIN + ':' + process.env.PORT +
-      '?token=' + token;
+    var url = process.env.FULL_API_DOMAIN;
     ctx.primus = new Socket(url);
     ctx.primus.on('error', function (err) {
       console.error(
