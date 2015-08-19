@@ -43,6 +43,18 @@ describe('Context Version', function () {
   });
 
   describe('log streams primus', function () {
+    it('should be fine if we do not pass it a callback', function (done) {
+      var cv = new ContextVersion({
+        build: { log: 'hello\nworld\n' }
+      });
+      var cache = [];
+      var stream = {
+        write: function (data) { cache.push(data); },
+        end: function () { done(); }
+      };
+      // this will call stream.end for us
+      cv.writeLogsToPrimusStream(stream);
+    });
     it('should write objects to primus from a string log', function (done) {
       var cv = new ContextVersion({
         build: { log: 'hello\nworld\n' }
