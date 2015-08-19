@@ -104,7 +104,7 @@ describe('Docker Events', function () {
                     expect(message).to.equal('Docker.prototype.handleDie');
                   }
                   if (count === 1) {
-                    expect(message).to.equal('events are stopping');
+                    expect(message).to.equal('handleDie: events are stopping');
                     done();
                   }
                   count++;
