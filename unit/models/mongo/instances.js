@@ -171,22 +171,25 @@ describe('Instance', function () {
   describe('#findActiveInstancesByDockerHost', function() {
     var instance1, instance2, instance3, instance4;
     var testHost = 'http://10.0.0.1:4242';
+    var testHost2 = 'http://10.0.0.2:4242';
 
     beforeEach(function (done) {
       instance1 = createNewInstance('one', {
         dockerHost: testHost
       });
+      instance1.container.inspect.State.Starting = false;
+      instance1.container.inspect.State.Running = false;
       instance2 = createNewInstance('two', {
         dockerHost: testHost
       });
+      instance2.container.inspect.State.Starting = true;
       instance3 = createNewInstance('three', {
         dockerHost: testHost
       });
+      instance3.container.inspect.State.Running = true;
       instance4 = createNewInstance('four', {
-        dockerHost: testHost
+        dockerHost: testHost2
       });
-      instance4.container.inspect.State.Starting = false;
-      instance4.container.inspect.State.Running = false;
       done();
     });
     beforeEach(function (done) {
