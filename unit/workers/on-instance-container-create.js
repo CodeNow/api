@@ -12,6 +12,7 @@ var noop = require('101/noop');
 var sinon = require('sinon');
 
 var Instance = require('models/mongo/instance');
+var rabbitMQ = require('models/rabbitmq');
 
 var OnInstanceContainerCreateWorker = require('workers/on-instance-container-create');
 
@@ -28,6 +29,10 @@ describe('OnInstanceContainerCreateWorker', function () {
     ctx = {};
     ctx.mockInstance = {
       _id: 555,
+      network: {
+        hostIp: '0.0.0.0',
+        networkIp: '1.1.1.1'
+      },
       toJSON: function () { return {}; }
     };
     ctx.data = {
@@ -40,6 +45,8 @@ describe('OnInstanceContainerCreateWorker', function () {
         Config: {
           Labels: {
             instanceId: ctx.mockInstance._id,
+            ownerUsername: 'fifo',
+            sessionUserGithubId: 444,
             contextVersionId: 123
           }
         }
@@ -83,6 +90,31 @@ describe('OnInstanceContainerCreateWorker', function () {
   });
 
   describe('_startContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'startInstanceContainer', noop);
+      // normally set in findOneAndUpdate
+      ctx.worker.instance = ctx.mockInstance;
+      done();
+    });
+    afterEach(function (done) {
+      rabbitMQ.startInstanceContainer.restore();
+      done();
+    });
+    it('should create a start-instance-container job', function (done) {
+      ctx.worker._startContainer(function () {
+        expect(rabbitMQ.startInstanceContainer.callCount).to.equal(1);
+        expect(rabbitMQ.startInstanceContainer.args[0][0]).to.only.contain({
+          dockerContainer: ctx.data.id,
+          dockerHost: ctx.data.host,
+          hostIp: ctx.mockInstance.network.hostIp,
+          instanceId: ctx.mockInstance._id.toString(),
+          networkIp: ctx.mockInstance.network.networkIp,
+          ownerUsername: ctx.data.inspectData.Config.Labels.ownerUsername,
+          sessionUserGithubId: ctx.data.inspectData.Config.Labels.sessionUserGithubId,
+          tid: ctx.worker.logData.uuid
+        });
+        done();
+      });
+    });
   });
-
 });
