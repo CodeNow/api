@@ -8,7 +8,6 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var async = require('async');
-var noop = require('101/noop');
 var rewire = require('rewire');
 var sinon = require('sinon');
 var keypather = require('keypather')();
