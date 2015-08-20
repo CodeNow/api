@@ -101,10 +101,10 @@ describe('Docker Events', function () {
               log: {
                 trace: function (data, message) {
                   if (count === 0) {
-                    expect(message).to.equal('handleDie');
+                    expect(message).to.equal('Docker.prototype.handleDie');
                   }
                   if (count === 1) {
-                    expect(message).to.equal('events are stopping');
+                    expect(message).to.equal('handleDie: events are stopping');
                     done();
                   }
                   count++;
@@ -146,10 +146,10 @@ describe('Docker Events', function () {
               log: {
                 trace: function (data, message) {
                   if (count === 0) {
-                    expect(message).to.equal('handleDie');
+                    expect(message).to.equal('Docker.prototype.handleDie');
                   }
                   if (count === 1) {
-                    expect(message).to.equal('not active api');
+                    expect(message).to.equal('handleDie: !meIsActiveApi');
                     done();
                   }
                   count++;
