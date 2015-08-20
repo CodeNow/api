@@ -12,13 +12,10 @@ var noop = require('101/noop');
 var rewire = require('rewire');
 var sinon = require('sinon');
 var keypather = require('keypather')();
-var log = require('middlewares/logger')(__filename);
 
 var Docker = require('models/apis/docker');
-var Hosts = require('models/redis/hosts');
 var ContextVersion = require('models/mongo/context-version');
 var Sauron = require('models/apis/sauron');
-var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
 
 var mockStartImageBuilderListenerEvent = require('../fixtures/docker-listener/build-image-container');
@@ -133,9 +130,9 @@ describe('StartImageBuildContainerWorker', function () {
             '_id': ctx.mockContextVersion._id
           });
           expect(ContextVersion.findOneAndUpdate.args[0][1], 'findOneAndUpdate').to.be.object();
-          expect(ContextVersion.findOneAndUpdate.args[0][1]['$set'], 'findOneAndUpdate.set').to.be.ok;
+          expect(ContextVersion.findOneAndUpdate.args[0][1].$set, 'findOneAndUpdate.set').to.be.ok;
           expect(
-            ContextVersion.findOneAndUpdate.args[0][1]['$set']['build.containerStarted'],
+            ContextVersion.findOneAndUpdate.args[0][1].$set['build.containerStarted'],
             'findOneAndUpdate.build.containerStarted'
           ).to.be.ok;
           expect(ContextVersion.findOneAndUpdate.args[0][2], 'findOneAndUpdate').to.be.a.function();
@@ -437,8 +434,9 @@ describe('StartImageBuildContainerWorker', function () {
               '_id': ctx.mockContextVersion._id
             });
             expect(ContextVersion.findOneAndUpdate.args[0][1]).to.be.object();
-            expect(ContextVersion.findOneAndUpdate.args[0][1]['$set']).to.be.ok;
-            expect(ContextVersion.findOneAndUpdate.args[0][1]['$set']['build.containerStarted']).to.be.ok;
+            expect(ContextVersion.findOneAndUpdate.args[0][1].$set).to.be.ok;
+            expect(ContextVersion.findOneAndUpdate.args[0][1].$set['build.containerStarted'])
+                .to.be.ok;
             expect(ContextVersion.findOneAndUpdate.args[0][2]).to.be.a.function();
             done();
           });

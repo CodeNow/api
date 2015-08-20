@@ -21,7 +21,12 @@ module.exports = {
       "Cpuset": "",
       "Domainname": "",
       "Entrypoint": null,
-      "Env": ["RUNNABLE_AWS_ACCESS_KEY=AKIAIDC4WVMTCGV7KRVQ", "RUNNABLE_AWS_SECRET_KEY=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", "RUNNABLE_FILES_BUCKET=runnable.context.resources.production-beta", "RUNNABLE_PREFIX=55d2d0e93e1b620e00eb61bd/source/", "RUNNABLE_FILES={\"55d2d0e93e1b620e00eb61bd/source/\":\"YuIKqAFTekkM84gp0_cfyzv3npjxIFZn\",\"55d2d0e93e1b620e00eb61bd/source/Dockerfile\":\"AnBDJSPt06VazGjuh1.1.HVWw..1FGU2\"}", "RUNNABLE_DOCKER=unix:///var/run/docker.sock", "RUNNABLE_DOCKERTAG=registry.runnable.com/146592/55d2d0e93e1b620e00eb61bd:55d3ef733e1b620e00eb6292", "RUNNABLE_IMAGE_BUILDER_NAME=runnable/image-builder", "RUNNABLE_IMAGE_BUILDER_TAG=d1.6.2-v2.3.2", "RUNNABLE_REPO=git@github.com:CodeNow/shiva", "RUNNABLE_COMMITISH=c1650832f3ca5a54cc7763bca91b4c83b739c648", "RUNNABLE_KEYS_BUCKET=runnable.deploykeys.production-beta", "RUNNABLE_DEPLOYKEY=CodeNow/shiva.key", "DOCKER_IMAGE_BUILDER_CACHE=/git-cache", "DOCKER_IMAGE_BUILDER_LAYER_CACHE=/layer-cache", "RUNNABLE_NETWORK_DRIVER=sauron", "RUNNABLE_WAIT_FOR_WEAVE=until grep -q ethwe /proc/net/dev; do sleep 1; done;", "RUNNABLE_SAURON_HOST=10.20.1.209:3200", "RUNNABLE_NETWORK_IP=10.255.244.0", "RUNNABLE_HOST_IP=10.255.244.68", "RUNNABLE_BUILD_FLAGS={\"Memory\":1000000000,\"forcerm\":true}", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "NODE_VERSION=0.10.40", "NPM_VERSION=2.11.3"],
+      "Env": [
+        "RUNNABLE_AWS_ACCESS_KEY=AKIAIDC4WVMTCGV7KRVQ",
+        "RUNNABLE_AWS_SECRET_KEY=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",
+        "RUNNABLE_FILES_BUCKET=runnable.context.resources.production-beta",
+        "RUNNABLE_PREFIX=55d2d0e93e1b620e00eb61bd/source/"
+      ],
       "ExposedPorts": null,
       "Hostname": "c2e4530647da",
       "Image": "runnable/image-builder:d1.6.2-v2.3.2",
@@ -46,7 +51,8 @@ module.exports = {
         "contextVersion.build.dockerContainerName.id": "U??s>\u001bb\u000e\u0000?b?",
         "contextVersion.build.duration": "undefined",
         "contextVersion.build.hash": "b054d62cc793290867abddeb73586987",
-        "contextVersion.build.triggeredAction.appCodeVersion.commit": "c1650832f3ca5a54cc7763bca91b4c83b739c648",
+        "contextVersion.build.triggeredAction.appCodeVersion.commit": "c1650832f3ca5a54cc7763bca" +
+            "91b4c83b739c648",
         "contextVersion.build.triggeredAction.appCodeVersion.repo": "CodeNow/shiva",
         "contextVersion.build.triggeredAction.manual": "false",
         "contextVersion.build.triggeredBy.github": "146592",
@@ -84,7 +90,8 @@ module.exports = {
         "contextVersion.infraCodeVersion.parent._bsontype": "ObjectID",
         "contextVersion.infraCodeVersion.parent.id": "U????U?\u001d\u0000 g?",
         "contextVersion.owner.github": "2335750",
-        "dockerTag": "registry.runnable.com/146592/55d2d0e93e1b620e00eb61bd:55d3ef733e1b620e00eb6292",
+        "dockerTag": "registry.runnable.com/146592/55d2d0e93e1b620e00eb61b" +
+            "d:55d3ef733e1b620e00eb6292",
         "hostIp": "10.255.244.68",
         "manualBuild": "false",
         "networkIp": "10.255.244.0",
@@ -114,7 +121,11 @@ module.exports = {
     "ExecDriver": "native-0.2",
     "ExecIDs": null,
     "HostConfig": {
-      "Binds": ["/var/run/docker.sock:/var/run/docker.sock", "/git-cache:/cache:rw", "/layer-cache:/layer-cache:rw"],
+      "Binds": [
+        "/var/run/docker.sock:/var/run/docker.sock",
+        "/git-cache:/cache:rw",
+        "/layer-cache:/layer-cache:rw"
+      ],
       "CapAdd": null,
       "CapDrop": null,
       "CgroupParent": "",
@@ -142,11 +153,14 @@ module.exports = {
       "Ulimits": null,
       "VolumesFrom": null
     },
-    "HostnamePath": "/docker/containers/c2e4530647da729430dc252da581872356b3aad463b7214d13cd8e8dbc3c7a9f/hostname",
-    "HostsPath": "/docker/containers/c2e4530647da729430dc252da581872356b3aad463b7214d13cd8e8dbc3c7a9f/hosts",
+    "HostnamePath": "/docker/containers/c2e4530647da729430dc252da581872356b3aad463b7214d13c" +
+        "d8e8dbc3c7a9f/hostname",
+    "HostsPath": "/docker/containers/c2e4530647da729430dc252da581872356b3aad463b721" +
+        "4d13cd8e8dbc3c7a9f/hosts",
     "Id": "c2e4530647da729430dc252da581872356b3aad463b7214d13cd8e8dbc3c7a9f",
     "Image": "45d2215ee80ddf33e1fbe8ef9d17da1fbf52083700a7bc0b9582dc43f816348a",
-    "LogPath": "/docker/containers/c2e4530647da729430dc252da581872356b3aad463b7214d13cd8e8dbc3c7a9f/c2e4530647da729430dc252da581872356b3aad463b7214d13cd8e8dbc3c7a9f-json.log",
+    "LogPath": "/docker/containers/c2e4530647da729430dc252da581872356b3aad463b7214d13cd8e8dbc3c7a" +
+        "9f/c2e4530647da729430dc252da581872356b3aad463b7214d13cd8e8dbc3c7a9f-json.log",
     "MountLabel": "",
     "Name": "/55d3ef733e1b620e00eb6291",
     "NetworkSettings": {
@@ -165,7 +179,8 @@ module.exports = {
     },
     "Path": "/source/dockerBuild.sh",
     "ProcessLabel": "",
-    "ResolvConfPath": "/docker/containers/c2e4530647da729430dc252da581872356b3aad463b7214d13cd8e8dbc3c7a9f/resolv.conf",
+    "ResolvConfPath": "/docker/containers/c2e4530647da729430dc252da581872356b3aad463b7214d1" +
+        "3cd8e8dbc3c7a9f/resolv.conf",
     "RestartCount": 0,
     "State": {
       "Dead": false,
@@ -186,4 +201,4 @@ module.exports = {
     },
     "VolumesRW": {"/cache": true, "/layer-cache": true, "/var/run/docker.sock": true}
   }
-}
+};
