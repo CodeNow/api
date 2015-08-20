@@ -19,7 +19,7 @@ var messenger = require('socket/messenger');
 
 var mockStartImageBuilderListenerEvent = require('../fixtures/docker-listener/build-image-container');
 
-var StartImageBuildContainerWorker = rewire('workers/start-image-builder-container');
+var StartImageBuildContainerWorker = rewire('workers/on-create-start-image-builder-container');
 
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
@@ -29,7 +29,7 @@ var it = lab.it;
 
 
 
-describe('StartImageBuildContainerWorker', function () {
+describe('OnCreateStartImageBuilderContainerWorker', function () {
   var ctx;
 
   beforeEach(function (done) {
