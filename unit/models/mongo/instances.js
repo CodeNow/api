@@ -169,7 +169,10 @@ describe('Instance', function () {
   });
 
   describe('#findActiveInstancesByDockerHost', function() {
-    var instance1, instance2, instance3, instance4;
+    var instance1;
+    var instance2;
+    var instance3;
+    var instance4;
     var testHost = 'http://10.0.0.1:4242';
     var testHost2 = 'http://10.0.0.2:4242';
 
