@@ -115,7 +115,7 @@ describe('StartImageBuildContainerWorker', function () {
       });
       it('should finish by updating the contextVersion', function (done) {
         ctx.worker.handle(ctx.data, function (err) {
-          expect(err).to.not.be.ok;
+          expect(err).to.be.undefined();
           expect(ContextVersion.findOne.callCount, 'findOne').to.equal(1);
           expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
             '_id': ctx.mockContextVersion._id,
@@ -130,11 +130,11 @@ describe('StartImageBuildContainerWorker', function () {
             '_id': ctx.mockContextVersion._id
           });
           expect(ContextVersion.findOneAndUpdate.args[0][1], 'findOneAndUpdate').to.be.object();
-          expect(ContextVersion.findOneAndUpdate.args[0][1].$set, 'findOneAndUpdate.set').to.be.ok;
+          expect(ContextVersion.findOneAndUpdate.args[0][1].$set, 'findOneAndUpdate.set').to.be.object();
           expect(
             ContextVersion.findOneAndUpdate.args[0][1].$set['build.containerStarted'],
             'findOneAndUpdate.build.containerStarted'
-          ).to.be.ok;
+          ).to.be.date();
           expect(ContextVersion.findOneAndUpdate.args[0][2], 'findOneAndUpdate').to.be.a.function();
 
           expect(Docker.prototype.startImageBuilderContainer.callCount, 'startImage').to.equal(1);
@@ -195,7 +195,7 @@ describe('StartImageBuildContainerWorker', function () {
       });
       it('should error', function (done) {
         ctx.worker.handle(ctx.data, function (err) {
-          expect(err).to.not.be.ok;
+          expect(err).to.be.undefined();
           expect(ContextVersion.findOne.callCount, 'findOne').to.equal(1);
           expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
             '_id': ctx.mockContextVersion._id,
@@ -434,9 +434,8 @@ describe('StartImageBuildContainerWorker', function () {
               '_id': ctx.mockContextVersion._id
             });
             expect(ContextVersion.findOneAndUpdate.args[0][1]).to.be.object();
-            expect(ContextVersion.findOneAndUpdate.args[0][1].$set).to.be.ok;
-            expect(ContextVersion.findOneAndUpdate.args[0][1].$set['build.containerStarted'])
-                .to.be.ok;
+            expect(ContextVersion.findOneAndUpdate.args[0][1].$set).to.be.object();
+            expect(ContextVersion.findOneAndUpdate.args[0][1].$set['build.containerStarted']).to.be.date();
             expect(ContextVersion.findOneAndUpdate.args[0][2]).to.be.a.function();
             done();
           });
