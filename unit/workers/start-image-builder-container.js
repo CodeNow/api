@@ -36,19 +36,6 @@ describe('StartImageBuildContainerWorker', function () {
   beforeEach(function (done) {
     ctx = {};
 
-    // spies
-    ctx.removeStartingStoppingStatesSpy = sinon.spy(function (cb) { cb(); });
-    ctx.modifyContainerInspectSpy =
-      sinon.spy(function (dockerContainerId, inspect, cb) {
-      cb(null, ctx.mockContainer);
-    });
-    ctx.modifyContainerInspectErrSpy = sinon.spy(function (dockerContainerId, error, cb) {
-      cb(null);
-    });
-
-    ctx.populateModelsSpy = sinon.spy(function (cb) { cb(null); });
-    ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (user, cb) { cb(null, ctx.mockInstance); });
-
     ctx.mockContextVersion = {
       '_id': '55d3ef733e1b620e00eb6292',
       name: 'name1',
@@ -64,14 +51,6 @@ describe('StartImageBuildContainerWorker', function () {
     };
     ctx.data = mockStartImageBuilderListenerEvent;
     ctx.labels = keypather.get(ctx.data, 'inspectData.Config.Labels');
-    ctx.mockContainer = {
-      dockerContainer: ctx.data.dockerContainer,
-      dockerHost: ctx.data.dockerHost
-    };
-    ctx.mockUser = {
-      _id: 'foo',
-      toJSON: noop
-    };
     done();
   });
 
@@ -454,6 +433,7 @@ describe('StartImageBuildContainerWorker', function () {
 
 
       afterEach(function (done) {
+        ctx.worker._updateFrontend.restore();
         Sauron.prototype.deleteHost.restore();
         ContextVersion.updateBuildErrorByBuildId.restore();
         messenger.emitContextVersionUpdate.restore();
