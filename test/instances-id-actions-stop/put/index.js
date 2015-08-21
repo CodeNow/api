@@ -449,6 +449,7 @@ describe('PUT /instances/:id/actions/stop', function () {
         startStop();
         function startStop () {
           primus.expectAction('start', function () {
+            console.log('start event');
             primus.expectAction('stopping', {
             //  container: {inspect: {State: {Stopping: true}}}
             }, count.next);
@@ -458,6 +459,7 @@ describe('PUT /instances/:id/actions/stop', function () {
             }));
           });
           instance.start(function (err) {
+            console.log('start return', err);
             if (err) { return count.next(err); }
             // expect temporary property to not be in final response
             //expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
