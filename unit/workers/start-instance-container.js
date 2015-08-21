@@ -95,6 +95,72 @@ describe('StartInstanceContainerWorker', function () {
     done();
   });
 
+  describe('_finalSeriesHandler', function () {
+    describe('failture witout instance', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.worker, '_updateFrontend', noop);
+        sinon.stub(ctx.worker, '_inspectContainerAndUpdate', noop);
+        done();
+      });
+      afterEach(function (done) {
+        ctx.worker._updateFrontend.restore();
+        ctx.worker._inspectContainerAndUpdate.restore();
+        done();
+      });
+      it('it should not inspect or notify frontend', function (done) {
+        ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
+          expect(ctx.worker._updateFrontend.callCount).to.equal(0);
+          expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(0);
+          done();
+        });
+      });
+    });
+
+    describe('failure with instance', function () {
+      beforeEach(function (done) {
+        ctx.worker.instance = ctx.mockInstance;
+        sinon.stub(ctx.worker, '_updateFrontend', noop);
+        sinon.stub(ctx.worker, '_inspectContainerAndUpdate', function (cb) { cb(); });
+        done();
+      });
+      afterEach(function (done) {
+        ctx.worker._updateFrontend.restore();
+        ctx.worker._inspectContainerAndUpdate.restore();
+        done();
+      });
+      it('it should inspect and notify frontend', function (done) {
+        ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
+          expect(ctx.worker._updateFrontend.callCount).to.equal(1);
+          expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(1);
+          expect(ctx.worker._updateFrontend.args[0][0]).to.equal('start-error');
+          done();
+        });
+      });
+    });
+
+    describe('success', function () {
+      beforeEach(function (done) {
+        ctx.worker.instance = ctx.mockInstance;
+        sinon.stub(ctx.worker, '_updateFrontend', noop);
+        sinon.stub(ctx.worker, '_inspectContainerAndUpdate', function (cb) { cb(); });
+        done();
+      });
+      afterEach(function (done) {
+        ctx.worker._updateFrontend.restore();
+        ctx.worker._inspectContainerAndUpdate.restore();
+        done();
+      });
+      it('it should NOT inspect and SHOULD notify frontend', function (done) {
+        ctx.worker._finalSeriesHandler(null, function () {
+          expect(ctx.worker._updateFrontend.callCount).to.equal(1);
+          expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(0);
+          expect(ctx.worker._updateFrontend.args[0][0]).to.equal('start');
+          done();
+        });
+      });
+    });
+  });
+
   describe('_findInstance', function () {
     describe('basic', function () {
       beforeEach(function (done) {
@@ -326,7 +392,7 @@ describe('StartInstanceContainerWorker', function () {
     describe('failure n times', function () {
       beforeEach(function (done) {
         sinon.stub(Docker.prototype, 'startUserContainer', function (dockerContainer, sessionUserGithubId, cb) {
-          cb(new Error('docker error'));
+          cb(new Error('docker start container error'));
         });
         done();
       });
@@ -336,7 +402,7 @@ describe('StartInstanceContainerWorker', function () {
       });
       it('should attempt to start container n times', function (done) {
         ctx.worker._startContainer(function (err) {
-          expect(err.message).to.equal('docker error');
+          expect(err.message).to.equal('docker start container error');
           expect(Docker.prototype.startUserContainer.callCount)
             .to.equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
