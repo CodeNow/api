@@ -9,7 +9,6 @@ var lab = exports.lab = Lab.script();
 var Code = require('code');
 var async = require('async');
 var noop = require('101/noop');
-var rewire = require('rewire');
 var sinon = require('sinon');
 
 var Docker = require('models/apis/docker');
@@ -19,7 +18,7 @@ var Sauron = require('models/apis/sauron');
 var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
 
-var StartInstanceContainerWorker = rewire('workers/start-instance-container');
+var StartInstanceContainerWorker = require('workers/start-instance-container');
 
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
