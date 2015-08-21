@@ -152,12 +152,6 @@ describe('PUT /instances/:id/actions/stop', function () {
         done();
       });
 
-      it('should revert stopping state if stop request returns error', function (done) {
-        ctx.instance.stop(function (err) {
-          expect(err.data.message).to.equal('container is already starting or stopping');
-          done();
-        });
-      });
     });
 
     describe('already starting', function () {
