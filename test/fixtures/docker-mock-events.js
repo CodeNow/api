@@ -3,7 +3,7 @@
 var ContextVersion = require('models/mongo/context-version');
 var dockerMock = require('docker-mock');
 
-var put = require('101/put');
+var extend = require('extend');
 var keypather = require('keypather')();
 module.exports.emitBuildComplete = emitBuildComplete;
 module.exports.emitBuildStart = emitBuildStart;
@@ -29,7 +29,7 @@ function emitBuildComplete (cv, failure) {
     }));
 }
 
-function emitBuildStart (cv, failure) {
+function emitBuildStart (cv) {
   if (cv.toJSON) {
     cv = cv.toJSON();
   }
