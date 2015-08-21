@@ -266,6 +266,34 @@ describe('StartInstanceContainerWorker', function () {
     });
   });
 
+  describe('_setInstanceStateStarting', function () {
+    beforeEach(function (done) {
+      // normally set by _findInstance & _findUser
+      ctx.worker.instance = ctx.mockInstance;
+      ctx.worker.user = ctx.mockUser;
+      done();
+    });
+    beforeEach(function (done) {
+      sinon.stub(ctx.worker, '_updateFrontend', noop);
+      ctx.mockInstance.setContainerStateToStarting = function (cb) {
+        cb(null, ctx.mockInstance);
+      };
+      done();
+    });
+    afterEach(function (done) {
+      ctx.worker._updateFrontend.restore();
+      done();
+    });
+    it('should set container state to starting and notify frontend', function (done) {
+      ctx.worker._setInstanceStateStarting(function (err) {
+        expect(err).to.be.undefined();
+        expect(ctx.worker._updateFrontend.callCount).to.equal(1);
+        expect(ctx.worker._updateFrontend.args[0][0]).to.equal('starting');
+        done();
+      });
+    });
+  });
+
   describe('_startContainer', function () {
     beforeEach(function (done) {
       // normally set by _findInstance & _findUser
@@ -273,7 +301,7 @@ describe('StartInstanceContainerWorker', function () {
       ctx.worker.user = ctx.mockUser;
       done();
     });
- 
+
     describe('success', function () {
       beforeEach(function (done) {
         sinon.stub(Docker.prototype, 'startUserContainer', function (dockerContainer, sessionUserGithubId, cb) {
