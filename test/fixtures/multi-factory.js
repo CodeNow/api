@@ -316,6 +316,7 @@ module.exports = {
         require('./mocks/github/user')(user);
       }
       require('./mocks/github/user')(user);
+      require('./mocks/github/user')(user);
       var next = createCount(2, done).next;
       primus.joinOrgRoom(user.json().accounts.github.id, function (err) {
         log.trace({}, 'createAndTailInstance', 'joined room');
