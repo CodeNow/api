@@ -1,5 +1,5 @@
 module.exports = {
-  "status": "die",
+  "status": "create",
   "id": "c2e4530647da729430dc252da581872356b3aad463b7214d13cd8e8dbc3c7a9f",
   "from": "runnable/image-builder:d1.6.2-v2.3.2",
   "time": 1439952757,

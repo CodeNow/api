@@ -3,6 +3,8 @@
 var ContextVersion = require('models/mongo/context-version');
 var dockerMock = require('docker-mock');
 
+var put = require('101/put');
+var keypather = require('keypather')();
 module.exports.emitBuildComplete = emitBuildComplete;
 module.exports.emitBuildStart = emitBuildStart;
 
@@ -31,19 +33,10 @@ function emitBuildStart (cv, failure) {
   if (cv.toJSON) {
     cv = cv.toJSON();
   }
-  var containerId = cv.build && cv.build.dockerContainer;
-  if (!containerId) {
-    ContextVersion.findById(cv._id, function (err, cv) {
-      if (err) { throw err; }
-      emitBuildStart(cv, failure);
-    });
-    return;
-  }
-  require('./mocks/docker/build-logs.js')(failure);
+  var result = require('../../unit/fixtures/docker-listener/build-image-container');
+
+  var Labels = keypather.flatten(cv, '.', 'contextVersion');
+  extend(result, Labels);
   dockerMock.events.stream.emit('data',
-    JSON.stringify({
-      status: 'create',
-      from: process.env.DOCKER_IMAGE_BUILDER_NAME+':'+process.env.DOCKER_IMAGE_BUILDER_VERSION,
-      id: containerId
-    }));
+    JSON.stringify(result));
 }
