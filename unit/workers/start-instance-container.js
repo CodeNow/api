@@ -132,7 +132,7 @@ describe('StartInstanceContainerWorker', function () {
         ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
           expect(ctx.worker._updateFrontend.callCount).to.equal(1);
           expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(1);
-          expect(ctx.worker._updateFrontend.args[0][0]).to.equal('start-error');
+          expect(ctx.worker._updateFrontend.args[0][0]).to.equal('update');
           done();
         });
       });
