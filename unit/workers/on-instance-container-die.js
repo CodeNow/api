@@ -61,7 +61,7 @@ describe('OnInstanceContainerDieWorker', function () {
       sinon.assert.calledOnce(Instance.findOneByContainerId);
       sinon.assert.calledWith(Instance.findOneByContainerId, ctx.data.id);
       sinon.assert.calledOnce(ctx.mockInstance.modifyContainerInspect);
-      sinon.assert.calledWith(ctx.mockInstance.modifyContainerInspect, ctx.data.inspectData);
+      sinon.assert.calledWith(ctx.mockInstance.modifyContainerInspect, ctx.data.id, ctx.data.inspectData);
       sinon.assert.calledOnce(ctx.workerResponse);
       sinon.assert.calledWith(ctx.workerResponse, null);
       done();
