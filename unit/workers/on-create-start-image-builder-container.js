@@ -8,7 +8,6 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var async = require('async');
-var rewire = require('rewire');
 var sinon = require('sinon');
 var keypather = require('keypather')();
 var Docker = require('models/apis/docker');
@@ -16,7 +15,7 @@ var ContextVersion = require('models/mongo/context-version');
 var Sauron = require('models/apis/sauron');
 var messenger = require('socket/messenger');
 
-var StartImageBuildContainerWorker = rewire('workers/on-create-start-image-builder-container');
+var StartImageBuildContainerWorker = require('workers/on-create-start-image-builder-container');
 
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
