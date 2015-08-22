@@ -21,12 +21,13 @@ describe('OnInstanceContainerDieWorker', function () {
   var ctx;
 
   beforeEach(function (done) {
+    ctx = {};
+
     ctx.mockInstance = {
       modifyContainerInspect: sinon.stub().callsArg(2)
     };
     sinon.stub(Instance, "findOneByContainerId").callsArgWith(1, null, ctx.mockInstance);
 
-    ctx = {};
     ctx.data = {
       id: 111,
       host: '10.0.0.1',
