@@ -153,12 +153,6 @@ describe('PUT /instances/:id/actions/restart', function () {
         done();
       });
 
-      it('should revert starting state if start request returns error', function (done) {
-        ctx.instance.restart(function (err) {
-          expect(err.data.message).to.equal('container is already starting or stopping');
-          done();
-        });
-      });
     });
 
     describe('already starting', function () {

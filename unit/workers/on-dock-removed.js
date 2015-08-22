@@ -14,9 +14,9 @@ var expect = Code.expect;
 
 var sinon = require('sinon');
 var Instance = require('models/mongo/instance');
-var Worker = require('workers/on-dock-unhealthy');
+var Worker = require('workers/on-dock-removed');
 
-describe('worker: on-dock-unhealthy unit test', function () {
+describe('worker: on-dock-removed unit test', function () {
   var worker;
   beforeEach(function (done) {
     worker = new Worker();
@@ -203,4 +203,4 @@ describe('worker: on-dock-unhealthy unit test', function () {
       });
     }); // end redeploy passes
   }); // end _redeployContainers
-}); // end worker: on-dock-unhealthy unit test
+}); // end worker: on-dock-removed unit test

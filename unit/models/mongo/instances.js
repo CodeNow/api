@@ -234,7 +234,7 @@ describe('Instance', function () {
         }, function (err) {
           if (err) { throw err; }
           instance.setContainerStateToStarting(function (err, result) {
-            expect(err.message).to.equal('container is already starting or stopping');
+            expect(err.message).to.equal('instance container has changed');
             expect(result).to.be.undefined();
             done();
           });
