@@ -27,14 +27,47 @@ describe('OnImageBuilderContainerDie', function () {
 
   beforeEach(function (done) {
     ctx = {};
+    ctx.data = {
+      from: '34565762',
+      host: '5476',
+      id: '3225',
+      time: '234234',
+      uuid: '12343'
+    };
+    sinon.stub(async, 'series', noop);
+    ctx.worker = new OnImageBuilderContainerDie();
+    ctx.worker.handle(ctx.data);
     done();
   });
 
   afterEach(function (done) {
+    async.series.restore();
     done();
   });
 
   describe('_validateDieData', function () {
+    beforeEach(function (done) {
+      done();
+    });
+    afterEach(function (done) {
+      done();
+    });
+    it('should call back with error if event '+
+       'data does not contain required keys', function (done) {
+      delete ctx.worker.data.uuid;
+      ctx.worker._validateDieData(function (err) {
+        expect(err.message).to.equal('_validateDieData: die event data missing key: uuid');
+        done();
+      });
+    });
+
+    it('should call back without error if '+
+       'event data contains all required keys', function (done) {
+      ctx.worker._validateDieData(function (err) {
+        expect(err).to.be.undefined();
+        done();
+      });
+    });
   });
 
   describe('_findContextVersion', function () {
