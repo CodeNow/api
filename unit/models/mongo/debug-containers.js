@@ -15,11 +15,13 @@ var async = require('async');
 var DebugContainer = require('models/mongo/debug-container');
 var Docker = require('models/apis/docker');
 var Context = require('models/mongo/context');
+var Instance = require('models/mongo/instance');
 var ContextVersion = require('models/mongo/context-version');
 
 var ctx = {};
 describe('Debug Containers', function () {
   before(require('../../fixtures/mongo').connect);
+  beforeEach(require('../../../test/fixtures/clean-mongo').removeEverything);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
 
   beforeEach(function (done) {
@@ -33,6 +35,18 @@ describe('Debug Containers', function () {
       createdBy: { github: 1 },
       dockerHost: 'http://example.com:4242'
     });
+    var i = new Instance({
+      shortHash: '123abc',
+      name: 'FOO',
+      lowerName: 'foo',
+      owner: { github: 1 },
+      createdBy: { github: 1 },
+      build: cv._id,
+      network: {
+        networkIp: '1.2.3.4',
+        hostIp: '1.2.3.4'
+      }
+    });
     ctx.dc = new DebugContainer({
       contextVersion: cv._id,
       layerId: 'deadbeef',
@@ -42,12 +56,16 @@ describe('Debug Containers', function () {
     async.series([
       c.save.bind(c),
       cv.save.bind(cv),
-      ctx.dc.save.bind(ctx.dc),
-      ctx.dc.populate.bind(ctx.dc, 'contextVersion')
+      i.save.bind(i),
+      ctx.dc.save.bind(ctx.dc)
     ], done);
   });
 
   describe('deploy', function () {
+    beforeEach(function (done) {
+      ctx.dc.populate([ 'instance', 'contextVersion' ], done);
+    });
+
     it('should create, start, and inspect a container', function (done) {
       var containerStart = sinon.stub().yieldsAsync(null);
       var containerInspect = sinon.stub().yieldsAsync(null, { Id: 4 });
@@ -62,7 +80,34 @@ describe('Debug Containers', function () {
         expect(Docker.prototype.createContainer.calledOnce).to.be.true();
         expect(containerStart.calledOnce).to.be.true();
         expect(containerInspect.calledOnce).to.be.true();
+        Docker.prototype.createContainer.restore();
         expect(dc.id).to.equal(ctx.dc.id);
+        done();
+      });
+    });
+  });
+
+  describe('destroyContainer', function () {
+    beforeEach(function (done) {
+      ctx.dc.set('inspect', { Id: 4 });
+      ctx.dc.populate('contextVersion', done);
+    });
+
+    it('should destroy the docker container and remove the model', function (done) {
+      sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync();
+      sinon.stub(Docker.prototype, 'removeContainer').yieldsAsync();
+
+      ctx.dc.destroyContainer(function (err, dc) {
+        if (err) { return done(err); }
+        expect(Docker.prototype.stopContainer.calledOnce).to.be.true();
+        // 4 is the ID above in the before...
+        expect(Docker.prototype.stopContainer.calledWith(4)).to.be.true();
+        expect(Docker.prototype.removeContainer.calledOnce).to.be.true();
+        // 4 is the ID above in the before...
+        expect(Docker.prototype.removeContainer.calledWith(4)).to.be.true();
+        Docker.prototype.stopContainer.restore();
+        Docker.prototype.removeContainer.restore();
+        expect(dc).to.deep.equal(ctx.dc);
         done();
       });
     });
