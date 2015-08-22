@@ -51,6 +51,7 @@ describe('OnInstanceContainerDieWorker', function () {
   });
 
   afterEach(function (done) {
+    Instance.findOneByContainerId.restore();
     done();
   });
 
