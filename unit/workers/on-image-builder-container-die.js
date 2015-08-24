@@ -11,8 +11,9 @@ var async = require('async');
 var noop = require('101/noop');
 var sinon = require('sinon');
 
-var Instance = require('models/mongo/instance');
 var ContextVersion = require('models/mongo/context-version');
+var Docker = require('models/apis/docker');
+var Instance = require('models/mongo/instance');
 var rabbitMQ = require('models/rabbitmq');
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die');
@@ -33,7 +34,8 @@ describe('OnImageBuilderContainerDie', function () {
       host: '5476',
       id: '3225',
       time: '234234',
-      uuid: '12343'
+      uuid: '12343',
+      dockerHost: '0.0.0.0'
     };
     ctx.mockContextVersion = {
       toJSON: noop
@@ -47,6 +49,9 @@ describe('OnImageBuilderContainerDie', function () {
   afterEach(function (done) {
     async.series.restore();
     done();
+  });
+
+  describe('_finalSeriesHandler', function () {
   });
 
   describe('_findContextVersion', function () {
@@ -70,7 +75,6 @@ describe('OnImageBuilderContainerDie', function () {
         });
       });
     });
-
     describe('mongoose error', function () {
       beforeEach(function (done) {
         sinon.stub(ContextVersion, 'findOneBy', function (keypath, data, cb) {
@@ -91,7 +95,6 @@ describe('OnImageBuilderContainerDie', function () {
         });
       });
     });
-
     describe('success', function () {
       beforeEach(function (done) {
         sinon.stub(ContextVersion, 'findOneBy', function (keypath, data, cb) {
@@ -113,5 +116,109 @@ describe('OnImageBuilderContainerDie', function () {
         });
       });
     });
+  });
+
+  describe('_getBuildInfo', function () {
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'getBuildInfo', function (containerId, cb) {
+          cb(null, {});
+        });
+        sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
+          expect(data).to.be.an.object();
+          cb();
+        });
+        sinon.stub(ctx.worker, '_handleBuildSuccess', function (data, cb) {
+          expect(data).to.be.an.object();
+          cb();
+        });
+        done();
+      });
+      afterEach(function (done) {
+        Docker.prototype.getBuildInfo.restore();
+        ctx.worker._handleBuildError.restore();
+        ctx.worker._handleBuildSuccess.restore();
+        done();
+      });
+      it('should fetch build info and update success', function (done) {
+        ctx.worker._getBuildInfo(function (err) {
+          expect(err).to.be.undefined();
+          expect(ctx.worker._handleBuildSuccess.callCount).to.equal(1);
+          expect(ctx.worker._handleBuildError.callCount).to.equal(0);
+          done();
+        });
+      });
+    });
+    describe('build failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'getBuildInfo', function (containerId, cb) {
+          cb(null, {
+            failed: true
+          });
+        });
+        sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
+          expect(data).to.be.an.object();
+          cb();
+        });
+        sinon.stub(ctx.worker, '_handleBuildSuccess', function (data, cb) {
+          expect(data).to.be.an.object();
+          cb();
+        });
+        done();
+      });
+      afterEach(function (done) {
+        Docker.prototype.getBuildInfo.restore();
+        ctx.worker._handleBuildError.restore();
+        ctx.worker._handleBuildSuccess.restore();
+        done();
+      });
+      it('should fetch build info and update build failure', function (done) {
+        ctx.worker._getBuildInfo(function (err) {
+          expect(err).to.be.undefined();
+          expect(ctx.worker._handleBuildSuccess.callCount).to.equal(0);
+          expect(ctx.worker._handleBuildError.callCount).to.equal(1);
+          done();
+        });
+      });
+    });
+    describe('fetch failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'getBuildInfo', function (containerId, cb) {
+          cb(new Error('docker error'));
+        });
+        sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
+          expect(data).to.be.an.object();
+          cb();
+        });
+        sinon.stub(ctx.worker, '_handleBuildSuccess', function (data, cb) {
+          expect(data).to.be.an.object();
+          cb();
+        });
+        done();
+      });
+      afterEach(function (done) {
+        Docker.prototype.getBuildInfo.restore();
+        ctx.worker._handleBuildError.restore();
+        ctx.worker._handleBuildSuccess.restore();
+        done();
+      });
+      it('should fetch build info and update fetch failure', function (done) {
+        ctx.worker._getBuildInfo(function (err) {
+          expect(err).to.be.undefined();
+          expect(ctx.worker._handleBuildSuccess.callCount).to.equal(0);
+          expect(ctx.worker._handleBuildError.callCount).to.equal(1);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('_handleBuildError', function () {
+  });
+
+  describe('_handleBuildSuccess', function () {
+  });
+
+  describe('_deallocImageBuilderNetwork', function () {
   });
 });
