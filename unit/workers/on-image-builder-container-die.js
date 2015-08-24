@@ -13,8 +13,7 @@ var sinon = require('sinon');
 
 var ContextVersion = require('models/mongo/context-version');
 var Docker = require('models/apis/docker');
-var Instance = require('models/mongo/instance');
-var rabbitMQ = require('models/rabbitmq');
+var Sauron = require('models/apis/sauron.js');
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die');
 
@@ -214,11 +213,66 @@ describe('OnImageBuilderContainerDie', function () {
   });
 
   describe('_handleBuildError', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'updateBuildErrorByContainer',
+                 function (containerId, err, cb) {
+        expect(containerId).to.equal(ctx.data.id);
+        cb();
+      });
+      done();
+    });
+    afterEach(function (done) {
+      ContextVersion.updateBuildErrorByContainer.restore();
+      done();
+    });
+    it('it should handle errored build', function (done) {
+      ctx.worker._handleBuildError({}, function () {
+        expect(ContextVersion.updateBuildErrorByContainer.callCount).to.equal(1);
+        done();
+      });
+    });
   });
 
   describe('_handleBuildSuccess', function () {
+    beforeEach(function (done) {
+      ctx.buildInfo = {};
+      sinon.stub(ContextVersion, 'updateBuildCompletedByContainer',
+                 function (containerId, buildInfo, cb) {
+        expect(containerId).to.equal(ctx.data.id);
+        expect(buildInfo).to.equal(ctx.buildInfo);
+        cb();
+      });
+      done();
+    });
+    afterEach(function (done) {
+      ContextVersion.updateBuildCompletedByContainer.restore();
+      done();
+    });
+    it('it should handle errored build', function (done) {
+      ctx.worker._handleBuildSuccess(ctx.buildInfo, function () {
+        expect(ContextVersion.updateBuildCompletedByContainer.callCount).to.equal(1);
+        done();
+      });
+    });
   });
 
   describe('_deallocImageBuilderNetwork', function () {
+    beforeEach(function (done) {
+      sinon.stub(Sauron, 'deleteHostFromContextVersion', function (cv, cb) {
+        expect(cv).to.equal(ctx.worker.contextVersion);
+        cb();
+      });
+      done();
+    });
+    afterEach(function (done) {
+      Sauron.deleteHostFromContextVersion.restore();
+      done();
+    });
+    it('should delete host from context version', function (done) {
+      ctx.worker._deallocImageBuilderNetwork(function () {
+        expect(Sauron.deleteHostFromContextVersion.callCount).to.equal(1);
+        done();
+      });
+    });
   });
 });
