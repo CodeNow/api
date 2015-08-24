@@ -24,7 +24,8 @@ describe('OnInstanceContainerDieWorker', function () {
     ctx = {};
 
     ctx.mockInstance = {
-      modifyContainerInspect: sinon.stub().callsArg(2)
+      modifyContainerInspect: sinon.stub().callsArg(2),
+      emitInstanceUpdate: sinon.stub().callsArg(1)
     };
     sinon.stub(Instance, "findOneByContainerId").callsArgWith(1, null, ctx.mockInstance);
 
@@ -62,6 +63,8 @@ describe('OnInstanceContainerDieWorker', function () {
       sinon.assert.calledWith(Instance.findOneByContainerId, ctx.data.id);
       sinon.assert.calledOnce(ctx.mockInstance.modifyContainerInspect);
       sinon.assert.calledWith(ctx.mockInstance.modifyContainerInspect, ctx.data.id, ctx.data.inspectData);
+      sinon.assert.calledOnce(ctx.mockInstance.emitInstanceUpdate);
+      sinon.assert.calledWith(ctx.mockInstance.modifyContainerInspect, 'container_inspect');
       sinon.assert.calledOnce(ctx.workerResponse);
       done();
     });
