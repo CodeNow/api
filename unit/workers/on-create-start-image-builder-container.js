@@ -88,7 +88,8 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
 
           expect(ContextVersion.updateBy.callCount).to.equal(1);
           expect(ContextVersion.updateBy.args[0][0]).to.equal('build._id');
-          expect(ContextVersion.updateBy.args[0][1]).to.deep.equal(ctx.mockContextVersion.build._id);
+          expect(ContextVersion.updateBy.args[0][1])
+              .to.deep.equal(ctx.mockContextVersion.build._id);
           expect(ContextVersion.updateBy.args[0][2]).to.be.object();
           expect(ContextVersion.updateBy.args[0][2].$set).to.be.object();
           expect(ContextVersion.updateBy.args[0][2].$set['build.containerStarted']).to.be.date();
@@ -100,17 +101,19 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
           expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage')
               .to.deep.equal(ctx.data.inspectData);
           expect(ContextVersion.updateContainerByBuildId.callCount, 'updateContainer').to.equal(1);
-          expect(ContextVersion.updateContainerByBuildId.args[0][0], 'updateContainer').to.deep.equal({
-            buildId: ctx.mockContextVersion.build._id,
-            buildContainerId: ctx.data.id,
-            tag: ctx.labels.dockerTag,
-            host: ctx.data.host,
-            network: {
-              networkIp: ctx.labels.networkIp,
-              hostIp: ctx.labels.hostIp
-            }
-          });
-          expect(ContextVersion.updateContainerByBuildId.args[0][1], 'updateContainer').to.be.a.function();
+          expect(ContextVersion.updateContainerByBuildId.args[0][0], 'updateContainer')
+              .to.deep.equal({
+                buildId: ctx.mockContextVersion.build._id,
+                buildContainerId: ctx.data.id,
+                tag: ctx.labels.dockerTag,
+                host: ctx.data.host,
+                network: {
+                  networkIp: ctx.labels.networkIp,
+                  hostIp: ctx.labels.hostIp
+                }
+              });
+          expect(ContextVersion.updateContainerByBuildId.args[0][1], 'updateContainer')
+              .to.be.a.function();
 
           done();
         });
@@ -166,16 +169,17 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
               .equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage').to.deep
               .equal(ctx.data.inspectData);
-          expect(ContextVersion.updateContainerByBuildId.callCount, 'updateContainerByBuildId').to.equal(1);
-
+          expect(ContextVersion.updateContainerByBuildId.callCount, 'updateContainerByBuildId')
+              .to.equal(1);
           expect(Sauron.prototype.deleteHost.callCount, 'deleteHost').to.equal(1);
-          expect(Sauron.prototype.deleteHost.args[0][0], 'deleteHost').to.equal(ctx.labels.networkIp);
-          expect(Sauron.prototype.deleteHost.args[0][1], 'deleteHost').to.equal(ctx.labels.hostIp);
-
-          expect(ContextVersion.updateBuildErrorByBuildId.callCount, 'updateBuildError').to.equal(1);
-          expect(ContextVersion.updateBuildErrorByBuildId.args[0][0], 'updateBuildError').to.equal(
-            ctx.mockContextVersion.build._id
-          );
+          expect(Sauron.prototype.deleteHost.args[0][0], 'deleteHost')
+              .to.equal(ctx.labels.networkIp);
+          expect(Sauron.prototype.deleteHost.args[0][1], 'deleteHost')
+              .to.equal(ctx.labels.hostIp);
+          expect(ContextVersion.updateBuildErrorByBuildId.callCount, 'updateBuildError')
+              .to.equal(1);
+          expect(ContextVersion.updateBuildErrorByBuildId.args[0][0], 'updateBuildError')
+              .to.equal(ctx.mockContextVersion.build._id);
 
           done();
         });
@@ -199,9 +203,7 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
     describe('_findContextVersion', function () {
       describe('basic', function () {
         beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'findOne', function (data, cb) {
-            cb(null, ctx.mockContextVersion);
-          });
+          sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
           done();
         });
         afterEach(function (done) {
@@ -240,9 +242,7 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
 
       describe('not found', function () {
         beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'findOne', function (data, cb) {
-            cb(null, null);
-          });
+          sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, null);
           done();
         });
         afterEach(function (done) {
@@ -260,9 +260,7 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
 
       describe('mongo error', function () {
         beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'findOne', function (data, cb) {
-            cb(new Error('mongoose error'), null);
-          });
+          sinon.stub(ContextVersion, 'findOne').yieldsAsync(new Error('mongoose error'), null);
           done();
         });
         afterEach(function (done) {
@@ -287,9 +285,7 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
           done();
         });
         beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'updateContainerByBuildId', function (data, cb) {
-            cb(null, 1);
-          });
+          sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync(null, 1);
           done();
         });
         afterEach(function (done) {
@@ -326,9 +322,7 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
 
       describe('success', function () {
         beforeEach(function (done) {
-          sinon.stub(Docker.prototype, 'startImageBuilderContainer', function (dockerContainer, cb) {
-            cb(null);
-          });
+          sinon.stub(Docker.prototype, 'startImageBuilderContainer').yieldsAsync(null);
           done();
         });
         afterEach(function (done) {
@@ -339,17 +333,16 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
           ctx.worker._startContainer(function (err) {
             expect(err).to.be.null();
             expect(Docker.prototype.startImageBuilderContainer.callCount).to.equal(1);
-            expect(Docker.prototype.startImageBuilderContainer.args[0][0]).to.deep.equal(ctx.data.inspectData);
+            expect(Docker.prototype.startImageBuilderContainer.args[0][0])
+                .to.deep.equal(ctx.data.inspectData);
             done();
           });
         });
       });
-
       describe('failure n times', function () {
         beforeEach(function (done) {
-          sinon.stub(Docker.prototype, 'startImageBuilderContainer', function (dockerContainer, cb) {
-            cb(new Error('docker error'));
-          });
+          sinon.stub(Docker.prototype, 'startImageBuilderContainer')
+              .yieldsAsync(new Error('docker error'));
           done();
         });
         afterEach(function (done) {
@@ -365,6 +358,25 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
           });
         });
       });
+      describe('Already Started Failure', function () {
+        beforeEach(function (done) {
+          var error = new Error('docker error');
+          error.statusCode = 304;
+          sinon.stub(Docker.prototype, 'startImageBuilderContainer').yieldsAsync(error);
+          done();
+        });
+        afterEach(function (done) {
+          Docker.prototype.startImageBuilderContainer.restore();
+          done();
+        });
+        it('should attempt to start container 1 time, then contiue', function (done) {
+          ctx.worker._startContainer(function (err) {
+            expect(err).to.be.null();
+            expect(Docker.prototype.startImageBuilderContainer.callCount).to.equal(1);
+            done();
+          });
+        });
+      });
     });
 
     describe('_updateContextVersion', function () {
@@ -375,9 +387,7 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
           done();
         });
         beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'updateBy', function (thing, id, query, opts, cb) {
-            cb(null, 1);
-          });
+          sinon.stub(ContextVersion, 'updateBy').yieldsAsync(null, 1);
           done();
         });
         afterEach(function (done) {
@@ -389,7 +399,8 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
             expect(err).to.be.undefined();
             expect(ContextVersion.updateBy.callCount).to.equal(1);
             expect(ContextVersion.updateBy.args[0][0]).to.equal('build._id');
-            expect(ContextVersion.updateBy.args[0][1]).to.deep.equal(ctx.mockContextVersion.build._id);
+            expect(ContextVersion.updateBy.args[0][1])
+                .to.deep.equal(ctx.mockContextVersion.build._id);
             expect(ContextVersion.updateBy.args[0][2]).to.be.object();
             expect(ContextVersion.updateBy.args[0][2].$set).to.be.object();
             expect(ContextVersion.updateBy.args[0][2].$set['build.containerStarted']).to.be.date();
@@ -420,13 +431,9 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
 
       describe('basics', function () {
         beforeEach(function (done) {
-          sinon.stub(Sauron.prototype, 'deleteHost', function (networkIp, hostIp, cb) {
-            cb(null);
-          });
+          sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
 
-          sinon.stub(ContextVersion, 'updateBuildErrorByBuildId', function (id, error, cb) {
-            cb();
-          });
+          sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync(null);
           done();
         });
 
@@ -450,12 +457,11 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
 
       describe('failures', function () {
         beforeEach(function (done) {
-          sinon.stub(Sauron.prototype, 'deleteHost', function (networkIp, hostIp, cb) {
-            cb(new Error('Bryan\'s message'));
-          });
-          sinon.stub(ContextVersion, 'updateBuildErrorByBuildId', function (id, error, cb) {
-            cb(new Error('Bryan\'s message'));
-          });
+          sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(new Error('Bryan\'s message'));
+          sinon.stub(
+            ContextVersion,
+            'updateBuildErrorByBuildId'
+          ).yieldsAsync(new Error('Bryan\'s message'));
           done();
         });
 
