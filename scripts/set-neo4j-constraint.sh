@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-if [ -e nohup.out ]
+if [ -e $CIRCLE_ARTIFACTS/stdout_neo4j* ]
 then
-  while [[ $(grep "is ready" nohup.out) = "" ]]
+  while [[ $(grep "is ready" $CIRCLE_ARTIFACTS/stdout_neo4j*) = "" ]]
   do
     echo "waiting for neo4j"
     sleep 1
