@@ -13,7 +13,6 @@ var keypather = require('keypather')();
 var Docker = require('models/apis/docker');
 var ContextVersion = require('models/mongo/context-version');
 var Sauron = require('models/apis/sauron');
-var messenger = require('socket/messenger');
 
 var StartImageBuildContainerWorker = require('workers/on-create-start-image-builder-container');
 
@@ -22,8 +21,6 @@ var beforeEach = lab.beforeEach;
 var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
-
-
 
 describe('OnCreateStartImageBuilderContainerWorker', function () {
   var ctx;
@@ -54,37 +51,21 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
       beforeEach(function (done) {
         // initialize instance w/ props, don't actually run protected methods
         ctx.worker = new StartImageBuildContainerWorker();
-        sinon.stub(ContextVersion, 'findOne', function (data, cb) {
-          cb(null, ctx.mockContextVersion);
-        });
-        sinon.stub(ContextVersion, 'updateContainerByBuildId', function (data, cb) {
-          cb(null, 1);
-        });
-        sinon.stub(Sauron.prototype, 'deleteHost', function (networkIp, hostIp, cb) {
-          cb(null);
-        });
+        sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
+        sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync(null, 1);
 
-        sinon.stub(ContextVersion, 'updateBuildErrorByBuildId', function (id, error, cb) {
-          cb();
-        });
-        sinon.stub(ContextVersion, 'updateBy', function (thing, id, query, opts, cb) {
-          cb(null, 1);
-        });
-        sinon.stub(messenger, 'emitContextVersionUpdate', function () {
-        });
-        sinon.stub(Docker.prototype, 'startImageBuilderContainer', function (dockerContainer, cb) {
-          cb(null);
-        });
+
+        sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync();
+        sinon.stub(ContextVersion, 'updateBy').yieldsAsync(null, 1);
+        sinon.stub(Docker.prototype, 'startImageBuilderContainer').yieldsAsync(null);
         done();
       });
       afterEach(function (done) {
         ContextVersion.findOne.restore();
         ContextVersion.updateContainerByBuildId.restore();
-        Docker.prototype.startImageBuilderContainer.restore();
-        Sauron.prototype.deleteHost.restore();
         ContextVersion.updateBuildErrorByBuildId.restore();
-        messenger.emitContextVersionUpdate.restore();
         ContextVersion.updateBy.restore();
+        Docker.prototype.startImageBuilderContainer.restore();
         done();
       });
       it('should finish by updating the contextVersion', function (done) {
@@ -139,27 +120,17 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
       beforeEach(function (done) {
         // initialize instance w/ props, don't actually run protected methods
         ctx.worker = new StartImageBuildContainerWorker();
-        sinon.stub(ContextVersion, 'findOne', function (data, cb) {
-          cb(null, ctx.mockContextVersion);
-        });
-        sinon.stub(ContextVersion, 'updateContainerByBuildId', function (data, cb) {
-          cb(null, 1);
-        });
-        sinon.stub(Sauron.prototype, 'deleteHost', function (networkIp, hostIp, cb) {
-          cb(null);
-        });
 
-        sinon.stub(ContextVersion, 'updateBuildErrorByBuildId', function (id, error, cb) {
-          cb();
-        });
-        sinon.stub(ContextVersion, 'updateBy', function (thing, id, query, opts, cb) {
-          cb(null, 1);
-        });
-        sinon.stub(messenger, 'emitContextVersionUpdate', function () {
-        });
-        sinon.stub(Docker.prototype, 'startImageBuilderContainer', function (dockerContainer, cb) {
-          cb(new Error('asdasdasd'));
-        });
+        sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
+        sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync(null, 1);
+        sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
+
+        sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync();
+        sinon.stub(ContextVersion, 'updateBy').yieldsAsync(null, 1);
+        sinon.stub(
+          Docker.prototype,
+          'startImageBuilderContainer'
+        ).yieldsAsync(new Error('asdasdasd'));
         done();
       });
       afterEach(function (done) {
@@ -168,7 +139,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
         Docker.prototype.startImageBuilderContainer.restore();
         Sauron.prototype.deleteHost.restore();
         ContextVersion.updateBuildErrorByBuildId.restore();
-        messenger.emitContextVersionUpdate.restore();
         ContextVersion.updateBy.restore();
         done();
       });
@@ -347,7 +317,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
       });
     });
 
-
     describe('_startContainer', function () {
       beforeEach(function (done) {
         // normally set by _findContextVersion
@@ -436,7 +405,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
     describe('_onError', function () {
       beforeEach(function (done) {
         ctx.worker.contextVersion = ctx.mockContextVersion;
-        sinon.stub(messenger, 'emitContextVersionUpdate', function () {});
         sinon.spy(ctx.worker, '_updateFrontend');
         done();
       });
@@ -447,7 +415,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
         ctx.worker._updateFrontend.restore();
         Sauron.prototype.deleteHost.restore();
         ContextVersion.updateBuildErrorByBuildId.restore();
-        messenger.emitContextVersionUpdate.restore();
         done();
       });
 
@@ -484,10 +451,10 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
       describe('failures', function () {
         beforeEach(function (done) {
           sinon.stub(Sauron.prototype, 'deleteHost', function (networkIp, hostIp, cb) {
-            cb(new Error('asdfasfs'));
+            cb(new Error('Bryan\'s message'));
           });
           sinon.stub(ContextVersion, 'updateBuildErrorByBuildId', function (id, error, cb) {
-            cb(new Error('asdfasfs'));
+            cb(new Error('Bryan\'s message'));
           });
           done();
         });
@@ -504,7 +471,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
               ctx.mockContextVersion.build._id
             );
-            expect(messenger.emitContextVersionUpdate.callCount).to.equal(0);
             done();
           });
         });
