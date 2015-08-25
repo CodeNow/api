@@ -184,7 +184,8 @@ describe('Github - /actions/github', function () {
           done();
         });
       });
-//-
+
+      // Note these tests should be deleted once waiting logic moved inside on-image-builder-container-die worker
       it('should call deleteSocketClient if error happened build create',
         function (done) {
           sinon.stub(Runnable.prototype, 'createBuild')
