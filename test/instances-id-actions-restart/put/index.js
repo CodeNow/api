@@ -153,18 +153,6 @@ describe('PUT /instances/:id/actions/restart', function () {
         done();
       });
 
-      it('should revert starting state if start request returns error', function (done) {
-        var count = createCount(2, done);
-        primus.expectAction('start-error', function (err, data) {
-          expect(data.data.data.container.inspect.State.Running).to.equal(true);
-          expect(data.data.data.container.inspect.State.Starting).to.be.undefined();
-          expect(data.data.data.container.inspect.State.Stopping).to.be.undefined();
-          count.next();
-        });
-        ctx.instance.restart(function () {
-          count.next();
-        });
-      });
     });
 
     describe('already starting', function () {
@@ -194,10 +182,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       });
 
       beforeEach(function (done) {
-        ctx.startContainerCallbacks = [];
-        sinon.stub(Docker.prototype, 'startContainer', function (containerId, opts, cb) {
-          ctx.startContainerCallbacks.push(cb);
-        });
+        sinon.stub(Docker.prototype, 'startContainer', function () {});
         done();
       });
 
@@ -217,8 +202,6 @@ describe('PUT /instances/:id/actions/restart', function () {
         primus.expectAction('starting', function () {
           ctx.instance.restart(function (err) {
             expect(err.message).to.equal('Instance is already starting');
-            // trigger start request to complete
-            ctx.startContainerCallbacks.forEach(function (cb) { cb(); });
           });
         });
         ctx.instance.start(done);
@@ -338,8 +321,9 @@ describe('PUT /instances/:id/actions/restart', function () {
       });
       describe('Immediately exiting container (first time only)', function() {
         beforeEach(function (done) {
+          // container no longer return in route response
           extend(ctx.expected, {
-            containers: exists
+            //containers: exists
             /*
              * Containers populated async after worker completes
             'containers[0]': exists,

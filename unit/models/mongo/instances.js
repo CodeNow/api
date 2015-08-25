@@ -168,6 +168,57 @@ describe('Instance', function () {
     });
   });
 
+  describe('#findActiveInstancesByDockerHost', function() {
+    var instance1;
+    var instance2;
+    var instance3;
+    var instance4;
+    var testHost = 'http://10.0.0.1:4242';
+    var testHost2 = 'http://10.0.0.2:4242';
+
+    beforeEach(function (done) {
+      instance1 = createNewInstance('one', {
+        dockerHost: testHost
+      });
+      instance1.container.inspect.State.Starting = false;
+      instance1.container.inspect.State.Running = false;
+      instance2 = createNewInstance('two', {
+        dockerHost: testHost
+      });
+      instance2.container.inspect.State.Starting = true;
+      instance3 = createNewInstance('three', {
+        dockerHost: testHost
+      });
+      instance3.container.inspect.State.Running = true;
+      instance4 = createNewInstance('four', {
+        dockerHost: testHost2
+      });
+      done();
+    });
+    beforeEach(function (done) {
+      instance1.save(done);
+    });
+    beforeEach(function (done) {
+      instance2.save(done);
+    });
+    beforeEach(function (done) {
+      instance3.save(done);
+    });
+    beforeEach(function (done) {
+      instance4.save(done);
+    });
+    it('should get all instances from testHost', function(done) {
+      Instance.findActiveInstancesByDockerHost(testHost, function (err, instances) {
+        expect(err).to.be.null();
+        expect(instances.length).to.equal(3);
+        instances.forEach(function (instance) {
+          expect(instance._id).to.not.equal(instance4._id);
+        });
+        done();
+      });
+    });
+  }); // end findActiveInstancesByDockerHost
+
   describe('atomic set container state', function () {
     it('should not set container state to Starting if container on instance has changed', function (done) {
       var instance = createNewInstance('container-stopping');
@@ -183,7 +234,7 @@ describe('Instance', function () {
         }, function (err) {
           if (err) { throw err; }
           instance.setContainerStateToStarting(function (err, result) {
-            expect(err.message).to.equal('container is already starting or stopping');
+            expect(err.message).to.equal('instance container has changed');
             expect(result).to.be.undefined();
             done();
           });

@@ -30,6 +30,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
   afterEach(require('../../fixtures/clean-nock'));
 
   describe('User Instances', function () {
+
     beforeEach(function (done) {
       multi.createAndTailInstance(primus, function (err, instance, build, user) {
         //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
@@ -58,6 +59,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           ],
           build: ctx.build.id()
         };
+        primus.expectAction('start', count.inc().next);
         ctx.instance2 = ctx.user.createInstance(body2, count.inc().next);
         ctx.instanceWithDep = ctx.user.createInstance(depBody, count.inc().next);
       });

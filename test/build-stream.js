@@ -17,11 +17,8 @@ var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 var dockerMockEvents = require('./fixtures/docker-mock-events');
 var createCount = require('callback-count');
-var createStreamCleanser = require('docker-stream-cleanser');
-var concat = require('concat-stream');
-var pump = require('substream-pump');
 var Primus = require('primus');
-var primusClient = Primus.createSocket({
+var PrimusClient = Primus.createSocket({
   transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
     'substream': require('substream')
@@ -31,7 +28,7 @@ var primusClient = Primus.createSocket({
 
 var ctx = {};
 
-describe('Build Stream', function() {
+describe('Build Stream', function () {
   ctx = {};
 
   before(api.start.bind(ctx));
@@ -59,7 +56,8 @@ describe('Build Stream', function() {
     });
 
     it('should get full logs from build stream', function (done) {
-      ctx.build.build(ctx.buildId, {message: 'hello!'}, function (err, body, code) {
+      require('./fixtures/mocks/docker/build-logs')();
+      ctx.build.build(ctx.buildId, { message: 'hello!' }, function (err, body, code) {
         if (err) {
           return done(err);
         }
@@ -69,7 +67,7 @@ describe('Build Stream', function() {
 
         dockerMockEvents.emitBuildComplete(ctx.cv);
         primus.onceVersionComplete(ctx.cv.id(), function () {
-          var client = new primusClient( 'http://localhost:' + process.env.PORT);
+          var client = new PrimusClient('http://localhost:' + process.env.PORT);
           // start build stream
           client.write({
             id: 1,
@@ -79,23 +77,21 @@ describe('Build Stream', function() {
               streamId: body.contextVersions[0]
             }
           });
-          var streamCleanser = createStreamCleanser('hex');
           var buildStream = client.substream(body.contextVersions[0]);
-          var concatStream = concat(assert);
-          pump(buildStream, streamCleanser);
-          pump(streamCleanser, concatStream);
-          function assert (cleanLog) {
+          var objectBuffer = [];
+          buildStream.on('data', function (d) { objectBuffer.push(d); });
+          buildStream.on('end', function () {
             client.end();
-            expect(cleanLog.toString()).to.equal(
-              'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c048080d32980521e743');
+            expect(objectBuffer).to.have.length(1);
+            expect(objectBuffer[0].content).to.match(/^Successfully built .+/);
             done();
-          }
+          });
         });
       });
     });
 
     it('should error if build does not exist', function (done) {
-      var client = new primusClient( 'http://localhost:' + process.env.PORT);
+      var client = new PrimusClient('http://localhost:' + process.env.PORT);
       // start build stream
       client.write({
         id: 1,
@@ -106,7 +102,7 @@ describe('Build Stream', function() {
         }
       });
 
-      client.on('data', function(msg) {
+      client.on('data', function (msg) {
         if (msg.error) {
           client.end();
           expect(msg.error).to.contain('could not find build in database');
@@ -116,12 +112,12 @@ describe('Build Stream', function() {
     });
 
     it('should get logs from build stream', function (done) {
-      ctx.build.build(ctx.buildId, {message: 'hello!'}, function (err, body, code) {
+      ctx.build.build(ctx.buildId, { message: 'hello!' }, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);
         expect(body).to.exist();
         require('./fixtures/mocks/docker/build-logs.js')();
-        var client = new primusClient( 'http://localhost:' + process.env.PORT);
+        var client = new PrimusClient('http://localhost:' + process.env.PORT);
         // start build stream
         client.write({
           id: 1,
@@ -133,27 +129,27 @@ describe('Build Stream', function() {
         });
         // create substream for build logs
         var count = createCount(2, done);
-        var streamCleanser = createStreamCleanser('hex');
         var buildStream = client.substream(body.contextVersions[0]);
         dockerMockEvents.emitBuildComplete(ctx.cv);
-        var concatStream = concat(assert);
-        pump(buildStream, streamCleanser);
-        pump(streamCleanser, concatStream);
 
-        function assert (cleanLog) {
-          client.end();
-          expect(cleanLog.toString()).to.equal(
-            'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c048080d32980521e743');
-          count.next();
-        }
         primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+          count.next();
+        });
+
+        var objectBuffer = [];
+        buildStream.on('data', function (d) { objectBuffer.push(d); });
+        buildStream.on('end', function () {
+          client.end();
+          expect(objectBuffer).to.have.length(1);
+          expect(objectBuffer[0].content).to.match(/^Successfully built .+/);
           count.next();
         });
       });
     });
+
     it('100 people should get the same logs', function (done) {
       var people = 100;
-      ctx.build.build(ctx.buildId, {message: 'lots of people!'}, function (err, body, code) {
+      ctx.build.build(ctx.buildId, { message: 'lots of people!' }, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);
         expect(body).to.exist();
@@ -162,7 +158,7 @@ describe('Build Stream', function() {
           var count = createCount(done);
           var client;
           for (var i = 0; i < people; i++) {
-            client = new primusClient( 'http://localhost:' + process.env.PORT);
+            client = new PrimusClient('http://localhost:' + process.env.PORT);
             // start build stream
             client.write({
               id: 1,
@@ -172,24 +168,23 @@ describe('Build Stream', function() {
                 streamId: body.contextVersions[0]
               }
             });
-            var streamCleanser = createStreamCleanser('hex');
             var buildStream = client.substream(body.contextVersions[0]);
-            var concatStream = concat(assertForClient(client, count.inc().next));
-            pump(buildStream, streamCleanser);
-            pump(streamCleanser, concatStream);
+            // var concatStream = concat(assertForClient(client, count.inc().next));
+            watchClientAndStream(client, buildStream, count.inc().next);
           }
-          function assertForClient (client, cb) {
-            return function (cleanLog) {
-              client.end();
-              expect(cleanLog.toString()).to.equal(
-                'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c048080d32980521e743');
+          function watchClientAndStream (c, s, cb) {
+            var objectBuffer = [];
+            s.on('data', function (d) { objectBuffer.push(d); });
+            s.on('end', function () {
+              c.end();
+              expect(objectBuffer).to.have.length(1);
+              expect(objectBuffer[0].content).to.match(/^Successfully built .+/);
               cb();
-            };
+            });
           }
         });
         dockerMockEvents.emitBuildComplete(ctx.cv);
       });
     });
-
   });
 });

@@ -209,7 +209,9 @@ describe('201 POST /instances', function () {
             instanceShortHash: body.shortHash,
             ownerUsername: ctx.user.attrs.accounts.github.login,
             creatorGithubId: ctx.user.attrs.accounts.github.id.toString(),
-            ownerGithubId: ctx.user.attrs.accounts.github.id.toString()
+            ownerGithubId: ctx.user.attrs.accounts.github.id.toString(),
+            sessionUserGithubId: ctx.user.attrs.accounts.github.id.toString(),
+            type: 'user-container'
           });
           rabbitMQ.publish.restore();
           count.next();

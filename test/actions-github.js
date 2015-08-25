@@ -184,7 +184,7 @@ describe('Github - /actions/github', function () {
           done();
         });
       });
-
+//-
       it('should call deleteSocketClient if error happened build create',
         function (done) {
           sinon.stub(Runnable.prototype, 'createBuild')
