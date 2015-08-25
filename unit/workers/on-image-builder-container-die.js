@@ -109,7 +109,7 @@ describe('OnImageBuilderContainerDie', function () {
       });
       it('should call back with error if context-version not found', function (done) {
         ctx.worker._findContextVersion(function (err) {
-          expect(err).to.be.undefined();
+          expect(err).to.be.null();
           expect(ctx.worker.contextVersion).to.equal(ctx.mockContextVersion);
           done();
         });
