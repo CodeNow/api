@@ -10,6 +10,7 @@ var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
+var sinon = require('sinon');
 
 var redis = require('models/redis');
 var pubsub = require('models/redis/pubsub');
@@ -99,6 +100,7 @@ describe('Docker Events', function () {
           'middlewares/logger': function () {
             return {
               log: {
+                info: sinon.spy(),
                 trace: function (data, message) {
                   if (count === 0) {
                     expect(message).to.equal('Docker.prototype.handleDie');
@@ -144,6 +146,7 @@ describe('Docker Events', function () {
           'middlewares/logger': function () {
             return {
               log: {
+                info: sinon.spy(),
                 trace: function (data, message) {
                   if (count === 0) {
                     expect(message).to.equal('Docker.prototype.handleDie');
@@ -163,7 +166,7 @@ describe('Docker Events', function () {
           id: 'some-id',
           time: new Date().getTime(),
           host: 'http://127.0.0.1:4242',
-          from: 'container/name'
+          from: process.env.DOCKER_IMAGE_BUILDER_NAME
         };
         de.handleDie(data);
       });
@@ -291,7 +294,7 @@ describe('Docker Events', function () {
           id: 'some-id',
           time: new Date().getTime(),
           host: 'http://localhost:4243',
-          from: 'container/name'
+          from: process.env.DOCKER_IMAGE_BUILDER_NAME
         };
         dockerEvents.handleDie(payload);
         dockerEvents.handleDie(payload);

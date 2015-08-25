@@ -96,7 +96,7 @@
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.6",
     "code": "^1.4.0",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
-    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#0c4ff6ef7ba9c584fc626edaca1d32166f0f8d87",
+    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#fe685687d31595a9cdca0f08033459c548dc090f",
     "docker-mock": "^2.0.0",
     "docker-modem": "^0.2.6",
     "eslint": "^0.20.0",
