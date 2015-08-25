@@ -28,7 +28,6 @@ var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
-var dockerEvents = require('models/events/docker');
 
 describe('204 DELETE /instances/:id', function () {
   var ctx = {};
@@ -274,21 +273,11 @@ describe('204 DELETE /instances/:id', function () {
         ctx.user.attrs.accounts.github.login);
       var instance = clone(ctx.instance);
       var container = ctx.instance.containers.models[0];
-      if (ctx.waitForDestroy) {
-        dockerEvents.once('destroy', function () {
-          check(done); // if waiting for destroy, done get's called here
-        });
-        ctx.instance.destroy(expects.success(204, function (err) {
-          if (err) { return done(err); }
-        }));
-      }
-      else {
-        // don't wait for destroy
-        ctx.instance.destroy(expects.success(204, function (err) {
-          if (err) { return done(err); }
-          check(done); // if NOT waiting for destroy, done get's called here
-        }));
-      }
+      // destroy event will be handled in near future via worker
+      ctx.instance.destroy(expects.success(204, function (err) {
+        if (err) { return done(err); }
+        check(done); // if NOT waiting for destroy, done get's called here
+      }));
       function check(cb) {
         var c = (container && container.attrs.dockerContainer) ? 3 : 1;
         var count = createCount(c, cb);
