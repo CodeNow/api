@@ -24,10 +24,13 @@ describe('OnInstanceContainerDie', function () {
     ctx = {};
 
     ctx.mockInstance = {
-      modifyContainerInspect: sinon.stub().callsArg(2),
+      modifyContainerInspect: function () {},
       emitInstanceUpdate: sinon.stub().callsArg(1)
     };
     sinon.stub(Instance, 'findOneByContainerId').callsArgWith(1, null, ctx.mockInstance);
+    sinon.stub(ctx.mockInstance, 'modifyContainerInspect', function (containerId, inspect, cb) {
+      cb(null, ctx.mockInstance);
+    });
 
     ctx.data = {
       id: 111,
