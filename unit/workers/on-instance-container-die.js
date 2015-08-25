@@ -27,7 +27,7 @@ describe('OnInstanceContainerDieWorker', function () {
       modifyContainerInspect: sinon.stub().callsArg(2),
       emitInstanceUpdate: sinon.stub().callsArg(1)
     };
-    sinon.stub(Instance, "findOneByContainerId").callsArgWith(1, null, ctx.mockInstance);
+    sinon.stub(Instance, 'findOneByContainerId').callsArgWith(1, null, ctx.mockInstance);
 
     ctx.data = {
       id: 111,
@@ -72,11 +72,10 @@ describe('OnInstanceContainerDieWorker', function () {
     it('should handle failure to find one by container id', function (done) {
       var err = new Error('This is a test erro!');
       Instance.findOneByContainerId.restore();
-      sinon.stub(Instance, "findOneByContainerId").callsArgWith(1, err);
+      sinon.stub(Instance, 'findOneByContainerId').callsArgWith(1, err);
 
       ctx.worker(ctx.data, function (err) {
         expect(err).to.exist();
-        console.log(err);
         done();
       });
     });
@@ -86,7 +85,6 @@ describe('OnInstanceContainerDieWorker', function () {
       ctx.mockInstance.modifyContainerInspect = sinon.stub().callsArgWith(2, err);
       ctx.worker(ctx.data, function (err) {
         expect(err).to.exist();
-        console.log(err);
         done();
       });
     });
@@ -96,7 +94,6 @@ describe('OnInstanceContainerDieWorker', function () {
       ctx.mockInstance.emitInstanceUpdate = sinon.stub().callsArgWith(1, err);
       ctx.worker(ctx.data, function (err) {
         expect(err).to.exist();
-        console.log(err);
         done();
       });
     });
