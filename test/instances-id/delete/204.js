@@ -156,7 +156,6 @@ describe('204 DELETE /instances/:id', function () {
             'containers[0].inspect.State.Running': true
             */
           });
-          ctx.waitForDestroy = true;
           done();
         });
 
@@ -176,7 +175,6 @@ describe('204 DELETE /instances/:id', function () {
           ctx.expectAlreadyStopped = true;
           ctx.originalStart = Docker.prototype.startContainer;
           Docker.prototype.startContainer = stopContainerRightAfterStart;
-          ctx.waitForDestroy = true;
           done();
         });
         afterEach(function (done) {
@@ -276,15 +274,14 @@ describe('204 DELETE /instances/:id', function () {
       // destroy event will be handled in near future via worker
       ctx.instance.destroy(expects.success(204, function (err) {
         if (err) { return done(err); }
-        check(done); // if NOT waiting for destroy, done get's called here
+        check(done);
       }));
       function check(cb) {
-        var c = (container && container.attrs.dockerContainer) ? 3 : 1;
+        var c = (container && container.attrs.dockerContainer) ? 2 : 1;
         var count = createCount(c, cb);
         expects.deletedHosts(ctx.user, instance, container, count.next);
         if (container && container.attrs.dockerContainer) {
           expects.deletedWeaveHost(container, count.next);
-          expects.deletedContainer(container, count.next);
         }
       }
     });
