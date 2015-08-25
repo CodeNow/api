@@ -8,7 +8,7 @@ var Code = require('code');
 var sinon = require('sinon');
 
 var Instance = require('models/mongo/instance');
-var OnInstanceContainerDieWorker = require('workers/on-instance-container-die');
+var OnInstanceContainerDie = require('workers/on-instance-container-die');
 
 var lab = exports.lab = Lab.script();
 var afterEach = lab.afterEach;
@@ -17,7 +17,7 @@ var describe = lab.describe;
 var it = lab.it;
 var expect = Code.expect;
 
-describe('OnInstanceContainerDieWorker', function () {
+describe('OnInstanceContainerDie', function () {
   var ctx;
 
   beforeEach(function (done) {
@@ -46,7 +46,7 @@ describe('OnInstanceContainerDieWorker', function () {
         }
       }
     };
-    ctx.worker = OnInstanceContainerDieWorker.worker;
+    ctx.worker = OnInstanceContainerDie.worker;
     done();
   });
 
