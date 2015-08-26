@@ -8,16 +8,13 @@ require('loadenv')();
 if (process.env.NEW_RELIC_LICENSE_KEY) {
   require('newrelic');
 }
-var Boom = require('dat-middleware').Boom;
 var cluster = require('cluster');
 var createCount = require('callback-count');
 
 var ApiServer = require('server');
-var activeApi = require('models/redis/active-api');
 var dogstatsd = require('models/datadog');
 var envIs = require('101/env-is');
 var error = require('error');
-var events = require('models/events');
 var keyGen = require('key-generator');
 var logger = require('middlewares/logger')(__filename);
 var mongooseControl = require('models/mongo/mongoose-control');
@@ -57,13 +54,6 @@ Api.prototype.start = function (cb) {
   dogstatsd.monitorStart();
   // connect to mongoose
   mongooseControl.start(count.inc().next);
-  // start listening to events
-  count.inc();
-  activeApi.setAsMe(function (err) {
-    if (err) { return count.next(err); }
-    events.listen();
-    count.next();
-  });
   // express server start
   apiServer.start(count.inc().next);
   // all started callback
@@ -96,21 +86,15 @@ Api.prototype.stop = function (cb) {
   log.trace('stop');
   cb = cb || error.logIfErr;
   var self = this;
-  activeApi.isMe(function (err, meIsActiveApi) {
-    if (err) { return cb(err); }
-    if (meIsActiveApi && !envIs('test', 'development')) {
-      // if this is the active api, block stop
-      return cb(Boom.create(500, 'Cannot stop current activeApi'));
-    }
-    var count = createCount(closeDbConnections);
-    // stop github ssh key generator
-    keyGen.stop(count.inc().next);
-    // stop sending socket count
-    dogstatsd.monitorStop();
-    // express server
-    events.close(count.inc().next);
-    apiServer.stop(count.inc().next);
-  });
+
+  var count = createCount(closeDbConnections);
+  // stop github ssh key generator
+  keyGen.stop(count.inc().next);
+  // stop sending socket count
+  dogstatsd.monitorStop();
+  // express server
+  apiServer.stop(count.inc().next);
+
   function closeDbConnections (err) {
     if (!err) {
       // so far the stop was successful
