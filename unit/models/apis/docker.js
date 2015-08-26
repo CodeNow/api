@@ -1,5 +1,6 @@
 'use strict';
 
+var Boom = require('dat-middleware').Boom;
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -103,4 +104,19 @@ describe('docker', function () {
       });
     });
   }); // end pullImage
+
+  describe('with retries', function () {
+    // it('should call original docker method 3 times', function (done) {
+    //   var docker = new Docker('https://localhost:4242');
+    //   var dockerErr = Boom.notFound('Docker error');
+    //   var inspectStub = sinon.stub(Docker.prototype, 'inspectContainer');
+    //   inspectStub.yieldsAsync(dockerErr);
+    //   docker.inspectContainerWithRetry({times: 3}, 'some-container-id', function (err) {
+    //     console.log('xxxxxx', err, inspectStub.callCount);
+    //     // expect(inspectStub.callCount).to.equal(3);
+    //     Docker.prototype.inspectContainer.restore();
+    //     done();
+    //   });
+    // });
+  });
 });
