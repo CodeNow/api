@@ -4,6 +4,8 @@ node_js:
 env:
   global:
     - CIRCLE_NODE_TOTAL=2
+    - LOG_LEVEL=none
+    - LOG_LEVEL_STDOUT=error
   matrix:
     - CIRCLE_NODE_INDEX=0
     - CIRCLE_NODE_INDEX=1
@@ -17,7 +19,7 @@ before_install:
   - wget http://neo4j.com/artifact.php?name=neo4j-community-2.1.8-unix.tar.gz -O /tmp/neo4j-community-2.1.8-unix.tar.gz
   - cd /tmp; tar -xzvf neo4j-community-2.1.8-unix.tar.gz; cd -
   - /tmp/neo4j-community-2.1.8/bin/neo4j start
-  - curl 127.0.0.1:7474/db/data/
+  - ./scripts/set-neo4j-constraint.sh
 script:
   - npm run lint
   - npm run unit
