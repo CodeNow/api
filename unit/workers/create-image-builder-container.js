@@ -90,7 +90,7 @@ describe('CreateImageBuilderContainerWorker', function () {
     describe('success', function () {
       beforeEach(function (done) {
         // initialize instance w/ props, don't actually run protected methods
-        ctx.worker = new StartImageBuildContainerWorker();
+        ctx.worker = new StartImageBuildContainerWorker(ctx.data);
         sinon.stub(Context, 'findOne').yieldsAsync(null, ctx.mockContext);
         sinon.stub(Sauron.prototype, 'findOrCreateHostForContext', function (context, cb) {
           cb(null, ctx.sauronResult);
@@ -116,7 +116,7 @@ describe('CreateImageBuilderContainerWorker', function () {
         done();
       });
       it('should finish by updating the contextVersion', function (done) {
-        ctx.worker.handle(ctx.data, function (err) {
+        ctx.worker.handle(function (err) {
           expect(err).to.be.undefined();
 
           expect(ctx.worker.manualBuild).to.equal(ctx.data.manualBuild);
@@ -227,7 +227,7 @@ describe('CreateImageBuilderContainerWorker', function () {
     describe('failure', function () {
       beforeEach(function (done) {
         // initialize instance w/ props, don't actually run protected methods
-        ctx.worker = new StartImageBuildContainerWorker();
+        ctx.worker = new StartImageBuildContainerWorker(ctx.data);
         sinon.stub(Context, 'findOne').yieldsAsync(null, ctx.mockContext);
         sinon.stub(Sauron.prototype, 'findOrCreateHostForContext')
           .yieldsAsync(null, ctx.sauronResult);
@@ -256,7 +256,7 @@ describe('CreateImageBuilderContainerWorker', function () {
         done();
       });
       it('should error', function (done) {
-        ctx.worker.handle(ctx.data, function (err) {
+        ctx.worker.handle(function (err) {
           expect(err).to.be.null();
           expect(ContextVersion.findOne.callCount, 'findOne').to.equal(1);
           expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
@@ -296,13 +296,13 @@ describe('CreateImageBuilderContainerWorker', function () {
   describe('independent tests', function () {
     beforeEach(function (done) {
       // initialize instance w/ props, don't actually run protected methods
-      ctx.worker = new StartImageBuildContainerWorker();
+      ctx.worker = new StartImageBuildContainerWorker(ctx.data);
 
       sinon.stub(async, 'series', function () {
         async.series.restore();
         done();
       });
-      ctx.worker.handle(ctx.data, function () {});
+      ctx.worker.handle(function () {});
     });
     describe('_findContext', function () {
       describe('basic', function () {
@@ -382,7 +382,18 @@ describe('CreateImageBuilderContainerWorker', function () {
           done();
         });
         it('should query mongo for contextVersion', function (done) {
-          ctx.worker._findContextVersion(function (err) {
+          ctx.worker._findContextVersion({
+            '_id': ctx.mockContextVersion._id,
+            'build.dockerContainer': {
+              $exists: false
+            },
+            'build.started': {
+              $exists: true
+            },
+            'build.finished': {
+              $exists: false
+            }
+          }, function (err) {
             expect(err).to.be.null();
             expect(ContextVersion.findOne.callCount).to.equal(1);
             expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
@@ -402,7 +413,18 @@ describe('CreateImageBuilderContainerWorker', function () {
           });
         });
         it('should callback successfully if contextVersion', function (done) {
-          ctx.worker._findContextVersion(function (err) {
+          ctx.worker._findContextVersion({
+            '_id': ctx.mockContextVersion._id,
+            'build.dockerContainer': {
+              $exists: false
+            },
+            'build.started': {
+              $exists: true
+            },
+            'build.finished': {
+              $exists: false
+            }
+          }, function (err) {
             expect(err).to.be.null();
             expect(ctx.worker.contextVersion).to.equal(ctx.mockContextVersion);
             done();
@@ -421,7 +443,18 @@ describe('CreateImageBuilderContainerWorker', function () {
           done();
         });
         it('should callback error if contextVersion not found', function (done) {
-          ctx.worker._findContextVersion(function (err) {
+          ctx.worker._findContextVersion({
+            '_id': ctx.mockContextVersion._id,
+            'build.dockerContainer': {
+              $exists: false
+            },
+            'build.started': {
+              $exists: true
+            },
+            'build.finished': {
+              $exists: false
+            }
+          }, function (err) {
             expect(err.message).to.equal('contextVersion not found');
             expect(ctx.worker.contextVersion).to.be.undefined();
             done();
@@ -439,7 +472,18 @@ describe('CreateImageBuilderContainerWorker', function () {
           done();
         });
         it('should callback error if mongo error', function (done) {
-          ctx.worker._findContextVersion(function (err) {
+          ctx.worker._findContextVersion({
+            '_id': ctx.mockContextVersion._id,
+            'build.dockerContainer': {
+              $exists: false
+            },
+            'build.started': {
+              $exists: true
+            },
+            'build.finished': {
+              $exists: false
+            }
+          }, function (err) {
             expect(err.message).to.equal('mongoose error');
             expect(ctx.worker.contextVersion).to.be.undefined();
             done();
