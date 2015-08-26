@@ -164,16 +164,7 @@ describe('CreateImageBuilderContainerWorker', function () {
           expect(ContextVersion.findOne.args[0][1], 'findOne').to.be.a.function();
 
           expect(ContextVersion.findOne.args[1][0], 'findOne').to.deep.equal({
-            '_id': ctx.mockContextVersion._id,
-            'build.dockerContainer': {
-              $exists: true
-            },
-            'build.started': {
-              $exists: true
-            },
-            'build.finished': {
-              $exists: false
-            }
+            '_id': ctx.mockContextVersion._id
           });
 
           expect(Docker.prototype.getDockerTag.callCount, 'getDockerTag').to.equal(1);
