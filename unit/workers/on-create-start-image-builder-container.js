@@ -16,7 +16,6 @@ var Sauron = require('models/apis/sauron');
 
 var OnCreateStartImageBuilderContainerWorker = require('workers/on-create-start-image-builder-container');
 
-var util = require('util');
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
 var describe = lab.describe;
