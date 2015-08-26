@@ -14,7 +14,6 @@ var Docker = require('models/apis/docker');
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var Sauron = require('models/apis/sauron');
-var dockerEvents = require('models/events/docker');
 var messenger = require('socket/messenger');
 
 var StartImageBuildContainerWorker = require('workers/create-image-builder-container');
@@ -29,9 +28,6 @@ var it = lab.it;
 describe('CreateImageBuilderContainerWorker', function () {
   var ctx;
 
-  afterEach(function (done) {
-    dockerEvents.close(done);
-  });
   beforeEach(function (done) {
     ctx = {};
 
@@ -46,6 +42,9 @@ describe('CreateImageBuilderContainerWorker', function () {
       },
       build: {
         _id: '23412312h3nk1lj2h3l1k2'
+      },
+      populate: function (id, cb) {
+        cb();
       }
     };
     ctx.mockContext = {
@@ -63,9 +62,7 @@ describe('CreateImageBuilderContainerWorker', function () {
       networkIp: '2'
     };
     ctx.container = {
-      dockerContainer: {
-        Id: 'hello'
-      }
+      id: 'hello'
     };
     ctx.dockerTag = 'asdasdasdasd';
     ctx.data = {
@@ -133,8 +130,7 @@ describe('CreateImageBuilderContainerWorker', function () {
           expect(ctx.worker.network).to.equal(ctx.sauronResult);
           expect(ctx.worker.context).to.equal(ctx.mockContext);
           expect(ctx.worker.contextVersion).to.equal(ctx.mockContextVersion);
-          expect(ctx.worker.container).to.equal(ctx.container.dockerContainer);
-          expect(ctx.worker.dockerContainerId).to.equal(ctx.container.dockerContainer.Id);
+          expect(ctx.worker.dockerContainerId).to.equal(ctx.container.id);
 
 
           expect(Context.findOne.callCount, 'findOne').to.equal(1);
@@ -206,7 +202,7 @@ describe('CreateImageBuilderContainerWorker', function () {
           expect(ContextVersion.updateContainerByBuildId.callCount, 'updateContainer').to.equal(1);
           expect(ContextVersion.updateContainerByBuildId.args[0][0]).to.deep.equal({
             buildId: ctx.mockContextVersion.build._id,
-            buildContainerId: ctx.container.dockerContainer.Id,
+            buildContainerId: ctx.container.id,
             tag: ctx.dockerTag,
             host: ctx.data.dockerHost,
             network: ctx.sauronResult
@@ -452,6 +448,46 @@ describe('CreateImageBuilderContainerWorker', function () {
         });
       });
     });
+    describe('_populateInfraCodeVersion', function () {
+      describe('basic', function () {
+        beforeEach(function (done) {
+          ctx.worker.contextVersion = ctx.mockContextVersion;
+          sinon.stub(ctx.mockContextVersion, 'populate').yieldsAsync(null);
+          done();
+        });
+        afterEach(function (done) {
+          ctx.mockContextVersion.populate.restore();
+          done();
+        });
+        it('should call the populate method on the cv', function (done) {
+          ctx.worker._populateInfraCodeVersion(function (err) {
+            expect(err).to.be.null();
+            expect(ctx.mockContextVersion.populate.callCount).to.equal(1);
+            expect(ctx.mockContextVersion.populate.args[0][0]).to.deep.equal('infraCodeVersion');
+            expect(ctx.mockContextVersion.populate.args[0][1]).to.be.a.function();
+            done();
+          });
+        });
+      });
+
+      describe('mongo error', function () {
+        beforeEach(function (done) {
+          ctx.worker.contextVersion = ctx.mockContextVersion;
+          sinon.stub(ctx.mockContextVersion, 'populate').yieldsAsync(new Error('oh geez!'));
+          done();
+        });
+        afterEach(function (done) {
+          ctx.mockContextVersion.populate.restore();
+          done();
+        });
+        it('should callback error if mongo error', function (done) {
+          ctx.worker._populateInfraCodeVersion(function (err) {
+            expect(err.message).to.equal('oh geez!');
+            done();
+          });
+        });
+      });
+    });
     describe('_findOrCreateHost', function () {
       beforeEach(function (done) {
         // normally set by _findContext
@@ -526,8 +562,7 @@ describe('CreateImageBuilderContainerWorker', function () {
         it('should callback successfully if container start', function (done) {
           ctx.worker._createImageBuilder(function (err) {
             expect(err).to.be.null();
-            expect(ctx.worker.container).to.equal(ctx.container.dockerContainer);
-            expect(ctx.worker.dockerContainerId).to.equal(ctx.container.dockerContainer.Id);
+            expect(ctx.worker.dockerContainerId).to.equal(ctx.container.id);
             expect(Docker.prototype.getDockerTag.callCount, 'getDockerTag').to.equal(1);
             expect(Docker.prototype.getDockerTag.args[0][0], 'getDockerTag arg0')
               .to.equal(ctx.data.sessionUser);
@@ -583,7 +618,7 @@ describe('CreateImageBuilderContainerWorker', function () {
           ctx.worker.contextVersion = ctx.mockContextVersion;
           ctx.worker.dockerTag = ctx.dockerTag;
           ctx.worker.network = ctx.sauronResult;
-          ctx.worker.dockerContainerId = ctx.container.dockerContainer.Id;
+          ctx.worker.dockerContainerId = ctx.container.id;
           done();
         });
         beforeEach(function (done) {
@@ -600,7 +635,7 @@ describe('CreateImageBuilderContainerWorker', function () {
             expect(ContextVersion.updateContainerByBuildId.callCount).to.equal(1);
             expect(ContextVersion.updateContainerByBuildId.args[0][0]).to.deep.equal({
               buildId: ctx.mockContextVersion.build._id,
-              buildContainerId: ctx.container.dockerContainer.Id,
+              buildContainerId: ctx.container.id,
               tag: ctx.dockerTag,
               host: ctx.data.dockerHost,
               network: ctx.sauronResult

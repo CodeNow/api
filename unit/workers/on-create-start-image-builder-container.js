@@ -52,7 +52,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
         // initialize instance w/ props, don't actually run protected methods
         ctx.worker = new StartImageBuildContainerWorker();
         sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
-        sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync(null, 1);
 
 
         sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync();
@@ -62,7 +61,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
       });
       afterEach(function (done) {
         ContextVersion.findOne.restore();
-        ContextVersion.updateContainerByBuildId.restore();
         ContextVersion.updateBuildErrorByBuildId.restore();
         ContextVersion.updateBy.restore();
         Docker.prototype.startImageBuilderContainer.restore();
@@ -100,20 +98,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
           expect(Docker.prototype.startImageBuilderContainer.callCount, 'startImage').to.equal(1);
           expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage')
               .to.deep.equal(ctx.data.inspectData);
-          expect(ContextVersion.updateContainerByBuildId.callCount, 'updateContainer').to.equal(1);
-          expect(ContextVersion.updateContainerByBuildId.args[0][0], 'updateContainer')
-              .to.deep.equal({
-                buildId: ctx.mockContextVersion.build._id,
-                buildContainerId: ctx.data.id,
-                tag: ctx.labels.dockerTag,
-                host: ctx.data.host,
-                network: {
-                  networkIp: ctx.labels.networkIp,
-                  hostIp: ctx.labels.hostIp
-                }
-              });
-          expect(ContextVersion.updateContainerByBuildId.args[0][1], 'updateContainer')
-              .to.be.a.function();
 
           done();
         });
@@ -125,7 +109,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
         ctx.worker = new StartImageBuildContainerWorker();
 
         sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
-        sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync(null, 1);
         sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
 
         sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync();
@@ -138,7 +121,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
       });
       afterEach(function (done) {
         ContextVersion.findOne.restore();
-        ContextVersion.updateContainerByBuildId.restore();
         Docker.prototype.startImageBuilderContainer.restore();
         Sauron.prototype.deleteHost.restore();
         ContextVersion.updateBuildErrorByBuildId.restore();
@@ -169,8 +151,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
               .equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage').to.deep
               .equal(ctx.data.inspectData);
-          expect(ContextVersion.updateContainerByBuildId.callCount, 'updateContainerByBuildId')
-              .to.equal(1);
           expect(Sauron.prototype.deleteHost.callCount, 'deleteHost').to.equal(1);
           expect(Sauron.prototype.deleteHost.args[0][0], 'deleteHost')
               .to.equal(ctx.labels.networkIp);
@@ -271,42 +251,6 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
           ctx.worker._findContextVersion(function (err) {
             expect(err.message).to.equal('mongoose error');
             expect(ctx.worker.contextVersion).to.be.undefined();
-            done();
-          });
-        });
-      });
-    });
-
-    describe('_updateContextVersionWithContainer', function () {
-      describe('basic', function () {
-        beforeEach(function (done) {
-          // normally set by _findContextVersion
-          ctx.worker.contextVersion = ctx.mockContextVersion;
-          done();
-        });
-        beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync(null, 1);
-          done();
-        });
-        afterEach(function (done) {
-          ContextVersion.updateContainerByBuildId.restore();
-          done();
-        });
-        it('should query mongo for contextVersion', function (done) {
-          ctx.worker._updateContextVersionWithContainer(function (err) {
-            expect(err).to.be.undefined();
-            expect(ContextVersion.updateContainerByBuildId.callCount).to.equal(1);
-            expect(ContextVersion.updateContainerByBuildId.args[0][0]).to.deep.equal({
-              buildId: ctx.mockContextVersion.build._id,
-              buildContainerId: ctx.data.id,
-              tag: ctx.labels.dockerTag,
-              host: ctx.data.host,
-              network: {
-                networkIp: ctx.labels.networkIp,
-                hostIp: ctx.labels.hostIp
-              }
-            });
-            expect(ContextVersion.updateContainerByBuildId.args[0][1]).to.be.a.function();
             done();
           });
         });
