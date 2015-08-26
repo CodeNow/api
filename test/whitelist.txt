@@ -47,7 +47,6 @@
 ./test/contexts-id.js
 ./test/contexts.js
 ./test/contexts/post/400.js
-./test/events/docker-die-event.js
 ./test/github-proxy.js
 ./test/instance-dependency-health.js
 ./test/instances-id-actions-copy/post/400.js
