@@ -10,6 +10,7 @@ env:
 services:
   - mongodb
   - redis-server
+  - rabbitmq
 before_install:
   - ulimit -n
   - npm install -g npm@2.8.3
