@@ -9,7 +9,6 @@ var lab = exports.lab = Lab.script();
 var Code = require('code');
 var async = require('async');
 var sinon = require('sinon');
-var keypather = require('keypather')();
 var Docker = require('models/apis/docker');
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
