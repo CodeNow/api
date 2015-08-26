@@ -87,6 +87,7 @@
     "substream": "0.2.0",
     "substream-pump": "^1.0.1",
     "sync-exec": "^0.6.1",
+    "through": "^2.3.8",
     "underscore.string": "^3.0.2",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
@@ -117,8 +118,7 @@
     "rimraf": "^2.2.8",
     "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.13",
     "server-destroy": "^1.0.0",
-    "sinon": "^1.14.1",
-    "through": "^2.3.8"
+    "sinon": "^1.14.1"
   },
   "engineStrict": true,
   "engine": {
