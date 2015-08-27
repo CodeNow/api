@@ -28,7 +28,6 @@ var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
-var dockerEvents = require('models/events/docker');
 
 describe('204 DELETE /instances/:id', function () {
   var ctx = {};
@@ -157,7 +156,6 @@ describe('204 DELETE /instances/:id', function () {
             'containers[0].inspect.State.Running': true
             */
           });
-          ctx.waitForDestroy = true;
           done();
         });
 
@@ -177,7 +175,6 @@ describe('204 DELETE /instances/:id', function () {
           ctx.expectAlreadyStopped = true;
           ctx.originalStart = Docker.prototype.startContainer;
           Docker.prototype.startContainer = stopContainerRightAfterStart;
-          ctx.waitForDestroy = true;
           done();
         });
         afterEach(function (done) {
@@ -274,28 +271,17 @@ describe('204 DELETE /instances/:id', function () {
         ctx.user.attrs.accounts.github.login);
       var instance = clone(ctx.instance);
       var container = ctx.instance.containers.models[0];
-      if (ctx.waitForDestroy) {
-        dockerEvents.once('destroy', function () {
-          check(done); // if waiting for destroy, done get's called here
-        });
-        ctx.instance.destroy(expects.success(204, function (err) {
-          if (err) { return done(err); }
-        }));
-      }
-      else {
-        // don't wait for destroy
-        ctx.instance.destroy(expects.success(204, function (err) {
-          if (err) { return done(err); }
-          check(done); // if NOT waiting for destroy, done get's called here
-        }));
-      }
+      // destroy event will be handled in near future via worker
+      ctx.instance.destroy(expects.success(204, function (err) {
+        if (err) { return done(err); }
+        check(done);
+      }));
       function check(cb) {
-        var c = (container && container.attrs.dockerContainer) ? 3 : 1;
+        var c = (container && container.attrs.dockerContainer) ? 2 : 1;
         var count = createCount(c, cb);
         expects.deletedHosts(ctx.user, instance, container, count.next);
         if (container && container.attrs.dockerContainer) {
           expects.deletedWeaveHost(container, count.next);
-          expects.deletedContainer(container, count.next);
         }
       }
     });
