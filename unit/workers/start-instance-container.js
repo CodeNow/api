@@ -12,9 +12,7 @@ var noop = require('101/noop');
 var sinon = require('sinon');
 
 var Docker = require('models/apis/docker');
-var Hosts = require('models/redis/hosts');
 var Instance = require('models/mongo/instance');
-var Sauron = require('models/apis/sauron');
 var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
 
@@ -99,18 +97,15 @@ describe('StartInstanceContainerWorker', function () {
     describe('failture witout instance', function () {
       beforeEach(function (done) {
         sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
-        sinon.stub(ctx.worker, '_inspectContainerAndUpdate', noop);
         done();
       });
       afterEach(function (done) {
         ctx.worker._updateInstanceFrontend.restore();
-        ctx.worker._inspectContainerAndUpdate.restore();
         done();
       });
-      it('it should not inspect or notify frontend', function (done) {
+      it('it should not notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
           expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(0);
-          expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(0);
           done();
         });
       });
@@ -120,18 +115,15 @@ describe('StartInstanceContainerWorker', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
         sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
-        sinon.stub(ctx.worker, '_inspectContainerAndUpdate', function (cb) { cb(); });
         done();
       });
       afterEach(function (done) {
         ctx.worker._updateInstanceFrontend.restore();
-        ctx.worker._inspectContainerAndUpdate.restore();
         done();
       });
-      it('it should inspect and notify frontend', function (done) {
+      it('it should notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
           expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
-          expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(1);
           expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('update');
           done();
         });
@@ -142,19 +134,15 @@ describe('StartInstanceContainerWorker', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
         sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
-        sinon.stub(ctx.worker, '_inspectContainerAndUpdate', function (cb) { cb(); });
         done();
       });
       afterEach(function (done) {
         ctx.worker._updateInstanceFrontend.restore();
-        ctx.worker._inspectContainerAndUpdate.restore();
         done();
       });
-      it('it should NOT inspect and SHOULD notify frontend', function (done) {
+      it('it should NOT notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(null, function () {
-          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
-          expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(0);
-          expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('start');
+          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(0);
           done();
         });
       });
@@ -406,130 +394,6 @@ describe('StartInstanceContainerWorker', function () {
           expect(Docker.prototype.startUserContainer.callCount)
             .to.equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
-          done();
-        });
-      });
-    });
-  });
-
-  describe('_inspectContainerAndUpdate', function () {
-    beforeEach(function (done) {
-      // normally set by _findInstance & _findUser
-      ctx.worker.instance = ctx.mockInstance;
-      ctx.worker.user = ctx.mockUser;
-      done();
-    });
-
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
-          cb(null, ctx.mockContainer);
-        });
-        done();
-      });
-
-      afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore();
-        done();
-      });
-
-      it('should inspect a container and update the database', function (done) {
-        ctx.worker._inspectContainerAndUpdate(function (err) {
-          expect(err).to.be.undefined();
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
-          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
-          done();
-        });
-      });
-    });
-
-    describe('error inspect', function () {
-      beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
-          cb(new Error('docker inspect error'));
-        });
-        done();
-      });
-
-      afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore();
-        done();
-      });
-
-      it('should inspect a container and update the database', function (done) {
-        ctx.worker._inspectContainerAndUpdate(function (err) {
-          expect(err.message).to.equal('docker inspect error');
-          expect(Docker.prototype.inspectContainer.callCount)
-            .to.equal(process.env.WORKER_INSPECT_CONTAINER_NUMBER_RETRY_ATTEMPTS);
-          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(0);
-          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(1);
-          done();
-        });
-      });
-    });
-
-    describe('error update mongo', function () {
-      beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
-          cb(null, ctx.mockContainer);
-        });
-        ctx.modifyContainerInspectSpy = sinon.spy(function (dockerContainerId, inspect, cb) {
-          cb(new Error('mongoose error'));
-        });
-        ctx.mockInstance.modifyContainerInspect = ctx.modifyContainerInspectSpy;
-        done();
-      });
-
-      afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore();
-        done();
-      });
-
-      it('should inspect a container and update the database', function (done) {
-        ctx.worker._inspectContainerAndUpdate(function (err) {
-          expect(err.message).to.equal('mongoose error');
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
-          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
-          done();
-        });
-      });
-    });
-  });
-
-  describe('_attachContainerToNetwork', function () {
-    beforeEach(function (done) {
-      // normally set by _findInstance & _findUser
-      ctx.worker.instance = ctx.mockInstance;
-      ctx.worker.user = ctx.mockUser;
-      done();
-    });
-
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(Sauron.prototype, 'attachHostToContainer',
-                   function (networkIp, hostIp, containerId, cb) {
-          cb(null);
-        });
-        sinon.stub(Hosts.prototype, 'upsertHostsForInstance',
-                  function (ownerUsername, instance, cb) {
-          cb(null);
-        });
-        done();
-      });
-
-      afterEach(function (done) {
-        Sauron.prototype.attachHostToContainer.restore();
-        Hosts.prototype.upsertHostsForInstance.restore();
-        done();
-      });
-
-      it('should attach to weave and register with navi', function (done) {
-        ctx.worker._attachContainerToNetwork(function (err) {
-          expect(err).to.be.undefined();
-          expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
-          expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
           done();
         });
       });
