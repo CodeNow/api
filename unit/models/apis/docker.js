@@ -141,7 +141,7 @@ describe('docker', function () {
       var attemts = 0;
       sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
         attemts++;
-        if (attemts > 4) {
+        if (attemts < 4) {
           cb(dockerErr);
         }
         else {
@@ -150,10 +150,24 @@ describe('docker', function () {
       });
       var docker = new Docker('https://localhost:4242');
 
-      docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err) {
+      docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err, result) {
         expect(err).to.be.undefined();
         expect(result.dockerContainer).to.equal('some-container-id');
-        expect(Docker.prototype.inspectContainer.callCount).to.equal(5);
+        expect(Docker.prototype.inspectContainer.callCount).to.equal(4);
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+    });
+    it('should not retry if ignoreStatusCode was specified', function (done) {
+      var dockerErr = Boom.notFound('Docker error');
+      sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
+        cb(dockerErr);
+      });
+      var docker = new Docker('https://localhost:4242');
+
+      docker.inspectContainerWithRetry({times: 6, ignoreStatusCode: 404}, 'some-container-id', function (err) {
+        expect(err).to.be.null();
+        expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
         Docker.prototype.inspectContainer.restore();
         done();
       });
