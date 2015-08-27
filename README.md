@@ -1,5 +1,7 @@
 [![Circle CI](https://circleci.com/gh/CodeNow/api.svg?style=svg&circle-token=15c68bfd7d9ca99637f0c5a6e05505366f5d9fd3)](https://circleci.com/gh/CodeNow/api)
 
+[![lol Travis CI](https://magnum.travis-ci.com/CodeNow/api.svg?token=CEnbe3bPEVFTjYa2MCtJ&branch=master)](https://magnum.travis-ci.com/CodeNow/api)
+
 # Application Components
 
 #### Express
