@@ -1,6 +1,6 @@
 'use strict';
 
-var Boom = require('dat-middleware').Boom;
+// var Boom = require('dat-middleware').Boom;
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
