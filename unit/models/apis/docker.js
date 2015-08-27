@@ -106,17 +106,31 @@ describe('docker', function () {
   }); // end pullImage
 
   describe('with retries', function () {
-    it('should call original docker method 3 times', function (done) {
+    it('should call original docker method 6 times if failed and return error', function (done) {
+            var dockerErr = Boom.notFound('Docker error');
       sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
         cb(dockerErr);
       });
       var docker = new Docker('https://localhost:4242');
-      var dockerErr = Boom.notFound('Docker error');
 
-      docker.inspectContainerWithRetry({times: 3}, 'some-container-id', function (err) {
+      docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err) {
         expect(err.output.statusCode).to.equal(404);
         expect(err.output.payload.message).to.equal('Docker error');
-        expect(Docker.prototype.inspectContainer.callCount).to.equal(3);
+        expect(Docker.prototype.inspectContainer.callCount).to.equal(6);
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+    });
+    it('should return callback with success on success', function (done) {
+      sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
+        cb(undefined, { dockerContainer: container });
+      });
+      var docker = new Docker('https://localhost:4242');
+
+      docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err, result) {
+        expect(err).to.be.undefined();
+        expect(result.dockerContainer).to.equal('some-container-id');
+        expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
         Docker.prototype.inspectContainer.restore();
         done();
       });
