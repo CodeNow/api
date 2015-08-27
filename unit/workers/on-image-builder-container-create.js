@@ -8,14 +8,15 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var async = require('async');
-var sinon = require('sinon');
 var keypather = require('keypather')();
-var Docker = require('models/apis/docker');
+var sinon = require('sinon');
+
 var ContextVersion = require('models/mongo/context-version');
+var Docker = require('models/apis/docker');
 var Sauron = require('models/apis/sauron');
 var messenger = require('socket/messenger');
 
-var OnCreateStartImageBuilderContainerWorker = require('workers/on-create-start-image-builder-container');
+var OnCreateImageBuilderContainer = require('workers/on-image-builder-container-create');
 
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
@@ -23,7 +24,7 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-describe('OnCreateStartImageBuilderContainerWorker', function () {
+describe('OnCreateImageBuilderContainer', function () {
   var ctx;
 
   beforeEach(function (done) {
@@ -51,7 +52,7 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
     describe('success', function () {
       beforeEach(function (done) {
         // initialize instance w/ props, don't actually run protected methods
-        ctx.worker = new OnCreateStartImageBuilderContainerWorker(ctx.data);
+        ctx.worker = new OnCreateImageBuilderContainer(ctx.data);
         sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
 
 
@@ -125,7 +126,7 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
     describe('failure', function () {
       beforeEach(function (done) {
         // initialize instance w/ props, don't actually run protected methods
-        ctx.worker = new OnCreateStartImageBuilderContainerWorker(ctx.data);
+        ctx.worker = new OnCreateImageBuilderContainer(ctx.data);
 
         sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
         sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
@@ -189,7 +190,7 @@ describe('OnCreateStartImageBuilderContainerWorker', function () {
   describe('independent tests', function () {
     beforeEach(function (done) {
       // initialize instance w/ props, don't actually run protected methods
-      ctx.worker = new OnCreateStartImageBuilderContainerWorker(ctx.data);
+      ctx.worker = new OnCreateImageBuilderContainer(ctx.data);
 
       sinon.stub(async, 'series', function () {
         async.series.restore();
