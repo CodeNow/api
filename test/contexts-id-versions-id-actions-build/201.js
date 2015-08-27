@@ -142,7 +142,7 @@ function buildTheVersionTests (ctx) {
             expect(body._id).not.to.equal(ctx.cv.attrs._id);
             expect(body.id).to.not.equal(ctx.cv.attrs.id);
             expect(body.containerId).to.not.equal(ctx.cv.attrs.containerId);
-            done();
+            waitForCvBuildToComplete(ctx.copiedCv, done);
           });
         });
 
