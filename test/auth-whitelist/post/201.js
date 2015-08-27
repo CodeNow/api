@@ -12,6 +12,8 @@ var Code = require('code');
 var expect = Code.expect;
 
 var api = require('../../fixtures/api-control');
+var rabbitMQ = require('../../../lib/models/rabbitmq');
+var createCount = require('callback-count');
 
 var request = require('request');
 var randStr = require('randomstring').generate;
@@ -35,8 +37,11 @@ describe('POST /auth/whitelist', function () {
   });
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
 
-  it('should add a name to the whitelist', function (done) {
-    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable');
+  it('should add a name to the whitelist and add job to queue', function (done) {
+    var testId = 2828361;
+    var testOrg = 'Runnable';
+    require('../../fixtures/mocks/github/user-orgs')(testId, testOrg);
+    require('../../fixtures/mocks/github/users-username')(testId, testOrg);
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
@@ -44,6 +49,12 @@ describe('POST /auth/whitelist', function () {
       body: { name: ctx.name },
       jar: ctx.j
     };
+    var count = createCount(2, done);
+    rabbitMQ.hermesClient.subscribe('org-whitelisted', function (data, cb) {
+      expect(data.orgId).to.equal(testId);
+      cb();
+      count.next();
+    });
     request(opts, function (err, res, body) {
       expect(err).to.be.null();
       expect(res).to.exist();
@@ -53,7 +64,7 @@ describe('POST /auth/whitelist', function () {
         lowerName: ctx.name.toLowerCase(),
         allowed: true
       });
-      require('../../fixtures/check-whitelist')([ctx.name], done);
+      require('../../fixtures/check-whitelist')([ctx.name], count.next);
     });
   });
 });
