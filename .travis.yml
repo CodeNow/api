@@ -22,8 +22,8 @@ before_install:
   - wget http://neo4j.com/artifact.php?name=neo4j-community-2.1.8-unix.tar.gz -O /tmp/neo4j-community-2.1.8-unix.tar.gz
   - cd /tmp; tar -xzvf neo4j-community-2.1.8-unix.tar.gz; cd -
   - /tmp/neo4j-community-2.1.8/bin/neo4j start
-  - ./scripts/set-neo4j-constraint.sh
+  - timeout 1m ./scripts/set-neo4j-constraint.sh
 script:
   - ./scripts/run-command-conditionally.sh npm run lint
-  - ./scripts/run-command-conditionally.sh npm run unit
-  - ./scripts/npm-bdd-split-files.sh
+  - timeout 3m ./scripts/run-command-conditionally.sh npm run unit
+  - timeout 10m ./scripts/npm-bdd-split-files.sh
