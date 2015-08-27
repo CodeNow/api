@@ -24,6 +24,6 @@ before_install:
   - /tmp/neo4j-community-2.1.8/bin/neo4j start
   - ./scripts/set-neo4j-constraint.sh
 script:
-  - if [ "${CIRCLE_NODE_INDEX}" = "0" ]; then npm run lint; fi
-  - if [ "${CIRCLE_NODE_INDEX}" = "0" ]; then npm run unit; fi
+  - ./scripts/run-command-conditionally.sh npm run lint
+  - ./scripts/run-command-conditionally.sh npm run unit
   - ./scripts/npm-bdd-split-files.sh
