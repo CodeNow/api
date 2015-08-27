@@ -48,7 +48,7 @@ describe('Instance - /instances/:id', function () {
       var expected = {
         'build._id': ctx.build.id(),
         'owner.github': ctx.orgId,
-        'owner.username': 'Runnable'
+        'owner.username': exists
       };
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
