@@ -4,9 +4,7 @@ var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
-var before = lab.before;
 var beforeEach = lab.beforeEach;
-var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
@@ -15,10 +13,7 @@ var rabbitMQ = require('../../../lib/models/rabbitmq/index.js');
 var Github = require('../../../lib/models/apis/github.js');
 var Shiva = require('../../../lib/models/apis/shiva.js');
 
-var request = require('request');
-var createCount = require('callback-count');
 var sinon = require('sinon');
-var Boom = require('dat-middleware').Boom;
 
 describe('lib/models/apis/shiva.js unit test', function () {
   var testReq = {
