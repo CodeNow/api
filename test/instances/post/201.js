@@ -190,7 +190,7 @@ describe('201 POST /instances', function () {
       it('should create an instance with a build', function (done) {
         var count = createCount(2, done);
         primus.expectActionCount('start', 1, count.next);
-        var rabbitmqPublishSpy = sinon.spy(rabbitMQ, 'publish');
+        var rabbitmqPublishSpy = sinon.spy(rabbitMQ, 'createInstanceContainer');
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
@@ -212,7 +212,7 @@ describe('201 POST /instances', function () {
             ownerGithubId: ctx.user.attrs.accounts.github.id.toString(),
             sessionUserGithubId: ctx.user.attrs.accounts.github.id.toString()
           });
-          rabbitMQ.publish.restore();
+          rabbitMQ.createInstanceContainer.restore();
           count.next();
         });
       });
