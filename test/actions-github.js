@@ -49,6 +49,7 @@ describe('Github - /actions/github', function () {
   after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
+  afterEach(require('./fixtures/clean-nock'));
   beforeEach(generateKey);
 
   describe('ping', function () {
