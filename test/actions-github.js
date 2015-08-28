@@ -307,10 +307,13 @@ describe('Github - /actions/github', function () {
             cb(null, instance);
           });
           var countOnCallback = function () {
+            console.log('CBcount', count.count);
             count.next();
           };
           var count = cbCount(4, function () {
             // restore what we stubbed
+            console.log('\n\n\n\n\nCOUNT CALLED');
+
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledOnce).to.equal(true);
             successStub.restore();
@@ -323,8 +326,14 @@ describe('Github - /actions/github', function () {
             SocketClient.prototype.onInstanceDeployed.restore();
             done();
           });
-          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
-          sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
+          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', function () {
+            console.log('deploymentSucceeded', 'CBcount');
+            countOnCallback();
+          });
+          sinon.stub(Slack.prototype, 'notifyOnAutoFork', function () {
+            console.log('notifyOnAutoFork', 'CBcount');
+            countOnCallback();
+          });
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
             branch: 'feature-1',
@@ -334,7 +343,10 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).push;
           // wait for container create worker to finish
-          primus.expectActionCount('start', 1, count.next);
+          primus.expectActionCount('start', 1, function () {
+            console.log('start', 'CBcount');
+            countOnCallback();
+          });
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions();
@@ -342,6 +354,7 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
+            console.log('FINISHED', 'CBcount');
             countOnCallback();
           });
         });
