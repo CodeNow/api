@@ -140,12 +140,12 @@ describe('Worker: create-instance-container', function () {
   });
   describe('#handle', function () {
     it('should return nothing if context version was not found because of error', function (done) {
-      var worker = new CreateInstanceContainer();
+      var worker = new CreateInstanceContainer({});
       sinon.stub(ContextVersion, 'findById', function (id, cb) {
         cb(new Error('Some mongo error'));
       });
       sinon.spy(Docker.prototype, 'createUserContainer');
-      worker.handle({}, function (err, cv) {
+      worker.handle(function (err, cv) {
         expect(err).to.not.exist();
         expect(cv).to.not.exist();
         expect(Docker.prototype.createUserContainer.callCount).to.equal(0);
@@ -156,12 +156,12 @@ describe('Worker: create-instance-container', function () {
     });
 
     it('should return nothing if context version was not found', function (done) {
-      var worker = new CreateInstanceContainer();
+      var worker = new CreateInstanceContainer({});
       sinon.stub(ContextVersion, 'findById', function (id, cb) {
         cb(null, null);
       });
       sinon.spy(Docker.prototype, 'createUserContainer');
-      worker.handle({}, function (err, cv) {
+      worker.handle(function (err, cv) {
         expect(err).to.not.exist();
         expect(cv).to.not.exist();
         expect(Docker.prototype.createUserContainer.callCount).to.equal(0);
@@ -172,7 +172,6 @@ describe('Worker: create-instance-container', function () {
     });
 
     it('should call Docker.createUserContainer and return nothing if everything was fine', function (done) {
-      var worker = new CreateInstanceContainer();
       var data = {
         cvId: 'some-cv-id',
         sessionUserId: 'some-user-id',
@@ -189,6 +188,7 @@ describe('Worker: create-instance-container', function () {
           ownerGithubId    : 812933
         }
       };
+      var worker = new CreateInstanceContainer(data);
       sinon.stub(ContextVersion, 'findById', function (id, cb) {
         cb(null, {_id: 'some-cv-id' });
       });
@@ -200,7 +200,7 @@ describe('Worker: create-instance-container', function () {
       });
       sinon.spy(worker, '_handle404');
       sinon.spy(worker, '_handleAppError');
-      worker.handle(data, function (err, cv) {
+      worker.handle(function (err, cv) {
         expect(err).to.not.exist();
         expect(cv).to.not.exist();
         expect(Docker.prototype.createUserContainer.callCount).to.equal(1);
@@ -215,7 +215,6 @@ describe('Worker: create-instance-container', function () {
     });
 
     it('should call _handle404 if we got 404 from docker', function (done) {
-      var worker = new CreateInstanceContainer();
       var data = {
         cvId: 'some-cv-id',
         sessionUserId: 'some-user-id',
@@ -232,6 +231,7 @@ describe('Worker: create-instance-container', function () {
           ownerGithubId    : 812933
         }
       };
+      var worker = new CreateInstanceContainer(data);
       sinon.stub(ContextVersion, 'findById', function (id, cb) {
         cb(null, {_id: 'some-cv-id' });
       });
@@ -245,7 +245,7 @@ describe('Worker: create-instance-container', function () {
         cb(null);
       });
       sinon.spy(worker, '_handleAppError');
-      worker.handle(data, function (err, cv) {
+      worker.handle(function (err, cv) {
         expect(err).to.not.exist();
         expect(cv).to.not.exist();
         expect(Docker.prototype.createUserContainer.callCount).to.equal(1);
@@ -260,7 +260,6 @@ describe('Worker: create-instance-container', function () {
     });
 
     it('should call _handleAppError if we got not 404 or 504 from docker', function (done) {
-      var worker = new CreateInstanceContainer();
       var data = {
         cvId: 'some-cv-id',
         sessionUserId: 'some-user-id',
@@ -277,6 +276,7 @@ describe('Worker: create-instance-container', function () {
           ownerGithubId    : 812933
         }
       };
+      var worker = new CreateInstanceContainer(data);
       sinon.stub(ContextVersion, 'findById', function (id, cb) {
         cb(null, {_id: 'some-cv-id' });
       });
@@ -290,7 +290,7 @@ describe('Worker: create-instance-container', function () {
         cb(null);
       });
       sinon.spy(worker, '_handle404');
-      worker.handle(data, function (err, cv) {
+      worker.handle(function (err, cv) {
         expect(err).to.not.exist();
         expect(cv).to.not.exist();
         expect(Docker.prototype.createUserContainer.callCount).to.equal(1);
@@ -305,7 +305,6 @@ describe('Worker: create-instance-container', function () {
     });
 
     it('should return error if 504 occured 5 times', function (done) {
-      var worker = new CreateInstanceContainer();
       var data = {
         cvId: 'some-cv-id',
         sessionUserId: 'some-user-id',
@@ -322,6 +321,7 @@ describe('Worker: create-instance-container', function () {
           ownerGithubId    : 812933
         }
       };
+      var worker = new CreateInstanceContainer(data);
       sinon.stub(ContextVersion, 'findById', function (id, cb) {
         cb(null, {_id: 'some-cv-id' });
       });
@@ -333,7 +333,7 @@ describe('Worker: create-instance-container', function () {
       });
       sinon.spy(worker, '_handleAppError');
       sinon.spy(worker, '_handle404');
-      worker.handle(data, function (err, cv) {
+      worker.handle(function (err, cv) {
         expect(err).to.exist();
         expect(err.output.statusCode).to.equal(504);
         expect(err.output.payload.message).to.equal('Docker timeout');
