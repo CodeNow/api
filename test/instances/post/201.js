@@ -194,11 +194,9 @@ describe('201 POST /instances', function () {
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
-          var jobName = rabbitmqPublishSpy.getCall(0).args[0];
-          var jobData = rabbitmqPublishSpy.getCall(0).args[1];
+          var jobData = rabbitmqPublishSpy.getCall(0).args[0];
 
           expect(rabbitmqPublishSpy.calledOnce).to.be.true();
-          expect(jobName).to.equal('create-instance-container');
           expect(jobData.cvId).to.equal(ctx.cv.id());
           expect(jobData.dockerHost).to.exist();
           expect(jobData.instanceEnvs[0]).to.equal('RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash);
