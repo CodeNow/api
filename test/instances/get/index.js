@@ -30,6 +30,7 @@ describe('GET /instances', function () {
   before(dock.start.bind(ctx));
   beforeEach(primus.connect);
   afterEach(primus.disconnect);
+  afterEach(require('../../fixtures/clean-mongo').removeEverything);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   afterEach(require('../../fixtures/clean-ctx')(ctx));
