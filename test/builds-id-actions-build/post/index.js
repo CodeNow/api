@@ -31,9 +31,6 @@ describe('Build - /builds/:id/actions/build', function () {
   beforeEach(require('./../../fixtures/mocks/github/login'));
   beforeEach(require('./../../fixtures/mocks/github/login'));
   beforeEach(primus.connect);
-
-  before(require('../../fixtures/mocks/api-client').setup);
-  after(require('../../fixtures/mocks/api-client').clean);
   afterEach(primus.disconnect);
   afterEach(require('./../../fixtures/clean-mongo').removeEverything);
   afterEach(require('./../../fixtures/clean-ctx')(ctx));
