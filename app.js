@@ -99,7 +99,10 @@ Api.prototype.stop = function (cb) {
     if (!err) {
       // so far the stop was successful
       // finally disconnect from he databases
-      var dbCount = createCount(cb);
+      var dbCount = createCount(function () {
+        console.log('API stopped');
+        cb();
+      });
       // FIXME: redis clients cannot be reconnected once they are quit; this breaks the tests.
       if (!envIs('test')) {
         // disconnect from redis
