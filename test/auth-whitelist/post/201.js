@@ -50,8 +50,8 @@ describe('POST /auth/whitelist', function () {
       jar: ctx.j
     };
     var count = createCount(2, done);
-    rabbitMQ.hermesClient.subscribe('org-whitelisted', function (data, cb) {
-      expect(data.orgId).to.equal(testId);
+    rabbitMQ.hermesClient.subscribe('cluster-provision', function (data, cb) {
+      expect(data.github_id).to.equal(testId);
       cb();
       count.next();
     });

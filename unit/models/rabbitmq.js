@@ -221,7 +221,7 @@ describe('RabbitMQ Model', function () {
     });
   });
 
-  describe('publishOrgWhitelisted', function () {
+  describe('publishClusterProvision', function () {
     var testOrgId = 18274533;
     beforeEach(function (done) {
       // this normally set after connect
@@ -229,14 +229,14 @@ describe('RabbitMQ Model', function () {
         publish: function () {}
       };
       ctx.validJobData = {
-        orgId: testOrgId
+        github_id: testOrgId
       };
       done();
     });
     describe('success', function () {
       beforeEach(function (done) {
         sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
-          expect(eventName).to.equal('org-whitelisted');
+          expect(eventName).to.equal('cluster-provision');
           expect(eventData).to.equal(ctx.validJobData);
         });
         done();
@@ -246,7 +246,7 @@ describe('RabbitMQ Model', function () {
         done();
       });
       it('should publish a job with required data', function (done) {
-        ctx.rabbitMQ.publishOrgWhitelisted(ctx.validJobData);
+        ctx.rabbitMQ.publishClusterProvision(ctx.validJobData);
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1);
         done();
       });
@@ -262,7 +262,7 @@ describe('RabbitMQ Model', function () {
         done();
       });
       it('should not publish a job without required data', function (done) {
-        ctx.rabbitMQ.publishOrgWhitelisted({});
+        ctx.rabbitMQ.publishClusterProvision({});
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
         done();
       });

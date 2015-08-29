@@ -17,17 +17,19 @@ var sinon = require('sinon');
 
 describe('lib/models/apis/shiva.js unit test', function () {
   var testReq = {
-    name: 'nemo'
+    body: {
+      name: 'nemo'
+    }
   };
   beforeEach(function (done) {
     sinon.stub(Github.prototype, 'getUserByUsername');
-    sinon.stub(rabbitMQ, 'publishOrgWhitelisted');
+    sinon.stub(rabbitMQ, 'publishClusterProvision');
     done();
   });
 
   afterEach(function (done) {
     Github.prototype.getUserByUsername.restore();
-    rabbitMQ.publishOrgWhitelisted.restore();
+    rabbitMQ.publishClusterProvision.restore();
     done();
   });
 
@@ -35,14 +37,14 @@ describe('lib/models/apis/shiva.js unit test', function () {
     it('should return error', function(done) {
       var testErr = new Error('ice storm');
       Github.prototype.getUserByUsername.yieldsAsync(testErr);
-      Shiva.publishOrgWhitelistedMw(testReq, {}, function (err) {
+      Shiva.publishClusterProvisionMw(testReq, {}, function (err) {
         expect(err).to.deep.equal(testErr);
         done();
       });
     });
     it('should return badRequest', function(done) {
       Github.prototype.getUserByUsername.yieldsAsync(null, null);
-      Shiva.publishOrgWhitelistedMw(testReq, {}, function (err) {
+      Shiva.publishClusterProvisionMw(testReq, {}, function (err) {
         expect(err.output.statusCode).to.equal(400);
         done();
       });
@@ -58,11 +60,11 @@ describe('lib/models/apis/shiva.js unit test', function () {
       done();
     });
     it('should publish job', function(done) {
-      Shiva.publishOrgWhitelistedMw(testReq, {}, function (err) {
+      Shiva.publishClusterProvisionMw(testReq, {}, function (err) {
         expect(err).to.not.exist();
-        expect(rabbitMQ.publishOrgWhitelisted
+        expect(rabbitMQ.publishClusterProvision
           .withArgs({
-            orgId: testId
+            github_id: testId
           }).called).to.be.true();
         done();
       });
