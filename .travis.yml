@@ -12,6 +12,12 @@ env:
   matrix:
     - CIRCLE_NODE_INDEX=0
     - CIRCLE_NODE_INDEX=1
+cache:
+  - directories:
+    - /tmp/neo4j-community-2.1.8
+    - ./node_modules
+before_cache:
+  - rm -rf /tmp/neo4j-community-2.1.8/data/graph.db
 services:
   - mongodb
   - redis-server
@@ -19,8 +25,7 @@ services:
 before_install:
   - ulimit -n
   - npm install -g npm@2.8.3
-  - wget http://neo4j.com/artifact.php?name=neo4j-community-2.1.8-unix.tar.gz -O /tmp/neo4j-community-2.1.8-unix.tar.gz
-  - cd /tmp; tar -xzvf neo4j-community-2.1.8-unix.tar.gz; cd -
+  - ./scripts/download-neo4j.sh
   - /tmp/neo4j-community-2.1.8/bin/neo4j start
   - timeout 1m ./scripts/set-neo4j-constraint.sh
 script:
