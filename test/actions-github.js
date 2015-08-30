@@ -431,66 +431,64 @@ describe('Github - /actions/github', function () {
           if (err) {
             return done(err);
           }
-          primus.expectActionCount('start', 1, function () {
-            var count = cbCount(4, function () {
-              var expected = {
-                'contextVersion.build.started': exists,
-                'contextVersion.build.completed': exists,
-                'contextVersion.build.duration': exists,
-                'contextVersion.build.network': exists,
-                'contextVersion.build.triggeredBy.github': exists,
-                'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name.toLowerCase(),
-                'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
-                'contextVersion.appCodeVersions[0].branch': data.branch,
-                'contextVersion.build.triggeredAction.manual': false,
-                'contextVersion.build.triggeredAction.appCodeVersion.repo': options.json.repository.full_name,
-                'contextVersion.build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id
-              };
-              // restore what we stubbed
-              var successStub = PullRequest.prototype.deploymentSucceeded;
-              expect(successStub.calledTwice).to.equal(true);
-              successStub.restore();
-              var slackStub = Slack.prototype.notifyOnAutoDeploy;
-              expect(slackStub.calledOnce).to.equal(true);
-              expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
-              slackStub.restore();
-              ctx.instance.fetch(expects.success(200, expected, function (err) {
-                if (err) {
-                  return done(err);
-                }
-                ctx.instance2.fetch(expects.success(200, expected, done));
-              }));
-            });
-            sinon.stub(PullRequest.prototype, 'deploymentSucceeded', function () {
-              count.next();
-            });
-            sinon.stub(Slack.prototype, 'notifyOnAutoDeploy', function () {
-              count.next();
-            });
-            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-            var user = ctx.user.attrs.accounts.github;
-            var data = {
-              branch: 'master',
-              repo: acv.repo,
-              ownerId: user.id,
-              owner: user.login
+          var count = cbCount(4, function () {
+            var expected = {
+              'contextVersion.build.started': exists,
+              'contextVersion.build.completed': exists,
+              'contextVersion.build.duration': exists,
+              'contextVersion.build.network': exists,
+              'contextVersion.build.triggeredBy.github': exists,
+              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name.toLowerCase(),
+              'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
+              'contextVersion.appCodeVersions[0].branch': data.branch,
+              'contextVersion.build.triggeredAction.manual': false,
+              'contextVersion.build.triggeredAction.appCodeVersion.repo': options.json.repository.full_name,
+              'contextVersion.build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id
             };
-            var options = hooks(data).push;
-            options.json.created = false;
-            var username = user.login;
-            require('./fixtures/mocks/github/users-username')(101, username);
-            // wait for container create worker to finish
-            primus.expectActionCount('start', 2, count.next);
-            request.post(options, function (err, res, cvIds) {
+            // restore what we stubbed
+            var successStub = PullRequest.prototype.deploymentSucceeded;
+            expect(successStub.calledTwice).to.equal(true);
+            successStub.restore();
+            var slackStub = Slack.prototype.notifyOnAutoDeploy;
+            expect(slackStub.calledOnce).to.equal(true);
+            expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
+            slackStub.restore();
+            ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) {
                 return done(err);
               }
-              finishAllIncompleteVersions();
-              expect(res.statusCode).to.equal(200);
-              expect(cvIds).to.exist();
-              expect(cvIds).to.be.an.array();
-              expect(cvIds).to.have.length(2);
-            });
+              ctx.instance2.fetch(expects.success(200, expected, done));
+            }));
+          });
+          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', function () {
+            count.next();
+          });
+          sinon.stub(Slack.prototype, 'notifyOnAutoDeploy', function () {
+            count.next();
+          });
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var user = ctx.user.attrs.accounts.github;
+          var data = {
+            branch: 'master',
+            repo: acv.repo,
+            ownerId: user.id,
+            owner: user.login
+          };
+          var options = hooks(data).push;
+          options.json.created = false;
+          var username = user.login;
+          require('./fixtures/mocks/github/users-username')(101, username);
+          // wait for container create worker to finish
+          primus.expectActionCount('start', 2, count.next);
+          request.post(options, function (err, res, cvIds) {
+            if (err) {
+              return done(err);
+            }
+            finishAllIncompleteVersions();
+            expect(res.statusCode).to.equal(200);
+            expect(cvIds).to.exist();
+            expect(cvIds).to.be.an.array();
+            expect(cvIds).to.have.length(2);
           });
         });
       });
