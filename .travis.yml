@@ -31,4 +31,4 @@ before_install:
 script:
   - ./scripts/run-command-conditionally.sh npm run lint
   - timeout 3m ./scripts/run-command-conditionally.sh npm run unit
-  - timeout 10m npm run _bdd
+  - timeout 10m ./scripts/npm-bdd-split-files.sh
