@@ -464,7 +464,7 @@ describe('Github - /actions/github', function () {
           var username = user.login;
           require('./fixtures/mocks/github/users-username')(101, username);
           // wait for container create worker to finish
-          primus.expectActionCount('start', 3, count.next);
+          primus.expectActionCount('start', 2, count.next);
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
             finishAllIncompleteVersions(count.next);
