@@ -96,7 +96,7 @@ describe('StartInstanceContainerWorker', function () {
   describe('_finalSeriesHandler', function () {
     describe('failture witout instance', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
+        sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
         done();
       });
       afterEach(function (done) {
@@ -114,7 +114,7 @@ describe('StartInstanceContainerWorker', function () {
     describe('failure with instance', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
-        sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
+        sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
         done();
       });
       afterEach(function (done) {
@@ -133,7 +133,7 @@ describe('StartInstanceContainerWorker', function () {
     describe('success', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
-        sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
+        sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
         done();
       });
       afterEach(function (done) {
@@ -328,7 +328,7 @@ describe('StartInstanceContainerWorker', function () {
       done();
     });
     beforeEach(function (done) {
-      sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
+      sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
       ctx.mockInstance.setContainerStateToStarting = function (cb) {
         cb(null, ctx.mockInstance);
       };
@@ -340,7 +340,7 @@ describe('StartInstanceContainerWorker', function () {
     });
     it('should set container state to starting and notify frontend', function (done) {
       ctx.worker._setInstanceStateStarting(function (err) {
-        expect(err).to.be.undefined();
+        expect(err).to.be.null();
         expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
         expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('starting');
         done();
@@ -425,13 +425,14 @@ describe('StartInstanceContainerWorker', function () {
 
       it('should fetch instance and notify frontend via primus instance has started',
       function (done) {
-        ctx.worker._updateInstanceFrontend();
-        expect(Instance.findById.callCount).to.equal(1);
-        expect(Instance.findById.args[0][0]).to.equal(ctx.data.instanceId);
-        expect(ctx.populateModelsSpy.callCount).to.equal(1);
-        expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-        expect(messenger.emitInstanceUpdate.callCount).to.equal(1);
-        done();
+        ctx.worker._updateInstanceFrontend('starting', function () {
+          expect(Instance.findById.callCount).to.equal(1);
+          expect(Instance.findById.args[0][0]).to.equal(ctx.data.instanceId);
+          expect(ctx.populateModelsSpy.callCount).to.equal(1);
+          expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
+          expect(messenger.emitInstanceUpdate.callCount).to.equal(1);
+          done();
+        });
       });
     });
   });

@@ -71,7 +71,7 @@ describe('OnInstanceContainerStartWorker', function () {
       cb(null, ctx.mockInstance);
     });
     sinon.stub(ctx.worker, '_findUser').yieldsAsync();
-    sinon.stub(ctx.worker, '_updateInstanceFrontend');
+    sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
     done();
   });
   afterEach(function (done) {
