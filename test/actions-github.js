@@ -60,6 +60,14 @@ describe('Github - /actions/github', function () {
     });
   });
 
+  function waitForInstanceDie (user, cb) {
+    primus.joinOrgRoom(user.json().accounts.github.id, function (err) {
+      if (err) { return cb(err); }
+      primus.expectAction('die', {}, function () {
+        cb();
+      });
+    });
+  }
   describe('disabled hooks', function () {
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
@@ -184,6 +192,7 @@ describe('Github - /actions/github', function () {
         });
       });
 
+
       it('should send 202 and message if autoforking disabled', function (done) {
         var acv = ctx.contextVersion.attrs.appCodeVersions[0];
         var user = ctx.user.attrs.accounts.github;
@@ -195,7 +204,10 @@ describe('Github - /actions/github', function () {
         };
         var options = hooks(data).push;
         var username = user.login;
+        console.log('\n\n\n\n', 'options', options, '\n\n\n\n'
+        )
         require('./fixtures/mocks/github/users-username')(101, username);
+        require('./fixtures/mocks/github/user')(username);
         request.post(options, function (err, res, body) {
           console.log('\n\n\n\n', 'HEY', arguments, '\n\n\n\n'
           )
