@@ -42,6 +42,8 @@ describe('Github - /actions/github', function () {
   after(dock.stop.bind(ctx));
   beforeEach(primus.connect);
   afterEach(primus.disconnect);
+  before(require('./fixtures/mocks/api-client').setup);
+  after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
@@ -195,6 +197,8 @@ describe('Github - /actions/github', function () {
         var username = user.login;
         require('./fixtures/mocks/github/users-username')(101, username);
         request.post(options, function (err, res, body) {
+          console.log('\n\n\n\n', 'HEY', arguments, '\n\n\n\n'
+          )
           if (err) { return done(err); }
           finishAllIncompleteVersions();
           expect(res.statusCode).to.equal(202);
