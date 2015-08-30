@@ -42,8 +42,6 @@ describe('Github - /actions/github', function () {
   after(dock.stop.bind(ctx));
   beforeEach(primus.connect);
   afterEach(primus.disconnect);
-  before(require('./fixtures/mocks/api-client').setup);
-  after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
@@ -476,7 +474,7 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it.skip('should report to mixpanel when a registered user pushes to a repo', function (done) {
+      it('should report to mixpanel when a registered user pushes to a repo', function (done) {
         sinon.stub(Mixpanel.prototype, 'track', function (eventName, eventData) {
           expect(eventName).to.equal('github-push');
           expect(eventData.repoName).to.equal(data.repo);
