@@ -28,4 +28,4 @@ before_install:
   - /tmp/neo4j-community-2.1.8/bin/neo4j start
   - timeout 1m ./scripts/set-neo4j-constraint.sh
 script:
-  - timeout 10m npm run githubTests
+  - timeout 10m ./scripts/npm-bdd-split-files.sh

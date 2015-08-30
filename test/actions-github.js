@@ -198,10 +198,9 @@ describe('Github - /actions/github', function () {
         require('./fixtures/mocks/github/users-username')(101, username);
         request.post(options, function (err, res, body) {
           if (err) { return done(err); }
-          finishAllIncompleteVersions();
+          finishAllIncompleteVersions(done);
           expect(res.statusCode).to.equal(202);
           expect(body).to.equal('Autoforking of instances on branch push is disabled for now');
-          done();
         });
       });
 
@@ -252,12 +251,11 @@ describe('Github - /actions/github', function () {
           primus.expectActionCount('start', 1, count.next);
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
-            finishAllIncompleteVersions();
+            finishAllIncompleteVersions(countOnCallback);
             expect(res.statusCode).to.equal(200);
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
-            countOnCallback();
           });
         });
 
@@ -319,12 +317,11 @@ describe('Github - /actions/github', function () {
             primus.expectActionCount('start', 1, count.next);
             request.post(options, function (err, res, cvIds) {
               if (err) { return done(err); }
-              finishAllIncompleteVersions();
+              finishAllIncompleteVersions(count.next);
               expect(res.statusCode).to.equal(200);
               expect(cvIds).to.exist();
               expect(cvIds).to.be.an.array();
               expect(cvIds).to.have.length(1);
-              count.next();
             });
           });
         });
@@ -470,7 +467,7 @@ describe('Github - /actions/github', function () {
           primus.expectActionCount('start', 2, count.next);
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
-            finishAllIncompleteVersions();
+            finishAllIncompleteVersions(count.next);
             expect(res.statusCode).to.equal(200);
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
@@ -501,7 +498,7 @@ describe('Github - /actions/github', function () {
   });
 });
 
-function finishAllIncompleteVersions () {
+function finishAllIncompleteVersions (cb) {
   var incompleteBuildsQuery = {
     'build.started'  : { $exists: true },
     'build.completed': { $exists: false }
@@ -524,5 +521,6 @@ function finishAllIncompleteVersions () {
         // emit build complete events for each unique build
         dockerMockEvents.emitBuildComplete(version);
       });
+    cb();
   });
 }
