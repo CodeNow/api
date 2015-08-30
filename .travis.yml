@@ -7,7 +7,7 @@ matrix:
 env:
   global:
     - LOG_LEVEL=none
-    - LOG_LEVEL_STDOUT=error
+    - LOG_LEVEL_STDOUT=trace
     - CIRCLE_NODE_TOTAL=2
   matrix:
     - CIRCLE_NODE_INDEX=0
