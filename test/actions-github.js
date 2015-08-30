@@ -42,8 +42,6 @@ describe('Github - /actions/github', function () {
   after(dock.stop.bind(ctx));
   beforeEach(primus.connect);
   afterEach(primus.disconnect);
-  before(require('./fixtures/mocks/api-client').setup);
-  after(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
@@ -415,7 +413,7 @@ describe('Github - /actions/github', function () {
       it('should redeploy two instances with new build', function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
           if (err) { return done(err); }
-          var count = cbCount(5, function () {
+          var count = cbCount(4, function () {
             var expected = {
               'contextVersion.build.started': exists,
               'contextVersion.build.completed': exists,
