@@ -169,8 +169,6 @@ describe('Github - /actions/github', function () {
           ctx.context = modelsArr[1];
           ctx.build = build;
           ctx.user = user;
-          console.log('\n\n\n\n', 'createAndTailInstance', arguments, '\n\n\n\n'
-          )
           ctx.instance = instance;
           var settings = {
             owner: {
@@ -180,15 +178,11 @@ describe('Github - /actions/github', function () {
           user.createSetting({json: settings}, function (err, body) {
             if (err) { return done(err); }
             expect(body._id).to.exist();
-            console.log('\n\n\n\n', 'createSetting', arguments, '\n\n\n\n'
-            )
             ctx.settingsId = body._id;
             done();
           });
         });
       });
-
-
 
       it('should send 202 and message if autoforking disabled', function (done) {
         var acv = ctx.contextVersion.attrs.appCodeVersions[0];
@@ -201,13 +195,8 @@ describe('Github - /actions/github', function () {
         };
         var options = hooks(data).push;
         var username = user.login;
-        console.log('\n\n\n\n', 'options', options, '\n\n\n\n'
-        )
         require('./fixtures/mocks/github/users-username')(101, username);
-        require('./fixtures/mocks/github/user')(username);
         request.post(options, function (err, res, body) {
-          console.log('\n\n\n\n', 'HEY', arguments, '\n\n\n\n'
-          )
           if (err) { return done(err); }
           finishAllIncompleteVersions();
           expect(res.statusCode).to.equal(202);
@@ -428,9 +417,7 @@ describe('Github - /actions/github', function () {
 
       it('should redeploy two instances with new build', function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
-          if (err) {
-            return done(err);
-          }
+          if (err) { return done(err); }
           var count = cbCount(4, function () {
             var expected = {
               'contextVersion.build.started': exists,
@@ -438,12 +425,15 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.duration': exists,
               'contextVersion.build.network': exists,
               'contextVersion.build.triggeredBy.github': exists,
-              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name.toLowerCase(),
+              'contextVersion.appCodeVersions[0].lowerRepo':
+                options.json.repository.full_name.toLowerCase(),
               'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
               'contextVersion.appCodeVersions[0].branch': data.branch,
               'contextVersion.build.triggeredAction.manual': false,
-              'contextVersion.build.triggeredAction.appCodeVersion.repo': options.json.repository.full_name,
-              'contextVersion.build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id
+              'contextVersion.build.triggeredAction.appCodeVersion.repo':
+                options.json.repository.full_name,
+              'contextVersion.build.triggeredAction.appCodeVersion.commit':
+                options.json.head_commit.id
             };
             // restore what we stubbed
             var successStub = PullRequest.prototype.deploymentSucceeded;
@@ -454,9 +444,7 @@ describe('Github - /actions/github', function () {
             expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
             slackStub.restore();
             ctx.instance.fetch(expects.success(200, expected, function (err) {
-              if (err) {
-                return done(err);
-              }
+              if (err) { return done(err); }
               ctx.instance2.fetch(expects.success(200, expected, done));
             }));
           });
@@ -481,9 +469,7 @@ describe('Github - /actions/github', function () {
           // wait for container create worker to finish
           primus.expectActionCount('start', 2, count.next);
           request.post(options, function (err, res, cvIds) {
-            if (err) {
-              return done(err);
-            }
+            if (err) { return done(err); }
             finishAllIncompleteVersions();
             expect(res.statusCode).to.equal(200);
             expect(cvIds).to.exist();
