@@ -23,6 +23,6 @@ test:
     - npm run lint
     - timeout 5m npm run unit
     - timeout 15m ./scripts/npm-bdd-split-files.sh:
-        parallel: true
+        parallel: false
   post:
     - npm run eslint-changes-errors || true
