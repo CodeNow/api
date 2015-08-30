@@ -150,23 +150,23 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
-    //
-    //it('should return 202 if there is neither autoDeploy nor autoLaunch is needed',
-    //  function (done) {
-    //    var data = {
-    //      branch: 'some-branch',
-    //      repo: 'some-repo',
-    //      ownerId: 3217371238,
-    //      owner: 'anton'
-    //    };
-    //    var options = hooks(data).push;
-    //    request.post(options, function (err, res, body) {
-    //      if (err) { return done(err); }
-    //      expect(res.statusCode).to.equal(202);
-    //      expect(body).to.equal('Nothing to deploy or fork');
-    //      done();
-    //    });
-    //});
+
+    it('should return 202 if there is neither autoDeploy nor autoLaunch is needed',
+      function (done) {
+        var data = {
+          branch: 'some-branch',
+          repo: 'some-repo',
+          ownerId: 3217371238,
+          owner: 'anton'
+        };
+        var options = hooks(data).push;
+        request.post(options, function (err, res, body) {
+          if (err) { return done(err); }
+          expect(res.statusCode).to.equal(202);
+          expect(body).to.equal('Nothing to deploy or fork');
+          done();
+        });
+    });
 
 
     describe('autofork', function () {
@@ -177,6 +177,8 @@ describe('Github - /actions/github', function () {
           ctx.context = modelsArr[1];
           ctx.build = build;
           ctx.user = user;
+          console.log('\n\n\n\n', 'createAndTailInstance', arguments, '\n\n\n\n'
+          )
           ctx.instance = instance;
           var settings = {
             owner: {
@@ -186,6 +188,8 @@ describe('Github - /actions/github', function () {
           user.createSetting({json: settings}, function (err, body) {
             if (err) { return done(err); }
             expect(body._id).to.exist();
+            console.log('\n\n\n\n', 'createSetting', arguments, '\n\n\n\n'
+            )
             ctx.settingsId = body._id;
             done();
           });
