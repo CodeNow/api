@@ -31,4 +31,4 @@ before_install:
 script:
   - ./scripts/run-command-conditionally.sh npm run lint
   - timeout 3m ./scripts/run-command-conditionally.sh npm run unit
-  - timeout 10m lab --assert code --verbose --leaks --context-timeout 60000 --timeout 60000 -i 39,40
+  - timeout 10m npm run githubTags
