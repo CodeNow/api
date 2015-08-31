@@ -144,6 +144,9 @@ describe('BDD - Debug Containers', function () {
       ctx.krain = krain.listen(process.env.KRAIN_PORT);
       fs.mkdirSync(containerRoot(ctx.dc.attrs.inspect));
       fs.mkdirSync(containerRoot(ctx.dc.attrs.inspect) + '/foo/');
+      fs.writeFileSync(
+        containerRoot(ctx.dc.attrs.inspect) + '/foo/que.txt',
+        'Que Pasa!');
       fs.mkdirSync(containerRoot(ctx.dc.attrs.inspect) + '/bar/');
       fs.writeFileSync(
         containerRoot(ctx.dc.attrs.inspect) + '/baz.txt',
