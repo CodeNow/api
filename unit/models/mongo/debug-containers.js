@@ -51,7 +51,8 @@ describe('Debug Containers', function () {
       contextVersion: cv._id,
       layerId: 'deadbeef',
       owner: { github: 1 },
-      instance: c._id
+      instance: c._id,
+      cmd: 'echo your mom'
     });
     async.series([
       c.save.bind(c),
