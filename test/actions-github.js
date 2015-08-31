@@ -220,10 +220,11 @@ describe('Github - /actions/github', function () {
           sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
             cb(null, instance);
           });
+          var count;
           var countOnCallback = function () {
             count.next();
           };
-          var count = cbCount(4, function () {
+          count = cbCount(4, function () {
             // restore what we stubbed
             var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledOnce).to.equal(true);

@@ -248,7 +248,7 @@ describe('CreateImageBuilderContainerWorker', function () {
       });
       it('should error', function (done) {
         ctx.worker.handle(function (err) {
-          expect(err).to.be.null();
+          expect(err).to.be.undefined();
           expect(ContextVersion.findOne.callCount, 'findOne').to.equal(1);
           expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
             '_id': ctx.mockContextVersion._id,
