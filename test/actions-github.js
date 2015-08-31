@@ -21,7 +21,6 @@ var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
 var Slack = require('notifications/slack');
 var api = require('./fixtures/api-control');
-var cbCount = require('callback-count');
 var dock = require('./fixtures/dock');
 var dockerMockEvents = require('./fixtures/docker-mock-events');
 var exists = require('101/exists');
@@ -162,6 +161,19 @@ describe('Github - /actions/github', function () {
 
 
     describe('autofork', function () {
+      var slackStub;
+      beforeEach(function (done) {
+        sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
+          cb(null, instance);
+        });
+        slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoFork');
+        done();
+      });
+      afterEach(function (done) {
+        slackStub.restore();
+        SocketClient.prototype.onInstanceDeployed.restore();
+        done();
+      });
       beforeEach(function (done) {
         multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
           if (err) { return done(err); }
@@ -198,48 +210,28 @@ describe('Github - /actions/github', function () {
         require('./fixtures/mocks/github/users-username')(101, username);
         request.post(options, function (err, res, body) {
           if (err) { return done(err); }
-          finishAllIncompleteVersions(done);
           expect(res.statusCode).to.equal(202);
           expect(body).to.equal('Autoforking of instances on branch push is disabled for now');
+          finishAllIncompleteVersions(done);
         });
       });
 
       describe('enabled autoforking', function () {
+        var successStub;
         beforeEach(function (done) {
           ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH;
           process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true';
+          successStub = sinon.stub(PullRequest.prototype, 'deploymentSucceeded');
           done();
         });
         afterEach(function (done) {
           process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking;
+          successStub.restore();
           done();
         });
 
         it('should fork instance from master', function (done) {
           // emulate instance deploy event
-          sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
-            cb(null, instance);
-          });
-          var count;
-          var countOnCallback = function () {
-            count.next();
-          };
-          count = cbCount(4, function () {
-            // restore what we stubbed
-            var successStub = PullRequest.prototype.deploymentSucceeded;
-            expect(successStub.calledOnce).to.equal(true);
-            successStub.restore();
-            var slackStub = Slack.prototype.notifyOnAutoFork;
-            expect(slackStub.calledOnce).to.equal(true);
-            expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
-            var forkedInstance = slackStub.args[0][1];
-            expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name);
-            slackStub.restore();
-            SocketClient.prototype.onInstanceDeployed.restore();
-            done();
-          });
-          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', countOnCallback);
-          sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
             branch: 'feature-1',
@@ -249,14 +241,22 @@ describe('Github - /actions/github', function () {
           };
           var options = hooks(data).push;
           // wait for container create worker to finish
-          primus.expectActionCount('start', 1, count.next);
+          primus.expectActionCount('start', 1, function () {
+            // restore what we stubbed
+            expect(successStub.calledOnce).to.equal(true);
+            expect(slackStub.calledOnce).to.equal(true);
+            expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
+            var forkedInstance = slackStub.args[0][1];
+            expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name);
+            done();
+          });
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
-            finishAllIncompleteVersions(countOnCallback);
             expect(res.statusCode).to.equal(200);
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
+            finishAllIncompleteVersions(function () {});
           });
         });
 
@@ -283,24 +283,19 @@ describe('Github - /actions/github', function () {
               owner: user.login
             };
             var username = user.login;
-
-            var countOnCallback = function () {
-              count.next();
-            };
             // emulate instance deploy event
-            sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
-              cb(null, instance);
-            });
-            var count = cbCount(3, function () {
-              var slackStub = Slack.prototype.notifyOnAutoFork;
+
+            var options = hooks(data).push;
+            require('./fixtures/mocks/github/users-username')(101, username);
+            require('./fixtures/mocks/github/users-username')(101, username);
+            // wait for container create worker to finish
+            primus.expectActionCount('start', 1, function () {
               expect(slackStub.calledOnce).to.equal(true);
               expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
-              slackStub.restore();
-              SocketClient.prototype.onInstanceDeployed.restore();
-
-
               var deleteOptions = hooks(data).push;
               deleteOptions.json.deleted = true;
+              require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+                ctx.user.attrs.accounts.github.login);
               require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
                 ctx.user.attrs.accounts.github.login);
               request.post(deleteOptions, function (err, res, body) {
@@ -309,20 +304,14 @@ describe('Github - /actions/github', function () {
                 expect(body.length).to.equal(1);
                 done();
               });
-
             });
-            sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-            var options = hooks(data).push;
-            require('./fixtures/mocks/github/users-username')(101, username);
-            // wait for container create worker to finish
-            primus.expectActionCount('start', 1, count.next);
             request.post(options, function (err, res, cvIds) {
               if (err) { return done(err); }
-              finishAllIncompleteVersions(count.next);
               expect(res.statusCode).to.equal(200);
               expect(cvIds).to.exist();
               expect(cvIds).to.be.an.array();
               expect(cvIds).to.have.length(1);
+              finishAllIncompleteVersions(function () {});
             });
           });
         });
@@ -359,13 +348,19 @@ describe('Github - /actions/github', function () {
     });
 
     describe('autodeploy', function () {
+      var successStub;
+      var slackStub;
       beforeEach(function (done) {
         ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH;
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true';
+        successStub = sinon.stub(PullRequest.prototype, 'deploymentSucceeded');
+        slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoDeploy');
         done();
       });
       afterEach(function (done) {
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking;
+        slackStub.restore();
+        successStub.restore();
         done();
       });
       beforeEach(function (done) {
@@ -416,7 +411,21 @@ describe('Github - /actions/github', function () {
       it('should redeploy two instances with new build', function (done) {
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
           if (err) { return done(err); }
-          var count = cbCount(4, function () {
+          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+          var user = ctx.user.attrs.accounts.github;
+          var data = {
+            branch: 'master',
+            repo: acv.repo,
+            ownerId: user.id,
+            owner: user.login
+          };
+          var options = hooks(data).push;
+          options.json.created = false;
+          var username = user.login;
+          require('./fixtures/mocks/github/users-username')(101, username);
+          require('./fixtures/mocks/github/users-username')(101, username);
+          // wait for container create worker to finish
+          primus.expectActionCount('start', 2, function () {
             var expected = {
               'contextVersion.build.started': exists,
               'contextVersion.build.completed': exists,
@@ -433,46 +442,21 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.triggeredAction.appCodeVersion.commit':
                 options.json.head_commit.id
             };
-            // restore what we stubbed
-            var successStub = PullRequest.prototype.deploymentSucceeded;
             expect(successStub.calledTwice).to.equal(true);
-            successStub.restore();
-            var slackStub = Slack.prototype.notifyOnAutoDeploy;
             expect(slackStub.calledOnce).to.equal(true);
             expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
-            slackStub.restore();
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err); }
               ctx.instance2.fetch(expects.success(200, expected, done));
             }));
           });
-          sinon.stub(PullRequest.prototype, 'deploymentSucceeded', function () {
-            count.next();
-          });
-          sinon.stub(Slack.prototype, 'notifyOnAutoDeploy', function () {
-            count.next();
-          });
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var user = ctx.user.attrs.accounts.github;
-          var data = {
-            branch: 'master',
-            repo: acv.repo,
-            ownerId: user.id,
-            owner: user.login
-          };
-          var options = hooks(data).push;
-          options.json.created = false;
-          var username = user.login;
-          require('./fixtures/mocks/github/users-username')(101, username);
-          // wait for container create worker to finish
-          primus.expectActionCount('start', 2, count.next);
           request.post(options, function (err, res, cvIds) {
             if (err) { return done(err); }
-            finishAllIncompleteVersions(count.next);
             expect(res.statusCode).to.equal(200);
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(2);
+            finishAllIncompleteVersions(function () {});
           });
         });
       });
