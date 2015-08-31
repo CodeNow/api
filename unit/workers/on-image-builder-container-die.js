@@ -219,15 +219,22 @@ describe('OnImageBuilderContainerDie', function () {
         expect(containerId).to.equal(ctx.data.id);
         cb();
       });
+      sinon.stub(ContextVersion, 'updateBuildCompletedByContainer',
+                 function (containerId, buildData, cb) {
+        expect(containerId).to.equal(ctx.data.id);
+        cb();
+      });
       done();
     });
     afterEach(function (done) {
+      ContextVersion.updateBuildCompletedByContainer.restore();
       ContextVersion.updateBuildErrorByContainer.restore();
       done();
     });
     it('it should handle errored build', function (done) {
       ctx.worker._handleBuildError({}, function () {
         expect(ContextVersion.updateBuildErrorByContainer.callCount).to.equal(1);
+        expect(ContextVersion.updateBuildCompletedByContainer.callCount).to.equal(1);
         done();
       });
     });
