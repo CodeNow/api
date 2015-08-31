@@ -31,7 +31,6 @@ function containerRoot (inspect) {
     inspect.Id);
 }
 
-
 describe('BDD - Debug Containers', function () {
   var ctx = {};
 
@@ -156,11 +155,11 @@ describe('BDD - Debug Containers', function () {
         expect(code).to.equal(200);
         expect(body).to.be.an.array();
         expect(body).to.have.length(3);
-        expect(body).to.deep.include(
+        expect(body).to.deep.include([
           { name: 'foo', path: '/', isDir: true },
           { name: 'bar', path: '/', isDir: true },
-          { name: 'bax.txt', path: '/', isDir: false }
-        );
+          { name: 'baz.txt', path: '/', isDir: false }
+        ]);
         done();
       });
     });
