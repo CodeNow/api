@@ -64,7 +64,7 @@ describe('lib/models/apis/shiva.js unit test', function () {
         expect(err).to.not.exist();
         expect(rabbitMQ.publishClusterProvision
           .withArgs({
-            github_id: testId
+            githubId: testId
           }).called).to.be.true();
         done();
       });

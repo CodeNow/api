@@ -229,7 +229,7 @@ describe('RabbitMQ Model', function () {
         publish: function () {}
       };
       ctx.validJobData = {
-        github_id: testOrgId
+        githubId: testOrgId
       };
       done();
     });
