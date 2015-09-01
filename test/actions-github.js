@@ -15,7 +15,7 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-var SocketClient = require('socket/socket-client');
+//var SocketClient = require('socket/socket-client');
 var ContextVersion = require('models/mongo/context-version');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
