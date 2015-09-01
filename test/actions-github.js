@@ -139,6 +139,7 @@ describe('Github - /actions/github', function () {
     });
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+      finishAllIncompleteVersions(function () {});
       done();
     });
 
@@ -447,7 +448,9 @@ describe('Github - /actions/github', function () {
             expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err); }
-              ctx.instance2.fetch(expects.success(200, expected, done));
+              ctx.instance2.fetch(expects.success(200, expected, function () {
+                done();
+              }));
             }));
           });
           request.post(options, function (err, res, cvIds) {
