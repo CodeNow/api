@@ -61,8 +61,8 @@ describe('De-Moderate - /actions/demoderate', function () {
       jar: ctx.moderatorJar
     };
     request(requestOpts, function (patchErr, patchRes) {
-      if (patchErr) { return done(patchErr); }
       console.log('\n\n\nDEMODERATE', patchErr, patchRes, '\n\n\n');
+      if (patchErr) { return done(patchErr); }
       expect(patchRes.statusCode).to.equal(204);
       request({
         url: process.env.FULL_API_DOMAIN + '/users/me',
