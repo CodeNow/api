@@ -268,7 +268,8 @@ describe('Github - /actions/github', function () {
               if (err) { return done(err); }
               expect(res.statusCode).to.equal(202);
               expect(body).to.equal('No appropriate work to be done; finishing.');
-              done();
+
+              finishAllIncompleteVersions(done());
             });
           });
 
@@ -378,7 +379,8 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             expect(res.statusCode).to.equal(202);
             expect(body).to.equal('No instances should be deployed');
-            done();
+
+            finishAllIncompleteVersions(done);
           });
         });
       });
