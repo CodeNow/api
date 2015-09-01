@@ -105,7 +105,7 @@ describe('OnInstanceContainerStartWorker', function () {
 
       it('should do everything', function (done) {
         ctx.worker.handle(function (err) {
-          expect(err).to.be.undefined();
+          expect(err).to.be.null();
           expect(ctx.worker._findInstance.callCount).to.equal(1);
           expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
           expect(ctx.mockInstance.modifyContainerInspect.args[0][0])
@@ -142,7 +142,8 @@ describe('OnInstanceContainerStartWorker', function () {
 
       it('should get most of the way through, then fail', function (done) {
         ctx.worker.handle(function (err) {
-          expect(err.message).to.equal('this is an error');
+          // This should never return an error
+          expect(err).to.be.null();
           expect(ctx.worker._findInstance.callCount).to.equal(1);
           expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
           expect(Sauron.prototype.attachHostToContainer.args[0][0])
@@ -189,7 +190,7 @@ describe('OnInstanceContainerStartWorker', function () {
 
       it('should attach to weave and register with navi', function (done) {
         ctx.worker._attachContainerToNetwork(function (err) {
-          expect(err).to.be.undefined();
+          expect(err).to.be.null();
           expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
           expect(Sauron.prototype.attachHostToContainer.args[0][0])
               .to.equal(ctx.mockInstance.network.networkIp);
