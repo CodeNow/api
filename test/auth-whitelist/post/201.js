@@ -21,11 +21,12 @@ var randStr = require('randomstring').generate;
 var ctx = {};
 describe('POST /auth/whitelist', function () {
   before(api.start.bind(ctx));
-  after(api.stop.bind(ctx));
+
   beforeEach(function (done) {
     ctx.name = randStr(5);
     done();
   });
+
   before(function (done) {
     ctx.j = request.jar();
     require('../../fixtures/multi-factory').createUser({
@@ -35,7 +36,10 @@ describe('POST /auth/whitelist', function () {
       done(err);
     });
   });
+
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
+
+  after(api.stop.bind(ctx));
 
   it('should add a name to the whitelist and add job to queue', function (done) {
     var testId = 2828361;
@@ -51,7 +55,7 @@ describe('POST /auth/whitelist', function () {
     };
     var count = createCount(2, done);
     rabbitMQ.hermesClient.subscribe('cluster-provision', function (data, cb) {
-      expect(data.github_id).to.equal(testId);
+      expect(data.githubId).to.equal(testId);
       cb();
       count.next();
     });
