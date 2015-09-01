@@ -97,7 +97,8 @@ describe('BDD - Debug Containers', function () {
       var opts = {
         instance: ctx.instance.attrs._id.toString(),
         layerId: layer,
-        contextVersion: ctx.instance.attrs.contextVersion._id.toString()
+        contextVersion: ctx.instance.attrs.contextVersion._id.toString(),
+        cmd: 'echo your mom'
       };
       ctx.user.createDebugContainer(opts, function (err, dc) {
         if (err) { return done(err); }
@@ -134,7 +135,8 @@ describe('BDD - Debug Containers', function () {
       var opts = {
         instance: ctx.instance.attrs._id.toString(),
         layerId: layer,
-        contextVersion: ctx.instance.attrs.contextVersion._id.toString()
+        contextVersion: ctx.instance.attrs.contextVersion._id.toString(),
+        cmd: 'echo your dad'
       };
       ctx.dc = ctx.user.createDebugContainer(opts, done);
     });
@@ -142,6 +144,9 @@ describe('BDD - Debug Containers', function () {
       ctx.krain = krain.listen(process.env.KRAIN_PORT);
       fs.mkdirSync(containerRoot(ctx.dc.attrs.inspect));
       fs.mkdirSync(containerRoot(ctx.dc.attrs.inspect) + '/foo/');
+      fs.writeFileSync(
+        containerRoot(ctx.dc.attrs.inspect) + '/foo/que.txt',
+        'Que Pasa!');
       fs.mkdirSync(containerRoot(ctx.dc.attrs.inspect) + '/bar/');
       fs.writeFileSync(
         containerRoot(ctx.dc.attrs.inspect) + '/baz.txt',

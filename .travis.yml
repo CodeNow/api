@@ -1,34 +1,38 @@
 language: node_js
 sudo: false
 node_js:
-  - "0.10.38"
+- 0.10.38
 matrix:
   fast_finish: true
 env:
   global:
-    - LOG_LEVEL=none
-    - LOG_LEVEL_STDOUT=error
-    - CIRCLE_NODE_TOTAL=2
+  - LOG_LEVEL=none
+  - LOG_LEVEL_STDOUT=error
+  - CIRCLE_NODE_TOTAL=2
   matrix:
-    - CIRCLE_NODE_INDEX=0
-    - CIRCLE_NODE_INDEX=1
+  - CIRCLE_NODE_INDEX=0
+  - CIRCLE_NODE_INDEX=1
 cache:
-  - directories:
-    - /tmp/neo4j-community-2.1.8
-    - ./node_modules
+- directories:
+  - /tmp/neo4j-community-2.1.8
+  - ./node_modules
 before_cache:
-  - rm -rf /tmp/neo4j-community-2.1.8/data/graph.db
+- rm -rf /tmp/neo4j-community-2.1.8/data/graph.db
 services:
-  - mongodb
-  - redis-server
-  - rabbitmq
+- mongodb
+- redis-server
+- rabbitmq
 before_install:
-  - ulimit -n
-  - npm install -g npm@2.8.3
-  - ./scripts/download-neo4j.sh
-  - /tmp/neo4j-community-2.1.8/bin/neo4j start
-  - timeout 1m ./scripts/set-neo4j-constraint.sh
+- ulimit -n
+- npm install -g npm@2.8.3
+- ./scripts/download-neo4j.sh
+- /tmp/neo4j-community-2.1.8/bin/neo4j start
+- timeout 1m ./scripts/set-neo4j-constraint.sh
 script:
-  - ./scripts/run-command-conditionally.sh npm run lint
-  - timeout 3m ./scripts/run-command-conditionally.sh npm run unit
-  - timeout 10m ./scripts/npm-bdd-split-files.sh
+- ./scripts/run-command-conditionally.sh npm run lint
+- timeout 3m ./scripts/run-command-conditionally.sh npm run unit
+- timeout 10m ./scripts/npm-bdd-split-files.sh
+notifications:
+  email: false
+  slack:
+    secure: SZMv1t5nvj0YktlyWrfTPQd95cfvz3dFxvb4+7Zq2qz/xHmo54SaoNkDESeR0EYBu1xQV0oBUIXEwXEpm7T7SCt7O9OYredA91Xslb6tIgzAwwEuohSjf0E6O5rXSE07IepUjSUAR1hvEcbPCrQuuUeyCU5ortfw8HAJTS9BRpQ=
