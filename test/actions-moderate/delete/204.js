@@ -62,6 +62,7 @@ describe('De-Moderate - /actions/demoderate', function () {
     };
     request(requestOpts, function (patchErr, patchRes) {
       if (patchErr) { return done(patchErr); }
+      console.log('\n\n\nDEMODERATE', patchErr, patchRes, '\n\n\n');
       expect(patchRes.statusCode).to.equal(204);
       request({
         url: process.env.FULL_API_DOMAIN + '/users/me',
