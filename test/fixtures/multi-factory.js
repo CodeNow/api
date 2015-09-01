@@ -275,7 +275,7 @@ module.exports = {
     }
     if (isFunction(buildOwnerName)) {
       cb = buildOwnerName;
-      buildOwnerName = 'Runnable';
+      buildOwnerName = null;
       log.trace({}, 'createAndTailInstance args3', buildOwnerId, buildOwnerName, createBody, typeof cb);
     }
     else if (isObject(buildOwnerName)) {

@@ -527,7 +527,7 @@ describe('StartInstanceContainerWorker', function () {
 
       it('should attach to weave and register with navi', function (done) {
         ctx.worker._attachContainerToNetwork(function (err) {
-          expect(err).to.be.null();
+          expect(err).to.be.undefined();
           expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
           expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
           done();
