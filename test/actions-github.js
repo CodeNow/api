@@ -444,24 +444,24 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      //it('should report to mixpanel when a registered user pushes to a repo', function (done) {
-      //  sinon.stub(Mixpanel.prototype, 'track', function (eventName, eventData) {
-      //    expect(eventName).to.equal('github-push');
-      //    expect(eventData.repoName).to.equal(data.repo);
-      //  });
-      //  var data = {
-      //    repo: 'hellonode',
-      //    branch: 'master',
-      //    ownerId: ctx.user.attrs.accounts.github.id,
-      //    owner: 'cflynn07'
-      //  };
-      //  var options = hooks(data).push;
-      //  request.post(options, function (err) {
-      //    if (err) { return done(err); }
-      //    Mixpanel.prototype.track.restore();
-      //    done();
-      //  });
-      //});
+      it('should report to mixpanel when a registered user pushes to a repo', function (done) {
+        sinon.stub(Mixpanel.prototype, 'track', function (eventName, eventData) {
+          expect(eventName).to.equal('github-push');
+          expect(eventData.repoName).to.equal(data.repo);
+        });
+        var data = {
+          repo: 'hellonode',
+          branch: 'master',
+          ownerId: ctx.user.attrs.accounts.github.id,
+          owner: 'cflynn07'
+        };
+        var options = hooks(data).push;
+        request.post(options, function (err) {
+          if (err) { return done(err); }
+          Mixpanel.prototype.track.restore();
+          done();
+        });
+      });
     });
   });
 });
