@@ -269,7 +269,7 @@ describe('Github - /actions/github', function () {
               expect(res.statusCode).to.equal(202);
               expect(body).to.equal('No appropriate work to be done; finishing.');
 
-              finishAllIncompleteVersions(done());
+              finishAllIncompleteVersions(done);
             });
           });
 
