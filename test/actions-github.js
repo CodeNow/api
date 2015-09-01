@@ -41,8 +41,8 @@ describe('Github - /actions/github', function () {
   after(dock.stop.bind(ctx));
   beforeEach(primus.connect);
   afterEach(primus.disconnect);
-  before(require('./fixtures/mocks/api-client').setup);
-  after(require('./fixtures/mocks/api-client').clean);
+  beforeEach(require('./fixtures/mocks/api-client').setup);
+  afterEach(require('./fixtures/mocks/api-client').clean);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
@@ -205,7 +205,8 @@ describe('Github - /actions/github', function () {
         };
         var options = hooks(data).push;
         var username = user.login;
-        require('./fixtures/mocks/github/users-username')(101, username);
+        require('./fixtures/mocks/github/users-username')(user.id, username);
+        require('./fixtures/mocks/github/user')(username);
         request.post(options, function (err, res, body) {
           if (err) { return done(err); }
           expect(res.statusCode).to.equal(202);
@@ -284,8 +285,11 @@ describe('Github - /actions/github', function () {
             // emulate instance deploy event
 
             var options = hooks(data).push;
-            require('./fixtures/mocks/github/users-username')(101, username);
-            require('./fixtures/mocks/github/users-username')(101, username);
+
+            require('./fixtures/mocks/github/users-username')(user.id, username);
+            require('./fixtures/mocks/github/user')(username);
+            require('./fixtures/mocks/github/users-username')(user.id, username);
+            require('./fixtures/mocks/github/user')(username);
             // wait for container create worker to finish
             primus.expectActionCount('start', 1, function () {
               expect(slackStub.calledOnce).to.equal(true);
@@ -367,7 +371,9 @@ describe('Github - /actions/github', function () {
           var options = hooks(data).push;
           options.json.created = false;
           var username = user.login;
-          require('./fixtures/mocks/github/users-username')(101, username);
+
+          require('./fixtures/mocks/github/users-username')(user.id, username);
+          require('./fixtures/mocks/github/user')(username);
           request.post(options, function (err, res, body) {
             if (err) { return done(err); }
             expect(res.statusCode).to.equal(202);
@@ -391,8 +397,12 @@ describe('Github - /actions/github', function () {
           var options = hooks(data).push;
           options.json.created = false;
           var username = user.login;
-          require('./fixtures/mocks/github/users-username')(101, username);
-          require('./fixtures/mocks/github/users-username')(101, username);
+
+          require('./fixtures/mocks/github/users-username')(user.id, username);
+          require('./fixtures/mocks/github/user')(username);
+
+          require('./fixtures/mocks/github/users-username')(user.id, username);
+          require('./fixtures/mocks/github/user')(username);
           // wait for container create worker to finish
           primus.expectActionCount('start', 2, function () {
             var expected = {
