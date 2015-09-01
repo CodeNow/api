@@ -78,6 +78,9 @@ var sources = [{
     ' https://registry.hub.docker.com/u/dockerfile/elasticsearch/\n'+
     'FROM dockerfile/elasticsearch\n'
 }, {
+  name: 'Memcached',
+  body: fs.readFileSync('./scripts/sourceDockerfiles/memcached').toString()
+}, {
   name: 'Nginx',
   body:
     '# Full list of versions available here:'+
