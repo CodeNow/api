@@ -315,35 +315,6 @@ describe('Github - /actions/github', function () {
             });
           });
         });
-
-        describe('fork 2 instances', function () {
-          beforeEach(function (done) {
-            multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
-              ctx.contextVersion = modelsArr[0];
-              ctx.context = modelsArr[1];
-              ctx.build = build;
-              ctx.user = user;
-              ctx.instance = instance;
-              var settings = {
-                owner: {
-                  github: user.attrs.accounts.github.id
-                }
-              };
-              user.createSetting({json: settings}, function (err, body) {
-                if (err) { return done(err); }
-                expect(body._id).to.exist();
-                ctx.settingsId = body._id;
-                ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
-                  expect(err).to.be.null();
-                  primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
-                    if (err) { return done(err); }
-                    primus.expectAction('start', {}, done);
-                  });
-                });
-              });
-            });
-          });
-        });
       });
     });
 
@@ -384,7 +355,7 @@ describe('Github - /actions/github', function () {
         });
       });
 
-      it('should not redeploy locked instance', function (done) {
+      it.skip('should not redeploy locked instance', function (done) {
         ctx.instance.update({ locked: true }, function (err) {
           if (err) { return done(err); }
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
