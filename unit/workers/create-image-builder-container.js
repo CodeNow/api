@@ -63,20 +63,21 @@ describe('CreateImageBuilderContainerWorker', function () {
     ctx.container = {
       id: 'hello'
     };
+    ctx.mockUser = {
+      accounts: {
+        github: {
+          id: 'asdasdasd',
+          displayName: 'asdasqwqwerqweqwe',
+          username: 'sdasdas'
+        }
+      }
+    };
     ctx.dockerTag = 'asdasdasdasd';
     ctx.data = {
       manualBuild: {
         someStuff: 'I forgot what this looks like'
       },
-      sessionUser: {
-        accounts: {
-          github: {
-            id: 'asdasdasd',
-            displayName: 'asdasqwqwerqweqwe',
-            username: 'sdasdas'
-          }
-        }
-      },
+      sessionUserGithubId: ctx.mockUser.accounts.github.id,
       contextId: '55d3ef733e1b620e00eb6242',
       contextVersionId: '55d3ef733e1b620e00eb6292',
       dockerHost: 'localhost:4243',
@@ -103,6 +104,10 @@ describe('CreateImageBuilderContainerWorker', function () {
         sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync(null, 1);
 
         sinon.stub(messenger, 'emitContextVersionUpdate');
+        sinon.stub(ctx.worker, '_findUser', function (userId, cb) {
+          ctx.worker.user = ctx.mockUser;
+          cb(null, ctx.mockUser);
+        });
         done();
       });
       afterEach(function (done) {
@@ -113,6 +118,7 @@ describe('CreateImageBuilderContainerWorker', function () {
         Docker.prototype.createImageBuilder.restore();
         ContextVersion.updateContainerByBuildId.restore();
         messenger.emitContextVersionUpdate.restore();
+        ctx.worker._findUser.restore();
         done();
       });
       it('should finish by updating the contextVersion', function (done) {
@@ -169,7 +175,7 @@ describe('CreateImageBuilderContainerWorker', function () {
 
           expect(Docker.prototype.getDockerTag.callCount, 'getDockerTag').to.equal(1);
           expect(Docker.prototype.getDockerTag.args[0][0], 'getDockerTag arg0')
-              .to.equal(ctx.data.sessionUser);
+              .to.equal(ctx.mockUser);
           expect(Docker.prototype.getDockerTag.args[0][1], 'getDockerTag arg1')
               .to.equal(ctx.mockContextVersion);
 
@@ -177,7 +183,7 @@ describe('CreateImageBuilderContainerWorker', function () {
           expect(Docker.prototype.createImageBuilder.args[0][0], 'createImageBuilder arg0')
               .to.equal(ctx.data.manualBuild);
           expect(Docker.prototype.createImageBuilder.args[0][1], 'createImageBuilder arg1')
-              .to.equal(ctx.data.sessionUser);
+              .to.equal(ctx.mockUser);
           expect(Docker.prototype.createImageBuilder.args[0][2], 'createImageBuilder arg2')
               .to.equal(ctx.mockContextVersion);
           expect(Docker.prototype.createImageBuilder.args[0][3], 'createImageBuilder arg3')
@@ -231,7 +237,10 @@ describe('CreateImageBuilderContainerWorker', function () {
         sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync();
 
         sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
-
+        sinon.stub(ctx.worker, '_findUser', function (userId, cb) {
+          ctx.worker.user = ctx.mockUser;
+          cb(null, ctx.mockUser);
+        });
         sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync();
         done();
       });
@@ -243,6 +252,7 @@ describe('CreateImageBuilderContainerWorker', function () {
         Docker.prototype.getDockerTag.restore();
         Docker.prototype.createImageBuilder.restore();
         ContextVersion.updateContainerByBuildId.restore();
+        ctx.worker._findUser.restore();
         ContextVersion.updateBuildErrorByBuildId.restore();
         done();
       });

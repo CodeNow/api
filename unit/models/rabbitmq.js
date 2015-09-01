@@ -45,7 +45,7 @@ describe('RabbitMQ Model', function () {
         manualBuild: {
           user: 'asdaSDFASDF'
         },
-        sessionUser: 'asdaSDFASDF',
+        sessionUserGithubId: 'asdaSDFASDF',
         contextId: '4G23G243G4545',
         contextVersionId: 'G45GH4GERGDSG',
         dockerHost: '0.0.0.0',
@@ -54,7 +54,7 @@ describe('RabbitMQ Model', function () {
       };
       // missing manualBuild and noCache
       ctx.invalidJobData = {
-        sessionUser: 'asdaSDFASDF',
+        sessionUserGithubId: 'asdaSDFASDF',
         contextId: '4G23G243G4545',
         contextVersionId: 'G45GH4GERGDSG',
         dockerHost: '0.0.0.0',
