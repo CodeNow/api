@@ -268,8 +268,7 @@ describe('Github - /actions/github', function () {
               if (err) { return done(err); }
               expect(res.statusCode).to.equal(202);
               expect(body).to.equal('No appropriate work to be done; finishing.');
-
-              finishAllIncompleteVersions(done);
+              done();
             });
           });
 
@@ -305,7 +304,7 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(res.statusCode).to.equal(201);
                 expect(body.length).to.equal(1);
-                done();
+                primus.expectActionCount('delete', 1, done);
               });
             });
             request.post(options, function (err, res, cvIds) {

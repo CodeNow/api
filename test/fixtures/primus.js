@@ -105,7 +105,6 @@ module.exports = {
     var cbCount = createCount(count, done);
     ctx.primus.on('data', handleData);
     function handleData (data) {
-      log.trace('actionactionaction expectActionCount', action);
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
         log.trace('expectActionCount', action, cbCount.count);
         cbCount.next();
