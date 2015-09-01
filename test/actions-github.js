@@ -59,32 +59,32 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  describe('disabled hooks', function () {
-    beforeEach(function (done) {
-      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
-      delete process.env.ENABLE_GITHUB_HOOKS;
-      done();
-    });
-    afterEach(function (done) {
-      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
-      done();
-    });
-    it('should send response immediately if hooks are disabled', function (done) {
-      var options = hooks().pull_request_sync;
-      options.json.ref = 'refs/heads/someotherbranch';
-      require('./fixtures/mocks/github/users-username')(429706, 'podviaznikov');
-      request.post(options, function (err, res) {
-        if (err) {
-          done(err);
-        }
-        else {
-          expect(res.statusCode).to.equal(202);
-          expect(res.body).to.match(/Hooks are currently disabled\. but we gotchu/);
-          done();
-        }
-      });
-    });
-  });
+  //describe('disabled hooks', function () {
+  //  beforeEach(function (done) {
+  //    ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
+  //    delete process.env.ENABLE_GITHUB_HOOKS;
+  //    done();
+  //  });
+  //  afterEach(function (done) {
+  //    process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+  //    done();
+  //  });
+  //  it('should send response immediately if hooks are disabled', function (done) {
+  //    var options = hooks().pull_request_sync;
+  //    options.json.ref = 'refs/heads/someotherbranch';
+  //    require('./fixtures/mocks/github/users-username')(429706, 'podviaznikov');
+  //    request.post(options, function (err, res) {
+  //      if (err) {
+  //        done(err);
+  //      }
+  //      else {
+  //        expect(res.statusCode).to.equal(202);
+  //        expect(res.body).to.match(/Hooks are currently disabled\. but we gotchu/);
+  //        done();
+  //      }
+  //    });
+  //  });
+  //});
 
   describe('not supported event type', function () {
     beforeEach(function (done) {
