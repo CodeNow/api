@@ -11,11 +11,11 @@ var expect = Code.expect;
 
 var rabbitMQ = require('../../../lib/models/rabbitmq/index.js');
 var Github = require('../../../lib/models/apis/github.js');
-var Shiva = require('../../../lib/models/apis/shiva.js');
+var jobs = require('../../../lib/middlewares/apis/jobs.js');
 
 var sinon = require('sinon');
 
-describe('lib/models/apis/shiva.js unit test', function () {
+describe('lib/middlewares/apis/jobs.js unit test', function () {
   var testReq = {
     body: {
       name: 'nemo'
@@ -37,14 +37,14 @@ describe('lib/models/apis/shiva.js unit test', function () {
     it('should return error', function(done) {
       var testErr = new Error('ice storm');
       Github.prototype.getUserByUsername.yieldsAsync(testErr);
-      Shiva.publishClusterProvisionMw(testReq, {}, function (err) {
+      jobs.publishClusterProvision(testReq, {}, function (err) {
         expect(err).to.deep.equal(testErr);
         done();
       });
     });
     it('should return badRequest', function(done) {
       Github.prototype.getUserByUsername.yieldsAsync(null, null);
-      Shiva.publishClusterProvisionMw(testReq, {}, function (err) {
+      jobs.publishClusterProvision(testReq, {}, function (err) {
         expect(err.output.statusCode).to.equal(400);
         done();
       });
@@ -60,7 +60,7 @@ describe('lib/models/apis/shiva.js unit test', function () {
       done();
     });
     it('should publish job', function(done) {
-      Shiva.publishClusterProvisionMw(testReq, {}, function (err) {
+      jobs.publishClusterProvision(testReq, {}, function (err) {
         expect(err).to.not.exist();
         expect(rabbitMQ.publishClusterProvision
           .withArgs({
