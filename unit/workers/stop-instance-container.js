@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/start-instance-container
+ * @module unit/workers/stop-instance-container
  */
 'use strict';
 
@@ -18,7 +18,7 @@ var Sauron = require('models/apis/sauron');
 var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
 
-var StartInstanceContainerWorker = require('workers/start-instance-container');
+var StopInstanceContainerWorker = require('workers/stop-instance-container');
 
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
@@ -26,7 +26,7 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-describe('StartInstanceContainerWorker', function () {
+describe('StopInstanceContainerWorker', function () {
   var ctx;
 
   beforeEach(function (done) {
@@ -83,14 +83,14 @@ describe('StartInstanceContainerWorker', function () {
       _id: 'foo',
       toJSON: noop
     };
-    ctx.worker = new StartInstanceContainerWorker(ctx.data);
+    ctx.worker = new StopInstanceContainerWorker();
     done();
   });
 
   beforeEach(function (done) {
     // initialize instance w/ props, don't actually run protected methods
     sinon.stub(async, 'series', noop);
-    ctx.worker.handle(noop);
+    ctx.worker.handle(ctx.data, noop);
     async.series.restore();
     done();
   });

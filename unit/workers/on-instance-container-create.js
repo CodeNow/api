@@ -53,8 +53,8 @@ describe('OnInstanceContainerCreateWorker', function () {
       }
     };
     sinon.stub(async, 'series', noop);
-    ctx.worker = new OnInstanceContainerCreateWorker();
-    ctx.worker.handle(ctx.data);
+    ctx.worker = new OnInstanceContainerCreateWorker(ctx.data);
+    ctx.worker.handle(noop);
     done();
   });
 

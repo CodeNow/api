@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.42.3",
+  "version": "2.43.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -79,7 +79,7 @@
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.5.0",
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "s3-stream-upload": "0.0.6",
-    "sauron-client": "git+ssh://git@github.com:codenow/sauron-client.git#v1.0.2",
+    "sauron-client": "git+ssh://git@github.com:codenow/sauron-client.git#v1.1.0",
     "shimmer": "^1.0.0",
     "simple-api-client": "^0.5.9",
     "slack-client": "^1.4.0",
@@ -138,7 +138,7 @@
     "docs": "jsdoc -r -d docs lib/ && if [ $CIRCLE_ARTIFACTS ]; then cp -r docs $CIRCLE_ARTIFACTS; fi",
     "fixme": "grep -nR FIXME lib test",
     "todo": "grep -nR TODO lib test",
-    "start": "NODE_PATH=./lib node index.js",
+    "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js",
     "start-debug": "NODE_PATH=./lib node --debug index.js",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs index.js",
     "coverage": "NODE_PATH=./lib NODE_ENV=test lab -vl -m 60000 -e test -c -r html test/*.js > coverage.html && if [ $CIRCLE_ARTIFACTS ]; then cp coverage.html $CIRCLE_ARTIFACTS; fi",

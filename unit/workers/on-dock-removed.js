@@ -19,7 +19,6 @@ var Worker = require('workers/on-dock-removed');
 describe('worker: on-dock-removed unit test', function () {
   var worker;
   beforeEach(function (done) {
-    worker = new Worker();
     done();
   });
 
@@ -30,6 +29,7 @@ describe('worker: on-dock-removed unit test', function () {
     };
 
     beforeEach(function (done) {
+      worker = new Worker(testData);
       sinon.stub(worker.runnableClient, 'githubLogin');
       sinon.stub(Instance, 'findActiveInstancesByDockerHost');
       done();
@@ -49,7 +49,7 @@ describe('worker: on-dock-removed unit test', function () {
       });
 
       it('should cb err', function (done) {
-        worker.handle({}, function (err) {
+        worker.handle(function (err) {
           expect(err).to.not.exist();
           expect(
             worker.runnableClient.githubLogin
@@ -83,7 +83,7 @@ describe('worker: on-dock-removed unit test', function () {
         });
 
         it('should cb err', function (done) {
-          worker.handle(testData, function (err) {
+          worker.handle(function (err) {
             expect(
               worker.runnableClient.githubLogin
               .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
@@ -105,7 +105,7 @@ describe('worker: on-dock-removed unit test', function () {
         });
 
         it('should cb right away', function (done) {
-          worker.handle(testData, function (err) {
+          worker.handle(function (err) {
             expect(err).to.be.undefined();
             expect(
               worker.runnableClient.githubLogin
@@ -132,7 +132,7 @@ describe('worker: on-dock-removed unit test', function () {
         });
 
         it('should call _redeployContainers', function (done) {
-          worker.handle(testData, function (err) {
+          worker.handle(function (err) {
             expect(err).to.be.undefined();
             expect(
               worker.runnableClient.githubLogin
