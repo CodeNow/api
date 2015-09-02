@@ -3,7 +3,6 @@ machine:
     NODE_ENV: testing
     LOG_LEVEL: none
     LOG_LEVEL_STDOUT: error
-    DEBUG: hermes:*
 dependencies:
   cache_directories:
     - neo4j-community-2.1.8

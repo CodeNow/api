@@ -255,7 +255,7 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
-            finishAllIncompleteVersions(function () {});
+            finishAllIncompleteVersions();
           });
         });
 
@@ -313,7 +313,7 @@ describe('Github - /actions/github', function () {
               expect(cvIds).to.exist();
               expect(cvIds).to.be.an.array();
               expect(cvIds).to.have.length(1);
-              finishAllIncompleteVersions(function () {});
+              finishAllIncompleteVersions();
             });
           });
         });
@@ -438,7 +438,7 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(2);
-            finishAllIncompleteVersions(function () {});
+            finishAllIncompleteVersions();
           });
         });
       });
@@ -491,6 +491,8 @@ function finishAllIncompleteVersions (cb) {
           dockerMockEvents.emitBuildComplete(version);
         });
       });
-    cb();
+    if (cb) {
+      cb();
+    }
   });
 }
