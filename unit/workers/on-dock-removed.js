@@ -178,7 +178,7 @@ describe('worker: on-dock-removed unit test', function () {
 
       it('should callback with no error', function (done) {
         worker._redeployContainers(testData, function (err) {
-          expect(err).to.be.null();
+          expect(err).to.be.undefined();
           expect(redeployStub
             .calledTwice).to.be.true();
           done();
@@ -195,7 +195,7 @@ describe('worker: on-dock-removed unit test', function () {
 
       it('should callback with no error', function (done) {
         worker._redeployContainers(testData, function (err) {
-          expect(err).to.be.null();
+          expect(err).to.be.undefined();
           expect(redeployStub
             .calledTwice).to.be.true();
           done();
