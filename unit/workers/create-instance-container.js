@@ -12,7 +12,6 @@ var sinon = require('sinon');
 var Boom = require('dat-middleware').Boom;
 var CreateInstanceContainer = require('workers/create-instance-container');
 var Docker = require('models/apis/docker');
-var User = require('models/mongo/user');
 var Instance = require('models/mongo/instance');
 var ContextVersion = require('models/mongo/context-version');
 
