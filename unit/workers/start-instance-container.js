@@ -15,7 +15,6 @@ var Docker = require('models/apis/docker');
 var Hosts = require('models/redis/hosts');
 var Instance = require('models/mongo/instance');
 var Sauron = require('models/apis/sauron');
-var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
 
 var StartInstanceContainerWorker = require('workers/start-instance-container');
@@ -96,7 +95,7 @@ describe('StartInstanceContainerWorker', function () {
   });
 
   describe('_finalSeriesHandler', function () {
-    describe('failture witout instance', function () {
+    describe('failure without instance', function () {
       beforeEach(function (done) {
         sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
         sinon.stub(ctx.worker, '_inspectContainerAndUpdate', noop);
@@ -155,177 +154,6 @@ describe('StartInstanceContainerWorker', function () {
           expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
           expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(0);
           expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('start');
-          done();
-        });
-      });
-    });
-  });
-
-  describe('_findInstance', function () {
-    describe('basic', function () {
-      beforeEach(function (done) {
-        sinon.stub(Instance, 'findOne', function (data, cb) {
-          cb(null, ctx.mockInstance);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        Instance.findOne.restore();
-        done();
-      });
-      it('should query mongo for instance w/ container', function (done) {
-        ctx.worker._findInstance(function (err) {
-          expect(err).to.be.null();
-          expect(Instance.findOne.callCount).to.equal(1);
-          expect(Instance.findOne.args[0][0]).to.only.contain({
-            '_id': ctx.data.instanceId,
-            'container.dockerContainer': ctx.data.dockerContainer
-          });
-          expect(Instance.findOne.args[0][1]).to.be.a.function();
-          done();
-        });
-      });
-    });
-
-    describe('found', function () {
-      beforeEach(function (done) {
-        sinon.stub(Instance, 'findOne', function (data, cb) {
-          cb(null, ctx.mockInstance);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        Instance.findOne.restore();
-        done();
-      });
-      it('should callback successfully if instance w/ container found', function (done) {
-        ctx.worker._findInstance(function (err) {
-          expect(err).to.be.null();
-          expect(ctx.worker.instance).to.equal(ctx.mockInstance);
-          done();
-        });
-      });
-    });
-
-    describe('not found', function () {
-      beforeEach(function (done) {
-        sinon.stub(Instance, 'findOne', function (data, cb) {
-          cb(null, null);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        Instance.findOne.restore();
-        done();
-      });
-      it('should callback error if instance w/ container not found', function (done) {
-        ctx.worker._findInstance(function (err) {
-          expect(err.message).to.equal('instance not found');
-          expect(ctx.worker.instance).to.be.undefined();
-          done();
-        });
-      });
-    });
-
-    describe('mongo error', function () {
-      beforeEach(function (done) {
-        sinon.stub(Instance, 'findOne', function (data, cb) {
-          cb(new Error('mongoose error'), null);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        Instance.findOne.restore();
-        done();
-      });
-      it('should callback error if mongo error', function (done) {
-        ctx.worker._findInstance(function (err) {
-          expect(err.message).to.equal('mongoose error');
-          expect(ctx.worker.instance).to.be.undefined();
-          done();
-        });
-      });
-    });
-  });
-
-  describe('_findUser', function () {
-    describe('basic', function () {
-      beforeEach(function (done) {
-        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
-          cb(null, ctx.mockUser);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        User.findByGithubId.restore();
-        done();
-      });
-      it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err) {
-          expect(err).to.be.null();
-          expect(User.findByGithubId.callCount).to.equal(1);
-          expect(User.findByGithubId.args[0][0]).to.equal(ctx.data.sessionUserGithubId);
-          expect(User.findByGithubId.args[0][1]).to.be.a.function();
-          done();
-        });
-      });
-    });
-
-    describe('found', function () {
-      beforeEach(function (done) {
-        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
-          cb(null, ctx.mockUser);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        User.findByGithubId.restore();
-        done();
-      });
-      it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err) {
-          expect(err).to.be.null();
-          expect(ctx.worker.user).to.equal(ctx.mockUser);
-          done();
-        });
-      });
-    });
-
-    describe('not found', function () {
-      beforeEach(function (done) {
-        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
-          cb(null, null);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        User.findByGithubId.restore();
-        done();
-      });
-      it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err) {
-          expect(err.message).to.equal('user not found');
-          expect(ctx.worker.user).to.be.undefined();
-          done();
-        });
-      });
-    });
-
-    describe('mongo error', function () {
-      beforeEach(function (done) {
-        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
-          cb(new Error('mongoose error'), null);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        User.findByGithubId.restore();
-        done();
-      });
-      it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err) {
-          expect(err.message).to.equal('mongoose error');
-          expect(ctx.worker.user).to.be.undefined();
           done();
         });
       });
