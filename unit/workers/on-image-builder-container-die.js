@@ -127,7 +127,7 @@ describe('OnImageBuilderContainerDie', function () {
           expect(data).to.be.an.object();
           cb();
         });
-        sinon.stub(ctx.worker, '_handleBuildSuccess', function (data, cb) {
+        sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
           expect(data).to.be.an.object();
           cb();
         });
@@ -136,13 +136,13 @@ describe('OnImageBuilderContainerDie', function () {
       afterEach(function (done) {
         Docker.prototype.getBuildInfo.restore();
         ctx.worker._handleBuildError.restore();
-        ctx.worker._handleBuildSuccess.restore();
+        ctx.worker._handleBuildComplete.restore();
         done();
       });
       it('should fetch build info and update success', function (done) {
         ctx.worker._getBuildInfo(function (err) {
           expect(err).to.be.undefined();
-          expect(ctx.worker._handleBuildSuccess.callCount).to.equal(1);
+          expect(ctx.worker._handleBuildComplete.callCount).to.equal(1);
           expect(ctx.worker._handleBuildError.callCount).to.equal(0);
           done();
         });
@@ -159,7 +159,7 @@ describe('OnImageBuilderContainerDie', function () {
           expect(data).to.be.an.object();
           cb();
         });
-        sinon.stub(ctx.worker, '_handleBuildSuccess', function (data, cb) {
+        sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
           expect(data).to.be.an.object();
           cb();
         });
@@ -168,14 +168,14 @@ describe('OnImageBuilderContainerDie', function () {
       afterEach(function (done) {
         Docker.prototype.getBuildInfo.restore();
         ctx.worker._handleBuildError.restore();
-        ctx.worker._handleBuildSuccess.restore();
+        ctx.worker._handleBuildComplete.restore();
         done();
       });
       it('should fetch build info and update build failure', function (done) {
         ctx.worker._getBuildInfo(function (err) {
           expect(err).to.be.undefined();
-          expect(ctx.worker._handleBuildSuccess.callCount).to.equal(0);
-          expect(ctx.worker._handleBuildError.callCount).to.equal(1);
+          expect(ctx.worker._handleBuildComplete.callCount).to.equal(1);
+          expect(ctx.worker._handleBuildError.callCount).to.equal(0);
           done();
         });
       });
@@ -189,7 +189,7 @@ describe('OnImageBuilderContainerDie', function () {
           expect(data).to.be.an.object();
           cb();
         });
-        sinon.stub(ctx.worker, '_handleBuildSuccess', function (data, cb) {
+        sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
           expect(data).to.be.an.object();
           cb();
         });
@@ -198,13 +198,13 @@ describe('OnImageBuilderContainerDie', function () {
       afterEach(function (done) {
         Docker.prototype.getBuildInfo.restore();
         ctx.worker._handleBuildError.restore();
-        ctx.worker._handleBuildSuccess.restore();
+        ctx.worker._handleBuildComplete.restore();
         done();
       });
       it('should fetch build info and update fetch failure', function (done) {
         ctx.worker._getBuildInfo(function (err) {
           expect(err).to.be.undefined();
-          expect(ctx.worker._handleBuildSuccess.callCount).to.equal(0);
+          expect(ctx.worker._handleBuildComplete.callCount).to.equal(0);
           expect(ctx.worker._handleBuildError.callCount).to.equal(1);
           done();
         });
@@ -233,7 +233,7 @@ describe('OnImageBuilderContainerDie', function () {
     });
   });
 
-  describe('_handleBuildSuccess', function () {
+  describe('_handleBuildComplete', function () {
     beforeEach(function (done) {
       ctx.buildInfo = {};
       sinon.stub(ContextVersion, 'updateBuildCompletedByContainer',
@@ -249,7 +249,7 @@ describe('OnImageBuilderContainerDie', function () {
       done();
     });
     it('it should handle errored build', function (done) {
-      ctx.worker._handleBuildSuccess(ctx.buildInfo, function () {
+      ctx.worker._handleBuildComplete(ctx.buildInfo, function () {
         expect(ContextVersion.updateBuildCompletedByContainer.callCount).to.equal(1);
         done();
       });
