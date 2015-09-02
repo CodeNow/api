@@ -453,7 +453,10 @@ module.exports = {
                 require('./mocks/github/user')(user);
                 build.fetch(count.next);
               });
-              dockerMockEvents.emitBuildComplete(cv);      
+
+              primus.expectActionCount('build_running', 1, function () {
+                dockerMockEvents.emitBuildComplete(cv);
+              });
             });
           });
         });

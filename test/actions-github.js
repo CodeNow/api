@@ -163,9 +163,7 @@ describe('Github - /actions/github', function () {
     describe('autofork', function () {
       var slackStub;
       beforeEach(function (done) {
-        sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
-          cb(null, instance);
-        });
+        sinon.spy(SocketClient.prototype, 'onInstanceDeployed');
         slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoFork');
         done();
       });
@@ -257,7 +255,9 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
+            //primus.expectActionCount('build_running', 1, function () {
             finishAllIncompleteVersions(function () {});
+            //});
           });
         });
 
@@ -489,7 +489,9 @@ function finishAllIncompleteVersions (cb) {
       })
       .forEach(function (version) {
         // emit build complete events for each unique build
-        dockerMockEvents.emitBuildComplete(version);
+        primus.expectActionCount('build_running', 1, function () {
+          dockerMockEvents.emitBuildComplete(version);
+        });
       });
     cb();
   });

@@ -35,6 +35,7 @@ module.exports = {
       }
     });
     ctx.primus.on('data', function onData (data) {
+      console.log('\n\n\nPRIMUS', data, '\n\n');
       if (data.event === 'ROOM_ACTION_COMPLETE') {
         ctx.primus.removeListener('data', onData);
         cb();
@@ -59,7 +60,7 @@ module.exports = {
     log.trace('disconnect');
     if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
     ctx.primus.once('end', cb);
-    ctx.primus.end();
+    ctx.primus.destroy();
   },
   onceRoomMessage: function (event, action, cb) {
     log.trace('onceRoomMessage');
@@ -105,6 +106,7 @@ module.exports = {
     var cbCount = createCount(count, done);
     ctx.primus.on('data', handleData);
     function handleData (data) {
+      console.log('actionactionaction ', action, data);
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
         log.trace('expectActionCount', action, cbCount.count);
         cbCount.next();
