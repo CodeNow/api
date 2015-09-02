@@ -17,7 +17,8 @@ cache:
   - /tmp/neo4j-community-2.1.8
   - ./node_modules
 before_cache:
-- rm -rf /tmp/neo4j-community-2.1.8/data/graph.db
+- /tmp/neo4j-community-2.1.8/bin/neo4j start
+- rm -rf /tmp/neo4j-community-2.1.8/data
 services:
 - mongodb
 - redis-server
