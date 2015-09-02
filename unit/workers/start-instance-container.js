@@ -81,14 +81,14 @@ describe('StartInstanceContainerWorker', function () {
       _id: 'foo',
       toJSON: noop
     };
-    ctx.worker = new StartInstanceContainerWorker();
+    ctx.worker = new StartInstanceContainerWorker(ctx.data);
     done();
   });
 
   beforeEach(function (done) {
     // initialize instance w/ props, don't actually run protected methods
     sinon.stub(async, 'series', noop);
-    ctx.worker.handle(ctx.data, noop);
+    ctx.worker.handle(noop);
     async.series.restore();
     done();
   });
