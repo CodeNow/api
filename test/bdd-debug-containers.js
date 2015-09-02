@@ -22,9 +22,9 @@ var krain = require('krain');
 var path = require('path');
 var rimraf = require('rimraf');
 var fs = require('fs');
-var keypather = require('keypather')();
 
 function containerRoot (inspect) {
+  // this is dumb that we have to save it in krain's node_module folder
   return path.join(
     __dirname,
     '../node_modules/krain/test',
@@ -68,16 +68,6 @@ describe('BDD - Debug Containers', function () {
           masterPod: true
         }, count.next);
       });
-  });
-
-  afterEach(function (done) {
-    if (!keypather.get(ctx, 'dc.attrs.inspect')) {
-      return done();
-    }
-    // create test folder
-    rimraf.sync(containerRoot(ctx.dc.attrs.inspect));
-    ctx.krain.close();
-    done();
   });
 
   describe('creation', function () {
@@ -140,8 +130,10 @@ describe('BDD - Debug Containers', function () {
       };
       ctx.dc = ctx.user.createDebugContainer(opts, done);
     });
+    var inspectToDelete;
+    var krainServer;
     beforeEach(function (done) {
-      ctx.krain = krain.listen(process.env.KRAIN_PORT);
+      krainServer = krain.listen(process.env.KRAIN_PORT);
       fs.mkdirSync(containerRoot(ctx.dc.attrs.inspect));
       fs.mkdirSync(containerRoot(ctx.dc.attrs.inspect) + '/foo/');
       fs.writeFileSync(
@@ -151,7 +143,14 @@ describe('BDD - Debug Containers', function () {
       fs.writeFileSync(
         containerRoot(ctx.dc.attrs.inspect) + '/baz.txt',
         'Hello World!');
+      inspectToDelete = ctx.dc.attrs.inspect;
       ctx.dc.fetch(done);
+    });
+
+    afterEach(function (done) {
+      rimraf.sync(containerRoot(inspectToDelete));
+      krainServer.close();
+      done();
     });
 
     it('should allow us access to the fs of the container', function (done) {

@@ -14,10 +14,8 @@ env:
   - CIRCLE_NODE_INDEX=1
 cache:
 - directories:
-  - /tmp/neo4j-community-2.1.8
+  - /tmp/downloads
   - ./node_modules
-before_cache:
-- rm -rf /tmp/neo4j-community-2.1.8/data/graph.db
 services:
 - mongodb
 - redis-server
@@ -32,6 +30,8 @@ script:
 - ./scripts/run-command-conditionally.sh npm run lint
 - timeout 3m ./scripts/run-command-conditionally.sh npm run unit
 - timeout 10m ./scripts/npm-bdd-split-files.sh
+after_script:
+- /tmp/neo4j-community-2.1.8/bin/neo4j stop
 notifications:
   email: false
   slack:
