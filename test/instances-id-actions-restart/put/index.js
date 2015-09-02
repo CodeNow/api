@@ -17,14 +17,8 @@ var expect = Code.expect;
 var it = lab.it;
 
 var Container = require('dockerode/lib/container');
-var Dockerode = require('dockerode');
 var createCount = require('callback-count');
 var exists = require('101/exists');
-var extend = require('extend');
-var isFunction = require('101/is-function');
-var last = require('101/last');
-var noop = require('101/noop');
-var sinon = require('sinon');
 var uuid = require('uuid');
 
 var Docker = require('models/apis/docker');
@@ -34,7 +28,6 @@ var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
-var rabbitMQ = require('models/rabbitmq/index');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 
 describe('PUT /instances/:id/actions/restart', function () {
