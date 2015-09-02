@@ -25,6 +25,7 @@ var isFunction = require('101/is-function');
 var last = require('101/last');
 var sinon = require('sinon');
 var uuid = require('uuid');
+var rabbitMQ = require('models/rabbitmq/index');
 
 var Docker = require('models/apis/docker');
 var api = require('../../fixtures/api-control');
@@ -191,7 +192,8 @@ describe('PUT /instances/:id/actions/stop', function () {
 
       it('should error if already starting', function(done) {
         sinon.stub(Docker.prototype, 'startContainer', function () {});
-        ctx.instance.start(done);
+        ctx.instance.start(function () {});
+        primus.expectAction('start', done);
         primus.expectAction('starting', function () {
           ctx.instance.stop(function (err) {
             expect(err.message).to.equal('Instance is already starting');
@@ -225,7 +227,14 @@ describe('PUT /instances/:id/actions/stop', function () {
           done();
         });
       });
-
+      beforeEach(function (done) {
+        sinon.stub(rabbitMQ.hermesClient, 'publish', function () {});
+        done();
+      });
+      afterEach(function (done) {
+        rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
       beforeEach(function (done) {
         ctx.stopContainerCallbacks = [];
         sinon.stub(Docker.prototype, 'stopContainer', function (containerId, opts, cb) {
@@ -448,7 +457,7 @@ describe('PUT /instances/:id/actions/stop', function () {
             }, count.next);
             instance.stop(expects.success(200, {}, /*ctx.expected,*/ function (err) {
               if (err) { return count.next(err); }
-              count.next();
+              primus.expectAction('stop', count.next);
             }));
           });
           instance.start(function (err) {
