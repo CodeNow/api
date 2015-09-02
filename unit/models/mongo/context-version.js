@@ -17,11 +17,41 @@ var ContextVersion = require('models/mongo/context-version');
 var cbCount = require('callback-count');
 var error = require('error');
 var sinon = require('sinon');
+var Boom = require('dat-middleware').Boom;
 
 var ctx = {};
 describe('Context Version', function () {
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
+
+  describe('updateBuildErrorByContainer', function () {
+    it('should save the logs as an array', function (done) {
+      sinon.stub(ContextVersion, 'updateBy').yields();
+      sinon.stub(ContextVersion, 'findBy').yields();
+
+      var err = Boom.badRequest('message', {
+        docker: {
+          log: [{ some: 'object' }]
+        }
+      });
+
+      ContextVersion.updateBuildErrorByContainer('', err, function () {
+        expect(ContextVersion.updateBy.calledOnce).to.be.true();
+        // expect(ContextVersion.findBy.calledOnce).to.be.true();
+
+        var args = ContextVersion.updateBy.getCall(0).args;
+        expect(args[0]).to.equal('build.dockerContainer');
+        expect(args[1]).to.equal('');
+        expect(args[2].$set['build.log']).to.deep.equal([{
+          some: 'object'
+        }]);
+
+        ContextVersion.updateBy.restore();
+        ContextVersion.findBy.restore();
+        done();
+      });
+    });
+  });
 
   describe('save context version hook', function () {
     it('should call post save hook and report error when owner is undefiend', function (done) {
