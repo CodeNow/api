@@ -424,7 +424,7 @@ describe('StartInstanceContainerWorker', function () {
       });
       it('should attempt to start container n times', function (done) {
         ctx.worker._startContainer(function (err) {
-          expect(err.message).to.be.undefined();
+          expect(err).to.be.null();
           expect(Docker.prototype.startUserContainer.callCount)
             .to.equal(1);
           expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
