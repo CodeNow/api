@@ -27,6 +27,9 @@ var expects = require('./fixtures/expects');
 var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 
+var sinon = require('sinon');
+var rabbitMQ = require('models/rabbitmq');
+
 describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {};
   before(api.start.bind(ctx));
@@ -40,6 +43,15 @@ describe('BDD - Create Build and Deploy Instance', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
+
+  before(function (done) {
+    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    done();
+  });
+  after(function (done) {
+    rabbitMQ.deleteInstanceContainer.restore();
+    done();
+  });
 
   describe('create a cv to test dudupe logic with', function () {
 
