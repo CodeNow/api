@@ -79,6 +79,14 @@ describe('Debug Containers', function () {
       ctx.dc.deploy(function (err, dc) {
         if (err) { return done(err); }
         expect(Docker.prototype.createContainer.calledOnce).to.be.true();
+        var createArgs = Docker.prototype.createContainer.getCall(0).args[0];
+        expect(createArgs).to.deep.equal({
+          Cmd: [ 'sleep', '28800' ],
+          Image: dc.layerId,
+          Labels: {
+            type: 'debug-container'
+          }
+        });
         expect(containerStart.calledOnce).to.be.true();
         expect(containerInspect.calledOnce).to.be.true();
         Docker.prototype.createContainer.restore();
