@@ -221,6 +221,61 @@ describe('RabbitMQ Model', function () {
     });
   });
 
+  describe('deleteInstanceContainer', function () {
+    beforeEach(function (done) {
+      // this normally set after connect
+      ctx.rabbitMQ.hermesClient = {
+        publish: noop
+      };
+      ctx.validJobData = {
+        instance: {
+          shortHash: 'd1as5f',
+        },
+        instanceName: 'api',
+        ownerUsername: 'podviaznikov'
+      };
+      //missing instance
+      ctx.invalidJobData = {
+        instanceName: 'api',
+        ownerUsername: 'podviaznikov'
+      };
+      done();
+    });
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
+          expect(eventName).to.equal('delete-instance-container');
+          expect(eventData).to.equal(ctx.validJobData);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should publish a job with required data', function (done) {
+        ctx.rabbitMQ.deleteInstanceContainer(ctx.validJobData);
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1);
+        done();
+      });
+    });
+    describe('failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {});
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should not publish a job without required data', function (done) {
+        ctx.rabbitMQ.deleteInstanceContainer(ctx.invalidJobData);
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
+        done();
+      });
+    });
+  });
+
   describe('publishClusterProvision', function () {
     var testOrgId = 18274533;
     beforeEach(function (done) {
