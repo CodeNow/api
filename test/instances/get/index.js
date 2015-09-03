@@ -163,29 +163,6 @@ describe('GET /instances', function () {
         }
       ], done);
     });
-    it('should support instance filtering', function (done) {
-      require('../../fixtures/mocks/github/user')(ctx.user);
-      require('../../fixtures/mocks/github/users-username')
-      (ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.username);
-      async.series([
-        function userOne (cb) {
-          var query = {
-            githubUsername: ctx.user.json().accounts.github.username,
-            ignoredFields: 'containers'
-          };
-          var expected = [
-            {
-              _id: ctx.instance.json()._id,
-              shortHash: ctx.instance.json().shortHash,
-              containers: function (item) {
-                return !exists(item);
-              }
-            }
-          ];
-          ctx.user.fetchInstances(query, expects.success(200, expected, cb));
-        }
-      ], done);
-    });
     it('should get instances by ["contextVersion.appCodeVersions.repo"]', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user);
       var count = createCount(2, done);
