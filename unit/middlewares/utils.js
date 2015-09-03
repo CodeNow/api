@@ -92,5 +92,5 @@ describe('utils unit test', function () {
       }
       utils.applyFieldFilters('instance')(req, res, next);
     });
-  })
+  });
 });
