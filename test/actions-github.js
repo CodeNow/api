@@ -35,6 +35,7 @@ var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 var request = require('request');
 var sinon = require('sinon');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('Github - /actions/github', function () {
   var ctx = {};
@@ -50,6 +51,15 @@ describe('Github - /actions/github', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
+
+  before(function (done) {
+    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    done();
+  });
+  after(function (done) {
+    rabbitMQ.deleteInstanceContainer.restore();
+    done();
+  });
 
   describe('ping', function () {
     it('should return OKAY', function (done) {
@@ -348,100 +358,72 @@ describe('Github - /actions/github', function () {
 
         describe('delete branch', function () {
 
-          // it('should return 0 instancesIds if nothing was deleted', function (done) {
-          //   var options = hooks().push;
-          //   options.json.deleted = true;
-          //   request.post(options, function (err, res, body) {
-          //     if (err) { return done(err); }
-          //     expect(res.statusCode).to.equal(202);
-          //     expect(body).to.equal('No appropriate work to be done; finishing.');
-          //     done();
-          //   });
-          // });
-          // //
-          // it('should return 1 instancesIds if 1 instance was deleted', function (done) {
-          //   var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          //   var user = ctx.user.attrs.accounts.github;
-          //   var data = {
-          //     branch: 'feature-1',
-          //     repo: acv.repo,
-          //     ownerId: user.id,
-          //     owner: user.login
-          //   };
-          //   var username = user.login;
+          it('should return 0 instancesIds if nothing was deleted', function (done) {
+            var options = hooks().push;
+            options.json.deleted = true;
+            request.post(options, function (err, res, body) {
+              if (err) { return done(err); }
+              expect(res.statusCode).to.equal(202);
+              expect(body).to.equal('No appropriate work to be done; finishing.');
+              done();
+            });
+          });
           //
-          //   var countOnCallback = function () {
-          //     count.next();
-          //   };
-          //   // emulate instance deploy event
-          //   sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
-          //     cb(null, instance);
-          //   });
-          //   var count = cbCount(3, function () {
-          //     var slackStub = Slack.prototype.notifyOnAutoFork;
-          //     expect(slackStub.calledOnce).to.equal(true);
-          //     expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
-          //     slackStub.restore();
-          //     SocketClient.prototype.onInstanceDeployed.restore();
-          //
-          //
-          //     var deleteOptions = hooks(data).push;
-          //     deleteOptions.json.deleted = true;
-          //     require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
-          //       ctx.user.attrs.accounts.github.login);
-          //     request.post(deleteOptions, function (err, res, body) {
-          //       if (err) { return done(err); }
-          //       expect(res.statusCode).to.equal(201);
-          //       expect(body.length).to.equal(1);
-          //       done();
-          //     });
-          //
-          //   });
-          //   sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
-          //   var options = hooks(data).push;
-          //   require('./fixtures/mocks/github/users-username')(101, username);
-          //   // wait for container create worker to finish
-          //   primus.expectActionCount('start', 1, count.next);
-          //   request.post(options, function (err, res, cvIds) {
-          //     if (err) { return done(err); }
-          //     finishAllIncompleteVersions();
-          //     expect(res.statusCode).to.equal(200);
-          //     expect(cvIds).to.exist();
-          //     expect(cvIds).to.be.an.array();
-          //     expect(cvIds).to.have.length(1);
-          //     count.next();
-          //   });
-          // });
-        });
+          it('should return 1 instancesIds if 1 instance was deleted', function (done) {
+            var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+            var user = ctx.user.attrs.accounts.github;
+            var data = {
+              branch: 'feature-1',
+              repo: acv.repo,
+              ownerId: user.id,
+              owner: user.login
+            };
+            var username = user.login;
 
-        describe('fork 2 instances', function () {
-          beforeEach(function (done) {
-            multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
-              ctx.contextVersion = modelsArr[0];
-              ctx.context = modelsArr[1];
-              ctx.build = build;
-              ctx.user = user;
-              ctx.instance = instance;
-              var settings = {
-                owner: {
-                  github: user.attrs.accounts.github.id
-                }
-              };
-              user.createSetting({json: settings}, function (err, body) {
+            var countOnCallback = function () {
+              count.next();
+            };
+            // emulate instance deploy event
+            sinon.stub(SocketClient.prototype, 'onInstanceDeployed', function (instance, buildId, cb) {
+              cb(null, instance);
+            });
+            var count = cbCount(3, function () {
+              var slackStub = Slack.prototype.notifyOnAutoFork;
+              expect(slackStub.calledOnce).to.equal(true);
+              expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
+              slackStub.restore();
+              SocketClient.prototype.onInstanceDeployed.restore();
+
+
+              var deleteOptions = hooks(data).push;
+              deleteOptions.json.deleted = true;
+              require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
+                ctx.user.attrs.accounts.github.login);
+              request.post(deleteOptions, function (err, res, body) {
                 if (err) { return done(err); }
-                expect(body._id).to.exist();
-                ctx.settingsId = body._id;
-                ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
-                  expect(err).to.be.null();
-                  primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
-                    if (err) { return done(err); }
-                    primus.expectAction('start', {}, done);
-                  });
-                });
+                expect(res.statusCode).to.equal(201);
+                expect(body.length).to.equal(1);
+                done();
               });
+
+            });
+            sinon.stub(Slack.prototype, 'notifyOnAutoFork', countOnCallback);
+            var options = hooks(data).push;
+            require('./fixtures/mocks/github/users-username')(101, username);
+            // wait for container create worker to finish
+            primus.expectActionCount('start', 1, count.next);
+            request.post(options, function (err, res, cvIds) {
+              if (err) { return done(err); }
+              finishAllIncompleteVersions();
+              expect(res.statusCode).to.equal(200);
+              expect(cvIds).to.exist();
+              expect(cvIds).to.be.an.array();
+              expect(cvIds).to.have.length(1);
+              count.next();
             });
           });
         });
+
       });
     });
 
