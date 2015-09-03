@@ -33,6 +33,8 @@ var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
+var sinon = require('sinon');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('Instance - /instances/:id', function () {
   var ctx = {};
@@ -46,6 +48,16 @@ describe('Instance - /instances/:id', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+
+  before(function (done) {
+    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    done();
+  });
+  
+  after(function (done) {
+    rabbitMQ.deleteInstanceContainer.restore();
+    done();
+  });
 
   /**
    * Patching has a couple of different jobs.  It allows the user to edit the name of the instance,
