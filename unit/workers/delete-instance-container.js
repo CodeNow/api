@@ -122,5 +122,40 @@ describe('Worker: delete-instance-container', function () {
         done();
       });
     });
+    it('should report success if no errors occured', function (done) {
+      var worker = new DeleteInstanceContainer({
+        instance: {
+          container: {
+            dockerHost: 'https://localhost:4242'
+          }
+        }
+      });
+      sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
+        cb(null);
+      });
+      sinon.stub(Hosts.prototype, 'removeHostsForInstance',
+        function (ownerUsername, instance, instanceName, container, cb) {
+          cb(null);
+        });
+      sinon.stub(Docker.prototype, 'stopContainer', function (container, force, cb) {
+        cb(null);
+      });
+      sinon.stub(Docker.prototype, 'removeContainer', function (container, cb) {
+        cb(null);
+      });
+      worker.handle(function (err) {
+        expect(err).to.not.exist();
+        expect(Sauron.prototype.detachHostFromContainer.callCount).to.equal(1);
+        expect(Hosts.prototype.removeHostsForInstance.callCount).to.equal(1);
+        expect(Docker.prototype.stopContainer.callCount).to.equal(1);
+        expect(Docker.prototype.removeContainer.callCount).to.equal(1);
+
+        Sauron.prototype.detachHostFromContainer.restore();
+        Hosts.prototype.removeHostsForInstance.restore();
+        Docker.prototype.stopContainer.restore();
+        Docker.prototype.removeContainer.restore();
+        done();
+      });
+    });
   });
 });
