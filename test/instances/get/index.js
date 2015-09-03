@@ -4,9 +4,8 @@ var Code = require('code');
 var Lab = require('lab');
 var async = require('async');
 var createCount = require('callback-count');
-var exist = require('101/exist');
+var exists = require('101/exists');
 var noop = require('101/noop');
-var not = require('101/not');
 var pluck = require('101/pluck');
 
 var api = require('../../fixtures/api-control');
@@ -178,7 +177,9 @@ describe('GET /instances', function () {
             {
               _id: ctx.instance.json()._id,
               shortHash: ctx.instance.json().shortHash,
-              containers: not().exist()
+              containers: function (item) {
+                return !exists(item);
+              }
             }
           ];
           ctx.user.fetchInstances(query, expects.success(200, expected, cb));
