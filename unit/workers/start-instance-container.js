@@ -410,6 +410,28 @@ describe('StartInstanceContainerWorker', function () {
         });
       });
     });
+
+    describe('failure already-started', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'startUserContainer', function (dockerContainer, sessionUserGithubId, cb) {
+          cb({statusCode: 304});
+        });
+        done();
+      });
+      afterEach(function (done) {
+        Docker.prototype.startUserContainer.restore();
+        done();
+      });
+      it('should attempt to start container n times', function (done) {
+        ctx.worker._startContainer(function (err) {
+          expect(err.message).to.be.undefined();
+          expect(Docker.prototype.startUserContainer.callCount)
+            .to.equal(1);
+          expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
+          done();
+        });
+      });
+    });
   });
 
   describe('_inspectContainerAndUpdate', function () {
