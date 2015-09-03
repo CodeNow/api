@@ -1,5 +1,6 @@
 'use strict';
-
+var sinon = require('sinon');
+var Code = require('code');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -8,6 +9,7 @@ var before = lab.before;
 var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
+var expect = Code.expect;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -16,7 +18,6 @@ var multi = require('../../fixtures/multi-factory');
 var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var primus = require('../../fixtures/primus');
 
-var clone = require('101/clone');
 var exists = require('101/exists');
 var last = require('101/last');
 var isFunction = require('101/is-function');
@@ -28,6 +29,7 @@ var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
 var extend = require('extend');
 var redisCleaner = require('../../fixtures/redis-cleaner');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('204 DELETE /instances/:id', function () {
   var ctx = {};
@@ -269,20 +271,18 @@ describe('204 DELETE /instances/:id', function () {
     it('should delete an instance', function (done) {
       require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
         ctx.user.attrs.accounts.github.login);
-      var instance = clone(ctx.instance);
-      var container = ctx.instance.containers.models[0];
+      sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
       // destroy event will be handled in near future via worker
       ctx.instance.destroy(expects.success(204, function (err) {
         if (err) { return done(err); }
         check(done);
       }));
       function check(cb) {
-        var c = (container && container.attrs.dockerContainer) ? 2 : 1;
-        var count = createCount(c, cb);
-        expects.deletedHosts(ctx.user, instance, container, count.next);
-        if (container && container.attrs.dockerContainer) {
-          expects.deletedWeaveHost(container, count.next);
+        if (ctx.expectNoContainerErr !== true) {
+          expect(rabbitMQ.deleteInstanceContainer.calledOnce).to.be.true();
         }
+        rabbitMQ.deleteInstanceContainer.restore();
+        cb();
       }
     });
   }
