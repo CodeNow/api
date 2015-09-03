@@ -24,7 +24,7 @@ describe('utils unit test', function () {
       };
       var res = {};
       function next() {
-        expect(req.ignoredFields).to.equal(['testField']);
+        expect(req.ignoredFields[0]).to.equal('testField');
         done();
       }
       utils.formatFieldFilters()(req, res, next);
@@ -50,14 +50,14 @@ describe('utils unit test', function () {
       };
       var res = {};
       function next() {
-        expect(req.ignoredFields).to.equal(['option 1', 'option 2']);
+        expect(req.ignoredFields[0]).to.equal('option 1');
         done();
       }
       utils.formatFieldFilters()(req, res, next);
     });
   });
   describe('applyFieldFilters', function () {
-    it('should do nothing if there are no ignored fields', function () {
+    it('should do nothing if there are no ignored fields', function (done) {
       var req = {
         instance: {
           key: 'value'
@@ -70,7 +70,7 @@ describe('utils unit test', function () {
       }
       utils.applyFieldFilters('instance')(req, res, next);
     });
-    it('should ignore the ignored fields', function () {
+    it('should ignore the ignored fields', function (done) {
       var req = {
         instance: {
           key: 'value',
@@ -86,8 +86,8 @@ describe('utils unit test', function () {
       var res = {};
       function next() {
         expect(req.instance.key).to.equal('value');
-        expect(req.instance.obj).to.equal({});
-        expect(req.instance.obj1).to.equal({});
+        expect(req.instance.obj).to.be.empty();
+        expect(req.instance.obj1).to.be.empty();
         done();
       }
       utils.applyFieldFilters('instance')(req, res, next);
