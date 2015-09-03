@@ -363,40 +363,4 @@ describe('StartInstanceContainerWorker', function () {
       });
     });
   });
-
-  describe('_updateInstanceFrontend', function () {
-    beforeEach(function (done) {
-      // normally set by _findInstance & _findUser
-      ctx.worker.instance = ctx.mockInstance;
-      ctx.worker.user = ctx.mockUser;
-      done();
-    });
-
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(Instance, 'findById', function (query, cb) {
-          cb(null, ctx.mockInstance);
-        });
-        sinon.stub(messenger, 'emitInstanceUpdate', function () {});
-        done();
-      });
-
-      afterEach(function (done) {
-        Instance.findById.restore();
-        messenger.emitInstanceUpdate.restore();
-        done();
-      });
-
-      it('should fetch instance and notify frontend via primus instance has started',
-      function (done) {
-        ctx.worker._updateInstanceFrontend();
-        expect(Instance.findById.callCount).to.equal(1);
-        expect(Instance.findById.args[0][0]).to.equal(ctx.data.instanceId);
-        expect(ctx.populateModelsSpy.callCount).to.equal(1);
-        expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-        expect(messenger.emitInstanceUpdate.callCount).to.equal(1);
-        done();
-      });
-    });
-  });
 });

@@ -12,11 +12,7 @@ var noop = require('101/noop');
 var sinon = require('sinon');
 
 var Docker = require('models/apis/docker');
-var Hosts = require('models/redis/hosts');
-var Instance = require('models/mongo/instance');
 var Sauron = require('models/apis/sauron');
-var User = require('models/mongo/user');
-var messenger = require('socket/messenger');
 
 var StopInstanceContainerWorker = require('workers/stop-instance-container');
 
@@ -161,8 +157,7 @@ describe('StopInstanceContainerWorker', function () {
     });
   });
 
-/*
-  describe('_setInstanceStateStarting', function () {
+  describe('_setInstanceStateStopping', function () {
     beforeEach(function (done) {
       // normally set by _findInstance & _findUser
       ctx.worker.instance = ctx.mockInstance;
@@ -171,7 +166,7 @@ describe('StopInstanceContainerWorker', function () {
     });
     beforeEach(function (done) {
       sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
-      ctx.mockInstance.setContainerStateToStarting = function (cb) {
+      ctx.mockInstance.setContainerStateToStopping = function (cb) {
         cb(null, ctx.mockInstance);
       };
       done();
@@ -180,17 +175,17 @@ describe('StopInstanceContainerWorker', function () {
       ctx.worker._updateInstanceFrontend.restore();
       done();
     });
-    it('should set container state to starting and notify frontend', function (done) {
-      ctx.worker._setInstanceStateStarting(function (err) {
+    it('should set container state to stopping and notify frontend', function (done) {
+      ctx.worker._setInstanceStateStopping(function (err) {
         expect(err).to.be.undefined();
         expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
-        expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('starting');
+        expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('stopping');
         done();
       });
     });
   });
 
-  describe('_startContainer', function () {
+  describe('_stopContainer', function () {
     beforeEach(function (done) {
       // normally set by _findInstance & _findUser
       ctx.worker.instance = ctx.mockInstance;
@@ -200,19 +195,19 @@ describe('StopInstanceContainerWorker', function () {
 
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'startUserContainer', function (dockerContainer, sessionUserGithubId, cb) {
+        sinon.stub(Docker.prototype, 'stopContainer', function (dockerContainer, cb) {
           cb(null);
         });
         done();
       });
       afterEach(function (done) {
-        Docker.prototype.startUserContainer.restore();
+        Docker.prototype.stopContainer.restore();
         done();
       });
-      it('should callback successfully if container start', function (done) {
-        ctx.worker._startContainer(function (err) {
+      it('should callback successfully if container stop', function (done) {
+        ctx.worker._stopContainer(function (err) {
           expect(err).to.be.null();
-          expect(Docker.prototype.startUserContainer.callCount).to.equal(1);
+          expect(Docker.prototype.stopContainer.callCount).to.equal(1);
           expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
           done();
         });
@@ -221,20 +216,20 @@ describe('StopInstanceContainerWorker', function () {
 
     describe('failure n times', function () {
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'startUserContainer', function (dockerContainer, sessionUserGithubId, cb) {
-          cb(new Error('docker start container error'));
+        sinon.stub(Docker.prototype, 'stopContainer', function (dockerContainer, cb) {
+          cb(new Error('docker stop container error'));
         });
         done();
       });
       afterEach(function (done) {
-        Docker.prototype.startUserContainer.restore();
+        Docker.prototype.stopContainer.restore();
         done();
       });
-      it('should attempt to start container n times', function (done) {
-        ctx.worker._startContainer(function (err) {
-          expect(err.message).to.equal('docker start container error');
-          expect(Docker.prototype.startUserContainer.callCount)
-            .to.equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS);
+      it('should attempt to stop container n times', function (done) {
+        ctx.worker._stopContainer(function (err) {
+          expect(err.message).to.equal('docker stop container error');
+          expect(Docker.prototype.stopContainer.callCount)
+          .to.equal(process.env.WORKER_STOP_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
           done();
         });
@@ -328,7 +323,7 @@ describe('StopInstanceContainerWorker', function () {
     });
   });
 
-  describe('_attachContainerToNetwork', function () {
+  describe('_detachContainerFromNetwork', function () {
     beforeEach(function (done) {
       // normally set by _findInstance & _findUser
       ctx.worker.instance = ctx.mockInstance;
@@ -338,68 +333,25 @@ describe('StopInstanceContainerWorker', function () {
 
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(Sauron.prototype, 'attachHostToContainer',
+        sinon.stub(Sauron.prototype, 'detachHostFromContainer',
                    function (networkIp, hostIp, containerId, cb) {
-          cb(null);
-        });
-        sinon.stub(Hosts.prototype, 'upsertHostsForInstance',
-                  function (ownerUsername, instance, cb) {
           cb(null);
         });
         done();
       });
 
       afterEach(function (done) {
-        Sauron.prototype.attachHostToContainer.restore();
-        Hosts.prototype.upsertHostsForInstance.restore();
+        Sauron.prototype.detachHostFromContainer.restore();
         done();
       });
 
-      it('should attach to weave and register with navi', function (done) {
-        ctx.worker._attachContainerToNetwork(function (err) {
-          expect(err).to.be.undefined();
-          expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
-          expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
+      it('should detach from weave', function (done) {
+        ctx.worker._detachContainerFromNetwork(function (err) {
+          expect(err).to.be.null();
+          expect(Sauron.prototype.detachHostFromContainer.callCount).to.equal(1);
           done();
         });
       });
     });
   });
-
-  describe('_updateInstanceFrontend', function () {
-    beforeEach(function (done) {
-      // normally set by _findInstance & _findUser
-      ctx.worker.instance = ctx.mockInstance;
-      ctx.worker.user = ctx.mockUser;
-      done();
-    });
-
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(Instance, 'findById', function (query, cb) {
-          cb(null, ctx.mockInstance);
-        });
-        sinon.stub(messenger, 'emitInstanceUpdate', function () {});
-        done();
-      });
-
-      afterEach(function (done) {
-        Instance.findById.restore();
-        messenger.emitInstanceUpdate.restore();
-        done();
-      });
-
-      it('should fetch instance and notify frontend via primus instance has started',
-      function (done) {
-        ctx.worker._updateInstanceFrontend();
-        expect(Instance.findById.callCount).to.equal(1);
-        expect(Instance.findById.args[0][0]).to.equal(ctx.data.instanceId);
-        expect(ctx.populateModelsSpy.callCount).to.equal(1);
-        expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-        expect(messenger.emitInstanceUpdate.callCount).to.equal(1);
-        done();
-      });
-    });
-  });
-*/
 });
