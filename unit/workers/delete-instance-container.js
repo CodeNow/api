@@ -15,8 +15,51 @@ var DeleteInstanceContainer = require('workers/delete-instance-container');
 var Docker = require('models/apis/docker');
 var Hosts = require('models/redis/hosts');
 var Sauron = require('models/apis/sauron');
+var User = require('models/mongo/user');
 
 describe('Worker: delete-instance-container', function () {
+
+  describe('#_findGitHubUsername', function () {
+    it('should fail if User.findById failed', function (done) {
+      sinon.stub(User, 'findById', function (id, cb) {
+        cb(Boom.badRequest('Mongo error'));
+      });
+      var worker = new DeleteInstanceContainer({
+        instance: {
+          container: {
+            dockerHost: 'https://localhost:4242'
+          }
+        }
+      });
+      worker._findGitHubUsername('some-id', 123213, function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(400);
+        expect(err.output.payload.message).to.equal('Mongo error');
+        User.findById.restore();
+        done();
+      });
+    });
+    it('should fail if User.findById returned null', function (done) {
+      sinon.stub(User, 'findById', function (id, cb) {
+        cb(null, null);
+      });
+      var worker = new DeleteInstanceContainer({
+        instance: {
+          container: {
+            dockerHost: 'https://localhost:4242'
+          }
+        }
+      });
+      worker._findGitHubUsername('some-id', 123213, function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('User not found');
+        User.findById.restore();
+        done();
+      });
+    });
+  });
+
 
   describe('#handle', function () {
     it('should fail job if _findGitHubUsername call failed', function (done) {
