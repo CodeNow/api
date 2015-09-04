@@ -4,7 +4,6 @@ var Code = require('code');
 var Lab = require('lab');
 var async = require('async');
 var createCount = require('callback-count');
-var exists = require('101/exists');
 var noop = require('101/noop');
 var pluck = require('101/pluck');
 
@@ -162,6 +161,23 @@ describe('GET /instances', function () {
           ctx.user2.fetchInstances(query2, expects.success(200, expected2, cb));
         }
       ], done);
+    });
+    it('should support instance filtering', function (done) {
+      require('../../fixtures/mocks/github/user')(ctx.user);
+      require('../../fixtures/mocks/github/users-username')
+        (ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.username);
+      var query = {
+        githubUsername: ctx.user.json().accounts.github.username,
+        ignoredFields: JSON.stringify(['containers', 'container'])
+      };
+      ctx.user.fetchInstances(query, function (err, data) {
+        if (err) { return done(err); }
+        expect(data).to.have.length(1);
+        expect(data[0].container).to.not.exist();
+        expect(data[0].containers).to.not.exist();
+        expect(data[0]._id).to.equal(ctx.instance.attrs._id);
+        done();
+      });
     });
     it('should get instances by ["contextVersion.appCodeVersions.repo"]', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user);
