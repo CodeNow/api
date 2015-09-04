@@ -12,6 +12,7 @@ var sinon = require('sinon');
 
 var BaseWorker = require('workers/base-worker');
 var ContextVersion = require('models/mongo/context-version');
+var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
 var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
@@ -27,16 +28,19 @@ describe('BaseWorker', function () {
 
   beforeEach(function (done) {
     ctx = {};
+    ctx.modifyContainerInspectSpy =
+      sinon.spy(function (dockerContainerId, inspect, cb) {
+      cb(null, ctx.mockContainer);
+    });
+    ctx.modifyContainerInspectErrSpy = sinon.spy(function (dockerContainerId, error, cb) {
+      cb(null);
+    });
     ctx.data = {
       from: '34565762',
       host: '5476',
       id: '3225',
       time: '234234',
       uuid: '12343'
-    };
-    ctx.mockInstance = {
-      '_id': ctx.data.instanceId,
-      name: 'name1'
     };
     ctx.mockUser = {
       _id: 'foo',
@@ -45,6 +49,10 @@ describe('BaseWorker', function () {
     ctx.dockerContainerId = 'asdasdasd';
     ctx.mockContextVersion = {
       toJSON: noop
+    };
+    ctx.mockContainer = {
+      dockerContainer: ctx.data.dockerContainer,
+      dockerHost: ctx.data.dockerHost
     };
     ctx.mockInstance = {
       '_id': ctx.data.instanceId,
@@ -59,6 +67,7 @@ describe('BaseWorker', function () {
         username: '',
         gravatar: ''
       },
+      container: ctx.mockContainer,
       removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
       modifyContainerInspect: ctx.modifyContainerInspectSpy,
       modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy,
@@ -394,8 +403,89 @@ describe('BaseWorker', function () {
   });
 
   describe('_baseWorkerInspectContainerAndUpdate', function () {
-    it('TODO', function (done) {
+    beforeEach(function (done) {
+      // normally set by _findInstance & _findUser
+      ctx.worker.instance = ctx.mockInstance;
+      ctx.worker.user = ctx.mockUser;
+      ctx.worker.docker = new Docker('0.0.0.0');
       done();
+    });
+
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
+          cb(null, ctx.mockContainer);
+        });
+        done();
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+
+      it('should inspect a container and update the database', function (done) {
+        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
+          expect(err).to.be.undefined();
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
+          done();
+        });
+      });
+    });
+
+    describe('error inspect', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
+          cb(new Error('docker inspect error'));
+        });
+        done();
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+
+      it('should inspect a container and update the database', function (done) {
+        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
+          expect(err.message).to.equal('docker inspect error');
+          expect(Docker.prototype.inspectContainer.callCount)
+            .to.equal(process.env.WORKER_INSPECT_CONTAINER_NUMBER_RETRY_ATTEMPTS);
+          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(0);
+          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(1);
+          done();
+        });
+      });
+    });
+
+    describe('error update mongo', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
+          cb(null, ctx.mockContainer);
+        });
+        ctx.modifyContainerInspectSpy = sinon.spy(function (dockerContainerId, inspect, cb) {
+          cb(new Error('mongoose error'));
+        });
+        ctx.mockInstance.modifyContainerInspect = ctx.modifyContainerInspectSpy;
+        done();
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+
+      it('should inspect a container and update the database', function (done) {
+        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
+          expect(err.message).to.equal('mongoose error');
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
+          done();
+        });
+      });
     });
   });
 });

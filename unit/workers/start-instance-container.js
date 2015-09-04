@@ -28,14 +28,6 @@ describe('StartInstanceContainerWorker', function () {
 
     // spies
     ctx.removeStartingStoppingStatesSpy = sinon.spy(function (cb) { cb(); });
-    ctx.modifyContainerInspectSpy =
-      sinon.spy(function (dockerContainerId, inspect, cb) {
-      cb(null, ctx.mockContainer);
-    });
-    ctx.modifyContainerInspectErrSpy = sinon.spy(function (dockerContainerId, error, cb) {
-      cb(null);
-    });
-
     ctx.populateModelsSpy = sinon.spy(function (cb) { cb(null); });
     ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (user, cb) { cb(null, ctx.mockInstance); });
 
@@ -63,8 +55,6 @@ describe('StartInstanceContainerWorker', function () {
         gravatar: ''
       },
       removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
-      modifyContainerInspect: ctx.modifyContainerInspectSpy,
-      modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy,
       populateModels: ctx.populateModelsSpy,
       populateOwnerAndCreatedBy: ctx.populateOwnerAndCreatedBySpy
     };
