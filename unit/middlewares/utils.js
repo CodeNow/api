@@ -19,41 +19,27 @@ describe('utils unit test', function () {
     it('should set the ignored fields as an array on the req object', function (done) {
       var req = {
         query: {
-          ignoredFields: '"testField"'
+          ignoredFields: 'testField'
         }
       };
-      var res = {};
       function next() {
         expect(req.ignoredFields[0]).to.equal('testField');
         done();
       }
-      utils.formatFieldFilters()(req, res, next);
-    });
-    it('should handle and JSON parse errors like a champ', function (done) {
-      var req = {
-        query: {
-          ignoredFields: '[thisisInvalidJSON'
-        }
-      };
-      var res = {};
-      function next() {
-        expect(req.ignoredFields).to.not.exist();
-        done();
-      }
-      utils.formatFieldFilters()(req, res, next);
+      utils.formatFieldFilters()(req, {}, next);
     });
     it('should parse an array of options properly', function (done) {
       var req = {
         query: {
-          ignoredFields: '["option 1", "option 2"]'
+          ignoredFields: ['option 1', 'option 2']
         }
       };
-      var res = {};
       function next() {
         expect(req.ignoredFields[0]).to.equal('option 1');
+        expect(req.ignoredFields[1]).to.equal('option 2');
         done();
       }
-      utils.formatFieldFilters()(req, res, next);
+      utils.formatFieldFilters()(req, {}, next);
     });
   });
   describe('applyFieldFilters', function () {
@@ -63,12 +49,11 @@ describe('utils unit test', function () {
           key: 'value'
         }
       };
-      var res = {};
       function next() {
         expect(req.instance.key).to.equal('value');
         done();
       }
-      utils.applyFieldFilters('instance')(req, res, next);
+      utils.applyFieldFilters('instance')(req, {}, next);
     });
     it('should ignore the ignored fields', function (done) {
       var req = {
@@ -83,14 +68,13 @@ describe('utils unit test', function () {
         },
         ignoredFields: ['obj.key', 'obj1.key1']
       };
-      var res = {};
       function next() {
         expect(req.instance.key).to.equal('value');
         expect(req.instance.obj).to.be.empty();
         expect(req.instance.obj1).to.be.empty();
         done();
       }
-      utils.applyFieldFilters('instance')(req, res, next);
+      utils.applyFieldFilters('instance')(req, {}, next);
     });
   });
 });
