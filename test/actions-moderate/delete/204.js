@@ -61,6 +61,7 @@ describe('De-Moderate - /actions/demoderate', function () {
       jar: ctx.moderatorJar
     };
     request(requestOpts, function (patchErr, patchRes) {
+      console.log('\n\n\nDEMODERATE', patchErr, patchRes, '\n\n\n');
       if (patchErr) { return done(patchErr); }
       expect(patchRes.statusCode).to.equal(204);
       request({
