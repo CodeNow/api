@@ -17,6 +17,7 @@ var Hosts = require('models/redis/hosts');
 var Sauron = require('models/apis/sauron');
 var User = require('models/mongo/user');
 
+
 describe('Worker: delete-instance-container', function () {
 
   describe('#_findGitHubUsername', function () {
@@ -73,8 +74,11 @@ describe('Worker: delete-instance-container', function () {
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
         cb(Boom.badRequest('_findGitHubUsername error'));
       });
-      worker.handle(function (err) {
-        expect(err).to.exist();
+      sinon.spy(worker, '_handleError');
+      worker.handle(function (jobErr) {
+        expect(jobErr).to.not.exist();
+        expect(worker._handleError.callCount).to.equal(1);
+        var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('_findGitHubUsername error');
         done();
@@ -91,11 +95,13 @@ describe('Worker: delete-instance-container', function () {
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
         cb(null, 'podviaznikov');
       });
+      sinon.spy(worker, '_handleError');
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(Boom.badRequest('Sauron error'));
       });
-      worker.handle(function (err) {
-        expect(err).to.exist();
+      worker.handle(function (jobErr) {
+        expect(jobErr).to.not.exist();
+        var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Sauron error');
         Sauron.prototype.detachHostFromContainer.restore();
@@ -110,6 +116,7 @@ describe('Worker: delete-instance-container', function () {
           }
         }
       });
+      sinon.spy(worker, '_handleError');
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
         cb(null, 'podviaznikov');
       });
@@ -120,8 +127,9 @@ describe('Worker: delete-instance-container', function () {
         function (ownerUsername, instance, instanceName, container, cb) {
           cb(Boom.badRequest('Hosts error'));
         });
-      worker.handle(function (err) {
-        expect(err).to.exist();
+      worker.handle(function (jobErr) {
+        expect(jobErr).to.not.exist();
+        var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Hosts error');
         Sauron.prototype.detachHostFromContainer.restore();
@@ -137,6 +145,7 @@ describe('Worker: delete-instance-container', function () {
           }
         }
       });
+      sinon.spy(worker, '_handleError');
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
         cb(null, 'podviaznikov');
       });
@@ -150,8 +159,9 @@ describe('Worker: delete-instance-container', function () {
       sinon.stub(Docker.prototype, 'stopContainer', function (container, force, cb) {
         cb(Boom.badRequest('Docker stopContainer error'));
       });
-      worker.handle(function (err) {
-        expect(err).to.exist();
+      worker.handle(function (jobErr) {
+        expect(jobErr).to.not.exist();
+        var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Docker stopContainer error');
         Sauron.prototype.detachHostFromContainer.restore();
@@ -168,6 +178,7 @@ describe('Worker: delete-instance-container', function () {
           }
         }
       });
+      sinon.spy(worker, '_handleError');
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
         cb(null, 'podviaznikov');
       });
@@ -184,8 +195,9 @@ describe('Worker: delete-instance-container', function () {
       sinon.stub(Docker.prototype, 'removeContainer', function (container, cb) {
         cb(Boom.badRequest('Docker removeContainer error'));
       });
-      worker.handle(function (err) {
-        expect(err).to.exist();
+      worker.handle(function (jobErr) {
+        expect(jobErr).to.not.exist();
+        var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Docker removeContainer error');
         Sauron.prototype.detachHostFromContainer.restore();
@@ -219,8 +231,8 @@ describe('Worker: delete-instance-container', function () {
       sinon.stub(Docker.prototype, 'removeContainer', function (container, cb) {
         cb(null);
       });
-      worker.handle(function (err) {
-        expect(err).to.not.exist();
+      worker.handle(function (jobErr) {
+        expect(jobErr).to.not.exist();
         expect(Sauron.prototype.detachHostFromContainer.callCount).to.equal(1);
         expect(Hosts.prototype.removeHostsForInstance.callCount).to.equal(1);
         expect(Docker.prototype.stopContainer.callCount).to.equal(1);
