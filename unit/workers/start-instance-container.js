@@ -13,9 +13,7 @@ var sinon = require('sinon');
 
 var Docker = require('models/apis/docker');
 var Hosts = require('models/redis/hosts');
-var Instance = require('models/mongo/instance');
 var Sauron = require('models/apis/sauron');
-var messenger = require('socket/messenger');
 
 var StartInstanceContainerWorker = require('workers/start-instance-container');
 
