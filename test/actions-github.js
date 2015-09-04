@@ -23,8 +23,8 @@ var Slack = require('notifications/slack');
 var api = require('./fixtures/api-control');
 var dock = require('./fixtures/dock');
 var dockerMockEvents = require('./fixtures/docker-mock-events');
-var exists = require('101/exists');
-var expects = require('./fixtures/expects');
+// var exists = require('101/exists');
+// var expects = require('./fixtures/expects');
 var generateKey = require('./fixtures/key-factory');
 var hooks = require('./fixtures/github-hooks');
 var multi = require('./fixtures/multi-factory');
@@ -388,70 +388,69 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             expect(res.statusCode).to.equal(202);
             expect(body).to.equal('No instances should be deployed');
-            finishAllIncompleteVersions();
             done();
           });
         });
       });
 
-      it('should redeploy two instances with new build', function (done) {
-        ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
-          if (err) { return done(err); }
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0];
-          var user = ctx.user.attrs.accounts.github;
-          var data = {
-            branch: 'master',
-            repo: acv.repo,
-            ownerId: user.id,
-            owner: user.login
-          };
-          var options = hooks(data).push;
-          options.json.created = false;
-          var username = user.login;
-
-          require('./fixtures/mocks/github/users-username')(user.id, username);
-          require('./fixtures/mocks/github/user')(username);
-
-          require('./fixtures/mocks/github/users-username')(user.id, username);
-          require('./fixtures/mocks/github/user')(username);
-          // wait for container create worker to finish
-          primus.expectActionCount('start', 2, function () {
-            var expected = {
-              'contextVersion.build.started': exists,
-              'contextVersion.build.completed': exists,
-              'contextVersion.build.duration': exists,
-              'contextVersion.build.network': exists,
-              'contextVersion.build.triggeredBy.github': exists,
-              'contextVersion.appCodeVersions[0].lowerRepo':
-                options.json.repository.full_name.toLowerCase(),
-              'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
-              'contextVersion.appCodeVersions[0].branch': data.branch,
-              'contextVersion.build.triggeredAction.manual': false,
-              'contextVersion.build.triggeredAction.appCodeVersion.repo':
-                options.json.repository.full_name,
-              'contextVersion.build.triggeredAction.appCodeVersion.commit':
-                options.json.head_commit.id
-            };
-            expect(successStub.calledTwice).to.equal(true);
-            expect(slackStub.calledOnce).to.equal(true);
-            expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
-            ctx.instance.fetch(expects.success(200, expected, function (err) {
-              if (err) { return done(err); }
-              ctx.instance2.fetch(expects.success(200, expected, function () {
-                done();
-              }));
-            }));
-          });
-          request.post(options, function (err, res, cvIds) {
-            if (err) { return done(err); }
-            expect(res.statusCode).to.equal(200);
-            expect(cvIds).to.exist();
-            expect(cvIds).to.be.an.array();
-            expect(cvIds).to.have.length(2);
-            finishAllIncompleteVersions();
-          });
-        });
-      });
+      // it('should redeploy two instances with new build', function (done) {
+      //   ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
+      //     if (err) { return done(err); }
+      //     var acv = ctx.contextVersion.attrs.appCodeVersions[0];
+      //     var user = ctx.user.attrs.accounts.github;
+      //     var data = {
+      //       branch: 'master',
+      //       repo: acv.repo,
+      //       ownerId: user.id,
+      //       owner: user.login
+      //     };
+      //     var options = hooks(data).push;
+      //     options.json.created = false;
+      //     var username = user.login;
+      //
+      //     require('./fixtures/mocks/github/users-username')(user.id, username);
+      //     require('./fixtures/mocks/github/user')(username);
+      //
+      //     require('./fixtures/mocks/github/users-username')(user.id, username);
+      //     require('./fixtures/mocks/github/user')(username);
+      //     // wait for container create worker to finish
+      //     primus.expectActionCount('start', 2, function () {
+      //       var expected = {
+      //         'contextVersion.build.started': exists,
+      //         'contextVersion.build.completed': exists,
+      //         'contextVersion.build.duration': exists,
+      //         'contextVersion.build.network': exists,
+      //         'contextVersion.build.triggeredBy.github': exists,
+      //         'contextVersion.appCodeVersions[0].lowerRepo':
+      //           options.json.repository.full_name.toLowerCase(),
+      //         'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
+      //         'contextVersion.appCodeVersions[0].branch': data.branch,
+      //         'contextVersion.build.triggeredAction.manual': false,
+      //         'contextVersion.build.triggeredAction.appCodeVersion.repo':
+      //           options.json.repository.full_name,
+      //         'contextVersion.build.triggeredAction.appCodeVersion.commit':
+      //           options.json.head_commit.id
+      //       };
+      //       expect(successStub.calledTwice).to.equal(true);
+      //       expect(slackStub.calledOnce).to.equal(true);
+      //       expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true);
+      //       ctx.instance.fetch(expects.success(200, expected, function (err) {
+      //         if (err) { return done(err); }
+      //         ctx.instance2.fetch(expects.success(200, expected, function () {
+      //           done();
+      //         }));
+      //       }));
+      //     });
+      //     request.post(options, function (err, res, cvIds) {
+      //       if (err) { return done(err); }
+      //       expect(res.statusCode).to.equal(200);
+      //       expect(cvIds).to.exist();
+      //       expect(cvIds).to.be.an.array();
+      //       expect(cvIds).to.have.length(2);
+      //       finishAllIncompleteVersions();
+      //     });
+      //   });
+      // });
 
       it('should report to mixpanel when a registered user pushes to a repo', function (done) {
         Mixpanel.prototype.track.restore();
