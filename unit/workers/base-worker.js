@@ -42,8 +42,28 @@ describe('BaseWorker', function () {
       _id: 'foo',
       toJSON: noop
     };
+    ctx.dockerContainerId = 'asdasdasd';
     ctx.mockContextVersion = {
       toJSON: noop
+    };
+    ctx.mockInstance = {
+      '_id': ctx.data.instanceId,
+      name: 'name1',
+      owner: {
+        github: '',
+        username: 'foo',
+        gravatar: ''
+      },
+      createdBy: {
+        github: '',
+        username: '',
+        gravatar: ''
+      },
+      removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
+      modifyContainerInspect: ctx.modifyContainerInspectSpy,
+      modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy,
+      populateModels: ctx.populateModelsSpy,
+      populateOwnerAndCreatedBy: ctx.populateOwnerAndCreatedBySpy
     };
     ctx.worker = new BaseWorker(ctx.data);
     done();
