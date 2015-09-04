@@ -168,7 +168,7 @@ describe('GET /instances', function () {
         (ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.username);
       var query = {
         githubUsername: ctx.user.json().accounts.github.username,
-        ignoredFields: JSON.stringify(['containers', 'container'])
+        ignoredFields: [ 'containers', 'container' ]
       };
       ctx.user.fetchInstances(query, function (err, data) {
         if (err) { return done(err); }
