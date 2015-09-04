@@ -94,19 +94,19 @@ describe('StopInstanceContainerWorker', function () {
   describe('_finalSeriesHandler', function () {
     describe('failure without instance', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
-        sinon.stub(ctx.worker, '_inspectContainerAndUpdate', noop);
+        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend', noop);
+        sinon.stub(ctx.worker, '_baseWorkerInspectContainerAndUpdate', noop);
         done();
       });
       afterEach(function (done) {
-        ctx.worker._updateInstanceFrontend.restore();
-        ctx.worker._inspectContainerAndUpdate.restore();
+        ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
+        ctx.worker._baseWorkerInspectContainerAndUpdate.restore();
         done();
       });
       it('it should not inspect or notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
-          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(0);
-          expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(0);
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(0);
+          expect(ctx.worker._baseWorkerInspectContainerAndUpdate.callCount).to.equal(0);
           done();
         });
       });
@@ -115,20 +115,20 @@ describe('StopInstanceContainerWorker', function () {
     describe('failure with instance', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
-        sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
-        sinon.stub(ctx.worker, '_inspectContainerAndUpdate', function (cb) { cb(); });
+        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend', noop);
+        sinon.stub(ctx.worker, '_baseWorkerInspectContainerAndUpdate', function (cb) { cb(); });
         done();
       });
       afterEach(function (done) {
-        ctx.worker._updateInstanceFrontend.restore();
-        ctx.worker._inspectContainerAndUpdate.restore();
+        ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
+        ctx.worker._baseWorkerInspectContainerAndUpdate.restore();
         done();
       });
       it('it should inspect and notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
-          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
-          expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(1);
-          expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('update');
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerInspectContainerAndUpdate.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0]).to.equal('update');
           done();
         });
       });
@@ -137,20 +137,20 @@ describe('StopInstanceContainerWorker', function () {
     describe('success', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
-        sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
-        sinon.stub(ctx.worker, '_inspectContainerAndUpdate', function (cb) { cb(); });
+        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend', noop);
+        sinon.stub(ctx.worker, '_baseWorkerInspectContainerAndUpdate', function (cb) { cb(); });
         done();
       });
       afterEach(function (done) {
-        ctx.worker._updateInstanceFrontend.restore();
-        ctx.worker._inspectContainerAndUpdate.restore();
+        ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
+        ctx.worker._baseWorkerInspectContainerAndUpdate.restore();
         done();
       });
       it('it should NOT inspect and SHOULD notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(null, function () {
-          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
-          expect(ctx.worker._inspectContainerAndUpdate.callCount).to.equal(0);
-          expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('stop');
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerInspectContainerAndUpdate.callCount).to.equal(0);
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0]).to.equal('stop');
           done();
         });
       });
@@ -165,21 +165,21 @@ describe('StopInstanceContainerWorker', function () {
       done();
     });
     beforeEach(function (done) {
-      sinon.stub(ctx.worker, '_updateInstanceFrontend', noop);
+      sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend', noop);
       ctx.mockInstance.setContainerStateToStopping = function (cb) {
         cb(null, ctx.mockInstance);
       };
       done();
     });
     afterEach(function (done) {
-      ctx.worker._updateInstanceFrontend.restore();
+      ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
       done();
     });
     it('should set container state to stopping and notify frontend', function (done) {
       ctx.worker._setInstanceStateStopping(function (err) {
         expect(err).to.be.undefined();
-        expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
-        expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('stopping');
+        expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
+        expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0]).to.equal('stopping');
         done();
       });
     });
@@ -237,7 +237,7 @@ describe('StopInstanceContainerWorker', function () {
     });
   });
 
-  describe('_inspectContainerAndUpdate', function () {
+  describe('_baseWorkerInspectContainerAndUpdate', function () {
     beforeEach(function (done) {
       // normally set by _findInstance & _findUser
       ctx.worker.instance = ctx.mockInstance;
@@ -259,7 +259,7 @@ describe('StopInstanceContainerWorker', function () {
       });
 
       it('should inspect a container and update the database', function (done) {
-        ctx.worker._inspectContainerAndUpdate(function (err) {
+        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
           expect(err).to.be.undefined();
           expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
           expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
@@ -283,7 +283,7 @@ describe('StopInstanceContainerWorker', function () {
       });
 
       it('should inspect a container and update the database', function (done) {
-        ctx.worker._inspectContainerAndUpdate(function (err) {
+        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
           expect(err.message).to.equal('docker inspect error');
           expect(Docker.prototype.inspectContainer.callCount)
             .to.equal(process.env.WORKER_INSPECT_CONTAINER_NUMBER_RETRY_ATTEMPTS);
@@ -312,7 +312,7 @@ describe('StopInstanceContainerWorker', function () {
       });
 
       it('should inspect a container and update the database', function (done) {
-        ctx.worker._inspectContainerAndUpdate(function (err) {
+        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
           expect(err.message).to.equal('mongoose error');
           expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
           expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);

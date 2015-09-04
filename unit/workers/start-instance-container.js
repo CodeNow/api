@@ -92,16 +92,16 @@ describe('StartInstanceContainerWorker', function () {
   describe('_finalSeriesHandler', function () {
     describe('failure without instance', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
+        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null);
         done();
       });
       afterEach(function (done) {
-        ctx.worker._updateInstanceFrontend.restore();
+        ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
         done();
       });
       it('it should not notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
-          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(0);
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(0);
           done();
         });
       });
@@ -110,17 +110,17 @@ describe('StartInstanceContainerWorker', function () {
     describe('failure with instance', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
-        sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
+        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null);
         done();
       });
       afterEach(function (done) {
-        ctx.worker._updateInstanceFrontend.restore();
+        ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
         done();
       });
       it('it should notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
-          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
-          expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('update');
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0]).to.equal('update');
           done();
         });
       });
@@ -129,16 +129,16 @@ describe('StartInstanceContainerWorker', function () {
     describe('success', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
-        sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
+        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null);
         done();
       });
       afterEach(function (done) {
-        ctx.worker._updateInstanceFrontend.restore();
+        ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
         done();
       });
       it('it should NOT notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(null, function () {
-          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(0);
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(0);
           done();
         });
       });
@@ -153,21 +153,21 @@ describe('StartInstanceContainerWorker', function () {
       done();
     });
     beforeEach(function (done) {
-      sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
+      sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null);
       ctx.mockInstance.setContainerStateToStarting = function (cb) {
         cb(null, ctx.mockInstance);
       };
       done();
     });
     afterEach(function (done) {
-      ctx.worker._updateInstanceFrontend.restore();
+      ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
       done();
     });
     it('should set container state to starting and notify frontend', function (done) {
       ctx.worker._setInstanceStateStarting(function (err) {
         expect(err).to.be.null();
-        expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
-        expect(ctx.worker._updateInstanceFrontend.args[0][0]).to.equal('starting');
+        expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
+        expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0]).to.equal('starting');
         done();
       });
     });
