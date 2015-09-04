@@ -89,6 +89,9 @@ describe('Worker: delete-instance-container', function () {
         instance: {
           container: {
             dockerHost: 'https://localhost:4242'
+          },
+          owner: {
+            github: 429706
           }
         }
       });
@@ -113,7 +116,13 @@ describe('Worker: delete-instance-container', function () {
         instance: {
           container: {
             dockerHost: 'https://localhost:4242'
-          }
+          },
+          owner: {
+            github: 429706
+          },
+          masterPod: false,
+          shortHash: 's1ad12',
+          name: 'api'
         }
       });
       sinon.spy(worker, '_handleError');
@@ -124,7 +133,7 @@ describe('Worker: delete-instance-container', function () {
         cb(null);
       });
       sinon.stub(Hosts.prototype, 'removeHostsForInstance',
-        function (ownerUsername, instance, instanceName, container, cb) {
+        function (ownerUsername, branch, shortHash, ownerGithub, masterPod, instanceName, container, cb) {
           cb(Boom.badRequest('Hosts error'));
         });
       worker.handle(function (jobErr) {
@@ -142,7 +151,13 @@ describe('Worker: delete-instance-container', function () {
         instance: {
           container: {
             dockerHost: 'https://localhost:4242'
-          }
+          },
+          owner: {
+            github: 429706
+          },
+          masterPod: false,
+          shortHash: 's1ad12',
+          name: 'api'
         }
       });
       sinon.spy(worker, '_handleError');
@@ -153,7 +168,7 @@ describe('Worker: delete-instance-container', function () {
         cb(null);
       });
       sinon.stub(Hosts.prototype, 'removeHostsForInstance',
-        function (ownerUsername, instance, instanceName, container, cb) {
+        function (ownerUsername, branch, shortHash, ownerGithub, masterPod, instanceName, container, cb) {
           cb(null);
         });
       sinon.stub(Docker.prototype, 'stopContainer', function (container, force, cb) {
@@ -176,7 +191,13 @@ describe('Worker: delete-instance-container', function () {
         instance: {
           container: {
             dockerHost: 'https://localhost:4242'
-          }
+          },
+          owner: {
+            github: 429706
+          },
+          masterPod: false,
+          shortHash: 's1ad12',
+          name: 'api'
         }
       });
       sinon.spy(worker, '_handleError');
@@ -187,7 +208,7 @@ describe('Worker: delete-instance-container', function () {
         cb(null);
       });
       sinon.stub(Hosts.prototype, 'removeHostsForInstance',
-        function (ownerUsername, instance, instanceName, container, cb) {
+        function (ownerUsername, branch, shortHash, ownerGithub, masterPod, instanceName, container, cb) {
           cb(null);
         });
       sinon.stub(Docker.prototype, 'stopContainer', function (container, force, cb) {
@@ -214,7 +235,13 @@ describe('Worker: delete-instance-container', function () {
         instance: {
           container: {
             dockerHost: 'https://localhost:4242'
-          }
+          },
+          owner: {
+            github: 429706
+          },
+          masterPod: false,
+          shortHash: 's1ad12',
+          name: 'api'
         }
       });
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
@@ -224,7 +251,7 @@ describe('Worker: delete-instance-container', function () {
         cb(null);
       });
       sinon.stub(Hosts.prototype, 'removeHostsForInstance',
-        function (ownerUsername, instance, instanceName, container, cb) {
+        function (ownerUsername, branch, shortHash, ownerGithub, masterPod, instanceName, container, cb) {
           cb(null);
         });
       sinon.stub(Docker.prototype, 'stopContainer', function (container, force, cb) {

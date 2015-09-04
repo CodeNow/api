@@ -34,7 +34,8 @@ describe('Hosts', function () {
     });
     afterEach(function (done) {
       ctx.hosts.removeHostsForInstance(
-        ctx.username, ctx.instance, ctx.instanceName, ctx.instance.container, done);
+        ctx.username, ctx.branch, ctx.instance.shortHash, ctx.instance.owner.github,
+         ctx.instance.masterPod, ctx.instanceName, ctx.instance.container, done);
     });
 
     it('should parse a username from a container hostname', function (done) {
