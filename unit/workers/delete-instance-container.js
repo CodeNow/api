@@ -164,6 +164,7 @@ describe('Worker: delete-instance-container', function () {
         var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Docker stopContainer error');
+        expect(Docker.prototype.stopContainer.callCount).to.equal(5);
         Sauron.prototype.detachHostFromContainer.restore();
         Hosts.prototype.removeHostsForInstance.restore();
         Docker.prototype.stopContainer.restore();
@@ -200,6 +201,7 @@ describe('Worker: delete-instance-container', function () {
         var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Docker removeContainer error');
+        expect(Docker.prototype.removeContainer.callCount).to.equal(5);
         Sauron.prototype.detachHostFromContainer.restore();
         Hosts.prototype.removeHostsForInstance.restore();
         Docker.prototype.stopContainer.restore();
