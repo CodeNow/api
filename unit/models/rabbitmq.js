@@ -228,16 +228,26 @@ describe('RabbitMQ Model', function () {
         publish: noop
       };
       ctx.validJobData = {
-        instance: {
-          shortHash: 'd1as5f',
-        },
+        instanceShortHash: 'd1as5f',
         instanceName: 'api',
-        ownerUsername: 'podviaznikov'
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242'
+        }
       };
-      //missing instance
+      //missing container
       ctx.invalidJobData = {
+        instanceShortHash: 'd1as5f',
         instanceName: 'api',
-        ownerUsername: 'podviaznikov'
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerUsername: 'podviaznikov',
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1'
       };
       done();
     });

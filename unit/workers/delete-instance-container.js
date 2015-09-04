@@ -26,10 +26,14 @@ describe('Worker: delete-instance-container', function () {
         cb(Boom.badRequest('Mongo error'));
       });
       var worker = new DeleteInstanceContainer({
-        instance: {
-          container: {
-            dockerHost: 'https://localhost:4242'
-          }
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242'
         }
       });
       worker._findGitHubUsername('some-id', 123213, function (err) {
@@ -45,10 +49,14 @@ describe('Worker: delete-instance-container', function () {
         cb(null, null);
       });
       var worker = new DeleteInstanceContainer({
-        instance: {
-          container: {
-            dockerHost: 'https://localhost:4242'
-          }
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242'
         }
       });
       worker._findGitHubUsername('some-id', 123213, function (err) {
@@ -65,10 +73,14 @@ describe('Worker: delete-instance-container', function () {
   describe('#handle', function () {
     it('should fail job if _findGitHubUsername call failed', function (done) {
       var worker = new DeleteInstanceContainer({
-        instance: {
-          container: {
-            dockerHost: 'https://localhost:4242'
-          }
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242'
         }
       });
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
@@ -86,13 +98,14 @@ describe('Worker: delete-instance-container', function () {
     });
     it('should fail job if sauron call failed', function (done) {
       var worker = new DeleteInstanceContainer({
-        instance: {
-          container: {
-            dockerHost: 'https://localhost:4242'
-          },
-          owner: {
-            github: 429706
-          }
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242'
         }
       });
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
@@ -113,16 +126,14 @@ describe('Worker: delete-instance-container', function () {
     });
     it('should fail job if hosts call failed', function (done) {
       var worker = new DeleteInstanceContainer({
-        instance: {
-          container: {
-            dockerHost: 'https://localhost:4242'
-          },
-          owner: {
-            github: 429706
-          },
-          masterPod: false,
-          shortHash: 's1ad12',
-          name: 'api'
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242'
         }
       });
       sinon.spy(worker, '_handleError');
@@ -148,16 +159,14 @@ describe('Worker: delete-instance-container', function () {
     });
     it('should fail job if docker.stopContainer call failed', function (done) {
       var worker = new DeleteInstanceContainer({
-        instance: {
-          container: {
-            dockerHost: 'https://localhost:4242'
-          },
-          owner: {
-            github: 429706
-          },
-          masterPod: false,
-          shortHash: 's1ad12',
-          name: 'api'
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242'
         }
       });
       sinon.spy(worker, '_handleError');
@@ -188,16 +197,14 @@ describe('Worker: delete-instance-container', function () {
     });
     it('should fail job if docker.removeContainer call failed', function (done) {
       var worker = new DeleteInstanceContainer({
-        instance: {
-          container: {
-            dockerHost: 'https://localhost:4242'
-          },
-          owner: {
-            github: 429706
-          },
-          masterPod: false,
-          shortHash: 's1ad12',
-          name: 'api'
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242'
         }
       });
       sinon.spy(worker, '_handleError');
@@ -232,16 +239,14 @@ describe('Worker: delete-instance-container', function () {
     });
     it('should report success if no errors occured', function (done) {
       var worker = new DeleteInstanceContainer({
-        instance: {
-          container: {
-            dockerHost: 'https://localhost:4242'
-          },
-          owner: {
-            github: 429706
-          },
-          masterPod: false,
-          shortHash: 's1ad12',
-          name: 'api'
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242'
         }
       });
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
