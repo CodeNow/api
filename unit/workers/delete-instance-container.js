@@ -19,6 +19,24 @@ var Sauron = require('models/apis/sauron');
 describe('Worker: delete-instance-container', function () {
 
   describe('#handle', function () {
+    it('should fail job if _findGitHubUsername call failed', function (done) {
+      var worker = new DeleteInstanceContainer({
+        instance: {
+          container: {
+            dockerHost: 'https://localhost:4242'
+          }
+        }
+      });
+      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
+        cb(Boom.badRequest('_findGitHubUsername error'));
+      });
+      worker.handle(function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(400);
+        expect(err.output.payload.message).to.equal('_findGitHubUsername error');
+        done();
+      });
+    });
     it('should fail job if sauron call failed', function (done) {
       var worker = new DeleteInstanceContainer({
         instance: {
@@ -26,6 +44,9 @@ describe('Worker: delete-instance-container', function () {
             dockerHost: 'https://localhost:4242'
           }
         }
+      });
+      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
+        cb(null, 'podviaznikov');
       });
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(Boom.badRequest('Sauron error'));
@@ -45,6 +66,9 @@ describe('Worker: delete-instance-container', function () {
             dockerHost: 'https://localhost:4242'
           }
         }
+      });
+      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
+        cb(null, 'podviaznikov');
       });
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(null);
@@ -69,6 +93,9 @@ describe('Worker: delete-instance-container', function () {
             dockerHost: 'https://localhost:4242'
           }
         }
+      });
+      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
+        cb(null, 'podviaznikov');
       });
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(null);
@@ -97,6 +124,9 @@ describe('Worker: delete-instance-container', function () {
             dockerHost: 'https://localhost:4242'
           }
         }
+      });
+      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
+        cb(null, 'podviaznikov');
       });
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(null);
@@ -129,6 +159,9 @@ describe('Worker: delete-instance-container', function () {
             dockerHost: 'https://localhost:4242'
           }
         }
+      });
+      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
+        cb(null, 'podviaznikov');
       });
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(null);
