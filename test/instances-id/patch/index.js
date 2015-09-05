@@ -36,7 +36,7 @@ var primus = require('../../fixtures/primus');
 var sinon = require('sinon');
 var rabbitMQ = require('models/rabbitmq');
 
-describe('Instance - /instances/:id', function () {
+describe('Instance - PATCH /instances/:id', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
