@@ -11,7 +11,10 @@ var noop = require('101/noop');
 var sinon = require('sinon');
 
 var BaseWorker = require('workers/base-worker');
+var ContextVersion = require('models/mongo/context-version');
+var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
+var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
 
 var afterEach = lab.afterEach;
@@ -25,6 +28,13 @@ describe('BaseWorker', function () {
 
   beforeEach(function (done) {
     ctx = {};
+    ctx.modifyContainerInspectSpy =
+      sinon.spy(function (dockerContainerId, inspect, cb) {
+      cb(null, ctx.mockContainer);
+    });
+    ctx.modifyContainerInspectErrSpy = sinon.spy(function (dockerContainerId, error, cb) {
+      cb(null);
+    });
     ctx.data = {
       from: '34565762',
       host: '5476',
@@ -32,9 +42,17 @@ describe('BaseWorker', function () {
       time: '234234',
       uuid: '12343'
     };
+    ctx.mockUser = {
+      _id: 'foo',
+      toJSON: noop
+    };
     ctx.dockerContainerId = 'asdasdasd';
     ctx.mockContextVersion = {
       toJSON: noop
+    };
+    ctx.mockContainer = {
+      dockerContainer: ctx.data.dockerContainer,
+      dockerHost: ctx.data.dockerHost
     };
     ctx.mockInstance = {
       '_id': ctx.data.instanceId,
@@ -49,6 +67,7 @@ describe('BaseWorker', function () {
         username: '',
         gravatar: ''
       },
+      container: ctx.mockContainer,
       removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
       modifyContainerInspect: ctx.modifyContainerInspectSpy,
       modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy,
@@ -63,7 +82,66 @@ describe('BaseWorker', function () {
     done();
   });
 
-  describe('_updateFrontendWithContextVersion', function () {
+  describe('_baseWorkerFindContextVersion', function () {
+    describe('basic', function () {
+      beforeEach(function (done) {
+        sinon.stub(ContextVersion, 'findOne', function (query, cb) {
+          cb(null, ctx.mockContextVersion);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        ContextVersion.findOne.restore();
+        done();
+      });
+      it('should query for contextversion', function (done) {
+        ctx.worker._baseWorkerFindContextVersion({}, function (err) {
+          expect(err).to.be.null();
+          expect(ctx.worker.contextVersion).to.equal(ctx.mockContextVersion);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('_baseWorkerUpdateInstanceFrontend', function () {
+    beforeEach(function (done) {
+      // normally set by _baseWorkerFindInstance & _baseWorkerFindUser
+      ctx.worker.instance = ctx.mockInstance;
+      ctx.worker.user = ctx.mockUser;
+      done();
+    });
+
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(Instance, 'findById', function (query, cb) {
+          cb(null, ctx.mockInstance);
+        });
+        sinon.stub(messenger, 'emitInstanceUpdate', function () {});
+        done();
+      });
+
+      afterEach(function (done) {
+        Instance.findById.restore();
+        messenger.emitInstanceUpdate.restore();
+        done();
+      });
+
+      it('should fetch instance and notify frontend via primus instance has started',
+      function (done) {
+        ctx.worker._baseWorkerUpdateInstanceFrontend();
+        // todo fix w/ callback
+        //expect(Instance.findById.callCount).to.equal(1);
+        //expect(Instance.findById.args[0][0]).to.equal(ctx.data.instanceId);
+        //expect(ctx.populateModelsSpy.callCount).to.equal(1);
+        //expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
+        //expect(messenger.emitInstanceUpdate.callCount).to.equal(1);
+        done();
+      });
+    });
+  });
+
+  describe('_baseWorkerUpdateContextVersionFrontend', function () {
     beforeEach(function (done) {
       ctx.worker.contextVersion = ctx.mockContextVersion;
       sinon.stub(messenger, 'emitContextVersionUpdate');
@@ -71,23 +149,23 @@ describe('BaseWorker', function () {
     });
     afterEach(function (done) {
       messenger.emitContextVersionUpdate.restore();
-      ctx.worker._findContextVersion.restore();
+      ctx.worker._baseWorkerFindContextVersion.restore();
       done();
     });
     describe('basic', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_findContextVersion').yieldsAsync(null, ctx.mockContextVersion);
+        sinon.stub(ctx.worker, '_baseWorkerFindContextVersion').yieldsAsync(null, ctx.mockContextVersion);
         done();
       });
 
       it('should fetch the contextVersion and emit the update', function (done) {
-        ctx.worker._updateFrontendWithContextVersion('build_running', function (err) {
+        ctx.worker._baseWorkerUpdateContextVersionFrontend('build_running', function (err) {
           expect(err).to.be.null();
-          expect(ctx.worker._findContextVersion.callCount).to.equal(1);
-          expect(ctx.worker._findContextVersion.args[0][0]).to.deep.equal({
+          expect(ctx.worker._baseWorkerFindContextVersion.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerFindContextVersion.args[0][0]).to.deep.equal({
             '_id': ctx.mockContextVersion._id
           });
-          expect(ctx.worker._findContextVersion.args[0][1]).to.be.a.function();
+          expect(ctx.worker._baseWorkerFindContextVersion.args[0][1]).to.be.a.function();
           expect(
             messenger.emitContextVersionUpdate.callCount,
             'emitContextVersionUpdate'
@@ -106,17 +184,17 @@ describe('BaseWorker', function () {
     });
     describe('failure', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_findContextVersion').yieldsAsync(new Error('error'));
+        sinon.stub(ctx.worker, '_baseWorkerFindContextVersion').yieldsAsync(new Error('error'));
         done();
       });
       it('should fail with an invalid event message', function (done) {
-        ctx.worker._updateFrontendWithContextVersion('dsfasdfasdfgasdf', function (err) {
+        ctx.worker._baseWorkerUpdateContextVersionFrontend('dsfasdfasdfgasdf', function (err) {
           expect(err.message).to.equal('Attempted status update contained invalid event');
           done();
         });
       });
       it('should fetch the contextVersion and emit the update', function (done) {
-        ctx.worker._updateFrontendWithContextVersion('build_running', function (err) {
+        ctx.worker._baseWorkerUpdateContextVersionFrontend('build_running', function (err) {
           expect(
             messenger.emitContextVersionUpdate.callCount,
             'emitContextVersionUpdate'
@@ -128,7 +206,32 @@ describe('BaseWorker', function () {
     });
   });
 
-  describe('_findInstance', function () {
+  describe('_baseWorkerValidateDieData', function () {
+    beforeEach(function (done) {
+      done();
+    });
+    afterEach(function (done) {
+      done();
+    });
+    it('should call back with error if event '+
+       'data does not contain required keys', function (done) {
+      delete ctx.worker.data.uuid;
+      ctx.worker._baseWorkerValidateDieData(function (err) {
+        expect(err.message).to.equal('_baseWorkerValidateDieData: die event data missing key: uuid');
+        done();
+      });
+    });
+
+    it('should call back without error if '+
+       'event data contains all required keys', function (done) {
+      ctx.worker._baseWorkerValidateDieData(function (err) {
+        expect(err).to.be.undefined();
+        done();
+      });
+    });
+  });
+
+  describe('_baseWorkerFindInstance', function () {
     describe('basic', function () {
       beforeEach(function (done) {
         sinon.stub(Instance, 'findOne', function (data, cb) {
@@ -141,15 +244,12 @@ describe('BaseWorker', function () {
         done();
       });
       it('should query mongo for instance w/ container', function (done) {
-        ctx.worker._findInstance({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.dockerContainerId
-        }, function (err) {
+        ctx.worker._baseWorkerFindInstance(function (err) {
           expect(err).to.be.null();
           expect(Instance.findOne.callCount).to.equal(1);
           expect(Instance.findOne.args[0][0]).to.only.contain({
             '_id': ctx.data.instanceId,
-            'container.dockerContainer': ctx.dockerContainerId
+            'container.dockerContainer': ctx.data.dockerContainer
           });
           expect(Instance.findOne.args[0][1]).to.be.a.function();
           done();
@@ -169,10 +269,7 @@ describe('BaseWorker', function () {
         done();
       });
       it('should callback successfully if instance w/ container found', function (done) {
-        ctx.worker._findInstance({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.dockerContainerId
-        }, function (err) {
+        ctx.worker._baseWorkerFindInstance(function (err) {
           expect(err).to.be.null();
           expect(ctx.worker.instance).to.equal(ctx.mockInstance);
           done();
@@ -182,7 +279,9 @@ describe('BaseWorker', function () {
 
     describe('not found', function () {
       beforeEach(function (done) {
-        sinon.stub(Instance, 'findOne').yieldsAsync(null, null);
+        sinon.stub(Instance, 'findOne', function (data, cb) {
+          cb(null, null);
+        });
         done();
       });
       afterEach(function (done) {
@@ -190,10 +289,7 @@ describe('BaseWorker', function () {
         done();
       });
       it('should callback error if instance w/ container not found', function (done) {
-        ctx.worker._findInstance({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.data.dockerContainer
-        }, function (err) {
+        ctx.worker._baseWorkerFindInstance(function (err) {
           expect(err.message).to.equal('instance not found');
           expect(ctx.worker.instance).to.be.undefined();
           done();
@@ -203,7 +299,9 @@ describe('BaseWorker', function () {
 
     describe('mongo error', function () {
       beforeEach(function (done) {
-        sinon.stub(Instance, 'findOne').yieldsAsync(new Error('mongoose error'));
+        sinon.stub(Instance, 'findOne', function (data, cb) {
+          cb(new Error('mongoose error'), null);
+        });
         done();
       });
       afterEach(function (done) {
@@ -211,10 +309,7 @@ describe('BaseWorker', function () {
         done();
       });
       it('should callback error if mongo error', function (done) {
-        ctx.worker._findInstance({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.data.dockerContainer
-        }, function (err) {
+        ctx.worker._baseWorkerFindInstance(function (err) {
           expect(err.message).to.equal('mongoose error');
           expect(ctx.worker.instance).to.be.undefined();
           done();
@@ -223,27 +318,173 @@ describe('BaseWorker', function () {
     });
   });
 
-  describe('_validateDieData', function () {
-    beforeEach(function (done) {
-      done();
-    });
-    afterEach(function (done) {
-      done();
-    });
-    it('should call back with error if event '+
-       'data does not contain required keys', function (done) {
-      delete ctx.worker.data.uuid;
-      ctx.worker._validateDieData(function (err) {
-        expect(err.message).to.equal('_validateDieData: die event data missing key: uuid');
+  describe('_baseWorkerFindUser', function () {
+    describe('basic', function () {
+      beforeEach(function (done) {
+        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
+          cb(null, ctx.mockUser);
+        });
         done();
+      });
+      afterEach(function (done) {
+        User.findByGithubId.restore();
+        done();
+      });
+      it('should query mongo for user', function (done) {
+        ctx.worker._baseWorkerFindUser(function (err) {
+          expect(err).to.be.null();
+          expect(User.findByGithubId.callCount).to.equal(1);
+          expect(User.findByGithubId.args[0][0]).to.equal(ctx.data.sessionUserGithubId);
+          expect(User.findByGithubId.args[0][1]).to.be.a.function();
+          done();
+        });
       });
     });
 
-    it('should call back without error if '+
-       'event data contains all required keys', function (done) {
-      ctx.worker._validateDieData(function (err) {
-        expect(err).to.be.undefined();
+    describe('found', function () {
+      beforeEach(function (done) {
+        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
+          cb(null, ctx.mockUser);
+        });
         done();
+      });
+      afterEach(function (done) {
+        User.findByGithubId.restore();
+        done();
+      });
+      it('should query mongo for user', function (done) {
+        ctx.worker._baseWorkerFindUser(function (err) {
+          expect(err).to.be.null();
+          expect(ctx.worker.user).to.equal(ctx.mockUser);
+          done();
+        });
+      });
+    });
+
+    describe('not found', function () {
+      beforeEach(function (done) {
+        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
+          cb(null, null);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        User.findByGithubId.restore();
+        done();
+      });
+      it('should query mongo for user', function (done) {
+        ctx.worker._baseWorkerFindUser(function (err) {
+          expect(err.message).to.equal('user not found');
+          expect(ctx.worker.user).to.be.undefined();
+          done();
+        });
+      });
+    });
+
+    describe('mongo error', function () {
+      beforeEach(function (done) {
+        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
+          cb(new Error('mongoose error'), null);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        User.findByGithubId.restore();
+        done();
+      });
+      it('should query mongo for user', function (done) {
+        ctx.worker._baseWorkerFindUser(function (err) {
+          expect(err.message).to.equal('mongoose error');
+          expect(ctx.worker.user).to.be.undefined();
+          done();
+        });
+      });
+    });
+  });
+
+  describe('_baseWorkerInspectContainerAndUpdate', function () {
+    beforeEach(function (done) {
+      // normally set by _findInstance & _findUser
+      ctx.worker.instance = ctx.mockInstance;
+      ctx.worker.user = ctx.mockUser;
+      ctx.worker.docker = new Docker('0.0.0.0');
+      done();
+    });
+
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
+          cb(null, ctx.mockContainer);
+        });
+        done();
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+
+      it('should inspect a container and update the database', function (done) {
+        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
+          expect(err).to.be.undefined();
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
+          done();
+        });
+      });
+    });
+
+    describe('error inspect', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
+          cb(new Error('docker inspect error'));
+        });
+        done();
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+
+      it('should inspect a container and update the database', function (done) {
+        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
+          expect(err.message).to.equal('docker inspect error');
+          expect(Docker.prototype.inspectContainer.callCount)
+            .to.equal(process.env.WORKER_INSPECT_CONTAINER_NUMBER_RETRY_ATTEMPTS);
+          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(0);
+          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(1);
+          done();
+        });
+      });
+    });
+
+    describe('error update mongo', function () {
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
+          cb(null, ctx.mockContainer);
+        });
+        ctx.modifyContainerInspectSpy = sinon.spy(function (dockerContainerId, inspect, cb) {
+          cb(new Error('mongoose error'));
+        });
+        ctx.mockInstance.modifyContainerInspect = ctx.modifyContainerInspectSpy;
+        done();
+      });
+
+      afterEach(function (done) {
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+
+      it('should inspect a container and update the database', function (done) {
+        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
+          expect(err.message).to.equal('mongoose error');
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1);
+          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0);
+          done();
+        });
       });
     });
   });
