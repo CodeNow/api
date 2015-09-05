@@ -246,7 +246,8 @@ describe('Worker: delete-instance-container', function () {
         networkIp: '10.0.1.0',
         hostIp: '10.0.1.1',
         container: {
-          dockerHost: 'https://localhost:4242'
+          dockerHost: 'https://localhost:4242',
+          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
         }
       });
       sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
