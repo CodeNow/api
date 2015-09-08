@@ -143,10 +143,9 @@ describe('Worker: delete-instance-container', function () {
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(null);
       });
-      sinon.stub(Hosts.prototype, 'removeHostsForInstance',
-        function (ownerUsername, branch, shortHash, ownerGithub, masterPod, instanceName, container, cb) {
-          cb(Boom.badRequest('Hosts error'));
-        });
+      sinon.stub(Hosts.prototype, 'removeHostsForInstance',function (entry, container, cb) {
+        cb(Boom.badRequest('Hosts error'));
+      });
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
         var err = worker._handleError.args[0][0];
@@ -176,10 +175,9 @@ describe('Worker: delete-instance-container', function () {
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(null);
       });
-      sinon.stub(Hosts.prototype, 'removeHostsForInstance',
-        function (ownerUsername, branch, shortHash, ownerGithub, masterPod, instanceName, container, cb) {
-          cb(null);
-        });
+      sinon.stub(Hosts.prototype, 'removeHostsForInstance', function (entry, container, cb) {
+        cb(null);
+      });
       sinon.stub(Docker.prototype, 'stopContainer', function (container, force, cb) {
         cb(Boom.badRequest('Docker stopContainer error'));
       });
@@ -214,10 +212,9 @@ describe('Worker: delete-instance-container', function () {
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(null);
       });
-      sinon.stub(Hosts.prototype, 'removeHostsForInstance',
-        function (ownerUsername, branch, shortHash, ownerGithub, masterPod, instanceName, container, cb) {
-          cb(null);
-        });
+      sinon.stub(Hosts.prototype, 'removeHostsForInstance', function (entry, container, cb) {
+        cb(null);
+      });
       sinon.stub(Docker.prototype, 'stopContainer', function (container, force, cb) {
         cb(null);
       });
@@ -256,10 +253,9 @@ describe('Worker: delete-instance-container', function () {
       sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
         cb(null);
       });
-      sinon.stub(Hosts.prototype, 'removeHostsForInstance',
-        function (ownerUsername, branch, shortHash, ownerGithub, masterPod, instanceName, container, cb) {
-          cb(null);
-        });
+      sinon.stub(Hosts.prototype, 'removeHostsForInstance', function (entry, container, cb) {
+        cb(null);
+      });
       sinon.stub(Docker.prototype, 'stopContainer', function (container, force, cb) {
         cb(null);
       });
