@@ -285,6 +285,9 @@ describe('Github - /actions/github', function () {
           });
 
           it('should return 1 instancesIds if 1 instance was deleted', function (done) {
+
+            OnInstanceContainerDie.prototype.handle.restore();
+
             var acv = ctx.contextVersion.attrs.appCodeVersions[0];
             var user = ctx.user.attrs.accounts.github;
             var data = {
@@ -304,6 +307,10 @@ describe('Github - /actions/github', function () {
             require('./fixtures/mocks/github/user')(username);
             // wait for container create worker to finish
             primus.expectActionCount('start', 1, function () {
+              sinon.stub(OnInstanceContainerDie.prototype, 'handle', function (cb) {
+                cb();
+                done();
+              });
               expect(slackStub.calledOnce).to.equal(true);
               expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
               var deleteOptions = hooks(data).push;
@@ -316,7 +323,8 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(res.statusCode).to.equal(201);
                 expect(body.length).to.equal(1);
-                primus.expectActionCount('delete', 1, done);
+                primus.expectActionCount('delete', 1, function () {
+                });
               });
             });
             request.post(options, function (err, res, cvIds) {
