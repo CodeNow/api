@@ -40,6 +40,16 @@ describe('Context Version', function () {
         completed: true
       }
     };
+    ctx.mockContext = {
+      '_id': '55d3ef733e1b620e00eb6292',
+      name: 'name1',
+      owner: {
+        github: '2335750'
+      },
+      createdBy: {
+        github: '146592'
+      }
+    };
     done();
   });
   describe('updateBuildErrorByContainer', function () {
@@ -73,11 +83,13 @@ describe('Context Version', function () {
 
   describe('updateBuildCompletedByContainer', function () {
     beforeEach(function (done) {
+      sinon.stub(Context, 'findById').yieldsAsync(null, ctx.mockContext);
       sinon.stub(ContextVersion, 'updateBy').yieldsAsync();
       sinon.stub(ContextVersion, 'findBy').yieldsAsync(null, [ctx.mockContextVersion]);
       done();
     });
     afterEach(function (done) {
+      Context.findById.restore();
       ContextVersion.updateBy.restore();
       ContextVersion.findBy.restore();
       messenger.emitContextVersionUpdate.restore();
@@ -90,9 +102,13 @@ describe('Context Version', function () {
         failed: false
       };
       var myCv = {id: 12341};
+
+      sinon.stub(messenger, 'emitContextVersionUpdate', function () {
+        done();
+      });
       ContextVersion.updateBuildCompletedByContainer(myCv, opts, function () {
         expect(ContextVersion.updateBy.calledOnce).to.be.true();
-        // expect(ContextVersion.findBy.calledOnce).to.be.true();
+        expect(ContextVersion.findBy.calledOnce).to.be.true();
 
         var args = ContextVersion.updateBy.getCall(0).args;
         expect(args[0]).to.equal('build.dockerContainer');
@@ -104,9 +120,6 @@ describe('Context Version', function () {
         });
         expect(args[2].$set['build.completed']).to.exist();
 
-        sinon.stub(messenger, 'emitContextVersionUpdate', function () {
-          done();
-        });
       });
     });
     it('should save a failed build', function (done) {
@@ -118,9 +131,12 @@ describe('Context Version', function () {
         }
       };
       var myCv = {id: 12341};
+      sinon.stub(messenger, 'emitContextVersionUpdate', function () {
+        done();
+      });
       ContextVersion.updateBuildCompletedByContainer(myCv, opts, function () {
         expect(ContextVersion.updateBy.calledOnce).to.be.true();
-        // expect(ContextVersion.findBy.calledOnce).to.be.true();
+        expect(ContextVersion.findBy.calledOnce).to.be.true();
 
         var args = ContextVersion.updateBy.getCall(0).args;
         expect(args[0]).to.equal('build.dockerContainer');
@@ -131,9 +147,6 @@ describe('Context Version', function () {
           'error.message'    : opts.error.message
         });
         expect(args[2].$set['build.completed']).to.exist();
-        sinon.stub(messenger, 'emitContextVersionUpdate', function () {
-          done();
-        });
       });
     });
   });

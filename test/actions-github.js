@@ -7,7 +7,6 @@ var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 
 var Code = require('code');
-var createCount = require('callback-count');
 var after = lab.after;
 var afterEach = lab.afterEach;
 var before = lab.before;
@@ -486,7 +485,6 @@ function finishAllIncompleteVersions (cb) {
   };
   var fields = null; // all fields
   var opts = { sort: ['build.started'] };
-  var count = createCount(cb || function () {});
   ContextVersion.find(incompleteBuildsQuery, fields, opts, function (err, versions) {
     var buildIds = [];
     versions
@@ -504,8 +502,9 @@ function finishAllIncompleteVersions (cb) {
         primus.expectActionCount('build_running', 1, function () {
           dockerMockEvents.emitBuildComplete(version);
         });
-        primus.onceVersionComplete(version._id, count.inc().next);
       });
-    count.next();
+    if (cb) {
+      cb();
+    }
   });
 }
