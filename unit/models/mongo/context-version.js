@@ -75,7 +75,6 @@ describe('Context Version', function () {
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateBy').yieldsAsync();
       sinon.stub(ContextVersion, 'findBy').yieldsAsync(null, [ctx.mockContextVersion]);
-      sinon.stub(messenger, 'emitContextVersionUpdate');
       done();
     });
     afterEach(function (done) {
@@ -105,8 +104,9 @@ describe('Context Version', function () {
         });
         expect(args[2].$set['build.completed']).to.exist();
 
-        expect(messenger.emitContextVersionUpdate.calledOnce).to.be.true();
-        done();
+        sinon.stub(messenger, 'emitContextVersionUpdate', function () {
+          done();
+        });
       });
     });
     it('should save a failed build', function (done) {
@@ -131,9 +131,9 @@ describe('Context Version', function () {
           'error.message'    : opts.error.message
         });
         expect(args[2].$set['build.completed']).to.exist();
-        expect(messenger.emitContextVersionUpdate.calledOnce).to.be.true();
-
-        done();
+        sinon.stub(messenger, 'emitContextVersionUpdate', function () {
+          done();
+        });
       });
     });
   });
