@@ -22,7 +22,7 @@ var redisPubSub = require('models/redis/pubsub');
 var log = logger.log;
 
 // Report environment here (as opposed to in loadenv)
-if (envIs('production') || envIs('staging')) {
+if (envIs('production', 'staging')) {
   log.trace({
     env: process.env,
   }, 'env');
