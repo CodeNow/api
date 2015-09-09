@@ -316,7 +316,8 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(res.statusCode).to.equal(201);
                 expect(body.length).to.equal(1);
-                primus.expectActionCount('delete', 1, done);
+                expect(rabbitMQ.deleteInstance.callCount).to.equal(1);
+                done();
               });
             });
             request.post(options, function (err, res, cvIds) {
