@@ -7,6 +7,7 @@ var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 
 var Code = require('code');
+var createCount = require('callback-count');
 var after = lab.after;
 var afterEach = lab.afterEach;
 var before = lab.before;
@@ -17,6 +18,7 @@ var it = lab.it;
 
 var SocketClient = require('socket/socket-client');
 var ContextVersion = require('models/mongo/context-version');
+var OnInstanceContainerDie = require('../lib/workers/on-instance-container-die');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
 var Slack = require('notifications/slack');
@@ -46,6 +48,17 @@ describe('Github - /actions/github', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
+
+  beforeEach(function (done) {
+    sinon.stub(OnInstanceContainerDie.prototype, 'handle', function (cb) {
+      cb();
+    });
+    done();
+  });
+  afterEach(function (done) {
+    OnInstanceContainerDie.prototype.handle.restore();
+    done();
+  });
 
   describe('ping', function () {
     it('should return OKAY', function (done) {
@@ -473,6 +486,7 @@ function finishAllIncompleteVersions (cb) {
   };
   var fields = null; // all fields
   var opts = { sort: ['build.started'] };
+  var count = createCount(cb || function () {});
   ContextVersion.find(incompleteBuildsQuery, fields, opts, function (err, versions) {
     var buildIds = [];
     versions
@@ -490,9 +504,8 @@ function finishAllIncompleteVersions (cb) {
         primus.expectActionCount('build_running', 1, function () {
           dockerMockEvents.emitBuildComplete(version);
         });
+        primus.onceVersionComplete(version._id, count.inc().next);
       });
-    if (cb) {
-      cb();
-    }
+    count.next();
   });
 }

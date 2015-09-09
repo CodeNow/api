@@ -35,6 +35,7 @@ module.exports = {
       }
     });
     ctx.primus.on('data', function onData (data) {
+      console.log('\nPRIMUS\n', data);
       if (data.event === 'ROOM_ACTION_COMPLETE') {
         ctx.primus.removeListener('data', onData);
         cb();
@@ -87,6 +88,7 @@ module.exports = {
       log.trace('primus expect:',
         'ROOM_MESSAGE', action,
         data.event, data.data.action);
+
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
         log.trace('primus expected data:', expected, data.data.data);
         expect(data.type).to.equal('org');
@@ -105,6 +107,7 @@ module.exports = {
     var cbCount = createCount(count, done);
     ctx.primus.on('data', handleData);
     function handleData (data) {
+      console.log('\nPRIMUS\n', action, data);
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
         log.trace('expectActionCount', action, cbCount.count);
         cbCount.next();
