@@ -49,10 +49,12 @@ describe('Github - /actions/github', function () {
   beforeEach(generateKey);
 
   before(function (done) {
+    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
     done();
   });
   after(function (done) {
+    rabbitMQ.deleteInstance.restore();
     rabbitMQ.deleteInstanceContainer.restore();
     done();
   });
