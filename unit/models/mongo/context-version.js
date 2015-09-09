@@ -41,7 +41,7 @@ describe('Context Version', function () {
       }
     };
     done();
-  })
+  });
   describe('updateBuildErrorByContainer', function () {
     it('should save the logs as an array', function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields();
