@@ -5,9 +5,6 @@
 'use strict';
 require('loadenv')();
 
-if (process.env.NEW_RELIC_LICENSE_KEY) {
-  require('newrelic');
-}
 var cluster = require('cluster');
 var createCount = require('callback-count');
 
