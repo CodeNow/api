@@ -9,6 +9,7 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 
+var Instance = require('models/mongo/instance');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
@@ -77,9 +78,7 @@ describe('DELETE /instances/:id', function () {
 
     describe('not founds', function () {
       beforeEach(function (done) {
-        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
-          ctx.user.attrs.accounts.github.login);
-        ctx.instance.destroy(done);
+        Instance.removeById(ctx.instance.id(), done);
       });
       it('should not delete the instance if missing (404 instance)', function (done) {
         ctx.user.destroyInstance(ctx.instance.id(), expects.errorStatus(404, done));
