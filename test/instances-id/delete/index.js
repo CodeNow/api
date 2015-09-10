@@ -70,8 +70,6 @@ describe('DELETE /instances/:id', function () {
         });
         it('should not delete the instance (403 forbidden)', function (done) {
           ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
-          // require('../../fixtures/mocks/github/user-id')(ctx.nonOwner.attrs.accounts.github.id,
-          //   ctx.nonOwner.attrs.accounts.github.login);
           ctx.instance.destroy(expects.errorStatus(403, done));
         });
       });
