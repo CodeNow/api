@@ -34,6 +34,7 @@ var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 var request = require('request');
 var sinon = require('sinon');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('Github - /actions/github', function () {
   var ctx = {};
@@ -50,6 +51,15 @@ describe('Github - /actions/github', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
 
+  beforeEach(function (done) {
+    // prevent worker to be created
+    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.deleteInstanceContainer.restore();
+    done();
+  });
   beforeEach(function (done) {
     sinon.stub(OnInstanceContainerDie.prototype, 'handle', function (cb) {
       cb();
@@ -287,7 +297,7 @@ describe('Github - /actions/github', function () {
           });
 
           it('should return 1 instancesIds if 1 instance was deleted', function (done) {
-            OnInstanceContainerDie.prototype.handle.restore();
+            rabbitMQ.deleteInstanceContainer.restore();
             var acv = ctx.contextVersion.attrs.appCodeVersions[0];
             var user = ctx.user.attrs.accounts.github;
             var data = {
@@ -308,8 +318,7 @@ describe('Github - /actions/github', function () {
             require('./fixtures/mocks/github/user')(username);
             // wait for container create worker to finish
             primus.expectActionCount('start', 1, function () {
-              sinon.stub(OnInstanceContainerDie.prototype, 'handle', function (cb) {
-                cb();
+              sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {
                 countCb.next();
               });
               expect(slackStub.calledOnce).to.equal(true);
@@ -324,7 +333,7 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(res.statusCode).to.equal(201);
                 expect(body.length).to.equal(1);
-                primus.expectActionCount('delete', 1, countCb.next);
+                countCb.next();
               });
             });
             request.post(options, function (err, res, cvIds) {
