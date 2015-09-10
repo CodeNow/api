@@ -200,7 +200,7 @@ describe('201 POST /instances', function () {
           expect(jobData.cvId).to.equal(ctx.cv.id());
           expect(jobData.dockerHost).to.exist();
           expect(jobData.instanceEnvs[0]).to.equal('RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash);
-          expect(jobData.labels).to.deep.equal({
+          expect(jobData.labels).to.deep.contain({
             contextVersionId: ctx.cv.id(),
             instanceId: body._id,
             instanceName: body.name,
