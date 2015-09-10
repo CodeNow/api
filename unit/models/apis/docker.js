@@ -1,5 +1,6 @@
 'use strict';
 
+var Boom = require('dat-middleware').Boom;
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -103,4 +104,58 @@ describe('docker', function () {
       });
     });
   }); // end pullImage
+  describe('with retries', function () {
+    it('should call original docker method 5 times if failed and return error', function (done) {
+      var dockerErr = Boom.notFound('Docker error');
+      sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
+        cb(dockerErr);
+      });
+      var docker = new Docker('https://localhost:4242');
+
+      docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err) {
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('Docker error');
+        expect(Docker.prototype.inspectContainer.callCount).to.equal(5);
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+    });
+    it('should return callback with success on success', function (done) {
+      sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
+        cb(undefined, { dockerContainer: container });
+      });
+      var docker = new Docker('https://localhost:4242');
+
+      docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err, result) {
+        expect(err).to.be.undefined();
+        expect(result.dockerContainer).to.equal('some-container-id');
+        expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+    });
+
+    it('should call original docker method with retries on error and final success', function (done) {
+      var dockerErr = Boom.notFound('Docker error');
+      var attemts = 0;
+      sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
+        attemts++;
+        if (attemts < 4) {
+          cb(dockerErr);
+        }
+        else {
+          cb(undefined, { dockerContainer: container });
+        }
+      });
+      var docker = new Docker('https://localhost:4242');
+
+      docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err, result) {
+        expect(err).to.be.undefined();
+        expect(result.dockerContainer).to.equal('some-container-id');
+        expect(Docker.prototype.inspectContainer.callCount).to.equal(4);
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+    });
+  });
 });

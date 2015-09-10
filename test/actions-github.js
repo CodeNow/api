@@ -31,6 +31,7 @@ var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 var request = require('request');
 var sinon = require('sinon');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('Github - /actions/github', function () {
   var ctx = {};
@@ -46,6 +47,16 @@ describe('Github - /actions/github', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
+
+  before(function (done) {
+    // prevent worker to be created
+    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    done();
+  });
+  after(function (done) {
+    rabbitMQ.deleteInstanceContainer.restore();
+    done();
+  });
 
   describe('ping', function () {
     it('should return OKAY', function (done) {
@@ -378,7 +389,6 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             expect(res.statusCode).to.equal(202);
             expect(body).to.equal('No instances should be deployed');
-
             done();
           });
         });
