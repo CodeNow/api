@@ -153,4 +153,67 @@ describe('Worker: delete-instance', function () {
       });
     });
   });
+
+  describe('#_deleteForks', function () {
+    it('should return immediately if masterPod !== true', function (done) {
+      var worker = new DeleteInstance({
+        instanceId: '507f1f77bcf86cd799439011',
+        sessionUserId: '507f191e810c19729de860ea'
+      });
+      sinon.stub(Instance, 'findInstancesByParent', function () {});
+      worker._deleteForks({
+        _id: '507f1f77bcf86cd799439011',
+        masterPod: false
+      }, '507f191e810c19729de860ea', function (err) {
+        expect(err).to.be.undefined();
+        expect(Instance.findInstancesByParent.callCount).to.equal(0);
+        Instance.findInstancesByParent.restore();
+        done();
+      });
+    });
+
+    it('should return error if findInstancesByParent failed', function (done) {
+      var worker = new DeleteInstance({
+        instanceId: '507f1f77bcf86cd799439011',
+        sessionUserId: '507f191e810c19729de860ea'
+      });
+      sinon.stub(Instance, 'findInstancesByParent', function (shortHash, cb) {
+        cb(Boom.badRequest('findInstancesByParent failed'));
+      });
+      worker._deleteForks({
+        _id: '507f1f77bcf86cd799439011',
+        masterPod: true
+      }, '507f191e810c19729de860ea', function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(400);
+        expect(err.output.payload.message).to.equal('findInstancesByParent failed');
+        expect(Instance.findInstancesByParent.callCount).to.equal(1);
+        Instance.findInstancesByParent.restore();
+        done();
+      });
+    });
+
+    it('should create new jobs', function (done) {
+      var worker = new DeleteInstance({
+        instanceId: '507f1f77bcf86cd799439011',
+        sessionUserId: '507f191e810c19729de860ea'
+      });
+      sinon.stub(Instance, 'findInstancesByParent', function (shortHash, cb) {
+        cb(null, [{_id: '507f1f77bcf86cd799439012'}, {_id: '507f1f77bcf86cd799439013'}]);
+      });
+      sinon.stub(rabbitMQ, 'deleteInstance', function () {});
+      worker._deleteForks({
+        _id: '507f1f77bcf86cd799439011',
+        masterPod: true
+      }, '507f191e810c19729de860ea', function (err) {
+        expect(err).to.be.undefined();
+        expect(Instance.findInstancesByParent.callCount).to.equal(1);
+        expect(rabbitMQ.deleteInstance.callCount).to.equal(2);
+        Instance.findInstancesByParent.restore();
+        rabbitMQ.deleteInstance.restore();
+        done();
+      });
+    });
+
+  });
 });
