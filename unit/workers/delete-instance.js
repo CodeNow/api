@@ -120,5 +120,37 @@ describe('Worker: delete-instance', function () {
         done();
       });
     });
+    it('should success if everything was successful', function (done) {
+      var worker = new DeleteInstance({
+        instanceId: '507f1f77bcf86cd799439011',
+        sessionUserId: '507f191e810c19729de860ea'
+      });
+      sinon.stub(worker, '_findInstance', function (instanceId, cb) {
+        cb(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
+      });
+      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
+        cb(null);
+      });
+      sinon.stub(Instance.prototype, 'remove', function (cb) {
+        cb(null);
+      });
+      sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+      sinon.stub(messenger, 'emitInstanceDelete', function () {});
+      sinon.stub(worker, '_deleteForks', function (instance, sessionUserId, cb) {
+        cb(null);
+      });
+      sinon.spy(worker, '_handleError');
+      worker.handle(function (jobErr) {
+        expect(jobErr).to.not.exist();
+        expect(worker._handleError.callCount).to.equal(0);
+        Instance.prototype.removeSelfFromGraph.restore();
+        Instance.prototype.remove.restore();
+        expect(rabbitMQ.deleteInstanceContainer.callCount).to.equal(1);
+        expect(messenger.emitInstanceDelete.callCount).to.equal(1);
+        rabbitMQ.deleteInstanceContainer.restore();
+        messenger.emitInstanceDelete.restore();
+        done();
+      });
+    });
   });
 });
