@@ -1,5 +1,6 @@
 'use strict';
 
+var sinon = require('sinon');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -15,6 +16,7 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
 var primus = require('../../fixtures/primus');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('DELETE /instances/:id', function () {
   var ctx = {};
@@ -28,6 +30,16 @@ describe('DELETE /instances/:id', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+
+  before(function (done) {
+    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
+    done();
+  });
+
+  after(function (done) {
+    rabbitMQ.deleteInstance.restore();
+    done();
+  });
 
   beforeEach(function (done) {
     multi.createAndTailInstance(primus, function (err, instance, build, user) {
