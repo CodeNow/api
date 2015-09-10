@@ -5,9 +5,6 @@
 'use strict';
 require('loadenv')();
 
-if (process.env.NEW_RELIC_LICENSE_KEY) {
-  require('newrelic');
-}
 var cluster = require('cluster');
 var createCount = require('callback-count');
 
@@ -23,6 +20,17 @@ var redisClient = require('models/redis');
 var redisPubSub = require('models/redis/pubsub');
 
 var log = logger.log;
+
+// Report environment here (as opposed to in loadenv)
+if (envIs('production', 'staging')) {
+  log.trace({
+    env: process.env,
+  }, 'env');
+}
+
+if (!envIs('test')) {
+  console.log('ENVIRONMENT CONFIG', process.env.NODE_ENV, process.env);
+}
 
 // express server, handles web HTTP requests
 var apiServer = new ApiServer();
