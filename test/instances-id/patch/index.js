@@ -27,6 +27,7 @@ var randStr = require('randomstring').generate;
 var uuid = require('uuid');
 
 var Build = require('models/mongo/build');
+var Instance = require('models/mongo/instance');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var dockerMockEvents = require('../../fixtures/docker-mock-events');
@@ -688,9 +689,7 @@ describe('Instance - PATCH /instances/:id', function () {
 
       describe('not founds', function () {
         beforeEach(function (done) {
-          require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
-            ctx.user.attrs.accounts.github.login);
-          ctx.instance.destroy(done);
+          Instance.removeById(ctx.instance.id(), done);
         });
         updates.forEach(function (json) {
           var keys = Object.keys(json);
