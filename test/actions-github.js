@@ -305,8 +305,6 @@ describe('Github - /actions/github', function () {
             require('./fixtures/mocks/github/user')(username);
             // wait for container create worker to finish
             primus.expectActionCount('start', 1, function () {
-              expect(slackStub.calledOnce).to.equal(true);
-              expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
               var deleteOptions = hooks(data).push;
               deleteOptions.json.deleted = true;
               require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
