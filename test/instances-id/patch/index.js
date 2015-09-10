@@ -67,39 +67,39 @@ describe('Instance - PATCH /instances/:id', function () {
    * be modified all at once
    */
   describe('PATCH', function () {
-    describe('Orgs', function () {
-      beforeEach(function (done) {
-        ctx.orgId = 1001;
-        var next = createCount(2, done).next;
-        primus.expectAction('start', next);
-        multi.createAndTailInstance(primus, ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
-          //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
-          if (err) { return next(err); }
-          ctx.instance = instance;
-          ctx.build = build;
-          ctx.user = user;
-          ctx.cv = mdlArray[0];
-          ctx.context = mdlArray[1];
-          ctx.srcArray = srcArray;
-          multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build) {
-            if (err) { return next(err); }
-            ctx.otherBuild = build;
-            next();
-          });
-        });
-      });
-      it('should not allow a user-owned build to be patched to an org-owned instance', function (done) {
-        nock.cleanAll();
-        require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-        require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-        require('../../fixtures/mocks/github/user')(ctx.user);
-        var update = {
-          build: ctx.otherBuild.id().toString()
-        };
-        require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-        ctx.instance.update(update, expects.error(400, /owner/, done));
-      });
-    });
+    // describe('Orgs', function () {
+    //   beforeEach(function (done) {
+    //     ctx.orgId = 1001;
+    //     var next = createCount(2, done).next;
+    //     primus.expectAction('start', next);
+    //     multi.createAndTailInstance(primus, ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
+    //       //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
+    //       if (err) { return next(err); }
+    //       ctx.instance = instance;
+    //       ctx.build = build;
+    //       ctx.user = user;
+    //       ctx.cv = mdlArray[0];
+    //       ctx.context = mdlArray[1];
+    //       ctx.srcArray = srcArray;
+    //       multi.createBuiltBuild(ctx.user.attrs.accounts.github.id, function (err, build) {
+    //         if (err) { return next(err); }
+    //         ctx.otherBuild = build;
+    //         next();
+    //       });
+    //     });
+    //   });
+    //   it('should not allow a user-owned build to be patched to an org-owned instance', function (done) {
+    //     nock.cleanAll();
+    //     require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+    //     require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+    //     require('../../fixtures/mocks/github/user')(ctx.user);
+    //     var update = {
+    //       build: ctx.otherBuild.id().toString()
+    //     };
+    //     require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+    //     ctx.instance.update(update, expects.error(400, /owner/, done));
+    //   });
+    // });
 
     describe('User', function() {
       beforeEach(function (done) {
