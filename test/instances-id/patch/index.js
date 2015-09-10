@@ -51,6 +51,7 @@ describe('Instance - PATCH /instances/:id', function () {
   afterEach(require('../../fixtures/clean-nock'));
 
   before(function (done) {
+    // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     done();
   });

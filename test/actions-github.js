@@ -49,6 +49,7 @@ describe('Github - /actions/github', function () {
   beforeEach(generateKey);
 
   before(function (done) {
+    // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
     done();
