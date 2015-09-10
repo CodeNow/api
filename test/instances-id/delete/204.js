@@ -271,6 +271,7 @@ describe('204 DELETE /instances/:id', function () {
     it('should delete an instance', function (done) {
       require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
         ctx.user.attrs.accounts.github.login);
+      // prevent worker to be created
       sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
       // destroy event will be handled in near future via worker
       ctx.instance.destroy(expects.success(204, function (err) {

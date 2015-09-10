@@ -78,6 +78,7 @@ describe('200 PATCH /instances', function () {
     done();
   });
   before(function (done) {
+    // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
     done();
   });
