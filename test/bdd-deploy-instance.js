@@ -45,11 +45,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
   afterEach(require('./fixtures/clean-nock'));
 
   before(function (done) {
-    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     done();
   });
   after(function (done) {
-    rabbitMQ.deleteInstanceContainer.restore();
+    rabbitMQ.deleteInstance.restore();
     done();
   });
 

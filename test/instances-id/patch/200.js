@@ -78,12 +78,12 @@ describe('200 PATCH /instances', function () {
     done();
   });
   before(function (done) {
-    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     done();
   });
 
   after(function (done) {
-    rabbitMQ.deleteInstanceContainer.restore();
+    rabbitMQ.deleteInstance.restore();
     done();
   });
   beforeEach(function (done) {
