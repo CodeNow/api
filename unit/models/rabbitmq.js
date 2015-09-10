@@ -231,7 +231,7 @@ describe('RabbitMQ Model', function () {
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       };
-      //missing container
+      //missing sessionUserId
       ctx.invalidJobData = {
         instanceId: '507f1f77bcf86cd799439011'
       };
