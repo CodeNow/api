@@ -26,6 +26,7 @@
  * Prints and fixes all builds never marked finished
 
 ###updateTimedOutVersions.js
+ * updateTimedOutBuilds.js must be run right after this script
  * Prints and fixes all context-versions never marked finished
 
 
