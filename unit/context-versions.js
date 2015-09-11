@@ -5,15 +5,19 @@ var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
 var before = lab.before;
+var beforeEach = lab.beforeEach;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
+var sinon = require('sinon');
+
+var noop = require('101/noop');
 
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var ContextVersion = require('models/mongo/context-version');
 var validation = require('./fixtures/validation')(lab);
-
 var Version = require('models/mongo/context-version');
+var InfraCodeVersion = require('models/mongo/infra-code-version');
 
 describe('Versions', function () {
   before(require('./fixtures/mongo').connect);
@@ -187,5 +191,46 @@ describe('Versions', function () {
     });
   });
 
+  describe('dedupeBuild', function() {
+    var version;
+    var dupe;
+    var icvMock = { getHash: noop };
 
+    beforeEach(function (done) {
+      version = createNewVersion();
+      dupe = createNewVersion();
+      sinon.stub(icvMock, 'getHash').yieldsAsync(null, 'some-hash');
+      sinon.stub(InfraCodeVersion, 'findById').yieldsAsync(null, icvMock);
+      sinon.stub(ContextVersion, 'find').yieldsAsync(null, [ dupe ]);
+      sinon.stub(version, 'copyBuildFromContextVersion').yieldsAsync(null, dupe);
+      done();
+    });
+
+    afterEach(function (done) {
+      icvMock.getHash.restore();
+      InfraCodeVersion.findById.restore();
+      ContextVersion.find.restore();
+      version.copyBuildFromContextVersion.restore();
+      done();
+    });
+
+    it('should dedupe versions with the same github owner', function(done) {
+      version.dedupeBuild(function (err) {
+        if (err) { done(err); }
+        expect(version.copyBuildFromContextVersion.calledWith(dupe))
+          .to.be.true();
+        done();
+      });
+    });
+
+    it('should not dedupe a version with a different github owner', function(done) {
+      dupe.owner.github = 2;
+      version.dedupeBuild(function (err) {
+        if (err) { done(err); }
+        expect(version.copyBuildFromContextVersion.calledWith(dupe))
+          .to.be.false();
+        done();
+      });
+    });
+  }); // end 'dedupeBuild'
 });
