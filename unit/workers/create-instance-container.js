@@ -129,16 +129,32 @@ describe('Worker: create-instance-container', function () {
       Docker.prototype.pullImage.yieldsAsync();
       Docker.prototype.createUserContainer.yieldsAsync();
       var data = {
-        dockerHost: 'http://localhost:4242'
+        dockerHost: 'http://localhost:4242',
+        instanceEnvs: ['RUNNABLE_CONTAINER_ID=yd3as6'],
+        labels: {
+          contextVersionId: 'some-cv-id',
+          instanceId: 'some-instance-id',
+          instanceName: 'master',
+          instanceShortHash: 'yd3as6',
+          ownerUsername: 'anton',
+          creatorGithubId: 123123,
+          ownerGithubId: 812933
+        }
       };
       var worker = new CreateInstanceContainer(data);
       var cv = {
+        _id: 'someb-cv-id',
         build: {
           dockerTag: 'test/tag'
         }
       };
       worker._handle404(cv, function (err) {
         expect(err).to.not.exist();
+        expect(Docker.prototype.pullImage.callCount).to.equal(1);
+        expect(Docker.prototype.createUserContainer.callCount).to.equal(1);
+        expect(Docker.prototype.createUserContainer.args[0][0]).to.deep.equal(cv);
+        expect(Docker.prototype.createUserContainer.args[0][1].Env).to.deep.equal(data.instanceEnvs);
+        expect(Docker.prototype.createUserContainer.args[0][1].Labels).to.deep.equal(data.labels);
         done();
       });
     });
