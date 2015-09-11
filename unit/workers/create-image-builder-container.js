@@ -103,7 +103,7 @@ describe('CreateImageBuilderContainerWorker', function () {
         sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync(null, 1);
 
         sinon.stub(messenger, 'emitContextVersionUpdate');
-        sinon.stub(ctx.worker, '_baseWorkerFindUser', function (userId, cb) {
+        sinon.stub(ctx.worker, '_baseWorkerFindUser', function (cb) {
           ctx.worker.user = ctx.mockUser;
           cb(null, ctx.mockUser);
         });
@@ -236,7 +236,7 @@ describe('CreateImageBuilderContainerWorker', function () {
         sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync();
 
         sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
-        sinon.stub(ctx.worker, '_baseWorkerFindUser', function (userId, cb) {
+        sinon.stub(ctx.worker, '_baseWorkerFindUser', function (cb) {
           ctx.worker.user = ctx.mockUser;
           cb(null, ctx.mockUser);
         });
