@@ -22,6 +22,8 @@ var beforeEach = lab.beforeEach;
 var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
+var sinon = require('sinon');
+var rabbitMQ = require('models/rabbitmq');
 
 function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
   user = user.json();
@@ -66,6 +68,7 @@ describe('200 PATCH /instances', function () {
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
   beforeEach(primus.connect);
+
   before(function (done) {
     // container to update test w/ later
     docker = ctx.docker = new Docker({
@@ -74,7 +77,16 @@ describe('200 PATCH /instances', function () {
     });
     done();
   });
+  before(function (done) {
+    // prevent worker to be created
+    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    done();
+  });
 
+  after(function (done) {
+    rabbitMQ.deleteInstanceContainer.restore();
+    done();
+  });
   beforeEach(function (done) {
     docker.createContainer({
       Image: 'ubuntu',

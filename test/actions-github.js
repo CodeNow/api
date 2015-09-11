@@ -17,10 +17,13 @@ var it = lab.it;
 
 var SocketClient = require('socket/socket-client');
 var ContextVersion = require('models/mongo/context-version');
+var OnInstanceContainerDie = require('workers/on-instance-container-die');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
 var Slack = require('notifications/slack');
+
 var api = require('./fixtures/api-control');
+var createCount = require('callback-count');
 var dock = require('./fixtures/dock');
 var dockerMockEvents = require('./fixtures/docker-mock-events');
 var exists = require('101/exists');
@@ -31,6 +34,7 @@ var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 var request = require('request');
 var sinon = require('sinon');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('Github - /actions/github', function () {
   var ctx = {};
@@ -46,6 +50,26 @@ describe('Github - /actions/github', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
+
+  beforeEach(function (done) {
+    // prevent worker to be created
+    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.deleteInstanceContainer.restore();
+    done();
+  });
+  beforeEach(function (done) {
+    sinon.stub(OnInstanceContainerDie.prototype, 'handle', function (cb) {
+      cb();
+    });
+    done();
+  });
+  afterEach(function (done) {
+    OnInstanceContainerDie.prototype.handle.restore();
+    done();
+  });
 
   describe('ping', function () {
     it('should return OKAY', function (done) {
@@ -273,6 +297,7 @@ describe('Github - /actions/github', function () {
           });
 
           it('should return 1 instancesIds if 1 instance was deleted', function (done) {
+            rabbitMQ.deleteInstanceContainer.restore();
             var acv = ctx.contextVersion.attrs.appCodeVersions[0];
             var user = ctx.user.attrs.accounts.github;
             var data = {
@@ -286,12 +311,16 @@ describe('Github - /actions/github', function () {
 
             var options = hooks(data).push;
 
+            var countCb = createCount(2, done);
             require('./fixtures/mocks/github/users-username')(user.id, username);
             require('./fixtures/mocks/github/user')(username);
             require('./fixtures/mocks/github/users-username')(user.id, username);
             require('./fixtures/mocks/github/user')(username);
             // wait for container create worker to finish
             primus.expectActionCount('start', 1, function () {
+              sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {
+                countCb.next();
+              });
               expect(slackStub.calledOnce).to.equal(true);
               expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true);
               var deleteOptions = hooks(data).push;
@@ -304,7 +333,7 @@ describe('Github - /actions/github', function () {
                 if (err) { return done(err); }
                 expect(res.statusCode).to.equal(201);
                 expect(body.length).to.equal(1);
-                primus.expectActionCount('delete', 1, done);
+                countCb.next();
               });
             });
             request.post(options, function (err, res, cvIds) {
@@ -378,7 +407,6 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err); }
             expect(res.statusCode).to.equal(202);
             expect(body).to.equal('No instances should be deployed');
-
             done();
           });
         });
