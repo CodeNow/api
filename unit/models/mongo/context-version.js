@@ -11,6 +11,7 @@ var Code = require('code');
 var expect = Code.expect;
 
 var Github = require('models/apis/github');
+var messenger = require('socket/messenger');
 
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
@@ -24,6 +25,33 @@ describe('Context Version', function () {
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
 
+  beforeEach(function (done) {
+    ctx.mockContextVersion = {
+      '_id': '55d3ef733e1b620e00eb6292',
+      name: 'name1',
+      owner: {
+        github: '2335750'
+      },
+      createdBy: {
+        github: '146592'
+      },
+      build: {
+        _id: '23412312h3nk1lj2h3l1k2',
+        completed: true
+      }
+    };
+    ctx.mockContext = {
+      '_id': '55d3ef733e1b620e00eb6292',
+      name: 'name1',
+      owner: {
+        github: '2335750'
+      },
+      createdBy: {
+        github: '146592'
+      }
+    };
+    done();
+  });
   describe('updateBuildErrorByContainer', function () {
     it('should save the logs as an array', function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields();
@@ -49,6 +77,76 @@ describe('Context Version', function () {
         ContextVersion.updateBy.restore();
         ContextVersion.findBy.restore();
         done();
+      });
+    });
+  });
+
+  describe('updateBuildCompletedByContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(Context, 'findById').yieldsAsync(null, ctx.mockContext);
+      sinon.stub(ContextVersion, 'updateBy').yieldsAsync();
+      sinon.stub(ContextVersion, 'findBy').yieldsAsync(null, [ctx.mockContextVersion]);
+      done();
+    });
+    afterEach(function (done) {
+      Context.findById.restore();
+      ContextVersion.updateBy.restore();
+      ContextVersion.findBy.restore();
+      messenger.emitContextVersionUpdate.restore();
+      done();
+    });
+    it('should save a successful build', function (done) {
+      var opts = {
+        dockerImage: 'asdasdfgvaw4fgaw323kjh23kjh4gq3kj',
+        log: 'adsfasdfasdfadsfadsf',
+        failed: false
+      };
+      var myCv = {id: 12341};
+
+      sinon.stub(messenger, 'emitContextVersionUpdate', function () {
+        done();
+      });
+      ContextVersion.updateBuildCompletedByContainer(myCv, opts, function () {
+        expect(ContextVersion.updateBy.calledOnce).to.be.true();
+        expect(ContextVersion.findBy.calledOnce).to.be.true();
+
+        var args = ContextVersion.updateBy.getCall(0).args;
+        expect(args[0]).to.equal('build.dockerContainer');
+        expect(args[1]).to.equal(myCv);
+        expect(args[2].$set).to.contains({
+          'build.dockerImage': opts.dockerImage,
+          'build.log'        : opts.log,
+          'build.failed'     : opts.failed
+        });
+        expect(args[2].$set['build.completed']).to.exist();
+
+      });
+    });
+    it('should save a failed build', function (done) {
+      var opts = {
+        log: 'adsfasdfasdfadsfadsf',
+        failed: true,
+        error: {
+          message: 'jksdhfalskdjfhadsf'
+        }
+      };
+      var myCv = {id: 12341};
+      sinon.stub(messenger, 'emitContextVersionUpdate', function () {
+        done();
+      });
+      ContextVersion.updateBuildCompletedByContainer(myCv, opts, function () {
+        expect(ContextVersion.updateBy.calledOnce).to.be.true();
+        expect(ContextVersion.findBy.calledOnce).to.be.true();
+
+        var args = ContextVersion.updateBy.getCall(0).args;
+        expect(args[0]).to.equal('build.dockerContainer');
+        expect(args[1]).to.equal(myCv);
+        expect(args[2].$set).to.contains({
+          'build.log'        : opts.log,
+          'build.failed'     : opts.failed,
+          'error.message'    : opts.error.message
+        });
+        expect(args[2].$set['build.completed']).to.exist();
       });
     });
   });

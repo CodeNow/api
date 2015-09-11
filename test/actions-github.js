@@ -17,10 +17,13 @@ var it = lab.it;
 
 var SocketClient = require('socket/socket-client');
 var ContextVersion = require('models/mongo/context-version');
+var OnInstanceContainerDie = require('workers/on-instance-container-die');
 var Mixpanel = require('models/apis/mixpanel');
 var PullRequest = require('models/apis/pullrequest');
 var Slack = require('notifications/slack');
+
 var api = require('./fixtures/api-control');
+var createCount = require('callback-count');
 var dock = require('./fixtures/dock');
 var dockerMockEvents = require('./fixtures/docker-mock-events');
 var exists = require('101/exists');
@@ -48,7 +51,7 @@ describe('Github - /actions/github', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   beforeEach(generateKey);
 
-  before(function (done) {
+  beforeEach(function (done) {
     // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
@@ -57,6 +60,16 @@ describe('Github - /actions/github', function () {
   after(function (done) {
     rabbitMQ.deleteInstance.restore();
     rabbitMQ.deleteInstanceContainer.restore();
+    done();
+  });
+  beforeEach(function (done) {
+    sinon.stub(OnInstanceContainerDie.prototype, 'handle', function (cb) {
+      cb();
+    });
+    done();
+  });
+  afterEach(function (done) {
+    OnInstanceContainerDie.prototype.handle.restore();
     done();
   });
 
@@ -286,6 +299,7 @@ describe('Github - /actions/github', function () {
           });
 
           it('should return 1 instancesIds if 1 instance was deleted', function (done) {
+            rabbitMQ.deleteInstanceContainer.restore();
             var acv = ctx.contextVersion.attrs.appCodeVersions[0];
             var user = ctx.user.attrs.accounts.github;
             var data = {
@@ -299,6 +313,7 @@ describe('Github - /actions/github', function () {
 
             var options = hooks(data).push;
 
+            var countCb = createCount(2, done);
             require('./fixtures/mocks/github/users-username')(user.id, username);
             require('./fixtures/mocks/github/user')(username);
             require('./fixtures/mocks/github/users-username')(user.id, username);
