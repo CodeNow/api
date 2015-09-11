@@ -91,7 +91,14 @@ describe('Worker: delete-instance', function () {
         sessionUserId: '507f191e810c19729de860ea'
       });
       sinon.stub(worker, '_findInstance', function (instanceId, cb) {
-        cb(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
+        var data = {
+          _id: '507f1f77bcf86cd799439011',
+          name: 'api',
+          container: {
+            dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
+          }
+        };
+        cb(null, new Instance(data));
       });
       sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
         cb(null);
@@ -138,7 +145,8 @@ describe('Worker: delete-instance', function () {
           hostIp: '10.0.1.1'
         },
         container: {
-          dockerHost: 'https://localhost:4242'
+          dockerHost: 'https://localhost:4242',
+          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
         },
         contextVersion: {
           appCodeVersions: [
