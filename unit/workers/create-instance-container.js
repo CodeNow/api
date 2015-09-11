@@ -89,16 +89,17 @@ describe('Worker: create-instance-container', function () {
 
     it('should return error if pull returned error', function (done) {
       Docker.prototype.pullImage.yieldsAsync('explode');
-      var worker = new CreateInstanceContainer();
+      var data = {
+        dockerHost: 'http://localhost:4242'
+      };
+      var worker = new CreateInstanceContainer(data);
       var cv = {
         build: {
           dockerTag: 'test/tag'
         }
       };
-      var data = {
-        dockerHost: 'http://localhost:4242'
-      };
-      worker._handle404(cv, data, function (err) {
+
+      worker._handle404(cv, function (err) {
         expect(err).to.exist();
         done();
       });
@@ -108,16 +109,16 @@ describe('Worker: create-instance-container', function () {
     it('should return error if createUserContainer returned error', function (done) {
       Docker.prototype.pullImage.yieldsAsync();
       Docker.prototype.createUserContainer.yieldsAsync('explode');
-      var worker = new CreateInstanceContainer();
+      var data = {
+        dockerHost: 'http://localhost:4242'
+      };
+      var worker = new CreateInstanceContainer(data);
       var cv = {
         build: {
           dockerTag: 'test/tag'
         }
       };
-      var data = {
-        dockerHost: 'http://localhost:4242'
-      };
-      worker._handle404(cv, data, function (err) {
+      worker._handle404(cv, function (err) {
         expect(err).to.exist();
         done();
       });
@@ -127,16 +128,16 @@ describe('Worker: create-instance-container', function () {
     it('should return', function (done) {
       Docker.prototype.pullImage.yieldsAsync();
       Docker.prototype.createUserContainer.yieldsAsync();
-      var worker = new CreateInstanceContainer();
+      var data = {
+        dockerHost: 'http://localhost:4242'
+      };
+      var worker = new CreateInstanceContainer(data);
       var cv = {
         build: {
           dockerTag: 'test/tag'
         }
       };
-      var data = {
-        dockerHost: 'http://localhost:4242'
-      };
-      worker._handle404(cv, data, function (err) {
+      worker._handle404(cv, function (err) {
         expect(err).to.not.exist();
         done();
       });
