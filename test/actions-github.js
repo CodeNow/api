@@ -310,10 +310,7 @@ describe('Github - /actions/github', function () {
             };
             var username = user.login;
             // emulate instance deploy event
-
             var options = hooks(data).push;
-
-            var countCb = createCount(2, done);
             require('./fixtures/mocks/github/users-username')(user.id, username);
             require('./fixtures/mocks/github/user')(username);
             require('./fixtures/mocks/github/users-username')(user.id, username);
