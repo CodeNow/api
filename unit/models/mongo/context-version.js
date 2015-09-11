@@ -9,6 +9,7 @@ var beforeEach = lab.beforeEach;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
+var sinon = require('sinon');
 
 var Github = require('models/apis/github');
 
@@ -16,8 +17,8 @@ var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var cbCount = require('callback-count');
 var error = require('error');
-var sinon = require('sinon');
 var Boom = require('dat-middleware').Boom;
+var InfraCodeVersion = require('models/mongo/infra-code-version');
 
 var ctx = {};
 describe('Context Version', function () {
@@ -385,6 +386,7 @@ describe('Context Version', function () {
           });
       });
     });
+
     it('should update acv with latest commit if userLatest=true', function (done) {
       var c = new Context();
       var acv1 = {
@@ -440,5 +442,55 @@ describe('Context Version', function () {
           });
       });
     });
-  });
+  }); // end 'modifyAppCodeVersionWithLatestCommit'
+
+  describe('dedupeBuild', function() {
+    var version;
+    var dupe;
+
+    beforeEach(function (done) {
+      version = new ContextVersion({
+        infraCodeVersion: 'infra-code-version-id',
+        owner: { github: 1 }
+      });
+      dupe = new ContextVersion({
+        infraCodeVersion: 'infra-code-version-id',
+        owner: { github: 1 }
+      });
+      sinon.stub(InfraCodeVersion, 'findByIdAndGetHash').yieldsAsync(null, 'hash');
+      sinon.stub(version, 'setHash').yieldsAsync();
+      sinon.stub(version, 'findPendingDupe').yieldsAsync(null, dupe);
+      sinon.stub(version, 'findCompletedDupe').yieldsAsync(null, dupe);
+      sinon.stub(version, 'copyBuildFromContextVersion').yieldsAsync(null, dupe);
+      done();
+    });
+
+    afterEach(function (done) {
+      InfraCodeVersion.findByIdAndGetHash.restore();
+      version.setHash.restore();
+      version.findPendingDupe.restore();
+      version.findCompletedDupe.restore();
+      version.copyBuildFromContextVersion.restore();
+      done();
+    });
+
+    it('should dedupe versions with the same github owner', function(done) {
+      version.dedupeBuild(function (err) {
+        if (err) { done(err); }
+        expect(version.copyBuildFromContextVersion.calledWith(dupe))
+          .to.be.true();
+        done();
+      });
+    });
+
+    it('should not dedupe a version with a different github owner', function(done) {
+      dupe.owner.github = 2;
+      version.dedupeBuild(function (err) {
+        if (err) { done(err); }
+        expect(version.copyBuildFromContextVersion.calledWith(dupe))
+          .to.be.false();
+        done();
+      });
+    });
+  }); // end 'dedupeBuild'
 });
