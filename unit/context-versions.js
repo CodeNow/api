@@ -190,47 +190,4 @@ describe('Versions', function () {
       });
     });
   });
-
-  describe('dedupeBuild', function() {
-    var version;
-    var dupe;
-    var icvMock = { getHash: noop };
-
-    beforeEach(function (done) {
-      version = createNewVersion();
-      dupe = createNewVersion();
-      sinon.stub(icvMock, 'getHash').yieldsAsync(null, 'some-hash');
-      sinon.stub(InfraCodeVersion, 'findById').yieldsAsync(null, icvMock);
-      sinon.stub(ContextVersion, 'find').yieldsAsync(null, [ dupe ]);
-      sinon.stub(version, 'copyBuildFromContextVersion').yieldsAsync(null, dupe);
-      done();
-    });
-
-    afterEach(function (done) {
-      icvMock.getHash.restore();
-      InfraCodeVersion.findById.restore();
-      ContextVersion.find.restore();
-      version.copyBuildFromContextVersion.restore();
-      done();
-    });
-
-    it('should dedupe versions with the same github owner', function(done) {
-      version.dedupeBuild(function (err) {
-        if (err) { done(err); }
-        expect(version.copyBuildFromContextVersion.calledWith(dupe))
-          .to.be.true();
-        done();
-      });
-    });
-
-    it('should not dedupe a version with a different github owner', function(done) {
-      dupe.owner.github = 2;
-      version.dedupeBuild(function (err) {
-        if (err) { done(err); }
-        expect(version.copyBuildFromContextVersion.calledWith(dupe))
-          .to.be.false();
-        done();
-      });
-    });
-  }); // end 'dedupeBuild'
 });
