@@ -23,7 +23,6 @@ var PullRequest = require('models/apis/pullrequest');
 var Slack = require('notifications/slack');
 
 var api = require('./fixtures/api-control');
-var createCount = require('callback-count');
 var dock = require('./fixtures/dock');
 var dockerMockEvents = require('./fixtures/docker-mock-events');
 var exists = require('101/exists');
