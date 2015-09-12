@@ -1,7 +1,7 @@
 'use strict';
 
 var nock = require('nock');
-var dockerHost = require('../docker-host');
+var dockerHost = require('../../docker-host');
 var createFrame = require('docker-frame');
 
 // This mock is currently used with docker container die event
