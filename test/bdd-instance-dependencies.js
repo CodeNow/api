@@ -1,5 +1,6 @@
 'use strict';
 
+var sinon = require('sinon');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -21,6 +22,7 @@ var pluck = require('101/pluck');
 var find = require('101/find');
 var hasProps = require('101/has-properties');
 var createCount = require('callback-count');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('BDD - Instance Dependencies', function () {
   var ctx = {};
@@ -141,13 +143,11 @@ describe('BDD - Instance Dependencies', function () {
       it('should remove dependencies that are deleted', function (done) {
         require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
           ctx.user.attrs.accounts.github.login);
-        async.series([
-          ctx.apiInstance.destroy.bind(ctx.apiInstance),
-          ctx.webInstance.fetchDependencies.bind(ctx.webInstance)
-        ], function (err, results) {
+        sinon.stub(rabbitMQ, 'deleteInstance', function () {});
+        ctx.apiInstance.destroy(function (err) {
           if (err) { return done(err); }
-          var deps = results[1][0];
-          expect(deps).to.have.length(0);
+          expect(rabbitMQ.deleteInstance.callCount).to.equal(1);
+          rabbitMQ.deleteInstance.restore();
           done();
         });
       });
@@ -168,7 +168,13 @@ describe('BDD - Instance Dependencies', function () {
         // it deletes all nodes - a sanity test to make sure that that works
         require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
           ctx.user.attrs.accounts.github.login);
-        ctx.webInstance.destroy(done);
+        sinon.stub(rabbitMQ, 'deleteInstance', function () {});
+        ctx.webInstance.destroy(function (err) {
+          if (err) { return done(err); }
+          expect(rabbitMQ.deleteInstance.callCount).to.equal(1);
+          rabbitMQ.deleteInstance.restore();
+          done();
+        });
       });
     });
 

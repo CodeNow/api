@@ -1,5 +1,6 @@
 'use strict';
 
+var sinon = require('sinon');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -9,11 +10,13 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 
+var Instance = require('models/mongo/instance');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
 var primus = require('../../fixtures/primus');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('DELETE /instances/:id', function () {
   var ctx = {};
@@ -27,6 +30,17 @@ describe('DELETE /instances/:id', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+
+  before(function (done) {
+    // prevent worker to be created
+    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
+    done();
+  });
+
+  after(function (done) {
+    rabbitMQ.deleteInstance.restore();
+    done();
+  });
 
   beforeEach(function (done) {
     multi.createAndTailInstance(primus, function (err, instance, build, user) {
@@ -57,8 +71,6 @@ describe('DELETE /instances/:id', function () {
         });
         it('should not delete the instance (403 forbidden)', function (done) {
           ctx.instance.client = ctx.nonOwner.client; // swap auth to nonOwner's
-          // require('../../fixtures/mocks/github/user-id')(ctx.nonOwner.attrs.accounts.github.id,
-          //   ctx.nonOwner.attrs.accounts.github.login);
           ctx.instance.destroy(expects.errorStatus(403, done));
         });
       });
@@ -77,9 +89,7 @@ describe('DELETE /instances/:id', function () {
 
     describe('not founds', function () {
       beforeEach(function (done) {
-        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
-          ctx.user.attrs.accounts.github.login);
-        ctx.instance.destroy(done);
+        Instance.removeById(ctx.instance.id(), done);
       });
       it('should not delete the instance if missing (404 instance)', function (done) {
         ctx.user.destroyInstance(ctx.instance.id(), expects.errorStatus(404, done));
