@@ -4,7 +4,7 @@ var mocker = require('./mocker.js');
 var check = {};
 
 module.exports.setup = function (cb) {
-  mocker.mocksForMethods(require('../../../lib/models/apis/docker.js'), {
+  mocker.mocksForMethods(require('../../../../lib/models/apis/docker.js'), {
     startImageBuilderAndWait: function () {
       nock('http://localhost:4243', { allowUnmocked: true })
           .filteringPath(function(path) {

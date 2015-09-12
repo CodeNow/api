@@ -11,22 +11,22 @@ var afterEach = lab.afterEach;
 var before = lab.before;
 var beforeEach = lab.beforeEach;
 
-var api = require('../fixtures/api-control');
-var multi = require('../fixtures/multi-factory');
+var api = require('../../fixtures/api-control');
+var multi = require('../../fixtures/multi-factory');
 var findIndex = require('101/find-index');
 var hasProps = require('101/has-properties');
 
 describe('/users/:id/routes', function () {
   var ctx = {};
   before(api.start.bind(ctx));
-  beforeEach(require('../fixtures/mocks/github/login'));
-  beforeEach(require('../fixtures/mocks/github/login'));
+  beforeEach(require('../../fixtures/mocks/github/login'));
+  beforeEach(require('../../fixtures/mocks/github/login'));
   beforeEach(function (done) {
     ctx.user = multi.createUser(done);
   });
-  afterEach(require('../fixtures/clean-mongo').removeEverything);
-  afterEach(require('../fixtures/clean-ctx')(ctx));
-  afterEach(require('../fixtures/clean-nock'));
+  afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../fixtures/clean-ctx')(ctx));
+  afterEach(require('../../fixtures/clean-nock'));
   after(api.stop.bind(ctx));
 
 
