@@ -244,7 +244,10 @@ describe('BaseWorker', function () {
         done();
       });
       it('should query mongo for instance w/ container', function (done) {
-        ctx.worker._baseWorkerFindInstance(function (err) {
+        ctx.worker._baseWorkerFindInstance({
+          _id: ctx.data.instanceId,
+          'container.dockerContainer': ctx.data.dockerContainer
+        }, function (err) {
           expect(err).to.be.null();
           expect(Instance.findOne.callCount).to.equal(1);
           expect(Instance.findOne.args[0][0]).to.only.contain({
@@ -269,7 +272,10 @@ describe('BaseWorker', function () {
         done();
       });
       it('should callback successfully if instance w/ container found', function (done) {
-        ctx.worker._baseWorkerFindInstance(function (err) {
+        ctx.worker._baseWorkerFindInstance({
+          _id: ctx.data.instanceId,
+          'container.dockerContainer': ctx.data.dockerContainer
+        }, function (err) {
           expect(err).to.be.null();
           expect(ctx.worker.instance).to.equal(ctx.mockInstance);
           done();
@@ -289,7 +295,10 @@ describe('BaseWorker', function () {
         done();
       });
       it('should callback error if instance w/ container not found', function (done) {
-        ctx.worker._baseWorkerFindInstance(function (err) {
+        ctx.worker._baseWorkerFindInstance({
+          _id: ctx.data.instanceId,
+          'container.dockerContainer': ctx.data.dockerContainer
+        }, function (err) {
           expect(err.message).to.equal('instance not found');
           expect(ctx.worker.instance).to.be.undefined();
           done();
@@ -309,7 +318,10 @@ describe('BaseWorker', function () {
         done();
       });
       it('should callback error if mongo error', function (done) {
-        ctx.worker._baseWorkerFindInstance(function (err) {
+        ctx.worker._baseWorkerFindInstance({
+          _id: ctx.data.instanceId,
+          'container.dockerContainer': ctx.data.dockerContainer
+        }, function (err) {
           expect(err.message).to.equal('mongoose error');
           expect(ctx.worker.instance).to.be.undefined();
           done();
@@ -331,7 +343,7 @@ describe('BaseWorker', function () {
         done();
       });
       it('should query mongo for user', function (done) {
-        ctx.worker._baseWorkerFindUser(function (err) {
+        ctx.worker._baseWorkerFindUser(ctx.data.sessionUserGithubId, function (err) {
           expect(err).to.be.null();
           expect(User.findByGithubId.callCount).to.equal(1);
           expect(User.findByGithubId.args[0][0]).to.equal(ctx.data.sessionUserGithubId);
@@ -353,7 +365,7 @@ describe('BaseWorker', function () {
         done();
       });
       it('should query mongo for user', function (done) {
-        ctx.worker._baseWorkerFindUser(function (err) {
+        ctx.worker._baseWorkerFindUser(ctx.data.sessionUserGithubId, function (err) {
           expect(err).to.be.null();
           expect(ctx.worker.user).to.equal(ctx.mockUser);
           done();
@@ -373,7 +385,7 @@ describe('BaseWorker', function () {
         done();
       });
       it('should query mongo for user', function (done) {
-        ctx.worker._baseWorkerFindUser(function (err) {
+        ctx.worker._baseWorkerFindUser(ctx.data.sessionUserGithubId, function (err) {
           expect(err.message).to.equal('user not found');
           expect(ctx.worker.user).to.be.undefined();
           done();
@@ -393,7 +405,7 @@ describe('BaseWorker', function () {
         done();
       });
       it('should query mongo for user', function (done) {
-        ctx.worker._baseWorkerFindUser(function (err) {
+        ctx.worker._baseWorkerFindUser(ctx.data.sessionUserGithubId, function (err) {
           expect(err.message).to.equal('mongoose error');
           expect(ctx.worker.user).to.be.undefined();
           done();
