@@ -53,11 +53,11 @@ describe('Github - /actions/github', function () {
 
   beforeEach(function (done) {
     // prevent worker to be created
-    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     done();
   });
   afterEach(function (done) {
-    rabbitMQ.deleteInstanceContainer.restore();
+    rabbitMQ.deleteInstance.restore();
     done();
   });
   beforeEach(function (done) {
@@ -299,7 +299,7 @@ describe('Github - /actions/github', function () {
           });
 
           it('should return 1 instancesIds if 1 instance was deleted', function (done) {
-            rabbitMQ.deleteInstanceContainer.restore();
+            rabbitMQ.deleteInstance.restore();
             var acv = ctx.contextVersion.attrs.appCodeVersions[0];
             var user = ctx.user.attrs.accounts.github;
             var data = {
@@ -320,7 +320,7 @@ describe('Github - /actions/github', function () {
             require('./fixtures/mocks/github/user')(username);
             // wait for container create worker to finish
             primus.expectActionCount('start', 1, function () {
-              sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {
+              sinon.stub(rabbitMQ, 'deleteInstance', function () {
                 countCb.next();
               });
               expect(slackStub.calledOnce).to.equal(true);

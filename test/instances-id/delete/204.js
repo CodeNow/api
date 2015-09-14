@@ -272,7 +272,7 @@ describe('204 DELETE /instances/:id', function () {
       require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
         ctx.user.attrs.accounts.github.login);
       // prevent worker to be created
-      sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+      sinon.stub(rabbitMQ, 'deleteInstance', function () {});
       // destroy event will be handled in near future via worker
       ctx.instance.destroy(expects.success(204, function (err) {
         if (err) { return done(err); }
@@ -280,9 +280,9 @@ describe('204 DELETE /instances/:id', function () {
       }));
       function check(cb) {
         if (ctx.expectNoContainerErr !== true) {
-          expect(rabbitMQ.deleteInstanceContainer.calledOnce).to.be.true();
+          expect(rabbitMQ.deleteInstance.calledOnce).to.be.true();
         }
-        rabbitMQ.deleteInstanceContainer.restore();
+        rabbitMQ.deleteInstance.restore();
         cb();
       }
     });

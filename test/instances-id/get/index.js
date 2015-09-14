@@ -15,6 +15,7 @@ var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
 var primus = require('../../fixtures/primus');
 var exists = require('101/exists');
+var Instance = require('models/mongo/instance');
 
 describe('Instance - /instances/:id', function () {
   var ctx = {};
@@ -162,10 +163,7 @@ describe('Instance - /instances/:id', function () {
 
     describe('not founds', function () {
       beforeEach(function (done) {
-        require('../../fixtures/mocks/github/user')(ctx.user);
-        require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
-          ctx.user.attrs.accounts.github.login);
-        ctx.instance.destroy(done);
+        Instance.removeById(ctx.instance.id(), done);
       });
       it('should not get the instance if missing (404)', function (done) {
         require('../../fixtures/mocks/github/user')(ctx.user);

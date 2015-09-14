@@ -27,6 +27,7 @@ var randStr = require('randomstring').generate;
 var uuid = require('uuid');
 
 var Build = require('models/mongo/build');
+var Instance = require('models/mongo/instance');
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var dockerMockEvents = require('../../fixtures/docker-mock-events');
@@ -51,12 +52,12 @@ describe('Instance - PATCH /instances/:id', function () {
 
   before(function (done) {
     // prevent worker to be created
-    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     done();
   });
 
   after(function (done) {
-    rabbitMQ.deleteInstanceContainer.restore();
+    rabbitMQ.deleteInstance.restore();
     done();
   });
 
@@ -73,7 +74,6 @@ describe('Instance - PATCH /instances/:id', function () {
         var next = createCount(2, done).next;
         primus.expectAction('start', next);
         multi.createAndTailInstance(primus, ctx.orgId, function (err, instance, build, user, mdlArray, srcArray) {
-          //[contextVersion, context, build, user], [srcContextVersion, srcContext, moderator]
           if (err) { return next(err); }
           ctx.instance = instance;
           ctx.build = build;
@@ -689,9 +689,7 @@ describe('Instance - PATCH /instances/:id', function () {
 
       describe('not founds', function () {
         beforeEach(function (done) {
-          require('../../fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
-            ctx.user.attrs.accounts.github.login);
-          ctx.instance.destroy(done);
+          Instance.removeById(ctx.instance.id(), done);
         });
         updates.forEach(function (json) {
           var keys = Object.keys(json);
