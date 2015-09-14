@@ -5,15 +5,19 @@ var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
 var before = lab.before;
+var beforeEach = lab.beforeEach;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
+var sinon = require('sinon');
+
+var noop = require('101/noop');
 
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var ContextVersion = require('models/mongo/context-version');
 var validation = require('./fixtures/validation')(lab);
-
 var Version = require('models/mongo/context-version');
+var InfraCodeVersion = require('models/mongo/infra-code-version');
 
 describe('Versions', function () {
   before(require('./fixtures/mongo').connect);
@@ -186,6 +190,4 @@ describe('Versions', function () {
       });
     });
   });
-
-
 });
