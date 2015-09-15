@@ -44,11 +44,17 @@ describe('StopInstanceContainerWorker', function () {
     ctx.data = {
       dockerContainer: 'abc123',
       dockerHost: '0.0.0.0',
+      inspectData: {
+        Config: {
+          Labels: {
+            instanceId: 'instanceid123',
+            sessionUserGithubId: '12345'
+          }
+        }
+      },
       //hostIp: req.instance.network.hostIp,
-      instanceId: 'instanceid123',
       //networkIp: req.instance.network.networkIp,
       //ownerUsername: req.sessionUser.accounts.github.login,
-      sessionUserGithubId: '12345'
       //tid: req.domain.runnableData.tid
     };
     ctx.mockInstance = {
