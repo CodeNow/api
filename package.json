@@ -152,7 +152,7 @@
     "eslint-changes": "git fetch origin master > /dev/null 2>&1; eslint $(git diff --name-only origin/master | grep -e '.*.js$')",
     "eslint-errors": "npm run eslint -- --quiet",
     "eslint-changes-errors": "npm run eslint-changes -- --quiet",
-    "cayley": "./test/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/fixtures/graphs/cayley/local.cfg --assets=./test/fixtures/graphs/cayley",
-    "generate-whitelist": "find ./test -path ./test/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt"
+    "cayley": "./test/integration/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/integration/fixtures/graphs/cayley/local.cfg --assets=./test/integration/fixtures/graphs/cayley",
+    "generate-whitelist": "find ./test -path ./test/integration/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt"
   }
 }
