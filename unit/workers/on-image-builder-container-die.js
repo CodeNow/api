@@ -214,6 +214,7 @@ describe('OnImageBuilderContainerDie', function () {
 
   describe('_handleBuildError', function () {
     beforeEach(function (done) {
+      ctx.worker.contextVersion = ctx.mockContextVersion;
       sinon.stub(ContextVersion, 'updateBuildErrorByContainer',
                  function (containerId, err, cb) {
         expect(containerId).to.equal(ctx.data.id);
@@ -235,6 +236,7 @@ describe('OnImageBuilderContainerDie', function () {
 
   describe('_handleBuildComplete', function () {
     beforeEach(function (done) {
+      ctx.worker.contextVersion = ctx.mockContextVersion;
       ctx.buildInfo = {};
       sinon.stub(ContextVersion, 'updateBuildCompletedByContainer',
                  function (containerId, buildInfo, cb) {

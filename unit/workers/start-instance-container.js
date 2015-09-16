@@ -432,7 +432,7 @@ describe('StartInstanceContainerWorker', function () {
 
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(Instance, 'findById', function (query, cb) {
+        sinon.stub(Instance, 'findOne', function (query, cb) {
           cb(null, ctx.mockInstance);
         });
         sinon.stub(messenger, 'emitInstanceUpdate', function () {});
@@ -440,7 +440,7 @@ describe('StartInstanceContainerWorker', function () {
       });
 
       afterEach(function (done) {
-        Instance.findById.restore();
+        Instance.findOne.restore();
         messenger.emitInstanceUpdate.restore();
         done();
       });
@@ -448,8 +448,10 @@ describe('StartInstanceContainerWorker', function () {
       it('should fetch instance and notify frontend via primus instance has started',
       function (done) {
         ctx.worker._updateInstanceFrontend('starting', function () {
-          expect(Instance.findById.callCount).to.equal(1);
-          expect(Instance.findById.args[0][0]).to.equal(ctx.data.instanceId);
+          expect(Instance.findOne.callCount).to.equal(1);
+          expect(Instance.findOne.args[0][0]).to.deep.equal({
+            '_id': ctx.data.instanceId
+          });
           expect(ctx.populateModelsSpy.callCount).to.equal(1);
           expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
           expect(messenger.emitInstanceUpdate.callCount).to.equal(1);

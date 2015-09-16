@@ -8,6 +8,7 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var noop = require('101/noop');
+var put = require('101/put');
 var sinon = require('sinon');
 
 var BaseWorker = require('workers/base-worker');
@@ -36,9 +37,13 @@ describe('BaseWorker', function () {
     ctx.mockContextVersion = {
       toJSON: noop
     };
-    ctx.mockInstance = {
-      '_id': ctx.data.instanceId,
+    ctx.mockInstanceSparse = {
+      '_id': 'dsfadsfadsfadsfasdf',
       name: 'name1',
+      populateModels: function () {},
+      populateOwnerAndCreatedBy: function () {}
+    };
+    ctx.mockInstance = put({
       owner: {
         github: '',
         username: 'foo',
@@ -48,12 +53,12 @@ describe('BaseWorker', function () {
         github: '',
         username: '',
         gravatar: ''
-      },
-      removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
-      modifyContainerInspect: ctx.modifyContainerInspectSpy,
-      modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy,
-      populateModels: ctx.populateModelsSpy,
-      populateOwnerAndCreatedBy: ctx.populateOwnerAndCreatedBySpy
+      }
+    }, ctx.mockInstanceSparse);
+    ctx.mockUser = {
+      github: '',
+      username: '',
+      gravatar: ''
     };
     ctx.worker = new BaseWorker(ctx.data);
     done();
@@ -124,6 +129,227 @@ describe('BaseWorker', function () {
           expect(err.message).to.equal('error');
           done();
         });
+      });
+    });
+  });
+
+  describe('_updateInstanceFrontend', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null, ctx.mockInstanceSparse);
+      sinon.stub(ctx.mockInstanceSparse, 'populateModels').yieldsAsync(null);
+      sinon.stub(ctx.mockInstanceSparse, 'populateOwnerAndCreatedBy')
+        .yieldsAsync(null, ctx.mockInstance);
+      sinon.stub(messenger, 'emitInstanceUpdate');
+      done();
+    });
+    afterEach(function (done) {
+      Instance.findOne.restore();
+      ctx.mockInstanceSparse.populateModels.restore();
+      ctx.mockInstanceSparse.populateOwnerAndCreatedBy.restore();
+      messenger.emitInstanceUpdate.restore();
+      done();
+    });
+    describe('success', function () {
+      beforeEach(function (done) {
+        ctx.worker.user = ctx.mockUser;
+        done();
+      });
+      it('should fetch the instance with the query and emit the update', function (done) {
+        var query = {
+          hello: 'howdy'
+        };
+        ctx.worker._updateInstanceFrontend(query, 'starting', function (err) {
+          expect(err).to.be.undefined();
+          expect(Instance.findOne.callCount).to.equal(1);
+          expect(Instance.findOne.args[0][0]).to.deep.equal(query);
+          expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
+          expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(1);
+          expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.args[0][0])
+            .to.deep.equal(ctx.worker.user);
+          expect(
+            messenger.emitInstanceUpdate.callCount,
+            'emitContextVersionUpdate'
+          ).to.equal(1);
+          expect(
+            messenger.emitInstanceUpdate.args[0][0],
+            'emitContextVersionUpdate arg0'
+          ).to.equal(ctx.mockInstance);
+          expect(
+            messenger.emitInstanceUpdate.args[0][1],
+            'emitContextVersionUpdate arg0'
+          ).to.equal('starting');
+          done();
+        });
+      });
+      it('should fetch the instance without the query and emit the update', function (done) {
+        ctx.worker.instanceId = ctx.mockInstance._id;
+        ctx.worker._updateInstanceFrontend('starting', function (err) {
+          expect(err).to.be.undefined();
+          expect(Instance.findOne.callCount).to.equal(1);
+          expect(Instance.findOne.args[0][0]).to.deep.equal({ _id: ctx.mockInstance._id });
+          expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
+          expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(1);
+          expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.args[0][0])
+            .to.deep.equal(ctx.worker.user);
+          expect(
+            messenger.emitInstanceUpdate.callCount,
+            'emitContextVersionUpdate'
+          ).to.equal(1);
+          expect(
+            messenger.emitInstanceUpdate.args[0][0],
+            'emitContextVersionUpdate arg0'
+          ).to.equal(ctx.mockInstance);
+          expect(
+            messenger.emitInstanceUpdate.args[0][1],
+            'emitContextVersionUpdate arg0'
+          ).to.equal('starting');
+          done();
+        });
+      });
+    });
+    describe('failure', function () {
+      describe('before doing anything', function () {
+        it('should fail when no query given, and no instanceId', function (done) {
+          ctx.worker._updateInstanceFrontend('starting', function (err) {
+            expect(messenger.emitInstanceUpdate.callCount, 'emitInstanceUpdate').to.equal(0);
+            expect(err.message).to.equal('Missing instanceId');
+            done();
+          });
+        });
+        it('should fail when missing a user', function (done) {
+          ctx.worker.instanceId = ctx.mockInstance._id;
+          ctx.worker._updateInstanceFrontend('starting', function (err) {
+            expect(messenger.emitInstanceUpdate.callCount, 'emitInstanceUpdate').to.equal(0);
+            expect(err.message).to.equal('Missing User');
+            done();
+          });
+        });
+      });
+      describe('failing on any of the external methods', function () {
+        beforeEach(function (done) {
+          ctx.worker.user = ctx.mockUser;
+          ctx.worker.instanceId = ctx.mockInstance._id;
+          done();
+        });
+        var testError = new Error('Generic Database error');
+
+        it('should fail and return in findOne', function (done) {
+          Instance.findOne.yieldsAsync(testError);
+          ctx.worker._updateInstanceFrontend({}, 'starting', function (err) {
+            expect(err).to.equal(testError);
+            expect(Instance.findOne.callCount).to.equal(1);
+            expect(Instance.findOne.args[0][0]).to.deep.equal({});
+            expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(0);
+            done();
+          });
+        });
+        it('should fail and return in findOne when no instance found', function (done) {
+          Instance.findOne.yieldsAsync();
+          ctx.worker._updateInstanceFrontend({}, 'starting', function (err) {
+            expect(err.message).to.equal('instance not found');
+            expect(Instance.findOne.callCount).to.equal(1);
+            expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(0);
+            done();
+          });
+        });
+        it('should fail and return in ctx.mockInstanceSparse', function (done) {
+          ctx.mockInstanceSparse.populateModels.yieldsAsync(testError);
+          ctx.worker._updateInstanceFrontend('starting', function (err) {
+            expect(err).to.equal(testError);
+            expect(Instance.findOne.callCount).to.equal(1);
+            expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
+            expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(0);
+            done();
+          });
+        });
+        it('should fail and return in ctx.mockInstanceSparse', function (done) {
+          ctx.mockInstanceSparse.populateOwnerAndCreatedBy.yieldsAsync(testError);
+          ctx.worker._updateInstanceFrontend('starting', function (err) {
+            expect(err).to.equal(testError);
+            expect(Instance.findOne.callCount).to.equal(1);
+            expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
+            expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(1);
+            expect(messenger.emitInstanceUpdate.callCount).to.equal(0);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  describe('pUpdateInstanceFrontend', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null, ctx.mockInstanceSparse);
+      sinon.stub(ctx.mockInstanceSparse, 'populateModels').yieldsAsync(null);
+      sinon.stub(ctx.mockInstanceSparse, 'populateOwnerAndCreatedBy')
+        .yieldsAsync(null, ctx.mockInstance);
+      sinon.stub(messenger, 'emitInstanceUpdate');
+      done();
+    });
+    afterEach(function (done) {
+      Instance.findOne.restore();
+      ctx.mockInstanceSparse.populateModels.restore();
+      ctx.mockInstanceSparse.populateOwnerAndCreatedBy.restore();
+      messenger.emitInstanceUpdate.restore();
+      done();
+    });
+    describe('success', function () {
+      beforeEach(function (done) {
+        ctx.worker.user = ctx.mockUser;
+        done();
+      });
+      it('should fetch the instance with the query and emit the update', function (done) {
+        var query = {
+          hello: 'howdy'
+        };
+        ctx.worker.pUpdateInstanceFrontend(query, 'starting')
+          .then(function () {
+            expect(Instance.findOne.callCount).to.equal(1);
+            expect(Instance.findOne.args[0][0]).to.deep.equal(query);
+            expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
+            expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(1);
+            expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.args[0][0])
+              .to.deep.equal(ctx.worker.user);
+            expect(
+              messenger.emitInstanceUpdate.callCount,
+              'emitContextVersionUpdate'
+            ).to.equal(1);
+            expect(
+              messenger.emitInstanceUpdate.args[0][0],
+              'emitContextVersionUpdate arg0'
+            ).to.equal(ctx.mockInstance);
+            expect(
+              messenger.emitInstanceUpdate.args[0][1],
+              'emitContextVersionUpdate arg0'
+            ).to.equal('starting');
+            done();
+          })
+          .catch(done);
+      });
+      it('should fetch the instance without the query and emit the update', function (done) {
+        ctx.worker.instanceId = ctx.mockInstance._id;
+        ctx.worker.pUpdateInstanceFrontend('starting')
+          .then(function () {
+            expect(Instance.findOne.callCount).to.equal(1);
+            expect(Instance.findOne.args[0][0]).to.deep.equal({_id: ctx.mockInstance._id});
+            expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
+            expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(1);
+            expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.args[0][0])
+              .to.deep.equal(ctx.worker.user);
+            expect(
+              messenger.emitInstanceUpdate.callCount,
+              'emitContextVersionUpdate'
+            ).to.equal(1);
+            expect(
+              messenger.emitInstanceUpdate.args[0][0],
+              'emitContextVersionUpdate arg0'
+            ).to.equal(ctx.mockInstance);
+            expect(
+              messenger.emitInstanceUpdate.args[0][1],
+              'emitContextVersionUpdate arg0'
+            ).to.equal('starting');
+            done();
+          });
       });
     });
   });
@@ -219,6 +445,103 @@ describe('BaseWorker', function () {
           expect(ctx.worker.instance).to.be.undefined();
           done();
         });
+      });
+    });
+  });
+
+  describe('pFindInstance', function () {
+    describe('basic', function () {
+      beforeEach(function (done) {
+        sinon.stub(Instance, 'findOne', function (data, cb) {
+          cb(null, ctx.mockInstance);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        Instance.findOne.restore();
+        done();
+      });
+      it('should query mongo for instance w/ container', function (done) {
+        ctx.worker.pFindInstance({
+          '_id': ctx.data.instanceId,
+          'container.dockerContainer': ctx.dockerContainerId
+        })
+          .then(function () {
+            expect(Instance.findOne.callCount).to.equal(1);
+            expect(Instance.findOne.args[0][0]).to.only.contain({
+              '_id': ctx.data.instanceId,
+              'container.dockerContainer': ctx.dockerContainerId
+            });
+            expect(Instance.findOne.args[0][1]).to.be.a.function();
+            done();
+          });
+      });
+    });
+
+    describe('found', function () {
+      beforeEach(function (done) {
+        sinon.stub(Instance, 'findOne', function (data, cb) {
+          cb(null, ctx.mockInstance);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        Instance.findOne.restore();
+        done();
+      });
+      it('should callback successfully if instance w/ container found', function (done) {
+        ctx.worker.pFindInstance({
+          '_id': ctx.data.instanceId,
+          'container.dockerContainer': ctx.dockerContainerId
+        })
+          .then(function () {
+          expect(ctx.worker.instance).to.equal(ctx.mockInstance);
+          done();
+        });
+      });
+    });
+
+    describe('not found', function () {
+      beforeEach(function (done) {
+        sinon.stub(Instance, 'findOne').yieldsAsync(null, null);
+        done();
+      });
+      afterEach(function (done) {
+        Instance.findOne.restore();
+        done();
+      });
+      it('should callback error if instance w/ container not found', function (done) {
+        ctx.worker.pFindInstance({
+          '_id': ctx.data.instanceId,
+          'container.dockerContainer': ctx.data.dockerContainer
+        })
+          .catch(function (err) {
+            expect(err.message).to.equal('instance not found');
+            expect(ctx.worker.instance).to.be.undefined();
+            done();
+          });
+      });
+    });
+
+    describe('mongo error', function () {
+      beforeEach(function (done) {
+        sinon.stub(Instance, 'findOne').yieldsAsync(new Error('mongoose error'));
+        done();
+      });
+      afterEach(function (done) {
+        Instance.findOne.restore();
+        done();
+      });
+      it('should callback error if mongo error', function (done) {
+        ctx.worker.pFindInstance({
+          '_id': ctx.data.instanceId,
+          'container.dockerContainer': ctx.data.dockerContainer
+        })
+          .catch(function (err) {
+            expect(err.message).to.equal('mongoose error');
+            expect(ctx.worker.instance).to.be.undefined();
+            done();
+          });
       });
     });
   });
