@@ -1,5 +1,5 @@
 /**
- * @module test/fixtures/container-inspect
+ * @module test/functional/fixtures/container-inspect
  */
 
 var dockerHost = require('./docker-host');

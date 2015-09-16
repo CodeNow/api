@@ -21,8 +21,8 @@ var ContextVersion = require('models/mongo/context-version');
 var ctx = {};
 describe('Debug Containers', function () {
   before(require('../../fixtures/mongo').connect);
-  beforeEach(require('../../../test/integration/fixtures/clean-mongo').removeEverything);
-  afterEach(require('../../../test/integration/fixtures/clean-mongo').removeEverything);
+  beforeEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
 
   beforeEach(function (done) {
     var c = new Context({

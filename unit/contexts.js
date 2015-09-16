@@ -15,7 +15,7 @@ var Context = require('models/mongo/context');
 
 describe('Context Unit Testing', function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/integration/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 
   function createNewContext() {
     return new Context({

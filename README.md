@@ -37,7 +37,7 @@
   - `redis-server`
 - neo4j
   - `brew install neo4j`
-  - disable auth: `sed -ie 's/.*auth_enabled.*/dbms.security.auth_enabled=false/g' /usr/local/Cellar/neo4j/2.2.0/libexec/conf/neo4j-server.properties`
+  - disable auth: `sed -ie 's/.*auth_enabled.*/dbms.security.auth_enabled=false/g' /usr/local/Cellar/neo4j/2.2.5/libexec/conf/neo4j-server.properties`
   - `neo4j start`
 - ulimit
   - `ulimit -n 10240` (at minimum)
