@@ -17,6 +17,8 @@ var isObject = require('101/is-object');
 
 var error = require('error');
 var Github = require('models/apis/github');
+var messenger = require('socket/messenger');
+
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
@@ -24,8 +26,35 @@ var InfraCodeVersion = require('models/mongo/infra-code-version');
 var ctx = {};
 describe('Context Version', function () {
   before(require('../../fixtures/mongo').connect);
-  afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../../test/integration/fixtures/clean-mongo').removeEverything);
 
+  beforeEach(function (done) {
+    ctx.mockContextVersion = {
+      '_id': '55d3ef733e1b620e00eb6292',
+      name: 'name1',
+      owner: {
+        github: '2335750'
+      },
+      createdBy: {
+        github: '146592'
+      },
+      build: {
+        _id: '23412312h3nk1lj2h3l1k2',
+        completed: true
+      }
+    };
+    ctx.mockContext = {
+      '_id': '55d3ef733e1b620e00eb6292',
+      name: 'name1',
+      owner: {
+        github: '2335750'
+      },
+      createdBy: {
+        github: '146592'
+      }
+    };
+    done();
+  });
   describe('updateBuildErrorByContainer', function () {
     it('should save the logs as an array', function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields();
@@ -51,6 +80,76 @@ describe('Context Version', function () {
         ContextVersion.updateBy.restore();
         ContextVersion.findBy.restore();
         done();
+      });
+    });
+  });
+
+  describe('updateBuildCompletedByContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(Context, 'findById').yieldsAsync(null, ctx.mockContext);
+      sinon.stub(ContextVersion, 'updateBy').yieldsAsync();
+      sinon.stub(ContextVersion, 'findBy').yieldsAsync(null, [ctx.mockContextVersion]);
+      done();
+    });
+    afterEach(function (done) {
+      Context.findById.restore();
+      ContextVersion.updateBy.restore();
+      ContextVersion.findBy.restore();
+      messenger.emitContextVersionUpdate.restore();
+      done();
+    });
+    it('should save a successful build', function (done) {
+      var opts = {
+        dockerImage: 'asdasdfgvaw4fgaw323kjh23kjh4gq3kj',
+        log: 'adsfasdfasdfadsfadsf',
+        failed: false
+      };
+      var myCv = {id: 12341};
+
+      sinon.stub(messenger, 'emitContextVersionUpdate', function () {
+        done();
+      });
+      ContextVersion.updateBuildCompletedByContainer(myCv, opts, function () {
+        expect(ContextVersion.updateBy.calledOnce).to.be.true();
+        expect(ContextVersion.findBy.calledOnce).to.be.true();
+
+        var args = ContextVersion.updateBy.getCall(0).args;
+        expect(args[0]).to.equal('build.dockerContainer');
+        expect(args[1]).to.equal(myCv);
+        expect(args[2].$set).to.contains({
+          'build.dockerImage': opts.dockerImage,
+          'build.log'        : opts.log,
+          'build.failed'     : opts.failed
+        });
+        expect(args[2].$set['build.completed']).to.exist();
+
+      });
+    });
+    it('should save a failed build', function (done) {
+      var opts = {
+        log: 'adsfasdfasdfadsfadsf',
+        failed: true,
+        error: {
+          message: 'jksdhfalskdjfhadsf'
+        }
+      };
+      var myCv = {id: 12341};
+      sinon.stub(messenger, 'emitContextVersionUpdate', function () {
+        done();
+      });
+      ContextVersion.updateBuildCompletedByContainer(myCv, opts, function () {
+        expect(ContextVersion.updateBy.calledOnce).to.be.true();
+        expect(ContextVersion.findBy.calledOnce).to.be.true();
+
+        var args = ContextVersion.updateBy.getCall(0).args;
+        expect(args[0]).to.equal('build.dockerContainer');
+        expect(args[1]).to.equal(myCv);
+        expect(args[2].$set).to.contains({
+          'build.log'        : opts.log,
+          'build.failed'     : opts.failed,
+          'error.message'    : opts.error.message
+        });
+        expect(args[2].$set['build.completed']).to.exist();
       });
     });
   });
@@ -430,7 +529,7 @@ describe('Context Version', function () {
               if (err) {
                 return done(err);
               }
-              require('../../../test/fixtures/mocks/github/repos-username-repo-branches-branch')(newCv);
+              require('../../../test/integration/fixtures/mocks/github/repos-username-repo-branches-branch')(newCv);
               newCv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
                 expect(err).to.be.null();
                 expect(updatedCv.appCodeVersions[0].commit).to.be.undefined();
@@ -506,7 +605,7 @@ describe('Context Version', function () {
     });
   }); // end 'addAppCodeVersionQuery'
 
-  describe('setHash', function() {
+  describe('updateBuildHash', function() {
     var cv;
 
     beforeEach(function (done) {
@@ -529,7 +628,7 @@ describe('Context Version', function () {
           'build.hash' : hash
         }
       };
-      cv.setHash(hash, function (err) {
+      cv.updateBuildHash(hash, function (err) {
         if (err) { return done(err); }
         expect(cv.update.calledOnce).to.be.true();
         expect(cv.update.calledWith(expectedQuery)).to.be.true();
@@ -539,7 +638,7 @@ describe('Context Version', function () {
 
     it('should set the hash on the context version', function(done) {
       var hash = 'brand-new-hash';
-      cv.setHash(hash, function (err) {
+      cv.updateBuildHash(hash, function (err) {
         if (err) { return done(err); }
         expect(cv.build.hash).to.equal(hash);
         done();
@@ -549,13 +648,13 @@ describe('Context Version', function () {
     it('should correctly handle update errors', function(done) {
       var updateError = new Error('Update is too cool to work right now.');
       cv.update.yieldsAsync(updateError);
-      cv.setHash('rando', function (err) {
+      cv.updateBuildHash('rando', function (err) {
         expect(err).to.exist();
         expect(err).to.equal(updateError);
         done();
       });
     });
-  }); // end 'setHash'
+  }); // end 'updateBuildHash'
 
   describe('findPendingDupe', function() {
     var cv;
@@ -590,7 +689,8 @@ describe('Context Version', function () {
       var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
         'build.completed': { $exists: false },
         'build.hash': cv.build.hash,
-        'build._id': { $ne: cv.build._id }
+        'build._id': { $ne: cv.build._id },
+        'advanced': false
       });
 
       cv.findPendingDupe(function (err) {
@@ -694,7 +794,8 @@ describe('Context Version', function () {
       var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
         'build.completed': { $exists: true },
         'build.hash': cv.build.hash,
-        'build._id': { $ne: cv.build._id }
+        'build._id': { $ne: cv.build._id },
+        'advanced': false
       });
 
       cv.findCompletedDupe(function (err) {
@@ -710,7 +811,7 @@ describe('Context Version', function () {
       var expectedOptions = {
         sort : '-build.started',
         limit: 1
-      }
+      };
 
       cv.findCompletedDupe(function (err) {
         if (err) { return done(err); }
@@ -746,7 +847,7 @@ describe('Context Version', function () {
       });
       sinon.stub(InfraCodeVersion, 'findByIdAndGetHash')
         .yieldsAsync(null, hash);
-      sinon.stub(cv, 'setHash').yieldsAsync();
+      sinon.stub(cv, 'updateBuildHash').yieldsAsync();
       sinon.stub(cv, 'findPendingDupe').yieldsAsync(null, dupe);
       sinon.stub(cv, 'findCompletedDupe').yieldsAsync(null, dupe);
       sinon.stub(cv, 'copyBuildFromContextVersion')
@@ -756,7 +857,7 @@ describe('Context Version', function () {
 
     afterEach(function (done) {
       InfraCodeVersion.findByIdAndGetHash.restore();
-      cv.setHash.restore();
+      cv.updateBuildHash.restore();
       cv.findPendingDupe.restore();
       cv.findCompletedDupe.restore();
       cv.copyBuildFromContextVersion.restore();
@@ -764,7 +865,7 @@ describe('Context Version', function () {
     });
 
     it('should find the hash via InfraCodeVersion', function(done) {
-      cv.dedupeBuild(function (err, result) {
+      cv.dedupeBuild(function (err) {
         if (err) { return done(err); }
         expect(InfraCodeVersion.findByIdAndGetHash.calledOnce).to.be.true();
         expect(InfraCodeVersion.findByIdAndGetHash.calledWith(
@@ -775,16 +876,16 @@ describe('Context Version', function () {
     });
 
     it('should set the hash returned by InfraCodeVersion', function(done) {
-      cv.dedupeBuild(function (err, result) {
+      cv.dedupeBuild(function (err) {
         if (err) { return done(err); }
-        expect(cv.setHash.calledOnce).to.be.true();
-        expect(cv.setHash.calledWith(hash)).to.be.true();
+        expect(cv.updateBuildHash.calledOnce).to.be.true();
+        expect(cv.updateBuildHash.calledWith(hash)).to.be.true();
         done();
       });
     });
 
     it('should find pending duplicates', function(done) {
-      cv.dedupeBuild(function (err, result) {
+      cv.dedupeBuild(function (err) {
         if (err) { return done(err); }
         expect(cv.findPendingDupe.calledOnce).to.be.true();
         done();
@@ -792,7 +893,7 @@ describe('Context Version', function () {
     });
 
     it('should not find completed duplicates with one pending', function(done) {
-      cv.dedupeBuild(function (err, result) {
+      cv.dedupeBuild(function (err) {
         if (err) { return done(err); }
         expect(cv.findCompletedDupe.callCount).to.equal(0);
         done();
@@ -802,7 +903,7 @@ describe('Context Version', function () {
     it('should find completed duplicates without one pending', function(done) {
       cv.findPendingDupe.yieldsAsync(null, null);
 
-      cv.dedupeBuild(function (err, result) {
+      cv.dedupeBuild(function (err) {
         if (err) { return done(err); }
         expect(cv.findCompletedDupe.calledOnce).to.be.true();
         done();
@@ -814,7 +915,7 @@ describe('Context Version', function () {
       cv.findPendingDupe.yieldsAsync(null, null);
       cv.findCompletedDupe.yieldsAsync(completedErr, null);
 
-      cv.dedupeBuild(function (err, result) {
+      cv.dedupeBuild(function (err) {
         expect(err).to.equal(completedErr);
         done();
       });
@@ -823,7 +924,7 @@ describe('Context Version', function () {
     it('should dedupe cvs with the same owner', function(done) {
       cv.dedupeBuild(function (err, result) {
         if (err) { done(err); }
-        expect(result).to.equal(dupe)
+        expect(result).to.equal(dupe);
         done();
       });
     });
@@ -838,7 +939,7 @@ describe('Context Version', function () {
     });
 
     it('should replace itself if a duplicate was found', function(done) {
-      cv.dedupeBuild(function (err, result) {
+      cv.dedupeBuild(function (err) {
         if (err) { done(err); }
         expect(cv.copyBuildFromContextVersion.calledOnce).to.be.true();
         expect(cv.copyBuildFromContextVersion.calledWith(dupe))
@@ -851,7 +952,7 @@ describe('Context Version', function () {
       cv.findPendingDupe.yieldsAsync(null, null);
       cv.findCompletedDupe.yieldsAsync(null, null);
 
-      cv.dedupeBuild(function (err, result) {
+      cv.dedupeBuild(function (err) {
         if (err) { done(err); }
         expect(cv.copyBuildFromContextVersion.callCount).to.equal(0);
         expect(cv.copyBuildFromContextVersion.calledWith(dupe))

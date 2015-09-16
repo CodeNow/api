@@ -221,6 +221,108 @@ describe('RabbitMQ Model', function () {
     });
   });
 
+  describe('deleteInstance', function () {
+    beforeEach(function (done) {
+      // this normally set after connect
+      ctx.rabbitMQ.hermesClient = {
+        publish: noop
+      };
+      ctx.validJobData = {
+        instanceId: '507f1f77bcf86cd799439011',
+        sessionUserId: '507f191e810c19729de860ea'
+      };
+      //missing sessionUserId
+      ctx.invalidJobData = {
+        instanceId: '507f1f77bcf86cd799439011'
+      };
+      done();
+    });
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
+          expect(eventName).to.equal('delete-instance');
+          expect(eventData).to.equal(ctx.validJobData);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should publish a job with required data', function (done) {
+        ctx.rabbitMQ.deleteInstance(ctx.validJobData);
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1);
+        done();
+      });
+    });
+  });
+
+  describe('deleteInstanceContainer', function () {
+    beforeEach(function (done) {
+      // this normally set after connect
+      ctx.rabbitMQ.hermesClient = {
+        publish: noop
+      };
+      ctx.validJobData = {
+        instanceShortHash: 'd1as5f',
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242',
+          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
+        }
+      };
+      //missing container
+      ctx.invalidJobData = {
+        instanceShortHash: 'd1as5f',
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerUsername: 'podviaznikov',
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1'
+      };
+      done();
+    });
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
+          expect(eventName).to.equal('delete-instance-container');
+          expect(eventData).to.equal(ctx.validJobData);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should publish a job with required data', function (done) {
+        ctx.rabbitMQ.deleteInstanceContainer(ctx.validJobData);
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1);
+        done();
+      });
+    });
+    describe('failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {});
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should not publish a job without required data', function (done) {
+        ctx.rabbitMQ.deleteInstanceContainer(ctx.invalidJobData);
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
+        done();
+      });
+    });
+  });
+
   describe('publishClusterProvision', function () {
     var testOrgId = 18274533;
     beforeEach(function (done) {
