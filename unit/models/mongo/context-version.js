@@ -605,7 +605,7 @@ describe('Context Version', function () {
     });
   }); // end 'addAppCodeVersionQuery'
 
-  describe('setHash', function() {
+  describe('updateBuildHash', function() {
     var cv;
 
     beforeEach(function (done) {
@@ -628,7 +628,7 @@ describe('Context Version', function () {
           'build.hash' : hash
         }
       };
-      cv.setHash(hash, function (err) {
+      cv.updateBuildHash(hash, function (err) {
         if (err) { return done(err); }
         expect(cv.update.calledOnce).to.be.true();
         expect(cv.update.calledWith(expectedQuery)).to.be.true();
@@ -638,7 +638,7 @@ describe('Context Version', function () {
 
     it('should set the hash on the context version', function(done) {
       var hash = 'brand-new-hash';
-      cv.setHash(hash, function (err) {
+      cv.updateBuildHash(hash, function (err) {
         if (err) { return done(err); }
         expect(cv.build.hash).to.equal(hash);
         done();
@@ -648,13 +648,13 @@ describe('Context Version', function () {
     it('should correctly handle update errors', function(done) {
       var updateError = new Error('Update is too cool to work right now.');
       cv.update.yieldsAsync(updateError);
-      cv.setHash('rando', function (err) {
+      cv.updateBuildHash('rando', function (err) {
         expect(err).to.exist();
         expect(err).to.equal(updateError);
         done();
       });
     });
-  }); // end 'setHash'
+  }); // end 'updateBuildHash'
 
   describe('findPendingDupe', function() {
     var cv;
@@ -845,7 +845,7 @@ describe('Context Version', function () {
       });
       sinon.stub(InfraCodeVersion, 'findByIdAndGetHash')
         .yieldsAsync(null, hash);
-      sinon.stub(cv, 'setHash').yieldsAsync();
+      sinon.stub(cv, 'updateBuildHash').yieldsAsync();
       sinon.stub(cv, 'findPendingDupe').yieldsAsync(null, dupe);
       sinon.stub(cv, 'findCompletedDupe').yieldsAsync(null, dupe);
       sinon.stub(cv, 'copyBuildFromContextVersion')
@@ -855,7 +855,7 @@ describe('Context Version', function () {
 
     afterEach(function (done) {
       InfraCodeVersion.findByIdAndGetHash.restore();
-      cv.setHash.restore();
+      cv.updateBuildHash.restore();
       cv.findPendingDupe.restore();
       cv.findCompletedDupe.restore();
       cv.copyBuildFromContextVersion.restore();
@@ -876,8 +876,8 @@ describe('Context Version', function () {
     it('should set the hash returned by InfraCodeVersion', function(done) {
       cv.dedupeBuild(function (err, result) {
         if (err) { return done(err); }
-        expect(cv.setHash.calledOnce).to.be.true();
-        expect(cv.setHash.calledWith(hash)).to.be.true();
+        expect(cv.updateBuildHash.calledOnce).to.be.true();
+        expect(cv.updateBuildHash.calledWith(hash)).to.be.true();
         done();
       });
     });
