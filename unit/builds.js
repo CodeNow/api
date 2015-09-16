@@ -16,7 +16,7 @@ var Build = require('models/mongo/build');
 
 describe('Build', function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../test/integration/fixtures/clean-mongo').removeEverything);
 
   function createNewBuild() {
     return new Build({

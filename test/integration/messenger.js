@@ -10,7 +10,7 @@ var Code = require('code');
 var expect = Code.expect;
 
 var Primus = require('primus');
-var api = require('../test/fixtures/api-control');
+var api = require('./fixtures/api-control');
 var messenger = require('socket/messenger');
 var createCount = require('callback-count');
 

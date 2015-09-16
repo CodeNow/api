@@ -20,8 +20,8 @@ var notEquals = function (compare) {
   };
 };
 
-var equivalentDockerfiles = require('../test/fixtures/equivalent-dockerfiles');
-var differentDockerfiles  = require('../test/fixtures/different-dockerfiles');
+var equivalentDockerfiles = require('../test/integration/fixtures/equivalent-dockerfiles');
+var differentDockerfiles  = require('../test/integration/fixtures/different-dockerfiles');
 
 describe('Hasher',  function () {
   describe('stream', function () {
