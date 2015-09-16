@@ -32,7 +32,7 @@ var opts = {
     'NODE_ENV': 'test',
     'ACTUALLY_RUN': true
   }),
-  cwd: path.resolve(__dirname, '../..')
+  cwd: path.resolve(__dirname, '../../..')
 };
 
 describe('template update script', function () {
@@ -43,7 +43,7 @@ describe('template update script', function () {
   after(mongoose.stop.bind(mongoose));
 
   beforeEach(function (done) {
-    var nodejsData = require(path.resolve(__dirname, '../../scripts/templates/nodejs.json'));
+    var nodejsData = require(path.resolve(__dirname, '../../../scripts/templates/nodejs.json'));
     // a field to see updated
     nodejsData.defaultMainCommands.push('# remove this');
     // a field to see cleared
@@ -55,7 +55,7 @@ describe('template update script', function () {
   });
 
   beforeEach(function (done) {
-    fs.readdir(path.resolve(__dirname, '../../scripts/templates'), function (err, files) {
+    fs.readdir(path.resolve(__dirname, '../../../scripts/templates'), function (err, files) {
       if (err) { return done(err); }
       ctx.templateCount = files.filter(function (n) {
         return /.+\.json$/.test(n);

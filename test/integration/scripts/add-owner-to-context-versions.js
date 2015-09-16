@@ -28,7 +28,7 @@ var opts = {
     'NODE_ENV': 'test',
     'ACTUALLY_RUN': true
   }),
-  cwd: path.resolve(__dirname, '../..')
+  cwd: path.resolve(__dirname, '../../..')
 };
 var ContextVersion = require('models/mongo/context-version');
 var Context = require('models/mongo/context');

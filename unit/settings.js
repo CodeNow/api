@@ -13,7 +13,7 @@ var Settings = require('models/mongo/settings');
 
 describe('Settings',  function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../test/integration/fixtures/clean-mongo').removeEverything);
 
   describe('find by owner github id', function () {
     var savedSettings = null;

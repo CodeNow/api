@@ -27,7 +27,7 @@ function containerRoot (inspect) {
   // this is dumb that we have to save it in krain's node_module folder
   return path.join(
     __dirname,
-    '../node_modules/krain/test',
+    '../../node_modules/krain/test',
     inspect.Id);
 }
 

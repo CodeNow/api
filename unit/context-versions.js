@@ -17,7 +17,7 @@ var Version = require('models/mongo/context-version');
 
 describe('Versions', function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../test/integration/fixtures/clean-mongo').removeEverything);
 
   function createNewVersion(acv) {
     acv = acv || {};

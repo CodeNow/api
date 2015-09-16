@@ -18,7 +18,7 @@
 //   var ctx = {};
 
 //   before(function (done) {
-//     ctx.api = require('../app')();
+//     ctx.api = require('../../app')();
 //     ctx.api.start(done);
 //   });
 //   after(function (done) {
