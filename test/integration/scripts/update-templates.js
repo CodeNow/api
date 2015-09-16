@@ -55,7 +55,7 @@ describe('template update script', function () {
   });
 
   beforeEach(function (done) {
-    fs.readdir(path.resolve(__dirname, '../../scripts/templates'), function (err, files) {
+    fs.readdir(path.resolve(__dirname, '../../../scripts/templates'), function (err, files) {
       if (err) { return done(err); }
       ctx.templateCount = files.filter(function (n) {
         return /.+\.json$/.test(n);
