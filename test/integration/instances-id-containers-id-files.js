@@ -32,7 +32,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
 
   function containerRoot (ctx) {
     return path.join(__dirname,
-      '../node_modules/krain/test',
+      '../../node_modules/krain/test',
       ctx.container.attrs.dockerContainer);
   }
 
