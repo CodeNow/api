@@ -79,12 +79,12 @@ describe('200 PATCH /instances', function () {
   });
   before(function (done) {
     // prevent worker to be created
-    sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
+    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     done();
   });
 
   after(function (done) {
-    rabbitMQ.deleteInstanceContainer.restore();
+    rabbitMQ.deleteInstance.restore();
     done();
   });
   beforeEach(function (done) {
