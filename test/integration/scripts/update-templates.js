@@ -32,7 +32,7 @@ var opts = {
     'NODE_ENV': 'test',
     'ACTUALLY_RUN': true
   }),
-  cwd: path.resolve(__dirname, '../..')
+  cwd: path.resolve(__dirname, '../../..')
 };
 
 describe('template update script', function () {
