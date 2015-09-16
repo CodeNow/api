@@ -1,3 +1,5 @@
+./test/functional/models/mongo/context-version.js
+./test/functional/models/mongo/infra-code-version.js
 ./test/integration/actions-analyze-info/get/200.js
 ./test/integration/actions-analyze/get/200.js
 ./test/integration/actions-analyze/get/400.js
