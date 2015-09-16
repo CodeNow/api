@@ -1,5 +1,5 @@
 /**
- * @module test/fixtures/multi-factory
+ * @module test/integration/fixtures/multi-factory
  */
 'use strict';
 
@@ -16,10 +16,43 @@ var dockerMockEvents = require('./docker-mock-events');
 var generateKey = require('./key-factory');
 var logger = require('middlewares/logger')(__filename);
 var primus = require('./primus');
+var async = require('async');
 
 var log = logger.log;
 
 module.exports = {
+  findUser: function (userId, cb) {
+    log.trace({}, 'findUser');
+    var host = require('./host');
+    var User = require('runnable');
+    var opts = { userContentDomain: process.env.USER_CONTENT_DOMAIN };
+    var user = new User(host, opts);
+    MongoUser.findOne({'accounts.github.id': userId}, function (err, userDoc) {
+      if (err) { return cb(err); }
+      if (!userDoc) {
+        return cb(null, null);
+      }
+      var token = userDoc.accounts.github.accessToken;
+      var name = userDoc.accounts.github.username;
+      require('./mocks/github/action-auth')(token, userId, name);
+      user.githubLogin(token, function (err) {
+        if (err) {
+          return cb(err);
+        }
+        else {
+          user.attrs.accounts.github.accessToken = token;
+          user.attrs.accounts.github.username = name;
+          log.trace({
+            token: token,
+            name: name,
+            userId: userId
+          }, 'foundUser');
+          cb(null, user);
+        }
+      });
+    });
+    return user;
+  },
   createUser: function (opts, cb) {
     if (isFunction(opts)) {
       cb = opts;
@@ -40,6 +73,11 @@ module.exports = {
       else {
         user.attrs.accounts.github.accessToken = token;
         user.attrs.accounts.github.username = name;
+        log.trace({
+          token: token,
+          name: name,
+          userId: user.attrs.accounts.github.id
+        }, 'createdUser');
         cb(null, user);
       }
     });
@@ -91,14 +129,28 @@ module.exports = {
       // create context
       require('./mocks/github/user-orgs')(ownerId, 'Runnable');
     }
-    this.createUser(function (err, user) {
-      if (err) { return cb(err); }
-      var body = { name: randStr(5) };
-      if (ownerId) { body.owner = { github: ownerId }; }
-      var context = user.createContext(body, function (err) {
-        cb(err, context, user);
-      });
-    });
+    var self = this;
+    async.waterfall([
+      function findUser (cb) {
+        if (!ownerId) {
+          return cb(null, null);
+        }
+        self.findUser(ownerId, cb);
+      },
+      function createUser (user, cb) {
+        if (user) {
+          return cb(null, user);
+        }
+        self.createUser(cb);
+      },
+      function createContext (user, cb) {
+        var body = { name: randStr(5) };
+        if (ownerId) { body.owner = { github: ownerId }; }
+        var context = user.createContext(body, function (err) {
+          cb(err, context, user);
+        });
+      }
+    ], cb);
   },
   createSourceContext: function (cb) {
     log.trace({}, 'createSourceContext');
