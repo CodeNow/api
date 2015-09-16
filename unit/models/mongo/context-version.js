@@ -689,7 +689,8 @@ describe('Context Version', function () {
       var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
         'build.completed': { $exists: false },
         'build.hash': cv.build.hash,
-        'build._id': { $ne: cv.build._id }
+        'build._id': { $ne: cv.build._id },
+        'advanced': false
       });
 
       cv.findPendingDupe(function (err) {
@@ -793,7 +794,8 @@ describe('Context Version', function () {
       var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
         'build.completed': { $exists: true },
         'build.hash': cv.build.hash,
-        'build._id': { $ne: cv.build._id }
+        'build._id': { $ne: cv.build._id },
+        'advanced': false
       });
 
       cv.findCompletedDupe(function (err) {
