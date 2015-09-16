@@ -127,6 +127,80 @@ describe('Worker: delete-instance', function () {
         done();
       });
     });
+    it('should success if neo4j returned Neo.ClientError.Statement.EntityNotFound', function (done) {
+      var worker = new DeleteInstance({
+        instanceId: '507f1f77bcf86cd799439011',
+        sessionUserId: '507f191e810c19729de860ea'
+      });
+      var instanceData = {
+        _id: '507f1f77bcf86cd799439011',
+        shortHash: 'a6aj1',
+        name: 'api',
+        masterPod: false,
+        owner: {
+          github: 429706
+        },
+        network: {
+          networkIp: '10.0.1.0',
+          hostIp: '10.0.1.1'
+        },
+        container: {
+          dockerHost: 'https://localhost:4242',
+          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
+        },
+        contextVersion: {
+          appCodeVersions: [
+            {
+              lowerBranch: 'develop',
+              additionalRepo: false
+            }
+          ]
+        }
+      };
+      sinon.stub(worker, '_findInstance', function (instanceId, cb) {
+        cb(null, new Instance(instanceData));
+      });
+      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
+        var err = new Error('Neo4j error');
+        err.code = 'Neo.ClientError.Statement.EntityNotFound';
+        cb(err);
+      });
+      sinon.stub(Instance.prototype, 'remove', function (cb) {
+        cb(null);
+      });
+      sinon.stub(rabbitMQ, 'deleteInstanceContainer', function (task) {
+        expect(task.instanceShortHash).to.equal(instanceData.shortHash);
+        expect(task.instanceName).to.equal(instanceData.name);
+        expect(task.instanceMasterPod).to.equal(instanceData.masterPod);
+        expect(task.instanceMasterBranch)
+          .to.equal(instanceData.contextVersion.appCodeVersions[0].lowerBranch);
+        expect(task.container).to.deep.equal(instanceData.container);
+        expect(task.networkIp).to.equal(instanceData.network.networkIp);
+        expect(task.hostIp).to.equal(instanceData.network.hostIp);
+        expect(task.ownerGithubId).to.equal(instanceData.owner.github);
+        expect(task.sessionUserId).to.equal('507f191e810c19729de860ea');
+      });
+      sinon.stub(messenger, 'emitInstanceDelete', function (instance) {
+        expect(instance._id.toString()).to.equal(instanceData._id);
+        expect(instance.name).to.equal(instanceData.name);
+        expect(instance.shortHash).to.equal(instanceData.shortHash);
+      });
+      sinon.stub(worker, '_deleteForks', function (instance, sessionUserId, cb) {
+        cb(null);
+      });
+      sinon.spy(worker, '_handleError');
+      worker.handle(function (jobErr) {
+        expect(jobErr).to.not.exist();
+        expect(worker._handleError.callCount).to.equal(0);
+        Instance.prototype.removeSelfFromGraph.restore();
+        Instance.prototype.remove.restore();
+        expect(rabbitMQ.deleteInstanceContainer.callCount).to.equal(1);
+        expect(messenger.emitInstanceDelete.callCount).to.equal(1);
+        rabbitMQ.deleteInstanceContainer.restore();
+        messenger.emitInstanceDelete.restore();
+        done();
+      });
+    });
     it('should success if everything was successful', function (done) {
       var worker = new DeleteInstance({
         instanceId: '507f1f77bcf86cd799439011',
