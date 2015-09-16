@@ -17,7 +17,7 @@ var sinon = require('sinon');
 
 describe('Infracode Versions', function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/integration/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 
   function createNewInfracodeVersion() {
     return new InfracodeVersion({

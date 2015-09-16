@@ -21,7 +21,7 @@ var times = require('times-loop');
 var mongooseControl = require('models/mongo/mongoose-control.js');
 var ContextVersion = require('models/mongo/context-version.js');
 
-describe('ContextVersion Model Query Functional Tests', function () {
+describe('ContextVersion Model Query Integration Tests', function () {
   before(mongooseControl.start);
   after(mongooseControl.stop);
   var ctx;
@@ -30,8 +30,8 @@ describe('ContextVersion Model Query Functional Tests', function () {
     done();
   });
   afterEach(function (done) {
-        ContextVersion.remove({}, done);
-      });
+    ContextVersion.remove({}, done);
+  });
 
   describe('methods', function() {
 
