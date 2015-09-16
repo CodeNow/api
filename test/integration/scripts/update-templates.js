@@ -43,7 +43,7 @@ describe('template update script', function () {
   after(mongoose.stop.bind(mongoose));
 
   beforeEach(function (done) {
-    var nodejsData = require(path.resolve(__dirname, '../../scripts/templates/nodejs.json'));
+    var nodejsData = require(path.resolve(__dirname, '../../../scripts/templates/nodejs.json'));
     // a field to see updated
     nodejsData.defaultMainCommands.push('# remove this');
     // a field to see cleared

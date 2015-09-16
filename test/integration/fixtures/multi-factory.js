@@ -1,5 +1,5 @@
 /**
- * @module test/fixtures/multi-factory
+ * @module test/integration/fixtures/multi-factory
  */
 'use strict';
 
