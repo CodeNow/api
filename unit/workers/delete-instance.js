@@ -37,7 +37,7 @@ describe('Worker: delete-instance', function () {
         done();
       });
     });
-    it('should fail job if removeSelfFromGraph call failed', function (done) {
+    it('should fail job if removeSelfFromGraphAndIgnore404 call failed', function (done) {
       var worker = new DeleteInstance({
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
@@ -45,8 +45,8 @@ describe('Worker: delete-instance', function () {
       sinon.stub(worker, '_findInstance', function (instanceId, cb) {
         cb(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
       });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
-        cb(Boom.badRequest('removeSelfFromGraph error'));
+      sinon.stub(Instance.prototype, 'removeSelfFromGraphAndIgnore404', function (cb) {
+        cb(Boom.badRequest('removeSelfFromGraphAndIgnore404 error'));
       });
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
@@ -54,8 +54,8 @@ describe('Worker: delete-instance', function () {
         expect(worker._handleError.callCount).to.equal(1);
         var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
-        expect(err.output.payload.message).to.equal('removeSelfFromGraph error');
-        Instance.prototype.removeSelfFromGraph.restore();
+        expect(err.output.payload.message).to.equal('removeSelfFromGraphAndIgnore404 error');
+        Instance.prototype.removeSelfFromGraphAndIgnore404.restore();
         done();
       });
     });
@@ -67,7 +67,7 @@ describe('Worker: delete-instance', function () {
       sinon.stub(worker, '_findInstance', function (instanceId, cb) {
         cb(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
       });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
+      sinon.stub(Instance.prototype, 'removeSelfFromGraphAndIgnore404', function (cb) {
         cb(null);
       });
       sinon.stub(Instance.prototype, 'remove', function (cb) {
@@ -80,7 +80,7 @@ describe('Worker: delete-instance', function () {
         var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('remove error');
-        Instance.prototype.removeSelfFromGraph.restore();
+        Instance.prototype.removeSelfFromGraphAndIgnore404.restore();
         Instance.prototype.remove.restore();
         done();
       });
@@ -100,7 +100,7 @@ describe('Worker: delete-instance', function () {
         };
         cb(null, new Instance(data));
       });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
+      sinon.stub(Instance.prototype, 'removeSelfFromGraphAndIgnore404', function (cb) {
         cb(null);
       });
       sinon.stub(Instance.prototype, 'remove', function (cb) {
@@ -118,7 +118,7 @@ describe('Worker: delete-instance', function () {
         var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('_deleteForks error');
-        Instance.prototype.removeSelfFromGraph.restore();
+        Instance.prototype.removeSelfFromGraphAndIgnore404.restore();
         Instance.prototype.remove.restore();
         expect(rabbitMQ.deleteInstanceContainer.callCount).to.equal(1);
         expect(messenger.emitInstanceDelete.callCount).to.equal(1);
@@ -160,7 +160,7 @@ describe('Worker: delete-instance', function () {
       sinon.stub(worker, '_findInstance', function (instanceId, cb) {
         cb(null, new Instance(instanceData));
       });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
+      sinon.stub(Instance.prototype, 'removeSelfFromGraphAndIgnore404', function (cb) {
         cb(null);
       });
       sinon.stub(Instance.prototype, 'remove', function (cb) {
@@ -190,7 +190,7 @@ describe('Worker: delete-instance', function () {
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
         expect(worker._handleError.callCount).to.equal(0);
-        Instance.prototype.removeSelfFromGraph.restore();
+        Instance.prototype.removeSelfFromGraphAndIgnore404.restore();
         Instance.prototype.remove.restore();
         expect(rabbitMQ.deleteInstanceContainer.callCount).to.equal(1);
         expect(messenger.emitInstanceDelete.callCount).to.equal(1);
@@ -231,7 +231,7 @@ describe('Worker: delete-instance', function () {
       sinon.stub(worker, '_findInstance', function (instanceId, cb) {
         cb(null, new Instance(instanceData));
       });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
+      sinon.stub(Instance.prototype, 'removeSelfFromGraphAndIgnore404', function (cb) {
         cb(null);
       });
       sinon.stub(Instance.prototype, 'remove', function (cb) {
@@ -261,7 +261,7 @@ describe('Worker: delete-instance', function () {
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
         expect(worker._handleError.callCount).to.equal(0);
-        Instance.prototype.removeSelfFromGraph.restore();
+        Instance.prototype.removeSelfFromGraphAndIgnore404.restore();
         Instance.prototype.remove.restore();
         expect(rabbitMQ.deleteInstanceContainer.callCount).to.equal(0);
         expect(messenger.emitInstanceDelete.callCount).to.equal(1);
