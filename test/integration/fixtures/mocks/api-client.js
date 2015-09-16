@@ -1,5 +1,5 @@
 /**
- * @module test/fixtures/mocks/api-client
+ * @module test/integration/fixtures/mocks/api-client
  */
 
 var path = require('path');

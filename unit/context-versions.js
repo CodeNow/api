@@ -9,10 +9,10 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
+
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var ContextVersion = require('models/mongo/context-version');
 var validation = require('./fixtures/validation')(lab);
-
 var Version = require('models/mongo/context-version');
 
 describe('Versions', function () {
@@ -186,6 +186,4 @@ describe('Versions', function () {
       });
     });
   });
-
-
 });
