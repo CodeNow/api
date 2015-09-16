@@ -14,7 +14,7 @@ var User = require('models/mongo/user');
 
 describe('User', function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../test/integration/fixtures/clean-mongo').removeEverything);
 
   function createNewUser() {
     return new User({
