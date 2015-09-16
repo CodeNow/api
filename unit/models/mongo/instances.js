@@ -1315,4 +1315,13 @@ describe('Instance', function () {
     });
   });
 
+  describe('remove', function () {
+    it('should not throw error if instance does not exist in db', function (done) {
+      var inst = createNewInstance('api-anton-1');
+      inst.remove(function (err) {
+        expect(err).to.be.null();
+        done();
+      });
+    });
+  });
 });
