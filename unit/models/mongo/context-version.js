@@ -26,7 +26,7 @@ var InfraCodeVersion = require('models/mongo/infra-code-version');
 var ctx = {};
 describe('Context Version', function () {
   before(require('../../fixtures/mongo').connect);
-  afterEach(require('../../../test/integration/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
 
   beforeEach(function (done) {
     ctx.mockContextVersion = {
@@ -529,7 +529,7 @@ describe('Context Version', function () {
               if (err) {
                 return done(err);
               }
-              require('../../../test/integration/fixtures/mocks/github/repos-username-repo-branches-branch')(newCv);
+              require('../../../test/functional/fixtures/mocks/github/repos-username-repo-branches-branch')(newCv);
               newCv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
                 expect(err).to.be.null();
                 expect(updatedCv.appCodeVersions[0].commit).to.be.undefined();
