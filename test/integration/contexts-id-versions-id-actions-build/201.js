@@ -194,7 +194,7 @@ function buildTheVersionTests (ctx) {
     function dedupeFirstBuildCompletedTest() {
       describe('deduped builds', function() {
         beforeEach(function (done) {
-          multi.createContextVersion(function (err, contextVersion, context, build, user) {
+          multi.createContextVersion(ctx.cv.attrs.owner.github, function (err, contextVersion, context, build, user) {
             if (err) { return done(err); }
             ctx.cv2 = contextVersion;
             ctx.user2 = user;
@@ -323,7 +323,8 @@ function buildTheVersionTests (ctx) {
           });
           describe('in progress builds', function() {
             beforeEach(function(done) {
-              multi.createContextVersion(function (err, contextVersion, context, build, user) {
+              var ownerId = ctx.cv.attrs.owner.github;
+              multi.createContextVersion(ownerId, function (err, contextVersion, context, build, user) {
                 if (err) { return done(err); }
                 ctx.cv3 = contextVersion;
                 ctx.user3 = user;
