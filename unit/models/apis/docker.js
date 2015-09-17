@@ -157,5 +157,19 @@ describe('docker', function () {
         done();
       });
     });
+    it('should not retry if ignoreStatusCode was specified', function (done) {
+      var dockerErr = Boom.notFound('Docker error');
+      sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
+        cb(dockerErr);
+      });
+      var docker = new Docker('https://localhost:4242');
+
+      docker.inspectContainerWithRetry({times: 6, ignoreStatusCode: 404}, 'some-container-id', function (err) {
+        expect(err).to.be.null();
+        expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
+        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+    });
   });
 });
