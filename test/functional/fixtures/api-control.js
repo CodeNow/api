@@ -1,7 +1,7 @@
 'use strict';
 
 var async = require('async');
-var api = require('../../app');
+var api = require('../../../app');
 var cleanMongo = require('./clean-mongo');
 var exec = require('child_process').exec;
 

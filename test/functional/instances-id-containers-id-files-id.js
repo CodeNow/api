@@ -23,7 +23,7 @@ var path = require('path');
 function containerRoot (ctx) {
   if (ctx.container.attrs.dockerContainer) {
     ctx.containerRoot = path.join(__dirname,
-      '../node_modules/krain/test',
+      '../../node_modules/krain/test',
       ctx.container.attrs.dockerContainer);
   }
   return ctx.containerRoot;

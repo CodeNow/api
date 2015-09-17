@@ -17,7 +17,7 @@ var dock = require('../fixtures/dock');
 var multi = require('../fixtures/multi-factory');
 var primus = require('../fixtures/primus');
 
-var InfraCodeVersion = require('../../lib/models/mongo/infra-code-version');
+var InfraCodeVersion = require('../../../lib/models/mongo/infra-code-version');
 
 describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTransformRules', function () {
   var ctx = {};
