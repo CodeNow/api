@@ -37,6 +37,13 @@ describe('build-files', function() {
     it('should use s3 object streams to perform the copy', function(done) {
       model.copyObject('sourceKey', 'version', 'destKey', function (err) {
         if (err) { return done(err); }
+        expect(model.s3.getObject.callCount).to.equal(1);
+        var data = {
+          Bucket: process.env.S3_CONTEXT_RESOURCE_BUCKET,
+          Key: 'sourceKey',
+          VersionId: 'version'
+        };
+        expect(model.s3.getObject.getCall(0).args[0]).to.deep.equal(data);
         expect(model.putFileStream.calledWith('destKey', readStream))
           .to.be.true();
         done();
