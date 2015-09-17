@@ -755,7 +755,7 @@ describe('CreateImageBuilderContainerWorker', function () {
         it('Should log an error if sauron errors on the delete', function (done) {
           ctx.worker._onError(new Error('hello'), function () {
             expect(Sauron.prototype.deleteHost.callCount)
-                .to.equal(process.env.WORKER_SAURON_RETRY_ATTEMPTS);
+                .to.equal(1);
 
             expect(Sauron.prototype.deleteHost.args[0][0]).to.equal(ctx.sauronResult.networkIp);
             expect(Sauron.prototype.deleteHost.args[0][1]).to.equal(ctx.sauronResult.hostIp);
