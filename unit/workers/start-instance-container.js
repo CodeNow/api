@@ -13,7 +13,6 @@ var sinon = require('sinon');
 
 var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
-var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
 
 var StartInstanceContainerWorker = require('workers/start-instance-container');
@@ -143,90 +142,6 @@ describe('StartInstanceContainerWorker', function () {
       it('it should NOT notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(null, function () {
           expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(0);
-          done();
-        });
-      });
-    });
-  });
-
-  describe('_findUser', function () {
-    describe('basic', function () {
-      beforeEach(function (done) {
-        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
-          cb(null, ctx.mockUser);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        User.findByGithubId.restore();
-        done();
-      });
-      it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err) {
-          expect(err).to.be.null();
-          expect(User.findByGithubId.callCount).to.equal(1);
-          expect(User.findByGithubId.args[0][0]).to.equal(ctx.data.sessionUserGithubId);
-          expect(User.findByGithubId.args[0][1]).to.be.a.function();
-          done();
-        });
-      });
-    });
-
-    describe('found', function () {
-      beforeEach(function (done) {
-        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
-          cb(null, ctx.mockUser);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        User.findByGithubId.restore();
-        done();
-      });
-      it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err) {
-          expect(err).to.be.null();
-          expect(ctx.worker.user).to.equal(ctx.mockUser);
-          done();
-        });
-      });
-    });
-
-    describe('not found', function () {
-      beforeEach(function (done) {
-        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
-          cb(null, null);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        User.findByGithubId.restore();
-        done();
-      });
-      it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err) {
-          expect(err.message).to.equal('user not found');
-          expect(ctx.worker.user).to.be.undefined();
-          done();
-        });
-      });
-    });
-
-    describe('mongo error', function () {
-      beforeEach(function (done) {
-        sinon.stub(User, 'findByGithubId', function (sessionUserGithubId, cb) {
-          cb(new Error('mongoose error'), null);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        User.findByGithubId.restore();
-        done();
-      });
-      it('should query mongo for user', function (done) {
-        ctx.worker._findUser(function (err) {
-          expect(err.message).to.equal('mongoose error');
-          expect(ctx.worker.user).to.be.undefined();
           done();
         });
       });
