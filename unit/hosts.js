@@ -33,8 +33,15 @@ describe('Hosts', function () {
         ctx.username, ctx.instance, ctx.instanceName, ctx.instance.container, done);
     });
     afterEach(function (done) {
-      ctx.hosts.removeHostsForInstance(
-        ctx.username, ctx.instance, ctx.instanceName, ctx.instance.container, done);
+      var entry = {
+        ownerUsername: ctx.username,
+        ownerGithub: ctx.instance.owner.github,
+        branch: ctx.branch,
+        masterPod: ctx.instance.masterPod,
+        instanceName: ctx.instanceName,
+        shortHash: ctx.instance.shortHash
+      };
+      ctx.hosts.removeHostsForInstance(entry, ctx.instance.container, done);
     });
 
     it('should parse a username from a container hostname', function (done) {

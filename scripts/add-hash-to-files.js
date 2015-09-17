@@ -2,7 +2,6 @@
 require('loadenv')();
 var crypto = require('crypto');
 var InfraCodeVersion = require('models/mongo/infra-code-version.js');
-var debug = require('debug')('script');
 var mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO);
 var async = require('async');
@@ -19,7 +18,7 @@ async.waterfall([
 });
 
 function getAllInfra (cb) {
-  debug('getAllInfra');
+  console.log('getAllInfra');
   InfraCodeVersion.find({
     'files': {
       $elemMatch: {
@@ -42,19 +41,19 @@ function hashString(data, cb) {
 }
 
 function eachInfra (infras, cb) {
-  debug('eachInfra');
+  console.log('eachInfra');
   if(!infras || infras.length === 0) {
     return cb();
   }
   // get all infracodes
   async.eachLimit(infras, 1000, function (infra, cb) {
-    debug('eachInfra:infra', infra._id);
+    console.log('eachInfra:infra', infra._id);
     // for each file
 
     async.each(infra.files, function(file, cb) {
       if(file.isDir) { return cb(); }
 
-      debug('eachInfra:infra:file', infra._id, file._id);
+      console.log('eachInfra:infra:file', infra._id, file._id);
       var filePath = file.Key.substr(file.Key.indexOf('/source')+7);
       // get contance of file
       infra.bucket().getFile(filePath, file.VersionId, file.ETag, function (err, data) {
@@ -65,7 +64,7 @@ function eachInfra (infras, cb) {
           if (err)  { return cb(err); }
 
           file.hash = hash;
-          debug('eachInfra:infra:file:hash', infra._id, file._id, file.hash);
+          console.log('eachInfra:infra:file:hash', infra._id, file._id, file.hash);
           // update mongo of file with hash
           InfraCodeVersion.update({
             _id: infra._id,

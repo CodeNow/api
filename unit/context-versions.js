@@ -9,21 +9,22 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
+
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var ContextVersion = require('models/mongo/context-version');
 var validation = require('./fixtures/validation')(lab);
-
 var Version = require('models/mongo/context-version');
 
 describe('Versions', function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 
   function createNewVersion(acv) {
     acv = acv || {};
     return new Version({
       message: "test",
       createdBy: { github: validation.VALID_GITHUB_ID },
+      owner: { github: validation.VALID_GITHUB_ID },
       config: validation.VALID_OBJECT_ID,
       created: Date.now(),
       context: validation.VALID_OBJECT_ID,
@@ -157,9 +158,6 @@ describe('Versions', function () {
       validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.branch');
       validation.stringLengthValidationChecking(createNewVersion, 'appCodeVersions.0.branch', 200);
     });
-    describe('Commit', function () {
-      validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.commit');
-    });
   });
 
   describe('findAllRepos', function () {
@@ -188,6 +186,4 @@ describe('Versions', function () {
       });
     });
   });
-
-
 });

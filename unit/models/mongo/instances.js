@@ -12,26 +12,23 @@ var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
 
-var validation = require('../../fixtures/validation')(lab);
+var Graph = require('models/apis/graph');
 var Hashids = require('hashids');
 var async = require('async');
-var mongoose = require('mongoose');
-var pick = require('101/pick');
 var createCount = require('callback-count');
 var error = require('error');
-var Graph = require('models/apis/graph');
-var pluck = require('101/pluck');
 var find = require('101/find');
 var hasProps = require('101/has-properties');
-var async = require('async');
-
-var Instance = require('models/mongo/instance');
-var dock = require('../../../test/fixtures/dock');
-var Version = require('models/mongo/context-version');
-var pubsub = require('models/redis/pubsub');
+var mongoose = require('mongoose');
+var pick = require('101/pick');
+var pluck = require('101/pluck');
 
 var Docker = require('models/apis/docker');
-
+var Instance = require('models/mongo/instance');
+var Version = require('models/mongo/context-version');
+var dock = require('../../../test/functional/fixtures/dock');
+var pubsub = require('models/redis/pubsub');
+var validation = require('../../fixtures/validation')(lab);
 
 var id = 0;
 function getNextId () {
@@ -40,7 +37,7 @@ function getNextId () {
 }
 function getNextHash () {
   var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
-  return hashids.encrypt(getNextId())[0];
+  return hashids.encrypt(getNextId());
 }
 function newObjectId () {
   return new mongoose.Types.ObjectId();
@@ -135,7 +132,139 @@ function createNewInstance (name, opts) {
 describe('Instance', function () {
   // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect);
-  afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
+
+  describe('starting or stopping state detection', function () {
+    it('should not error if container is not starting or stopping', function (done) {
+      var instance = createNewInstance('container-not-starting-or-stopping');
+      instance.isNotStartingOrStopping(function (err) {
+        expect(err).to.be.null();
+        done();
+      });
+    });
+    it('should error if no container', function (done) {
+      var instance = createNewInstance('no-container');
+      instance.container = {};
+      instance.isNotStartingOrStopping(function (err) {
+        expect(err.message).to.equal('Instance does not have a container');
+        done();
+      });
+    });
+    it('should error if container starting', function (done) {
+      var instance = createNewInstance('container-starting');
+      instance.container.inspect.State.Starting = true;
+      instance.isNotStartingOrStopping(function (err) {
+        expect(err.message).to.equal('Instance is already starting');
+        done();
+      });
+    });
+    it('should error if container stopping', function (done) {
+      var instance = createNewInstance('container-stopping');
+      instance.container.inspect.State.Stopping = true;
+      instance.isNotStartingOrStopping(function (err) {
+        expect(err.message).to.equal('Instance is already stopping');
+        done();
+      });
+    });
+  });
+
+  describe('#findActiveInstancesByDockerHost', function() {
+    var instance1;
+    var instance2;
+    var instance3;
+    var instance4;
+    var testHost = 'http://10.0.0.1:4242';
+    var testHost2 = 'http://10.0.0.2:4242';
+
+    beforeEach(function (done) {
+      instance1 = createNewInstance('one', {
+        dockerHost: testHost
+      });
+      instance1.container.inspect.State.Starting = false;
+      instance1.container.inspect.State.Running = false;
+      instance2 = createNewInstance('two', {
+        dockerHost: testHost
+      });
+      instance2.container.inspect.State.Starting = true;
+      instance3 = createNewInstance('three', {
+        dockerHost: testHost
+      });
+      instance3.container.inspect.State.Running = true;
+      instance4 = createNewInstance('four', {
+        dockerHost: testHost2
+      });
+      done();
+    });
+    beforeEach(function (done) {
+      instance1.save(done);
+    });
+    beforeEach(function (done) {
+      instance2.save(done);
+    });
+    beforeEach(function (done) {
+      instance3.save(done);
+    });
+    beforeEach(function (done) {
+      instance4.save(done);
+    });
+    it('should get all instances from testHost', function(done) {
+      Instance.findActiveInstancesByDockerHost(testHost, function (err, instances) {
+        expect(err).to.be.null();
+        expect(instances.length).to.equal(3);
+        instances.forEach(function (instance) {
+          expect(instance._id).to.not.equal(instance4._id);
+        });
+        done();
+      });
+    });
+  }); // end findActiveInstancesByDockerHost
+
+  describe('atomic set container state', function () {
+    it('should not set container state to Starting if container on instance has changed', function (done) {
+      var instance = createNewInstance('container-stopping');
+      instance.save(function (err) {
+        if (err) { throw err; }
+        // change model data in DB without going through model
+        Instance.findOneAndUpdate({
+          '_id': instance._id
+        }, {
+          '$set': {
+            'container.dockerContainer': 'fooo'
+          }
+        }, function (err) {
+          if (err) { throw err; }
+          instance.setContainerStateToStarting(function (err, result) {
+            expect(err.message).to.equal('instance container has changed');
+            expect(result).to.be.undefined();
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not set container state to Stopping if container on instance has changed', function (done) {
+      var instance = createNewInstance('container-stopping');
+      instance.save(function (err) {
+        if (err) { throw err; }
+        // change model data in DB without going through model
+        Instance.findOneAndUpdate({
+          '_id': instance._id
+        }, {
+          '$set': {
+            'container.dockerContainer': 'fooo'
+          }
+        }, function (err) {
+          if (err) { throw err; }
+          instance.setContainerStateToStopping(function (err, result) {
+            expect(err.message).to.equal('container is already starting or stopping');
+            expect(result).to.be.undefined();
+            done();
+          });
+        });
+      });
+    });
+
+  });
 
   it('should not save an instance with the same (lower) name and owner', function (done) {
     var instance = createNewInstance('hello');
@@ -519,28 +648,6 @@ describe('Instance', function () {
     });
   });
 
-  describe('findContextVersionsForRepo', function () {
-    var ctx = {};
-    before(function (done) {
-      var instance = createNewInstance('instance-name', {locked: true, repo: 'podviaznikov/hello'});
-      instance.save(function (err, instance) {
-        if (err) { return done(err); }
-        expect(instance).to.exist();
-        ctx.savedInstance = instance;
-        done();
-      });
-    });
-
-    it('should find context versions using repo name', function (done) {
-      Instance.findContextVersionsForRepo('podviaznikov/hello', function (err, cvs) {
-        if (err) { return done(err); }
-        expect(cvs.length).to.equal(1);
-        expect(cvs[0].toString()).to.equal(ctx.savedInstance.contextVersion._id.toString());
-        done();
-      });
-    });
-  });
-
   describe('#findInstancesByParent', function () {
     it('should return empty [] for if no children were found', function (done) {
       Instance.findInstancesByParent('a5agn3', function (err, instances) {
@@ -901,6 +1008,18 @@ describe('Instance', function () {
           instances[0].addDependency(instances[1], 'somehostname', done);
         });
 
+        it('should give the network for a dependency', function(done) {
+          var network = { hostIp: '1.2.3.4', networkIp: '1.2.3.0' };
+          sinon.stub(Instance, 'findById').yieldsAsync(null, { network: network });
+          var i = instances[0];
+          i.getDependencies(function (err, deps) {
+            if (err) { return done(err); }
+            expect(deps[0].network).to.deep.equal(network);
+            Instance.findById.restore();
+            done();
+          });
+        });
+
         it('should allow us to remove the dependency', function (done) {
           var i = instances[0];
           var d = instances[1];
@@ -985,6 +1104,7 @@ describe('Instance', function () {
             });
           });
         });
+
         describe('instance with 2 dependents', function() {
           beforeEach(function (done) {
             instances[2].addDependency(instances[1], 'somehostname', done);

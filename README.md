@@ -1,5 +1,7 @@
 [![Circle CI](https://circleci.com/gh/CodeNow/api.svg?style=svg&circle-token=15c68bfd7d9ca99637f0c5a6e05505366f5d9fd3)](https://circleci.com/gh/CodeNow/api)
 
+[![lol Travis CI](https://magnum.travis-ci.com/CodeNow/api.svg?token=CEnbe3bPEVFTjYa2MCtJ&branch=master)](https://magnum.travis-ci.com/CodeNow/api)
+
 # Application Components
 
 #### Express
@@ -35,7 +37,7 @@
   - `redis-server`
 - neo4j
   - `brew install neo4j`
-  - disable auth: `sed -ie 's/.*auth_enabled.*/dbms.security.auth_enabled=false/g' /usr/local/Cellar/neo4j/2.2.0/libexec/conf/neo4j-server.properties`
+  - disable auth: `sed -ie 's/.*auth_enabled.*/dbms.security.auth_enabled=false/g' /usr/local/Cellar/neo4j/2.2.5/libexec/conf/neo4j-server.properties`
   - `neo4j start`
 - ulimit
   - `ulimit -n 10240` (at minimum)
@@ -55,6 +57,21 @@ Granular:
   - BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
 - Unit: `npm run unit`
   - (similar options exist to run individual and ranges of tests as BDD)
+
+## Tests: logging
+
+### [Guide to using CLI log parsing tools](https://github.com/CodeNow/devops-scripts/wiki/Using-Bunyan-CLI-tools-for-debugging)  
+
+If you see:  
+```js
+app.post('/workers/container-create',
+  requestTrace('POST_WORKERS_CONTAINER_CREATE')
+```
+
+You can filter trace logs w/
+```
+LOG_LEVEL_STDOUT=trace TID_POST_WORKERS_CONTAINER_CREATE=apples npm run bdd-whitelist | bunyan -c 'this.tid == "apples"'
+```
 
 ## Formatting
 
