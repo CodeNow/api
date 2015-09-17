@@ -14,11 +14,14 @@ var sinon = require('sinon');
 var Build = require('models/mongo/build');
 var BaseWorker = require('workers/base-worker');
 var Hosts = require('models/redis/hosts');
+var Instance = require('models/mongo/instance');
 var Mavis = require('models/apis/mavis');
 var Sauron = require('models/apis/sauron');
 var rabbitMQ = require('models/rabbitmq');
+var User = require('models/mongo/user');
+var messenger = require('socket/messenger');
 
-var DeployInstanceWorker = require('workers/deploy-instance-worker');
+var DeployInstanceWorker = require('deploy-instance.js');
 
 var AcceptableError = BaseWorker.acceptableError;
 var afterEach = lab.afterEach;
@@ -53,7 +56,8 @@ describe('DeployInstanceWorker', function () {
         instanceShortHash: keypather.get(instance, 'shortHash.toString()'),
         creatorGithubId: keypather.get(instance, 'createdBy.github.toString()'),
         ownerGithubId: keypather.get(instance, 'owner.github.toString()'),
-        sessionUserGithubId: ctx.worker.sessionUserGithubId
+        sessionUserGithubId: ctx.worker.sessionUserGithubId,
+        ownerUsername : ctx.worker.ownerUsername
       }
     };
   }
@@ -105,7 +109,9 @@ describe('DeployInstanceWorker', function () {
       },
       update: sinon.spy(function (query, opts, cb) {
         cb(null, ctx.mockInstance);
-      })
+      }),
+      populateModels: function () {},
+      populateOwnerAndCreatedBy: function () {}
     };
     ctx.mockInstance2 = {
       '_id': '55d3ef733e1b450e00907292',
@@ -140,7 +146,8 @@ describe('DeployInstanceWorker', function () {
     ctx.mockUser = {
       github: '',
       username: '',
-      gravatar: ''
+      gravatar: '',
+      toJSON: function () {}
     };
     done();
   });
@@ -158,10 +165,16 @@ describe('DeployInstanceWorker', function () {
 
       sinon.stub(BaseWorker.prototype, 'pFindContextVersion')
         .returns(Promise.resolve(ctx.mockContextVersion));
-      sinon.stub(BaseWorker.prototype, 'pUpdateInstanceFrontend').returns(Promise.resolve());
-      sinon.stub(BaseWorker.prototype, 'pFindUser').returns(Promise.resolve(ctx.mockUser));
+      //sinon.stub(BaseWorker.prototype, 'pUpdateInstanceFrontend').returns(Promise.resolve());
+      sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser);
       sinon.stub(Mavis.prototype, 'findDockForContainer').yieldsAsync(null, _dockerHost);
       sinon.stub(rabbitMQ, 'createInstanceContainer');
+
+      sinon.stub(Instance, 'findOne').yieldsAsync(null, ctx.mockInstance);
+      sinon.stub(ctx.mockInstance, 'populateModels').yieldsAsync(null);
+      sinon.stub(ctx.mockInstance, 'populateOwnerAndCreatedBy')
+        .yieldsAsync(null, ctx.mockInstance);
+      sinon.stub(messenger, 'emitInstanceUpdate');
       done();
     });
     afterEach(function (done) {
@@ -170,8 +183,13 @@ describe('DeployInstanceWorker', function () {
       BaseWorker.prototype.pFindInstances.restore();
       BaseWorker.prototype.pFindContextVersion.restore();
       BaseWorker.prototype.pFindBuild.restore();
-      BaseWorker.prototype.pUpdateInstanceFrontend.restore();
-      BaseWorker.prototype.pFindUser.restore();
+      User.findByGithubId.restore();
+      //BaseWorker.prototype.pUpdateInstanceFrontend.restore();
+      //BaseWorker.prototype.pFindUser.restore();
+      Instance.findOne.restore();
+      ctx.mockInstance.populateModels.restore();
+      ctx.mockInstance.populateOwnerAndCreatedBy.restore();
+      messenger.emitInstanceUpdate.restore();
       done();
     });
     describe('success', function () {
@@ -179,7 +197,8 @@ describe('DeployInstanceWorker', function () {
         sinon.stub(BaseWorker.prototype, 'pFindInstances')
           .returns(Promise.resolve([ctx.mockInstance]));
         ctx.worker = new DeployInstanceWorker({
-          instanceId: ctx.mockInstance._id
+          instanceId: ctx.mockInstance._id,
+          sessionUserGithubId: 12
         });
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined();
@@ -207,20 +226,43 @@ describe('DeployInstanceWorker', function () {
           expect(rabbitMQ.createInstanceContainer.callCount).to.equal(1);
           expect(rabbitMQ.createInstanceContainer.args[0][0])
             .to.deep.equal(makeExpectedCreateContainerJobDataForInstance(ctx.mockInstance));
+
+          expect(User.findByGithubId.callCount).to.equal(1);
+          expect(User.findByGithubId.args[0][0]).to.deep.equal(12);
+
+          expect(Instance.findOne.callCount).to.equal(1);
+          expect(Instance.findOne.args[0][0]).to.deep.equal({ '_id': ctx.mockInstance._id });
+          expect(ctx.mockInstance.populateModels.callCount).to.equal(1);
+          expect(ctx.mockInstance.populateOwnerAndCreatedBy.callCount).to.equal(1);
+          expect(ctx.mockInstance.populateOwnerAndCreatedBy.args[0][0])
+            .to.deep.equal(ctx.mockUser);
+          expect(
+            messenger.emitInstanceUpdate.callCount,
+            'emitContextVersionUpdate'
+          ).to.equal(1);
+          expect(
+            messenger.emitInstanceUpdate.args[0][0],
+            'emitContextVersionUpdate arg0'
+          ).to.equal(ctx.mockInstance);
+          expect(
+            messenger.emitInstanceUpdate.args[0][1],
+            'emitContextVersionUpdate arg0'
+          ).to.equal('deploy');
           done();
-        });
+        })
+          .catch(done);
       });
       it('should do everything with an buildId', function (done) {
         sinon.stub(BaseWorker.prototype, 'pFindInstances')
           .returns(Promise.resolve(ctx.mockInstances));
         ctx.worker = new DeployInstanceWorker({
-          instanceId: ctx.mockInstance._id
+          buildId: ctx.mockBuild._id
         });
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined();
           expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
           expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.deep.equal({
-            _id: ctx.mockInstance._id
+            'build._id': ctx.mockBuild._id
           });
           expect(BaseWorker.prototype.pFindBuild.callCount).to.equal(1);
           expect(BaseWorker.prototype.pFindBuild.args[0][0]).to.deep.equal({
@@ -239,10 +281,53 @@ describe('DeployInstanceWorker', function () {
           expect(Mavis.prototype.findDockForContainer.args[0][0])
             .to.deep.equal(ctx.mockContextVersion);
 
-          expect(rabbitMQ.createInstanceContainer.callCount).to.equal(2);
+          // Should filter mockInstance2 out since it's locked
+          expect(rabbitMQ.createInstanceContainer.callCount).to.equal(1);
           expect(rabbitMQ.createInstanceContainer.args[0][0])
             .to.deep.equal(makeExpectedCreateContainerJobDataForInstance(ctx.mockInstance));
           done();
+        })
+          .catch(done);
+        it('should do everything with a buildId and manual', function (done) {
+          sinon.stub(BaseWorker.prototype, 'pFindInstances')
+            .returns(Promise.resolve(ctx.mockInstances));
+          ctx.worker = new DeployInstanceWorker({
+            buildId: ctx.mockBuild._id
+          });
+          keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', true);
+          ctx.worker.handle(function (err) {
+            expect(err).to.be.undefined();
+            expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
+            expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.deep.equal({
+              'build_id': ctx.mockBuild._id
+            });
+            expect(BaseWorker.prototype.pFindBuild.callCount).to.equal(1);
+            expect(BaseWorker.prototype.pFindBuild.args[0][0]).to.deep.equal({
+              _id: ctx.mockBuild._id
+            });
+            expect(BaseWorker.prototype.pFindContextVersion.callCount).to.equal(1);
+            expect(BaseWorker.prototype.pFindContextVersion.args[0][0]).to.deep.equal({
+              _id: ctx.mockContextVersion._id
+            });
+            expect(ctx.mockInstance.update.callCount).to.equal(1);
+            expect(ctx.mockInstance.update.args[0][0]).to.deep.equal({
+              '$set': {
+                'contextVersion': ctx.mockContextVersion
+              }
+            });
+            expect(Mavis.prototype.findDockForContainer.callCount).to.equal(1);
+            expect(Mavis.prototype.findDockForContainer.args[0][0])
+              .to.deep.equal(ctx.mockContextVersion);
+
+            // Should filter mockInstance2 out since it's locked
+            expect(rabbitMQ.createInstanceContainer.callCount).to.equal(2);
+            expect(rabbitMQ.createInstanceContainer.args[0][0])
+              .to.deep.equal(makeExpectedCreateContainerJobDataForInstance(ctx.mockInstance));
+            expect(rabbitMQ.createInstanceContainer.args[1][0])
+              .to.deep.equal(makeExpectedCreateContainerJobDataForInstance(ctx.mockInstance2));
+            done();
+          })
+            .catch(done);
         });
       });
     });

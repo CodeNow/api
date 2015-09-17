@@ -78,6 +78,15 @@ describe('204 DELETE /instances/:id', function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
+  //
+  //before(function (done) {
+  //  sinon.stub(rabbitMQ, 'deployInstance');
+  //  done();
+  //});
+  //after(function (done) {
+  //  rabbitMQ.deployInstance.restore();
+  //  done();
+  //});
 
   function initExpected (done) {
     ctx.expected = {
@@ -128,7 +137,9 @@ describe('204 DELETE /instances/:id', function () {
             primus.onceVersionComplete(cvId, function () {
               primus.disconnect(done);
             });
-            dockerMockEvents.emitBuildComplete(carry);
+            primus.expectActionCount('build_running', 1, function () {
+              dockerMockEvents.emitBuildComplete(carry);
+            });
           });
         });
       });
