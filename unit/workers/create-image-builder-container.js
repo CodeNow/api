@@ -564,7 +564,7 @@ describe('CreateImageBuilderContainerWorker', function () {
           });
         });
       });
-      describe('failure n times', function () {
+      describe('handle failure', function () {
         beforeEach(function (done) {
           sinon.stub(Sauron.prototype, 'findOrCreateHostForContext')
             .yieldsAsync(new Error('sauron error'));
@@ -578,7 +578,7 @@ describe('CreateImageBuilderContainerWorker', function () {
           ctx.worker._findOrCreateHost(function (err) {
             expect(err.message).to.equal('sauron error');
             expect(Sauron.prototype.findOrCreateHostForContext.callCount)
-              .to.equal(process.env.WORKER_SAURON_RETRY_ATTEMPTS);
+              .to.equal(1);
             done();
           });
         });
