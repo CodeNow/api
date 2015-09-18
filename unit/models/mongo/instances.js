@@ -26,7 +26,7 @@ var pluck = require('101/pluck');
 var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
 var Version = require('models/mongo/context-version');
-var dock = require('../../../test/fixtures/dock');
+var dock = require('../../../test/functional/fixtures/dock');
 var pubsub = require('models/redis/pubsub');
 var validation = require('../../fixtures/validation')(lab);
 
@@ -132,7 +132,7 @@ function createNewInstance (name, opts) {
 describe('Instance', function () {
   // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect);
-  afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
 
   describe('starting or stopping state detection', function () {
     it('should not error if container is not starting or stopping', function (done) {

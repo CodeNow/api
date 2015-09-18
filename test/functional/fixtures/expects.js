@@ -1,5 +1,5 @@
 /**
- * @module test/fixtures/expects
+ * @module test/functional/fixtures/expects
  */
 'use strict';
 
