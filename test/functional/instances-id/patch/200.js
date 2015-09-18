@@ -8,6 +8,7 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var Docker = require('dockerode');
+var createCount = require('callback-count');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -152,8 +153,11 @@ describe('200 PATCH /instances', function () {
         }, function (err, body, statusCode) {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           // wait until build is ready to finish the test
-          primus.onceVersionComplete(ctx.cv.id(), function () {
+          sinon.stub(rabbitMQ, 'deployInstance', function () {
+            rabbitMQ.deployInstance.restore();
             done();
+          });
+          primus.onceVersionComplete(ctx.cv.id(), function () {
           });
           dockerMockEvents.emitBuildComplete(ctx.cv);
         });
@@ -170,8 +174,11 @@ describe('200 PATCH /instances', function () {
           if (err) { return done(err); }
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           // wait until build is ready to finish the test
-          primus.onceVersionComplete(ctx.cv.id(), function () {
+          sinon.stub(rabbitMQ, 'deployInstance', function () {
+            rabbitMQ.deployInstance.restore();
             done();
+          });
+          primus.onceVersionComplete(ctx.cv.id(), function () {
           });
           dockerMockEvents.emitBuildComplete(ctx.cv);
         });
@@ -193,10 +200,13 @@ describe('200 PATCH /instances', function () {
           }
         };
         ctx.instance.update(opts, function (err, body, statusCode) {
+          sinon.stub(rabbitMQ, 'deployInstance', function () {
+            rabbitMQ.deployInstance.restore();
+            done();
+          });
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv, ctx.container);
           // wait until build is ready to finish the test
           primus.onceVersionComplete(ctx.cv.id(), function () {
-            done();
           });
           dockerMockEvents.emitBuildComplete(ctx.cv);
         });

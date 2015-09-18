@@ -10,6 +10,7 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 var expect = Code.expect;
+var EventEmitter = require('events').EventEmitter;
 
 var expects = require('../../fixtures/expects');
 var api = require('../../fixtures/api-control');
@@ -33,42 +34,33 @@ var rabbitMQ = require('models/rabbitmq');
 
 describe('204 DELETE /instances/:id', function () {
   var ctx = {};
-  var stopContainerRightAfterStart = function () {
-    var self = this;
-    var args = Array.prototype.slice.call(arguments);
-    var container = args[0];
-    var cb = args.pop();
-    args.push(stopContainer);
-    return ctx.originalStart.apply(this, args);
-    function stopContainer (err, start) {
-      if (err) { return cb(err); }
-      self.stopContainer(container, function (err) {
-        cb(err, start);
-      });
-    }
-  };
-  var forceCreateContainerErr = function () {
-    var cb = last(arguments);
-    var createErr = new Error('server error');
-    extend(createErr, {
-      statusCode : 500,
-      reason: 'server error',
-      json: 'No command specified\n'
+  var stopContainerRightAfterStart = function (instance) {
+    primus.expectActionCount('start', 1, function () {
+      dockerMockEvents.emitContainerDie(instance);
     });
-    if (isFunction(cb)) {
-      cb(createErr);
-    }
   };
-  var dontReportCreateError = function () {
-    // for cleaner test logs
-    var args = Array.prototype.slice.call(arguments);
-    var cb = args.pop();
-    args.push(function (err) {
-      if (err) { err.data.report = false; }
-      cb.apply(this, arguments);
-    });
-    ctx.originalDockerCreateContainer.apply(this, args);
-  };
+  //var forceCreateContainerErr = function () {
+  //  var cb = last(arguments);
+  //  var createErr = new Error('server error');
+  //  extend(createErr, {
+  //    statusCode : 500,
+  //    reason: 'server error',
+  //    json: 'No command specified\n'
+  //  });
+  //  if (isFunction(cb)) {
+  //    cb(createErr);
+  //  }
+  //};
+  //var dontReportCreateError = function () {
+  //  // for cleaner test logs
+  //  var args = Array.prototype.slice.call(arguments);
+  //  var cb = args.pop();
+  //  args.push(function (err) {
+  //    if (err) { err.data.report = false; }
+  //    cb.apply(this, arguments);
+  //  });
+  //  ctx.originalDockerCreateContainer.apply(this, args);
+  //};
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   before(require('../../fixtures/mocks/api-client').setup);
@@ -117,11 +109,12 @@ describe('204 DELETE /instances/:id', function () {
           ctx.user = user;
           ctx.cv = contextVersion;
           carry = contextVersion;
-          ctx.build.build({ message: uuid() }, expects.success(201, done));
+          var dispatch = new EventEmitter();
+          ctx.build.build({ message: uuid() }, expects.success(201, function () {
+
+            dispatch.emit('started', err);
+          }));
         });
-      });
-      beforeEach(function (done) {
-        primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
       });
       beforeEach(function (done) {
         initExpected(function () {
@@ -131,20 +124,21 @@ describe('204 DELETE /instances/:id', function () {
       });
       afterEach(function (done) {
         // primus was disconnected (in above afterEach), reconnect here
-        primus.connect(function (){
-          primus.joinOrgRoom(ctx.user.json().accounts.github.id, function () {
-            var cvId = ctx.build.json().contextVersions[0];
-            primus.onceVersionComplete(cvId, function () {
-              primus.disconnect(done);
-            });
-            primus.expectActionCount('build_running', 1, function () {
-              dockerMockEvents.emitBuildComplete(carry);
-            });
+        primus.joinOrgRoom(ctx.user.json().accounts.github.id, function () {
+          var cvId = ctx.build.json().contextVersions[0];
+          primus.onceVersionComplete(cvId, done);
+          primus.expectActionCount('build_running', 1, function () {
+            sinon.stub(rabbitMQ, 'deployInstance', done);
+            dockerMockEvents.emitBuildComplete(carry);
           });
         });
       });
 
       createInstanceAndRunTests(ctx);
+      beforeEach(function (done) {
+        rabbitMQ.deployInstance.restore();
+        done();
+      });
     });
     describe('create instance with built build', function () {
       beforeEach(function (done) {
@@ -157,6 +151,11 @@ describe('204 DELETE /instances/:id', function () {
         });
       });
       beforeEach(initExpected);
+      beforeEach(function (done) {
+        primus.connect(function () {
+          primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+        });
+      });
       describe('Long running container', function () {
         beforeEach(function (done) {
           extend(ctx.expected, {
@@ -186,46 +185,40 @@ describe('204 DELETE /instances/:id', function () {
             */
           });
           ctx.expectAlreadyStopped = true;
-          ctx.originalStart = Docker.prototype.startContainer;
-          Docker.prototype.startContainer = stopContainerRightAfterStart;
-          done();
-        });
-        afterEach(function (done) {
-          // restore docker.startContainer back to normal
-          Docker.prototype.startContainer = ctx.originalStart;
           done();
         });
 
-        createInstanceAndRunTests(ctx);
-      });
-      describe('Container create error (Invalid dockerfile CMD)', function () {
-        beforeEach(function (done) {
-          /*
-          ctx.expected['containers[0].error.message'] = exists;
-          ctx.expected['containers[0].error.stack'] = exists;
-          */
-          ctx.expectNoContainerErr = true;
-          ctx.originalCreateContainer = Dockerode.prototype.createContainer;
-          ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
-          Dockerode.prototype.createContainer = forceCreateContainerErr;
-          Docker.prototype.createContainer = dontReportCreateError;
-          done();
-        });
-        afterEach(function (done) {
-          // restore dockerode.createContainer back to normal
-          Dockerode.prototype.createContainer = ctx.originalCreateContainer;
-          Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
-          done();
-        });
 
         createInstanceAndRunTests(ctx);
       });
+      //describe('Container create error (Invalid dockerfile CMD)', function () {
+      //  beforeEach(function (done) {
+      //    /*
+      //    ctx.expected['containers[0].error.message'] = exists;
+      //    ctx.expected['containers[0].error.stack'] = exists;
+      //    */
+      //    ctx.expectNoContainerErr = true;
+      //    ctx.originalCreateContainer = Dockerode.prototype.createContainer;
+      //    ctx.originalDockerCreateContainer = Docker.prototype.createContainer;
+      //    Dockerode.prototype.createContainer = forceCreateContainerErr;
+      //    Docker.prototype.createContainer = dontReportCreateError;
+      //    done();
+      //  });
+      //  afterEach(function (done) {
+      //    // restore dockerode.createContainer back to normal
+      //    Dockerode.prototype.createContainer = ctx.originalCreateContainer;
+      //    Docker.prototype.createContainer = ctx.originalDockerCreateContainer;
+      //    done();
+      //  });
+      //
+      //  createInstanceAndRunTests(ctx);
+      //});
     });
   });
   // describe('for Organization by member', function () {
     // TODO
   // });
-  function createInstanceAndRunTests (ctx) {
+  function createInstanceAndRunTests (ctx, stopAfterStart) {
     describe('and env.', function () {
       beforeEach(function (done) {
         var body = {
@@ -244,7 +237,12 @@ describe('204 DELETE /instances/:id', function () {
             var count = createCount(2, function () {
               ctx.instance.fetch(done);
             });
-            primus.expectAction('start', {}, count.next);
+            primus.expectAction('start', {}, function () {
+              if (stopAfterStart) {
+                stopContainerRightAfterStart(ctx.instance);
+              }
+              count.next();
+            });
             ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
           });
         }
@@ -265,7 +263,12 @@ describe('204 DELETE /instances/:id', function () {
             var count = createCount(2, function () {
               ctx.instance.fetch(done);
             });
-            primus.expectAction('start', {}, count.next);
+            primus.expectAction('start', {}, function () {
+              if (stopAfterStart) {
+                stopContainerRightAfterStart(ctx.instance);
+              }
+              count.next();
+            });
             ctx.instance = ctx.user.createInstance(body, expects.success(201, ctx.expected, count.next));
           });
         }
