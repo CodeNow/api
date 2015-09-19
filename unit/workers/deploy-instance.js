@@ -18,7 +18,7 @@ var rabbitMQ = require('models/rabbitmq');
 var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
 
-var DeployInstanceWorker = require('deploy-instance.js');
+var DeployInstanceWorker = require('workers/deploy-instance');
 
 var AcceptableError = BaseWorker.acceptableError;
 var afterEach = lab.afterEach;
@@ -52,9 +52,9 @@ describe('DeployInstanceWorker', function () {
         instanceName: keypather.get(instance, 'name.toString()'),
         instanceShortHash: keypather.get(instance, 'shortHash.toString()'),
         creatorGithubId: keypather.get(instance, 'createdBy.github.toString()'),
+        ownerUsername : ctx.worker.ownerUsername,
         ownerGithubId: keypather.get(instance, 'owner.github.toString()'),
-        sessionUserGithubId: ctx.worker.sessionUserGithubId,
-        ownerUsername : ctx.worker.ownerUsername
+        sessionUserGithubId: ctx.worker.sessionUserGithubId.toString()
       }
     };
   }
@@ -71,6 +71,9 @@ describe('DeployInstanceWorker', function () {
       },
       build: {
         _id: '23412312h3nk1lj2h3l1k2'
+      },
+      toJSON: function () {
+        return ctx.mockContextVersion;
       }
     };
     ctx.mockBuild = {
@@ -85,7 +88,7 @@ describe('DeployInstanceWorker', function () {
       contextVersions: ['55d3ef733e1b620e00eb6292']
     };
     ctx.mockInstance = {
-      '_id': '55d3ef733e1b620e00907292',
+      '_id': ctx.mockBuild._id,
       name: 'name1',
       env: ['asdasdasd'],
       build: '23412312h3nk1lj2h3l1k2',
@@ -162,7 +165,6 @@ describe('DeployInstanceWorker', function () {
 
       sinon.stub(BaseWorker.prototype, 'pFindContextVersion')
         .returns(Promise.resolve(ctx.mockContextVersion));
-      //sinon.stub(BaseWorker.prototype, 'pUpdateInstanceFrontend').returns(Promise.resolve());
       sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser);
       sinon.stub(Mavis.prototype, 'findDockForContainer').yieldsAsync(null, _dockerHost);
       sinon.stub(rabbitMQ, 'createInstanceContainer');
@@ -195,7 +197,8 @@ describe('DeployInstanceWorker', function () {
           .returns(Promise.resolve([ctx.mockInstance]));
         ctx.worker = new DeployInstanceWorker({
           instanceId: ctx.mockInstance._id,
-          sessionUserGithubId: 12
+          sessionUserGithubId: 12,
+          ownerUsername: 'asdfasdf'
         });
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined();
@@ -205,7 +208,8 @@ describe('DeployInstanceWorker', function () {
           });
           expect(BaseWorker.prototype.pFindBuild.callCount).to.equal(1);
           expect(BaseWorker.prototype.pFindBuild.args[0][0]).to.deep.equal({
-            _id: ctx.mockBuild._id
+            _id: ctx.mockBuild._id,
+            'failed': false
           });
           expect(BaseWorker.prototype.pFindContextVersion.callCount).to.equal(1);
           expect(BaseWorker.prototype.pFindContextVersion.args[0][0]).to.deep.equal({
@@ -254,17 +258,20 @@ describe('DeployInstanceWorker', function () {
         sinon.stub(BaseWorker.prototype, 'pFindInstances')
           .returns(Promise.resolve(ctx.mockInstances));
         ctx.worker = new DeployInstanceWorker({
-          buildId: ctx.mockBuild._id
+          buildId: ctx.mockBuild._id,
+          sessionUserGithubId: 12,
+          ownerUsername: 'asdfasdf'
         });
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined();
           expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
           expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.deep.equal({
-            'build._id': ctx.mockBuild._id
+            'build': ctx.mockBuild._id
           });
           expect(BaseWorker.prototype.pFindBuild.callCount).to.equal(1);
           expect(BaseWorker.prototype.pFindBuild.args[0][0]).to.deep.equal({
-            _id: ctx.mockBuild._id
+            _id: ctx.mockBuild._id,
+            'failed': false
           });
           expect(BaseWorker.prototype.pFindContextVersion.callCount).to.equal(1);
           expect(BaseWorker.prototype.pFindContextVersion.args[0][0]).to.deep.equal({
@@ -290,18 +297,21 @@ describe('DeployInstanceWorker', function () {
           sinon.stub(BaseWorker.prototype, 'pFindInstances')
             .returns(Promise.resolve(ctx.mockInstances));
           ctx.worker = new DeployInstanceWorker({
-            buildId: ctx.mockBuild._id
+            buildId: ctx.mockBuild._id,
+            sessionUserGithubId: 12,
+            ownerUsername: 'asdfasdf'
           });
           keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', true);
           ctx.worker.handle(function (err) {
             expect(err).to.be.undefined();
             expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
             expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.deep.equal({
-              'build_id': ctx.mockBuild._id
+              'build': ctx.mockBuild._id
             });
             expect(BaseWorker.prototype.pFindBuild.callCount).to.equal(1);
             expect(BaseWorker.prototype.pFindBuild.args[0][0]).to.deep.equal({
-              _id: ctx.mockBuild._id
+              _id: ctx.mockBuild._id,
+              'failed': false
             });
             expect(BaseWorker.prototype.pFindContextVersion.callCount).to.equal(1);
             expect(BaseWorker.prototype.pFindContextVersion.args[0][0]).to.deep.equal({

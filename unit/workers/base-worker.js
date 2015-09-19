@@ -69,10 +69,6 @@ describe('BaseWorker', function () {
     done();
   });
 
-  afterEach(function (done) {
-    done();
-  });
-
   describe('_updateFrontendWithContextVersion', function () {
     beforeEach(function (done) {
       ctx.worker.contextVersion = ctx.mockContextVersion;
@@ -555,17 +551,17 @@ describe('BaseWorker', function () {
     var query = {
       '_id': 'dfasdfasdf'
     };
-    beforeEach(function (done) {
-      sinon.stub(Build, 'findOne', function (data, cb) {
-        cb(null, ctx.mockBuild);
-      });
-      done();
-    });
-    afterEach(function (done) {
-      Build.findOne.restore();
-      done();
-    });
     describe('basic', function () {
+      beforeEach(function (done) {
+        sinon.stub(Build, 'findOne', function (id, cb) {
+          cb(null, ctx.mockBuild);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        Build.findOne.restore();
+        done();
+      });
       it('should query mongo for build', function (done) {
         ctx.worker.pFindBuild(query)
           .then(function () {
@@ -580,6 +576,16 @@ describe('BaseWorker', function () {
     });
 
     describe('found', function () {
+      beforeEach(function (done) {
+        sinon.stub(Build, 'findOne', function (id, cb) {
+          cb(null, ctx.mockBuild);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        Build.findOne.restore();
+        done();
+      });
       it('should callback successfully if instance w/ container found', function (done) {
         ctx.worker.pFindBuild(query)
           .then(function (build) {
@@ -592,11 +598,13 @@ describe('BaseWorker', function () {
 
     describe('Errors', function () {
       afterEach(function (done) {
-        Instance.findOne.restore();
+        Build.findOne.restore();
         done();
       });
       it('should callback error if build not found', function (done) {
-        Build.findOne.yieldsAsync(null, null);
+        sinon.stub(Build, 'findOne', function (id, cb) {
+          cb();
+        });
         ctx.worker.pFindBuild(query)
           .catch(function (err) {
             expect(err.message).to.equal('Build not found');
@@ -605,7 +613,9 @@ describe('BaseWorker', function () {
           });
       });
       it('should callback error if mongo error', function (done) {
-        Build.findOne.yieldsAsync(new Error('mongoose error'));
+        sinon.stub(Build, 'findOne', function (id, cb) {
+          cb(new Error('mongoose error'));
+        });
         ctx.worker.pFindBuild(query)
           .catch(function (err) {
             expect(err.message).to.equal('mongoose error');
