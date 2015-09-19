@@ -24,7 +24,6 @@ var expect = Code.expect;
 var it = lab.it;
 var sinon = require('sinon');
 var rabbitMQ = require('models/rabbitmq');
-var Instance = require('models/mongo/instance');
 var InstanceService = require('models/services/instance-service');
 
 function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
