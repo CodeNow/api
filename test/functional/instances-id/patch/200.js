@@ -157,12 +157,10 @@ describe('200 PATCH /instances', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             expect(InstanceService.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1);
             var acv = ctx.cv.appCodeVersions.models[0].attrs;
-            expect(InstanceService.deleteForkedInstancesByRepoAndBranch.getCall(0).args[0])
-              .to.equal(ctx.user.id);
-            expect(InstanceService.deleteForkedInstancesByRepoAndBranch.getCall(0).args[1])
-              .to.equal(acv.lowerRepo);
-            expect(InstanceService.deleteForkedInstancesByRepoAndBranch.getCall(0).args[2])
-              .to.equal(acv.lowerBranch);
+            var args = InstanceService.deleteForkedInstancesByRepoAndBranch.getCall(0).args;
+            expect(args[0]).to.equal(ctx.user.id());
+            expect(args[1]).to.equal(acv.lowerRepo);
+            expect(args[2]).to.equal(acv.lowerBranch);
             InstanceService.deleteForkedInstancesByRepoAndBranch.restore();
             done();
           });
