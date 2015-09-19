@@ -17,8 +17,6 @@ var generateKey = require('./key-factory');
 var logger = require('middlewares/logger')(__filename);
 var primus = require('./primus');
 var async = require('async');
-var sinon = require('sinon');
-var rabbitMQ = require('models/rabbitmq');
 
 var log = logger.log;
 
@@ -374,13 +372,8 @@ module.exports = {
       primus.joinOrgRoom(user.json().accounts.github.id, function (err) {
         log.trace({}, 'createAndTailInstance', 'joined room');
         if (err) { return next(err); }
-        var oldRabbitDeploy = rabbitMQ.deployInstance;
-        if (isFunction(rabbitMQ.deployInstance.restore)) {
-          rabbitMQ.deployInstance.restore();
-        }
         primus.expectAction('start', {}, function () {
           log.trace({}, 'createAndTailInstance', 'instance started');
-          rabbitMQ.deployInstance = sinon.spy(oldRabbitDeploy);
           next();
         });
         ctx.instance = user.createInstance(body, function (err) {

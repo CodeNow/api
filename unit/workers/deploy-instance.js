@@ -11,12 +11,9 @@ var Code = require('code');
 var keypather = require('keypather')();
 var sinon = require('sinon');
 
-var Build = require('models/mongo/build');
 var BaseWorker = require('workers/base-worker');
-var Hosts = require('models/redis/hosts');
 var Instance = require('models/mongo/instance');
 var Mavis = require('models/apis/mavis');
-var Sauron = require('models/apis/sauron');
 var rabbitMQ = require('models/rabbitmq');
 var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
@@ -248,6 +245,7 @@ describe('DeployInstanceWorker', function () {
             messenger.emitInstanceUpdate.args[0][1],
             'emitContextVersionUpdate arg0'
           ).to.equal('deploy');
+
           done();
         })
           .catch(done);

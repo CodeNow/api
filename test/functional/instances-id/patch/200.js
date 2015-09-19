@@ -8,7 +8,6 @@ var lab = exports.lab = Lab.script();
 
 var Code = require('code');
 var Docker = require('dockerode');
-var createCount = require('callback-count');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
