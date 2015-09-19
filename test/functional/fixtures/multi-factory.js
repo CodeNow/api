@@ -503,9 +503,7 @@ module.exports = {
                 var count = createCount(2, cb);
                 build.contextVersions.models[0].fetch(count.next);
                 require('./mocks/github/user')(user);
-                build.fetch(function () {
-                  count.next();
-                });
+                build.fetch(count.next);
               });
 
               primus.expectActionCount('build_running', 1, function () {
