@@ -58,7 +58,7 @@ describe('StopInstanceContainerWorker', function () {
       //tid: req.domain.runnableData.tid
     };
     ctx.mockInstance = {
-      '_id': ctx.data.instanceId,
+      '_id': ctx.data.inspectData.Config.Labels.instanceId,
       name: 'name1',
       owner: {
         github: '',
@@ -121,8 +121,13 @@ describe('StopInstanceContainerWorker', function () {
     describe('failure with instance', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
-        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend', noop);
-        sinon.stub(ctx.worker, '_baseWorkerInspectContainerAndUpdate', function (cb) { cb(); });
+        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend',
+                   function (instanceId, sessionUserGithubId, action, cb) {
+          cb();
+        });
+        sinon.stub(ctx.worker, '_baseWorkerInspectContainerAndUpdate', function (cb) {
+          cb();
+        });
         done();
       });
       afterEach(function (done) {
@@ -134,7 +139,7 @@ describe('StopInstanceContainerWorker', function () {
         ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerInspectContainerAndUpdate.callCount).to.equal(1);
-          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0]).to.equal('update');
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][2]).to.equal('update');
           done();
         });
       });
@@ -143,7 +148,10 @@ describe('StopInstanceContainerWorker', function () {
     describe('success', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
-        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend', noop);
+        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend',
+                   function (instanceId, sessionUserGithubId, action, cb) {
+          cb();
+        });
         sinon.stub(ctx.worker, '_baseWorkerInspectContainerAndUpdate', function (cb) { cb(); });
         done();
       });
@@ -156,7 +164,7 @@ describe('StopInstanceContainerWorker', function () {
         ctx.worker._finalSeriesHandler(null, function () {
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerInspectContainerAndUpdate.callCount).to.equal(0);
-          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0]).to.equal('stop');
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][2]).to.equal('stop');
           done();
         });
       });
@@ -171,7 +179,10 @@ describe('StopInstanceContainerWorker', function () {
       done();
     });
     beforeEach(function (done) {
-      sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend', noop);
+      sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend',
+                 function (instanceId, sessionUserGithubId, action, cb) {
+        cb();
+      });
       ctx.mockInstance.setContainerStateToStopping = function (cb) {
         cb(null, ctx.mockInstance);
       };
@@ -185,7 +196,7 @@ describe('StopInstanceContainerWorker', function () {
       ctx.worker._setInstanceStateStopping(function (err) {
         expect(err).to.be.undefined();
         expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
-        expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0]).to.equal('stopping');
+        expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][2]).to.equal('stopping');
         done();
       });
     });

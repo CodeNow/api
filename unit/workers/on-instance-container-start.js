@@ -70,13 +70,11 @@ describe('OnInstanceContainerStartWorker', function () {
       ctx.worker.instance = ctx.mockInstance;
       cb(null, ctx.mockInstance);
     });
-    sinon.stub(ctx.worker, '_baseWorkerFindUser').yieldsAsync();
     sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null);
     done();
   });
   afterEach(function (done) {
     ctx.worker._baseWorkerFindInstance.restore();
-    ctx.worker._baseWorkerFindUser.restore();
     ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
     done();
   });
@@ -122,7 +120,6 @@ describe('OnInstanceContainerStartWorker', function () {
           expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
               .to.equal(ctx.labels.ownerUsername);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
-          expect(ctx.worker._baseWorkerFindUser.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           done();
         });
@@ -156,7 +153,6 @@ describe('OnInstanceContainerStartWorker', function () {
               .to.equal(ctx.labels.ownerUsername);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
           expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
-          expect(ctx.worker._baseWorkerFindUser.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           done();
         });
