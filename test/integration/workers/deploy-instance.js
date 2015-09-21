@@ -26,7 +26,7 @@ var Instance = require('models/mongo/instance.js');
 var User = require('models/mongo/user.js');
 var messenger = require('socket/messenger');
 
-var DeployInstanceWorker = require('workers/deploy-instance.js')
+var DeployInstanceWorker = require('workers/deploy-instance.js');
 
 describe('DeployInstanceWorker Integration Tests', function () {
   before(mongooseControl.start);
@@ -210,25 +210,6 @@ describe('DeployInstanceWorker Integration Tests', function () {
   function createBuild (ownerGithubId, cv, cb) {
     var data = buildTemplate(ownerGithubId, cv);
     Build.create(data, cb);
-  }
-  function createStartedCv (ownerGithubId, props, cb) {
-    if (isFunction(props)) {
-      cb = props;
-      props = null;
-    }
-    props = props || { build: {}};
-    defaults(props.build, {
-      hash: uuid(),
-      started: new Date(),
-      manual: false
-    });
-    var data = cvTemplate(
-      ownerGithubId,
-      props.build.manual,
-      props.build.hash,
-      props.build.started
-    );
-    ContextVersion.create(data, cb);
   }
   function createCompletedCv (ownerGithubId, props, cb) {
     if (isFunction(props)) {
