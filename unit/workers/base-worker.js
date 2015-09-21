@@ -35,6 +35,12 @@ describe('BaseWorker', function () {
     ctx.modifyContainerInspectErrSpy = sinon.spy(function (dockerContainerId, error, cb) {
       cb(null);
     });
+    ctx.populateModelsSpy = sinon.spy(function (cb) {
+      cb(null);
+    });
+    ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (user, cb) {
+      cb(null);
+    });
     ctx.data = {
       from: '34565762',
       host: '5476',
@@ -105,16 +111,13 @@ describe('BaseWorker', function () {
   });
 
   describe('_baseWorkerUpdateInstanceFrontend', function () {
-    beforeEach(function (done) {
-      // normally set by _baseWorkerFindInstance & _baseWorkerFindUser
-      ctx.worker.instance = ctx.mockInstance;
-      ctx.worker.user = ctx.mockUser;
-      done();
-    });
 
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(Instance, 'findById', function (query, cb) {
+        sinon.stub(ctx.worker, '_baseWorkerFindUser', function (userGithubId, cb) {
+          cb(null, ctx.mockUser);
+        });
+        sinon.stub(ctx.worker, '_baseWorkerFindInstance', function (query, cb) {
           cb(null, ctx.mockInstance);
         });
         sinon.stub(messenger, 'emitInstanceUpdate', function () {});
@@ -122,21 +125,21 @@ describe('BaseWorker', function () {
       });
 
       afterEach(function (done) {
-        Instance.findById.restore();
+        ctx.worker._baseWorkerFindUser.restore();
+        ctx.worker._baseWorkerFindInstance.restore();
         messenger.emitInstanceUpdate.restore();
         done();
       });
 
       it('should fetch instance and notify frontend via primus instance has started',
       function (done) {
-        ctx.worker._baseWorkerUpdateInstanceFrontend();
-        // todo fix w/ callback
-        //expect(Instance.findById.callCount).to.equal(1);
-        //expect(Instance.findById.args[0][0]).to.equal(ctx.data.instanceId);
-        //expect(ctx.populateModelsSpy.callCount).to.equal(1);
-        //expect(ctx.populateOwnerAndCreatedBySpy.callCount).to.equal(1);
-        //expect(messenger.emitInstanceUpdate.callCount).to.equal(1);
-        done();
+        ctx.worker._baseWorkerUpdateInstanceFrontend(
+          ctx.data.instanceId,
+          ctx.data.sessionUserGithubId,
+          'started',
+          function () {
+            done();
+        });
       });
     });
   });

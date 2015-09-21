@@ -34,12 +34,12 @@ describe('StartInstanceContainerWorker', function () {
     ctx.data = {
       dockerContainer: 'abc123',
       dockerHost: '0.0.0.0',
+      instanceId: 'instanceid123',
+      sessionUserGithubId: '12345',
       //hostIp: req.instance.network.hostIp,
       inspectData: {
         Config: {
           Labels: {
-            instanceId: 'instanceid123',
-            sessionUserGithubId: '12345'
           }
         }
       },
@@ -106,7 +106,10 @@ describe('StartInstanceContainerWorker', function () {
     describe('failure with instance', function () {
       beforeEach(function (done) {
         ctx.worker.instance = ctx.mockInstance;
-        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null);
+        sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend',
+                  function (instanceId, sessionUserGithubId, action, cb) {
+          cb();
+        });
         done();
       });
       afterEach(function (done) {
@@ -117,9 +120,9 @@ describe('StartInstanceContainerWorker', function () {
         ctx.worker._finalSeriesHandler(new Error('mongoose error'), function () {
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0])
-            .to.equal(ctx.data.inspectData.Config.Labels.instanceId);
+            .to.equal(ctx.data.instanceId);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][1])
-            .to.equal(ctx.data.inspectData.Config.Labels.sessionUserGithubId);
+            .to.equal(ctx.data.sessionUserGithubId);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][2])
             .to.equal('update');
           done();
@@ -169,9 +172,9 @@ describe('StartInstanceContainerWorker', function () {
         expect(err).to.be.null();
         expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
         expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][0])
-          .to.equal(ctx.data.inspectData.Config.Labels.instanceId);
+          .to.equal(ctx.data.instanceId);
         expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][1])
-          .to.equal(ctx.data.inspectData.Config.Labels.sessionUserGithubId);
+          .to.equal(ctx.data.sessionUserGithubId);
         expect(ctx.worker._baseWorkerUpdateInstanceFrontend.args[0][2])
           .to.equal('starting');
         done();
