@@ -20,6 +20,52 @@ var Modem = require('docker-modem');
 describe('docker', function () {
   var model = new Docker('http://fake.host.com');
 
+  describe('getLogs', function () {
+    it('should call error handler and return error', function (done) {
+      sinon.stub(Dockerode.prototype, 'getContainer', function () {
+        return {
+          logs: function (opts, cb) {
+            cb(new Error('Some docker error'));
+          }
+        };
+      });
+      sinon.spy(model, 'handleErr');
+      model.getLogs('some-container-id', function (err) {
+        expect(err).to.exist();
+        expect(err.isBoom).to.be.true();
+        expect(err.data.err.message).to.equal('Some docker error');
+        expect(err.data.docker.containerId).to.equal('some-container-id');
+        expect(Dockerode.prototype.getContainer.callCount).to.equal(1);
+        expect(Dockerode.prototype.getContainer.getCall(0).args[0])
+          .to.equal('some-container-id');
+        expect(model.handleErr.callCount).to.equal(1);
+        Dockerode.prototype.getContainer.restore();
+        model.handleErr.restore();
+        done();
+      });
+    });
+    it('should call error but return success', function (done) {
+      sinon.stub(Dockerode.prototype, 'getContainer', function () {
+        return {
+          logs: function (opts, cb) {
+            cb(null);
+          }
+        };
+      });
+      sinon.spy(model, 'handleErr');
+      model.getLogs('some-container-id', function (err) {
+        expect(err).to.not.exist();
+        expect(Dockerode.prototype.getContainer.callCount).to.equal(1);
+        expect(Dockerode.prototype.getContainer.getCall(0).args[0])
+          .to.equal('some-container-id');
+        expect(model.handleErr.callCount).to.equal(1);
+        Dockerode.prototype.getContainer.restore();
+        model.handleErr.restore();
+        done();
+      });
+    });
+  });
+
   describe('pullImage', function () {
     var testTag = 'lothlorien';
     var testImageName = 'registy.runnable.com/1234/galadriel';

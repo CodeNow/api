@@ -9,15 +9,15 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
+
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var ContextVersion = require('models/mongo/context-version');
 var validation = require('./fixtures/validation')(lab);
-
 var Version = require('models/mongo/context-version');
 
 describe('Versions', function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/integration/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 
   function createNewVersion(acv) {
     acv = acv || {};
@@ -186,6 +186,4 @@ describe('Versions', function () {
       });
     });
   });
-
-
 });
