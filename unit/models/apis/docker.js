@@ -27,7 +27,7 @@ describe('docker', function () {
           logs: function (opts, cb) {
             cb(new Error('Some docker error'));
           }
-        }
+        };
       });
       sinon.spy(model, 'handleErr');
       model.getLogs('some-container-id', function (err) {
@@ -50,7 +50,7 @@ describe('docker', function () {
           logs: function (opts, cb) {
             cb(null);
           }
-        }
+        };
       });
       sinon.spy(model, 'handleErr');
       model.getLogs('some-container-id', function (err) {
