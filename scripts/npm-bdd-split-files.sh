@@ -3,9 +3,9 @@
 extra_args=""
 
 all_files=()
-for file in $(find ./test -path ./test/fixtures -prune -o -name "*.js" -print | sort)
+for file in $(find ./test -path ./test/functional/fixtures -prune -o -name "*.js" -print | sort)
 do
-  if [[ "$file" !=   "./test/fixtures" ]]
+  if [[ "$file" !=   "./test/functional/fixtures" ]]
   then
     all_files+=" $file"
   fi

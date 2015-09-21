@@ -12,7 +12,7 @@ var Code = require('code');
 var expect = Code.expect;
 
 var api = require('../../fixtures/api-control');
-var rabbitMQ = require('../../../lib/models/rabbitmq');
+var rabbitMQ = require('../../../../lib/models/rabbitmq');
 var createCount = require('callback-count');
 
 var request = require('request');
