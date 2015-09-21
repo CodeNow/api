@@ -144,7 +144,7 @@ describe('DeployInstanceWorker Integration Tests', function () {
           if (err) { return done(err); }
           ctx.user = user;
           ctx.hash = uuid();
-          createCompletedCv(ctx.githubId , { build: { manual: false }}, function (err, cv) {
+          createCompletedCv(ctx.githubId, { build: { manual: false }}, function (err, cv) {
             if (err) { return done(err); }
             ctx.cv = cv;
             createBuild(ctx.githubId , cv, function (err, build) {
