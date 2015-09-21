@@ -8,7 +8,7 @@ var lab = exports.lab = Lab.script();
 var sinon = require('sinon');
 var Code = require('code');
 var rabbitMQ = require('models/rabbitmq');
-var instanceService = require('models/services/instance-service');
+var InstanceService = require('models/services/instance-service');
 var Instance = require('models/mongo/instance');
 
 var it = lab.it;
@@ -19,7 +19,44 @@ describe('InstanceService', function () {
 
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
 
+    it('should return if user param is missing', function (done) {
+      var instanceService = new InstanceService();
+      sinon.spy(Instance, 'findForkedInstances');
+      instanceService.deleteForkedInstancesByRepoAndBranch(null, 'api', 'master',
+        function (err) {
+          expect(err).to.not.exist();
+          expect(Instance.findForkedInstances.callCount).to.equal(0);
+          Instance.findForkedInstances.restore();
+          done();
+        });
+    });
+
+    it('should return if repo param is missing', function (done) {
+      var instanceService = new InstanceService();
+      sinon.spy(Instance, 'findForkedInstances');
+      instanceService.deleteForkedInstancesByRepoAndBranch('user-id', null, 'master',
+        function (err) {
+          expect(err).to.not.exist();
+          expect(Instance.findForkedInstances.callCount).to.equal(0);
+          Instance.findForkedInstances.restore();
+          done();
+        });
+    });
+
+    it('should return if branch param is missing', function (done) {
+      var instanceService = new InstanceService();
+      sinon.spy(Instance, 'findForkedInstances');
+      instanceService.deleteForkedInstancesByRepoAndBranch('user-id', 'api', null,
+        function (err) {
+          expect(err).to.not.exist();
+          expect(Instance.findForkedInstances.callCount).to.equal(0);
+          Instance.findForkedInstances.restore();
+          done();
+        });
+    });
+
     it('should return error if #findForkedInstances failed', function (done) {
+      var instanceService = new InstanceService();
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(new Error('Some error'));
       instanceService.deleteForkedInstancesByRepoAndBranch('user-id', 'api', 'master',
@@ -32,6 +69,7 @@ describe('InstanceService', function () {
     });
 
     it('should not create new jobs if instances were not found', function (done) {
+      var instanceService = new InstanceService();
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(null, []);
       sinon.spy(rabbitMQ, 'deleteInstance');
@@ -46,6 +84,7 @@ describe('InstanceService', function () {
     });
 
     it('should create 2 jobs if 2 instances were found', function (done) {
+      var instanceService = new InstanceService();
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(null, [{id: 'inst-1'}, {id: 'inst-2'}]);
       sinon.spy(rabbitMQ, 'deleteInstance');
@@ -64,7 +103,5 @@ describe('InstanceService', function () {
           done();
         });
     });
-
   });
-
 });
