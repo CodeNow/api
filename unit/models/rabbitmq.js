@@ -229,7 +229,9 @@ describe('RabbitMQ Model', function () {
       };
       ctx.validJobData = {
         instanceId: '507f1f77bcf86cd799439011',
-        sessionUserId: '507f191e810c19729de860ea'
+        instanceName: 'test-instance-name',
+        sessionUserId: '507f191e810c19729de860ea',
+        tid: '0123456789'
       };
       //missing sessionUserId
       ctx.invalidJobData = {
