@@ -12,7 +12,6 @@ var noop = require('101/noop');
 var sinon = require('sinon');
 
 var Docker = require('models/apis/docker');
-var Sauron = require('models/apis/sauron');
 
 var StopInstanceContainerWorker = require('workers/stop-instance-container');
 
@@ -242,38 +241,6 @@ describe('StopInstanceContainerWorker', function () {
           expect(Docker.prototype.stopContainer.callCount)
           .to.equal(process.env.WORKER_STOP_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1);
-          done();
-        });
-      });
-    });
-  });
-
-  describe('_detachContainerFromNetwork', function () {
-    beforeEach(function (done) {
-      // normally set by _findInstance & _findUser
-      ctx.worker.instance = ctx.mockInstance;
-      ctx.worker.user = ctx.mockUser;
-      done();
-    });
-
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(Sauron.prototype, 'detachHostFromContainer',
-                   function (networkIp, hostIp, containerId, cb) {
-          cb(null);
-        });
-        done();
-      });
-
-      afterEach(function (done) {
-        Sauron.prototype.detachHostFromContainer.restore();
-        done();
-      });
-
-      it('should detach from weave', function (done) {
-        ctx.worker._detachContainerFromNetwork(function (err) {
-          expect(err).to.be.null();
-          expect(Sauron.prototype.detachHostFromContainer.callCount).to.equal(1);
           done();
         });
       });
