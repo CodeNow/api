@@ -11,7 +11,6 @@ function emitBuildComplete (cv, failure) {
   if (cv.toJSON) {
     cv = cv.toJSON();
   }
-  console.trace('EMIT COMPLETE');
   var containerId = cv.build && cv.build.dockerContainer;
   if (!containerId) {
     ContextVersion.findById(cv._id, function (err, cv) {
@@ -32,7 +31,6 @@ function emitContainerDie (instance) {
   if (instance.toJSON) {
     instance = instance.toJSON();
   }
-  console.trace('EMIT COMPLETE');
   var containerId = instance.container && instance.container.dockerContainer;
   if (!containerId) {
     Instance.findById(instance._id, function (err, instance) {
