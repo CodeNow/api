@@ -236,7 +236,11 @@ describe('StartInstanceContainerWorker', function () {
     describe('failure already-started', function () {
       beforeEach(function (done) {
         sinon.stub(Docker.prototype, 'startUserContainer', function (dockerContainer, sessionUserGithubId, cb) {
-          cb({statusCode: 304});
+          cb({
+            output: {
+              statusCode: 304
+            }
+          });
         });
         done();
       });
