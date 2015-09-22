@@ -72,8 +72,8 @@ describe('ContextVersion Model Query Integration Tests', function () {
         times(3,
           function (i, cb) {
             var props = put(ctx.props, {
-              'build.started'  : new Date('Mon Jan 1 2015 '+1+':00:00 GMT-0700 (PDT)'),
-              'build.completed': new Date('Mon Jan 1 2015 '+1+':00:30 GMT-0700 (PDT)')
+              'build.started'  : new Date('Mon Jan 1 2015 '+i+':00:00 GMT-0700 (PDT)'),
+              'build.completed': new Date('Mon Jan 1 2015 '+i+':00:30 GMT-0700 (PDT)')
             });
             createCompletedCv(props, cb);
           },
@@ -117,8 +117,8 @@ describe('ContextVersion Model Query Integration Tests', function () {
         times(3,
           function (i, cb) {
             var props = put(ctx.props, {
-              'build.started'  : new Date('Mon Jan 1 2015 '+1+':00:00 GMT-0700 (PDT)'),
-              'build.completed': new Date('Mon Jan 1 2015 '+1+':00:30 GMT-0700 (PDT)')
+              'build.started'  : new Date('Mon Jan 1 2015 '+i+':00:00 GMT-0700 (PDT)'),
+              'build.completed': new Date('Mon Jan 1 2015 '+i+':00:30 GMT-0700 (PDT)')
             });
             createCompletedCv(props, cb);
           },
