@@ -16,7 +16,6 @@ var last = require('101/last');
 var mongoose = require('mongoose');
 var ObjectId = mongoose.Types.ObjectId;
 var uuid = require('uuid');
-var times = require('times-loop');
 
 var mongooseControl = require('models/mongo/mongoose-control.js');
 var ContextVersion = require('models/mongo/context-version.js');
