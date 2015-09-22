@@ -183,7 +183,6 @@ describe('Github - /actions/github', function () {
         });
     });
 
-
     describe('autofork', function () {
       var slackStub;
       beforeEach(function (done) {
@@ -197,9 +196,7 @@ describe('Github - /actions/github', function () {
         done();
       });
       beforeEach(function (done) {
-        console.log('createAndTailInstance before');
         multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
-          console.log('createAndTailInstance callback');
           if (err) { return done(err); }
           ctx.contextVersion = modelsArr[0];
           ctx.context = modelsArr[1];
