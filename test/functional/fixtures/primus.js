@@ -35,8 +35,6 @@ module.exports = {
       }
     });
     ctx.primus.on('data', function onData (data) {
-      console.log('joinOrgRoom', orgId, data);
-
       if (data.event === 'ROOM_ACTION_COMPLETE') {
         ctx.primus.removeListener('data', onData);
         cb();
