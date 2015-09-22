@@ -37,7 +37,7 @@
   - `redis-server`
 - neo4j
   - `brew install neo4j`
-  - disable auth: `sed -ie 's/.*auth_enabled.*/dbms.security.auth_enabled=false/g' /usr/local/Cellar/neo4j/2.2.0/libexec/conf/neo4j-server.properties`
+  - disable auth: `sed -ie 's/.*auth_enabled.*/dbms.security.auth_enabled=false/g' /usr/local/Cellar/neo4j/2.2.5/libexec/conf/neo4j-server.properties`
   - `neo4j start`
 - ulimit
   - `ulimit -n 10240` (at minimum)
@@ -59,9 +59,9 @@ Granular:
   - (similar options exist to run individual and ranges of tests as BDD)
 
 ## Tests: logging
-WIP
 
-`npm install bunyan -g`
+### [CLI Log Parsing Guide](https://github.com/CodeNow/devops-scripts/wiki/Using-Bunyan-CLI-tools-for-debugging)  
+### [Loggly Querying Guide](https://github.com/CodeNow/devops-scripts/wiki/Loggly-debugging)  
 
 If you see:  
 ```js
@@ -71,7 +71,7 @@ app.post('/workers/container-create',
 
 You can filter trace logs w/
 ```
-LOG_LEVEL=trace TID_POST_WORKERS_CONTAINER_CREATE=apples npm run bdd-whitelist | bunyan -c 'this.tid == "apples"'
+LOG_LEVEL_STDOUT=trace TID_POST_WORKERS_CONTAINER_CREATE=apples npm run bdd-whitelist | bunyan -c 'this.tid == "apples"'
 ```
 
 ## Formatting

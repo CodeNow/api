@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.47.1",
+  "version": "2.49.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -88,6 +88,7 @@
     "substream-pump": "^1.0.1",
     "sync-exec": "^0.6.1",
     "through2": "^2.0.0",
+    "times-loop": "^1.0.0",
     "underscore.string": "^3.0.2",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
@@ -152,7 +153,7 @@
     "eslint-changes": "git fetch origin master > /dev/null 2>&1; eslint $(git diff --name-only origin/master | grep -e '.*.js$')",
     "eslint-errors": "npm run eslint -- --quiet",
     "eslint-changes-errors": "npm run eslint-changes -- --quiet",
-    "cayley": "./test/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/fixtures/graphs/cayley/local.cfg --assets=./test/fixtures/graphs/cayley",
-    "generate-whitelist": "find ./test -path ./test/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt"
+    "cayley": "./test/functional/fixtures/graphs/cayley/cayley_osx http --host=0.0.0.0 --config=./test/functional/fixtures/graphs/cayley/local.cfg --assets=./test/functional/fixtures/graphs/cayley",
+    "generate-whitelist": "find ./test -path ./test/functional/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt"
   }
 }
