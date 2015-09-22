@@ -67,7 +67,6 @@ module.exports = {
     log.trace('onceRoomMessage');
     if (!ctx.primus) { return cb(new Error('can not primus.onceRoomMessage if not connected')); }
     ctx.primus.on('data', function handler (data) {
-      console.log('\n\nPRIMUS onceRoomMessage', action, data);
       log.trace(data.event === 'ROOM_MESSAGE',
         data.data.event, data.data.action,
         event, action);
@@ -87,7 +86,6 @@ module.exports = {
     }
     if (!ctx.primus) { return cb(new Error('can not primus.expectAction if not connected')); }
     ctx.primus.on('data', function check (data) {
-      console.log('\n\nPRIMUS', action, data);
       log.trace('primus expect:',
         'ROOM_MESSAGE', action,
         data.event, data.data.action);
@@ -109,7 +107,6 @@ module.exports = {
     var cbCount = createCount(count, done);
     ctx.primus.on('data', handleData);
     function handleData (data) {
-      console.log('\n\nPRIMUS', action, data);
       if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
         log.trace('expectActionCount', action, cbCount.count);
         cbCount.next();
