@@ -153,7 +153,7 @@ describe('StopInstanceContainerWorker', function () {
         ctx.worker._baseWorkerInspectContainerAndUpdate.restore();
         done();
       });
-      it('it should NOT inspect and SHOULD notify frontend', function (done) {
+      it('should not inspect and should notify frontend', function (done) {
         ctx.worker._finalSeriesHandler(null, function () {
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerInspectContainerAndUpdate.callCount).to.equal(0);
