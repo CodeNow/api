@@ -19,6 +19,7 @@ var it = lab.it;
 var Container = require('dockerode/lib/container');
 var createCount = require('callback-count');
 var exists = require('101/exists');
+var sinon = require('sinon');
 var uuid = require('uuid');
 
 var Docker = require('models/apis/docker');
@@ -28,6 +29,7 @@ var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
+var rabbitMQ = require('models/rabbitmq/index');
 var redisCleaner = require('../../fixtures/redis-cleaner');
 
 describe('PUT /instances/:id/actions/restart', function () {
@@ -100,6 +102,7 @@ describe('PUT /instances/:id/actions/restart', function () {
           done();
         });
       });
+
       beforeEach(function (done) {
         var countCb = createCount(2, done);
         primus.expectActionCount('stop', 1, function () {
@@ -108,9 +111,19 @@ describe('PUT /instances/:id/actions/restart', function () {
         ctx.instance.stop(countCb.next);
       });
 
+      beforeEach(function (done) {
+        // Prevent task from enqueueing
+        sinon.stub(rabbitMQ, 'startInstanceContainer', function () {});
+        done();
+      });
+
+      afterEach(function (done) {
+        rabbitMQ.startInstanceContainer.restore();
+        done();
+      });
+
       it('should error if already starting', function (done) {
-        var countCb = createCount(2, done);
-        primus.expectActionCount('start', 1, countCb.next);
+        var countCb = createCount(1, done);
         ctx.instance.start(function () {
           ctx.instance.restart(function (err) {
             expect(err.message).to.equal('Instance is already starting');
@@ -147,15 +160,25 @@ describe('PUT /instances/:id/actions/restart', function () {
           done();
         });
       });
+
+      beforeEach(function (done) {
+        // Prevent task from enqueueing
+        sinon.stub(rabbitMQ, 'stopInstanceContainer', function () {});
+        done();
+      });
+
+      afterEach(function (done) {
+        rabbitMQ.stopInstanceContainer.restore();
+        done();
+      });
+
       it('should error if already stopping', function (done) {
-        var countCb = createCount(2, done);
-        primus.expectActionCount('stopping', 1, function () {
+        ctx.instance.stop(function () {
           ctx.instance.restart(function (err) {
             expect(err.message).to.equal('Instance is already stopping');
-            countCb.next();
+            done();
           });
         });
-        ctx.instance.stop(countCb.next);
       });
     });
 
