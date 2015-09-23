@@ -303,6 +303,46 @@ describe('Worker: delete-instance-container', function () {
         done();
       });
     });
+    it('should not fail job if docker.removeContainer returned 404', function (done) {
+      var worker = new DeleteInstanceContainer({
+        instanceName: 'api',
+        instanceMasterPod: true,
+        instanceMasterBranch: 'master',
+        ownerGithubId: 429706,
+        networkIp: '10.0.1.0',
+        hostIp: '10.0.1.1',
+        container: {
+          dockerHost: 'https://localhost:4242',
+          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
+        }
+      });
+      sinon.spy(worker, '_handleError');
+      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
+        cb(null, 'podviaznikov');
+      });
+      sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
+        cb(null);
+      });
+      sinon.stub(Hosts.prototype, 'removeHostsForInstance', function (entry, container, cb) {
+        cb(null);
+      });
+      sinon.stub(Docker.prototype, 'stopContainer', function (container, force, cb) {
+        cb(null);
+      });
+      sinon.stub(Docker.prototype, 'removeContainer', function (container, cb) {
+        cb(Boom.notFound('Container was not found'));
+      });
+      worker.handle(function (jobErr) {
+        expect(jobErr).to.not.exist();
+        expect(worker._handleError.callCount).to.equal(0);
+        expect(Docker.prototype.removeContainer.callCount).to.equal(1);
+        Sauron.prototype.detachHostFromContainer.restore();
+        Hosts.prototype.removeHostsForInstance.restore();
+        Docker.prototype.stopContainer.restore();
+        Docker.prototype.removeContainer.restore();
+        done();
+      });
+    });
     it('should report success if no errors occured', function (done) {
       var worker = new DeleteInstanceContainer({
         instanceName: 'api',
