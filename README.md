@@ -61,7 +61,7 @@ Granular:
 ## Tests: logging
 
 ### [Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)  
-### [Guide to Debugging production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)  
+### [Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)  
 
 If you see:  
 ```js
