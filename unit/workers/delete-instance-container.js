@@ -68,7 +68,7 @@ describe('Worker: delete-instance-container', function () {
 
 
   describe('#handle', function () {
-    it('should fail container not specified', function (done) {
+    it('should fail if container was not specified', function (done) {
       var worker = new DeleteInstanceContainer({
         instanceName: 'api',
         instanceMasterPod: true,
@@ -87,7 +87,7 @@ describe('Worker: delete-instance-container', function () {
         done();
       });
     });
-    it('should fail dockerHost not specified', function (done) {
+    it('should fail if dockerHost not specified', function (done) {
       var worker = new DeleteInstanceContainer({
         instanceName: 'api',
         instanceMasterPod: true,
@@ -109,7 +109,7 @@ describe('Worker: delete-instance-container', function () {
         done();
       });
     });
-    it('should fail dockerContainer not specified', function (done) {
+    it('should fail if dockerContainer was not specified', function (done) {
       var worker = new DeleteInstanceContainer({
         instanceName: 'api',
         instanceMasterPod: true,
