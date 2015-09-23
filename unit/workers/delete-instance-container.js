@@ -22,9 +22,7 @@ describe('Worker: delete-instance-container', function () {
 
   describe('#_findGitHubUsername', function () {
     it('should fail if User.findById failed', function (done) {
-      sinon.stub(User, 'findById', function (id, cb) {
-        cb(Boom.badRequest('Mongo error'));
-      });
+      sinon.stub(User, 'findById').yieldsAsync(Boom.badRequest('Mongo error'));
       var worker = new DeleteInstanceContainer({
         instanceName: 'api',
         instanceMasterPod: true,
@@ -46,9 +44,7 @@ describe('Worker: delete-instance-container', function () {
       });
     });
     it('should fail if User.findById returned null', function (done) {
-      sinon.stub(User, 'findById', function (id, cb) {
-        cb(null, null);
-      });
+      sinon.stub(User, 'findById').yieldsAsync(null, null);
       var worker = new DeleteInstanceContainer({
         instanceName: 'api',
         instanceMasterPod: true,
@@ -148,9 +144,8 @@ describe('Worker: delete-instance-container', function () {
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
         }
       });
-      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
-        cb(Boom.badRequest('_findGitHubUsername error'));
-      });
+      sinon.stub(worker, '_findGitHubUsername')
+        .yieldsAsync(Boom.badRequest('_findGitHubUsername error'));
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
@@ -174,13 +169,10 @@ describe('Worker: delete-instance-container', function () {
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
         }
       });
-      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
-        cb(null, 'podviaznikov');
-      });
+      sinon.stub(worker, '_findGitHubUsername').yieldsAsync(null, 'podviaznikov');
       sinon.spy(worker, '_handleError');
-      sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
-        cb(Boom.badRequest('Sauron error'));
-      });
+      sinon.stub(Sauron.prototype, 'detachHostFromContainer')
+        .yieldsAsync(Boom.badRequest('Sauron error'));
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
         var err = worker._handleError.args[0][0];
@@ -204,15 +196,10 @@ describe('Worker: delete-instance-container', function () {
         }
       });
       sinon.spy(worker, '_handleError');
-      sinon.stub(worker, '_findGitHubUsername', function (userId, githubId, cb) {
-        cb(null, 'podviaznikov');
-      });
-      sinon.stub(Sauron.prototype, 'detachHostFromContainer', function (networkIp, hostIp, container, cb) {
-        cb(null);
-      });
-      sinon.stub(Hosts.prototype, 'removeHostsForInstance',function (entry, container, cb) {
-        cb(Boom.badRequest('Hosts error'));
-      });
+      sinon.stub(worker, '_findGitHubUsername').yieldsAsync(null, 'podviaznikov');
+      sinon.stub(Sauron.prototype, 'detachHostFromContainer').yieldsAsync(null);
+      sinon.stub(Hosts.prototype, 'removeHostsForInstance')
+        .yieldsAsync(Boom.badRequest('Hosts error'));
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
         var err = worker._handleError.args[0][0];
