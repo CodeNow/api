@@ -200,130 +200,9 @@ describe('OnCreateImageBuilderContainer', function () {
       });
     });
 
-    describe('_findContextVersion', function () {
-      describe('basic', function () {
-        beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
-          done();
-        });
-        afterEach(function (done) {
-          ContextVersion.findOne.restore();
-          done();
-        });
-        it('should query mongo for contextVersion', function (done) {
-          ctx.worker._findContextVersion({
-            '_id': ctx.mockContextVersion._id,
-            'build.containerStarted': {
-              $exists: false
-            },
-            'build.started': {
-              $exists: true
-            },
-            'build.finished': {
-              $exists: false
-            }
-          }, function (err) {
-            expect(err).to.be.null();
-            expect(ContextVersion.findOne.callCount).to.equal(1);
-            expect(ContextVersion.findOne.args[0][0]).to.deep.equal({
-              '_id': ctx.mockContextVersion._id,
-              'build.containerStarted': {
-                $exists: false
-              },
-              'build.started': {
-                $exists: true
-              },
-              'build.finished': {
-                $exists: false
-              }
-            });
-            expect(ContextVersion.findOne.args[0][1]).to.be.a.function();
-            done();
-          });
-        });
-        it('should callback successfully if contextVersion', function (done) {
-          ctx.worker._findContextVersion({
-            '_id': ctx.mockContextVersion._id,
-            'build.containerStarted': {
-              $exists: false
-            },
-            'build.started': {
-              $exists: true
-            },
-            'build.finished': {
-              $exists: false
-            }
-          }, function (err) {
-            expect(err).to.be.null();
-            expect(ctx.worker.contextVersion).to.equal(ctx.mockContextVersion);
-            done();
-          });
-        });
-      });
-
-
-      describe('not found', function () {
-        beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, null);
-          done();
-        });
-        afterEach(function (done) {
-          ContextVersion.findOne.restore();
-          done();
-        });
-        it('should callback error if contextVersion not found', function (done) {
-          ctx.worker._findContextVersion({
-            '_id': ctx.mockContextVersion._id,
-            'build.containerStarted': {
-              $exists: false
-            },
-            'build.started': {
-              $exists: true
-            },
-            'build.finished': {
-              $exists: false
-            }
-          }, function (err) {
-            expect(err.message).to.equal('contextVersion not found');
-            expect(ctx.worker.contextVersion).to.be.undefined();
-            done();
-          });
-        });
-      });
-
-      describe('mongo error', function () {
-        beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'findOne').yieldsAsync(new Error('mongoose error'), null);
-          done();
-        });
-        afterEach(function (done) {
-          ContextVersion.findOne.restore();
-          done();
-        });
-        it('should callback error if mongo error', function (done) {
-          ctx.worker._findContextVersion({
-            '_id': ctx.mockContextVersion._id,
-            'build.containerStarted': {
-              $exists: false
-            },
-            'build.started': {
-              $exists: true
-            },
-            'build.finished': {
-              $exists: false
-            }
-          }, function (err) {
-            expect(err.message).to.equal('mongoose error');
-            expect(ctx.worker.contextVersion).to.be.undefined();
-            done();
-          });
-        });
-      });
-    });
-
     describe('_startContainer', function () {
       beforeEach(function (done) {
-        // normally set by _findContextVersion
+        // normally set by _baseWorkerFindContextVersion
         ctx.worker.contextVersion = ctx.mockContextVersion;
         done();
       });
@@ -390,7 +269,7 @@ describe('OnCreateImageBuilderContainer', function () {
     describe('_updateContextVersion', function () {
       describe('basic', function () {
         beforeEach(function (done) {
-          // normally set by _findContextVersion
+          // normally set by _baseWorkerFindContextVersion
           ctx.worker.contextVersion = ctx.mockContextVersion;
           done();
         });

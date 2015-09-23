@@ -13,7 +13,10 @@ var sinon = require('sinon');
 
 var BaseWorker = require('workers/base-worker');
 var Build = require('models/mongo/build');
+var ContextVersion = require('models/mongo/context-version');
+var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
+var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
 
 var afterEach = lab.afterEach;
@@ -27,12 +30,29 @@ describe('BaseWorker', function () {
 
   beforeEach(function (done) {
     ctx = {};
+    ctx.modifyContainerInspectSpy =
+      sinon.spy(function (dockerContainerId, inspect, cb) {
+      cb(null, ctx.mockContainer);
+    });
+    ctx.modifyContainerInspectErrSpy = sinon.spy(function (dockerContainerId, error, cb) {
+      cb(null);
+    });
+    ctx.populateModelsSpy = sinon.spy(function (cb) {
+      cb(null);
+    });
+    ctx.populateOwnerAndCreatedBySpy = sinon.spy(function (user, cb) {
+      cb(null);
+    });
     ctx.data = {
       from: '34565762',
       host: '5476',
       id: '3225',
       time: '234234',
       uuid: '12343'
+    };
+    ctx.mockUser = {
+      _id: 'foo',
+      toJSON: noop
     };
     ctx.dockerContainerId = 'asdasdasd';
     ctx.mockContextVersion = {
@@ -42,11 +62,19 @@ describe('BaseWorker', function () {
       '_id': 'dsfadsfadsfadsfasdf',
       name: 'name1'
     };
+    ctx.mockContainer = {
+      dockerContainer: ctx.data.dockerContainer,
+      dockerHost: ctx.data.dockerHost
+    };
     ctx.mockInstanceSparse = {
-      '_id': 'dsfadsfadsfadsfasdf',
+      '_id': ctx.data.instanceId,
       name: 'name1',
       populateModels: function () {},
-      populateOwnerAndCreatedBy: function () {}
+      populateOwnerAndCreatedBy: function () {},
+      container: ctx.mockContainer,
+      removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
+      modifyContainerInspect: ctx.modifyContainerInspectSpy,
+      modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy,
     };
     ctx.mockInstance = put({
       owner: {
@@ -69,6 +97,28 @@ describe('BaseWorker', function () {
     done();
   });
 
+  describe('_baseWorkerFindContextVersion', function () {
+    describe('basic', function () {
+      beforeEach(function (done) {
+        sinon.stub(ContextVersion, 'findOne', function (query, cb) {
+          cb(null, ctx.mockContextVersion);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        ContextVersion.findOne.restore();
+        done();
+      });
+      it('should query for contextversion', function (done) {
+        ctx.worker._baseWorkerFindContextVersion({}, function (err) {
+          expect(err).to.be.null();
+          expect(ctx.worker.contextVersion).to.equal(ctx.mockContextVersion);
+          done();
+        });
+      });
+    });
+  });
+  
   describe('_updateFrontendWithContextVersion', function () {
     beforeEach(function (done) {
       ctx.worker.contextVersion = ctx.mockContextVersion;
@@ -77,23 +127,23 @@ describe('BaseWorker', function () {
     });
     afterEach(function (done) {
       messenger.emitContextVersionUpdate.restore();
-      ctx.worker._findContextVersion.restore();
+      ctx.worker._baseWorkerFindContextVersion.restore();
       done();
     });
     describe('basic', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_findContextVersion').yieldsAsync(null, ctx.mockContextVersion);
+        sinon.stub(ctx.worker, '_baseWorkerFindContextVersion').yieldsAsync(null, ctx.mockContextVersion);
         done();
       });
 
       it('should fetch the contextVersion and emit the update', function (done) {
-        ctx.worker._updateFrontendWithContextVersion('build_running', function (err) {
+        ctx.worker._baseWorkerUpdateContextVersionFrontend('build_running', function (err) {
           expect(err).to.be.null();
-          expect(ctx.worker._findContextVersion.callCount).to.equal(1);
-          expect(ctx.worker._findContextVersion.args[0][0]).to.deep.equal({
+          expect(ctx.worker._baseWorkerFindContextVersion.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerFindContextVersion.args[0][0]).to.deep.equal({
             '_id': ctx.mockContextVersion._id
           });
-          expect(ctx.worker._findContextVersion.args[0][1]).to.be.a.function();
+          expect(ctx.worker._baseWorkerFindContextVersion.args[0][1]).to.be.a.function();
           expect(
             messenger.emitContextVersionUpdate.callCount,
             'emitContextVersionUpdate'
@@ -112,17 +162,17 @@ describe('BaseWorker', function () {
     });
     describe('failure', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_findContextVersion').yieldsAsync(new Error('error'));
+        sinon.stub(ctx.worker, '_baseWorkerFindContextVersion').yieldsAsync(new Error('error'));
         done();
       });
       it('should fail with an invalid event message', function (done) {
-        ctx.worker._updateFrontendWithContextVersion('dsfasdfasdfgasdf', function (err) {
+        ctx.worker._baseWorkerUpdateContextVersionFrontend('dsfasdfasdfgasdf', function (err) {
           expect(err.message).to.equal('Attempted status update contained invalid event');
           done();
         });
       });
       it('should fetch the contextVersion and emit the update', function (done) {
-        ctx.worker._updateFrontendWithContextVersion('build_running', function (err) {
+        ctx.worker._baseWorkerUpdateContextVersionFrontend('build_running', function (err) {
           expect(
             messenger.emitContextVersionUpdate.callCount,
             'emitContextVersionUpdate'
@@ -355,6 +405,32 @@ describe('BaseWorker', function () {
     });
   });
 
+
+  describe('_baseWorkerValidateDieData', function () {
+    beforeEach(function (done) {
+      done();
+    });
+    afterEach(function (done) {
+      done();
+    });
+    it('should call back with error if event '+
+      'data does not contain required keys', function (done) {
+      delete ctx.worker.data.uuid;
+      ctx.worker._baseWorkerValidateDieData(function (err) {
+        expect(err.message).to.equal('_baseWorkerValidateDieData: die event data missing key: uuid');
+        done();
+      });
+    });
+
+    it('should call back without error if '+
+      'event data contains all required keys', function (done) {
+      ctx.worker._baseWorkerValidateDieData(function (err) {
+        expect(err).to.be.undefined();
+        done();
+      });
+    });
+  });
+
   describe('_findInstance', function () {
     describe('basic', function () {
       beforeEach(function (done) {
@@ -368,15 +444,15 @@ describe('BaseWorker', function () {
         done();
       });
       it('should query mongo for instance w/ container', function (done) {
-        ctx.worker._findInstance({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.dockerContainerId
+        ctx.worker._baseWorkerFindInstance({
+          _id: ctx.data.instanceId,
+          'container.dockerContainer': ctx.data.dockerContainer
         }, function (err) {
           expect(err).to.be.null();
           expect(Instance.findOne.callCount).to.equal(1);
           expect(Instance.findOne.args[0][0]).to.only.contain({
             '_id': ctx.data.instanceId,
-            'container.dockerContainer': ctx.dockerContainerId
+            'container.dockerContainer': ctx.data.dockerContainer
           });
           expect(Instance.findOne.args[0][1]).to.be.a.function();
           done();
@@ -396,9 +472,9 @@ describe('BaseWorker', function () {
         done();
       });
       it('should callback successfully if instance w/ container found', function (done) {
-        ctx.worker._findInstance({
-          '_id': ctx.data.instanceId,
-          'container.dockerContainer': ctx.dockerContainerId
+        ctx.worker._baseWorkerFindInstance({
+          _id: ctx.data.instanceId,
+          'container.dockerContainer': ctx.data.dockerContainer
         }, function (err) {
           expect(err).to.be.null();
           expect(ctx.worker.instance).to.equal(ctx.mockInstance);
@@ -409,7 +485,9 @@ describe('BaseWorker', function () {
 
     describe('not found', function () {
       beforeEach(function (done) {
-        sinon.stub(Instance, 'findOne').yieldsAsync(null, null);
+        sinon.stub(Instance, 'findOne', function (data, cb) {
+          cb(null, null);
+        });
         done();
       });
       afterEach(function (done) {
@@ -417,8 +495,8 @@ describe('BaseWorker', function () {
         done();
       });
       it('should callback error if instance w/ container not found', function (done) {
-        ctx.worker._findInstance({
-          '_id': ctx.data.instanceId,
+        ctx.worker._baseWorkerFindInstance({
+          _id: ctx.data.instanceId,
           'container.dockerContainer': ctx.data.dockerContainer
         }, function (err) {
           expect(err.message).to.equal('instance not found');
@@ -430,7 +508,9 @@ describe('BaseWorker', function () {
 
     describe('mongo error', function () {
       beforeEach(function (done) {
-        sinon.stub(Instance, 'findOne').yieldsAsync(new Error('mongoose error'));
+        sinon.stub(Instance, 'findOne', function (data, cb) {
+          cb(new Error('mongoose error'), null);
+        });
         done();
       });
       afterEach(function (done) {
@@ -438,8 +518,8 @@ describe('BaseWorker', function () {
         done();
       });
       it('should callback error if mongo error', function (done) {
-        ctx.worker._findInstance({
-          '_id': ctx.data.instanceId,
+        ctx.worker._baseWorkerFindInstance({
+          _id: ctx.data.instanceId,
           'container.dockerContainer': ctx.data.dockerContainer
         }, function (err) {
           expect(err.message).to.equal('mongoose error');
@@ -622,31 +702,6 @@ describe('BaseWorker', function () {
             expect(ctx.worker.build).to.be.undefined();
             done();
           });
-      });
-    });
-  });
-
-  describe('_validateDieData', function () {
-    beforeEach(function (done) {
-      done();
-    });
-    afterEach(function (done) {
-      done();
-    });
-    it('should call back with error if event '+
-       'data does not contain required keys', function (done) {
-      delete ctx.worker.data.uuid;
-      ctx.worker._validateDieData(function (err) {
-        expect(err.message).to.equal('_validateDieData: die event data missing key: uuid');
-        done();
-      });
-    });
-
-    it('should call back without error if '+
-       'event data contains all required keys', function (done) {
-      ctx.worker._validateDieData(function (err) {
-        expect(err).to.be.undefined();
-        done();
       });
     });
   });
