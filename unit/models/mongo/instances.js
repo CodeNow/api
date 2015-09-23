@@ -22,6 +22,7 @@ var hasProps = require('101/has-properties');
 var mongoose = require('mongoose');
 var pick = require('101/pick');
 var pluck = require('101/pluck');
+var noop = require('101/noop');
 
 var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
@@ -509,6 +510,29 @@ describe('Instance', function () {
         var cvId = newObjectId();
         savedInstance.modifyContainerCreateErr(cvId, fakeError, count.next);
       });
+    });
+  });
+
+  describe('modifyContainerInspect', function() {
+    var instance;
+
+    beforeEach(function (done) {
+      instance = createNewInstance('testy', {});
+      sinon.spy(instance, 'invalidateContainerDNS');
+      sinon.stub(Instance, 'findOneAndUpdate');
+      done();
+    });
+
+    afterEach(function (done) {
+      instance.invalidateContainerDNS.restore();
+      Instance.findOneAndUpdate.restore();
+      done();
+    });
+
+    it('should invalidate the instance container DNS', function(done) {
+      instance.modifyContainerInspect('some-id', {}, noop);
+      expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
+      done();
     });
   });
 
