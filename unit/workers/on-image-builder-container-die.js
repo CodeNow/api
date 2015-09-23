@@ -51,69 +51,8 @@ describe('OnImageBuilderContainerDie', function () {
   });
 
   describe('_finalSeriesHandler', function () {
-  });
-
-  describe('_findContextVersion', function () {
-    describe('not found', function () {
-      beforeEach(function (done) {
-        sinon.stub(ContextVersion, 'findOneBy', function (keypath, data, cb) {
-          expect(keypath).to.equal('build.dockerContainer');
-          expect(data).to.equal(ctx.data.id);
-          cb(null, null);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        ContextVersion.findOneBy.restore();
-        done();
-      });
-      it('should call back with error if context-version not found', function (done) {
-        ctx.worker._findContextVersion(function (err) {
-          expect(err.message).to.equal('_findContextVersion: context version not found');
-          done();
-        });
-      });
-    });
-    describe('mongoose error', function () {
-      beforeEach(function (done) {
-        sinon.stub(ContextVersion, 'findOneBy', function (keypath, data, cb) {
-          expect(keypath).to.equal('build.dockerContainer');
-          expect(data).to.equal(ctx.data.id);
-          cb(new Error('mongoose error'), null);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        ContextVersion.findOneBy.restore();
-        done();
-      });
-      it('should call back with error if context-version not found', function (done) {
-        ctx.worker._findContextVersion(function (err) {
-          expect(err.message).to.equal('mongoose error');
-          done();
-        });
-      });
-    });
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(ContextVersion, 'findOneBy', function (keypath, data, cb) {
-          expect(keypath).to.equal('build.dockerContainer');
-          expect(data).to.equal(ctx.data.id);
-          cb(null, ctx.mockContextVersion);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        ContextVersion.findOneBy.restore();
-        done();
-      });
-      it('should call back with error if context-version not found', function (done) {
-        ctx.worker._findContextVersion(function (err) {
-          expect(err).to.be.null();
-          expect(ctx.worker.contextVersion).to.equal(ctx.mockContextVersion);
-          done();
-        });
-      });
+    it('TODO', function (done) {
+      done();
     });
   });
 
