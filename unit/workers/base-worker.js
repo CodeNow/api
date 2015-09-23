@@ -14,7 +14,6 @@ var sinon = require('sinon');
 var BaseWorker = require('workers/base-worker');
 var Build = require('models/mongo/build');
 var ContextVersion = require('models/mongo/context-version');
-var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
 var User = require('models/mongo/user');
 var messenger = require('socket/messenger');
@@ -131,7 +130,8 @@ describe('BaseWorker', function () {
     });
     describe('basic', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_baseWorkerFindContextVersion').yieldsAsync(null, ctx.mockContextVersion);
+        sinon.stub(ctx.worker, '_baseWorkerFindContextVersion')
+            .yieldsAsync(null, ctx.mockContextVersion);
         done();
       });
 
@@ -266,57 +266,77 @@ describe('BaseWorker', function () {
           var testError = new Error('Generic Database error');
           it('should fail and return with the user call', function (done) {
             User.findByGithubId.yieldsAsync(testError);
-            ctx.worker._baseWorkerUpdateInstanceFrontend(ctx.mockInstance._id, ctx.mockUser._id, 'starting', function (err) {
-              expect(err).to.equal(testError);
-              expect(User.findByGithubId.callCount).to.equal(1);
+            ctx.worker._baseWorkerUpdateInstanceFrontend(
+              ctx.mockInstance._id,
+              ctx.mockUser._id,
+              'starting',
+              function (err) {
+                expect(err).to.equal(testError);
+                expect(User.findByGithubId.callCount).to.equal(1);
 
-              expect(Instance.findOne.callCount).to.equal(0);
-              done();
-            });
+                expect(Instance.findOne.callCount).to.equal(0);
+                done();
+              });
           });
           it('should fail and return in findOne', function (done) {
             Instance.findOne.yieldsAsync(testError);
-            ctx.worker._baseWorkerUpdateInstanceFrontend(ctx.mockInstance._id, ctx.mockUser._id, 'starting', function (err) {
-              expect(err).to.equal(testError);
+            ctx.worker._baseWorkerUpdateInstanceFrontend(
+              ctx.mockInstance._id,
+              ctx.mockUser._id,
+              'starting',
+              function (err) {
+                expect(err).to.equal(testError);
 
-              expect(User.findByGithubId.callCount).to.equal(1);
-              expect(User.findByGithubId.args[0][0]).to.equal(ctx.mockUser._id);
+                expect(User.findByGithubId.callCount).to.equal(1);
+                expect(User.findByGithubId.args[0][0]).to.equal(ctx.mockUser._id);
 
-              expect(Instance.findOne.callCount).to.equal(1);
-              expect(Instance.findOne.args[0][0]).to.deep.equal({_id: ctx.mockInstance._id});
-              expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(0);
-              done();
-            });
+                expect(Instance.findOne.callCount).to.equal(1);
+                expect(Instance.findOne.args[0][0]).to.deep.equal({_id: ctx.mockInstance._id});
+                expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(0);
+                done();
+              });
           });
           it('should fail and return in findOne when no instance found', function (done) {
             Instance.findOne.yieldsAsync();
-            ctx.worker._baseWorkerUpdateInstanceFrontend(ctx.mockInstance._id, ctx.mockUser._id, 'starting', function (err) {
-              expect(err.message).to.equal('instance not found');
-              expect(Instance.findOne.callCount).to.equal(1);
-              expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(0);
-              done();
-            });
+            ctx.worker._baseWorkerUpdateInstanceFrontend(
+              ctx.mockInstance._id,
+              ctx.mockUser._id,
+              'starting',
+              function (err) {
+                expect(err.message).to.equal('instance not found');
+                expect(Instance.findOne.callCount).to.equal(1);
+                expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(0);
+                done();
+              });
           });
           it('should fail and return in ctx.mockInstanceSparse', function (done) {
             ctx.mockInstanceSparse.populateModels.yieldsAsync(testError);
-            ctx.worker._baseWorkerUpdateInstanceFrontend(ctx.mockInstance._id, ctx.mockUser._id, 'starting', function (err) {
-              expect(err).to.equal(testError);
-              expect(Instance.findOne.callCount).to.equal(1);
-              expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
-              expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(0);
-              done();
-            });
+            ctx.worker._baseWorkerUpdateInstanceFrontend(
+              ctx.mockInstance._id,
+              ctx.mockUser._id,
+              'starting',
+              function (err) {
+                expect(err).to.equal(testError);
+                expect(Instance.findOne.callCount).to.equal(1);
+                expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
+                expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(0);
+                done();
+              });
           });
           it('should fail and return in ctx.mockInstanceSparse', function (done) {
             ctx.mockInstanceSparse.populateOwnerAndCreatedBy.yieldsAsync(testError);
-            ctx.worker._baseWorkerUpdateInstanceFrontend(ctx.mockInstance._id, ctx.mockUser._id, 'starting', function (err) {
-              expect(err).to.equal(testError);
-              expect(Instance.findOne.callCount).to.equal(1);
-              expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
-              expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(1);
-              expect(messenger.emitInstanceUpdate.callCount).to.equal(0);
-              done();
-            });
+            ctx.worker._baseWorkerUpdateInstanceFrontend(
+              ctx.mockInstance._id,
+              ctx.mockUser._id,
+              'starting',
+              function (err) {
+                expect(err).to.equal(testError);
+                expect(Instance.findOne.callCount).to.equal(1);
+                expect(ctx.mockInstanceSparse.populateModels.callCount).to.equal(1);
+                expect(ctx.mockInstanceSparse.populateOwnerAndCreatedBy.callCount).to.equal(1);
+                expect(messenger.emitInstanceUpdate.callCount).to.equal(0);
+                done();
+              });
           });
         });
       });
