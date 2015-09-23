@@ -10,7 +10,6 @@ var beforeEach = lab.beforeEach;
 var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
-var noop = require('101/noop');
 
 require('loadenv')();
 var Docker = require('models/apis/docker');

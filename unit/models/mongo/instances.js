@@ -91,7 +91,7 @@ function createNewVersion (opts) {
 }
 
 function createNewInstance (name, opts) {
-  // jshint maxcomplexity:9
+  // jshint maxcomplexity:10
   opts = opts || {};
   var container = {
     dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
