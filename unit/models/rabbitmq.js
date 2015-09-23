@@ -44,7 +44,7 @@ describe('RabbitMQ Model', function () {
       sinon.stub(process, 'exit', function (code) {
         expect(code).to.equal(1);
       });
-      var rabbit = rabbitMQ._create();
+      var rabbit = new rabbitMQ.constructor();
       rabbit._handleFatalError(new Error());
       expect(process.exit.callCount).to.equal(1);
       process.exit.restore();
@@ -53,7 +53,7 @@ describe('RabbitMQ Model', function () {
   });
   describe('connect', function() {
     it('should call hermes connect and attach error handler', function (done) {
-      var rabbit = rabbitMQ._create();
+      var rabbit = new rabbitMQ.constructor();
       var HermesClient = function () {};
       util.inherits(HermesClient, EventEmitter);
       HermesClient.prototype.connect =  function (cb) {
@@ -76,7 +76,7 @@ describe('RabbitMQ Model', function () {
     });
 
     it('should call _handleFatalError if error was emitted', function (done) {
-      var rabbit = rabbitMQ._create();
+      var rabbit = new rabbitMQ.constructor();
       var HermesClient = function () {};
       util.inherits(HermesClient, EventEmitter);
       HermesClient.prototype.connect =  function (cb) {
