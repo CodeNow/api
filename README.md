@@ -60,7 +60,8 @@ Granular:
 
 ## Tests: logging
 
-### [Guide to using CLI log parsing tools](https://github.com/CodeNow/devops-scripts/wiki/Using-Bunyan-CLI-tools-for-debugging)  
+### [Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)  
+### [Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)  
 
 If you see:  
 ```js

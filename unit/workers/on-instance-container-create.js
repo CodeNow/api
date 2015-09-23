@@ -103,7 +103,7 @@ describe('OnInstanceContainerCreateWorker', function () {
     it('should create a start-instance-container job', function (done) {
       ctx.worker._startContainer(function () {
         expect(rabbitMQ.startInstanceContainer.callCount).to.equal(1);
-        expect(rabbitMQ.startInstanceContainer.args[0][0]).to.only.contain({
+        expect(rabbitMQ.startInstanceContainer.args[0][0]).to.contain({
           dockerContainer: ctx.data.id,
           dockerHost: ctx.data.host,
           hostIp: ctx.mockInstance.network.hostIp,

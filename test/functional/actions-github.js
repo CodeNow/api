@@ -183,7 +183,6 @@ describe('Github - /actions/github', function () {
         });
     });
 
-
     describe('autofork', function () {
       var slackStub;
       beforeEach(function (done) {
@@ -254,7 +253,7 @@ describe('Github - /actions/github', function () {
         });
 
         it('should fork instance from master', function (done) {
-          // emulate instance deploy event
+         // emulate instance deploy event
           var acv = ctx.contextVersion.attrs.appCodeVersions[0];
           var data = {
             branch: 'feature-1',
