@@ -98,7 +98,7 @@ describe('InstanceService', function () {
     it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
       var instanceService = new InstanceService();
       sinon.stub(Instance, 'findForkedInstances')
-        .yieldsAsync(null, [{id: 'inst-1'}, {id: 'inst-2'}, {id: 'inst-3'}]);
+        .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}]);
       sinon.spy(rabbitMQ, 'deleteInstance');
       instanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'user-id', 'api', 'master',
         function (err) {
