@@ -95,15 +95,15 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
 
       beforeEach(function (done) {
         sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, ctx.user);
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_validateDieData');
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_findContextVersion');
+        sinon.spy(OnImageBuilderContainerDie.prototype, '_baseWorkerValidateDieData');
+        sinon.spy(OnImageBuilderContainerDie.prototype, '_baseWorkerFindContextVersion');
         sinon.spy(OnImageBuilderContainerDie.prototype, '_getBuildInfo');
         sinon.spy(OnImageBuilderContainerDie.prototype, '_findBuildAndEmitUpdate');
         sinon.spy(Docker.prototype, 'getBuildInfo');
         sinon.spy(Build.prototype, 'modifyCompleted');
         sinon.spy(User, 'findByGithubId');
 
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_updateInstanceFrontend');
+        sinon.spy(OnImageBuilderContainerDie.prototype, '_baseWorkerUpdateInstanceFrontend');
         sinon.spy(OnImageBuilderContainerDie.prototype, '_deallocImageBuilderNetwork');
 
         sinon.stub(Sauron.prototype, 'deleteHost', function (net, host, cb) {
@@ -113,15 +113,15 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       });
       afterEach(function (done) {
         User.prototype.findGithubUserByGithubId.restore();
-        OnImageBuilderContainerDie.prototype._validateDieData.restore();
-        OnImageBuilderContainerDie.prototype._findContextVersion.restore();
+        OnImageBuilderContainerDie.prototype._baseWorkerValidateDieData.restore();
+        OnImageBuilderContainerDie.prototype._baseWorkerFindContextVersion.restore();
         OnImageBuilderContainerDie.prototype._getBuildInfo.restore();
         OnImageBuilderContainerDie.prototype._findBuildAndEmitUpdate.restore();
         Docker.prototype.getBuildInfo.restore();
         Build.prototype.modifyCompleted.restore();
         User.findByGithubId.restore();
 
-        OnImageBuilderContainerDie.prototype._updateInstanceFrontend.restore();
+        OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.restore();
         OnImageBuilderContainerDie.prototype._deallocImageBuilderNetwork.restore();
 
         Sauron.prototype.deleteHost.restore();
@@ -170,12 +170,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
 
               checkEmittedInstance(messenger._emitInstanceUpdateAction.args[0][0], false);
               expect(
-                OnImageBuilderContainerDie.prototype._validateDieData.callCount,
-                '_validateDieData'
+                OnImageBuilderContainerDie.prototype._baseWorkerValidateDieData.callCount,
+                '_baseWorkerValidateDieData'
               ).to.equal(1);
               expect(
-                OnImageBuilderContainerDie.prototype._findContextVersion.callCount,
-                '_findContextVersion'
+                OnImageBuilderContainerDie.prototype._baseWorkerFindContextVersion.callCount,
+                '_baseWorkerFindContextVersion'
               ).to.equal(1);
               expect(OnImageBuilderContainerDie.prototype._getBuildInfo.callCount, '_getBuildInfo')
                 .to.equal(1);
@@ -196,14 +196,17 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 .to.equal(false);
 
               expect(User.findByGithubId.callCount, 'User.findByGithubId').to.equal(1);
-              expect(OnImageBuilderContainerDie.prototype._updateInstanceFrontend.callCount,
-                '_updateInstanceFrontend'
+              expect(OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.callCount,
+                '_baseWorkerUpdateInstanceFrontend'
               ).to.equal(1);
-              expect(OnImageBuilderContainerDie.prototype._updateInstanceFrontend.args[0][0],
-                '_updateInstanceFrontend'
+              expect(OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][0],
+                '_baseWorkerUpdateInstanceFrontend'
               ).to.deep.equal({'contextVersion._id': ctx.cv._id});
-              expect(OnImageBuilderContainerDie.prototype._updateInstanceFrontend.args[0][1],
-                '_updateInstanceFrontend'
+              expect(OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][1],
+                '_baseWorkerUpdateInstanceFrontend'
+              ).to.deep.equal(ctx.githubId);
+              expect(OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][2],
+                '_baseWorkerUpdateInstanceFrontend'
               ).to.deep.equal('patch');
               expect(OnImageBuilderContainerDie.prototype._deallocImageBuilderNetwork.callCount,
                 '_deallocImageBuilderNetwork'
@@ -257,12 +260,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               checkEmittedInstance(messenger._emitInstanceUpdateAction.args[0][0], true);
 
               expect(
-                OnImageBuilderContainerDie.prototype._validateDieData.callCount,
-                '_validateDieData'
+                OnImageBuilderContainerDie.prototype._baseWorkerValidateDieData.callCount,
+                '_baseWorkerValidateDieData'
               ).to.equal(1);
               expect(
-                OnImageBuilderContainerDie.prototype._findContextVersion.callCount,
-                '_findContextVersion'
+                OnImageBuilderContainerDie.prototype._baseWorkerFindContextVersion.callCount,
+                '_baseWorkerFindContextVersion'
               ).to.equal(1);
               expect(OnImageBuilderContainerDie.prototype._getBuildInfo.callCount, '_getBuildInfo')
                 .to.equal(1);
@@ -284,16 +287,20 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
 
               expect(User.findByGithubId.callCount, 'User.findByGithubId').to.equal(1);
               expect(
-                OnImageBuilderContainerDie.prototype._updateInstanceFrontend.callCount,
-                '_updateInstanceFrontend'
+                OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.callCount,
+                '_baseWorkerUpdateInstanceFrontend'
               ).to.equal(1);
               expect(
-                OnImageBuilderContainerDie.prototype._updateInstanceFrontend.args[0][0],
-                '_updateInstanceFrontend'
+                OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][0],
+                '_baseWorkerUpdateInstanceFrontend'
               ).to.deep.equal({ 'contextVersion._id': ctx.cv._id});
               expect(
-                OnImageBuilderContainerDie.prototype._updateInstanceFrontend.args[0][1],
-                '_updateInstanceFrontend'
+                OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][1],
+                '_baseWorkerUpdateInstanceFrontend'
+              ).to.deep.equal(ctx.githubId);
+              expect(
+                OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][2],
+                '_baseWorkerUpdateInstanceFrontend'
               ).to.deep.equal('patch');
               expect(
                 OnImageBuilderContainerDie.prototype._deallocImageBuilderNetwork.callCount,
@@ -395,7 +402,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       advanced : true,
       appCodeVersions : [],
       created : new Date(started - 60*1000),
-      __v : 0,
+      _v : 0,
       dockerHost : 'http://127.0.0.1:4242'
     };
     return cv;
@@ -483,7 +490,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           'Hostname': 'c2e4530647da',
           'Image': 'runnable/image-builder:d1.6.2-v2.3.2',
           'Labels': {
-            'contextVersion.__v': '0',
+            'contextVersion._v': '0',
             'contextVersion._id._bsontype': 'ObjectID',
             'contextVersion._id.id': 'U??s>\u001bb\u000e\u0000?b?',
             'contextVersion.advanced': 'true',
@@ -514,7 +521,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             'contextVersion.createdBy.github': '146592',
             'contextVersion.dockerHost': 'http://127.0.0.1:4242',
             'contextVersion.id': contextVersion._id,
-            'contextVersion.infraCodeVersion.__v': '0',
+            'contextVersion.infraCodeVersion._v': '0',
             'contextVersion.infraCodeVersion._id._bsontype': 'ObjectID',
             'contextVersion.infraCodeVersion._id.id': 'U?????;\u0015\u0000I??',
             'contextVersion.infraCodeVersion.context._bsontype': 'ObjectID',

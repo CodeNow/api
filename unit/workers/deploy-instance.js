@@ -161,9 +161,10 @@ describe('DeployInstanceWorker', function () {
   });
   describe('all together', function () {
     beforeEach(function (done) {
-      sinon.stub(BaseWorker.prototype, 'pFindBuild').returns(Promise.resolve(ctx.mockBuild));
+      sinon.stub(BaseWorker.prototype, '_pBaseWorkerFindBuild')
+          .returns(Promise.resolve(ctx.mockBuild));
 
-      sinon.stub(BaseWorker.prototype, 'pFindContextVersion')
+      sinon.stub(BaseWorker.prototype, '_pBaseWorkerFindContextVersion')
         .returns(Promise.resolve(ctx.mockContextVersion));
       sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser);
       sinon.stub(Mavis.prototype, 'findDockForContainer').yieldsAsync(null, _dockerHost);
@@ -179,12 +180,10 @@ describe('DeployInstanceWorker', function () {
     afterEach(function (done) {
       Mavis.prototype.findDockForContainer.restore();
       rabbitMQ.createInstanceContainer.restore();
-      BaseWorker.prototype.pFindInstances.restore();
-      BaseWorker.prototype.pFindContextVersion.restore();
-      BaseWorker.prototype.pFindBuild.restore();
+      BaseWorker.prototype._pBaseWorkerFindInstances.restore();
+      BaseWorker.prototype._pBaseWorkerFindContextVersion.restore();
+      BaseWorker.prototype._pBaseWorkerFindBuild.restore();
       User.findByGithubId.restore();
-      //BaseWorker.prototype.pUpdateInstanceFrontend.restore();
-      //BaseWorker.prototype.pFindUser.restore();
       Instance.findOne.restore();
       ctx.mockInstance.populateModels.restore();
       ctx.mockInstance.populateOwnerAndCreatedBy.restore();
@@ -193,7 +192,7 @@ describe('DeployInstanceWorker', function () {
     });
     describe('success', function () {
       it('should do everything with an instanceId', function (done) {
-        sinon.stub(BaseWorker.prototype, 'pFindInstances')
+        sinon.stub(BaseWorker.prototype, '_pBaseWorkerFindInstances')
           .returns(Promise.resolve([ctx.mockInstance]));
         ctx.worker = new DeployInstanceWorker({
           instanceId: ctx.mockInstance._id,
@@ -202,17 +201,17 @@ describe('DeployInstanceWorker', function () {
         });
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined();
-          expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
-          expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.deep.equal({
+          expect(BaseWorker.prototype._pBaseWorkerFindInstances.callCount).to.equal(1);
+          expect(BaseWorker.prototype._pBaseWorkerFindInstances.args[0][0]).to.deep.equal({
             _id: ctx.mockInstance._id
           });
-          expect(BaseWorker.prototype.pFindBuild.callCount).to.equal(1);
-          expect(BaseWorker.prototype.pFindBuild.args[0][0]).to.deep.equal({
+          expect(BaseWorker.prototype._pBaseWorkerFindBuild.callCount).to.equal(1);
+          expect(BaseWorker.prototype._pBaseWorkerFindBuild.args[0][0]).to.deep.equal({
             _id: ctx.mockBuild._id,
             'failed': false
           });
-          expect(BaseWorker.prototype.pFindContextVersion.callCount).to.equal(1);
-          expect(BaseWorker.prototype.pFindContextVersion.args[0][0]).to.deep.equal({
+          expect(BaseWorker.prototype._pBaseWorkerFindContextVersion.callCount).to.equal(1);
+          expect(BaseWorker.prototype._pBaseWorkerFindContextVersion.args[0][0]).to.deep.equal({
             _id: ctx.mockContextVersion._id
           });
           expect(ctx.mockInstance.update.callCount).to.equal(1);
@@ -255,7 +254,7 @@ describe('DeployInstanceWorker', function () {
           .catch(done);
       });
       it('should do everything with an buildId', function (done) {
-        sinon.stub(BaseWorker.prototype, 'pFindInstances')
+        sinon.stub(BaseWorker.prototype, '_pBaseWorkerFindInstances')
           .returns(Promise.resolve(ctx.mockInstances));
         ctx.worker = new DeployInstanceWorker({
           buildId: ctx.mockBuild._id,
@@ -264,17 +263,17 @@ describe('DeployInstanceWorker', function () {
         });
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined();
-          expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
-          expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.deep.equal({
+          expect(BaseWorker.prototype._pBaseWorkerFindInstances.callCount).to.equal(1);
+          expect(BaseWorker.prototype._pBaseWorkerFindInstances.args[0][0]).to.deep.equal({
             'build': ctx.mockBuild._id
           });
-          expect(BaseWorker.prototype.pFindBuild.callCount).to.equal(1);
-          expect(BaseWorker.prototype.pFindBuild.args[0][0]).to.deep.equal({
+          expect(BaseWorker.prototype._pBaseWorkerFindBuild.callCount).to.equal(1);
+          expect(BaseWorker.prototype._pBaseWorkerFindBuild.args[0][0]).to.deep.equal({
             _id: ctx.mockBuild._id,
             'failed': false
           });
-          expect(BaseWorker.prototype.pFindContextVersion.callCount).to.equal(1);
-          expect(BaseWorker.prototype.pFindContextVersion.args[0][0]).to.deep.equal({
+          expect(BaseWorker.prototype._pBaseWorkerFindContextVersion.callCount).to.equal(1);
+          expect(BaseWorker.prototype._pBaseWorkerFindContextVersion.args[0][0]).to.deep.equal({
             _id: ctx.mockContextVersion._id
           });
           expect(ctx.mockInstance.update.callCount).to.equal(1);
@@ -294,7 +293,7 @@ describe('DeployInstanceWorker', function () {
         })
           .catch(done);
         it('should do everything with a buildId and manual', function (done) {
-          sinon.stub(BaseWorker.prototype, 'pFindInstances')
+          sinon.stub(BaseWorker.prototype, '_pBaseWorkerFindInstances')
             .returns(Promise.resolve(ctx.mockInstances));
           ctx.worker = new DeployInstanceWorker({
             buildId: ctx.mockBuild._id,
@@ -304,17 +303,17 @@ describe('DeployInstanceWorker', function () {
           keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', true);
           ctx.worker.handle(function (err) {
             expect(err).to.be.undefined();
-            expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
-            expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.deep.equal({
+            expect(BaseWorker.prototype._pBaseWorkerFindInstances.callCount).to.equal(1);
+            expect(BaseWorker.prototype._pBaseWorkerFindInstances.args[0][0]).to.deep.equal({
               'build': ctx.mockBuild._id
             });
-            expect(BaseWorker.prototype.pFindBuild.callCount).to.equal(1);
-            expect(BaseWorker.prototype.pFindBuild.args[0][0]).to.deep.equal({
+            expect(BaseWorker.prototype._pBaseWorkerFindBuild.callCount).to.equal(1);
+            expect(BaseWorker.prototype._pBaseWorkerFindBuild.args[0][0]).to.deep.equal({
               _id: ctx.mockBuild._id,
               'failed': false
             });
-            expect(BaseWorker.prototype.pFindContextVersion.callCount).to.equal(1);
-            expect(BaseWorker.prototype.pFindContextVersion.args[0][0]).to.deep.equal({
+            expect(BaseWorker.prototype._pBaseWorkerFindContextVersion.callCount).to.equal(1);
+            expect(BaseWorker.prototype._pBaseWorkerFindContextVersion.args[0][0]).to.deep.equal({
               _id: ctx.mockContextVersion._id
             });
             expect(ctx.mockInstance.update.callCount).to.equal(1);
@@ -353,22 +352,22 @@ describe('DeployInstanceWorker', function () {
       };
       describe('success', function () {
         beforeEach(function (done) {
-          sinon.stub(BaseWorker.prototype, 'pFindInstances')
+          sinon.stub(BaseWorker.prototype, '_pBaseWorkerFindInstances')
             .returns(Promise.resolve(ctx.mockInstances));
           done();
         });
 
         afterEach(function (done) {
-          BaseWorker.prototype.pFindInstances.restore();
+          BaseWorker.prototype._pBaseWorkerFindInstances.restore();
           done();
         });
 
         it('should return with the list of instances', function (done) {
-          ctx.worker._findInstances(query)
+          ctx.worker._pFindInstances(query)
             .then(function (instance) {
               expect(instance).to.equal(ctx.mockInstances);
-              expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
-              expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.equal(query);
+              expect(BaseWorker.prototype._pBaseWorkerFindInstances.callCount).to.equal(1);
+              expect(BaseWorker.prototype._pBaseWorkerFindInstances.args[0][0]).to.equal(query);
               done();
             })
             .catch(done);
@@ -376,34 +375,34 @@ describe('DeployInstanceWorker', function () {
       });
       describe('failure', function () {
         afterEach(function (done) {
-          BaseWorker.prototype.pFindInstances.restore();
+          BaseWorker.prototype._pBaseWorkerFindInstances.restore();
           done();
         });
         it('should return an acceptable error when given an empty array', function (done) {
-          sinon.stub(BaseWorker.prototype, 'pFindInstances').returns(Promise.resolve([]));
-          ctx.worker._findInstances(query)
+          sinon.stub(BaseWorker.prototype, '_pBaseWorkerFindInstances').returns(Promise.resolve([]));
+          ctx.worker._pFindInstances(query)
             .then(shouldntGoToThen(done))
             .catch(AcceptableError, function (err) {
-              expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
-              expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.equal(query);
+              expect(BaseWorker.prototype._pBaseWorkerFindInstances.callCount).to.equal(1);
+              expect(BaseWorker.prototype._pBaseWorkerFindInstances.args[0][0]).to.equal(query);
               expect(err.message).to.equal('No instances were found');
               done();
             })
             .catch(done);
         });
 
-        it('should throw normal error when pFindInstances returns an error', function (done) {
+        it('should throw normal error when _pBaseWorkerFindInstances returns an error', function (done) {
           var error = new Error('database error');
-          sinon.stub(BaseWorker.prototype, 'pFindInstances')
+          sinon.stub(BaseWorker.prototype, '_pBaseWorkerFindInstances')
             .returns(new Promise(function (resolve, reject) {
               reject(error);
             }));
-          ctx.worker._findInstances(query)
+          ctx.worker._pFindInstances(query)
             .then()
             .catch(AcceptableError, done)
             .catch(function (err) {
-              expect(BaseWorker.prototype.pFindInstances.callCount).to.equal(1);
-              expect(BaseWorker.prototype.pFindInstances.args[0][0]).to.equal(query);
+              expect(BaseWorker.prototype._pBaseWorkerFindInstances.callCount).to.equal(1);
+              expect(BaseWorker.prototype._pBaseWorkerFindInstances.args[0][0]).to.equal(query);
               expect(err).to.equal(error);
               done();
             });
@@ -597,30 +596,30 @@ describe('DeployInstanceWorker', function () {
     describe('_emitEvents', function () {
       beforeEach(function (done) {
         ctx.worker.sessionUserGithubId = 12;
-        sinon.stub(ctx.worker, 'pUpdateInstanceFrontend').returns(Promise.resolve());
-        sinon.stub(ctx.worker, 'pFindUser').returns(Promise.resolve(ctx.mockUser));
+        sinon.stub(ctx.worker, '_pBaseWorkerUpdateInstanceFrontend').returns(Promise.resolve());
         done();
       });
 
       afterEach(function (done) {
-        ctx.worker.pUpdateInstanceFrontend.restore();
-        ctx.worker.pFindUser.restore();
+        ctx.worker._pBaseWorkerUpdateInstanceFrontend.restore();
         done();
       });
       describe('success', function () {
         it('should create a CreateContainer worker for each instance it\'s given', function (done) {
           ctx.worker._emitEvents(ctx.mockInstances)
             .then(function () {
-              expect(ctx.worker.pFindUser.callCount).to.equal(1);
-              expect(ctx.worker.pFindUser.args[0][0]).to.equal(12);
-              expect(ctx.worker.pUpdateInstanceFrontend.callCount).to.equal(2);
-              expect(ctx.worker.pUpdateInstanceFrontend.args[0][0])
-                .to.deep.equal({'_id': ctx.mockInstance._id});
-              expect(ctx.worker.pUpdateInstanceFrontend.args[1][0])
-                .to.deep.equal({'_id': ctx.mockInstance2._id});
-              expect(ctx.worker.pUpdateInstanceFrontend.args[0][1])
+              expect(ctx.worker._pBaseWorkerUpdateInstanceFrontend.callCount).to.equal(2);
+              expect(ctx.worker._pBaseWorkerUpdateInstanceFrontend.args[0][0])
+                .to.deep.equal(ctx.mockInstance._id);
+              expect(ctx.worker._pBaseWorkerUpdateInstanceFrontend.args[1][0])
+                .to.deep.equal(ctx.mockInstance2._id);
+              expect(ctx.worker._pBaseWorkerUpdateInstanceFrontend.args[0][1])
+                .to.deep.equal(12);
+              expect(ctx.worker._pBaseWorkerUpdateInstanceFrontend.args[1][1])
+                .to.deep.equal(12);
+              expect(ctx.worker._pBaseWorkerUpdateInstanceFrontend.args[0][2])
                 .to.equal('deploy');
-              expect(ctx.worker.pUpdateInstanceFrontend.args[1][1])
+              expect(ctx.worker._pBaseWorkerUpdateInstanceFrontend.args[1][2])
                 .to.equal('deploy');
               done();
             })
@@ -628,7 +627,7 @@ describe('DeployInstanceWorker', function () {
         });
       });
     });
-    describe('_getDockHost', function () {
+    describe('_pGetDockHost', function () {
 
       beforeEach(function (done) {
         ctx.worker.sessionUserGithubId = 12;
@@ -642,7 +641,7 @@ describe('DeployInstanceWorker', function () {
       });
       describe('success', function () {
         it('should get the dockHost from the cv', function (done) {
-          ctx.worker._getDockHost(ctx.mockContextVersion)
+          ctx.worker._pGetDockHost(ctx.mockContextVersion)
             .then(function (dockerHost) {
               expect(dockerHost, 'dockerHost').to.equal(_dockerHost);
               expect(Mavis.prototype.findDockForContainer.callCount).to.equal(1);
@@ -654,7 +653,7 @@ describe('DeployInstanceWorker', function () {
         });
         it('should get the dockHost from the forceDock setting', function (done) {
           ctx.worker.forceDock = '127.0.0.1';
-          ctx.worker._getDockHost(ctx.mockContextVersion)
+          ctx.worker._pGetDockHost(ctx.mockContextVersion)
             .then(function (dockerHost) {
               expect(dockerHost, 'dockerHost').to.equal(ctx.worker.forceDock);
               expect(Mavis.prototype.findDockForContainer.callCount).to.equal(0);
