@@ -158,9 +158,10 @@ describe('200 PATCH /instances', function () {
             expect(InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1);
             var acv = ctx.cv.appCodeVersions.models[0].attrs;
             var args = InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.getCall(0).args;
-            expect(args[0]).to.equal(ctx.user.id());
-            expect(args[1]).to.equal(acv.lowerRepo);
-            expect(args[2]).to.equal(acv.lowerBranch);
+            expect(args[0]).to.equal(ctx.instance.id());
+            expect(args[1]).to.equal(ctx.user.id());
+            expect(args[2]).to.equal(acv.lowerRepo);
+            expect(args[3]).to.equal(acv.lowerBranch);
             InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.restore();
             done();
           });
