@@ -3,12 +3,15 @@
  */
 'use strict';
 
+var EventEmitter = require('events').EventEmitter;
+var util = require('util');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var noop = require('101/noop');
 var sinon = require('sinon');
 var Code = require('code');
 var rabbitMQ = require('models/rabbitmq');
+var hermes = require('hermes-private');
 
 var it = lab.it;
 var describe = lab.describe;
@@ -25,14 +28,82 @@ describe('RabbitMQ Model', function () {
   });
 
   describe('close', function() {
-    it('should just callback if the rabbitmq is not started', function(done) {
+    it('should just callback if the rabbitmq is not started', function (done) {
       ctx.rabbitMQ.close(done);
     });
   });
 
   describe('unloadWorkers', function() {
-    it('should just callback if the rabbitmq is not started', function(done) {
+    it('should just callback if the rabbitmq is not started', function (done) {
       ctx.rabbitMQ.unloadWorkers(done);
+    });
+  });
+
+  describe('_handleFatalError', function () {
+    it('should call process.exit', function (done) {
+      sinon.stub(process, 'exit', function (code) {
+        expect(code).to.equal(1);
+      });
+      var rabbit = new rabbitMQ.constructor();
+      rabbit._handleFatalError(new Error());
+      expect(process.exit.callCount).to.equal(1);
+      process.exit.restore();
+      done();
+    });
+  });
+  describe('connect', function() {
+    it('should call hermes connect and attach error handler', function (done) {
+      var rabbit = new rabbitMQ.constructor();
+      var HermesClient = function () {};
+      util.inherits(HermesClient, EventEmitter);
+      HermesClient.prototype.connect =  function (cb) {
+        cb(null);
+      };
+      var hermesClient = new HermesClient();
+      sinon.spy(hermesClient, 'connect');
+      sinon.spy(hermesClient, 'on');
+      sinon.stub(hermes, 'hermesSingletonFactory', function () {
+        return hermesClient;
+      });
+
+      rabbit.connect(function (err) {
+        expect(err).to.be.null();
+        expect(hermesClient.connect.callCount).to.equal(1);
+        expect(hermesClient.on.callCount).to.equal(1);
+        hermes.hermesSingletonFactory.restore();
+        done();
+      });
+    });
+
+    it('should call _handleFatalError if error was emitted', function (done) {
+      var rabbit = new rabbitMQ.constructor();
+      var HermesClient = function () {};
+      util.inherits(HermesClient, EventEmitter);
+      HermesClient.prototype.connect =  function (cb) {
+        cb(null);
+      };
+      var hermesClient = new HermesClient();
+      sinon.spy(hermesClient, 'connect');
+      sinon.spy(hermesClient, 'on');
+      sinon.stub(hermes, 'hermesSingletonFactory', function () {
+        return hermesClient;
+      });
+      sinon.stub(rabbit, '_handleFatalError');
+      rabbit.connect(function (err) {
+        expect(err).to.be.null();
+      });
+      rabbit.hermesClient.on('error', function (err) {
+        expect(err).to.exist();
+        expect(err.message).to.equal('Some hermes error');
+        expect(hermesClient.connect.callCount).to.equal(1);
+        expect(hermesClient.on.callCount).to.equal(2);
+        expect(rabbit._handleFatalError.callCount).to.equal(1);
+        expect(rabbit._handleFatalError.getCall(0).args[0].message)
+          .to.equal('Some hermes error');
+        hermes.hermesSingletonFactory.restore();
+        done();
+      });
+      rabbit.hermesClient.emit('error', new Error('Some hermes error'));
     });
   });
 
