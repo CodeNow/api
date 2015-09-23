@@ -16,14 +16,12 @@ var last = require('101/last');
 var mongoose = require('mongoose');
 var ObjectId = mongoose.Types.ObjectId;
 var uuid = require('uuid');
-var times = require('times-loop');
 
 var mongooseControl = require('models/mongo/mongoose-control.js');
 var ContextVersion = require('models/mongo/context-version.js');
 
 describe('ContextVersion Model Query Integration Tests', function () {
   before(mongooseControl.start);
-  after(mongooseControl.stop);
   var ctx;
   beforeEach(function (done) {
     ctx = {};
@@ -32,6 +30,10 @@ describe('ContextVersion Model Query Integration Tests', function () {
   afterEach(function (done) {
     ContextVersion.remove({}, done);
   });
+  after(function (done) {
+    ContextVersion.remove({}, done);
+  });
+  after(mongooseControl.stop);
 
   describe('methods', function() {
 
@@ -69,31 +71,44 @@ describe('ContextVersion Model Query Integration Tests', function () {
         done();
       });
       beforeEach(function (done) {
-        times(3,
-          function (i, cb) {
-            var props = put(ctx.props, {
-              'build.started'  : new Date('Mon Jan 1 2015 '+1+':00:00 GMT-0700 (PDT)'),
-              'build.completed': new Date('Mon Jan 1 2015 '+1+':00:30 GMT-0700 (PDT)')
-            });
-            createCompletedCv(props, cb);
-          },
-          function (err, completedDupes) {
-            ctx.completedDupes = completedDupes;
-            done(err);
+        function createCv(i, cb) {
+          var props = put(ctx.props, {
+            'build.started'  : new Date('Mon Jan 1 2015 '+i+':00:00 GMT-0700 (PDT)'),
+            'build.completed': new Date('Mon Jan 1 2015 '+i+':00:30 GMT-0700 (PDT)')
           });
+          createCompletedCv(props, cb);
+        }
+        ctx.completedDupes = [];
+        createCv(1, function (err, cv2) {
+          ctx.completedDupes.push(cv2);
+          createCv(2, function (err, cv1) {
+            ctx.completedDupes.push(cv1);
+            createCv(3, function (err, cv) {
+              ctx.completedDupes.push(cv);
+              done();
+            });
+          });
+        });
       });
       beforeEach(function (done) {
-        times(3,
-          function (i, cb) {
-            var props = put(ctx.props,
-              'build.started', new Date('Mon Jan 1 2015 12:00:0'+i+' GMT-0700 (PDT)'));
-            createStartedCv(props, cb);
-          },
-          function (err, startedDupes) {
-            ctx.startedDupes = startedDupes;
-            ctx.cv = last(ctx.startedDupes);
-            done(err);
+        function createCv(i, cb) {
+          var props = put(ctx.props, {
+            'build.started': new Date('Mon Jan 1 2015 12:00:0'+i+' GMT-0700 (PDT)')
           });
+          createStartedCv(props, cb);
+        }
+        ctx.startedDupes = [];
+        createCv(1, function (err, cv) {
+          ctx.startedDupes.push(cv);
+          createCv(2, function (err, cv) {
+            ctx.startedDupes.push(cv);
+            createCv(3, function (err, cv) {
+              ctx.startedDupes.push(cv);
+              ctx.cv = cv;
+              done();
+            });
+          });
+        });
       });
 
       it('should find the oldest pending dupe', function (done) {
@@ -114,31 +129,44 @@ describe('ContextVersion Model Query Integration Tests', function () {
         done();
       });
       beforeEach(function (done) {
-        times(3,
-          function (i, cb) {
-            var props = put(ctx.props, {
-              'build.started'  : new Date('Mon Jan 1 2015 '+1+':00:00 GMT-0700 (PDT)'),
-              'build.completed': new Date('Mon Jan 1 2015 '+1+':00:30 GMT-0700 (PDT)')
-            });
-            createCompletedCv(props, cb);
-          },
-          function (err, completedDupes) {
-            ctx.completedDupes = completedDupes;
-            done(err);
+        function createCv(i, cb) {
+          var props = put(ctx.props, {
+            'build.started'  : new Date('Mon Jan 1 2015 '+i+':00:00 GMT-0700 (PDT)'),
+            'build.completed': new Date('Mon Jan 1 2015 '+i+':00:30 GMT-0700 (PDT)')
           });
+          createCompletedCv(props, cb);
+        }
+        ctx.completedDupes = [];
+        createCv(1, function (err, cv2) {
+          ctx.completedDupes.push(cv2);
+          createCv(2, function (err, cv1) {
+            ctx.completedDupes.push(cv1);
+            createCv(3, function (err, cv) {
+              ctx.completedDupes.push(cv);
+              done();
+            });
+          });
+        });
       });
       beforeEach(function (done) {
-        times(3,
-          function (i, cb) {
-            var props = put(ctx.props,
-              'build.started', new Date('Mon Jan 1 2015 12:00:0'+i+' GMT-0700 (PDT)'));
-            createStartedCv(props, cb);
-          },
-          function (err, startedDupes) {
-            ctx.startedDupes = startedDupes;
-            ctx.cv = last(ctx.startedDupes);
-            done(err);
+        function createCv(i, cb) {
+          var props = put(ctx.props, {
+              'build.started': new Date('Mon Jan 1 2015 12:00:0'+i+' GMT-0700 (PDT)')
           });
+          createStartedCv(props, cb);
+        }
+        ctx.startedDupes = [];
+        createCv(1, function (err, cv) {
+          ctx.startedDupes.push(cv);
+          createCv(2, function (err, cv) {
+            ctx.startedDupes.push(cv);
+            createCv(3, function (err, cv) {
+              ctx.startedDupes.push(cv);
+              ctx.cv = cv;
+              done();
+            });
+          });
+        });
       });
 
       it('should find the oldest pending dupe', function (done) {
