@@ -17,7 +17,10 @@ var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
 var Modem = require('docker-modem');
 
-describe('docker', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('docker: '+moduleName, function () {
   var model = new Docker('http://fake.host.com');
 
   describe('getLogs', function () {

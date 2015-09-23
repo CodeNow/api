@@ -24,7 +24,10 @@ function getNextHash () {
   return hashids.encrypt(getNextId())[0];
 }
 
-describe('Instance', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Instance: '+moduleName, function () {
   before(require('../../../fixtures/mongo').connect);
   afterEach(require('../../../../test/functional/fixtures/clean-mongo').removeEverything);
 

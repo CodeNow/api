@@ -14,7 +14,10 @@ var expect = Code.expect;
 
 var utils = require('middlewares/utils');
 
-describe('utils unit test', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('utils unit test: '+moduleName, function () {
   describe('formatFieldFilters', function () {
     it('should set the ignored fields as an array on the req object', function (done) {
       var req = {

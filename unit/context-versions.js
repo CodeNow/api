@@ -15,7 +15,10 @@ var ContextVersion = require('models/mongo/context-version');
 var validation = require('./fixtures/validation')(lab);
 var Version = require('models/mongo/context-version');
 
-describe('Versions', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Versions: '+moduleName, function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 

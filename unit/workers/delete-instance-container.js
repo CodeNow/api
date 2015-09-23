@@ -17,8 +17,10 @@ var Hosts = require('models/redis/hosts');
 var Sauron = require('models/apis/sauron');
 var User = require('models/mongo/user');
 
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
 
-describe('Worker: delete-instance-container', function () {
+describe('Worker: delete-instance-container: '+moduleName, function () {
 
   describe('#_findGitHubUsername', function () {
     it('should fail if User.findById failed', function (done) {

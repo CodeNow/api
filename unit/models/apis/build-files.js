@@ -14,7 +14,10 @@ var noop = require('101/noop');
 require('loadenv')();
 var BuildFiles = require('models/apis/build-files');
 
-describe('build-files', function() {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('build-files: '+moduleName, function() {
   var model = new BuildFiles('some-context-id');
 
   describe('copyObject', function() {
