@@ -101,6 +101,18 @@ describe('DeployInstanceWorker Integration Tests', function () {
           var count = createCount(3, function () {
             expect(rabbitMQ.createInstanceContainer.callCount, 'createInstanceContainer')
               .to.equal(2);
+            expect(rabbitMQ.createInstanceContainer.args[0][0].cvId, 'createInstanceContainer.cv')
+              .to.equal(ctx.cv._id.toString());
+            expect(
+              rabbitMQ.createInstanceContainer.args[0][0].sessionUserId,
+              'createInstanceContainer.sessionUserId'
+            ).to.equal(ctx.user.accounts.github.id);
+            expect(rabbitMQ.createInstanceContainer.args[1][0].cvId, 'createInstanceContainer.cv')
+              .to.equal(ctx.cv._id.toString());
+            expect(
+              rabbitMQ.createInstanceContainer.args[1][0].sessionUserId,
+              'createInstanceContainer.sessionUserId'
+            ).to.equal(ctx.user.accounts.github.id);
             done();
           });
           sinon.stub(messenger, '_emitInstanceUpdateAction', count.next);
@@ -140,14 +152,14 @@ describe('DeployInstanceWorker Integration Tests', function () {
       });
       beforeEach(function (done) {
         ctx.githubId = 10;
-        createUser(ctx.githubId , function (err, user) {
+        createUser(ctx.githubId, function (err, user) {
           if (err) { return done(err); }
           ctx.user = user;
           ctx.hash = uuid();
           createCompletedCv(ctx.githubId, { build: { manual: false }}, function (err, cv) {
             if (err) { return done(err); }
             ctx.cv = cv;
-            createBuild(ctx.githubId , cv, function (err, build) {
+            createBuild(ctx.githubId, cv, function (err, build) {
               if (err) { return done(err); }
               ctx.build = build;
               done();
@@ -160,8 +172,14 @@ describe('DeployInstanceWorker Integration Tests', function () {
 
         beforeEach(function (done) {
           var count = createCount(2, done);
-          createInstance(ctx.githubId, ctx.build, false, count.next);
-          createInstance(ctx.githubId, ctx.build, true, count.next);
+          createInstance(ctx.githubId, ctx.build, false, function (err, instance) {
+            ctx.instance = instance;
+            count.next();
+          });
+          createInstance(ctx.githubId, ctx.build, true, function (err, instance) {
+            ctx.lockedInstance = instance;
+            count.next();
+          });
         });
         it('should deploy only the unlocked instance', function (done) {
           sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, ctx.user);
@@ -174,9 +192,19 @@ describe('DeployInstanceWorker Integration Tests', function () {
           var count = createCount(2, function () {
             expect(rabbitMQ.createInstanceContainer.callCount, 'createInstanceContainer')
               .to.equal(1);
+            expect(rabbitMQ.createInstanceContainer.args[0][0].cvId, 'createInstanceContainer.cv')
+              .to.equal(ctx.cv._id.toString());
+            expect(
+              rabbitMQ.createInstanceContainer.args[0][0].sessionUserId,
+              'createInstanceContainer.sessionUserId'
+            ).to.equal(ctx.user.accounts.github.id);
             done();
           });
-          sinon.stub(messenger, '_emitInstanceUpdateAction', count.next);
+          sinon.stub(messenger, '_emitInstanceUpdateAction', function (instance, action) {
+            expect(instance._id).to.deep.equal(ctx.instance._id);
+            expect(action).to.deep.equal('deploy');
+            count.next();
+          });
           worker.handle(function (err) {
             expect(err).to.be.undefined();
             count.next();
