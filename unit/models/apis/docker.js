@@ -152,18 +152,20 @@ describe('docker', function () {
     });
   }); // end pullImage
   describe('with retries', function () {
+    afterEach(function (done) {
+      Docker.prototype.inspectContainer.restore();
+      done();
+    });
+
     it('should call original docker method 5 times if failed and return error', function (done) {
       var dockerErr = Boom.notFound('Docker error');
-      sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
-        cb(dockerErr);
-      });
+      sinon.stub(Docker.prototype, 'inspectContainer').yieldsAsync(dockerErr);
       var docker = new Docker('https://localhost:4242');
 
       docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err) {
         expect(err.output.statusCode).to.equal(404);
         expect(err.output.payload.message).to.equal('Docker error');
         expect(Docker.prototype.inspectContainer.callCount).to.equal(5);
-        Docker.prototype.inspectContainer.restore();
         done();
       });
     });
@@ -177,7 +179,6 @@ describe('docker', function () {
         expect(err).to.be.undefined();
         expect(result.dockerContainer).to.equal('some-container-id');
         expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-        Docker.prototype.inspectContainer.restore();
         done();
       });
     });
@@ -200,22 +201,18 @@ describe('docker', function () {
         expect(err).to.be.undefined();
         expect(result.dockerContainer).to.equal('some-container-id');
         expect(Docker.prototype.inspectContainer.callCount).to.equal(4);
-        Docker.prototype.inspectContainer.restore();
         done();
       });
     });
 
     it('should not retry if ignoreStatusCode was specified', function (done) {
       var dockerErr = Boom.notFound('Docker error');
-      sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
-        cb(dockerErr);
-      });
+      sinon.stub(Docker.prototype, 'inspectContainer').yieldsAsync(dockerErr);
       var docker = new Docker('https://localhost:4242');
 
       docker.inspectContainerWithRetry({times: 6, ignoreStatusCode: 404}, 'some-container-id', function (err) {
         expect(err).to.be.null();
         expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-        Docker.prototype.inspectContainer.restore();
         done();
       });
     });
