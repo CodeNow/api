@@ -137,7 +137,7 @@
     "docs": "jsdoc -r -d docs lib/ && if [ $CIRCLE_ARTIFACTS ]; then cp -r docs $CIRCLE_ARTIFACTS; fi",
     "fixme": "grep -nR FIXME lib test",
     "todo": "grep -nR TODO lib test",
-    "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js | bunyan -o json-0 --strict",
+    "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js 2>&1 | bunyan -o json-0 --strict",
     "start-debug": "NODE_PATH=./lib node --debug index.js",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs index.js",
     "coverage": "NODE_PATH=./lib NODE_ENV=test lab -vl -m 60000 -e test -c -r html test/*.js > coverage.html && if [ $CIRCLE_ARTIFACTS ]; then cp coverage.html $CIRCLE_ARTIFACTS; fi",
