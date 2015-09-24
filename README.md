@@ -1,3 +1,33 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Application Components](#application-components)
+      - [Express](#express)
+      - [Routes](#routes)
+      - [Mongo](#mongo)
+      - [Tests](#tests)
+- [Running Tests](#running-tests)
+  - [Prerequisites](#prerequisites)
+  - [Tests](#tests-1)
+  - [Tests: logging](#tests-logging)
+    - [[Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)](#guide-to-development-cli-log-toolshttpsgithubcomcodenowdevops-scriptswikiguide-to-development-cli-log-tools)
+    - [[Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)](#guide-to-debugging-production-api-with-logshttpsgithubcomcodenowdevops-scriptswikiguide-to-debugging-production-api-with-logs)
+  - [Formatting](#formatting)
+      - [jshint](#jshint)
+      - [eslint](#eslint)
+- [Opinions](#opinions)
+      - [Restful resource urls](#restful-resource-urls)
+      - [Middleware Patterns](#middleware-patterns)
+      - [Boom for Http Errors](#boom-for-http-errors)
+- [Resource Overview](#resource-overview)
+- [Help and Tips](#help-and-tips)
+    - [Problems npm installing?](#problems-npm-installing)
+    - [Rapid Prototyping with Runnable-Api-Client](#rapid-prototyping-with-runnable-api-client)
+  - [](#)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 [![Circle CI](https://circleci.com/gh/CodeNow/api.svg?style=svg&circle-token=15c68bfd7d9ca99637f0c5a6e05505366f5d9fd3)](https://circleci.com/gh/CodeNow/api)
 
 [![lol Travis CI](https://magnum.travis-ci.com/CodeNow/api.svg?token=CEnbe3bPEVFTjYa2MCtJ&branch=master)](https://magnum.travis-ci.com/CodeNow/api)
