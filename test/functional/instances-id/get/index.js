@@ -9,6 +9,9 @@ var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
 
+var Code = require('code');
+var expect = Code.expect;
+
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
@@ -20,8 +23,6 @@ var Instance = require('models/mongo/instance');
 describe('Instance - /instances/:id', function () {
   var ctx = {};
 
-  before(require('../../fixtures/clean-nock'));
-  beforeEach(require('../../fixtures/clean-mongo').removeEverything);
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));
@@ -48,16 +49,17 @@ describe('Instance - /instances/:id', function () {
       });
     });
     it('should be owned by an org', function (done) {
-      var expected = {
-        'build._id': ctx.build.id(),
-        'owner.github': ctx.orgId,
-        'owner.username': 'Runnable'
-      };
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-      ctx.instance.fetch(expects.success(200, expected, done));
+      ctx.instance.fetch(function (err, instance, statusCode) {
+        expect(statusCode).to.equal(200);
+        expect(instance.build._id, 'instance.build._id').to.equal(ctx.build.id());
+        expect(instance.owner.github, 'instance.owner.github').to.equal(ctx.orgId);
+        expect(instance.owner.username, 'instance.owner.username').to.equal('Runnable');
+        done(err);
+      });
     });
   });
 
