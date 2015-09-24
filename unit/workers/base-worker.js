@@ -117,7 +117,7 @@ describe('BaseWorker', function () {
     });
   });
 
-  describe('_updateFrontendWithContextVersion', function () {
+  describe('_baseWorkerUpdateContextVersionFrontend', function () {
     beforeEach(function (done) {
       ctx.worker.contextVersion = ctx.mockContextVersion;
       sinon.stub(messenger, 'emitContextVersionUpdate');
@@ -369,7 +369,7 @@ describe('BaseWorker', function () {
     });
   });
 
-  describe('_findInstance', function () {
+  describe('_baseWorkerFindInstance', function () {
     describe('basic', function () {
       beforeEach(function (done) {
         sinon.stub(Instance, 'findOne', function (data, cb) {
