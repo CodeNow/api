@@ -17,8 +17,13 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-describe('InstanceService', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('InstanceService: '+moduleName, function () {
+  
   describe('#deploy', function () {
+    
     beforeEach(function (done) {
       sinon.spy(rabbitMQ, 'deployInstance');
       done();
@@ -89,6 +94,7 @@ describe('InstanceService', function () {
       });
     });
   });
+  
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
 
     it('should return if instanceId param is missing', function (done) {

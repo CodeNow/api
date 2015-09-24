@@ -15,7 +15,10 @@ var jobs = require('../../../lib/middlewares/apis/jobs.js');
 
 var sinon = require('sinon');
 
-describe('lib/middlewares/apis/jobs.js unit test', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('lib/middlewares/apis/jobs.js unit test: '+moduleName, function () {
   var testReq = {
     body: {
       name: 'nemo'

@@ -19,7 +19,10 @@ var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
 var expect = Code.expect;
 
-describe('RabbitMQ Model', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('RabbitMQ Model: '+moduleName, function () {
   var ctx;
   beforeEach(function (done) {
     ctx = {};

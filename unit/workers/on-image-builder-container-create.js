@@ -24,7 +24,10 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-describe('OnCreateImageBuilderContainer', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('OnCreateImageBuilderContainer: '+moduleName, function () {
   var ctx;
 
   beforeEach(function (done) {

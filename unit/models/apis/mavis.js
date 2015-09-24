@@ -14,7 +14,10 @@ var expect = Code.expect;
 var Mavis = require('models/apis/mavis');
 var sinon = require('sinon');
 
-describe('mavis.js unit test', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('mavis.js unit test: '+moduleName, function () {
   var ctx = {};
   beforeEach(function(done) {
     ctx.mavis = new Mavis();

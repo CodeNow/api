@@ -16,7 +16,10 @@ var sinon = require('sinon');
 var Instance = require('models/mongo/instance');
 var Worker = require('workers/on-dock-removed');
 
-describe('worker: on-dock-removed unit test', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('worker: on-dock-removed unit test: '+moduleName, function () {
   var worker;
   beforeEach(function (done) {
     done();

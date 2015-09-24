@@ -16,7 +16,10 @@ var Instance = require('models/mongo/instance');
 var messenger = require('socket/messenger');
 var rabbitMQ = require('models/rabbitmq');
 
-describe('Worker: delete-instance', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Worker: delete-instance: '+moduleName, function () {
 
   describe('#handle', function () {
     it('should fail job if _baseWorkerFindInstance call failed', function (done) {

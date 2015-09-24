@@ -11,7 +11,10 @@ var sinon = require('sinon');
 var containerFs = require('middlewares/apis/container-fs');
 var containerFsAPI = require('models/apis/container-fs');
 
-describe('container-fs', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('container-fs: '+moduleName, function () {
   describe('#parseParams', function () {
     it('should parse params correctly for dir', function (done) {
       var container = '0021da9eb7f3fee201cbc4b42d6efcdb8f494ba9466fb783a46f4527575d880f';

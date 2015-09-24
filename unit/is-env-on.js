@@ -12,7 +12,10 @@ var isEnvOn = require('middlewares/is-env-on');
 var createCount = require('callback-count');
 var noop = require('101/noop');
 
-describe('is-env-on', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('is-env-on: '+moduleName, function () {
 
   it('should call send response if env doesnot exist', function (done) {
     var count = createCount(2, done);

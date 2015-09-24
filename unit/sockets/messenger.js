@@ -15,7 +15,10 @@ var Messenger = require('socket/messenger');
 // var User = require('models/mongo/user');
 
 
-describe('Messenger', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Messenger: '+moduleName, function () {
   describe('#canJoin', function () {
     it('should return true if authToken provided', function (done) {
       var socket = {

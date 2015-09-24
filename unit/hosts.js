@@ -14,7 +14,10 @@ require('loadenv')();
 
 var Hosts = require('models/redis/hosts');
 
-describe('Hosts', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Hosts: '+moduleName, function () {
   describe('parseHostname', function () {
     var ctx = {};
     beforeEach(function (done) {

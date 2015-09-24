@@ -13,8 +13,10 @@ var createCount = require('callback-count');
 var RedisMutex = require('models/redis/mutex');
 var redis = require('models/redis');
 
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
 
-describe('RedisMutex', function () {
+describe('RedisMutex: '+moduleName, function () {
   before(function (done) {
     redis.flushdb(done);
   });

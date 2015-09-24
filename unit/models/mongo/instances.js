@@ -129,7 +129,10 @@ function createNewInstance (name, opts) {
   });
 }
 
-describe('Instance', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Instance: '+moduleName, function () {
   // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
