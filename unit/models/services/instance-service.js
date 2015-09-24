@@ -29,7 +29,12 @@ describe('InstanceService', function () {
     });
     it('should return if instanceId and buildId param is missing', function (done) {
       var instanceService = new InstanceService();
-      instanceService.deploy(null, null, 'user-id', 'name', function (err) {
+      instanceService.deploy({
+        instanceId: null,
+        buildId: null,
+        userId: 'user-id',
+        ownerUsername: 'name'
+      }, function (err) {
         expect(err).to.not.exist();
         expect(rabbitMQ.deployInstance.callCount).to.equal(0);
         done();
@@ -37,7 +42,13 @@ describe('InstanceService', function () {
     });
     it('should return if user-id param is missing', function (done) {
       var instanceService = new InstanceService();
-      instanceService.deploy('instance', null, null, 'name', true, function (err) {
+      instanceService.deploy({
+        instanceId: 'instance',
+        buildId: null,
+        userId: null,
+        ownerUsername: 'name',
+        forceDock: true
+      }, function (err) {
         expect(err).to.not.exist();
         expect(rabbitMQ.deployInstance.callCount).to.equal(0);
         done();
@@ -45,7 +56,12 @@ describe('InstanceService', function () {
     });
     it('should return if username param is missing', function (done) {
       var instanceService = new InstanceService();
-      instanceService.deploy(null, 'build', 'user-id', null, function (err) {
+      instanceService.deploy({
+        instanceId: null,
+        buildId: 'build',
+        userId: 'user-id',
+        ownerUsername: null
+      }, function (err) {
         expect(err).to.not.exist();
         expect(rabbitMQ.deployInstance.callCount).to.equal(0);
         done();
@@ -53,7 +69,13 @@ describe('InstanceService', function () {
     });
     it('should create a worker for the deploy', function (done) {
       var instanceService = new InstanceService();
-      instanceService.deploy(null, 'build', 'user-id', 'name', 'forceDock', function (err) {
+      instanceService.deploy({
+        instanceId: null,
+        buildId: 'build',
+        userId: 'user-id',
+        ownerUsername: 'name',
+        forceDock: 'forceDock'
+      }, function (err) {
         expect(err).to.not.exist();
         expect(rabbitMQ.deployInstance.callCount).to.equal(1);
         expect(rabbitMQ.deployInstance.args[0][0]).to.deep.equal({

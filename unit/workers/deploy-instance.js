@@ -405,35 +405,36 @@ describe('DeployInstanceWorker', function () {
               expect(BaseWorker.prototype._pBaseWorkerFindInstances.args[0][0]).to.equal(query);
               expect(err).to.equal(error);
               done();
-            });
+            })
+            .catch(done);
         });
       });
     });
-    describe('_filterAndSaveCvToInstances', function () {
+    describe('_pFilterAndSaveCvToInstances', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_updateInstance', function (instance) {
+        sinon.stub(ctx.worker, '_pUpdateInstance', function (instance) {
           return Promise.resolve(instance);
         });
         done();
       });
 
       afterEach(function (done) {
-        ctx.worker._updateInstance.restore();
+        ctx.worker._pUpdateInstance.restore();
         done();
       });
       describe('success', function () {
         it('should not filter out instances when manual', function (done) {
           keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', true);
-          ctx.worker._filterAndSaveCvToInstances(ctx.mockInstances, ctx.mockContextVersion)
+          ctx.worker._pFilterAndSaveCvToInstances(ctx.mockInstances, ctx.mockContextVersion)
             .then(function (instances) {
-              expect(ctx.worker._updateInstance.callCount).to.equal(ctx.mockInstances.length);
+              expect(ctx.worker._pUpdateInstance.callCount).to.equal(ctx.mockInstances.length);
               expect(instances).to.deep.equal(ctx.mockInstances);
-              expect(ctx.worker._updateInstance.args[0][0]).to.equal(ctx.mockInstance);
-              expect(ctx.worker._updateInstance.args[1][0]).to.equal(ctx.mockInstance2);
-              expect(ctx.worker._updateInstance.args[0][1]).to.deep.equal({
+              expect(ctx.worker._pUpdateInstance.args[0][0]).to.equal(ctx.mockInstance);
+              expect(ctx.worker._pUpdateInstance.args[1][0]).to.equal(ctx.mockInstance2);
+              expect(ctx.worker._pUpdateInstance.args[0][1]).to.deep.equal({
                 'contextVersion': ctx.mockContextVersion
               });
-              expect(ctx.worker._updateInstance.args[1][1]).to.deep.equal({
+              expect(ctx.worker._pUpdateInstance.args[1][1]).to.deep.equal({
                 'contextVersion': ctx.mockContextVersion
               });
               done();
@@ -443,12 +444,12 @@ describe('DeployInstanceWorker', function () {
         it('should filter out locked instances when not manual', function (done) {
           ctx.mockInstances.push(ctx.mockInstance2);
           keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', false);
-          ctx.worker._filterAndSaveCvToInstances(ctx.mockInstances, ctx.mockContextVersion)
+          ctx.worker._pFilterAndSaveCvToInstances(ctx.mockInstances, ctx.mockContextVersion)
             .then(function (instances) {
-              expect(ctx.worker._updateInstance.callCount).to.equal(1);
+              expect(ctx.worker._pUpdateInstance.callCount).to.equal(1);
               expect(instances).to.deep.equal([ctx.mockInstance]);
-              expect(ctx.worker._updateInstance.args[0][0]).to.equal(ctx.mockInstance);
-              expect(ctx.worker._updateInstance.args[0][1]).to.deep.equal({
+              expect(ctx.worker._pUpdateInstance.args[0][0]).to.equal(ctx.mockInstance);
+              expect(ctx.worker._pUpdateInstance.args[0][1]).to.deep.equal({
                 'contextVersion': ctx.mockContextVersion
               });
               done();
@@ -459,7 +460,7 @@ describe('DeployInstanceWorker', function () {
       describe('errors', function () {
         it('should return acceptable error when all instances are filtered out', function (done) {
           keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', false);
-          ctx.worker._filterAndSaveCvToInstances([ctx.mockInstance2], ctx.mockContextVersion)
+          ctx.worker._pFilterAndSaveCvToInstances([ctx.mockInstance2], ctx.mockContextVersion)
             .then(shouldntGoToThen(done))
             .catch(AcceptableError, function (err) {
               expect(err.message).to.equal('No instances were found to deploy');
@@ -469,11 +470,11 @@ describe('DeployInstanceWorker', function () {
         });
         it('should fall into the catch when one of the instance updates fail', function (done) {
           var error = new Error('generic error');
-          ctx.worker._updateInstance.restore();
-          sinon.stub(ctx.worker, '_updateInstance').returns(new Promise(function (resolve, reject) {
+          ctx.worker._pUpdateInstance.restore();
+          sinon.stub(ctx.worker, '_pUpdateInstance').returns(new Promise(function (resolve, reject) {
             reject(error);
           }));
-          ctx.worker._filterAndSaveCvToInstances(
+          ctx.worker._pFilterAndSaveCvToInstances(
             [ctx.mockInstance, ctx.mockInstance],
             ctx.mockContextVersion
           )
@@ -482,35 +483,36 @@ describe('DeployInstanceWorker', function () {
             .catch(function (err) {
               expect(err).to.equal(error);
               done();
-            });
+            })
+            .catch(done);
         });
       });
     });
-    describe('_filterAndSaveCvToInstances', function () {
+    describe('_pFilterAndSaveCvToInstances', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker, '_updateInstance', function (instance) {
+        sinon.stub(ctx.worker, '_pUpdateInstance', function (instance) {
           return Promise.resolve(instance);
         });
         done();
       });
 
       afterEach(function (done) {
-        ctx.worker._updateInstance.restore();
+        ctx.worker._pUpdateInstance.restore();
         done();
       });
       describe('success', function () {
         it('should not filter out instances when manual', function (done) {
           keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', true);
-          ctx.worker._filterAndSaveCvToInstances(ctx.mockInstances, ctx.mockContextVersion)
+          ctx.worker._pFilterAndSaveCvToInstances(ctx.mockInstances, ctx.mockContextVersion)
             .then(function (instances) {
-              expect(ctx.worker._updateInstance.callCount).to.equal(ctx.mockInstances.length);
+              expect(ctx.worker._pUpdateInstance.callCount).to.equal(ctx.mockInstances.length);
               expect(instances).to.deep.equal(ctx.mockInstances);
-              expect(ctx.worker._updateInstance.args[0][0]).to.equal(ctx.mockInstance);
-              expect(ctx.worker._updateInstance.args[1][0]).to.equal(ctx.mockInstance2);
-              expect(ctx.worker._updateInstance.args[0][1]).to.deep.equal({
+              expect(ctx.worker._pUpdateInstance.args[0][0]).to.equal(ctx.mockInstance);
+              expect(ctx.worker._pUpdateInstance.args[1][0]).to.equal(ctx.mockInstance2);
+              expect(ctx.worker._pUpdateInstance.args[0][1]).to.deep.equal({
                 'contextVersion': ctx.mockContextVersion
               });
-              expect(ctx.worker._updateInstance.args[1][1]).to.deep.equal({
+              expect(ctx.worker._pUpdateInstance.args[1][1]).to.deep.equal({
                 'contextVersion': ctx.mockContextVersion
               });
               done();
@@ -519,12 +521,12 @@ describe('DeployInstanceWorker', function () {
         });
         it('should filter out locked instances when not manual', function (done) {
           keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', false);
-          ctx.worker._filterAndSaveCvToInstances(ctx.mockInstances, ctx.mockContextVersion)
+          ctx.worker._pFilterAndSaveCvToInstances(ctx.mockInstances, ctx.mockContextVersion)
             .then(function (instances) {
-              expect(ctx.worker._updateInstance.callCount).to.equal(1);
+              expect(ctx.worker._pUpdateInstance.callCount).to.equal(1);
               expect(instances).to.deep.equal([ctx.mockInstance]);
-              expect(ctx.worker._updateInstance.args[0][0]).to.equal(ctx.mockInstance);
-              expect(ctx.worker._updateInstance.args[0][1]).to.deep.equal({
+              expect(ctx.worker._pUpdateInstance.args[0][0]).to.equal(ctx.mockInstance);
+              expect(ctx.worker._pUpdateInstance.args[0][1]).to.deep.equal({
                 'contextVersion': ctx.mockContextVersion
               });
               done();
@@ -535,7 +537,7 @@ describe('DeployInstanceWorker', function () {
       describe('errors', function () {
         it('should return acceptable error when all instances are filtered out', function (done) {
           keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', false);
-          ctx.worker._filterAndSaveCvToInstances([ctx.mockInstance2], ctx.mockContextVersion)
+          ctx.worker._pFilterAndSaveCvToInstances([ctx.mockInstance2], ctx.mockContextVersion)
             .then(shouldntGoToThen(done))
             .catch(AcceptableError, function (err) {
               expect(err.message).to.equal('No instances were found to deploy');
@@ -545,11 +547,11 @@ describe('DeployInstanceWorker', function () {
         });
         it('should fall into the catch when one of the instance updates fail', function (done) {
           var error = new Error('generic error');
-          ctx.worker._updateInstance.restore();
-          sinon.stub(ctx.worker, '_updateInstance').returns(new Promise(function (resolve, reject) {
+          ctx.worker._pUpdateInstance.restore();
+          sinon.stub(ctx.worker, '_pUpdateInstance').returns(new Promise(function (resolve, reject) {
             reject(error);
           }));
-          ctx.worker._filterAndSaveCvToInstances(
+          ctx.worker._pFilterAndSaveCvToInstances(
             [ctx.mockInstance, ctx.mockInstance],
             ctx.mockContextVersion
           )
@@ -558,7 +560,8 @@ describe('DeployInstanceWorker', function () {
             .catch(function (err) {
               expect(err).to.equal(error);
               done();
-            });
+            })
+            .catch(done);
         });
       });
     });
@@ -576,9 +579,6 @@ describe('DeployInstanceWorker', function () {
       describe('success', function () {
         it('should create a CreateContainer worker for each instance it\'s given', function (done) {
           var dockerHost = '0.0.0.1';
-
-
-
           ctx.worker._enqueueCreateContainerWorkers(
             ctx.mockInstances,
             ctx.mockContextVersion,
@@ -593,7 +593,7 @@ describe('DeployInstanceWorker', function () {
         });
       });
     });
-    describe('_emitEvents', function () {
+    describe('_pEmitEvents', function () {
       beforeEach(function (done) {
         ctx.worker.sessionUserGithubId = 12;
         sinon.stub(ctx.worker, '_pBaseWorkerUpdateInstanceFrontend').returns(Promise.resolve());
@@ -606,7 +606,7 @@ describe('DeployInstanceWorker', function () {
       });
       describe('success', function () {
         it('should create a CreateContainer worker for each instance it\'s given', function (done) {
-          ctx.worker._emitEvents(ctx.mockInstances)
+          ctx.worker._pEmitEvents(ctx.mockInstances)
             .then(function () {
               expect(ctx.worker._pBaseWorkerUpdateInstanceFrontend.callCount).to.equal(2);
               expect(ctx.worker._pBaseWorkerUpdateInstanceFrontend.args[0][0])

@@ -493,7 +493,8 @@ describe('BaseWorker', function () {
             });
             expect(Instance.findOne.args[0][1]).to.be.a.function();
             done();
-          });
+          })
+          .catch(done);
       });
     });
 
@@ -514,9 +515,10 @@ describe('BaseWorker', function () {
           'container.dockerContainer': ctx.dockerContainerId
         })
           .then(function () {
-          expect(ctx.worker.instance).to.equal(ctx.mockInstance);
-          done();
-        });
+            expect(ctx.worker.instance).to.equal(ctx.mockInstance);
+            done();
+          })
+          .catch(done);
       });
     });
 
@@ -538,7 +540,8 @@ describe('BaseWorker', function () {
             expect(err.message).to.equal('instance not found');
             expect(ctx.worker.instance).to.be.undefined();
             done();
-          });
+          })
+          .catch(done);
       });
     });
 
@@ -560,7 +563,8 @@ describe('BaseWorker', function () {
             expect(err.message).to.equal('mongoose error');
             expect(ctx.worker.instance).to.be.undefined();
             done();
-          });
+          })
+          .catch(done);
       });
     });
   });
@@ -589,7 +593,8 @@ describe('BaseWorker', function () {
             });
             expect(Build.findOne.args[0][1]).to.be.a.function();
             done();
-          });
+          })
+          .catch(done);
       });
     });
 
@@ -610,7 +615,8 @@ describe('BaseWorker', function () {
             expect(build).to.equal(ctx.mockBuild);
             expect(ctx.worker.build).to.equal(ctx.mockBuild);
             done();
-          });
+          })
+          .catch(done);
       });
     });
 
@@ -628,7 +634,8 @@ describe('BaseWorker', function () {
             expect(err.message).to.equal('Build not found');
             expect(ctx.worker.build).to.be.undefined();
             done();
-          });
+          })
+          .catch(done);
       });
       it('should callback error if mongo error', function (done) {
         sinon.stub(Build, 'findOne', function (id, cb) {
@@ -639,7 +646,8 @@ describe('BaseWorker', function () {
             expect(err.message).to.equal('mongoose error');
             expect(ctx.worker.build).to.be.undefined();
             done();
-          });
+          })
+          .catch(done);
       });
     });
   });

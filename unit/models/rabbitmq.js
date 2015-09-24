@@ -120,7 +120,7 @@ describe('RabbitMQ Model', function () {
       ctx.validJobData2 = {
         sessionUserGithubId: 'asdaSDFASDF',
         buildId: '4G23G243G4545',
-        forceDock: '43.23423.234234',
+        forceDock: '127.0.0.1',
         ownerUsername: 'G45GH4GERGDSG'
       };
       ctx.invalidJobData = {

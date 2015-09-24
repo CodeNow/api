@@ -55,6 +55,7 @@ describe('Instance - /instances/:id', function () {
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+      require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       ctx.instance.fetch(expects.success(200, expected, done));
     });
   });
