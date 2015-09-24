@@ -11,12 +11,62 @@ var rabbitMQ = require('models/rabbitmq');
 var InstanceService = require('models/services/instance-service');
 var Instance = require('models/mongo/instance');
 
-var it = lab.it;
+var afterEach = lab.afterEach;
+var beforeEach = lab.beforeEach;
 var describe = lab.describe;
 var expect = Code.expect;
+var it = lab.it;
 
 describe('InstanceService', function () {
-
+  describe('#deploy', function () {
+    beforeEach(function (done) {
+      sinon.spy(rabbitMQ, 'deployInstance');
+      done();
+    });
+    afterEach(function (done) {
+      rabbitMQ.deployInstance.restore();
+      done();
+    });
+    it('should return if instanceId and buildId param is missing', function (done) {
+      var instanceService = new InstanceService();
+      instanceService.deploy(null, null, 'user-id', 'name', function (err) {
+        expect(err).to.not.exist();
+        expect(rabbitMQ.deployInstance.callCount).to.equal(0);
+        done();
+      });
+    });
+    it('should return if user-id param is missing', function (done) {
+      var instanceService = new InstanceService();
+      instanceService.deploy('instance', null, null, 'name', true, function (err) {
+        expect(err).to.not.exist();
+        expect(rabbitMQ.deployInstance.callCount).to.equal(0);
+        done();
+      });
+    });
+    it('should return if username param is missing', function (done) {
+      var instanceService = new InstanceService();
+      instanceService.deploy(null, 'build', 'user-id', null, function (err) {
+        expect(err).to.not.exist();
+        expect(rabbitMQ.deployInstance.callCount).to.equal(0);
+        done();
+      });
+    });
+    it('should create a worker for the deploy', function (done) {
+      var instanceService = new InstanceService();
+      instanceService.deploy(null, 'build', 'user-id', 'name', 'forceDock', function (err) {
+        expect(err).to.not.exist();
+        expect(rabbitMQ.deployInstance.callCount).to.equal(1);
+        expect(rabbitMQ.deployInstance.args[0][0]).to.deep.equal({
+          instanceId: null,
+          buildId: 'build',
+          forceDock: undefined,
+          ownerUsername: 'name',
+          sessionUserGithubId: 'user-id'
+        });
+        done();
+      });
+    });
+  });
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
 
     it('should return if instanceId param is missing', function (done) {
