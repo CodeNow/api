@@ -7,6 +7,7 @@ var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 
 var Code = require('code');
+var domain = require('domain');
 var noop = require('101/noop');
 var put = require('101/put');
 var sinon = require('sinon');
@@ -96,6 +97,26 @@ describe('BaseWorker: '+moduleName, function () {
     }, ctx.mockInstanceSparse);
     ctx.worker = new BaseWorker(ctx.data);
     done();
+  });
+
+  describe('constructor', function () {
+    it('should use uuid from domain.runnableData', function (done) {
+      var d = domain.create();
+      d.runnableData = {tid: 'foobar'};
+      d.run(function () {
+        var b = new BaseWorker();
+        expect(b.logData.uuid).to.equal('foobar');
+        done();
+      });
+    });
+  });
+
+  describe('getRunnableData', function () {
+    it('should return an object with a tid', function (done) {
+      var runnableData = BaseWorker.getRunnableData();
+      expect(runnableData.tid).to.be.a.string();
+      done();
+    });
   });
 
   describe('_baseWorkerFindContextVersion', function () {
