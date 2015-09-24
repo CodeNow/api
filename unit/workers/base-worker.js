@@ -88,6 +88,13 @@ describe('BaseWorker', function () {
     done();
   });
 
+  describe('getRunnableData', function () {
+    it('should return an object with a tid', function () {
+      var runnableData = BaseWorker.getRunnableData();
+      expect(runnableData.tid).to.be.a.string();
+    });
+  });
+
   describe('_baseWorkerFindContextVersion', function () {
     describe('basic', function () {
       beforeEach(function (done) {
