@@ -89,9 +89,10 @@ describe('BaseWorker', function () {
   });
 
   describe('getRunnableData', function () {
-    it('should return an object with a tid', function () {
+    it('should return an object with a tid', function (done) {
       var runnableData = BaseWorker.getRunnableData();
       expect(runnableData.tid).to.be.a.string();
+      done();
     });
   });
 
