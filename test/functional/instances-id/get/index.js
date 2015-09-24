@@ -20,6 +20,7 @@ var Instance = require('models/mongo/instance');
 describe('Instance - /instances/:id', function () {
   var ctx = {};
 
+  before(require('../../fixtures/clean-nock'));
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));
