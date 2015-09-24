@@ -20,7 +20,10 @@ var ctx = {};
 // this is going to be a little weird, since we have to set NODE_ENV to not be
 // `test` to get this to work. Let's see what happens...
 
-describe('Error', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Error: '+moduleName, function () {
 
   describe('should send to rollbar', function () {
     beforeEach(function (done) {

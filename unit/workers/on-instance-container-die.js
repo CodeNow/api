@@ -17,7 +17,10 @@ var describe = lab.describe;
 var it = lab.it;
 var expect = Code.expect;
 
-describe('OnInstanceContainerDie', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('OnInstanceContainerDie: '+moduleName, function () {
   var ctx;
 
   beforeEach(function (done) {

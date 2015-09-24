@@ -8,7 +8,10 @@ var it = lab.it;
 
 var reqUtils = require('req-utils');
 
-describe('req-utils.js unit test', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('req-utils.js unit test: '+moduleName, function () {
   describe('getProtocol', function() {
     it('should return http', function(done) {
       var testReq = {

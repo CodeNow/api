@@ -15,7 +15,10 @@ var it = lab.it;
 var describe = lab.describe;
 var expect = Code.expect;
 
-describe('InstanceService', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('InstanceService: '+moduleName, function () {
 
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
 

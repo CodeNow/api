@@ -48,7 +48,11 @@ module.exports = function (lab) { return new Validator(lab); };
 
 Validator.prototype.githubUserRefValidationChecking = function(createModelFunction, property, isList) {
   var self = this;
-  self.lab.describe('Github User Ref Validation', function () {
+
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+  self.lab.describe('Github User Ref Validation: '+moduleName, function () {
     var word = self.makeStringOfLength(50);
     self.lab.it('should fail validation for an invalid Github User Id (' + word + ')', function (done) {
       var myObject = createModelFunction();

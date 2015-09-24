@@ -20,7 +20,10 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-describe('StartInstanceContainerWorker', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('StartInstanceContainerWorker: '+moduleName, function () {
   var ctx;
 
   beforeEach(function (done) {

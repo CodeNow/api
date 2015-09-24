@@ -23,8 +23,10 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
 
-describe('CreateImageBuilderContainerWorker', function () {
+describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
   var ctx;
 
   beforeEach(function (done) {

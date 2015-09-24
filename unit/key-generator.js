@@ -13,7 +13,10 @@ var sinon = require('sinon');
 var keyGen = require('key-generator');
 var Keypair = require('models/mongo/keypair');
 
-describe('KeyGenerator', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('KeyGenerator: '+moduleName, function () {
   var ctx;
   beforeEach(function (done) {
     ctx = {};

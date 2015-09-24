@@ -11,7 +11,11 @@ var Code = require('code');
 var expect = Code.expect;
 
 var Runnable = require('models/apis/runnable');
-describe('Runnable', function () {
+
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Runnable: '+moduleName, function () {
   describe('#forkMasterInstance', function () {
     it('should create new instance with branch-masterName pattern', function (done) {
       var runnable = new Runnable({});

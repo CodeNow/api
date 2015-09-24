@@ -13,7 +13,10 @@ var validation = require('./fixtures/validation')(lab);
 var schemaValidators = require('../lib/models/mongo/schemas/schema-validators');
 var Context = require('models/mongo/context');
 
-describe('Context Unit Testing', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Context Unit Testing: '+moduleName, function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 

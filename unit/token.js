@@ -10,7 +10,10 @@ var beforeEach = lab.beforeEach;
 var redis = require('models/redis');
 var Token = require('models/redis/token');
 
-describe('token.js unit test', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('token.js unit test '+moduleName, function () {
   var token;
   beforeEach(function(done) {
     redis.flushdb(done);
