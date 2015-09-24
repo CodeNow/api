@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.53.0",
+  "version": "2.53.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -16,8 +16,6 @@
     "blacklight": "^1.1.1",
     "body-parser": "^1.4.3",
     "bunyan": "^1.4.0",
-    "bunyan-logentries": "^1.1.2",
-    "bunyan-loggly": "0.0.5",
     "busboy": "^0.2.8",
     "callback-count": "~0.1.0",
     "cayley": "^0.2.0",
@@ -139,7 +137,7 @@
     "docs": "jsdoc -r -d docs lib/ && if [ $CIRCLE_ARTIFACTS ]; then cp -r docs $CIRCLE_ARTIFACTS; fi",
     "fixme": "grep -nR FIXME lib test",
     "todo": "grep -nR TODO lib test",
-    "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js",
+    "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js 2>&1 | bunyan -o json-0 --strict",
     "start-debug": "NODE_PATH=./lib node --debug index.js",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs index.js",
     "coverage": "NODE_PATH=./lib NODE_ENV=test lab -vl -m 60000 -e test -c -r html test/*.js > coverage.html && if [ $CIRCLE_ARTIFACTS ]; then cp coverage.html $CIRCLE_ARTIFACTS; fi",
