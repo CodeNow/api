@@ -8,17 +8,14 @@ var after = lab.after;
 var beforeEach = lab.beforeEach;
 var afterEach = lab.afterEach;
 
-var assign = require('101/assign');
 var createCount = require('callback-count');
-var defaults = require('101/defaults');
-var isFunction = require('101/is-function');
-var mongoose = require('mongoose');
-var ObjectId = mongoose.Types.ObjectId;
 var uuid = require('uuid');
 var rabbitMQ = require('models/rabbitmq');
 var sinon = require('sinon');
 
+
 var dock = require('../../functional/fixtures/dock');
+var mockFactory = require('../fixtures/factory');
 var mongooseControl = require('models/mongo/mongoose-control.js');
 var Build = require('models/mongo/build.js');
 var ContextVersion = require('models/mongo/context-version.js');
@@ -68,15 +65,21 @@ describe('DeployInstanceWorker Integration Tests', function () {
       });
       beforeEach(function (done) {
         ctx.githubId = 10;
-        createUser(ctx.githubId, function (err, user) {
-          if (err) { return done(err); }
+        mockFactory.createUser(ctx.githubId, function (err, user) {
+          if (err) {
+            return done(err);
+          }
           ctx.user = user;
           ctx.hash = uuid();
-          createCompletedCv(ctx.githubId, { build: { manual: true }}, function (err, cv) {
-            if (err) { return done(err); }
+          mockFactory.createCompletedCv(ctx.githubId, {build: {manual: true}}, function (err, cv) {
+            if (err) {
+              return done(err);
+            }
             ctx.cv = cv;
-            createBuild(ctx.githubId, cv, function (err, build) {
-              if (err) { return done(err); }
+            mockFactory.createBuild(ctx.githubId, cv, function (err, build) {
+              if (err) {
+                return done(err);
+              }
               ctx.build = build;
               done();
             });
@@ -87,8 +90,20 @@ describe('DeployInstanceWorker Integration Tests', function () {
 
         beforeEach(function (done) {
           var count = createCount(2, done);
-          createInstance(ctx.githubId, ctx.build, false, count.next);
-          createInstance(ctx.githubId, ctx.build, true, count.next);
+          mockFactory.createInstance(
+            ctx.githubId,
+            ctx.build,
+            false,
+            ctx.cv,
+            count.next
+          );
+          mockFactory.createInstance(
+            ctx.githubId,
+            ctx.build,
+            true,
+            ctx.cv,
+            count.next
+          );
         });
         it('should deploy both instances', function (done) {
           sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, ctx.user);
@@ -152,15 +167,21 @@ describe('DeployInstanceWorker Integration Tests', function () {
       });
       beforeEach(function (done) {
         ctx.githubId = 10;
-        createUser(ctx.githubId, function (err, user) {
-          if (err) { return done(err); }
+        mockFactory.createUser(ctx.githubId, function (err, user) {
+          if (err) {
+            return done(err);
+          }
           ctx.user = user;
           ctx.hash = uuid();
-          createCompletedCv(ctx.githubId, { build: { manual: false }}, function (err, cv) {
-            if (err) { return done(err); }
+          mockFactory.createCompletedCv(ctx.githubId, {build: {manual: false}}, function (err, cv) {
+            if (err) {
+              return done(err);
+            }
             ctx.cv = cv;
-            createBuild(ctx.githubId, cv, function (err, build) {
-              if (err) { return done(err); }
+            mockFactory.createBuild(ctx.githubId, cv, function (err, build) {
+              if (err) {
+                return done(err);
+              }
               ctx.build = build;
               done();
             });
@@ -172,14 +193,24 @@ describe('DeployInstanceWorker Integration Tests', function () {
 
         beforeEach(function (done) {
           var count = createCount(2, done);
-          createInstance(ctx.githubId, ctx.build, false, function (err, instance) {
-            ctx.instance = instance;
-            count.next();
-          });
-          createInstance(ctx.githubId, ctx.build, true, function (err, instance) {
-            ctx.lockedInstance = instance;
-            count.next();
-          });
+          mockFactory.createInstance(
+            ctx.githubId,
+            ctx.build,
+            false,
+            ctx.cv,
+            function (err, instance) {
+              ctx.instance = instance;
+              count.next();
+            });
+          mockFactory.createInstance(
+            ctx.githubId,
+            ctx.build,
+            true,
+            ctx.cv,
+            function (err, instance) {
+              ctx.lockedInstance = instance;
+              count.next();
+            });
         });
         it('should deploy only the unlocked instance', function (done) {
           sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, ctx.user);
@@ -213,137 +244,4 @@ describe('DeployInstanceWorker Integration Tests', function () {
       });
     });
   });
-
-
-  /* Utils */
-  function createUser (id, cb) {
-    User.create({
-      email: 'hello@runnable.com',
-      accounts: {
-        github: {
-          id: id,
-          accessToken: uuid(),
-          username: uuid(),
-          emails: [
-            'hello@runnable.com'
-          ]
-        }
-      }
-    }, cb);
-  }
-  function createInstance (ownerGithubId, build, locked, cb) {
-    var data = instanceTemplate(ownerGithubId, build, locked);
-    Instance.create(data, cb);
-  }
-  function createBuild (ownerGithubId, cv, cb) {
-    var data = buildTemplate(ownerGithubId, cv);
-    Build.create(data, cb);
-  }
-  function createCompletedCv (ownerGithubId, props, cb) {
-    if (isFunction(props)) {
-      cb = props;
-      props = null;
-    }
-    props = props || { build: {} };
-    defaults(props.build, {
-      hash: uuid(),
-      started: new Date(new Date() - 60 * 1000),
-      completed: new Date(),
-      manual: false
-    });
-    var data = cvTemplate(
-      ownerGithubId,
-      props.build.manual,
-      props.build.hash,
-      props.build.started,
-      props.build.completed
-    );
-    ContextVersion.create(data, cb);
-  }
 });
-function cvTemplate (ownerGithubId, manual, hash, started, completed) {
-  started = started || new Date();
-  var cv = {
-    infraCodeVersion : new ObjectId(),
-    createdBy : {
-      github : ownerGithubId
-    },
-    context : new ObjectId(),
-    owner : {
-      github : ownerGithubId
-    },
-    build: {
-      triggeredAction : {
-        manual : manual
-      },
-      _id : new ObjectId(),
-      triggeredBy : {
-        github : ownerGithubId
-      },
-      started : started,
-      hash : hash,
-      network : {
-        hostIp : '10.250.197.190',
-        networkIp : '10.250.196.0'
-      }
-    },
-    advanced : true,
-    appCodeVersions : [],
-    created : new Date(started - 60*1000),
-    __v : 0,
-    containerId : '55dbd00c5f899e0e0004b12d',
-    dockerHost : 'http://10.0.1.79:4242'
-  };
-  if (completed) {
-    assign(cv.build, {
-      dockerTag : 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
-      dockerContainer : '1234567890123456789012345678901234567890123456789012345678901234',
-      dockerImage : 'bbbd03498dab',
-      completed : completed
-    });
-  }
-  return cv;
-}
-function buildTemplate (ownerGithubId, cv) {
-  var completed = new Date();
-  var started = new Date(completed - 60*1000);
-  return {
-    buildNumber : 1,
-    disabled: false,
-    contexts: [cv.context],
-    contextVersions: [cv._id],
-    completed : completed,
-    created : new Date(started - 60*1000),
-    started: started,
-    createdBy : {
-      github : ownerGithubId
-    },
-    context : new ObjectId(),
-    owner : {
-      github : ownerGithubId
-    }
-  };
-}
-function instanceTemplate (ownerGithubId, build, locked) {
-  var name = uuid();
-  return {
-    shortHash: uuid(),
-    name: name,
-    lowerName: name.toLowerCase(),
-    owner: {
-      github: ownerGithubId
-    },
-    createdBy: {
-      github: ownerGithubId
-    },
-    parent: 'sdf',
-    build: build._id,
-    locked: locked,
-    created: new Date(),
-    env: [],
-    network: {
-      networkIp: '127.0.0.1',
-      hostIp: '127.0.0.1'
-    }
-  };
-}

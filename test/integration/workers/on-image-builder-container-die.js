@@ -12,10 +12,6 @@ var Dockerode = require('dockerode');
 var through = require('through');
 var createFrame = require('docker-frame');
 var createCount = require('callback-count');
-var defaults = require('101/defaults');
-var isFunction = require('101/is-function');
-var mongoose = require('mongoose');
-var ObjectId = mongoose.Types.ObjectId;
 var uuid = require('uuid');
 var rabbitMQ = require('models/rabbitmq');
 var sinon = require('sinon');
@@ -28,6 +24,8 @@ var Instance = require('models/mongo/instance.js');
 var User = require('models/mongo/user.js');
 var messenger = require('socket/messenger');
 var Sauron = require('models/apis/sauron.js');
+
+var mockFactory = require('../fixtures/factory');
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js');
 
@@ -74,20 +72,25 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       });
       beforeEach(function (done) {
         ctx.githubId = 10;
-        createUser(ctx.githubId, function (err, user) {
+        mockFactory.createUser(ctx.githubId, function (err, user) {
           if (err) { return done(err); }
           ctx.user = user;
           ctx.hash = uuid();
-          createStartedCv(ctx.githubId, { build: { manual: true }}, function (err, cv) {
+          mockFactory.createStartedCv(ctx.githubId, {build: {manual: true}}, function (err, cv) {
             if (err) { return done(err); }
             ctx.cv = cv;
-            createBuild(ctx.githubId, cv, function (err, build) {
+            mockFactory.createBuild(ctx.githubId, cv, function (err, build) {
               if (err) { return done(err); }
               ctx.build = build;
-              createInstance(ctx.githubId, ctx.build, false, ctx.cv, function (err, instance) {
-                ctx.instance = instance;
-                done();
-              });
+              mockFactory.createInstance(
+                ctx.githubId,
+                ctx.build,
+                false,
+                ctx.cv,
+                function (err, instance) {
+                  ctx.instance = instance;
+                  done();
+                });
             });
           });
         });
@@ -325,136 +328,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     expect(instance.contextVersion.build.failed, 'emitted contextVersion.build.failed')
       .to.equal(expectedFail);
   }
-  /* Utils */
-  function createUser (id, cb) {
-    User.create({
-      email: 'hello@runnable.com',
-      accounts: {
-        github: {
-          id: id,
-          accessToken: uuid(),
-          username: uuid(),
-          emails: [
-            'hello@runnable.com'
-          ]
-        }
-      }
-    }, cb);
-  }
-  function createInstance (ownerGithubId, build, locked, cv, cb) {
-    var data = instanceTemplate(ownerGithubId, build, locked, cv);
-    Instance.create(data, cb);
-  }
-  function createBuild (ownerGithubId, cv, cb) {
-    var data = buildTemplate(ownerGithubId, cv);
-    Build.create(data, cb);
-  }
-  function createStartedCv (ownerGithubId, props, cb) {
-    if (isFunction(props)) {
-      cb = props;
-      props = null;
-    }
-    props = props || { build: {} };
-    defaults(props.build, {
-      hash: uuid(),
-      started: new Date(),
-      dockerContainer: '1234567890123456789012345678901234567890123456789012345678901234'
-    });
-    var data = cvTemplate(
-      ownerGithubId,
-      props.build.dockerContainer,
-      props.build.manual,
-      props.build.hash,
-      props.build.started
-    );
-    ContextVersion.create(data, cb);
-  }
-  function cvTemplate (ownerGithubId, containerId, manual, hash, started) {
-    started = started || new Date();
-    var cv = {
-      infraCodeVersion : new ObjectId(),
-      createdBy : {
-        github : ownerGithubId
-      },
-      context : new ObjectId(),
-      owner : {
-        github : ownerGithubId
-      },
-      build: {
-        triggeredAction : {
-          manual : manual
-        },
-        _id : new ObjectId(),
-        triggeredBy : {
-          github : ownerGithubId
-        },
-        started : started,
-        hash : hash,
-        dockerTag : 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
-        containerId : containerId,
-        dockerContainer : containerId,
-        dockerImage : 'bbbd03498dab',
-        network : {
-          hostIp : '127.0.0.1',
-          networkIp : '127.0.0.1'
-        }
-      },
-      advanced : true,
-      appCodeVersions : [],
-      created : new Date(started - 60*1000),
-      _v : 0,
-      dockerHost : 'http://127.0.0.1:4242'
-    };
-    return cv;
-  }
-  function buildTemplate (ownerGithubId, cv) {
-    var completed = new Date();
-    var started = new Date(completed - 60*1000);
-    return {
-      buildNumber : 1,
-      disabled: false,
-      contexts: [cv.context],
-      contextVersions: [cv._id],
-      completed : completed,
-      created : new Date(started - 60*1000),
-      started: started,
-      createdBy : {
-        github : ownerGithubId
-      },
-      context : new ObjectId(),
-      owner : {
-        github : ownerGithubId
-      }
-    };
-  }
-  function instanceTemplate (ownerGithubId, build, locked, cv) {
-    var name = uuid();
-    return {
-      shortHash: uuid(),
-      name: name,
-      lowerName: name.toLowerCase(),
-      owner: {
-        github: ownerGithubId,
-        username: 'sdfasdfasdf',
-        gravatar: 'gravatar'
-      },
-      createdBy: {
-        github: ownerGithubId,
-        username: 'sdfasdfasdf',
-        gravatar: 'gravatar'
-      },
-      parent: 'sdf',
-      build: build._id,
-      contextVersion: cv,
-      locked: locked,
-      created: new Date(),
-      env: [],
-      network: {
-        networkIp: '127.0.0.1',
-        hostIp: '127.0.0.1'
-      }
-    };
-  }
+
   function imageBuilderDieTemplate (contextVersion, user) {
     return {
       'status': 'die',
