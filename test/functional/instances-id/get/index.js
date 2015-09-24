@@ -21,6 +21,7 @@ describe('Instance - /instances/:id', function () {
   var ctx = {};
 
   before(require('../../fixtures/clean-nock'));
+  beforeEach(require('../../fixtures/clean-mongo').removeEverything);
   before(api.start.bind(ctx));
   before(dock.start.bind(ctx));
   after(api.stop.bind(ctx));
