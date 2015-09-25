@@ -52,7 +52,9 @@ describe('Instance - /instances/:id', function () {
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
       require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-      //require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+      require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+      require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+      require('../../fixtures/mocks/github/user')(ctx.user);
       ctx.instance.fetch(function (err, instance, statusCode) {
         expect(statusCode).to.equal(200);
         expect(instance.build._id, 'instance.build._id').to.equal(ctx.build.id());
