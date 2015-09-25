@@ -133,7 +133,10 @@ function createNewInstance (name, opts) {
   });
 }
 
-describe('Instance', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Instance: '+moduleName, function () {
   // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
@@ -260,7 +263,7 @@ describe('Instance', function () {
         }, function (err) {
           if (err) { throw err; }
           instance.setContainerStateToStopping(function (err, result) {
-            expect(err.message).to.equal('container is already starting or stopping');
+            expect(err.message).to.equal('instance container has changed');
             expect(result).to.be.undefined();
             done();
           });

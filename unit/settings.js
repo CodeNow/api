@@ -11,7 +11,10 @@ var expect = Code.expect;
 
 var Settings = require('models/mongo/settings');
 
-describe('Settings',  function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Settings: '+moduleName,  function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 

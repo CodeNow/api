@@ -20,7 +20,10 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-describe('OnInstanceContainerStartWorker', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('OnInstanceContainerStartWorker: '+moduleName, function () {
   var ctx;
 
   beforeEach(function (done) {
@@ -66,18 +69,16 @@ describe('OnInstanceContainerStartWorker', function () {
     done();
   });
   beforeEach(function (done) {
-    sinon.stub(ctx.worker, '_findInstance', function (query, cb) {
+    sinon.stub(ctx.worker, '_baseWorkerFindInstance', function (query, cb) {
       ctx.worker.instance = ctx.mockInstance;
       cb(null, ctx.mockInstance);
     });
-    sinon.stub(ctx.worker, '_findUser').yieldsAsync();
-    sinon.stub(ctx.worker, '_updateInstanceFrontend').yieldsAsync(null);
+    sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null);
     done();
   });
   afterEach(function (done) {
-    ctx.worker._findInstance.restore();
-    ctx.worker._findUser.restore();
-    ctx.worker._updateInstanceFrontend.restore();
+    ctx.worker._baseWorkerFindInstance.restore();
+    ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
     done();
   });
   describe('all together', function () {
@@ -106,7 +107,7 @@ describe('OnInstanceContainerStartWorker', function () {
       it('should do everything', function (done) {
         ctx.worker.handle(function (err) {
           expect(err).to.be.null();
-          expect(ctx.worker._findInstance.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
           expect(ctx.mockInstance.modifyContainerInspect.args[0][0])
             .to.equal(ctx.data.id);
@@ -122,8 +123,7 @@ describe('OnInstanceContainerStartWorker', function () {
           expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
               .to.equal(ctx.labels.ownerUsername);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
-          expect(ctx.worker._findUser.callCount).to.equal(1);
-          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           done();
         });
       });
@@ -144,7 +144,7 @@ describe('OnInstanceContainerStartWorker', function () {
         ctx.worker.handle(function (err) {
           // This should never return an error
           expect(err).to.be.null();
-          expect(ctx.worker._findInstance.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
           expect(Sauron.prototype.attachHostToContainer.args[0][0])
             .to.equal(ctx.mockInstance.network.networkIp);
@@ -156,8 +156,7 @@ describe('OnInstanceContainerStartWorker', function () {
               .to.equal(ctx.labels.ownerUsername);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
           expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
-          expect(ctx.worker._findUser.callCount).to.equal(1);
-          expect(ctx.worker._updateInstanceFrontend.callCount).to.equal(1);
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           done();
         });
       });
@@ -167,9 +166,9 @@ describe('OnInstanceContainerStartWorker', function () {
 
   describe('_attachContainerToNetwork', function () {
     beforeEach(function (done) {
-      // normally set by _findInstance
+      // normally set by _baseWorkerFindInstance
       ctx.worker.instance = ctx.mockInstance;
-      // normally set after _findInstance
+      // normally set after _baseWorkerFindInstance
       ctx.worker.hostIp = ctx.mockInstance.network.hostIp;
       ctx.worker.networkIp = ctx.mockInstance.network.networkIp;
       done();
@@ -251,7 +250,7 @@ describe('OnInstanceContainerStartWorker', function () {
 
   describe('_updateInstance', function () {
     beforeEach(function (done) {
-      // normally set by _findInstance
+      // normally set by _baseWorkerFindInstance
       ctx.worker.instance = ctx.mockInstance;
       done();
     });

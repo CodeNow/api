@@ -76,7 +76,7 @@ var sources = [{
   body:
     '# Full details of this base image can be found here:'+
     ' https://registry.hub.docker.com/u/dockerfile/elasticsearch/\n'+
-    'FROM dockerfile/elasticsearch\n'
+    'FROM elasticsearch\n'
 }, {
   name: 'Memcached',
   body: fs.readFileSync('./scripts/sourceDockerfiles/memcached').toString()

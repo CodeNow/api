@@ -16,7 +16,10 @@ var spyOnMethod = require('function-proxy').spyOnMethod;
 
 var ctx = {};
 
-describe('Timers', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Timers: '+moduleName, function () {
   describe('instantiation', function () {
     it('should instantiate a timer', function (done) {
       var t;

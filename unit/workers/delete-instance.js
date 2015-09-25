@@ -16,16 +16,19 @@ var Instance = require('models/mongo/instance');
 var messenger = require('socket/messenger');
 var rabbitMQ = require('models/rabbitmq');
 
-describe('Worker: delete-instance', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Worker: delete-instance: '+moduleName, function () {
 
   describe('#handle', function () {
-    it('should fail job if _findInstance call failed', function (done) {
+    it('should fail job if _baseWorkerFindInstance call failed', function (done) {
       var worker = new DeleteInstance({
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       });
-      sinon.stub(worker, '_findInstance', function (instanceId, cb) {
-        cb(Boom.badRequest('_findInstance error'));
+      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
+        cb(Boom.badRequest('_baseWorkerFindInstance error'));
       });
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
@@ -33,7 +36,7 @@ describe('Worker: delete-instance', function () {
         expect(worker._handleError.callCount).to.equal(1);
         var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
-        expect(err.output.payload.message).to.equal('_findInstance error');
+        expect(err.output.payload.message).to.equal('_baseWorkerFindInstance error');
         done();
       });
     });
@@ -42,7 +45,7 @@ describe('Worker: delete-instance', function () {
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       });
-      sinon.stub(worker, '_findInstance', function (instanceId, cb) {
+      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
         cb(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
       });
       sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
@@ -64,7 +67,7 @@ describe('Worker: delete-instance', function () {
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       });
-      sinon.stub(worker, '_findInstance', function (instanceId, cb) {
+      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
         cb(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
       });
       sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
@@ -90,7 +93,7 @@ describe('Worker: delete-instance', function () {
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       });
-      sinon.stub(worker, '_findInstance', function (instanceId, cb) {
+      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
         var data = {
           _id: '507f1f77bcf86cd799439011',
           name: 'api',
@@ -157,7 +160,7 @@ describe('Worker: delete-instance', function () {
           ]
         }
       };
-      sinon.stub(worker, '_findInstance', function (instanceId, cb) {
+      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
         cb(null, new Instance(instanceData));
       });
       sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
@@ -228,7 +231,7 @@ describe('Worker: delete-instance', function () {
           ]
         }
       };
-      sinon.stub(worker, '_findInstance', function (instanceId, cb) {
+      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
         cb(null, new Instance(instanceData));
       });
       sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {

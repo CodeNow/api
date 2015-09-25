@@ -14,7 +14,10 @@ var validation = require('./fixtures/validation')(lab);
 
 var Build = require('models/mongo/build');
 
-describe('Build', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Build: '+moduleName, function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 

@@ -24,6 +24,7 @@ var expect = Code.expect;
 var it = lab.it;
 var sinon = require('sinon');
 var rabbitMQ = require('models/rabbitmq');
+var InstanceService = require('models/services/instance-service');
 
 function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
   user = user.json();
@@ -146,6 +147,7 @@ describe('200 PATCH /instances', function () {
       });
 
       it('should update an instance with a build', function (done) {
+        sinon.spy(InstanceService.prototype, 'deleteForkedInstancesByRepoAndBranch');
         ctx.instance.update({
           env: ['ENV=OLD'],
           build: ctx.build.id(),
@@ -153,6 +155,14 @@ describe('200 PATCH /instances', function () {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           // wait until build is ready to finish the test
           primus.onceVersionComplete(ctx.cv.id(), function () {
+            expect(InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1);
+            var acv = ctx.cv.appCodeVersions.models[0].attrs;
+            var args = InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.getCall(0).args;
+            expect(args[0].toString()).to.equal(ctx.instance.id().toString());
+            expect(args[1]).to.equal(ctx.user.id());
+            expect(args[2]).to.equal(acv.lowerRepo);
+            expect(args[3]).to.equal(acv.lowerBranch);
+            InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.restore();
             done();
           });
           dockerMockEvents.emitBuildComplete(ctx.cv);
