@@ -1294,7 +1294,7 @@ describe('Instance: '+moduleName, function () {
       instance.invalidateContainerDNS();
       expect(pubsub.publish.calledOnce).to.be.true();
       expect(pubsub.publish.calledWith(
-        process.env.REDIS_INVALIDATION_KEY + ':' + hostIp,
+        process.env.REDIS_DNS_INVALIDATION_KEY + ':' + hostIp,
         localIp
       )).to.be.true();
       done();
