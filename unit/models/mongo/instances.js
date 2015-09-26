@@ -22,6 +22,7 @@ var hasProps = require('101/has-properties');
 var mongoose = require('mongoose');
 var pick = require('101/pick');
 var pluck = require('101/pluck');
+var noop = require('101/noop');
 
 var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
@@ -90,7 +91,7 @@ function createNewVersion (opts) {
 }
 
 function createNewInstance (name, opts) {
-  // jshint maxcomplexity:9
+  // jshint maxcomplexity:10
   opts = opts || {};
   var container = {
     dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
@@ -105,6 +106,9 @@ function createNewInstance (name, opts) {
         'Running': true,
         'StartedAt': '2014-11-25T22:29:50.23925175Z'
       },
+      NetworkSettings: {
+        IPAddress: opts.IPAddress || '172.17.14.2'
+      }
     }
   };
   return new Instance({
@@ -509,6 +513,29 @@ describe('Instance: '+moduleName, function () {
         var cvId = newObjectId();
         savedInstance.modifyContainerCreateErr(cvId, fakeError, count.next);
       });
+    });
+  });
+
+  describe('modifyContainerInspect', function() {
+    var instance;
+
+    beforeEach(function (done) {
+      instance = createNewInstance('testy', {});
+      sinon.spy(instance, 'invalidateContainerDNS');
+      sinon.stub(Instance, 'findOneAndUpdate');
+      done();
+    });
+
+    afterEach(function (done) {
+      instance.invalidateContainerDNS.restore();
+      Instance.findOneAndUpdate.restore();
+      done();
+    });
+
+    it('should invalidate the instance container DNS', function(done) {
+      instance.modifyContainerInspect('some-id', {}, noop);
+      expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
+      done();
     });
   });
 
@@ -1222,17 +1249,54 @@ describe('Instance: '+moduleName, function () {
     });
   });
 
-  describe('dnsInvalidateNetworkIp', function() {
-    it('should use redis pubsub to send invalidation messages', function(done) {
-      var networkIp = '1.2.3.4';
-      var instance = createNewInstance('hola', { networkIp: networkIp });
-      sinon.spy(pubsub, 'publish');
-      instance.dnsInvalidateNetworkIp();
-      expect(pubsub.publish.calledWith(
-        'dns.invalidate.networkIp',
-        networkIp
-      )).to.be.true();
+  describe('invalidateContainerDNS', function() {
+    var instance;
+
+    beforeEach(function (done) {
+      instance = createNewInstance('a', {});
+      sinon.stub(pubsub, 'publish');
+      done();
+    });
+
+    afterEach(function (done) {
       pubsub.publish.restore();
+      done();
+    });
+
+    it('should not invalidate without a docker host', function(done) {
+      delete instance.container.dockerHost;
+      instance.invalidateContainerDNS();
+      expect(pubsub.publish.callCount).to.equal(0);
+      done();
+    });
+
+    it('should not invalidate without a local ip address', function(done) {
+      delete instance.container.inspect.NetworkSettings.IPAddress;
+      instance.invalidateContainerDNS();
+      expect(pubsub.publish.callCount).to.equal(0);
+      done();
+    });
+
+    it('should not invalidate with a malformed docker host ip', function(done) {
+      instance.container.dockerHost = 'skkfksrandom';
+      instance.invalidateContainerDNS();
+      expect(pubsub.publish.callCount).to.equal(0);
+      done();
+    });
+
+    it('should publish the correct invalidation event via redis', function(done) {
+      var hostIp = '10.20.128.1';
+      var localIp = '172.17.14.55';
+      var instance = createNewInstance('b', {
+        dockerHost: 'http://' + hostIp + ':4242',
+        IPAddress: localIp
+      });
+      instance.invalidateContainerDNS();
+      expect(pubsub.publish.calledOnce).to.be.true();
+      expect(pubsub.publish.calledWith(
+        process.env.REDIS_DNS_INVALIDATION_KEY + ':' + hostIp,
+        localIp
+      )).to.be.true();
       done();
     });
   });
@@ -1243,14 +1307,14 @@ describe('Instance: '+moduleName, function () {
     var instance = createNewInstance('wooosh', { networkIp: networkIp });
 
     beforeEach(function (done) {
-      sinon.spy(instance, 'dnsInvalidateNetworkIp');
+      sinon.spy(instance, 'invalidateContainerDNS');
       sinon.stub(instance, 'getDependencies').yieldsAsync(null, []);
       sinon.stub(Instance, 'find').yieldsAsync(null, []);
       done();
     });
 
     afterEach(function (done) {
-      instance.dnsInvalidateNetworkIp.restore();
+      instance.invalidateContainerDNS.restore();
       instance.getDependencies.restore();
       Instance.find.restore();
       done();
@@ -1259,7 +1323,7 @@ describe('Instance: '+moduleName, function () {
     it('should invalidate dns cache entries for the networkIp', function(done) {
       instance.setDependenciesFromEnvironment(ownerName, function (err) {
         if (err) { done(err); }
-        expect(instance.dnsInvalidateNetworkIp.calledOnce).to.be.true();
+        expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
         done();
       });
     });
@@ -1271,13 +1335,13 @@ describe('Instance: '+moduleName, function () {
     var dependant = createNewInstance('splooosh');
 
     beforeEach(function (done) {
-      sinon.spy(instance, 'dnsInvalidateNetworkIp');
+      sinon.spy(instance, 'invalidateContainerDNS');
       sinon.stub(async, 'series').yieldsAsync();
       done();
     });
 
     afterEach(function (done) {
-      instance.dnsInvalidateNetworkIp.restore();
+      instance.invalidateContainerDNS.restore();
       async.series.restore();
       done();
     });
@@ -1285,7 +1349,7 @@ describe('Instance: '+moduleName, function () {
     it('should invalidate dns cache entries for the networkIp', function(done) {
       instance.addDependency(dependant, 'wooo.com', function (err) {
         if (err) { done(err); }
-        expect(instance.dnsInvalidateNetworkIp.calledOnce).to.be.true();
+        expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
         done();
       });
     });
@@ -1298,13 +1362,13 @@ describe('Instance: '+moduleName, function () {
     var dependant = createNewInstance('mighty');
 
     beforeEach(function (done) {
-      sinon.spy(instance, 'dnsInvalidateNetworkIp');
+      sinon.spy(instance, 'invalidateContainerDNS');
       sinon.stub(Neo4j.prototype, 'deleteConnection').yieldsAsync();
       done();
     });
 
     afterEach(function (done) {
-      instance.dnsInvalidateNetworkIp.restore();
+      instance.invalidateContainerDNS.restore();
       Neo4j.prototype.deleteConnection.restore();
       done();
     });
@@ -1312,7 +1376,7 @@ describe('Instance: '+moduleName, function () {
     it('should invalidate dns cache entries for the networkIp', function(done) {
       instance.removeDependency(dependant, function (err) {
         if (err) { done(err); }
-        expect(instance.dnsInvalidateNetworkIp.calledOnce).to.be.true();
+        expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
         done();
       });
     });
