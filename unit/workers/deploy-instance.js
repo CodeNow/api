@@ -208,6 +208,7 @@ describe('DeployInstanceWorker', function () {
           expect(BaseWorker.prototype._pBaseWorkerFindBuild.callCount).to.equal(1);
           expect(BaseWorker.prototype._pBaseWorkerFindBuild.args[0][0]).to.deep.equal({
             _id: ctx.mockBuild._id,
+            completed: { $exists: true },
             'failed': false
           });
           expect(BaseWorker.prototype._pBaseWorkerFindContextVersion.callCount).to.equal(1);
@@ -270,6 +271,7 @@ describe('DeployInstanceWorker', function () {
           expect(BaseWorker.prototype._pBaseWorkerFindBuild.callCount).to.equal(1);
           expect(BaseWorker.prototype._pBaseWorkerFindBuild.args[0][0]).to.deep.equal({
             _id: ctx.mockBuild._id,
+            completed: { $exists: true },
             'failed': false
           });
           expect(BaseWorker.prototype._pBaseWorkerFindContextVersion.callCount).to.equal(1);
