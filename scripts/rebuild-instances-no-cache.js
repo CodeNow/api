@@ -25,10 +25,10 @@ var query = {
   'container.error.data.err.reason': 'runnable error please rebuild'
 };
 
-runnableClient.githubLogin(process.env.HELLO_RUNNABLE_GITHUB_TOKEN, function (ee) {
-  if (ee) {
-    console.log('XX failed login', ee);
-    throw new Error('no login');
+runnableClient.githubLogin(process.env.HELLO_RUNNABLE_GITHUB_TOKEN, function (err0) {
+  if (err0) {
+    console.log('failed login', err0);
+    throw err0;
   }
   var c = 0;
   Instance.find(query, function (err1, a) {
@@ -44,16 +44,16 @@ runnableClient.githubLogin(process.env.HELLO_RUNNABLE_GITHUB_TOKEN, function (ee
       var instanceModel = runnableClient.newInstance(i.shortHash);
       instanceModel.fetch(function (err2) {
         if (err2) {
-          console.log('XX failed fetch', err2, i.shortHash);
+          console.log('failed fetch', err2, i.shortHash);
           return cb();
         }
         if (!instanceModel.attrs.createdBy.github) {
-          console.log('XX no createdBy', i.shortHash);
+          console.log('no createdBy', i.shortHash);
           return cb();
         }
         User.findByGithubId(instanceModel.attrs.createdBy.github, function (err3, ud) {
           if (err3) {
-            console.log('XX getting user', err3, ud, i.shortHash);
+            console.log('failed getting user', err3, ud, i.shortHash);
             return cb();
           }
           var runnableClient2 = new Runnable(process.env.FULL_API_DOMAIN, {
@@ -65,12 +65,12 @@ runnableClient.githubLogin(process.env.HELLO_RUNNABLE_GITHUB_TOKEN, function (ee
           });
           runnableClient2.githubLogin(ud.accounts.github.accessToken, function (err4) {
             if (err4) {
-              console.log('XX error logging in', err4, i.shortHash);
+              console.log('error logging in', err4, i.shortHash);
               return cb();
             }
             instanceModel.build.deepCopy(function (err5, build) {
               if (err5) {
-                console.log('XX failed to deep copy', i.shortHash, err5);
+                console.log('failed to deep copy', i.shortHash, err5);
                 return cb();
               }
               build = runnableClient.newBuild(build);
@@ -79,7 +79,7 @@ runnableClient.githubLogin(process.env.HELLO_RUNNABLE_GITHUB_TOKEN, function (ee
                 noCache: true
               }, function (err6, nbuild) {
                 if (err6) {
-                  console.log('XX failed to deep copy', i.shortHash, err6);
+                  console.log('failed to build', i.shortHash, err6);
                   return cb();
                 }
                 instanceModel.update({
@@ -88,7 +88,7 @@ runnableClient.githubLogin(process.env.HELLO_RUNNABLE_GITHUB_TOKEN, function (ee
                 }, function (err7) {
                   // ignore errors for now
                   if (err7) {
-                    console.log('XX failed to redeploy', i.shortHash, err7);
+                    console.log('failed to update', i.shortHash, err7);
                   } else {
                     console.log('done', i.shortHash, c, '/', a.length);
                   }
