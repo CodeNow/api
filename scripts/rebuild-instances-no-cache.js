@@ -71,7 +71,6 @@ runnableClient.githubLogin(process.env.HELLO_RUNNABLE_GITHUB_TOKEN, function (ee
                 console.log('XX failed to deep copy', i.shortHash, err3);
                 return cb();
               }
-              console.log('build', build);
               build.build({
                 message: 'Manual build',
                 noCache: true
