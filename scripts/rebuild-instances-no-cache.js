@@ -15,7 +15,7 @@ var Runnable = require('runnable');
 var runnableClient = new Runnable(process.env.FULL_API_DOMAIN, {
   requestDefaults: {
     headers: {
-      'user-agent': 'anand'
+      'user-agent': 'rebuild-instances-script'
     }
   }
 });
@@ -31,61 +31,64 @@ runnableClient.githubLogin(process.env.HELLO_RUNNABLE_GITHUB_TOKEN, function (ee
     throw new Error('no login');
   }
   var c = 0;
-  Instance.find(query, function (err00, a) {
+  Instance.find(query, function (err1, a) {
     // use me to do a single instance
     // a = [{ shortHash: '17kxj2' }];
-    if (err00) { console.log('XX failed find', err00); }
+    if (err1) {
+      console.log('find failed');
+      throw err1;
+    }
     console.log('found', a.length);
     async.eachSeries(a, function (i, cb) {
       c++;
       var instanceModel = runnableClient.newInstance(i.shortHash);
-      instanceModel.fetch(function (err0) {
-        if (err0) {
-          console.log('XX failed fetch', err0);
+      instanceModel.fetch(function (err2) {
+        if (err2) {
+          console.log('XX failed fetch', err2, i.shortHash);
           return cb();
         }
         if (!instanceModel.attrs.createdBy.github) {
-          console.log('XX no createdBy');
+          console.log('XX no createdBy', i.shortHash);
           return cb();
         }
-        User.findByGithubId(instanceModel.attrs.createdBy.github, function (err, ud) {
-          if (err) {
-            console.log('XX getting user', err, ud);
+        User.findByGithubId(instanceModel.attrs.createdBy.github, function (err3, ud) {
+          if (err3) {
+            console.log('XX getting user', err3, ud, i.shortHash);
             return cb();
           }
           var runnableClient2 = new Runnable(process.env.FULL_API_DOMAIN, {
             requestDefaults: {
               headers: {
-                'user-agent': 'anand'
+                'user-agent': 'rebuild-instances-script'
               }
             }
           });
-          runnableClient2.githubLogin(ud.accounts.github.accessToken, function (err2) {
-            if (err2) {
-              console.log('XX error logging in', err2);
+          runnableClient2.githubLogin(ud.accounts.github.accessToken, function (err4) {
+            if (err4) {
+              console.log('XX error logging in', err4, i.shortHash);
               return cb();
             }
-            instanceModel.build.deepCopy(function (err3, build) {
-              build = runnableClient.newBuild(build);
-              if (err3) {
-                console.log('XX failed to deep copy', i.shortHash, err3);
+            instanceModel.build.deepCopy(function (err5, build) {
+              if (err5) {
+                console.log('XX failed to deep copy', i.shortHash, err5);
                 return cb();
               }
+              build = runnableClient.newBuild(build);
               build.build({
                 message: 'Manual build',
                 noCache: true
-              }, function (err4, nbuild) {
-                if (err4) {
-                  console.log('XX failed to deep copy', i.shortHash, err4);
+              }, function (err6, nbuild) {
+                if (err6) {
+                  console.log('XX failed to deep copy', i.shortHash, err6);
                   return cb();
                 }
                 instanceModel.update({
                   build: nbuild._id,
                   env: instanceModel.attrs.env
-                }, function (err5) {
+                }, function (err7) {
                   // ignore errors for now
-                  if (err5) {
-                    console.log('XX failed to redeploy', i.shortHash, err5);
+                  if (err7) {
+                    console.log('XX failed to redeploy', i.shortHash, err7);
                   } else {
                     console.log('done', i.shortHash, c, '/', a.length);
                   }
