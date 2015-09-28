@@ -15,7 +15,10 @@ var InfracodeVersion = require('../lib/models/mongo/infra-code-version');
 var Boom = require('dat-middleware').Boom;
 var sinon = require('sinon');
 
-describe('Infracode Versions', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Infracode Versions: '+moduleName, function () {
   before(require('./fixtures/mongo').connect);
   afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 

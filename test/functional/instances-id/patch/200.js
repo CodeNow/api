@@ -10,6 +10,7 @@ var Code = require('code');
 var Docker = require('dockerode');
 
 var api = require('../../fixtures/api-control');
+var createCount = require('callback-count');
 var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
@@ -81,11 +82,13 @@ describe('200 PATCH /instances', function () {
   before(function (done) {
     // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstance', function () {});
+    sinon.stub(rabbitMQ, 'deployInstance', function () {});
     done();
   });
 
   after(function (done) {
     rabbitMQ.deleteInstance.restore();
+    rabbitMQ.deployInstance.restore();
     done();
   });
   beforeEach(function (done) {
@@ -147,31 +150,39 @@ describe('200 PATCH /instances', function () {
       });
 
       it('should update an instance with a build', function (done) {
+        var count = createCount(2, done);
         sinon.spy(InstanceService.prototype, 'deleteForkedInstancesByRepoAndBranch');
+        // Original patch from the update route, then the one at the end of the on-build-die
+        primus.expectActionCount('patch', 2, function () {
+          expect(InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1);
+          var acv = ctx.cv.appCodeVersions.models[0].attrs;
+          var args = InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.getCall(0).args;
+          expect(args[0].toString()).to.equal(ctx.instance.id().toString());
+          expect(args[1]).to.equal(ctx.user.id());
+          expect(args[2]).to.equal(acv.lowerRepo);
+          expect(args[3]).to.equal(acv.lowerBranch);
+          InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.restore();
+          count.next();
+        });
         ctx.instance.update({
           env: ['ENV=OLD'],
-          build: ctx.build.id(),
+          build: ctx.build.id()
         }, function (err, body, statusCode) {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           // wait until build is ready to finish the test
           primus.onceVersionComplete(ctx.cv.id(), function () {
-            expect(InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1);
-            var acv = ctx.cv.appCodeVersions.models[0].attrs;
-            var args = InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.getCall(0).args;
-            expect(args[0].toString()).to.equal(ctx.instance.id().toString());
-            expect(args[1]).to.equal(ctx.user.id());
-            expect(args[2]).to.equal(acv.lowerRepo);
-            expect(args[3]).to.equal(acv.lowerBranch);
-            InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.restore();
-            done();
+            count.next();
           });
           dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
 
       it('should update an instance with name, build, env', function (done) {
+        var count = createCount(2, done);
         var name = 'CustomName';
         var env = ['one=one','two=two','three=three'];
+        // Original patch from the update route, then the one at the end of the on-build-die
+        primus.expectActionCount('patch', 2, count.next);
         ctx.instance.update({
           build: ctx.build.id(),
           name: name,
@@ -180,18 +191,22 @@ describe('200 PATCH /instances', function () {
           if (err) { return done(err); }
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv);
           // wait until build is ready to finish the test
+
           primus.onceVersionComplete(ctx.cv.id(), function () {
-            done();
+            count.next();
           });
           dockerMockEvents.emitBuildComplete(ctx.cv);
         });
       });
 
       it('should update an instance with a container and context version', function (done) {
+        var count = createCount(2, done);
         var container = {
           dockerHost: 'http://127.0.0.1:4243',
           dockerContainer: ctx.container.Id
         };
+        // Original patch from the update route, then the one at the end of the on-build-die
+        primus.expectActionCount('patch', 2, count.next);
         // required when updating container in PATCH route
         var contextVersion = ctx.cv.id();
         var opts = {
@@ -202,11 +217,12 @@ describe('200 PATCH /instances', function () {
             'contextVersion._id': contextVersion
           }
         };
+
         ctx.instance.update(opts, function (err, body, statusCode) {
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv, ctx.container);
           // wait until build is ready to finish the test
           primus.onceVersionComplete(ctx.cv.id(), function () {
-            done();
+            count.next();
           });
           dockerMockEvents.emitBuildComplete(ctx.cv);
         });

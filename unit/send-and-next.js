@@ -11,7 +11,10 @@ var resSendAndNext = require('middlewares/send-and-next');
 var createCount = require('callback-count');
 var sinon = require('sinon');
 
-describe('send-and-next', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('send-and-next: '+moduleName, function () {
   it('should call next and send response with status code', function (done) {
     var count = createCount(2, done);
     var req = {};

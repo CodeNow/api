@@ -262,7 +262,7 @@ module.exports = {
               branch: 'master',
               commit: '065470f6949b0b6f0f0f78f4ee2b0e7a3dc715ac'
             };
-            contextVersion.addGithubRepo({json: repoData}, function (err) {
+            contextVersion.addGithubRepo(repoData, function (err) {
               if (err) { return cb(err); }
               build.fetch(function (err) {
                 if (err) { return cb(err); }

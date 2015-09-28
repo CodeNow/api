@@ -55,7 +55,8 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           build: ctx.build.id()
         };
 
-        ctx.instanceWithDep = ctx.user.createInstance(body, done);
+        primus.expectAction('start', done);
+        ctx.instanceWithDep = ctx.user.createInstance(body, function () {});
       });
 
       it('should return a dependency', function (done) {
