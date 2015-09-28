@@ -184,7 +184,7 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
 
           expect(Docker.prototype.createImageBuilder.args[0][0].manualBuild)
             .to.equal(ctx.data.manualBuild);
-          expect(Docker.prototype.createImageBuilder.args[0][0].user)
+          expect(Docker.prototype.createImageBuilder.args[0][0].sessionUser)
             .to.equal(ctx.mockUser);
           expect(Docker.prototype.createImageBuilder.args[0][0].contextVersion)
             .to.equal(ctx.mockContextVersion);
@@ -501,7 +501,7 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
 
             expect(Docker.prototype.createImageBuilder.args[0][0].manualBuild)
               .to.equal(ctx.data.manualBuild);
-            expect(Docker.prototype.createImageBuilder.args[0][0].user)
+            expect(Docker.prototype.createImageBuilder.args[0][0].sessionUser)
             .to.equal(ctx.data.sessionUser);
             expect(Docker.prototype.createImageBuilder.args[0][0].contextVersion)
               .to.equal(ctx.mockContextVersion);
