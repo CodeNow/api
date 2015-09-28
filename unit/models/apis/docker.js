@@ -169,7 +169,7 @@ describe('docker: '+moduleName, function () {
       });
       expect(imageBuilderContainerLabels.tid).to.equal('0000-0000-0000-0000');
       //assert type casting to string for known value originally of type Number
-      expect(imageBuilderContainerLabels.sessionUserId).to.be.a.string();
+      expect(imageBuilderContainerLabels.sessionUserGithubId).to.be.a.string();
       done();
     });
   });
