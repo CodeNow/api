@@ -586,17 +586,14 @@ describe('CreateImageBuilderContainerWorker', function () {
       describe('basics', function () {
         beforeEach(function (done) {
           sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
-
           sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync(null);
           done();
         });
 
 
-        it('Should trigger only the updateBuildError', function (done) {
+        it('should trigger only the updateBuildError', function (done) {
           ctx.worker._onError(new Error('hello'), function () {
-
             expect(Sauron.prototype.deleteHost.callCount).to.equal(0);
-
             expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1);
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
               ctx.mockContextVersion.build._id
@@ -604,14 +601,12 @@ describe('CreateImageBuilderContainerWorker', function () {
             done();
           });
         });
-        it('Should trigger the delete host and updateBuildError', function (done) {
+        it('should trigger the delete host and updateBuildError', function (done) {
           ctx.worker.network = ctx.sauronResult;
           ctx.worker._onError(new Error('hello'), function () {
-
             expect(Sauron.prototype.deleteHost.callCount).to.equal(1);
             expect(Sauron.prototype.deleteHost.args[0][0]).to.equal(ctx.sauronResult.networkIp);
             expect(Sauron.prototype.deleteHost.args[0][1]).to.equal(ctx.sauronResult.hostIp);
-
             expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1);
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
               ctx.mockContextVersion.build._id
@@ -625,20 +620,15 @@ describe('CreateImageBuilderContainerWorker', function () {
         beforeEach(function (done) {
           ctx.worker.network = ctx.sauronResult;
           sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(new Error('Bryan\'s message'));
-
           sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync(null);
           done();
         });
 
-
-        it('Should log an error if sauron errors on the delete', function (done) {
+        it('should log an error if sauron errors on the delete', function (done) {
           ctx.worker._onError(new Error('hello'), function () {
-            expect(Sauron.prototype.deleteHost.callCount)
-                .to.equal(1);
-
+            expect(Sauron.prototype.deleteHost.callCount).to.equal(1);
             expect(Sauron.prototype.deleteHost.args[0][0]).to.equal(ctx.sauronResult.networkIp);
             expect(Sauron.prototype.deleteHost.args[0][1]).to.equal(ctx.sauronResult.hostIp);
-
             expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1);
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
               ctx.mockContextVersion.build._id
