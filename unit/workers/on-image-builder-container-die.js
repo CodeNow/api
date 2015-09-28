@@ -40,11 +40,17 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
       dockerHost: '0.0.0.0'
     };
     ctx.mockContextVersion = {
-      toJSON: noop
+      toJSON: function () { return {}; }
     };
     sinon.stub(async, 'series', noop);
     ctx.worker = new OnImageBuilderContainerDie(ctx.data);
+
+    // would normally be assigned from _baseWorkerFindContextVersion
+    ctx.worker.contextVersion = {
+      _id: 'temp'
+    };
     ctx.worker.handle();
+    delete ctx.worker.contextVersion;
     done();
   });
 
