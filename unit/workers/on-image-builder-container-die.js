@@ -23,7 +23,10 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-describe('OnImageBuilderContainerDie', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('OnImageBuilderContainerDie: '+moduleName, function () {
   var ctx;
 
   beforeEach(function (done) {
@@ -153,6 +156,7 @@ describe('OnImageBuilderContainerDie', function () {
 
   describe('_handleBuildError', function () {
     beforeEach(function (done) {
+      ctx.worker.contextVersion = ctx.mockContextVersion;
       sinon.stub(ContextVersion, 'updateBuildErrorByContainer',
                  function (containerId, err, cb) {
         expect(containerId).to.equal(ctx.data.id);
@@ -174,6 +178,7 @@ describe('OnImageBuilderContainerDie', function () {
 
   describe('_handleBuildComplete', function () {
     beforeEach(function (done) {
+      ctx.worker.contextVersion = ctx.mockContextVersion;
       ctx.buildInfo = {};
       sinon.stub(ContextVersion, 'updateBuildCompletedByContainer',
                  function (containerId, buildInfo, cb) {

@@ -13,7 +13,11 @@ var after = lab.after;
 
 var PullRequest = require('models/apis/pullrequest');
 var GitHub = require('models/apis/github');
-describe('PullRequest', function () {
+
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('PullRequest: '+moduleName, function () {
   var ctx = {};
   before(function (done) {
     ctx.originalStatusFlag = process.env.ENABLE_GITHUB_DEPLOYMENT_STATUSES;

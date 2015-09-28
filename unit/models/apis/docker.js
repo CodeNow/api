@@ -10,14 +10,16 @@ var beforeEach = lab.beforeEach;
 var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
-var noop = require('101/noop');
 
 require('loadenv')();
 var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
 var Modem = require('docker-modem');
 
-describe('docker', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('docker: '+moduleName, function () {
   var model = new Docker('http://fake.host.com');
 
   describe('getLogs', function () {
@@ -64,46 +66,7 @@ describe('docker', function () {
         done();
       });
     });
-
   });
-
-  describe('startUserContainer', function () {
-    afterEach(function (done) {
-      model.startContainer.restore();
-      done();
-    });
-
-    it('should not include charon if env variable is not set', function (done) {
-      sinon.stub(model, 'startContainer', function (container, opts) {
-        expect(opts.Dns.length).to.equal(1);
-        done();
-      });
-      model.startUserContainer({}, '', {}, noop);
-    });
-
-    it('should include charon as the first dns when evn is set', function (done) {
-      var host = process.env.CHARON_HOST = '10.10.10.10';
-      sinon.stub(model, 'startContainer', function (container, opts) {
-        expect(opts.Dns.length).to.equal(2);
-        expect(opts.Dns[0]).to.equal(host);
-        delete process.env.CHARON_HOST;
-        done();
-      });
-      model.startUserContainer({}, '', {}, noop);
-    });
-
-    it('should use the charon weave ip for codenow', function(done) {
-      var owner = process.env.CODENOW_GITHUB_ID;
-      var host = process.env.CODENOW_CHARON_WEAVE_IP = '1.1.1.1';
-      sinon.stub(model, 'startContainer', function (container, opts) {
-        expect(opts.Dns.length).to.equal(2);
-        expect(opts.Dns[0]).to.equal(host);
-        delete process.env.CODENOW_CHARON_WEAVE_IP;
-        done();
-      });
-      model.startUserContainer({}, owner, {}, noop);
-    });
-  }); // end 'startUserContainer'
 
   describe('pullImage', function () {
     var testTag = 'lothlorien';
@@ -152,18 +115,20 @@ describe('docker', function () {
     });
   }); // end pullImage
   describe('with retries', function () {
+    afterEach(function (done) {
+      Docker.prototype.inspectContainer.restore();
+      done();
+    });
+
     it('should call original docker method 5 times if failed and return error', function (done) {
       var dockerErr = Boom.notFound('Docker error');
-      sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
-        cb(dockerErr);
-      });
+      sinon.stub(Docker.prototype, 'inspectContainer').yieldsAsync(dockerErr);
       var docker = new Docker('https://localhost:4242');
 
       docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err) {
         expect(err.output.statusCode).to.equal(404);
         expect(err.output.payload.message).to.equal('Docker error');
         expect(Docker.prototype.inspectContainer.callCount).to.equal(5);
-        Docker.prototype.inspectContainer.restore();
         done();
       });
     });
@@ -177,7 +142,6 @@ describe('docker', function () {
         expect(err).to.be.undefined();
         expect(result.dockerContainer).to.equal('some-container-id');
         expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-        Docker.prototype.inspectContainer.restore();
         done();
       });
     });
@@ -200,7 +164,18 @@ describe('docker', function () {
         expect(err).to.be.undefined();
         expect(result.dockerContainer).to.equal('some-container-id');
         expect(Docker.prototype.inspectContainer.callCount).to.equal(4);
-        Docker.prototype.inspectContainer.restore();
+        done();
+      });
+    });
+
+    it('should not retry if ignoreStatusCode was specified', function (done) {
+      var dockerErr = Boom.notFound('Docker error');
+      sinon.stub(Docker.prototype, 'inspectContainer').yieldsAsync(dockerErr);
+      var docker = new Docker('https://localhost:4242');
+
+      docker.inspectContainerWithRetry({times: 6, ignoreStatusCode: 404}, 'some-container-id', function (err) {
+        expect(err).to.be.null();
+        expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
         done();
       });
     });

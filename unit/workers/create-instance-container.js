@@ -18,7 +18,10 @@ var Instance = require('models/mongo/instance');
 var ContextVersion = require('models/mongo/context-version');
 
 
-describe('Worker: create-instance-container', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Worker: create-instance-container: '+moduleName, function () {
   describe('#_handleAppError', function () {
     it('should return error if instance.findId returned error', function (done) {
       var worker = new CreateInstanceContainer();

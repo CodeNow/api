@@ -30,7 +30,10 @@ function testPreSessionRunnableDomainData () {
   expect(process.domain.runnableData.userGithubEmail).to.equal(null);
 }
 
-describe('middlewares/domains unit test', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('middlewares/domains unit test: '+moduleName, function () {
   var ctx = {};
 
   afterEach(function (done) {

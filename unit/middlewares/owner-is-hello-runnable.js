@@ -15,7 +15,10 @@ var expect = Code.expect;
 var ownerIsHelloRunnable = require('middlewares/owner-is-hello-runnable');
 var clone = require('101/clone');
 
-describe('owner-is-hello-runnable unit test', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('owner-is-hello-runnable unit test: '+moduleName, function () {
   describe('with hello runnable session user', function() {
     var req = {
       sessionUser: {

@@ -24,7 +24,10 @@ var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
 
 var ctx = {};
-describe('Context Version', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Context Version: '+moduleName, function () {
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
 

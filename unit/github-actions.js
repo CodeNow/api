@@ -9,7 +9,10 @@ var expect = Code.expect;
 
 var githubActions = require('routes/actions/github');
 
-describe('GitHub Actions', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('GitHub Actions: '+moduleName, function () {
 
   describe('parseGitHubPushData', function () {
 
