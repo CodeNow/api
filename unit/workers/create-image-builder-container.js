@@ -181,20 +181,23 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
               .to.equal(ctx.mockContextVersion);
 
           expect(Docker.prototype.createImageBuilder.callCount, 'createImageBuilder').to.equal(1);
-          expect(Docker.prototype.createImageBuilder.args[0][0], 'createImageBuilder arg0')
-              .to.equal(ctx.data.manualBuild);
-          expect(Docker.prototype.createImageBuilder.args[0][1], 'createImageBuilder arg1')
-              .to.equal(ctx.mockUser);
-          expect(Docker.prototype.createImageBuilder.args[0][2], 'createImageBuilder arg2')
-              .to.equal(ctx.mockContextVersion);
-          expect(Docker.prototype.createImageBuilder.args[0][3], 'createImageBuilder arg3')
-              .to.equal(ctx.dockerTag);
-          expect(Docker.prototype.createImageBuilder.args[0][4], 'createImageBuilder arg4')
-              .to.equal(ctx.sauronResult);
-          expect(Docker.prototype.createImageBuilder.args[0][5], 'createImageBuilder arg5')
-              .to.equal(ctx.data.noCache);
-          expect(Docker.prototype.createImageBuilder.args[0][6], 'createImageBuilder arg6')
-              .to.be.a.function();
+
+          expect(Docker.prototype.createImageBuilder.args[0][0].manualBuild)
+            .to.equal(ctx.data.manualBuild);
+          expect(Docker.prototype.createImageBuilder.args[0][0].user)
+            .to.equal(ctx.mockUser);
+          expect(Docker.prototype.createImageBuilder.args[0][0].contextVersion)
+            .to.equal(ctx.mockContextVersion);
+          expect(Docker.prototype.createImageBuilder.args[0][0].dockerTag)
+            .to.equal(ctx.dockerTag);
+          expect(Docker.prototype.createImageBuilder.args[0][0].network)
+            .to.equal(ctx.sauronResult);
+          expect(Docker.prototype.createImageBuilder.args[0][0].noCache)
+            .to.equal(ctx.data.noCache);
+          expect(Docker.prototype.createImageBuilder.args[0][0].tid)
+            .to.equal(ctx.data.tid);
+          expect(Docker.prototype.createImageBuilder.args[0][1])
+            .to.be.a.function();
 
           expect(ContextVersion.updateContainerByBuildId.callCount, 'updateContainer').to.equal(1);
           expect(ContextVersion.updateContainerByBuildId.args[0][0]).to.deep.equal({
@@ -495,19 +498,22 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
               .to.equal(ctx.mockContextVersion);
 
             expect(Docker.prototype.createImageBuilder.callCount, 'createImageBuilder').to.equal(1);
-            expect(Docker.prototype.createImageBuilder.args[0][0], 'createImageBuilder arg0')
+
+            expect(Docker.prototype.createImageBuilder.args[0][0].manualBuild)
               .to.equal(ctx.data.manualBuild);
-            expect(Docker.prototype.createImageBuilder.args[0][1], 'createImageBuilder arg1')
-              .to.equal(ctx.data.sessionUser);
-            expect(Docker.prototype.createImageBuilder.args[0][2], 'createImageBuilder arg2')
+            expect(Docker.prototype.createImageBuilder.args[0][0].user)
+            .to.equal(ctx.data.sessionUser);
+            expect(Docker.prototype.createImageBuilder.args[0][0].contextVersion)
               .to.equal(ctx.mockContextVersion);
-            expect(Docker.prototype.createImageBuilder.args[0][3], 'createImageBuilder arg3')
+            expect(Docker.prototype.createImageBuilder.args[0][0].dockerTag)
               .to.equal(ctx.dockerTag);
-            expect(Docker.prototype.createImageBuilder.args[0][4], 'createImageBuilder arg4')
+            expect(Docker.prototype.createImageBuilder.args[0][0].network)
               .to.equal(ctx.sauronResult);
-            expect(Docker.prototype.createImageBuilder.args[0][5], 'createImageBuilder arg5')
+            expect(Docker.prototype.createImageBuilder.args[0][0].noCache)
               .to.equal(ctx.data.noCache);
-            expect(Docker.prototype.createImageBuilder.args[0][6], 'createImageBuilder arg6')
+            expect(Docker.prototype.createImageBuilder.args[0][0].tid)
+              .to.equal(ctx.data.tid);
+            expect(Docker.prototype.createImageBuilder.args[0][1])
               .to.be.a.function();
             done();
           });
