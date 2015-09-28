@@ -13,6 +13,7 @@ var expect = Code.expect;
 var sinon = require('sinon');
 
 var Graph = require('models/apis/graph');
+var Neo4j = require('models/graph/neo4j');
 var Hashids = require('hashids');
 var async = require('async');
 var createCount = require('callback-count');
@@ -805,6 +806,30 @@ describe('Instance: '+moduleName, function () {
           expect(deps.length).to.equal(0);
           count.next();
         });
+      });
+    });
+    it('should swallow deleteNodeAndConnections EntityNotFound error', function (done) {
+      var node = instances[4];
+      var error = new Error('Neo4j error');
+      error.code = 'Neo.ClientError.Statement.EntityNotFound';
+      sinon.stub(Neo4j.prototype, 'deleteNodeAndConnections').yieldsAsync(error);
+      node.removeSelfFromGraph(function (err) {
+        expect(err).to.be.null();
+        expect(Neo4j.prototype.deleteNodeAndConnections.callCount).to.equal(1);
+        Neo4j.prototype.deleteNodeAndConnections.restore();
+        done();
+      });
+    });
+    it('should swallow getDependents EntityNotFound error', function (done) {
+      var node = instances[4];
+      var error = new Error('Neo4j error');
+      error.code = 'Neo.ClientError.Statement.EntityNotFound';
+      sinon.stub(node, 'getDependents').yieldsAsync(error);
+      node.removeSelfFromGraph(function (err) {
+        expect(err).to.be.null();
+        expect(node.getDependents.callCount).to.equal(1);
+        node.getDependents.restore();
+        done();
       });
     });
   });
