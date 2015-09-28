@@ -12,9 +12,12 @@ var validation = require('./fixtures/validation')(lab);
 
 var User = require('models/mongo/user');
 
-describe('User', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('User :'+moduleName, function () {
   before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
 
   function createNewUser() {
     return new User({

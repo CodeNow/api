@@ -15,7 +15,10 @@ var error = require('error');
 var querystring = require('querystring');
 var url = require('url');
 
-describe('token.js unit test', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('token.js unit test: '+moduleName, function () {
   describe('createWithSessionCookie', function() {
     beforeEach(function(done) {
       sinon.stub(RedisToken.prototype, 'setValue');

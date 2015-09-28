@@ -11,7 +11,10 @@ var expect = Code.expect;
 
 var Slack = require('notifications/slack');
 
-describe('Slack', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Slack: '+moduleName, function () {
   describe('#notifyOnAutoDeploy', function () {
     it('should do nothing if slack messaging is disabled', function (done) {
       var slack = new Slack();

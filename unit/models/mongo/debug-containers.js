@@ -19,10 +19,14 @@ var Instance = require('models/mongo/instance');
 var ContextVersion = require('models/mongo/context-version');
 
 var ctx = {};
-describe('Debug Containers', function () {
+
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Debug Containers: '+moduleName, function () {
   before(require('../../fixtures/mongo').connect);
-  beforeEach(require('../../../test/fixtures/clean-mongo').removeEverything);
-  afterEach(require('../../../test/fixtures/clean-mongo').removeEverything);
+  beforeEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
+  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
 
   beforeEach(function (done) {
     var c = new Context({

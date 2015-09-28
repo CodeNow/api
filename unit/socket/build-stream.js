@@ -33,7 +33,10 @@ ClientStream.prototype.write = function (data) {
 ClientStream.prototype.end = function () { this.emit('end'); };
 
 var ctx = {};
-describe('build stream', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('build stream: '+moduleName, function () {
   before(function (done) {
     var socket = {};
     var id = 4;

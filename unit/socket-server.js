@@ -32,7 +32,10 @@ var primusClient = Primus.createSocket({
   parser: 'JSON'
 });
 
-describe('socket-server', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('socket-server: '+moduleName, function () {
 
   describe('init test', function () {
     it('should error if no server passed in', function (done) {

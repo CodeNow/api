@@ -7,7 +7,7 @@
 
     // Predefined globals whom JSHint will ignore.
     "node"          : true,
-    "predef"        : ["escape", "encodeURIComponent"],
+    "predef"        : ["escape", "encodeURIComponent", "-Promise"],
 
 
     // Development.

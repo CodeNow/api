@@ -21,7 +21,10 @@ var requiredEnvVars = {
 };
 
 var ctx = { savedEnvVars: {} };
-describe('neo4j driver', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('neo4j driver: '+moduleName, function () {
   var graph;
   before(function (done) {
     Object.keys(requiredEnvVars).forEach(function (key) {

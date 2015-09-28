@@ -3,12 +3,15 @@
  */
 'use strict';
 
+var EventEmitter = require('events').EventEmitter;
+var util = require('util');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var noop = require('101/noop');
 var sinon = require('sinon');
 var Code = require('code');
 var rabbitMQ = require('models/rabbitmq');
+var hermes = require('hermes-private');
 
 var it = lab.it;
 var describe = lab.describe;
@@ -16,7 +19,10 @@ var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
 var expect = Code.expect;
 
-describe('RabbitMQ Model', function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('RabbitMQ Model: '+moduleName, function () {
   var ctx;
   beforeEach(function (done) {
     ctx = {};
@@ -25,17 +31,142 @@ describe('RabbitMQ Model', function () {
   });
 
   describe('close', function() {
-    it('should just callback if the rabbitmq is not started', function(done) {
+    it('should just callback if the rabbitmq is not started', function (done) {
       ctx.rabbitMQ.close(done);
     });
   });
 
   describe('unloadWorkers', function() {
-    it('should just callback if the rabbitmq is not started', function(done) {
+    it('should just callback if the rabbitmq is not started', function (done) {
       ctx.rabbitMQ.unloadWorkers(done);
     });
   });
 
+  describe('_handleFatalError', function () {
+    it('should call process.exit', function (done) {
+      sinon.stub(process, 'exit', function (code) {
+        expect(code).to.equal(1);
+      });
+      var rabbit = new rabbitMQ.constructor();
+      rabbit._handleFatalError(new Error());
+      expect(process.exit.callCount).to.equal(1);
+      process.exit.restore();
+      done();
+    });
+  });
+  describe('connect', function() {
+    it('should call hermes connect and attach error handler', function (done) {
+      var rabbit = new rabbitMQ.constructor();
+      var HermesClient = function () {};
+      util.inherits(HermesClient, EventEmitter);
+      HermesClient.prototype.connect =  function (cb) {
+        cb(null);
+      };
+      var hermesClient = new HermesClient();
+      sinon.spy(hermesClient, 'connect');
+      sinon.spy(hermesClient, 'on');
+      sinon.stub(hermes, 'hermesSingletonFactory', function () {
+        return hermesClient;
+      });
+
+      rabbit.connect(function (err) {
+        expect(err).to.be.null();
+        expect(hermesClient.connect.callCount).to.equal(1);
+        expect(hermesClient.on.callCount).to.equal(1);
+        hermes.hermesSingletonFactory.restore();
+        done();
+      });
+    });
+
+    it('should call _handleFatalError if error was emitted', function (done) {
+      var rabbit = new rabbitMQ.constructor();
+      var HermesClient = function () {};
+      util.inherits(HermesClient, EventEmitter);
+      HermesClient.prototype.connect =  function (cb) {
+        cb(null);
+      };
+      var hermesClient = new HermesClient();
+      sinon.spy(hermesClient, 'connect');
+      sinon.spy(hermesClient, 'on');
+      sinon.stub(hermes, 'hermesSingletonFactory', function () {
+        return hermesClient;
+      });
+      sinon.stub(rabbit, '_handleFatalError');
+      rabbit.connect(function (err) {
+        expect(err).to.be.null();
+      });
+      rabbit.hermesClient.on('error', function (err) {
+        expect(err).to.exist();
+        expect(err.message).to.equal('Some hermes error');
+        expect(hermesClient.connect.callCount).to.equal(1);
+        expect(hermesClient.on.callCount).to.equal(2);
+        expect(rabbit._handleFatalError.callCount).to.equal(1);
+        expect(rabbit._handleFatalError.getCall(0).args[0].message)
+          .to.equal('Some hermes error');
+        hermes.hermesSingletonFactory.restore();
+        done();
+      });
+      rabbit.hermesClient.emit('error', new Error('Some hermes error'));
+    });
+  });
+  describe('deployInstance', function () {
+    beforeEach(function (done) {
+      // this normally set after connect
+      ctx.rabbitMQ.hermesClient = {
+        publish: function () {}
+      };
+      ctx.validJobData = {
+        sessionUserGithubId: 'asdaSDFASDF',
+        instanceId: '4G23G243G4545',
+        ownerUsername: 'G45GH4GERGDSG'
+      };
+      ctx.validJobData2 = {
+        sessionUserGithubId: 'asdaSDFASDF',
+        buildId: '4G23G243G4545',
+        forceDock: '127.0.0.1',
+        ownerUsername: 'G45GH4GERGDSG'
+      };
+      ctx.invalidJobData = {
+        sessionUserGithubId: 'asdaSDFASDF',
+        ownerUsername: 'G45GH4GERGDSG'
+      };
+      done();
+    });
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
+          expect(eventName).to.equal('deploy-instance');
+          expect(eventData).to.equal(ctx.validJobData);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should publish a job with required data', function (done) {
+        ctx.rabbitMQ.deployInstance(ctx.validJobData);
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1);
+        done();
+      });
+    });
+
+    describe('failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {});
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should not publish a job without required data', function (done) {
+        ctx.rabbitMQ.deployInstance(ctx.invalidJobData);
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
+        done();
+      });
+    });
+  });
   describe('CreateImageBuilderContainer', function () {
     beforeEach(function (done) {
       // this normally set after connect
@@ -229,7 +360,9 @@ describe('RabbitMQ Model', function () {
       };
       ctx.validJobData = {
         instanceId: '507f1f77bcf86cd799439011',
-        sessionUserId: '507f191e810c19729de860ea'
+        instanceName: 'test-instance-name',
+        sessionUserId: '507f191e810c19729de860ea',
+        tid: '0123456789'
       };
       //missing sessionUserId
       ctx.invalidJobData = {

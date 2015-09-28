@@ -20,10 +20,13 @@ var notEquals = function (compare) {
   };
 };
 
-var equivalentDockerfiles = require('../test/fixtures/equivalent-dockerfiles');
-var differentDockerfiles  = require('../test/fixtures/different-dockerfiles');
+var equivalentDockerfiles = require('../test/functional/fixtures/equivalent-dockerfiles');
+var differentDockerfiles  = require('../test/functional/fixtures/different-dockerfiles');
 
-describe('Hasher',  function () {
+var path = require('path');
+var moduleName = path.relative(process.cwd(), __filename);
+
+describe('Hasher: '+moduleName,  function () {
   describe('stream', function () {
     it('should hash a stream', function (done) {
       var fileStream = fs.createReadStream(__filename);
