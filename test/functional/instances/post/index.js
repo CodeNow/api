@@ -76,8 +76,7 @@ describe('POST /instances', function () {
       describe('user owned', function () {
         describe('check messenger', function() {
           beforeEach(function(done) {
-            require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
-            ctx.build.build({ message: uuid() }, done);
+            multi.buildTheBuild(ctx.user, ctx.build, ctx.user.attrs.accounts.github.id, done);
           });
 
           it('should emit post and deploy events', function(done) {
@@ -125,19 +124,21 @@ describe('POST /instances', function () {
             'network.hostIp': exists
           };
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
-          ctx.build.build({ message: uuid() }, function (err) {
-            if (err) { return done(err); }
+
+          var countDown = createCount(4, done);
+          primus.expectActionCount('build_running', 1, function () {
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
-            var countDown = createCount(2, done);
             primus.expectAction('start', expected, countDown.next);
-            ctx.user.createInstance({ json: json }, function(err) {
-              if (err) { return done(err); }
+
+            ctx.user.createInstance({ json: json }, function (err) {
               primus.expectAction('deploy', expected, countDown.next);
+              countDown.next(err);
               dockerMockEvents.emitBuildComplete(ctx.cv);
             });
           });
+          ctx.build.build({ message: uuid() }, countDown.next);
         });
 
         it('should deploy the instance after the build finishes', function(done) {
