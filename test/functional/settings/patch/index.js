@@ -48,7 +48,7 @@ describe('PATCH /settings/:id', function () {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
         ctx.user = runnable;
-        settings.owner.github = runnable.user.attrs.accounts.github.id;
+        settings.owner.github = runnable.attrs.accounts.github.id;
         runnable.createSetting({json: settings}, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
