@@ -80,23 +80,24 @@ describe('mavis.js unit test: '+moduleName, function () {
   });
   describe('findDockForContainer', function() {
     it('should error if missing contextVersion', function(done) {
-      ctx.mavis.findDockForContainer(null, null, function (err) {
+      ctx.mavis.findDockForContainer(null, function (err) {
         expect(err).to.exist();
         done();
       });
     });
-    it('should error if missing context', function(done) {
-      ctx.mavis.findDockForContainer({}, null, function (err) {
+    it('should error if missing contextVersion owner', function(done) {
+      ctx.mavis.findDockForContainer({}, function (err) {
         expect(err).to.exist();
         done();
       });
     });
     describe('should send correct inputs to findDock', function() {
       var testOrgId = 23894759;
-      var testContext = {
-        owner: { github: testOrgId }
-      };
+      var testContextVersion;
       beforeEach(function(done) {
+        testContextVersion = {
+          owner: { github: testOrgId }
+        };
         sinon.stub(ctx.mavis, 'findDock').yieldsAsync();
         done();
       });
@@ -105,7 +106,7 @@ describe('mavis.js unit test: '+moduleName, function () {
         done();
       });
       it('no dockerHost', function(done) {
-        ctx.mavis.findDockForContainer({}, testContext, function () {
+        ctx.mavis.findDockForContainer(testContextVersion, function () {
           expect(ctx.mavis.findDock.calledWith({
             type: 'container_run',
             tags: testOrgId + ',run',
@@ -116,9 +117,8 @@ describe('mavis.js unit test: '+moduleName, function () {
       });
       it('w/dockerHost', function(done) {
         var testHost = 'godaddy';
-        ctx.mavis.findDockForContainer({
-          dockerHost: testHost
-        }, testContext, function () {
+        testContextVersion.dockerHost = testHost;
+        ctx.mavis.findDockForContainer(testContextVersion, function () {
           expect(ctx.mavis.findDock.calledWith({
             type: 'container_run',
             tags: testOrgId + ',run',

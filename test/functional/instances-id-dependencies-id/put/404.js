@@ -59,7 +59,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           ],
           build: ctx.build.id()
         };
-        primus.expectAction('start', count.inc().next);
+        primus.expectActionCount('start', 2, count.inc().next);
         ctx.instance2 = ctx.user.createInstance(body2, count.inc().next);
         ctx.instanceWithDep = ctx.user.createInstance(depBody, count.inc().next);
       });
