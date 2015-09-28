@@ -1,26 +1,190 @@
+/**
+ * @module unit/models/apis/docker
+ */
 'use strict';
+require('loadenv')();
 
 var Boom = require('dat-middleware').Boom;
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var afterEach = lab.afterEach;
-var beforeEach = lab.beforeEach;
 var Code = require('code');
-var expect = Code.expect;
+var Dockerode = require('dockerode');
+var Lab = require('lab');
+var Modem = require('docker-modem');
+var path = require('path');
 var sinon = require('sinon');
 
-require('loadenv')();
 var Docker = require('models/apis/docker');
-var Dockerode = require('dockerode');
-var Modem = require('docker-modem');
 
-var path = require('path');
+var lab = exports.lab = Lab.script();
+
+var afterEach = lab.afterEach;
+var beforeEach = lab.beforeEach;
+var describe = lab.describe;
+var expect = Code.expect;
+var it = lab.it;
 var moduleName = path.relative(process.cwd(), __filename);
 
 describe('docker: '+moduleName, function () {
   var model = new Docker('http://fake.host.com');
+  var ctx;
+
+  beforeEach(function (done) {
+    ctx = {
+      mockContextVersion: {
+        build: {
+          _id: 'buildId'
+        },
+        toJSON: function () {
+          return {};
+        }
+      },
+      mockNetwork: {
+        hostIp: '0.0.0.0',
+        networkIp: '1.1.1.1'
+      },
+      mockSessionUser: {
+        accounts: {
+          github: {
+            displayName: 'displayName',
+            id: '12345',
+            username: 'username'
+          }
+        }
+      }
+    };
+    ctx.mockContextVersion.infraCodeVersion = {
+      bucket: function () {
+        return {
+          sourcePath: 'sourcePath'
+        };
+      },
+      files: []
+    };
+    ctx.mockContextVersion.appCodeVersions = [];
+    done();
+  });
+
+  describe('createImageBuilder', function () {
+    beforeEach(function (done) {
+      sinon.stub(Docker.prototype, '_createImageBuilderValidateCV', function () {});
+      sinon.stub(Docker.prototype, '_createImageBuilderLabels', function () {
+        return {};
+      });
+      sinon.stub(Docker.prototype, '_createImageBuilderEnv', function () {
+      });
+      sinon.stub(Docker.prototype, 'createContainer', function (data, cb) {
+        expect(data).to.be.an.object();
+        expect(data.name).to.be.a.string();
+        expect(data.Image).to.be.a.string();
+        expect(data.Labels).to.be.an.object();
+        cb();
+      });
+      done();
+    });
+    afterEach(function (done) {
+      Docker.prototype._createImageBuilderLabels.restore();
+      Docker.prototype._createImageBuilderEnv.restore();
+      Docker.prototype._createImageBuilderValidateCV.restore();
+      Docker.prototype.createContainer.restore();
+      done();
+    });
+    it('should invoke createContainer with valid data', function (done) {
+      model.createImageBuilder({
+        manualBuild: true,
+        sessionUser: ctx.mockSessionUser,
+        contextVersion: ctx.mockContextVersion,
+        dockerTag: 'docker-tag',
+        network: ctx.mockNetwork,
+        noCache: false,
+        tid: '000-0000-0000-0000'
+      }, function () {
+        expect(Docker.prototype._createImageBuilderValidateCV.args[0][0])
+          .to.equal(ctx.mockContextVersion);
+        expect(Docker.prototype._createImageBuilderLabels.args[0][0]).to.be.an.object();
+        expect(Docker.prototype._createImageBuilderLabels.args[0][0].contextVersion)
+          .to.equal(ctx.mockContextVersion);
+        expect(Docker.prototype._createImageBuilderLabels.args[0][0].dockerTag)
+          .to.equal('docker-tag');
+        expect(Docker.prototype._createImageBuilderLabels.args[0][0].manualBuild)
+          .to.equal(true);
+        expect(Docker.prototype._createImageBuilderLabels.args[0][0].network)
+          .to.equal(ctx.mockNetwork);
+        expect(Docker.prototype._createImageBuilderLabels.args[0][0].sessionUser)
+          .to.equal(ctx.mockSessionUser);
+        done();
+      });
+    });
+  });
+
+  describe('_createImageBuilderValidateCV', function () {
+    it('should return an error if contextVersion already built', function (done) {
+      var validationError = model._createImageBuilderValidateCV({
+        build: {
+          completed: true
+        }
+      });
+      expect(validationError.message).to.equal('Version already built');
+      done();
+    });
+
+    it('should return an error if contextVersion has no icv', function (done) {
+      var validationError = model._createImageBuilderValidateCV({
+        build: {
+          completed: false
+        }
+      });
+      expect(validationError.message).to.equal('Cannot build a version without a Dockerfile');
+      done();
+    });
+
+    it('should return an error if contextVersion icv not populated', function (done) {
+      var validationError = model._createImageBuilderValidateCV({
+        build: {
+          completed: false
+        },
+        infraCodeVersion: '012345678901234567890123' // validation check regex string length 24
+      });
+      expect(validationError.message).to.equal('Populate infraCodeVersion before building it');
+      done();
+    });
+
+    it('should return falsy if no error condition present', function (done) {
+      var validationError = model._createImageBuilderValidateCV({
+        build: {
+          completed: false
+        },
+        infraCodeVersion: {}
+      });
+      expect(validationError).to.be.undefined();
+      done();
+    });
+  });
+
+  describe('_createImageBuilderLabels', function () {
+    it('should return a hash of container labels', function (done) {
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: ctx.mockSessionUser,
+        tid: '0000-0000-0000-0000'
+      });
+      expect(imageBuilderContainerLabels.tid).to.equal('0000-0000-0000-0000');
+      //assert type casting to string for known value originally of type Number
+      expect(imageBuilderContainerLabels.sessionUserId).to.be.a.string();
+      done();
+    });
+  });
+
+  describe('_createImageBuilderEnv', function () {
+    it('should return an array of ENV key/value pairs for image builder container', function (done) {
+      var imageBuilderContainerEnvs = model._createImageBuilderEnv({
+        contextVersion: ctx.mockContextVersion,
+        dockerTag: 'docker-tag'
+      });
+      expect(imageBuilderContainerEnvs.indexOf('RUNNABLE_DOCKERTAG=docker-tag'))
+        .to.not.equal(0);
+      done();
+    });
+  });
 
   describe('getLogs', function () {
     it('should call error handler and return error', function (done) {
