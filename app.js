@@ -216,7 +216,7 @@ process.on('uncaughtException', function(err) {
   var oldApi = api;
   oldApi.stop(function() {
     log.trace('API stopped');
+    api = new ApiServer();
+    api.start();
   });
-  api = new ApiServer();
-  api.start();
 });
