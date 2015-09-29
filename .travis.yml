@@ -6,7 +6,6 @@ matrix:
   fast_finish: true
 env:
   global:
-  - LOG_LEVEL=none
   - LOG_LEVEL_STDOUT=error
   - CIRCLE_NODE_TOTAL=2
   matrix:
