@@ -181,20 +181,23 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
               .to.equal(ctx.mockContextVersion);
 
           expect(Docker.prototype.createImageBuilder.callCount, 'createImageBuilder').to.equal(1);
-          expect(Docker.prototype.createImageBuilder.args[0][0], 'createImageBuilder arg0')
-              .to.equal(ctx.data.manualBuild);
-          expect(Docker.prototype.createImageBuilder.args[0][1], 'createImageBuilder arg1')
-              .to.equal(ctx.mockUser);
-          expect(Docker.prototype.createImageBuilder.args[0][2], 'createImageBuilder arg2')
-              .to.equal(ctx.mockContextVersion);
-          expect(Docker.prototype.createImageBuilder.args[0][3], 'createImageBuilder arg3')
-              .to.equal(ctx.dockerTag);
-          expect(Docker.prototype.createImageBuilder.args[0][4], 'createImageBuilder arg4')
-              .to.equal(ctx.sauronResult);
-          expect(Docker.prototype.createImageBuilder.args[0][5], 'createImageBuilder arg5')
-              .to.equal(ctx.data.noCache);
-          expect(Docker.prototype.createImageBuilder.args[0][6], 'createImageBuilder arg6')
-              .to.be.a.function();
+
+          expect(Docker.prototype.createImageBuilder.args[0][0].manualBuild)
+            .to.equal(ctx.data.manualBuild);
+          expect(Docker.prototype.createImageBuilder.args[0][0].sessionUser)
+            .to.equal(ctx.mockUser);
+          expect(Docker.prototype.createImageBuilder.args[0][0].contextVersion)
+            .to.equal(ctx.mockContextVersion);
+          expect(Docker.prototype.createImageBuilder.args[0][0].dockerTag)
+            .to.equal(ctx.dockerTag);
+          expect(Docker.prototype.createImageBuilder.args[0][0].network)
+            .to.equal(ctx.sauronResult);
+          expect(Docker.prototype.createImageBuilder.args[0][0].noCache)
+            .to.equal(ctx.data.noCache);
+          expect(Docker.prototype.createImageBuilder.args[0][0].tid)
+            .to.equal(ctx.data.tid);
+          expect(Docker.prototype.createImageBuilder.args[0][1])
+            .to.be.a.function();
 
           expect(ContextVersion.updateContainerByBuildId.callCount, 'updateContainer').to.equal(1);
           expect(ContextVersion.updateContainerByBuildId.args[0][0]).to.deep.equal({
@@ -445,7 +448,7 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
           });
         });
       });
-      describe('failure n times', function () {
+      describe('handle failure', function () {
         beforeEach(function (done) {
           sinon.stub(Sauron.prototype, 'findOrCreateHostForContext')
             .yieldsAsync(new Error('sauron error'));
@@ -459,7 +462,7 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
           ctx.worker._findOrCreateHost(function (err) {
             expect(err.message).to.equal('sauron error');
             expect(Sauron.prototype.findOrCreateHostForContext.callCount)
-              .to.equal(process.env.WORKER_SAURON_RETRY_ATTEMPTS);
+              .to.equal(1);
             done();
           });
         });
@@ -495,19 +498,22 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
               .to.equal(ctx.mockContextVersion);
 
             expect(Docker.prototype.createImageBuilder.callCount, 'createImageBuilder').to.equal(1);
-            expect(Docker.prototype.createImageBuilder.args[0][0], 'createImageBuilder arg0')
+
+            expect(Docker.prototype.createImageBuilder.args[0][0].manualBuild)
               .to.equal(ctx.data.manualBuild);
-            expect(Docker.prototype.createImageBuilder.args[0][1], 'createImageBuilder arg1')
-              .to.equal(ctx.data.sessionUser);
-            expect(Docker.prototype.createImageBuilder.args[0][2], 'createImageBuilder arg2')
+            expect(Docker.prototype.createImageBuilder.args[0][0].sessionUser)
+            .to.equal(ctx.data.sessionUser);
+            expect(Docker.prototype.createImageBuilder.args[0][0].contextVersion)
               .to.equal(ctx.mockContextVersion);
-            expect(Docker.prototype.createImageBuilder.args[0][3], 'createImageBuilder arg3')
+            expect(Docker.prototype.createImageBuilder.args[0][0].dockerTag)
               .to.equal(ctx.dockerTag);
-            expect(Docker.prototype.createImageBuilder.args[0][4], 'createImageBuilder arg4')
+            expect(Docker.prototype.createImageBuilder.args[0][0].network)
               .to.equal(ctx.sauronResult);
-            expect(Docker.prototype.createImageBuilder.args[0][5], 'createImageBuilder arg5')
+            expect(Docker.prototype.createImageBuilder.args[0][0].noCache)
               .to.equal(ctx.data.noCache);
-            expect(Docker.prototype.createImageBuilder.args[0][6], 'createImageBuilder arg6')
+            expect(Docker.prototype.createImageBuilder.args[0][0].tid)
+              .to.equal(ctx.data.tid);
+            expect(Docker.prototype.createImageBuilder.args[0][1])
               .to.be.a.function();
             done();
           });
@@ -588,17 +594,14 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
       describe('basics', function () {
         beforeEach(function (done) {
           sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
-
           sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync(null);
           done();
         });
 
 
-        it('Should trigger only the updateBuildError', function (done) {
+        it('should trigger only the updateBuildError', function (done) {
           ctx.worker._onError(new Error('hello'), function () {
-
             expect(Sauron.prototype.deleteHost.callCount).to.equal(0);
-
             expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1);
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
               ctx.mockContextVersion.build._id
@@ -606,14 +609,12 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
             done();
           });
         });
-        it('Should trigger the delete host and updateBuildError', function (done) {
+        it('should trigger the delete host and updateBuildError', function (done) {
           ctx.worker.network = ctx.sauronResult;
           ctx.worker._onError(new Error('hello'), function () {
-
             expect(Sauron.prototype.deleteHost.callCount).to.equal(1);
             expect(Sauron.prototype.deleteHost.args[0][0]).to.equal(ctx.sauronResult.networkIp);
             expect(Sauron.prototype.deleteHost.args[0][1]).to.equal(ctx.sauronResult.hostIp);
-
             expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1);
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
               ctx.mockContextVersion.build._id
@@ -627,20 +628,15 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
         beforeEach(function (done) {
           ctx.worker.network = ctx.sauronResult;
           sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(new Error('Bryan\'s message'));
-
           sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync(null);
           done();
         });
 
-
-        it('Should log an error if sauron errors on the delete', function (done) {
+        it('should log an error if sauron errors on the delete', function (done) {
           ctx.worker._onError(new Error('hello'), function () {
-            expect(Sauron.prototype.deleteHost.callCount)
-                .to.equal(process.env.WORKER_SAURON_RETRY_ATTEMPTS);
-
+            expect(Sauron.prototype.deleteHost.callCount).to.equal(1);
             expect(Sauron.prototype.deleteHost.args[0][0]).to.equal(ctx.sauronResult.networkIp);
             expect(Sauron.prototype.deleteHost.args[0][1]).to.equal(ctx.sauronResult.hostIp);
-
             expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1);
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
               ctx.mockContextVersion.build._id

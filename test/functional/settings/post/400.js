@@ -55,7 +55,7 @@ describe('400 POST /settings', function () {
         if (err) { return done(err); }
         var settings = {
           owner: {
-            github: runnable.user.attrs.accounts.github.id
+            github: runnable.attrs.accounts.github.id
           },
           notifications: {
             slack: {
@@ -73,7 +73,7 @@ describe('400 POST /settings', function () {
         runnable.createSetting({json: settings}, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
-          expect(body.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
+          expect(body.owner.github).to.equal(runnable.attrs.accounts.github.id);
           expect(body.notifications.slack.apiToken).to.equal(
             settings.notifications.slack.apiToken
           );

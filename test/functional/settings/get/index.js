@@ -49,7 +49,7 @@ describe('GET /settings', function () {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
         ctx.user = runnable;
-        settings.owner.github = runnable.user.attrs.accounts.github.id;
+        settings.owner.github = runnable.attrs.accounts.github.id;
         runnable.createSetting({ json: settings }, function (err, body) {
           if (err) { return done(err); }
           expect(body._id).to.exist();
@@ -67,7 +67,7 @@ describe('GET /settings', function () {
           var st = runnable.newSettings([], {
             qs: {
               owner: {
-                github: runnable.user.attrs.accounts.github.id
+                github: runnable.attrs.accounts.github.id
               }
             }
           });
@@ -75,7 +75,7 @@ describe('GET /settings', function () {
             if (err) { return done(err); }
             var settings = body[0];
             expect(settings._id).to.exist();
-            expect(settings.owner.github).to.equal(runnable.user.attrs.accounts.github.id);
+            expect(settings.owner.github).to.equal(runnable.attrs.accounts.github.id);
             expect(settings.notifications.slack.enabled).to.equal(true);
             expect(settings.ignoredHelpCards.length).to.equal(0);
             done();

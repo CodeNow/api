@@ -10,12 +10,13 @@
       - [Routes](#routes)
       - [Mongo](#mongo)
       - [Tests](#tests)
+- [Logs](#logs)
+      - [[Guide to Using Log Levels](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Using-Log-Levels)](#guide-to-using-log-levelshttpsgithubcomcodenowdevops-scriptswikiguide-to-using-log-levels)
+      - [[Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)](#guide-to-development-cli-log-toolshttpsgithubcomcodenowdevops-scriptswikiguide-to-development-cli-log-tools)
+      - [[Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)](#guide-to-debugging-production-api-with-logshttpsgithubcomcodenowdevops-scriptswikiguide-to-debugging-production-api-with-logs)
 - [Running Tests](#running-tests)
   - [Prerequisites](#prerequisites)
   - [Tests](#tests-1)
-  - [Tests: logging](#tests-logging)
-    - [[Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)](#guide-to-development-cli-log-toolshttpsgithubcomcodenowdevops-scriptswikiguide-to-development-cli-log-tools)
-    - [[Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)](#guide-to-debugging-production-api-with-logshttpsgithubcomcodenowdevops-scriptswikiguide-to-debugging-production-api-with-logs)
   - [Formatting](#formatting)
       - [jshint](#jshint)
       - [eslint](#eslint)
@@ -52,6 +53,12 @@
 - Unit Tests: `/unit`
 - Lab (testing framework): [hapijs/lab](https://github.com/hapijs/lab)
 
+# Logs
+
+#### [Guide to Using Log Levels](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Using-Log-Levels)  
+#### [Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)  
+#### [Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)  
+
 # Running Tests
 
 ## Prerequisites
@@ -86,22 +93,6 @@ Granular:
   - BDD Watch w/ one test file: `npm run bdd-watch -- test/path/to/file.js`
 - Unit: `npm run unit`
   - (similar options exist to run individual and ranges of tests as BDD)
-
-## Tests: logging
-
-### [Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)  
-### [Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)  
-
-If you see:  
-```js
-app.post('/workers/container-create',
-  requestTrace('POST_WORKERS_CONTAINER_CREATE')
-```
-
-You can filter trace logs w/
-```
-LOG_LEVEL_STDOUT=trace TID_POST_WORKERS_CONTAINER_CREATE=apples npm run bdd-whitelist | bunyan -c 'this.tid == "apples"'
-```
 
 ## Formatting
 

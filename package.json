@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.56.1",
+  "version": "2.57.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -17,6 +17,8 @@
     "bluebird": "^2.10.0",
     "body-parser": "^1.4.3",
     "bunyan": "^1.4.0",
+    "bunyan-logentries": "^1.1.2",
+    "bunyan-loggly": "0.0.5",
     "busboy": "^0.2.8",
     "callback-count": "~0.1.0",
     "cayley": "^0.2.0",
@@ -75,7 +77,7 @@
     "regexp-quote": "0.0.0",
     "request": "2.42.0",
     "rollbar": "0.5.4",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.6.0",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.6.2",
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "s3-stream-upload": "0.0.6",
     "sauron-client": "git+ssh://git@github.com:codenow/sauron-client.git#v1.1.0",
@@ -148,10 +150,10 @@
     "generate-whitelist": "find ./test -path ./test/functional/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt",
     "lint": "jshint .",
     "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js 2>&1 | bunyan -o json-0 --strict",
+    "todo": "grep -nR TODO lib test",
     "start-debug": "NODE_PATH=./lib node --debug index.js",
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "todo": "grep -nR TODO lib test",
     "unit": "npm run clear; NODE_PATH=./lib lab --threshold 82 --assert code --leaks --verbose unit/",
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "unit-watch": "nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
