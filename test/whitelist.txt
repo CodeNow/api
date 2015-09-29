@@ -85,4 +85,6 @@
 ./test/functional/users-id-routes-id/index.js
 ./test/functional/users-id-routes/index.js
 ./test/functional/users-id.js
+./test/integration/workers/deploy-instance.js
+./test/integration/workers/on-image-builder-container-die.js
 ./test/integration/models/mongo/context-version.js

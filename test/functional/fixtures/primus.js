@@ -23,7 +23,7 @@ var ctx = {};
 
 module.exports = {
   joinOrgRoom: function (orgId, cb) {
-    log.trace('joinOrgRoom');
+    log.trace('joinOrgRoom', orgId);
     if (!ctx.primus) { return cb(new Error('can not disconnect primus if not connected')); }
     ctx.primus.write({
       id: uuid(), // needed for uniqueness
