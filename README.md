@@ -11,9 +11,9 @@
       - [Mongo](#mongo)
       - [Tests](#tests)
 - [Logs](#logs)
-  - [[Guide to Using Log Levels](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Using-Log-Levels)](#guide-to-using-log-levelshttpsgithubcomcodenowdevops-scriptswikiguide-to-using-log-levels)
-  - [[Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)](#guide-to-development-cli-log-toolshttpsgithubcomcodenowdevops-scriptswikiguide-to-development-cli-log-tools)
-  - [[Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)](#guide-to-debugging-production-api-with-logshttpsgithubcomcodenowdevops-scriptswikiguide-to-debugging-production-api-with-logs)
+      - [[Guide to Using Log Levels](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Using-Log-Levels)](#guide-to-using-log-levelshttpsgithubcomcodenowdevops-scriptswikiguide-to-using-log-levels)
+      - [[Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)](#guide-to-development-cli-log-toolshttpsgithubcomcodenowdevops-scriptswikiguide-to-development-cli-log-tools)
+      - [[Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)](#guide-to-debugging-production-api-with-logshttpsgithubcomcodenowdevops-scriptswikiguide-to-debugging-production-api-with-logs)
 - [Running Tests](#running-tests)
   - [Prerequisites](#prerequisites)
   - [Tests](#tests-1)
@@ -55,9 +55,9 @@
 
 # Logs
 
-- [Guide to Using Log Levels](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Using-Log-Levels)  
-- [Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)  
-- [Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)  
+#### [Guide to Using Log Levels](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Using-Log-Levels)  
+#### [Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)  
+#### [Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)  
 
 # Running Tests
 
