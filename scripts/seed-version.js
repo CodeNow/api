@@ -60,6 +60,19 @@ var sources = [{
   name: 'MySQL',
   body: fs.readFileSync('./scripts/sourceDockerfiles/mysql').toString()
 }, {
+  name: 'Consul-Server',
+  body:
+  'FROM gliderlabs/consul-server:0.5\n' +
+  'EXPOSE 8400 8500 8600 53'
+}, {
+  name: 'Cassandra',
+  body:
+  '# View more information about this dockerfile here: ' +
+  'https://registry.hub.docker.com/u/spotify/cassandra/\n' +
+  'FROM spotify/cassandra\n\n' +
+  '# Open ports on server\n' +
+  'EXPOSE 7199 7000 7001 9160 9042 22 8012 61621'
+}, {
   name: 'MongoDB',
   body:
     '# Full list of versions available here:'+
@@ -264,7 +277,7 @@ function createICV (data, context, cb) {
   console.log('createICV "'+data.name+'"');
   var icv = new InfraCodeVersion({
     context: context._id,
-    parent : ctx.blankIcvId
+    parent: ctx.blankIcvId
   });
   async.series([
     icv.initWithDefaults.bind(icv),
@@ -281,6 +294,7 @@ function createCV (data, context, icv, cb) {
     context  : context._id,
     advanced : true,
     created  : new Date(),
+    owner: createdBy,
     infraCodeVersion: icv._id
   });
   cv.save(function (err, version) {
