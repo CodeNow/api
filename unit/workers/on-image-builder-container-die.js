@@ -40,10 +40,15 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
       dockerHost: '0.0.0.0'
     };
     ctx.mockContextVersion = {
-      toJSON: noop
+      toJSON: function () { return {}; }
     };
     sinon.stub(async, 'series', noop);
     ctx.worker = new OnImageBuilderContainerDie(ctx.data);
+
+    // would normally be assigned from _baseWorkerFindContextVersion
+    ctx.worker.contextVersion = {
+      _id: 'temp'
+    };
     ctx.worker.handle();
     done();
   });
@@ -162,10 +167,15 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
         expect(containerId).to.equal(ctx.data.id);
         cb();
       });
+      sinon.stub(ctx.worker, '_findBuildAndEmitUpdate', function (data, cb) {
+        expect(data).to.equal(null);
+        cb();
+      });
       done();
     });
     afterEach(function (done) {
       ContextVersion.updateBuildErrorByContainer.restore();
+      ctx.worker._findBuildAndEmitUpdate.restore();
       done();
     });
     it('it should handle errored build', function (done) {
@@ -186,10 +196,15 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
         expect(buildInfo).to.equal(ctx.buildInfo);
         cb();
       });
+      sinon.stub(ctx.worker, '_findBuildAndEmitUpdate', function (data, cb) {
+        expect(data).to.be.an.object();
+        cb();
+      });
       done();
     });
     afterEach(function (done) {
       ContextVersion.updateBuildCompletedByContainer.restore();
+      ctx.worker._findBuildAndEmitUpdate.restore();
       done();
     });
     it('it should handle errored build', function (done) {
