@@ -60,7 +60,7 @@ var sources = [{
   name: 'MySQL',
   body: fs.readFileSync('./scripts/sourceDockerfiles/mysql').toString()
 }, {
-  name: 'Consul Server',
+  name: 'Consul-Server',
   body:
   'FROM gliderlabs/consul-server:0.5\n' +
   'EXPOSE 8400 8500 8600 53'
