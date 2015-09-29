@@ -277,7 +277,6 @@ function createICV (data, context, cb) {
   console.log('createICV "'+data.name+'"');
   var icv = new InfraCodeVersion({
     context: context._id,
-    owner: createdBy,
     parent: ctx.blankIcvId
   });
   async.series([
@@ -295,6 +294,7 @@ function createCV (data, context, icv, cb) {
     context  : context._id,
     advanced : true,
     created  : new Date(),
+    owner: createdBy,
     infraCodeVersion: icv._id
   });
   cv.save(function (err, version) {
