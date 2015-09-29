@@ -277,7 +277,8 @@ function createICV (data, context, cb) {
   console.log('createICV "'+data.name+'"');
   var icv = new InfraCodeVersion({
     context: context._id,
-    parent : ctx.blankIcvId
+    owner: createdBy,
+    parent: ctx.blankIcvId
   });
   async.series([
     icv.initWithDefaults.bind(icv),
