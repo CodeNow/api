@@ -412,7 +412,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             'noCache': 'body.noCache',
             'sauronHost': '127.0.0.1:3200',
             'sessionUserDisplayName': 'Ryan Sandor Richards',
-            'sessionUserId': user.accounts.github.id,
+            'sessionUserGithubId': user.accounts.github.id,
             'sessionUserUsername': user.accounts.github.username,
             'tid': 'e5e14545-0d40-45bb-90fd-0128cbc6fbaa',
             'type': 'image-builder-container'
