@@ -27,9 +27,8 @@ describe('Worker: delete-instance: '+moduleName, function () {
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       });
-      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
-        cb(Boom.badRequest('_baseWorkerFindInstance error'));
-      });
+      sinon.stub(worker, '_baseWorkerFindInstance')
+        .yieldsAsync(Boom.badRequest('_baseWorkerFindInstance error'));
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
@@ -45,12 +44,10 @@ describe('Worker: delete-instance: '+moduleName, function () {
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       });
-      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
-        cb(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
-      });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
-        cb(Boom.badRequest('removeSelfFromGraph error'));
-      });
+      sinon.stub(worker, '_baseWorkerFindInstance')
+        .yieldsAsync(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
+      sinon.stub(Instance.prototype, 'removeSelfFromGraph')
+        .yieldsAsync(Boom.badRequest('removeSelfFromGraph error'));
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
@@ -67,15 +64,10 @@ describe('Worker: delete-instance: '+moduleName, function () {
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       });
-      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
-        cb(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
-      });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
-        cb(null);
-      });
-      sinon.stub(Instance.prototype, 'remove', function (cb) {
-        cb(Boom.badRequest('remove error'));
-      });
+      sinon.stub(worker, '_baseWorkerFindInstance')
+        .yieldsAsync(null, new Instance({_id: '507f1f77bcf86cd799439011', name: 'api'}));
+      sinon.stub(Instance.prototype, 'removeSelfFromGraph').yieldsAsync(null);
+      sinon.stub(Instance.prototype, 'remove').yieldsAsync(Boom.badRequest('remove error'));
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
@@ -93,27 +85,19 @@ describe('Worker: delete-instance: '+moduleName, function () {
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       });
-      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
-        var data = {
-          _id: '507f1f77bcf86cd799439011',
-          name: 'api',
-          container: {
-            dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
-          }
-        };
-        cb(null, new Instance(data));
+      var inst = new Instance({
+        _id: '507f1f77bcf86cd799439011',
+        name: 'api',
+        container: {
+          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
+        }
       });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
-        cb(null);
-      });
-      sinon.stub(Instance.prototype, 'remove', function (cb) {
-        cb(null);
-      });
+      sinon.stub(worker, '_baseWorkerFindInstance').yieldsAsync(null, inst);
+      sinon.stub(Instance.prototype, 'removeSelfFromGraph').yieldsAsync(null);
+      sinon.stub(Instance.prototype, 'remove').yieldsAsync(null);
       sinon.stub(rabbitMQ, 'deleteInstanceContainer', function () {});
       sinon.stub(messenger, 'emitInstanceDelete', function () {});
-      sinon.stub(worker, '_deleteForks', function (instance, sessionUserId, cb) {
-        cb(Boom.badRequest('_deleteForks error'));
-      });
+      sinon.stub(worker, '_deleteForks').yieldsAsync(Boom.badRequest('_deleteForks error'));
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
@@ -160,15 +144,10 @@ describe('Worker: delete-instance: '+moduleName, function () {
           ]
         }
       };
-      sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
-        cb(null, new Instance(instanceData));
-      });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
-        cb(null);
-      });
-      sinon.stub(Instance.prototype, 'remove', function (cb) {
-        cb(null);
-      });
+      sinon.stub(worker, '_baseWorkerFindInstance').
+        yieldsAsync(null, new Instance(instanceData));
+      sinon.stub(Instance.prototype, 'removeSelfFromGraph').yieldsAsync(null);
+      sinon.stub(Instance.prototype, 'remove').yieldsAsync(null);
       sinon.stub(rabbitMQ, 'deleteInstanceContainer', function (task) {
         expect(task.instanceShortHash).to.equal(instanceData.shortHash);
         expect(task.instanceName).to.equal(instanceData.name);
@@ -186,9 +165,7 @@ describe('Worker: delete-instance: '+moduleName, function () {
         expect(instance.name).to.equal(instanceData.name);
         expect(instance.shortHash).to.equal(instanceData.shortHash);
       });
-      sinon.stub(worker, '_deleteForks', function (instance, sessionUserId, cb) {
-        cb(null);
-      });
+      sinon.stub(worker, '_deleteForks').yieldsAsync(null);
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
@@ -234,12 +211,8 @@ describe('Worker: delete-instance: '+moduleName, function () {
       sinon.stub(worker, '_baseWorkerFindInstance', function (query, cb) {
         cb(null, new Instance(instanceData));
       });
-      sinon.stub(Instance.prototype, 'removeSelfFromGraph', function (cb) {
-        cb(null);
-      });
-      sinon.stub(Instance.prototype, 'remove', function (cb) {
-        cb(null);
-      });
+      sinon.stub(Instance.prototype, 'removeSelfFromGraph').yieldsAsync(null);
+      sinon.stub(Instance.prototype, 'remove').yieldsAsync(null);
       sinon.stub(rabbitMQ, 'deleteInstanceContainer', function (task) {
         expect(task.instanceShortHash).to.equal(instanceData.shortHash);
         expect(task.instanceName).to.equal(instanceData.name);
@@ -257,9 +230,7 @@ describe('Worker: delete-instance: '+moduleName, function () {
         expect(instance.name).to.equal(instanceData.name);
         expect(instance.shortHash).to.equal(instanceData.shortHash);
       });
-      sinon.stub(worker, '_deleteForks', function (instance, sessionUserId, cb) {
-        cb(null);
-      });
+      sinon.stub(worker, '_deleteForks').yieldsAsync(null);
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
@@ -298,9 +269,8 @@ describe('Worker: delete-instance: '+moduleName, function () {
         instanceId: '507f1f77bcf86cd799439011',
         sessionUserId: '507f191e810c19729de860ea'
       });
-      sinon.stub(Instance, 'findInstancesByParent', function (shortHash, cb) {
-        cb(Boom.badRequest('findInstancesByParent failed'));
-      });
+      sinon.stub(Instance, 'findInstancesByParent')
+        .yieldsAsync(Boom.badRequest('findInstancesByParent failed'));
       worker._deleteForks({
         _id: '507f1f77bcf86cd799439011',
         masterPod: true
@@ -335,6 +305,5 @@ describe('Worker: delete-instance: '+moduleName, function () {
         done();
       });
     });
-
   });
 });
