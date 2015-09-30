@@ -711,7 +711,7 @@ function waitForVersionComplete (user, cv) {
       primus.onceVersionComplete(cv.id(), function (/* data */) {
         cb();
       });
-      dockerMockEvents.emitBuildComplete(cv);
+      dockerMockEvents.emitBuildComplete(cv, user);
     });
   };
 }

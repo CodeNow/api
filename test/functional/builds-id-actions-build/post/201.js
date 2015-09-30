@@ -204,7 +204,7 @@ function buildTheBuildTests (ctx) {
             primus.onceVersionComplete(ctx.cv.id(), function () {
               done();
             });
-            dockerMockEvents.emitBuildComplete(ctx.cv);
+            dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
           }));
         });
       });
@@ -285,7 +285,7 @@ function itShouldBuildTheBuild (ctx) {
       expects.success(201, ctx.expectStarted, function (err) {
         if (err) { return done(err); }
 
-        dockerMockEvents.emitBuildComplete(ctx.cv);
+        dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
 
         primus.onceVersionComplete(ctx.cv.id(), function() {
           var count = createCount(done);

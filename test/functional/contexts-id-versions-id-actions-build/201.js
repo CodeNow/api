@@ -398,7 +398,7 @@ function buildTheVersionTests (ctx) {
           primus.onceVersionComplete(cv._id, function (/*data*/) {
             cvModel.fetch(done);
           });
-          dockerMockEvents.emitBuildComplete(cv);
+          dockerMockEvents.emitBuildComplete(cv, ctx.user);
         });
       });
     });

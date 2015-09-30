@@ -173,7 +173,7 @@ describe('200 PATCH /instances', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             count.next();
           });
-          dockerMockEvents.emitBuildComplete(ctx.cv);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
         });
       });
 
@@ -195,7 +195,7 @@ describe('200 PATCH /instances', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             count.next();
           });
-          dockerMockEvents.emitBuildComplete(ctx.cv);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
         });
       });
 
@@ -224,7 +224,7 @@ describe('200 PATCH /instances', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             count.next();
           });
-          dockerMockEvents.emitBuildComplete(ctx.cv);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
         });
       });
     });

@@ -65,7 +65,8 @@ describe('Build Stream', function () {
         expect(code).to.equal(201);
         expect(body).to.exist();
 
-        dockerMockEvents.emitBuildComplete(ctx.cv);
+        // require('./fixtures/mocks/github/user')(ctx.user);
+        dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
         primus.onceVersionComplete(ctx.cv.id(), function () {
           var client = new PrimusClient('http://localhost:' + process.env.PORT);
           // start build stream
@@ -130,7 +131,7 @@ describe('Build Stream', function () {
         // create substream for build logs
         var count = createCount(2, done);
         var buildStream = client.substream(body.contextVersions[0]);
-        dockerMockEvents.emitBuildComplete(ctx.cv);
+        dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
 
         primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
           count.next();
@@ -183,7 +184,7 @@ describe('Build Stream', function () {
             });
           }
         });
-        dockerMockEvents.emitBuildComplete(ctx.cv);
+        dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
       });
     });
   });

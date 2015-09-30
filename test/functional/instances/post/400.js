@@ -52,7 +52,7 @@ describe('400 POST /instances', function () {
         primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
           done();
         });
-        dockerMockEvents.emitBuildComplete(ctx.cv);
+        dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
       });
     });
 

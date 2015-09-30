@@ -128,7 +128,7 @@ describe('204 DELETE /instances/:id', function () {
             primus.onceVersionComplete(cvId, function () {
               primus.disconnect(done);
             });
-            dockerMockEvents.emitBuildComplete(carry);
+            dockerMockEvents.emitBuildComplete(carry, ctx.user);
           });
         });
       });

@@ -129,7 +129,7 @@ describe('201 POST /instances', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             done();
           });
-          dockerMockEvents.emitBuildComplete(ctx.cv);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
         });
       });
 
@@ -148,7 +148,7 @@ describe('201 POST /instances', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             done();
           });
-          dockerMockEvents.emitBuildComplete(ctx.cv);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
         });
       });
 
@@ -159,7 +159,7 @@ describe('201 POST /instances', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             done();
           });
-          dockerMockEvents.emitBuildComplete(ctx.cv);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
         });
       });
 
@@ -172,7 +172,7 @@ describe('201 POST /instances', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             done();
           });
-          dockerMockEvents.emitBuildComplete(ctx.cv);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
         });
       });
     });

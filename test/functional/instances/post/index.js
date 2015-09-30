@@ -105,7 +105,7 @@ describe('POST /instances', function () {
               primus.onceVersionComplete(ctx.cv.id(), function (/*data*/) {
                 countDown.next();
               });
-              dockerMockEvents.emitBuildComplete(ctx.cv);
+              dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
             });
           });
         });
@@ -135,7 +135,7 @@ describe('POST /instances', function () {
             ctx.user.createInstance({ json: json }, function (err) {
               primus.expectAction('deploy', expected, countDown.next);
               countDown.next(err);
-              dockerMockEvents.emitBuildComplete(ctx.cv);
+              dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
             });
           });
           ctx.build.build({ message: uuid() }, countDown.next);
@@ -154,7 +154,7 @@ describe('POST /instances', function () {
             var instance = ctx.user.createInstance({ json: json }, function(err) {
               if (err) { return done(err); }
               primus.expectAction('deploy', {}, count.next);
-              dockerMockEvents.emitBuildComplete(ctx.cv);
+              dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
             });
             function fetchInstanceAndAssertHosts (err) {
               if (err) { return done(err); }
@@ -226,13 +226,14 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
+            ctx.user.username = 'Runnable';
             require('../../fixtures/mocks/github/user')(ctx.user);
             var countDown = createCount(2, done);
             var next = countDown.next;
             primus.expectAction('start', next);
             ctx.user.createInstance({ json: json }, function (err, body, code, res) {
               if (err) { return next(err); }
-              dockerMockEvents.emitBuildComplete(ctx.cv);
+              dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
               expects.success(201, expected, next)(err, body, code, res);
             });
           });

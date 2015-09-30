@@ -61,7 +61,7 @@ describe('Build - /builds/:id/actions/build', function () {
 
           expect(code).to.equal(201);
           expect(body).to.exist();
-          dockerMockEvents.emitBuildComplete(ctx.cv);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
           primus.onceVersionComplete(ctx.cv.id(), function (data) {
             expect(last(data.data.data.build.log).content).to.contain('Successfully built');
 
@@ -107,7 +107,7 @@ describe('Build - /builds/:id/actions/build', function () {
               expect(body).to.exist();
               expect(body.contextVersions[0]).to.equal(ctx.cv.attrs._id);
 
-              dockerMockEvents.emitBuildComplete(ctx.cv);
+              dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
 
               primus.onceVersionComplete(ctx.cv.id(), function (data) {
                 if (err) { return done(err); }
@@ -162,7 +162,7 @@ describe('Build - /builds/:id/actions/build', function () {
               expect(body).to.exist();
               expect(body.contextVersions[0]).to.equal(ctx.cv.attrs._id);
 
-              dockerMockEvents.emitBuildComplete(ctx.cv, true);
+              dockerMockEvents.emitBuildComplete(ctx.cv, true, ctx.user);
 
               primus.onceVersionComplete(ctx.cv.id(), function () {
                 var buildExpected = {
@@ -202,7 +202,7 @@ describe('Build - /builds/:id/actions/build', function () {
               if (err) { return done(err); }
               multi.buildTheBuild(ctx.user, ctx.build, function (err) {
                 if (err) { return done(err); }
-                dockerMockEvents.emitBuildComplete(ctx.cv);
+                dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
                 // Now make a copy
                 var newCv = ctx.user
                   .newContext(ctx.context.id())
@@ -218,7 +218,7 @@ describe('Build - /builds/:id/actions/build', function () {
                     require('./../../fixtures/mocks/github/user')(ctx.user);
                     ctx.buildCopy.build({message: 'hello!'}, function (err) {
                       if (err) { return done(err); }
-                      dockerMockEvents.emitBuildComplete(newCv);
+                      dockerMockEvents.emitBuildComplete(newCv, ctx.user);
 
                       primus.onceVersionComplete(newCv.id(), function () {
                         // Now refetch the build, and make sure the cv is different from the
@@ -242,7 +242,7 @@ describe('Build - /builds/:id/actions/build', function () {
           ctx.build.build({message:'hello!'}, function (err) {
             if (err) { return done(err); }
             ctx.build.build({message:'hello!'}, function (err, body, code) {
-              dockerMockEvents.emitBuildComplete(ctx.cv);
+              dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
 
               primus.onceVersionComplete(ctx.cv.id(), function () {
                 expects.error(409, /Build is already in progress/, done)(err, body, code);
