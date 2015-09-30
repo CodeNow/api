@@ -94,7 +94,7 @@ describe('Building - Context Version Deduping', function () {
         forkedInstance = instance.copy(function (err) {
           if (err) { return done(err); }
           // Now tail both and make sure they both start
-          dockerMockEvents.emitBuildComplete(ctx.cv);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user);
         });
       });
     });
@@ -107,7 +107,7 @@ describe('Building - Context Version Deduping', function () {
         var forkedInstance = instance.copy(function (err) {
           if (err) { return done(err); }
           // Now tail the buildstream so we can check if the instances do not deploy
-          dockerMockEvents.emitBuildComplete(ctx.cv, true);
+          dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user, true);
           // since the build will fail we must rely on version complete, versus instance deploy socket event
           primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
             var count = createCount(2, done);
@@ -128,7 +128,7 @@ describe('Building - Context Version Deduping', function () {
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err); }
         // finish the build
-        dockerMockEvents.emitBuildComplete(ctx.cv, true);
+        dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user, true);
         // Now wait for the finished build
         // since the build will fail we must rely on version complete, versus instance deploy socket event
         primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {

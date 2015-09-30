@@ -234,7 +234,7 @@ describe('Github - /actions/github', function () {
           if (err) { return done(err); }
           expect(res.statusCode).to.equal(202);
           expect(body).to.equal('Autoforking of instances on branch push is disabled for now');
-          finishAllIncompleteVersions(done);
+          finishAllIncompleteVersions(ctx.user, done);
         });
       });
 
@@ -278,7 +278,7 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(1);
-            finishAllIncompleteVersions();
+            finishAllIncompleteVersions(ctx.user);
           });
         });
 
@@ -341,7 +341,7 @@ describe('Github - /actions/github', function () {
               expect(cvIds).to.exist();
               expect(cvIds).to.be.an.array();
               expect(cvIds).to.have.length(1);
-              finishAllIncompleteVersions();
+              finishAllIncompleteVersions(ctx.user);
             });
           });
         });
@@ -465,7 +465,7 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.exist();
             expect(cvIds).to.be.an.array();
             expect(cvIds).to.have.length(2);
-            finishAllIncompleteVersions();
+            finishAllIncompleteVersions(ctx.user);
           });
         });
       });
@@ -493,7 +493,7 @@ describe('Github - /actions/github', function () {
   });
 });
 
-function finishAllIncompleteVersions (cb) {
+function finishAllIncompleteVersions (user, cb) {
   var incompleteBuildsQuery = {
     'build.started'  : { $exists: true },
     'build.completed': { $exists: false }
@@ -515,7 +515,7 @@ function finishAllIncompleteVersions (cb) {
       .forEach(function (version) {
         // emit build complete events for each unique build
         primus.expectActionCount('build_running', 1, function () {
-          dockerMockEvents.emitBuildComplete(version);
+          dockerMockEvents.emitBuildComplete(version, user);
         });
       });
     if (cb) {

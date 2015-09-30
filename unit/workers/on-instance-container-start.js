@@ -25,7 +25,7 @@ var moduleName = path.relative(process.cwd(), __filename);
 
 describe('OnInstanceContainerStartWorker: '+moduleName, function () {
   var ctx;
-
+  var testOwnerName = 'Beedrill';
   beforeEach(function (done) {
     ctx = {};
     ctx.mockInstance = {
@@ -49,7 +49,6 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
     };
     ctx.labels = {
       instanceId: ctx.mockInstance._id,
-      ownerUsername: 'fifo',
       sessionUserGithubId: 444,
       contextVersionId: 123
     };
@@ -73,11 +72,16 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
       ctx.worker.instance = ctx.mockInstance;
       cb(null, ctx.mockInstance);
     });
+    sinon.stub(ctx.worker, '_baseWorkerFindGithubUser', function (query, cb) {
+      ctx.worker.githubUser = { name: testOwnerName };
+      cb(null, ctx.worker.githubUser);
+    });
     sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null);
     done();
   });
   afterEach(function (done) {
     ctx.worker._baseWorkerFindInstance.restore();
+    ctx.worker._baseWorkerFindGithubUser.restore();
     ctx.worker._baseWorkerUpdateInstanceFrontend.restore();
     done();
   });
@@ -121,7 +125,7 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
           expect(Sauron.prototype.attachHostToContainer.args[0][2]).to.equal(ctx.data.id);
           expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
-              .to.equal(ctx.labels.ownerUsername);
+              .to.equal(testOwnerName);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           done();
@@ -153,7 +157,7 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
           expect(Sauron.prototype.attachHostToContainer.args[0][2]).to.equal(ctx.data.id);
           expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
-              .to.equal(ctx.labels.ownerUsername);
+              .to.equal(testOwnerName);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
           expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
@@ -171,6 +175,8 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
       // normally set after _baseWorkerFindInstance
       ctx.worker.hostIp = ctx.mockInstance.network.hostIp;
       ctx.worker.networkIp = ctx.mockInstance.network.networkIp;
+      // normally set by _baseWorkerFindGithubUser
+      ctx.worker.githubUser = { name: testOwnerName };
       done();
     });
 
@@ -198,14 +204,13 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
           expect(Sauron.prototype.attachHostToContainer.args[0][2]).to.equal(ctx.data.id);
           expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
-              .to.equal(ctx.labels.ownerUsername);
+              .to.equal(testOwnerName);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
           done();
         });
       });
     });
     describe('failure', function () {
-
       afterEach(function (done) {
         Sauron.prototype.attachHostToContainer.restore();
         Hosts.prototype.upsertHostsForInstance.restore();
@@ -240,7 +245,7 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
           expect(Sauron.prototype.attachHostToContainer.args[0][2]).to.equal(ctx.data.id);
           expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
-            .to.equal(ctx.labels.ownerUsername);
+            .to.equal(testOwnerName);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
           done();
         });

@@ -49,10 +49,7 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
 
     // would normally be assigned from _baseWorkerFindContextVersion
     ctx.worker.contextVersion = {
-      _id: 'temp',
-      owner: {
-        github: 3498684
-      }
+      _id: 'temp'
     };
     ctx.worker.handle();
     done();
@@ -92,14 +89,6 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
 
     it('should throw if missing sessionUserGithubId', function (done) {
       ctx.worker.data = null;
-      expect(function () {
-        ctx.worker._deployInstance('123415');
-      }).to.throw();
-      done();
-    });
-
-    it('should throw if missing ownerUsername', function (done) {
-      ctx.worker.githubUser = null;
       expect(function () {
         ctx.worker._deployInstance('123415');
       }).to.throw();
