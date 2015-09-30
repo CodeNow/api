@@ -10,9 +10,11 @@ var Code = require('code');
 var async = require('async');
 var noop = require('101/noop');
 var sinon = require('sinon');
+var keypather = require('keypather')();
 
 var ContextVersion = require('models/mongo/context-version');
 var Docker = require('models/apis/docker');
+var rabbitMQ = require('models/rabbitmq');
 var Sauron = require('models/apis/sauron.js');
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die');
@@ -63,6 +65,51 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
 
   describe('_finalSeriesHandler', function () {
     it('TODO', function (done) {
+      done();
+    });
+  });
+
+  describe('_deployInstance', function () {
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'deployInstance');
+      keypather.set(ctx.worker, 'githubUser.name', 'Muk');
+      keypather.set(ctx.worker,
+        'data.inspectData.Config.Labels.sessionUserGithubId', 'Test');
+      done();
+    });
+
+    afterEach(function (done) {
+      rabbitMQ.deployInstance.restore();
+      done();
+    });
+
+    it('should throw if missing buildId', function (done) {
+      expect(function () {
+        ctx.worker._deployInstance(null);
+      }).to.throw();
+      done();
+    });
+
+    it('should throw if missing sessionUserGithubId', function (done) {
+      ctx.worker.data = null;
+      expect(function () {
+        ctx.worker._deployInstance('123415');
+      }).to.throw();
+      done();
+    });
+
+    it('should throw if missing ownerUsername', function (done) {
+      ctx.worker.githubUser = null;
+      expect(function () {
+        ctx.worker._deployInstance('123415');
+      }).to.throw();
+      done();
+    });
+
+    it('should deploy instance', function (done) {
+      ctx.worker._deployInstance('123415');
+      expect(rabbitMQ.deployInstance.called)
+        .to.be.true();
       done();
     });
   });
