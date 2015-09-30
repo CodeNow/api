@@ -368,6 +368,40 @@ describe('BaseWorker: '+moduleName, function () {
     });
   });
 
+  describe('_baseWorkerFindGithubUser', function() {
+    beforeEach(function (done) {
+      sinon.stub(User.prototype, 'findGithubUserByGithubId');
+      done();
+    });
+    afterEach(function (done) {
+      User.prototype.findGithubUserByGithubId.restore();
+      done();
+    });
+    it('should error if find errored', function (done) {
+      User.prototype.findGithubUserByGithubId.yieldsAsync('error');
+      ctx.worker._baseWorkerFindGithubUser('', function (err) {
+        expect(err).to.exist();
+        done();
+      });
+    });
+    it('should error if no user found', function (done) {
+      User.prototype.findGithubUserByGithubId.yieldsAsync(null, null);
+      ctx.worker._baseWorkerFindGithubUser('', function (err) {
+        expect(err).to.exist();
+        done();
+      });
+    });
+    it('should return user', function (done) {
+      var testUser = new User();
+      User.prototype.findGithubUserByGithubId.yieldsAsync(null, testUser);
+      ctx.worker._baseWorkerFindGithubUser('', function (err, user) {
+        expect(err).to.not.exist();
+        expect(ctx.worker.user).to.deep.equal(testUser);
+        expect(user).to.deep.equal(testUser);
+        done();
+      });
+    });
+  }); // end _baseWorkerFindGithubUser
 
   describe('_baseWorkerValidateDieData', function () {
     beforeEach(function (done) {
