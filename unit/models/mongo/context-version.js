@@ -157,22 +157,19 @@ describe('Context Version: '+moduleName, function () {
     });
   });
 
-  describe('save context version hook', function () {
-    it('should call post save hook and report error when owner is undefiend', function (done) {
-      var next = cbCount(2, done).next;
-      sinon.stub(error, 'log', function (err) {
-        expect(err.output.statusCode).to.equal(500);
-        expect(err.message).to.equal('context version was saved without owner');
-        expect(err.data.cv._id).to.exist();
-        error.log.restore();
-        next();
-      });
+  describe('save context version validation', function () {
+    it('should not possible to save cv without owner', function (done) {
       var c = new Context();
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
         context: c._id
       });
-      cv.save(next);
+      cv.save(function (err) {
+        expect(err).to.exist();
+        expect(err.message).to.equal('Validation failed');
+        expect(err.errors.owner.message).to.equal('ContextVersions require an Owner');
+        done();
+      });
     });
   });
 
