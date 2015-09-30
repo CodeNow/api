@@ -11,11 +11,9 @@ var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
 
-var cbCount = require('callback-count');
 var Boom = require('dat-middleware').Boom;
 var isObject = require('101/is-object');
 
-var error = require('error');
 var Github = require('models/apis/github');
 var messenger = require('socket/messenger');
 
