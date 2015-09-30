@@ -368,7 +368,7 @@ describe('BaseWorker: '+moduleName, function () {
     });
   });
 
-  describe('_baseWorkerFindGithubUser', function() {
+  describe('_baseWorkerFindGithubUser', function () {
     beforeEach(function (done) {
       sinon.stub(User.prototype, 'findGithubUserByGithubId');
       done();
@@ -392,12 +392,12 @@ describe('BaseWorker: '+moduleName, function () {
       });
     });
     it('should return user', function (done) {
-      var testUser = new User();
+      var testUser = 'Nidoking';
       User.prototype.findGithubUserByGithubId.yieldsAsync(null, testUser);
       ctx.worker._baseWorkerFindGithubUser('', function (err, user) {
         expect(err).to.not.exist();
-        expect(ctx.worker.user).to.deep.equal(testUser);
-        expect(user).to.deep.equal(testUser);
+        expect(ctx.worker.githubUser).to.equal(testUser);
+        expect(user).to.equal(testUser);
         done();
       });
     });
