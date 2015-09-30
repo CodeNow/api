@@ -47,7 +47,10 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
 
     // would normally be assigned from _baseWorkerFindContextVersion
     ctx.worker.contextVersion = {
-      _id: 'temp'
+      _id: 'temp',
+      owner: {
+        github: 3498684
+      }
     };
     ctx.worker.handle();
     done();
