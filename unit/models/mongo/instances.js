@@ -385,12 +385,12 @@ describe('Instance: '+moduleName, function () {
         savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, cb);
       }
       function startContainer (savedInstance, cb) {
-        docker.startContainer(savedInstance.container, function (err) {
+        docker.startContainer(savedInstance.container.dockerContainer, function (err) {
           cb(err, savedInstance);
         });
       }
       function stopContainer (savedInstance, cb) {
-        docker.stopContainer(savedInstance.container, function (err) {
+        docker.stopContainer(savedInstance.container.dockerContainer, function (err) {
           cb(err, savedInstance);
         });
       }
@@ -440,9 +440,9 @@ describe('Instance: '+moduleName, function () {
         var instance = createNewInstance('new-inst', opts);
         instance.save(function (err) {
           if (err) { return done(err); }
-          docker.startContainer(container, function (err) {
+          docker.startContainer(container.dockerContainer, function (err) {
             if (err) { return done(err); }
-            docker.stopContainer(container, function (err) {
+            docker.stopContainer(container.dockerContainer, function (err) {
               if (err) { return done(err); }
               Instance.inspectAndUpdateByContainer(container.dockerContainer, function (err, saved) {
                 if (err) { return done(err); }

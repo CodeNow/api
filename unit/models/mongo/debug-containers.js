@@ -37,6 +37,7 @@ describe('Debug Containers: '+moduleName, function () {
     var cv = new ContextVersion({
       context: c._id,
       createdBy: { github: 1 },
+      owner: { github: 1 },
       dockerHost: 'http://example.com:4242'
     });
     var i = new Instance({
@@ -114,10 +115,10 @@ describe('Debug Containers: '+moduleName, function () {
         if (err) { return done(err); }
         expect(Docker.prototype.stopContainer.calledOnce).to.be.true();
         // 4 is the ID above in the before...
-        expect(Docker.prototype.stopContainer.calledWith({ Id: 4 })).to.be.true();
+        expect(Docker.prototype.stopContainer.calledWith(4)).to.be.true();
         expect(Docker.prototype.removeContainer.calledOnce).to.be.true();
         // 4 is the ID above in the before...
-        expect(Docker.prototype.removeContainer.calledWith({ Id: 4 })).to.be.true();
+        expect(Docker.prototype.removeContainer.calledWith(4)).to.be.true();
         Docker.prototype.stopContainer.restore();
         Docker.prototype.removeContainer.restore();
         expect(dc).to.deep.equal(ctx.dc);
