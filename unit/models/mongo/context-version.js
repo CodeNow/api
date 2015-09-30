@@ -295,7 +295,7 @@ describe('Context Version: '+moduleName, function () {
       };
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
+        owner: { github: 2874589 },
         context: c._id
       });
       cv.save(function  (err) {
@@ -312,7 +312,7 @@ describe('Context Version: '+moduleName, function () {
                 return done(err);
               }
               newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id,
-                {branch: 'Some-branch'},
+                { branch: 'Some-branch' },
                 function (err, updatedCv) {
                   expect(err).to.be.null();
                   expect(updatedCv.appCodeVersions[0].branch).to.equal('Some-branch');
@@ -331,7 +331,7 @@ describe('Context Version: '+moduleName, function () {
       };
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
+        owner: { github: 2874589 },
         context: c._id
       });
       cv.save(function  (err) {
