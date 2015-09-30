@@ -11,11 +11,9 @@ var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
 
-var cbCount = require('callback-count');
 var Boom = require('dat-middleware').Boom;
 var isObject = require('101/is-object');
 
-var error = require('error');
 var Github = require('models/apis/github');
 var messenger = require('socket/messenger');
 
@@ -157,22 +155,19 @@ describe('Context Version: '+moduleName, function () {
     });
   });
 
-  describe('save context version hook', function () {
-    it('should call post save hook and report error when owner is undefiend', function (done) {
-      var next = cbCount(2, done).next;
-      sinon.stub(error, 'log', function (err) {
-        expect(err.output.statusCode).to.equal(500);
-        expect(err.message).to.equal('context version was saved without owner');
-        expect(err.data.cv._id).to.exist();
-        error.log.restore();
-        next();
-      });
+  describe('save context version validation', function () {
+    it('should not possible to save cv without owner', function (done) {
       var c = new Context();
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
         context: c._id
       });
-      cv.save(next);
+      cv.save(function (err) {
+        expect(err).to.exist();
+        expect(err.message).to.equal('Validation failed');
+        expect(err.errors.owner.message).to.equal('ContextVersions require an Owner');
+        done();
+      });
     });
   });
 
@@ -300,7 +295,7 @@ describe('Context Version: '+moduleName, function () {
       };
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
+        owner: { github: 2874589 },
         context: c._id
       });
       cv.save(function  (err) {
@@ -317,7 +312,7 @@ describe('Context Version: '+moduleName, function () {
                 return done(err);
               }
               newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id,
-                {branch: 'Some-branch'},
+                { branch: 'Some-branch' },
                 function (err, updatedCv) {
                   expect(err).to.be.null();
                   expect(updatedCv.appCodeVersions[0].branch).to.equal('Some-branch');
@@ -336,7 +331,7 @@ describe('Context Version: '+moduleName, function () {
       };
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
+        owner: { github: 2874589 },
         context: c._id
       });
       cv.save(function  (err) {

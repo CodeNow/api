@@ -37,6 +37,7 @@ describe('Debug Containers: '+moduleName, function () {
     var cv = new ContextVersion({
       context: c._id,
       createdBy: { github: 1 },
+      owner: { github: 1 },
       dockerHost: 'http://example.com:4242'
     });
     var i = new Instance({
