@@ -27,7 +27,7 @@ var it = lab.it;
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
-describe('OnCreateImageBuilderContainer: '+moduleName, function () {
+describe('OnImageBuilderContainerCreate: '+moduleName, function () {
   var ctx;
 
   beforeEach(function (done) {
@@ -57,8 +57,6 @@ describe('OnCreateImageBuilderContainer: '+moduleName, function () {
         // initialize instance w/ props, don't actually run protected methods
         ctx.worker = new OnCreateImageBuilderContainer(ctx.data);
         sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
-
-
         sinon.stub(messenger, 'emitContextVersionUpdate');
         sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync();
         sinon.stub(ContextVersion, 'updateBy').yieldsAsync(null, 1);
@@ -99,7 +97,7 @@ describe('OnCreateImageBuilderContainer: '+moduleName, function () {
           expect(ContextVersion.updateBy.callCount).to.equal(1);
           expect(ContextVersion.updateBy.args[0][0]).to.equal('build._id');
           expect(ContextVersion.updateBy.args[0][1])
-              .to.deep.equal(ctx.mockContextVersion.build._id);
+            .to.deep.equal(ctx.mockContextVersion.build._id);
           expect(ContextVersion.updateBy.args[0][2]).to.be.object();
           expect(ContextVersion.updateBy.args[0][2].$set).to.be.object();
           expect(ContextVersion.updateBy.args[0][2].$set['build.containerStarted']).to.be.date();
@@ -109,7 +107,7 @@ describe('OnCreateImageBuilderContainer: '+moduleName, function () {
 
           expect(Docker.prototype.startImageBuilderContainer.callCount, 'startImage').to.equal(1);
           expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage')
-              .to.deep.equal(ctx.data.inspectData);
+              .to.deep.equal(ctx.data.inspectData.Id);
           expect(
             messenger.emitContextVersionUpdate.callCount,
             'emitContextVersionUpdate'
@@ -173,7 +171,7 @@ describe('OnCreateImageBuilderContainer: '+moduleName, function () {
           expect(Docker.prototype.startImageBuilderContainer.callCount, 'startImage').to
               .equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage').to.deep
-              .equal(ctx.data.inspectData);
+              .equal(ctx.data.inspectData.Id);
           expect(Sauron.prototype.deleteHost.callCount, 'deleteHost').to.equal(1);
           expect(Sauron.prototype.deleteHost.args[0][0], 'deleteHost')
               .to.equal(ctx.labels.networkIp);
@@ -224,7 +222,7 @@ describe('OnCreateImageBuilderContainer: '+moduleName, function () {
             expect(err).to.be.null();
             expect(Docker.prototype.startImageBuilderContainer.callCount).to.equal(1);
             expect(Docker.prototype.startImageBuilderContainer.args[0][0])
-                .to.deep.equal(ctx.data.inspectData);
+                .to.deep.equal(ctx.data.inspectData.Id);
             done();
           });
         });
