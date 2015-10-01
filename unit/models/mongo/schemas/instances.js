@@ -121,4 +121,8 @@ describe('Instance: '+moduleName, function () {
     validation.githubUserRefValidationChecking(createNewInstance, 'createdBy.github');
     validation.requiredValidationChecking(createNewInstance, 'createdBy');
   });
+
+  describe('Isoalted Validation', function () {
+    validation.objectIdValidationChecking(createNewInstance, 'isolated');
+  });
 });
