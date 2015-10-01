@@ -226,7 +226,6 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
             require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable');
-            ctx.user.username = 'Runnable';
             require('../../fixtures/mocks/github/user')(ctx.user);
             var countDown = createCount(2, done);
             var next = countDown.next;

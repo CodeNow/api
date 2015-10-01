@@ -162,7 +162,7 @@ describe('Build - /builds/:id/actions/build', function () {
               expect(body).to.exist();
               expect(body.contextVersions[0]).to.equal(ctx.cv.attrs._id);
 
-              dockerMockEvents.emitBuildComplete(ctx.cv, true, ctx.user);
+              dockerMockEvents.emitBuildComplete(ctx.cv, ctx.user, true);
 
               primus.onceVersionComplete(ctx.cv.id(), function () {
                 var buildExpected = {
