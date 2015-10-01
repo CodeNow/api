@@ -73,7 +73,7 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
       cb(null, ctx.mockInstance);
     });
     sinon.stub(ctx.worker, '_baseWorkerFindGithubUser', function (query, cb) {
-      ctx.worker.githubUser = { name: testOwnerName };
+      ctx.worker.githubUser = { login: testOwnerName };
       cb(null, ctx.worker.githubUser);
     });
     sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null);
@@ -176,7 +176,7 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
       ctx.worker.hostIp = ctx.mockInstance.network.hostIp;
       ctx.worker.networkIp = ctx.mockInstance.network.networkIp;
       // normally set by _baseWorkerFindGithubUser
-      ctx.worker.githubUser = { name: testOwnerName };
+      ctx.worker.githubUser = { login: testOwnerName };
       done();
     });
 

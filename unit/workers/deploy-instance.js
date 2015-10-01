@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/on-instance-container-start
+ * @module unit/workers/deploy-instance
  */
 'use strict';
 
@@ -36,6 +36,7 @@ describe('DeployInstanceWorker', function () {
   var ctx;
 
   var _dockerHost = '0.0.0.1';
+  var testOwnerName = 'Zapdos';
   function makeExpectedCreateContainerJobDataForInstance(instance) {
     return {
       cvId: ctx.mockContextVersion._id,
@@ -52,7 +53,6 @@ describe('DeployInstanceWorker', function () {
         instanceName: keypather.get(instance, 'name.toString()'),
         instanceShortHash: keypather.get(instance, 'shortHash.toString()'),
         creatorGithubId: keypather.get(instance, 'createdBy.github.toString()'),
-        ownerUsername : ctx.worker.ownerUsername,
         ownerGithubId: keypather.get(instance, 'owner.github.toString()'),
         sessionUserGithubId: ctx.worker.sessionUserGithubId.toString()
       }
@@ -136,7 +136,6 @@ describe('DeployInstanceWorker', function () {
     ctx.mockInstances = [ ctx.mockInstance, ctx.mockInstance2 ];
     ctx.labels = {
       instanceId: ctx.mockInstance._id,
-      ownerUsername: 'fifo',
       sessionUserGithubId: 444,
       contextVersionId: 123
     };
@@ -197,7 +196,7 @@ describe('DeployInstanceWorker', function () {
         ctx.worker = new DeployInstanceWorker({
           instanceId: ctx.mockInstance._id,
           sessionUserGithubId: 12,
-          ownerUsername: 'asdfasdf'
+          githubUser: { login: testOwnerName }
         });
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined();
@@ -260,7 +259,7 @@ describe('DeployInstanceWorker', function () {
         ctx.worker = new DeployInstanceWorker({
           buildId: ctx.mockBuild._id,
           sessionUserGithubId: 12,
-          ownerUsername: 'asdfasdf'
+          githubUser: { login: testOwnerName }
         });
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined();
@@ -300,8 +299,8 @@ describe('DeployInstanceWorker', function () {
           ctx.worker = new DeployInstanceWorker({
             buildId: ctx.mockBuild._id,
             sessionUserGithubId: 12,
-            ownerUsername: 'asdfasdf'
-          });
+
+});
           keypather.set(ctx.mockContextVersion, 'build.triggeredAction.manual', true);
           ctx.worker.handle(function (err) {
             expect(err).to.be.undefined();
