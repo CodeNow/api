@@ -15,7 +15,8 @@ db.contextversions.find(
       'build.duration'     : now - cv.build.started,
       'build.error.message': err.message,
       'build.error.stack'  : err.stack,
-      'build.log'          : ''
+      'build.log'          : '',
+      'build.failed'       : true
     }
   });
   var found = db.contextversions.findOne({ _id: cv._id });
