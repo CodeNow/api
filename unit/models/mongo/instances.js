@@ -137,7 +137,7 @@ function createNewInstance (name, opts) {
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
-describe('Instance: '+moduleName, function () {
+describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
@@ -1416,4 +1416,34 @@ describe('Instance: '+moduleName, function () {
       });
     });
   });
+
+  describe('addDefaultIsolationOpts', function () {
+    it('should add default options for Isolation', function (done) {
+      var opts = {};
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+        $or: [
+          { isolated: { $exists: false } },
+          { isIsolationGroupMaster: true }
+        ]
+      });
+      // enforce the function returns a new object, not the same one
+      expect(opts).to.deep.equal({});
+      opts = { isolated: 4 };
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({ isolated: 4 });
+      opts = { isIsolationGroupMaster: true };
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+        isIsolationGroupMaster: true
+      });
+      opts = { $or: [{ value: 4 }] };
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+        $or: [
+          { value: 4 },
+          { isolated: { $exists: false } },
+          { isIsolationGroupMaster: true }
+        ]
+      });
+      done();
+    });
+  });
 });
+
