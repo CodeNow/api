@@ -128,11 +128,13 @@ describe('GET /instances', function () {
     });
     it('should get instances by username', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user);
-      require('../../fixtures/mocks/github/users-username')
-        (ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.username);
+      require('../../fixtures/mocks/github/users-username')(
+        ctx.user.json().accounts.github.id,
+        ctx.user.json().accounts.github.username);
       require('../../fixtures/mocks/github/user')(ctx.user2);
-      require('../../fixtures/mocks/github/users-username')
-        (ctx.user2.json().accounts.github.id, ctx.user2.json().accounts.github.username);
+      require('../../fixtures/mocks/github/users-username')(
+        ctx.user2.json().accounts.github.id,
+        ctx.user2.json().accounts.github.username);
       async.series([
         function userOne (cb) {
           var query = {
@@ -164,8 +166,9 @@ describe('GET /instances', function () {
     });
     it('should support instance filtering', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user);
-      require('../../fixtures/mocks/github/users-username')
-        (ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.username);
+      require('../../fixtures/mocks/github/users-username')(
+        ctx.user.json().accounts.github.id,
+        ctx.user.json().accounts.github.username);
       var query = {
         githubUsername: ctx.user.json().accounts.github.username,
         ignoredFields: [ 'containers', 'container' ]
@@ -197,8 +200,9 @@ describe('GET /instances', function () {
           'containers[0].inspect.State.Running': true
         }
       ];
-      require('../../fixtures/mocks/github/users-username')
-        (ctx.user.json().accounts.github.id, ctx.user.attrs.accounts.github.username);
+      require('../../fixtures/mocks/github/users-username')(
+        ctx.user.json().accounts.github.id,
+        ctx.user.attrs.accounts.github.username);
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next));
       var query2 = {
         'contextVersion.appCodeVersions.repo': ctx.instance2.attrs.contextVersion.appCodeVersions[0].repo,
@@ -213,8 +217,9 @@ describe('GET /instances', function () {
           'containers[0].inspect.State.Running': true
         }
       ];
-      require('../../fixtures/mocks/github/users-username')
-        (ctx.user2.json().accounts.github.id, ctx.user2.attrs.accounts.github.username);
+      require('../../fixtures/mocks/github/users-username')(
+        ctx.user2.json().accounts.github.id,
+        ctx.user2.attrs.accounts.github.username);
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next));
     });
     it('should list instances by owner.github', function (done) {
@@ -260,7 +265,7 @@ describe('GET /instances', function () {
           masterPod: true,
           'owner.github': ctx.user.attrs.accounts.github.id
         };
-        ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+        ctx.user.fetchInstances(query, expects.success(200, function (err, body) {
           if (err) { return done(err); }
           expect(body.length).to.equal(1);
           expect(body[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
@@ -280,7 +285,7 @@ describe('GET /instances', function () {
           masterPod: true,
           hostname: hostname
         };
-        ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+        ctx.user.fetchInstances(query, expects.success(200, function (err, body) {
           if (err) { return done(err); }
           expect(body.length).to.equal(1);
           expect(body[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
@@ -300,7 +305,7 @@ describe('GET /instances', function () {
       var query = {
         hostname: hostname
       };
-      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+      ctx.user.fetchInstances(query, expects.success(200, function (err, body) {
         if (err) { return done(err); }
         expect(body.length).to.equal(1);
         expect(body[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
@@ -315,7 +320,7 @@ describe('GET /instances', function () {
       var query = {
         hostname: 'http://dne-staging-codenow.runnableapp.com'
       };
-      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+      ctx.user.fetchInstances(query, expects.success(200, function (err, body) {
         if (err) { return done(err); }
         expect(body).to.be.an.array();
         expect(body.length).to.equal(0);
@@ -331,7 +336,7 @@ describe('GET /instances', function () {
         'network.hostIp': ctx.instance.attrs.network.hostIp,
         'owner.github': ctx.user.attrs.accounts.github.id
       };
-      ctx.user.fetchInstances(query, expects.success(200, function(err, body) {
+      ctx.user.fetchInstances(query, expects.success(200, function (err, body) {
         if (err) { return done(err); }
         expect(body.length).to.equal(1);
         expect(body[0].shortHash).to.equal(ctx.instance.attrs.shortHash);
@@ -429,8 +434,9 @@ describe('GET /instances', function () {
               var query = {
                 githubUsername: ctx.user.json().accounts.github.username
               };
-              require('../../fixtures/mocks/github/users-username')
-                (ctx.user.json().accounts.github.id, ctx.user.json().accounts.github.username);
+              require('../../fixtures/mocks/github/users-username')(
+                ctx.user.json().accounts.github.id,
+                ctx.user.json().accounts.github.username);
               ctx.helloRunnable.fetchInstances(query, function (err, instances) {
                 if (err) { return cb(err); }
                 expect(instances).to.have.length(2);
@@ -452,8 +458,9 @@ describe('GET /instances', function () {
                   'containers[0].inspect.State.Running': true
                 }
               ];
-              require('../../fixtures/mocks/github/users-username')
-                (ctx.user2.json().accounts.github.id, ctx.user2.json().accounts.github.username);
+              require('../../fixtures/mocks/github/users-username')(
+                ctx.user2.json().accounts.github.id,
+                ctx.user2.json().accounts.github.username);
               ctx.helloRunnable.fetchInstances(query2, expects.success(200, expected2, cb));
             }
           ], done);
@@ -462,8 +469,8 @@ describe('GET /instances', function () {
     });
 
     describe('exceptions', function () {
-      it('should list projects belonging to HelloRunnable for any unautheticated '+
-         'or authenticated request from any user', function (done) {
+      it('should list projects belonging to HelloRunnable for any unautheticated ' +
+      'or authenticated request from any user', function (done) {
         var query = {
           owner: {
             github: process.env.HELLO_RUNNABLE_GITHUB_ID
