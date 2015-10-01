@@ -57,6 +57,7 @@ describe('Build Stream', function () {
 
     it('should get full logs from build stream', function (done) {
       require('./fixtures/mocks/docker/build-logs')();
+      require('./fixtures/mocks/github/user')(ctx.user);
       ctx.build.build(ctx.buildId, { message: 'hello!' }, function (err, body, code) {
         if (err) {
           return done(err);
@@ -112,6 +113,7 @@ describe('Build Stream', function () {
     });
 
     it('should get logs from build stream', function (done) {
+      require('./fixtures/mocks/github/user')(ctx.user);
       ctx.build.build(ctx.buildId, { message: 'hello!' }, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);
@@ -149,6 +151,7 @@ describe('Build Stream', function () {
 
     it('100 people should get the same logs', function (done) {
       var people = 100;
+      require('./fixtures/mocks/github/user')(ctx.user);
       ctx.build.build(ctx.buildId, { message: 'lots of people!' }, function (err, body, code) {
         if (err) { return done(err); }
         expect(code).to.equal(201);

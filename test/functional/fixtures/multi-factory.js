@@ -485,6 +485,7 @@ module.exports = {
         if (err) { return cb(err); }
         require('./mocks/github/repos-username-repo-branches-branch')(cv);
         log.trace({}, 'build.build', build.id());
+        require('./mocks/github/user')(user);
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err);
           if (err) { return cb(err); }
