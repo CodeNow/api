@@ -380,7 +380,7 @@ describe('BaseWorker: '+moduleName, function () {
       'data does not contain required keys', function (done) {
       delete ctx.worker.data.uuid;
       ctx.worker._baseWorkerValidateDieData(function (err) {
-        expect(err.message).to.equal('_baseWorkerValidateDieData: die event data missing key: uuid');
+        expect(err.message).to.equal('_baseWorkerValidateDieData: die event data missing keypath: uuid');
         done();
       });
     });
@@ -389,6 +389,14 @@ describe('BaseWorker: '+moduleName, function () {
       'event data contains all required keys', function (done) {
       ctx.worker._baseWorkerValidateDieData(function (err) {
         expect(err).to.be.undefined();
+        done();
+      });
+    });
+
+    it('should call back with error if event '+
+      'data does not contain required keys', function (done) {
+      ctx.worker._baseWorkerValidateDieData(['hello'], function (err) {
+        expect(err.message).to.equal('_baseWorkerValidateDieData: die event data missing keypath: hello');
         done();
       });
     });
