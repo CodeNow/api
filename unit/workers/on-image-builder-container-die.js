@@ -12,8 +12,12 @@ var noop = require('101/noop');
 var sinon = require('sinon');
 
 var ContextVersion = require('models/mongo/context-version');
+var Instance = require('models/mongo/instance');
+var User = require('models/mongo/user');
 var Docker = require('models/apis/docker');
 var Sauron = require('models/apis/sauron.js');
+var messenger = require('socket/messenger.js');
+var keypather = require('keypather')();
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die');
 
@@ -31,14 +35,16 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
 
   beforeEach(function (done) {
     ctx = {};
-    ctx.data = {
+    ctx.data = keypather.expand({
       from: '34565762',
       host: '5476',
       id: '3225',
       time: '234234',
       uuid: '12343',
-      dockerHost: '0.0.0.0'
-    };
+      dockerHost: '0.0.0.0',
+      'inspectData.Name': '<cv.build._id>',
+      'inspectData.Config.Labels.sessionUserGithubId': 1
+    });
     ctx.mockContextVersion = {
       toJSON: function () { return {}; }
     };
@@ -210,6 +216,39 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
     it('it should handle errored build', function (done) {
       ctx.worker._handleBuildComplete(ctx.buildInfo, function () {
         expect(ContextVersion.updateBuildCompletedByContainer.callCount).to.equal(1);
+        done();
+      });
+    });
+  });
+
+  describe('_emitInstanceUpdateEvents', function () {
+    beforeEach(function (done) {
+      ctx.mockUser = {};
+      ctx.mockInstances = [{}, {}, {}];
+      sinon.stub(User, 'findById').yieldsAsync(null, ctx.mockUser);
+      sinon.stub(Instance, 'findAndPopulate').yieldsAsync(null, ctx.mockInstances);
+      sinon.stub(messenger, 'emitInstanceUpdate');
+      done();
+    });
+    afterEach(function (done) {
+      User.findById.restore();
+      Instance.findAndPopulate.restore();
+      messenger.emitInstanceUpdate.restore();
+      done();
+    });
+
+    it('should emit instance update events', function (done) {
+      ctx.worker._emitInstanceUpdateEvents(function (err) {
+        if (err) { return done(err); }
+        sinon.assert.calledWith(User.findById, ctx.data.inspectData.Config.Labels.sessionUserGithubId);
+        sinon.assert.calledWith(Instance.findAndPopulate, ctx.mockUser);
+        console.log(Instance.findAndPopulate);
+        expect(Instance.findAndPopulate.firstCall.args[1]).to.deep.equal({
+          'contextVersion.build._id': ctx.data.inspectData.Name
+        });
+        ctx.mockInstances.forEach(function (mockInstance, i) {
+          expect(messenger.emitInstanceUpdate.args[i][0]).to.equal(mockInstance);
+        });
         done();
       });
     });
