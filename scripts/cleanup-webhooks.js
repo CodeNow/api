@@ -28,6 +28,10 @@ function findAllRepos(cb) {
 }
 
 
+var dryRun = !process.env.ACTUALLY_RUN;
+
+console.log('dryRun?', !!dryRun);
+
 var allErrors = [];
 
 
@@ -113,18 +117,34 @@ function processHooks(repos, cb) {
       }));
       // case 1
       if (httpHook && httpsHook) {
-        return github._deleteRepoHook(repo._id, errorHandler);
+        if (dryRun) {
+          console.log('going to delete hook', repo, httpHook._id);
+          return callback();
+        } else {
+          return github._deleteRepoHook(httpHook._id, errorHandler);
+        }
       }
       // case 2
       if (httpHook) {
-        return github._updateRepoHook(httpHook.id, repo._id, errorHandler);
+        if (dryRun) {
+          console.log('going to update hook', repo, httpHook._id);
+          return callback();
+        } else {
+          return github._updateRepoHook(httpHook.id, repo._id, errorHandler);
+        }
       }
       // case 3
       if (httpsHook) {
+        console.log('going to do nothing. everything is fine for repo', repo);
         return callback(null);
       }
       // case 4
-      github.createRepoHookIfNotAlready(repo._id, errorHandler);
+      if (dryRun) {
+        console.log('going create new hook', repo);
+        return callback();
+      } else {
+        github.createRepoHookIfNotAlready(repo._id, errorHandler);
+      }
     });
   }, cb);
 }
