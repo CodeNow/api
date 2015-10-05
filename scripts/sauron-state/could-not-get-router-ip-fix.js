@@ -3,16 +3,24 @@
 var mongoose = require('mongoose');
 var redis = require('models/redis');
 var Network = require('models/mongo/network');
-var Instance = require('models/mongo/instances');
+var Instance = require('models/mongo/instance');
 var createCount = require('callback-count');
 var equals = require('101/equals');
 var not = require('101/not');
 var pluck = require('101/pluck');
 
+if (!process.env.NODE_PATH) {
+  throw new Error('NODE_PATH=./lib is required');
+}
+if (!process.env.MONGO) {
+  throw new Error('MONGO is required');
+}
 if (!process.env.SCRIPT_ORG_ID) {
   throw new Error('SCRIPT_ORG_ID is required');
 }
-
+if (!process.env.ACTUALLY_RUN) {
+  console.log('DRY RUN!');
+}
 mongoose.connect(process.env.MONGO);
 
 /**
@@ -103,12 +111,20 @@ function removeInactiveIps (orgNetworkIp, allocatedIps, activeIps, cb) {
     var notEquals = not(equals);
     return activeIps.every(notEquals(allocatedIp));
   });
+  console.log('ALLOCATED IPS', allocatedIps);
+  console.log('ACTIVE IPS', activeIps);
   var count = createCount(inactiveIps.length, cb);
   var networkHashKey = 'weave:network:' + orgNetworkIp;
   if (inactiveIps.length === 0) {
     return cb();
   }
+  console.log('REMOVE IPS!!!', inactiveIps);
   inactiveIps.forEach(function (inactiveIp) {
-    redis.hdel(networkHashKey, inactiveIp, count.next);
+    if (process.env.ACTUALLY_RUN) {
+      redis.hdel(networkHashKey, inactiveIp, count.next);
+    }
+    else {
+      count.next();
+    }
   });
 }
