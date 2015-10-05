@@ -168,7 +168,7 @@ describe('Github - /actions/github', function () {
       request.post(options, function (err, res, body) {
         if (err) { return done(err); }
         expect(res.statusCode).to.equal(202);
-        expect(body).to.equal('We do not support http for webhooks. Use https');
+        expect(body).to.equal('We do not support http, use https');
         done();
       });
     });
