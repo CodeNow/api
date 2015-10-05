@@ -57,10 +57,19 @@ describe('Context Version: '+moduleName, function () {
     done();
   });
   describe('updateBuildErrorByContainer', function () {
-    it('should save the logs as an array', function (done) {
+    beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields();
-      sinon.stub(ContextVersion, 'findBy').yields();
-
+      sinon.stub(ContextVersion, 'findBy').yields(null, [ctx.mockContextVersion]);
+      sinon.stub(messenger, 'emitContextVersionUpdate');
+      done();
+    });
+    afterEach(function (done) {
+      ContextVersion.updateBy.restore();
+      ContextVersion.findBy.restore();
+      messenger.emitContextVersionUpdate.restore();
+      done();
+    });
+    it('should save the logs as an array', function (done) {
       var err = Boom.badRequest('message', {
         docker: {
           log: [{ some: 'object' }]
@@ -77,9 +86,6 @@ describe('Context Version: '+moduleName, function () {
         expect(args[2].$set['build.log']).to.deep.equal([{
           some: 'object'
         }]);
-
-        ContextVersion.updateBy.restore();
-        ContextVersion.findBy.restore();
         done();
       });
     });
