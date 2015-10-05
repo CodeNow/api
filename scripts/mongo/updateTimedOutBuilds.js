@@ -17,18 +17,13 @@ db.contextversions.find({
         failed   : true,
         completed: cv.build.completed,
         duration : cv.build.duration
-      },
-      $push: {
-        erroredContextVersions: cv._id
       }
     });
     found = db.builds.findOne({ _id: build._id });
     if (found) {
       if (found.failed &&
           found.completed &&
-          found.duration &&
-          found.erroredContextVersions &&
-          found.erroredContextVersions.length
+          found.duration
       ) {
         print(found._id.toString() + 'updated');
       }

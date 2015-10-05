@@ -60,9 +60,6 @@ async.waterfall([
                 failed   : true,
                 completed: cv.build.completed,
                 duration : cv.build.duration
-              },
-              $push: {
-                erroredContextVersions: cv._id
               }
             });
           }, function (err) {

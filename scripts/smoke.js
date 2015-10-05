@@ -55,7 +55,7 @@ async.series([
     async.whilst(
       function () {
         return ctx.build &&
-          !(ctx.build.json().completed || ctx.build.json().erroredContextVersions.length);
+          !(ctx.build.json().completed || ctx.build.json().failed);
       },
       function (cb) { ctx.build.fetch(cb); },
       cb);
