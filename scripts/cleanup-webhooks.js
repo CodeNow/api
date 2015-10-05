@@ -6,9 +6,14 @@ Find all repos and runnable webhooks for this repo and do following:
  - if 1 webhook exists (https) - do nothing
  - if 0 webhook exist - create https webhook
 
-To run:
+To run in test mode:
 
   NODE_PATH=./lib node scrtips/cleanup-webhooks.js
+  and please add appropriate NODE_ENV
+
+To run in prod mode:
+
+  NODE_PATH=./lib ACTUALLY_RUN=1  node scrtips/cleanup-webhooks.js
   and please add appropriate NODE_ENV
 
 */
