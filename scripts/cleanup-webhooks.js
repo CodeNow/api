@@ -6,6 +6,11 @@ Find all repos and runnable webhooks for this repo and do following:
  - if 1 webhook exists (https) - do nothing
  - if 0 webhook exist - create https webhook
 
+To run:
+
+  NODE_PATH=./lib node scrtips/cleanup-webhooks.js
+  and please add appropriate NODE_ENV
+
 */
 
 'use strict';
@@ -20,6 +25,17 @@ var GitHub = require('models/apis/github');
 var ContextVersion = require('models/mongo/context-version');
 var User = require('models/mongo/user');
 var mongoose = require('mongoose');
+
+if (!process.env.NODE_PATH) {
+  throw new Error('NODE_PATH=./lib is required');
+}
+if (!process.env.MONGO) {
+  throw new Error('MONGO is required');
+}
+if (!process.env.ACTUALLY_RUN) {
+  console.log('DRY RUN!');
+}
+
 mongoose.connect(process.env.MONGO);
 
 
@@ -30,7 +46,6 @@ function findAllRepos(cb) {
 
 var dryRun = !process.env.ACTUALLY_RUN;
 
-console.log('dryRun?', !!dryRun);
 
 var allErrors = [];
 
