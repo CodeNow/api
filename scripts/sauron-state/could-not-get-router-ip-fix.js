@@ -103,9 +103,12 @@ function removeInactiveIps (orgNetworkIp, allocatedIps, activeIps, cb) {
     var notEquals = not(equals);
     return activeIps.every(notEquals(allocatedIp));
   });
-  var count = createCount(cb);
+  var count = createCount(inactiveIps.length, cb);
   var networkHashKey = 'weave:network:' + orgNetworkIp;
+  if (inactiveIps.length === 0) {
+    return cb();
+  }
   inactiveIps.forEach(function (inactiveIp) {
-    redis.hdel([networkHashKey, inactiveIp], count.inc().next);
+    redis.hdel(networkHashKey, inactiveIp, count.next);
   });
 }
