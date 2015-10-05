@@ -61,7 +61,7 @@ describe('is https unit test: '+moduleName, function () {
       };
       sinon.stub(res, 'status');
       sinon.stub(res, 'send');
-      isHttps(req, res, function (err) {
+      isHttps(req, res, function () {
         done(new Error('Next should never be called'));
       });
       expect(res.status.callCount).to.equal(1);
