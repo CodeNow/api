@@ -36,7 +36,7 @@ function main () {
     activeIps = _activeIps;
     count.next(err);
   });
-  findOrgNetworkIp(function (err, _orgNetworkIp) {
+  findOrgNetworkIp(orgId, function (err, _orgNetworkIp) {
     if (err) { count.next(err); }
     orgNetworkIp = _orgNetworkIp;
     findAllocatedIpsForOrg(orgNetworkIp, function (err, _allocatedIps) {
