@@ -10,7 +10,7 @@ var not = require('101/not');
 var pluck = require('101/pluck');
 
 if (!process.env.SCRIPT_ORG_ID) {
-  throw new Error('SCRIPT_ORG_ID');
+  throw new Error('SCRIPT_ORG_ID is required');
 }
 
 mongoose.connect(process.env.MONGO);
@@ -29,10 +29,10 @@ function main () {
     count.next(err);
   });
   findOrgNetworkIp(function (err, _orgNetworkIp) {
-    if (err) { throw err; }
+    if (err) { count.next(err); }
     orgNetworkIp = _orgNetworkIp;
     findAllocatedIpsForOrg(orgNetworkIp, function (err, _allocatedIps) {
-      if (err) { throw err; }
+      if (err) { count.next(err); }
       allocatedIps = _allocatedIps;
       count.next(err);
     });
