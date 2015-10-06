@@ -16,7 +16,7 @@ var Code = require('code');
 var expect = Code.expect;
 
 var sinon = require('sinon');
-var isHttps = require('middlewares/is-https');
+var assertHttps = require('middlewares/assert-https');
 
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
@@ -27,7 +27,7 @@ describe('is https unit test: '+moduleName, function () {
     var req = {
       secure: false
     };
-    isHttps(req, {}, function (err) {
+    assertHttps(req, {}, function (err) {
       expect(err).to.not.exist();
       done();
     });
@@ -46,7 +46,7 @@ describe('is https unit test: '+moduleName, function () {
       var req = {
         secure: true
       };
-      isHttps(req, {}, function (err) {
+      assertHttps(req, {}, function (err) {
         expect(err).to.not.exist();
         done();
       });
@@ -61,11 +61,11 @@ describe('is https unit test: '+moduleName, function () {
       };
       sinon.stub(res, 'status');
       sinon.stub(res, 'send');
-      isHttps(req, res, function () {
+      assertHttps(req, res, function () {
         done(new Error('Next should never be called'));
       });
       expect(res.status.callCount).to.equal(1);
-      expect(res.status.getCall(0).args[0]).to.equal(202);
+      expect(res.status.getCall(0).args[0]).to.equal(403);
       expect(res.send.getCall(0).args[0]).to.equal('We do not support http, use https');
       done();
     });
