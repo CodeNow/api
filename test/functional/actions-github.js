@@ -151,28 +151,29 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  describe('wrong protocol: use https', function () {
-    beforeEach(function (done) {
-      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
-      process.env.NODE_ENV = 'development';
-      process.env.ENABLE_GITHUB_HOOKS = 'true';
-      done();
-    });
-    afterEach(function (done) {
-      process.env.NODE_ENV = 'test';
-      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
-      done();
-    });
-    it('should return message that http is not supported', function (done) {
-      var options = hooks().issue_comment;
-      request.post(options, function (err, res, body) {
-        if (err) { return done(err); }
-        expect(res.statusCode).to.equal(403);
-        expect(body).to.equal('We do not support http, use https');
-        done();
-      });
-    });
-  });
+  // support only https. should be enabled in the separate PR after we run scrips
+  // describe('wrong protocol: use https', function () {
+  //   beforeEach(function (done) {
+  //     ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
+  //     process.env.NODE_ENV = 'development';
+  //     process.env.ENABLE_GITHUB_HOOKS = 'true';
+  //     done();
+  //   });
+  //   afterEach(function (done) {
+  //     process.env.NODE_ENV = 'test';
+  //     process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
+  //     done();
+  //   });
+  //   it('should return message that http is not supported', function (done) {
+  //     var options = hooks().issue_comment;
+  //     request.post(options, function (err, res, body) {
+  //       if (err) { return done(err); }
+  //       expect(res.statusCode).to.equal(403);
+  //       expect(body).to.equal('We do not support http, use https');
+  //       done();
+  //     });
+  //   });
+  // });
 
   describe('push event', function () {
     var ctx = {};

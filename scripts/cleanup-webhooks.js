@@ -117,9 +117,9 @@ function processHooks(repos, cb) {
       }
     };
 
-    console.log('processing repo', repo);
+    console.log('processing repo', repo._id);
     if (!repo.user) {
-      console.log('user not found for the repo', repo);
+      console.log('user not found for the repo', repo._id);
       return callback();
     }
     var github = new GitHub({token: repo.user.accounts.github.accessToken});
@@ -138,16 +138,16 @@ function processHooks(repos, cb) {
       // case 1
       if (httpHook && httpsHook) {
         if (dryRun) {
-          console.log('going to delete hook', repo._id, httpHook._id);
+          console.log('going to delete hook', repo._id, httpHook.id);
           return callback();
         } else {
-          return github._deleteRepoHook(httpHook._id, errorHandler);
+          return github._deleteRepoHook(httpHook.id, errorHandler);
         }
       }
       // case 2
       if (httpHook) {
         if (dryRun) {
-          console.log('going to update hook', repo._id, httpHook._id);
+          console.log('going to update hook', repo._id, httpHook.id);
           return callback();
         } else {
           return github._updateRepoHook(httpHook.id, repo._id, errorHandler);
