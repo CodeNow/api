@@ -1,5 +1,4 @@
 /**
-
 Find all repos and runnable webhooks for this repo and do following:
  - if 2 webhooks exist (1 to http and 1 to https) - then remove http webhook
  - if 1 webhook exists (http) - update it to https
