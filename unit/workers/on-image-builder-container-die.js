@@ -247,13 +247,13 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
     beforeEach(function (done) {
       ctx.mockUser = {};
       ctx.mockInstances = [{}, {}, {}];
-      sinon.stub(User, 'findById').yieldsAsync(null, ctx.mockUser);
+      sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser);
       sinon.stub(Instance, 'findAndPopulate').yieldsAsync(null, ctx.mockInstances);
       sinon.stub(messenger, 'emitInstanceUpdate');
       done();
     });
     afterEach(function (done) {
-      User.findById.restore();
+      User.findByGithubId.restore();
       Instance.findAndPopulate.restore();
       messenger.emitInstanceUpdate.restore();
       done();
@@ -262,7 +262,7 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
     it('should emit instance update events', function (done) {
       ctx.worker._emitInstanceUpdateEvents(function (err) {
         if (err) { return done(err); }
-        sinon.assert.calledWith(User.findById, ctx.data.inspectData.Config.Labels.sessionUserGithubId);
+        sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId);
         sinon.assert.calledWith(Instance.findAndPopulate, ctx.mockUser);
         expect(Instance.findAndPopulate.firstCall.args[1]).to.deep.equal({
           'contextVersion.build._id': ctx.data.inspectData.Name
