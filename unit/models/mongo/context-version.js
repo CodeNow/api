@@ -58,41 +58,18 @@ describe('Context Version: '+moduleName, function () {
   });
 
   describe('updateBuildErrorByBuildId', function () {
-    it('should update contextVersions with matching build properties', function (done) {
-      sinon.stub(ContextVersion, 'updateBy').yields();
-      sinon.stub(ContextVersion, 'findBy', function (keypath, buildId, cb) {
-        cb(null, []);
-      });
-
-      var err = Boom.badRequest('message', {
-        docker: {
-          log: [{ some: 'object' }]
-        }
-      });
-
-      ContextVersion.updateBuildErrorByBuildId('123', err, function () {
-        expect(ContextVersion.updateBy.calledOnce).to.be.true();
-        // expect(ContextVersion.findBy.calledOnce).to.be.true();
-
-        var args = ContextVersion.updateBy.getCall(0).args;
-        expect(args[0]).to.equal('build._id');
-        expect(args[1]).to.equal('123');
-        expect(args[2].$set['build.log']).to.deep.equal([{
-          some: 'object'
-        }]);
-        expect(args[2].$set['build.failed']).to.equal(true);
-
-        ContextVersion.updateBy.restore();
-        ContextVersion.findBy.restore();
-        done();
-      });
-    });
-  });
-
-  describe('updateBuildErrorByContainer', function () {
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields();
-      sinon.stub(ContextVersion, 'findBy').yields(null, [ctx.mockContextVersion]);
+      ctx.mockContextVersions = [
+        {
+          _id: '098765432109876543214321',
+          build: {
+            completed: Date.now()
+          }
+        }
+      ];
+      ctx.buildId = '123456789012345678901234';
+      sinon.stub(ContextVersion, 'findBy').yields(null, ctx.mockContextVersions);
       sinon.stub(messenger, 'emitContextVersionUpdate');
       done();
     });
@@ -102,24 +79,99 @@ describe('Context Version: '+moduleName, function () {
       messenger.emitContextVersionUpdate.restore();
       done();
     });
-    it('should save the logs as an array', function (done) {
-      var err = Boom.badRequest('message', {
+    it('should update contextVersions with matching build properties', function (done) {
+      var buildErr = Boom.badRequest('message', {
         docker: {
           log: [{ some: 'object' }]
         }
       });
+      ContextVersion.updateBuildErrorByBuildId(ctx.buildId, buildErr, function (err, contextVersions) {
+        if (err) { return done(err); }
+        expect(contextVersions).to.equal(ctx.mockContextVersions);
+        sinon.assert.calledOnce(ContextVersion.updateBy);
+        sinon.assert.calledWith(
+          ContextVersion.updateBy,
+          'build._id',
+          ctx.buildId
+        );
+        var update = ContextVersion.updateBy.firstCall.args[2];
+        expect(update).to.exist();
+        expect(update.$set).to.deep.contain({
+          'build.error.message': buildErr.message,
+          'build.error.stack': buildErr.stack,
+          'build.log': buildErr.data.docker.log,
+          'build.failed': true
+        });
+        expect(update.$set['build.completed']).to.exist();
+        sinon.assert.calledWith(
+          ContextVersion.findBy,
+          'build._id',
+          ctx.buildId
+        );
+        sinon.assert.calledWith(
+          messenger.emitContextVersionUpdate,
+          ctx.mockContextVersions[0]
+        );
+        done();
+      });
+    });
+  });
 
-      ContextVersion.updateBuildErrorByContainer('', err, function () {
-        expect(ContextVersion.updateBy.calledOnce).to.be.true();
-        // expect(ContextVersion.findBy.calledOnce).to.be.true();
-
-        var args = ContextVersion.updateBy.getCall(0).args;
-        expect(args[0]).to.equal('build.dockerContainer');
-        expect(args[1]).to.equal('');
-        expect(args[2].$set['build.log']).to.deep.equal([{
-          some: 'object'
-        }]);
-	expect(args[2].$set['build.failed']).to.equal(true);
+  describe('updateBuildErrorByContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'updateBy').yields();
+      ctx.mockContextVersions = [
+        {
+          _id: '098765432109876543214321',
+          build: {
+            completed: Date.now()
+          }
+        }
+      ];
+      ctx.dockerContainer = '123456789012345678901234';
+      sinon.stub(ContextVersion, 'findBy').yields(null, ctx.mockContextVersions);
+      sinon.stub(messenger, 'emitContextVersionUpdate');
+      done();
+    });
+    afterEach(function (done) {
+      ContextVersion.updateBy.restore();
+      ContextVersion.findBy.restore();
+      messenger.emitContextVersionUpdate.restore();
+      done();
+    });
+    it('should update contextVersions with matching build properties', function (done) {
+      var buildErr = Boom.badRequest('message', {
+        docker: {
+          log: [{ some: 'object' }]
+        }
+      });
+      ContextVersion.updateBuildErrorByContainer(ctx.dockerContainer, buildErr, function (err, contextVersions) {
+        if (err) { return done(err); }
+        expect(contextVersions).to.equal(ctx.mockContextVersions);
+        sinon.assert.calledOnce(ContextVersion.updateBy);
+        sinon.assert.calledWith(
+          ContextVersion.updateBy,
+          'build.dockerContainer',
+          ctx.dockerContainer
+        );
+        var update = ContextVersion.updateBy.firstCall.args[2];
+        expect(update).to.exist();
+        expect(update.$set).to.deep.contain({
+          'build.error.message': buildErr.message,
+          'build.error.stack': buildErr.stack,
+          'build.log': buildErr.data.docker.log,
+          'build.failed': true
+        });
+        expect(update.$set['build.completed']).to.exist();
+        sinon.assert.calledWith(
+          ContextVersion.findBy,
+          'build.dockerContainer',
+          ctx.dockerContainer
+        );
+        sinon.assert.calledWith(
+          messenger.emitContextVersionUpdate,
+          ctx.mockContextVersions[0]
+        );
         done();
       });
     });
