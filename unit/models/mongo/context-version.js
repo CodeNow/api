@@ -56,6 +56,39 @@ describe('Context Version: '+moduleName, function () {
     };
     done();
   });
+
+  describe('updateBuildErrorByBuildId', function () {
+    it('should update contextVersions with matching build properties', function (done) {
+      sinon.stub(ContextVersion, 'updateBy').yields();
+      sinon.stub(ContextVersion, 'findBy', function (keypath, buildId, cb) {
+        cb(null, []);
+      });
+
+      var err = Boom.badRequest('message', {
+        docker: {
+          log: [{ some: 'object' }]
+        }
+      });
+
+      ContextVersion.updateBuildErrorByBuildId('123', err, function () {
+        expect(ContextVersion.updateBy.calledOnce).to.be.true();
+        // expect(ContextVersion.findBy.calledOnce).to.be.true();
+
+        var args = ContextVersion.updateBy.getCall(0).args;
+        expect(args[0]).to.equal('build._id');
+        expect(args[1]).to.equal('123');
+        expect(args[2].$set['build.log']).to.deep.equal([{
+          some: 'object'
+        }]);
+        expect(args[2].$set['build.failed']).to.equal(true);
+
+        ContextVersion.updateBy.restore();
+        ContextVersion.findBy.restore();
+        done();
+      });
+    });
+  });
+
   describe('updateBuildErrorByContainer', function () {
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields();
@@ -86,6 +119,7 @@ describe('Context Version: '+moduleName, function () {
         expect(args[2].$set['build.log']).to.deep.equal([{
           some: 'object'
         }]);
+	expect(args[2].$set['build.failed']).to.equal(true);
         done();
       });
     });
