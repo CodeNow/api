@@ -138,7 +138,7 @@ function processHooks(repos, cb) {
       // case 1
       if (httpHook && httpsHook) {
         if (dryRun) {
-          console.log('going to delete hook', repo, httpHook._id);
+          console.log('going to delete hook', repo._id, httpHook._id);
           return callback();
         } else {
           return github._deleteRepoHook(httpHook._id, errorHandler);
@@ -147,7 +147,7 @@ function processHooks(repos, cb) {
       // case 2
       if (httpHook) {
         if (dryRun) {
-          console.log('going to update hook', repo, httpHook._id);
+          console.log('going to update hook', repo._id, httpHook._id);
           return callback();
         } else {
           return github._updateRepoHook(httpHook.id, repo._id, errorHandler);
@@ -155,12 +155,12 @@ function processHooks(repos, cb) {
       }
       // case 3
       if (httpsHook) {
-        console.log('going to do nothing. everything is fine for repo', repo);
+        console.log('going to do nothing. everything is fine for repo', repo._id);
         return callback(null);
       }
       // case 4
       if (dryRun) {
-        console.log('going create new hook', repo);
+        console.log('going create new hook', repo._id);
         return callback();
       } else {
         github.createRepoHookIfNotAlready(repo._id, errorHandler);
