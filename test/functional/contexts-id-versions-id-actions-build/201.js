@@ -364,8 +364,10 @@ function buildTheVersionTests (ctx) {
         });
         describe('with in progress builds', function() {
           it('should dedupe', function (done) {
+            require('../fixtures/mocks/github/user')(ctx.user);
             ctx.cv.build(function (err) {
               if (err) { return done(err); }
+              require('../fixtures/mocks/github/user')(ctx.user2);
               ctx.cv2.build(function (err) {
                 if (err) { return done(err); }
                 waitForCvBuildToComplete(ctx.cv, function(){

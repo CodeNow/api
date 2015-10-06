@@ -27,27 +27,27 @@ function getNextHash () {
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
-describe('Instance: '+moduleName, function () {
+describe('Instance Schema Isolation Tests: ' + moduleName, function () {
   before(require('../../../fixtures/mongo').connect);
   afterEach(require('../../../../test/functional/fixtures/clean-mongo').removeEverything);
 
 
-  function createNewVersion(opts) {
+  function createNewVersion (opts) {
     return new Version({
-      message: "test",
+      message: 'test',
       owner: { github: validation.VALID_GITHUB_ID },
       createdBy: { github: validation.VALID_GITHUB_ID },
       config: validation.VALID_OBJECT_ID,
       created: Date.now(),
       context: validation.VALID_OBJECT_ID,
-      files:[{
-        Key: "test",
-        ETag: "test",
+      files: [{
+        Key: 'test',
+        ETag: 'test',
         VersionId: validation.VALID_OBJECT_ID
       }],
       build: {
-        dockerImage: "testing",
-        dockerTag: "adsgasdfgasdf"
+        dockerImage: 'testing',
+        dockerTag: 'adsgasdfgasdf'
       },
       appCodeVersions: [{
         repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
@@ -58,13 +58,13 @@ describe('Instance: '+moduleName, function () {
     });
   }
 
-  function createNewInstance(name, opts) {
+  function createNewInstance (name, opts) {
     opts = opts || {};
     return new Instance({
       name: name || 'name',
       shortHash: getNextHash(),
       locked: opts.locked || false,
-      public: false,
+      'public': false,
       owner: { github: validation.VALID_GITHUB_ID },
       createdBy: { github: validation.VALID_GITHUB_ID },
       build: validation.VALID_OBJECT_ID,
@@ -75,14 +75,14 @@ describe('Instance: '+moduleName, function () {
         dockerHost: opts.dockerHost || 'http://localhost:4243',
         inspect: {
           State: {
-            'ExitCode': 0,
-            'FinishedAt': '0001-01-01T00:00:00Z',
-            'Paused': false,
-            'Pid': 889,
-            'Restarting': false,
-            'Running': true,
-            'StartedAt': '2014-11-25T22:29:50.23925175Z'
-          },
+            ExitCode: 0,
+            FinishedAt: '0001-01-01T00:00:00Z',
+            Paused: false,
+            Pid: 889,
+            Restarting: false,
+            Running: true,
+            StartedAt: '2014-11-25T22:29:50.23925175Z'
+          }
         }
       },
       containers: [],
@@ -98,7 +98,11 @@ describe('Instance: '+moduleName, function () {
       it('should fail validation for ' + string, function (done) {
         var instance = createNewInstance();
         instance.name = string;
-        validation.errorCheck(instance, done, 'name', schemaValidators.validationMessages.characters);
+        validation.errorCheck(
+          instance,
+          done,
+          'name',
+          schemaValidators.validationMessages.characters);
       });
     });
     validation.ALPHA_NUM_SAFE.forEach(function (string) {
@@ -120,5 +124,9 @@ describe('Instance: '+moduleName, function () {
   describe('Github CreatedBy Validation', function () {
     validation.githubUserRefValidationChecking(createNewInstance, 'createdBy.github');
     validation.requiredValidationChecking(createNewInstance, 'createdBy');
+  });
+
+  describe('Isoalted Validation', function () {
+    validation.objectIdValidationChecking(createNewInstance, 'isolated');
   });
 });

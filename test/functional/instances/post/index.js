@@ -138,6 +138,7 @@ describe('POST /instances', function () {
               dockerMockEvents.emitBuildComplete(ctx.cv);
             });
           });
+          require('../../fixtures/mocks/github/user')(ctx.user);
           ctx.build.build({ message: uuid() }, countDown.next);
         });
 

@@ -182,7 +182,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
         contextVersionId: 'G45GH4GERGDSG',
         dockerHost: '0.0.0.0',
         noCache: false,
-        tid: '9494949'
+        tid: '9494949',
+        ownerUsername: 'tjmehta'
       };
       // missing manualBuild and noCache
       ctx.invalidJobData = {

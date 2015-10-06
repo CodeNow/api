@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.61.0",
+  "version": "2.63.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -103,7 +103,7 @@
     "docker-mock": "^2.0.0",
     "docker-modem": "^0.2.6",
     "doctoc": "^0.15.0",
-    "eslint": "^0.20.0",
+    "eslint": "^1.5.1",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
     "function-proxy": "^0.5.2",
