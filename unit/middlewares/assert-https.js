@@ -25,7 +25,9 @@ describe('is https unit test: '+moduleName, function () {
 
   it('should next no error we NODE_ENV is test', function(done) {
     var req = {
-      secure: false
+      headers: {
+        'x-forwarded-protocol': 'http'
+      }
     };
     assertHttps(req, {}, function (err) {
       expect(err).to.not.exist();
@@ -42,18 +44,22 @@ describe('is https unit test: '+moduleName, function () {
       process.env.NODE_ENV = 'test';
       done();
     });
-    it('should next no error if request was secure', function(done) {
+    it('should next no error if protocol was https', function(done) {
       var req = {
-        secure: true
+        headers: {
+          'x-forwarded-protocol': 'https'
+        }
       };
       assertHttps(req, {}, function (err) {
         expect(err).to.not.exist();
         done();
       });
     });
-    it('should next error if request was not secure', function(done) {
+    it('should next error if protocol was https', function(done) {
       var req = {
-        secure: false
+        headers: {
+          'x-forwarded-protocol': 'http'
+        }
       };
       var res = {
         status: noop,
