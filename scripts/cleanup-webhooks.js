@@ -128,11 +128,12 @@ function processHooks(repos, cb) {
         return errorHandler(err);
       }
       hooks = hooks || [];
+      var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH;
       var httpsHook = find(existingHooks, hasKeypaths({
-        'config.url': process.env.GITHUB_HOOK_URL
+        'config.url': hookUrl
       }));
       var httpHook = find(existingHooks, hasKeypaths({
-        'config.url': process.env.GITHUB_HOOK_URL.replace('https', 'http')
+        'config.url': hookUrl.replace('https', 'http')
       }));
       // case 1
       if (httpHook && httpsHook) {
