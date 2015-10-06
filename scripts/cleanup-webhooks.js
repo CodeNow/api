@@ -137,17 +137,17 @@ function processHooks(repos, cb) {
       }));
       // case 1
       if (httpHook && httpsHook) {
+        console.log('going to delete hook', repo._id, httpHook.id);
         if (dryRun) {
-          console.log('going to delete hook', repo._id, httpHook.id);
           return callback();
         } else {
-          return github._deleteRepoHook(httpHook.id, errorHandler);
+          return github._deleteRepoHook(httpHook.id, repo._id, errorHandler);
         }
       }
       // case 2
       if (httpHook) {
+        console.log('going to update hook', repo._id, httpHook.id);
         if (dryRun) {
-          console.log('going to update hook', repo._id, httpHook.id);
           return callback();
         } else {
           return github._updateRepoHook(httpHook.id, repo._id, errorHandler);
@@ -163,6 +163,7 @@ function processHooks(repos, cb) {
         console.log('going create new hook', repo._id);
         return callback();
       } else {
+        console.log('going create new hook', repo._id);
         github.createRepoHookIfNotAlready(repo._id, errorHandler);
       }
     });
