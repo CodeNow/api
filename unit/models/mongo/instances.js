@@ -50,20 +50,20 @@ after(dock.stop);
 
 function createNewVersion (opts) {
   return new Version({
-    message: "test",
+    message: 'test',
     owner: { github: validation.VALID_GITHUB_ID },
     createdBy: { github: validation.VALID_GITHUB_ID },
     config: validation.VALID_OBJECT_ID,
     created: Date.now(),
     context: validation.VALID_OBJECT_ID,
-    files:[{
-      Key: "test",
-      ETag: "test",
+    files: [{
+      Key: 'test',
+      ETag: 'test',
       VersionId: validation.VALID_OBJECT_ID
     }],
     build: {
-      dockerImage: "testing",
-      dockerTag: "adsgasdfgasdf"
+      dockerImage: 'testing',
+      dockerTag: 'adsgasdfgasdf'
     },
     appCodeVersions: [
       {
@@ -99,13 +99,13 @@ function createNewInstance (name, opts) {
     dockerHost: opts.dockerHost || 'http://localhost:4243',
     inspect: {
       State: {
-        'ExitCode': 0,
-        'FinishedAt': '0001-01-01T00:00:00Z',
-        'Paused': false,
-        'Pid': 889,
-        'Restarting': false,
-        'Running': true,
-        'StartedAt': '2014-11-25T22:29:50.23925175Z'
+        ExitCode: 0,
+        FinishedAt: '0001-01-01T00:00:00Z',
+        Paused: false,
+        Pid: 889,
+        Restarting: false,
+        Running: true,
+        StartedAt: '2014-11-25T22:29:50.23925175Z'
       },
       NetworkSettings: {
         IPAddress: opts.IPAddress || '172.17.14.2'
@@ -116,7 +116,7 @@ function createNewInstance (name, opts) {
     name: name || 'name',
     shortHash: getNextHash(),
     locked: opts.locked || false,
-    public: false,
+    'public': false,
     masterPod: opts.masterPod || false,
     parent: opts.parent,
     autoForked: opts.autoForked || false,
@@ -137,7 +137,7 @@ function createNewInstance (name, opts) {
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
-describe('Instance: '+moduleName, function () {
+describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
@@ -176,7 +176,7 @@ describe('Instance: '+moduleName, function () {
     });
   });
 
-  describe('#findActiveInstancesByDockerHost', function() {
+  describe('#findActiveInstancesByDockerHost', function () {
     var instance1;
     var instance2;
     var instance3;
@@ -215,7 +215,7 @@ describe('Instance: '+moduleName, function () {
     beforeEach(function (done) {
       instance4.save(done);
     });
-    it('should get all instances from testHost', function(done) {
+    it('should get all instances from testHost', function (done) {
       Instance.findActiveInstancesByDockerHost(testHost, function (err, instances) {
         expect(err).to.be.null();
         expect(instances.length).to.equal(3);
@@ -234,9 +234,9 @@ describe('Instance: '+moduleName, function () {
         if (err) { throw err; }
         // change model data in DB without going through model
         Instance.findOneAndUpdate({
-          '_id': instance._id
+          _id: instance._id
         }, {
-          '$set': {
+          $set: {
             'container.dockerContainer': 'fooo'
           }
         }, function (err) {
@@ -256,9 +256,9 @@ describe('Instance: '+moduleName, function () {
         if (err) { throw err; }
         // change model data in DB without going through model
         Instance.findOneAndUpdate({
-          '_id': instance._id
+          _id: instance._id
         }, {
-          '$set': {
+          $set: {
             'container.dockerContainer': 'fooo'
           }
         }, function (err) {
@@ -271,7 +271,6 @@ describe('Instance: '+moduleName, function () {
         });
       });
     });
-
   });
 
   it('should not save an instance with the same (lower) name and owner', function (done) {
@@ -289,15 +288,15 @@ describe('Instance: '+moduleName, function () {
     });
   });
 
-  describe('getMainBranchName', function() {
-    it('should return null when there is no main AppCodeVersion', function(done) {
+  describe('getMainBranchName', function () {
+    it('should return null when there is no main AppCodeVersion', function (done) {
       var instance = createNewInstance('no-main-app-code-version');
       instance.contextVersion.appCodeVersions[0].additionalRepo = true;
       expect(Instance.getMainBranchName(instance)).to.be.null();
       done();
     });
 
-    it('should return the main AppCodeVersion', function(done) {
+    it('should return the main AppCodeVersion', function (done) {
       var expectedBranchName = 'somebranchomg';
       var instance = createNewInstance('no-main-app-code-version', {
         branch: expectedBranchName
@@ -406,16 +405,10 @@ describe('Instance: '+moduleName, function () {
   });
 
   describe('inspectAndUpdateByContainer', function () {
-    var savedInstance = null;
     var instance = null;
     beforeEach(function (done) {
       instance = createNewInstance();
-      instance.save(function (err, instance) {
-        if (err) { return done(err); }
-        expect(instance).to.exist();
-        savedInstance = instance;
-        done();
-      });
+      instance.save(done);
     });
 
     it('should fail if container is not found', function (done) {
@@ -475,7 +468,7 @@ describe('Instance: '+moduleName, function () {
         message: 'random message',
         data: 'random data',
         stack: 'random stack',
-        field: 'random field',
+        field: 'random field'
       };
       var cvId = savedInstance.contextVersion._id;
       savedInstance.modifyContainerCreateErr(cvId, error, function (err, newInst) {
@@ -500,7 +493,7 @@ describe('Instance: '+moduleName, function () {
           message: 'random message',
           data: 'random data',
           stack: 'random stack',
-          field: 'random field',
+          field: 'random field'
         };
         var count = createCount(3, done);
         error.log = function (err) {
@@ -517,7 +510,7 @@ describe('Instance: '+moduleName, function () {
     });
   });
 
-  describe('modifyContainerInspect', function() {
+  describe('modifyContainerInspect', function () {
     var instance;
 
     beforeEach(function (done) {
@@ -533,7 +526,7 @@ describe('Instance: '+moduleName, function () {
       done();
     });
 
-    it('should invalidate the instance container DNS', function(done) {
+    it('should invalidate the instance container DNS', function (done) {
       instance.modifyContainerInspect('some-id', {}, noop);
       expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
       done();
@@ -558,7 +551,7 @@ describe('Instance: '+moduleName, function () {
         message: 'random message',
         data: 'random data',
         stack: 'random stack',
-        field: 'random field',
+        field: 'random field'
       };
       var dockerContainer = savedInstance.container.dockerContainer;
       savedInstance.modifyContainerInspectErr(dockerContainer, fakeError, function (err, newInst) {
@@ -571,7 +564,7 @@ describe('Instance: '+moduleName, function () {
       });
     });
 
-    describe('conflict error', function() {
+    describe('conflict error', function () {
       var origErrorLog = error.log;
       after(function (done) {
         error.log = origErrorLog;
@@ -583,7 +576,7 @@ describe('Instance: '+moduleName, function () {
           message: 'random message',
           data: 'random data',
           stack: 'random stack',
-          field: 'random field',
+          field: 'random field'
         };
         var count = createCount(3, done);
         error.log = function (err) {
@@ -628,35 +621,17 @@ describe('Instance: '+moduleName, function () {
   });
 
   describe('find by repo and branch', function () {
-    var savedInstance1 = null;
-    var savedInstance2 = null;
-    var savedInstance3 = null;
     before(function (done) {
       var instance = createNewInstance('instance1');
-      instance.save(function (err, instance) {
-        if (err) { return done(err); }
-        expect(instance).to.exist();
-        savedInstance1 = instance;
-        done();
-      });
+      instance.save(done);
     });
     before(function (done) {
-      var instance = createNewInstance('instance2', {locked: false});
-      instance.save(function (err, instance) {
-        if (err) { return done(err); }
-        expect(instance).to.exist();
-        savedInstance2 = instance;
-        done();
-      });
+      var instance = createNewInstance('instance2', { locked: false });
+      instance.save(done);
     });
     before(function (done) {
-      var instance = createNewInstance('instance3', {locked: true, repo: 'podviaznikov/hello'});
-      instance.save(function (err, instance) {
-        if (err) { return done(err); }
-        expect(instance).to.exist();
-        savedInstance3 = instance;
-        done();
-      });
+      var instance = createNewInstance('instance3', { locked: true, repo: 'podviaznikov/hello' });
+      instance.save(done);
     });
 
     it('should find instances using repo name and branch', function (done) {
@@ -664,7 +639,7 @@ describe('Instance: '+moduleName, function () {
         if (err) { return done(err); }
         expect(insts.length).to.equal(2);
         insts.forEach(function (inst) {
-          expect(['instance1', 'instance2']).to.include(inst.name);
+          expect([ 'instance1', 'instance2' ]).to.include(inst.name);
         });
         done();
       });
@@ -735,7 +710,7 @@ describe('Instance: '+moduleName, function () {
     var instances = [];
 
     beforeEach(function (done) {
-      var names = ['A', 'B', 'C', 'D'];
+      var names = [ 'A', 'B', 'C', 'D' ];
       while (instances.length < names.length) {
         instances.push(createNewInstance(names[instances.length]));
       }
@@ -835,7 +810,6 @@ describe('Instance: '+moduleName, function () {
   });
 
   describe('#findForkableMasterInstances', function () {
-
     it('should return empty [] for repo that has no instances', function (done) {
       Instance.findForkableMasterInstances('anton/node', 'master', function (err, instances) {
         expect(err).to.be.null();
@@ -928,7 +902,7 @@ describe('Instance: '+moduleName, function () {
   describe('dependencies', { timeout: 10000 }, function () {
     var instances = [];
     beforeEach(function (done) {
-      var names = ['A', 'B', 'C'];
+      var names = [ 'A', 'B', 'C' ];
       while (instances.length < names.length) {
         instances.push(createNewInstance(names[instances.length]));
       }
@@ -952,8 +926,9 @@ describe('Instance: '+moduleName, function () {
           shortHash: instances[0].shortHash.toString(),
           name: instances[0].name,
           lowerName: instances[0].lowerName,
-          owner_github: instances[0].owner.github,
-          contextVersion_context: instances[0].contextVersion.context.toString()
+          'owner_github': instances[0].owner.github, // eslint-disable-line quote-props
+          'contextVersion_context': // eslint-disable-line quote-props
+            instances[0].contextVersion.context.toString()
         }
       };
       expect(generated).to.deep.equal(expected);
@@ -985,8 +960,11 @@ describe('Instance: '+moduleName, function () {
           graph.graph
             .cypher('MATCH (n:Instance) RETURN n')
             .on('data', function (d) {
-              if (!nodes[d.n.id]) { nodes[d.n.id] = d.n; }
-              else { err = new Error('duplicate node ' + d.n.id); }
+              if (!nodes[d.n.id]) {
+                nodes[d.n.id] = d.n;
+              } else {
+                err = new Error('duplicate node ' + d.n.id);
+              }
             })
             .on('end', function () {
               expect(err).to.be.null();
@@ -1063,7 +1041,7 @@ describe('Instance: '+moduleName, function () {
           instances[0].addDependency(instances[1], 'somehostname', done);
         });
 
-        it('should give the network for a dependency', function(done) {
+        it('should give the network for a dependency', function (done) {
           var network = { hostIp: '1.2.3.4', networkIp: '1.2.3.0' };
           sinon.stub(Instance, 'findById').yieldsAsync(null, { network: network });
           var i = instances[0];
@@ -1160,7 +1138,7 @@ describe('Instance: '+moduleName, function () {
           });
         });
 
-        describe('instance with 2 dependents', function() {
+        describe('instance with 2 dependents', function () {
           beforeEach(function (done) {
             instances[2].addDependency(instances[1], 'somehostname', done);
           });
@@ -1274,7 +1252,7 @@ describe('Instance: '+moduleName, function () {
     });
   });
 
-  describe('invalidateContainerDNS', function() {
+  describe('invalidateContainerDNS', function () {
     var instance;
 
     beforeEach(function (done) {
@@ -1288,28 +1266,28 @@ describe('Instance: '+moduleName, function () {
       done();
     });
 
-    it('should not invalidate without a docker host', function(done) {
+    it('should not invalidate without a docker host', function (done) {
       delete instance.container.dockerHost;
       instance.invalidateContainerDNS();
       expect(pubsub.publish.callCount).to.equal(0);
       done();
     });
 
-    it('should not invalidate without a local ip address', function(done) {
+    it('should not invalidate without a local ip address', function (done) {
       delete instance.container.inspect.NetworkSettings.IPAddress;
       instance.invalidateContainerDNS();
       expect(pubsub.publish.callCount).to.equal(0);
       done();
     });
 
-    it('should not invalidate with a malformed docker host ip', function(done) {
+    it('should not invalidate with a malformed docker host ip', function (done) {
       instance.container.dockerHost = 'skkfksrandom';
       instance.invalidateContainerDNS();
       expect(pubsub.publish.callCount).to.equal(0);
       done();
     });
 
-    it('should publish the correct invalidation event via redis', function(done) {
+    it('should publish the correct invalidation event via redis', function (done) {
       var hostIp = '10.20.128.1';
       var localIp = '172.17.14.55';
       var instance = createNewInstance('b', {
@@ -1326,7 +1304,7 @@ describe('Instance: '+moduleName, function () {
     });
   });
 
-  describe('setDependenciesFromEnvironment', function() {
+  describe('setDependenciesFromEnvironment', function () {
     var networkIp = '10.20.10.20';
     var ownerName = 'someowner';
     var instance = createNewInstance('wooosh', { networkIp: networkIp });
@@ -1345,7 +1323,7 @@ describe('Instance: '+moduleName, function () {
       done();
     });
 
-    it('should invalidate dns cache entries for the networkIp', function(done) {
+    it('should invalidate dns cache entries for the networkIp', function (done) {
       instance.setDependenciesFromEnvironment(ownerName, function (err) {
         if (err) { done(err); }
         expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
@@ -1354,7 +1332,7 @@ describe('Instance: '+moduleName, function () {
     });
   });
 
-  describe('addDependency', function() {
+  describe('addDependency', function () {
     var networkIp = '120.220.120.220';
     var instance = createNewInstance('goooush', { networkIp: networkIp });
     var dependant = createNewInstance('splooosh');
@@ -1371,7 +1349,7 @@ describe('Instance: '+moduleName, function () {
       done();
     });
 
-    it('should invalidate dns cache entries for the networkIp', function(done) {
+    it('should invalidate dns cache entries for the networkIp', function (done) {
       instance.addDependency(dependant, 'wooo.com', function (err) {
         if (err) { done(err); }
         expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
@@ -1380,7 +1358,7 @@ describe('Instance: '+moduleName, function () {
     });
   });
 
-  describe('removeDependency', function() {
+  describe('removeDependency', function () {
     var Neo4j = require('models/graph/neo4j');
     var networkIp = '2.3.5.7';
     var instance = createNewInstance('boooush', { networkIp: networkIp });
@@ -1398,7 +1376,7 @@ describe('Instance: '+moduleName, function () {
       done();
     });
 
-    it('should invalidate dns cache entries for the networkIp', function(done) {
+    it('should invalidate dns cache entries for the networkIp', function (done) {
       instance.removeDependency(dependant, function (err) {
         if (err) { done(err); }
         expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
@@ -1416,4 +1394,34 @@ describe('Instance: '+moduleName, function () {
       });
     });
   });
+
+  describe('addDefaultIsolationOpts', function () {
+    it('should add default options for Isolation', function (done) {
+      var opts = {};
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+        $or: [
+          { isolated: { $exists: false } },
+          { isIsolationGroupMaster: true }
+        ]
+      });
+      // enforce the function returns a new object, not the same one
+      expect(opts).to.deep.equal({});
+      opts = { isolated: 4 };
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({ isolated: 4 });
+      opts = { isIsolationGroupMaster: true };
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+        isIsolationGroupMaster: true
+      });
+      opts = { $or: [{ value: 4 }] };
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+        $or: [
+          { value: 4 },
+          { isolated: { $exists: false } },
+          { isIsolationGroupMaster: true }
+        ]
+      });
+      done();
+    });
+  });
 });
+
