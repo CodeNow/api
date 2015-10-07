@@ -151,7 +151,6 @@ describe('Github - /actions/github', function () {
     });
   });
 
-  // support only https. should be enabled in the separate PR after we run scrips
   describe('wrong protocol: use https', function () {
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
