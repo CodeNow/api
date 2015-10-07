@@ -368,17 +368,17 @@ describe('BaseWorker: '+moduleName, function () {
     });
   });
 
-  describe('_validateData', function () {
+  describe('_baseWorkerValidateData', function () {
     it('should call back with error if event '+
       'data does not contain required keys', function (done) {
-      ctx.worker._validateData(['hello'], function (err) {
-        expect(err.message).to.equal('_validateData: event data missing keypath: hello');
+      ctx.worker._baseWorkerValidateData(['hello'], function (err) {
+        expect(err.message).to.equal('_baseWorkerValidateData: event data missing keypath: hello');
         done();
       });
     });
     it('should call back nothing if event '+
       'data does not contain required keys', function (done) {
-      ctx.worker._validateData(['uuid'], function (err) {
+      ctx.worker._baseWorkerValidateData(['uuid'], function (err) {
         expect(err).to.not.exist();
         done();
       });
@@ -390,7 +390,7 @@ describe('BaseWorker: '+moduleName, function () {
       'data does not contain required keys', function (done) {
       delete ctx.worker.data.uuid;
       ctx.worker._baseWorkerValidateDieData(function (err) {
-        expect(err.message).to.equal('_validateData: event data missing keypath: uuid');
+        expect(err.message).to.equal('_baseWorkerValidateData: event data missing keypath: uuid');
         done();
       });
     });
