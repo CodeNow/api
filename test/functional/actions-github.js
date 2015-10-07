@@ -139,6 +139,7 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
+    
     it('should return message that we cannot handle tags events', function (done) {
       var options = hooks().push;
       options.json.ref = 'refs/tags/v1';
@@ -163,6 +164,7 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
+
     it('should return message that http is not supported', function (done) {
       var options = hooks().issue_comment;
       request.post(options, function (err, res, body) {
