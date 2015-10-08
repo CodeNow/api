@@ -48,7 +48,9 @@ module.exports = {
       hash: uuid(),
       started: new Date(new Date() - 60 * 1000),
       completed: new Date(),
-      manual: false,
+      triggeredAction: {
+        manual: false
+      },
       dockerContainer: '012345678901234567890123'
     });
     var data = this.cvTemplate(
