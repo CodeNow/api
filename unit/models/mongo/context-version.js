@@ -89,11 +89,8 @@ describe('Context Version: '+moduleName, function () {
         if (err) { return done(err); }
         expect(contextVersions).to.equal(ctx.mockContextVersions);
         sinon.assert.calledOnce(ContextVersion.updateBy);
-        sinon.assert.calledWith(
-          ContextVersion.updateBy,
-          'build._id',
-          ctx.buildId
-        );
+        expect(ContextVersion.updateBy.firstCall.args[0]).to.equal('build._id');
+        expect(ContextVersion.updateBy.firstCall.args[1].toString()).to.equal(ctx.buildId);
         var update = ContextVersion.updateBy.firstCall.args[2];
         expect(update).to.exist();
         expect(update.$set).to.deep.contain({
@@ -103,11 +100,8 @@ describe('Context Version: '+moduleName, function () {
           'build.failed': true
         });
         expect(update.$set['build.completed']).to.exist();
-        sinon.assert.calledWith(
-          ContextVersion.findBy,
-          'build._id',
-          ctx.buildId
-        );
+        expect(ContextVersion.findBy.firstCall.args[0]).to.equal('build._id');
+        expect(ContextVersion.findBy.firstCall.args[1].toString()).to.equal(ctx.buildId);
         sinon.assert.calledWith(
           messenger.emitContextVersionUpdate,
           ctx.mockContextVersions[0]
