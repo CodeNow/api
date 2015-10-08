@@ -1,8 +1,5 @@
 FROM ruby:<ruby-version>
 
-# Open up ports on the server
-EXPOSE <user-specified-ports>
-
 # Install Rails (and its dependencies)
 RUN apt-get update && apt-get install -y nodejs --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
@@ -17,6 +14,8 @@ RUN gem install rails --version "$RAILS_VERSION"
 #default run:bundle install # runnable-cache
 <after-main-repo>
 
+# Open up ports on the server
+EXPOSE <user-specified-ports>
 
 # Command to start the app
 CMD <start-command>

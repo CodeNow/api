@@ -1,9 +1,6 @@
 # Full list of versions available here: https://registry.hub.docker.com/_/php/tags/manage/
 FROM php:<php-version>
 
-# Open up ports on the container
-EXPOSE <user-specified-ports>
-
 RUN apt-get upgrade && apt-get -y update && apt-get install -y mysql-client php-apc pwgen python-setuptools curl unzip
 RUN apt-get install -y php5-curl php5-gd php5-intl php-pear php5-imagick php5-imap php5-mcrypt php5-memcache php5-pspell php5-recode php5-sqlite php5-tidy php5-mysql php5-xmlrpc php5-xsl git curl
 
@@ -11,7 +8,7 @@ RUN apt-get install -y php5-curl php5-gd php5-intl php-pear php5-imagick php5-im
 RUN apt-get install -y --force-yes nodejs npm nodejs-legacy ruby-full rubygems \
     && npm install -g bower grunt-cli gulp gulp-ruby-sass gulp-autoprefixer gulp-minify-css gulp-rename \
     && gem install sass
-    
+
 RUN docker-php-ext-install mysql mysqli pdo pdo_mysql
 RUN cp /etc/apache2/mods-available/rewrite.load /etc/apache2/mods-enabled/rewrite.load
 
@@ -20,8 +17,11 @@ RUN curl -sS https://getcomposer.org/installer | php -- --filename=composer --in
 
 <before-main-repo>
 #default dst:/var/www/html/
-#default run:composer install # runnable-cache  
+#default run:composer install # runnable-cache
 <after-main-repo>
+
+# Open up ports on the container
+EXPOSE <user-specified-ports>
 
 # Command to start the app
 CMD <start-command>

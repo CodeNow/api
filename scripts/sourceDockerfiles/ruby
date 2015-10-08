@@ -1,20 +1,17 @@
 #Based from ruby:<ruby-version-normalized>
 FROM ubuntu:14.04
 
-# Open up ports on the server
-EXPOSE <user-specified-ports>
-
 ## Install Ruby
-ENV RUBY_VERSION <ruby-version> 
+ENV RUBY_VERSION <ruby-version>
 
 ## Install Ruby via rvm
 ## Install Ruby
-ENV DEBIAN_FRONTEND noninteractive 
+ENV DEBIAN_FRONTEND noninteractive
 ENV PATH /usr/local/rvm/scripts/rvm:$PATH
 ## Install Ruby via rvm
 RUN apt-get update \
     && apt-get upgrade -y\
-    && apt-get install -y wget libtokyocabinet-dev libxml2-dev libbz2-dev libpq-dev libxslt1-dev git curl libmysqlclient-dev npm nodejs --no-install-recommends mysql-client postgresql-client sqlite3 --no-install-recommends 
+    && apt-get install -y wget libtokyocabinet-dev libxml2-dev libbz2-dev libpq-dev libxslt1-dev git curl libmysqlclient-dev npm nodejs --no-install-recommends mysql-client postgresql-client sqlite3 --no-install-recommends
 RUN ln -s /usr/bin/nodejs /usr/bin/node
 RUN npm install -g grunt grunt-cli
 RUN apt-get install -y ca-certificates
@@ -32,6 +29,8 @@ RUN  /bin/bash -l -c "gem install bundler -v 1.0.21"
 #default run:/bin/bash -l -c "bundle install" # runnable-cache
 <after-main-repo>
 
+# Open up ports on the server
+EXPOSE <user-specified-ports>
 
 # Command to start the app
 CMD <start-command>
