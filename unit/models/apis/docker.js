@@ -30,9 +30,14 @@ describe('docker: '+moduleName, function () {
   beforeEach(function (done) {
     ctx = {
       mockContextVersion: {
+        _id: 'versionId',
         build: {
           _id: 'buildId'
         },
+        owner: {
+          github: 'owner'
+        },
+        context: 'contextId',
         toJSON: function () {
           return {};
         }
@@ -92,7 +97,6 @@ describe('docker: '+moduleName, function () {
         manualBuild: true,
         sessionUser: ctx.mockSessionUser,
         contextVersion: ctx.mockContextVersion,
-        dockerTag: 'docker-tag',
         network: ctx.mockNetwork,
         noCache: false,
         tid: '000-0000-0000-0000'
@@ -103,7 +107,7 @@ describe('docker: '+moduleName, function () {
         expect(Docker.prototype._createImageBuilderLabels.args[0][0].contextVersion)
           .to.equal(ctx.mockContextVersion);
         expect(Docker.prototype._createImageBuilderLabels.args[0][0].dockerTag)
-          .to.equal('docker-tag');
+          .to.equal('registry.runnable.com/owner/contextId:versionId');
         expect(Docker.prototype._createImageBuilderLabels.args[0][0].manualBuild)
           .to.equal(true);
         expect(Docker.prototype._createImageBuilderLabels.args[0][0].network)

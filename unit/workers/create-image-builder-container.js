@@ -85,6 +85,11 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
       noCache: false,
       tid: '123413423423423423423423'
     };
+    sinon.spy(Docker, 'getDockerTag');
+    done();
+  });
+  afterEach(function (done) {
+    Docker.getDockerTag.restore();
     done();
   });
 
@@ -99,7 +104,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
         });
         sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
 
-        sinon.stub(Docker, 'getDockerTag').returns(ctx.dockerTag);
         sinon.stub(Docker.prototype, 'createImageBuilder').yieldsAsync(null, ctx.container);
 
         sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync(null, 1);
@@ -115,7 +119,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
         Context.findOne.restore();
         Sauron.prototype.findOrCreateHostForContext.restore();
         ContextVersion.findOne.restore();
-        Docker.getDockerTag.restore();
         Docker.prototype.createImageBuilder.restore();
         ContextVersion.updateContainerByBuildId.restore();
         messenger.emitContextVersionUpdate.restore();
@@ -176,8 +179,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
 
           expect(Docker.getDockerTag.callCount, 'getDockerTag').to.equal(1);
           expect(Docker.getDockerTag.args[0][0], 'getDockerTag arg0')
-              .to.equal(ctx.mockUser);
-          expect(Docker.getDockerTag.args[0][1], 'getDockerTag arg1')
               .to.equal(ctx.mockContextVersion);
 
           expect(Docker.prototype.createImageBuilder.callCount, 'createImageBuilder').to.equal(1);
@@ -188,8 +189,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
             .to.equal(ctx.mockUser);
           expect(Docker.prototype.createImageBuilder.args[0][0].contextVersion)
             .to.equal(ctx.mockContextVersion);
-          expect(Docker.prototype.createImageBuilder.args[0][0].dockerTag)
-            .to.equal(ctx.dockerTag);
           expect(Docker.prototype.createImageBuilder.args[0][0].network)
             .to.equal(ctx.sauronResult);
           expect(Docker.prototype.createImageBuilder.args[0][0].noCache)
@@ -203,7 +202,7 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
           expect(ContextVersion.updateContainerByBuildId.args[0][0]).to.deep.equal({
             buildId: ctx.mockContextVersion.build._id,
             buildContainerId: ctx.container.id,
-            tag: ctx.dockerTag,
+            tag: Docker.getDockerTag(ctx.mockContextVersion),
             host: ctx.data.dockerHost,
             network: ctx.sauronResult
           });
@@ -234,7 +233,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
           .yieldsAsync(null, ctx.sauronResult);
         sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
 
-        sinon.stub(Docker, 'getDockerTag').returns(ctx.dockerTag);
         // FAILING HERE
         sinon.stub(Docker.prototype, 'createImageBuilder').yieldsAsync(new Error('error'));
 
@@ -253,7 +251,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
         Sauron.prototype.findOrCreateHostForContext.restore();
         Sauron.prototype.deleteHost.restore();
         ContextVersion.findOne.restore();
-        Docker.getDockerTag.restore();
         Docker.prototype.createImageBuilder.restore();
         ContextVersion.updateContainerByBuildId.restore();
         ctx.worker._baseWorkerFindUser.restore();
@@ -477,12 +474,10 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
 
       describe('success', function () {
         beforeEach(function (done) {
-          sinon.stub(Docker, 'getDockerTag').returns(ctx.dockerTag);
           sinon.stub(Docker.prototype, 'createImageBuilder').yieldsAsync(null, ctx.container);
           done();
         });
         afterEach(function (done) {
-          Docker.getDockerTag.restore();
           Docker.prototype.createImageBuilder.restore();
           done();
         });
@@ -490,11 +485,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
           ctx.worker._createImageBuilder(function (err) {
             expect(err).to.be.null();
             expect(ctx.worker.dockerContainerId).to.equal(ctx.container.id);
-            expect(Docker.getDockerTag.callCount, 'getDockerTag').to.equal(1);
-            expect(Docker.getDockerTag.args[0][0], 'getDockerTag arg0')
-              .to.equal(ctx.data.sessionUser);
-            expect(Docker.getDockerTag.args[0][1], 'getDockerTag arg1')
-              .to.equal(ctx.mockContextVersion);
 
             expect(Docker.prototype.createImageBuilder.callCount, 'createImageBuilder').to.equal(1);
 
@@ -504,8 +494,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
             .to.equal(ctx.data.sessionUser);
             expect(Docker.prototype.createImageBuilder.args[0][0].contextVersion)
               .to.equal(ctx.mockContextVersion);
-            expect(Docker.prototype.createImageBuilder.args[0][0].dockerTag)
-              .to.equal(ctx.dockerTag);
             expect(Docker.prototype.createImageBuilder.args[0][0].network)
               .to.equal(ctx.sauronResult);
             expect(Docker.prototype.createImageBuilder.args[0][0].noCache)
@@ -520,12 +508,10 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
       });
       describe('failure n times', function () {
         beforeEach(function (done) {
-          sinon.stub(Docker, 'getDockerTag').returns(ctx.dockerTag);
           sinon.stub(Docker.prototype, 'createImageBuilder').yieldsAsync(new Error('Docker error'));
           done();
         });
         afterEach(function (done) {
-          Docker.getDockerTag.restore();
           Docker.prototype.createImageBuilder.restore();
           done();
         });
@@ -545,7 +531,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
         beforeEach(function (done) {
           // normally set by _findContextVersion
           ctx.worker.contextVersion = ctx.mockContextVersion;
-          ctx.worker.dockerTag = ctx.dockerTag;
           ctx.worker.network = ctx.sauronResult;
           ctx.worker.dockerContainerId = ctx.container.id;
           done();
@@ -565,7 +550,7 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
             expect(ContextVersion.updateContainerByBuildId.args[0][0]).to.deep.equal({
               buildId: ctx.mockContextVersion.build._id,
               buildContainerId: ctx.container.id,
-              tag: ctx.dockerTag,
+              tag: Docker.getDockerTag(ctx.mockContextVersion),
               host: ctx.data.dockerHost,
               network: ctx.sauronResult
             });
