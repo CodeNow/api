@@ -490,11 +490,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
           ctx.worker._createImageBuilder(function (err) {
             expect(err).to.be.null();
             expect(ctx.worker.dockerContainerId).to.equal(ctx.container.id);
-            expect(Docker.getDockerTag.callCount, 'getDockerTag').to.equal(1);
-            expect(Docker.getDockerTag.args[0][0], 'getDockerTag arg0')
-              .to.equal(ctx.data.sessionUser);
-            expect(Docker.getDockerTag.args[0][1], 'getDockerTag arg1')
-              .to.equal(ctx.mockContextVersion);
 
             expect(Docker.prototype.createImageBuilder.callCount, 'createImageBuilder').to.equal(1);
 
