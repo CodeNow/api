@@ -3,6 +3,7 @@
  */
 'use strict';
 require('loadenv')();
+var url = require('url');
 
 var Boom = require('dat-middleware').Boom;
 var Code = require('code');
@@ -70,51 +71,133 @@ describe('docker: '+moduleName, function () {
 
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
-      sinon.stub(Docker.prototype, '_createImageBuilderValidateCV', function () {});
-      sinon.stub(Docker.prototype, '_createImageBuilderLabels', function () {
-        return {};
-      });
-      sinon.stub(Docker.prototype, '_createImageBuilderEnv', function () {
-      });
-      sinon.stub(Docker.prototype, 'createContainer', function (data, cb) {
-        expect(data).to.be.an.object();
-        expect(data.name).to.be.a.string();
-        expect(data.Image).to.be.a.string();
-        expect(data.Labels).to.be.an.object();
-        cb();
-      });
+      ctx.mockDockerTag = 'mockDockerTag';
+      ctx.mockLabels = ['label1', 'label2', 'label3'];
+      ctx.mockEnv = ['env1', 'env2', 'env3'];
+      sinon.stub(Docker.prototype, '_createImageBuilderValidateCV');
+      sinon.stub(Docker, 'getDockerTag').returns(ctx.mockDockerTag);
+      sinon.stub(Docker.prototype, '_createImageBuilderLabels').returns(ctx.mockLabels);
+      sinon.stub(Docker.prototype, '_createImageBuilderEnv').returns(ctx.mockEnv);
+      sinon.stub(Docker.prototype, 'createContainer').yieldsAsync();
       done();
     });
     afterEach(function (done) {
       Docker.prototype._createImageBuilderLabels.restore();
+      Docker.getDockerTag.restore();
       Docker.prototype._createImageBuilderEnv.restore();
       Docker.prototype._createImageBuilderValidateCV.restore();
       Docker.prototype.createContainer.restore();
       done();
     });
-    it('should invoke createContainer with valid data', function (done) {
-      model.createImageBuilder({
-        manualBuild: true,
-        sessionUser: ctx.mockSessionUser,
-        contextVersion: ctx.mockContextVersion,
-        network: ctx.mockNetwork,
-        noCache: false,
-        tid: '000-0000-0000-0000'
-      }, function () {
-        expect(Docker.prototype._createImageBuilderValidateCV.args[0][0])
-          .to.equal(ctx.mockContextVersion);
-        expect(Docker.prototype._createImageBuilderLabels.args[0][0]).to.be.an.object();
-        expect(Docker.prototype._createImageBuilderLabels.args[0][0].contextVersion)
-          .to.equal(ctx.mockContextVersion);
-        expect(Docker.prototype._createImageBuilderLabels.args[0][0].dockerTag)
-          .to.equal('registry.runnable.com/owner/contextId:versionId');
-        expect(Docker.prototype._createImageBuilderLabels.args[0][0].manualBuild)
-          .to.equal(true);
-        expect(Docker.prototype._createImageBuilderLabels.args[0][0].network)
-          .to.equal(ctx.mockNetwork);
-        expect(Docker.prototype._createImageBuilderLabels.args[0][0].sessionUser)
-          .to.equal(ctx.mockSessionUser);
+    describe('no cache', function () {
+      beforeEach(function (done) {
+        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
+        delete process.env.DOCKER_IMAGE_BUILDER_CACHE;
+        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
+        delete process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
         done();
+      });
+      afterEach(function (done) {
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE;
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
+        done();
+      });
+
+      it('should create an image builder container', function (done) {
+        var opts = {
+          manualBuild: true,
+          sessionUser: ctx.mockSessionUser,
+          contextVersion: ctx.mockContextVersion,
+          network: ctx.mockNetwork,
+          noCache: false,
+          tid: '000-0000-0000-0000'
+        };
+        model.createImageBuilder(opts, function (err) {
+          if (err) { return done(err); }
+          sinon.assert.calledWith(
+            Docker.prototype._createImageBuilderValidateCV,
+            opts.contextVersion
+          );
+          sinon.assert.calledWith(
+            Docker.getDockerTag,
+            opts.contextVersion
+          );
+          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0])
+            .to.deep.equal({
+              contextVersion: opts.contextVersion,
+              dockerTag: ctx.mockDockerTag,
+              manualBuild: opts.manualBuild,
+              network: opts.network,
+              noCache: opts.noCache,
+              sessionUser: opts.sessionUser,
+              ownerUsername: opts.ownerUsername,
+              tid: opts.tid
+            });
+          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0])
+            .to.deep.equal({
+              dockerTag: ctx.mockDockerTag,
+              hostIp: opts.network.hostIp,
+              networkIp: opts.network.networkIp,
+              noCache: opts.noCache,
+              sauronHost: url.parse(model.dockerHost).hostname+':'+process.env.SAURON_PORT,
+              contextVersion: opts.contextVersion
+            });
+          expect(Docker.prototype.createContainer.firstCall.args[0])
+            .to.deep.equal({
+              name: opts.contextVersion.build._id.toString(),
+              Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+              Env: ctx.mockEnv,
+              Binds: [],
+              Volumes: {},
+              Labels: ctx.mockLabels
+            });
+          done();
+        });
+      });
+
+      describe('w/ image builder cache and layer cache', function() {
+        beforeEach(function (done) {
+          ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
+          process.env.DOCKER_IMAGE_BUILDER_CACHE = '/builder-cache';
+          ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
+          process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = '/builder-layer-cache';
+          done();
+        });
+        afterEach(function (done) {
+          process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE;
+          process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
+          done();
+        });
+
+        it('should create an image builder container', function (done) {
+          var opts = {
+            manualBuild: true,
+            sessionUser: ctx.mockSessionUser,
+            contextVersion: ctx.mockContextVersion,
+            network: ctx.mockNetwork,
+            noCache: false,
+            tid: '000-0000-0000-0000'
+          };
+          model.createImageBuilder(opts, function (err) {
+            if (err) { return done(err); }
+            var volumes = {};
+            volumes['/cache'] = {};
+            volumes['/layer-cache'] = {};
+            expect(Docker.prototype.createContainer.firstCall.args[0])
+              .to.deep.equal({
+                name: opts.contextVersion.build._id.toString(),
+                Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+                Env: ctx.mockEnv,
+                Binds: [
+                  process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
+                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
+                ],
+                Volumes: volumes,
+                Labels: ctx.mockLabels
+              });
+            done();
+          });
+        });
       });
     });
   });
