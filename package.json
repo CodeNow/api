@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.66.0",
+  "version": "2.66.2",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -101,7 +101,7 @@
     "code": "^1.4.0",
     "console-trace": "git://github.com/numbcoder/console-trace.git",
     "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v0.13.0",
-    "docker-mock": "^3.0.1",
+    "docker-mock": "^5.0.1",
     "docker-modem": "^0.2.6",
     "doctoc": "^0.15.0",
     "eslint": "^1.5.1",
