@@ -43,7 +43,7 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
       time: '234234',
       uuid: '12343',
       dockerHost: '0.0.0.0',
-      'inspectData.Name': '123456789012345678901111',
+      'inspectData.Name': '/123456789012345678901111',
       'inspectData.Config.Labels.sessionUserGithubId': 1
     });
     ctx.mockContextVersion = {
@@ -264,7 +264,7 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
         sinon.assert.calledWith(Instance.findAndPopulate, ctx.mockUser);
         var query = Instance.findAndPopulate.firstCall.args[1];
         expect(query['contextVersion.build._id'].toString())
-          .to.deep.equal(ctx.data.inspectData.Name);
+          .to.deep.equal(ctx.data.inspectData.Name.slice(1));
         ctx.mockInstances.forEach(function (mockInstance, i) {
           expect(messenger.emitInstanceUpdate.args[i][0]).to.equal(mockInstance);
         });
