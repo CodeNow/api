@@ -76,4 +76,27 @@ describe('lib/middlewares/apis/jobs.js unit test: '+moduleName, function () {
       });
     }); // end getUserByUsername successful
   }); // end publishClusterProvision successful
+
+  describe('publishClustersDeprovision', function () {
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'publishClusterDeprovision');
+      done();
+    });
+
+    afterEach(function (done) {
+      rabbitMQ.publishClusterDeprovision.restore();
+      done();
+    });
+    it('should call publishClusterDeprovision for each user id', function (done) {
+      jobs.publishClustersDeprovision({}, {}, function (err) {
+        expect(err).to.not.exist();
+        var userIds = process.env.TEST_GITHUB_USER_IDS.split(',');
+        expect(rabbitMQ.publishClusterDeprovision.callCount).to.equal(userIds.length);
+        expect(rabbitMQ.publishClusterDeprovision.getCall(0).args[0].githubId).to.equal(userIds[0]);
+        expect(rabbitMQ.publishClusterDeprovision.getCall(userIds.length - 1).args[0].githubId)
+          .to.equal(userIds[userIds.length - 1]);
+        done();
+      });
+    });
+  }); // end publishClustersDeprovision successful
 });
