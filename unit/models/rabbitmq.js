@@ -504,4 +504,52 @@ describe('RabbitMQ Model: '+moduleName, function () {
       });
     });
   });
+
+  describe('publishClusterDeprovision', function () {
+    var testOrgId = 18274533;
+    beforeEach(function (done) {
+      // this normally set after connect
+      ctx.rabbitMQ.hermesClient = {
+        publish: function () {}
+      };
+      ctx.validJobData = {
+        githubId: testOrgId
+      };
+      done();
+    });
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
+          expect(eventName).to.equal('cluster-deprovision');
+          expect(eventData).to.equal(ctx.validJobData);
+        });
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should publish a job with required data', function (done) {
+        ctx.rabbitMQ.publishClusterDeprovision(ctx.validJobData);
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1);
+        done();
+      });
+    });
+
+    describe('failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {});
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should not publish a job without required data', function (done) {
+        ctx.rabbitMQ.publishClusterDeprovision({});
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
+        done();
+      });
+    });
+  });
 });
