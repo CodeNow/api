@@ -4,10 +4,16 @@
 'use strict';
 require('loadenv')();
 var url = require('url');
+var path = require('path');
 
 var Boom = require('dat-middleware').Boom;
 var Code = require('code');
+var assign = require('101/assign');
+var clone = require('101/clone');
 var Dockerode = require('dockerode');
+var indexBy = require('101/index-by');
+var keypather = require('keypather')();
+var pluck = require('101/pluck');
 var Lab = require('lab');
 var Modem = require('docker-modem');
 var path = require('path');
@@ -39,8 +45,36 @@ describe('docker: '+moduleName, function () {
           github: 'owner'
         },
         context: 'contextId',
+        infraCodeVersion: {
+          bucket: function () {
+            return {
+              bucket: 'bucket',
+              sourcePath: 'sourcePath'
+            };
+          },
+          files: []
+        },
+        appCodeVersions: [
+          {
+            repo: 'github.com/user/repo1',
+            commit: 'commit',
+            privateKey: 'private1'
+          },
+          {
+            repo: 'github.com/user/repo2',
+            branch: 'branch',
+            privateKey: 'private2'
+          },
+          {
+            repo: 'github.com/user/repo2',
+            privateKey: 'private2'
+          }
+        ],
         toJSON: function () {
-          return {};
+          var json = clone(ctx.mockContextVersion);
+          delete json.toJSON;
+          delete json.infraCodeVersion.bucket;
+          return json;
         }
       },
       mockNetwork: {
@@ -57,22 +91,13 @@ describe('docker: '+moduleName, function () {
         }
       }
     };
-    ctx.mockContextVersion.infraCodeVersion = {
-      bucket: function () {
-        return {
-          sourcePath: 'sourcePath'
-        };
-      },
-      files: []
-    };
-    ctx.mockContextVersion.appCodeVersions = [];
     done();
   });
 
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
       ctx.mockDockerTag = 'mockDockerTag';
-      ctx.mockLabels = ['label1', 'label2', 'label3'];
+      ctx.mockLabels = { label1: 1, label2: 2, label3: 3 };
       ctx.mockEnv = ['env1', 'env2', 'env3'];
       sinon.stub(Docker.prototype, '_createImageBuilderValidateCV');
       sinon.stub(Docker, 'getDockerTag').returns(ctx.mockDockerTag);
@@ -248,28 +273,133 @@ describe('docker: '+moduleName, function () {
 
   describe('_createImageBuilderLabels', function () {
     it('should return a hash of container labels', function (done) {
-      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+      var opts = {
         contextVersion: ctx.mockContextVersion,
+        dockerTag: 'dockerTag',
         network: ctx.mockNetwork,
+        manualBuild: 'manualBuild',
+        noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
-        tid: '0000-0000-0000-0000'
-      });
-      expect(imageBuilderContainerLabels.tid).to.equal('0000-0000-0000-0000');
+        ownerUsername: 'ownerUsername',
+        tid: 'tid'
+      };
+      var labels = model._createImageBuilderLabels(opts);
+      var expectedLabels = assign(
+        keypather.flatten(ctx.mockContextVersion.toJSON(), '.', 'contextVersion'),
+        {
+          dockerTag: opts.dockerTag,
+          hostIp: opts.network.hostIp,
+          manualBuild: opts.manualBuild,
+          networkIp: opts.network.networkIp,
+          noCache: opts.noCache,
+          sauronHost: url.parse(model.dockerHost).hostname+':'+process.env.SAURON_PORT,
+          sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
+          sessionUserGithubId:    opts.sessionUser.accounts.github.id,
+          sessionUserUsername:    opts.sessionUser.accounts.github.username,
+          ownerUsername: opts.ownerUsername,
+          tid: opts.tid,
+          type: 'image-builder-container'
+        }
+      );
+      expect(labels).to.deep.equal(expectedLabels);
       //assert type casting to string for known value originally of type Number
-      expect(imageBuilderContainerLabels.sessionUserGithubId).to.be.a.string();
+      expect(labels.sessionUserGithubId).to.be.a.string();
       done();
     });
   });
 
   describe('_createImageBuilderEnv', function () {
-    it('should return an array of ENV key/value pairs for image builder container', function (done) {
-      var imageBuilderContainerEnvs = model._createImageBuilderEnv({
+    beforeEach(function (done) {
+      ctx.opts = {
         contextVersion: ctx.mockContextVersion,
-        dockerTag: 'docker-tag'
-      });
-      expect(imageBuilderContainerEnvs.indexOf('RUNNABLE_DOCKERTAG=docker-tag'))
-        .to.not.equal(0);
+        dockerTag: 'dockerTag',
+        sauronHost: 'sauronHost',
+        networkIp: 'networkIp',
+        hostIp: 'hostIp',
+        noCache: false
+      };
       done();
+    });
+    describe('no cache', function() {
+      beforeEach(function (done) {
+        ctx.opts.noCache = true;
+        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
+        delete process.env.DOCKER_IMAGE_BUILDER_CACHE;
+        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
+        delete process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
+        done();
+      });
+      afterEach(function (done) {
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE;
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
+        done();
+      });
+
+      it('should return an array of ENV for image builder container', function (done) {
+        var opts = ctx.opts;
+        var buildOpts = {
+          Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES,
+          forcerm: true,
+          nocache: true
+        };
+        var envs = model._createImageBuilderEnv(opts);
+        var cv = ctx.mockContextVersion;
+        var appCodeVersions = cv.appCodeVersions;
+        var expectedEnvs = [
+          'RUNNABLE_AWS_ACCESS_KEY=' + process.env.AWS_ACCESS_KEY_ID,
+          'RUNNABLE_AWS_SECRET_KEY=' + process.env.AWS_SECRET_ACCESS_KEY,
+          'RUNNABLE_FILES_BUCKET='   + cv.infraCodeVersion.bucket().bucket,
+          'RUNNABLE_PREFIX='         + path.join(cv.infraCodeVersion.bucket().sourcePath, '/'),
+          'RUNNABLE_FILES='          + JSON.stringify(indexBy(cv.infraCodeVersion.files, 'Key')),
+          'RUNNABLE_DOCKER='         + 'unix:///var/run/docker.sock',
+          'RUNNABLE_DOCKERTAG='      + opts.dockerTag,
+          'RUNNABLE_IMAGE_BUILDER_NAME=' + process.env.DOCKER_IMAGE_BUILDER_NAME,
+          'RUNNABLE_IMAGE_BUILDER_TAG=' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+          // acv envs
+          'RUNNABLE_REPO='        + 'git@github.com:'+appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
+          'RUNNABLE_COMMITISH='   + [appCodeVersions[0].commit, appCodeVersions[1].branch, 'master'].join(';'),
+          'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
+          'RUNNABLE_DEPLOYKEY='   + appCodeVersions.map(pluck('privateKey')).join(';'),
+          // network envs
+          'RUNNABLE_NETWORK_DRIVER=' + process.env.RUNNABLE_NETWORK_DRIVER,
+          'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
+          'RUNNABLE_SAURON_HOST='    + opts.sauronHost,
+          'RUNNABLE_NETWORK_IP='     + opts.networkIp,
+          'RUNNABLE_HOST_IP='        + opts.hostIp,
+          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
+          'RUNNABLE_PUSH_IMAGE=true'
+        ];
+        expect(envs).to.deep.equal(expectedEnvs);
+        done();
+      });
+    });
+    describe('cache', function() {
+      beforeEach(function (done) {
+        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = '/cache';
+        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = '/layer-cache';
+        done();
+      });
+      afterEach(function (done) {
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE;
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
+        done();
+      });
+
+      it('should return conditional container env', function(done) {
+        var envs = model._createImageBuilderEnv(ctx.opts);
+        var buildOpts = {
+          Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES,
+          forcerm: true
+        };
+        expect(envs).to.contain([
+          'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
+          'DOCKER_IMAGE_BUILDER_LAYER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE,
+          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
+        ]);
+        done();
+      });
     });
   });
 
