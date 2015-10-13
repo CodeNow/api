@@ -23,7 +23,7 @@ var moduleName = path.relative(process.cwd(), __filename);
 
 describe('is https unit test: '+moduleName, function () {
 
-  it('should next no error we NODE_ENV is test', function(done) {
+  it('should next no error since ASSERT_HTTPS is false', function(done) {
     var req = {
       headers: {
         'x-forwarded-protocol': 'http'
@@ -35,13 +35,13 @@ describe('is https unit test: '+moduleName, function () {
     });
   });
 
-  describe('non-test env', function () {
+  describe('ASSERT_HTTPS=true', function () {
     beforeEach(function (done) {
-      process.env.NODE_ENV = 'development';
+      process.env.ASSERT_HTTPS = true;
       done();
     });
     afterEach(function (done) {
-      process.env.NODE_ENV = 'test';
+      process.env.ASSERT_HTTPS = false;
       done();
     });
     it('should next no error if protocol was https', function(done) {
