@@ -19,6 +19,81 @@ var it = lab.it;
 var moduleName = path.relative(process.cwd(), __filename);
 
 describe('github: '+moduleName, function () {
+
+  describe('isOrgMember', function () {
+
+    it('should return 404 if getting orgs returned 404', function (done) {
+      var github = new Github({token: 'some-token'});
+      var err = new Error('Orgs error');
+      err.code = 404;
+      sinon.stub(github, 'getUserAuthorizedOrgs').yieldsAsync(err);
+      github.isOrgMember('CodeNow', function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('user is not a member of org');
+        done();
+      });
+    });
+
+    it('should return 502 in case other error', function (done) {
+      var github = new Github({token: 'some-token'});
+      var err = new Error('Orgs error');
+      sinon.stub(github, 'getUserAuthorizedOrgs').yieldsAsync(err);
+      github.isOrgMember('CodeNow', function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(502);
+        expect(err.output.payload.message).to.equal('failed to get user orgs');
+        done();
+      });
+    });
+
+    it('should return 404 if not orgs were found (null)', function (done) {
+      var github = new Github({token: 'some-token'});
+      sinon.stub(github, 'getUserAuthorizedOrgs').yieldsAsync(null, null);
+      github.isOrgMember('CodeNow', function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('user is not a member of org');
+        done();
+      });
+    });
+
+    it('should return 404 if not orgs were found ([])', function (done) {
+      var github = new Github({token: 'some-token'});
+      sinon.stub(github, 'getUserAuthorizedOrgs').yieldsAsync(null, []);
+      github.isOrgMember('CodeNow', function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('user is not a member of org');
+        done();
+      });
+    });
+
+    it('should return 404 if orgs was not in the list', function (done) {
+      var github = new Github({token: 'some-token'});
+      var orgs = [{login: 'Runnable'}];
+      sinon.stub(github, 'getUserAuthorizedOrgs').yieldsAsync(null, orgs);
+      github.isOrgMember('CodeNow', function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('user is not a member of org');
+        done();
+      });
+    });
+
+    it('should return true if org was found', function (done) {
+      var github = new Github({token: 'some-token'});
+      var orgs = [{login: 'CodeNow'}];
+      sinon.stub(github, 'getUserAuthorizedOrgs').yieldsAsync(null, orgs);
+      github.isOrgMember('CodeNow', function (err, isMember) {
+        expect(err).to.not.exist();
+        expect(isMember).to.be.true();
+        done();
+      });
+    });
+  });
+
+
   describe('_listRepoHooks', function () {
     it('should return 404 if repo wasnot found', function (done) {
       var github = new Github({token: 'some-token'});
