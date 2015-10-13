@@ -1,8 +1,5 @@
 FROM python:<python-version>
 
-# Open up ports on the server
-EXPOSE <user-specified-ports>
-
 ENV PYTHON_VERSION <python-version>
 
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y libzmq3-dev  python-zmq
@@ -11,6 +8,9 @@ RUN apt-get update -y && apt-get upgrade -y && apt-get install -y libzmq3-dev  p
 #default dst:home
 #default run:pip install -r 'requirements.txt'
 <after-main-repo>
+
+# Open up ports on the server
+EXPOSE <user-specified-ports>
 
 # Command to start the app
 CMD <start-command>

@@ -71,7 +71,12 @@ describe('DeployInstanceWorker Integration Tests', function () {
           }
           ctx.user = user;
           ctx.hash = uuid();
-          mockFactory.createCompletedCv(ctx.githubId, {build: {manual: true}}, function (err, cv) {
+          var props = {
+            build: {
+              triggeredAction:{manual: true}
+            }
+          };
+          mockFactory.createCompletedCv(ctx.githubId, props, function (err, cv) {
             if (err) {
               return done(err);
             }
@@ -161,7 +166,6 @@ describe('DeployInstanceWorker Integration Tests', function () {
       });
       afterEach(function (done) {
         rabbitMQ.createInstanceContainer.restore();
-        messenger._emitInstanceUpdateAction.restore();
         User.prototype.findGithubUserByGithubId.restore();
         done();
       });
@@ -173,7 +177,12 @@ describe('DeployInstanceWorker Integration Tests', function () {
           }
           ctx.user = user;
           ctx.hash = uuid();
-          mockFactory.createCompletedCv(ctx.githubId, {build: {manual: false}}, function (err, cv) {
+          var props = {
+            build: {
+              triggeredAction:{manual: false}
+            }
+          };
+          mockFactory.createCompletedCv(ctx.githubId, props, function (err, cv) {
             if (err) {
               return done(err);
             }
@@ -211,6 +220,11 @@ describe('DeployInstanceWorker Integration Tests', function () {
               ctx.lockedInstance = instance;
               count.next();
             });
+          sinon.stub(messenger, '_emitInstanceUpdateAction');
+        });
+        afterEach(function (done) {
+          messenger._emitInstanceUpdateAction.restore();
+          done();
         });
         it('should deploy only the unlocked instance', function (done) {
           sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, ctx.user);
@@ -220,7 +234,15 @@ describe('DeployInstanceWorker Integration Tests', function () {
             ownerUsername: ctx.user.accounts.github.username
           });
 
-          var count = createCount(2, function () {
+          worker.handle(function (err) {
+            expect(err).to.be.undefined();
+            sinon.assert.calledWith(
+              messenger._emitInstanceUpdateAction,
+              sinon.match({
+                _id: ctx.instance._id
+              }),
+              'deploy'
+            );
             expect(rabbitMQ.createInstanceContainer.callCount, 'createInstanceContainer')
               .to.equal(1);
             expect(rabbitMQ.createInstanceContainer.args[0][0].cvId, 'createInstanceContainer.cv')
@@ -230,15 +252,6 @@ describe('DeployInstanceWorker Integration Tests', function () {
               'createInstanceContainer.sessionUserId'
             ).to.equal(ctx.user.accounts.github.id);
             done();
-          });
-          sinon.stub(messenger, '_emitInstanceUpdateAction', function (instance, action) {
-            expect(instance._id).to.deep.equal(ctx.instance._id);
-            expect(action).to.deep.equal('deploy');
-            count.next();
-          });
-          worker.handle(function (err) {
-            expect(err).to.be.undefined();
-            count.next();
           });
         });
       });

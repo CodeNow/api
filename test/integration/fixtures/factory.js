@@ -3,6 +3,7 @@
 var assign = require('101/assign');
 var defaults = require('101/defaults');
 var isFunction = require('101/is-function');
+var assign = require('101/assign');
 var mongoose = require('mongoose');
 var uuid = require('uuid');
 
@@ -43,19 +44,18 @@ module.exports = {
     }
     props = props || {build: {}};
     defaults(props.build, {
+      _id: '012345678901234567890123',
       hash: uuid(),
       started: new Date(new Date() - 60 * 1000),
       completed: new Date(),
-      manual: false,
-      dockerContainer: '1234567890123456789012345678901234567890123456789012345678901234'
+      triggeredAction: {
+        manual: false
+      },
+      dockerContainer: '012345678901234567890123'
     });
     var data = this.cvTemplate(
       ownerGithubId,
-      props.build.dockerContainer,
-      props.build.manual,
-      props.build.hash,
-      props.build.started,
-      props.build.completed
+      props.build
     );
     ContextVersion.create(data, cb);
   },
@@ -66,21 +66,18 @@ module.exports = {
     }
     props = props || { build: {} };
     defaults(props.build, {
+      _id: '012345678901234567890123',
       hash: uuid(),
       started: new Date(),
-      dockerContainer: '1234567890123456789012345678901234567890123456789012345678901234'
+      dockerContainer: '012345678901234567890123'
     });
     var data = this.cvTemplate(
       ownerGithubId,
-      props.build.dockerContainer,
-      props.build.manual,
-      props.build.hash,
-      props.build.started
+      props.build
     );
     ContextVersion.create(data, cb);
   },
-  cvTemplate: function (ownerGithubId, containerId, manual, hash, started, completed) {
-    started = started || new Date();
+  cvTemplate: function (ownerGithubId, buildExtend) {
     var cv = {
       infraCodeVersion : new ObjectId(),
       createdBy : {
@@ -90,34 +87,34 @@ module.exports = {
       owner : {
         github : ownerGithubId
       },
-      build: {
+      build: assign({
         triggeredAction : {
-          manual : manual
+          manual : true
         },
         _id : new ObjectId(),
         triggeredBy : {
           github : ownerGithubId
         },
-        started : started,
-        hash : hash,
+        started : new Date(),
+        hash : 'abcdef',
         network : {
           networkIp: '127.0.0.1',
           hostIp: '127.0.0.1'
         },
-        containerId : containerId,
-        dockerContainer : containerId
-      },
+        containerId : 'abcdef',
+        dockerContainer : 'abcdef'
+      }, buildExtend),
       advanced : true,
       appCodeVersions : [],
-      created : new Date(started - 60*1000),
       __v : 0,
       dockerHost : 'http://127.0.0.1:4242'
     };
-    if (completed) {
+    cv.created = new Date(cv.build.started - 60*1000);
+    if (buildExtend.completed) {
       assign(cv.build, {
         dockerTag : 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
         dockerImage : 'bbbd03498dab',
-        completed : completed
+        completed : buildExtend.completed
       });
     }
     return cv;

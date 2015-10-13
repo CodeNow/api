@@ -30,11 +30,18 @@ describe('docker: '+moduleName, function () {
   beforeEach(function (done) {
     ctx = {
       mockContextVersion: {
+        _id: 'versionId',
         build: {
           _id: 'buildId'
         },
+        owner: {
+          github: 'owner'
+        },
+        context: 'contextId',
         toJSON: function () {
-          return {};
+          return {
+            '_id': 12345
+          };
         }
       },
       mockNetwork: {
@@ -92,7 +99,6 @@ describe('docker: '+moduleName, function () {
         manualBuild: true,
         sessionUser: ctx.mockSessionUser,
         contextVersion: ctx.mockContextVersion,
-        dockerTag: 'docker-tag',
         network: ctx.mockNetwork,
         noCache: false,
         tid: '000-0000-0000-0000'
@@ -103,7 +109,7 @@ describe('docker: '+moduleName, function () {
         expect(Docker.prototype._createImageBuilderLabels.args[0][0].contextVersion)
           .to.equal(ctx.mockContextVersion);
         expect(Docker.prototype._createImageBuilderLabels.args[0][0].dockerTag)
-          .to.equal('docker-tag');
+          .to.equal('registry.runnable.com/owner/contextId:versionId');
         expect(Docker.prototype._createImageBuilderLabels.args[0][0].manualBuild)
           .to.equal(true);
         expect(Docker.prototype._createImageBuilderLabels.args[0][0].network)
@@ -170,6 +176,34 @@ describe('docker: '+moduleName, function () {
       expect(imageBuilderContainerLabels.tid).to.equal('0000-0000-0000-0000');
       //assert type casting to string for known value originally of type Number
       expect(imageBuilderContainerLabels.sessionUserGithubId).to.be.a.string();
+      done();
+    });
+
+    it('should cast all values of flattened labels object to strings', function (done) {
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: ctx.mockSessionUser,
+        tid: '0000-0000-0000-0000'
+      });
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.be.a.string();
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('12345');
+      done();
+    });
+
+    it('should not error if value is undefined', function (done) {
+      ctx.mockContextVersion.toJSON = function () {
+        return {
+          '_id': undefined
+        };
+      };
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: ctx.mockSessionUser,
+        tid: '0000-0000-0000-0000'
+      });
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('undefined');
       done();
     });
   });
