@@ -10,14 +10,18 @@ var Boom = require('dat-middleware').Boom;
 var Code = require('code');
 var assign = require('101/assign');
 var clone = require('101/clone');
+var dockerFrame = require('docker-frame');
 var Dockerode = require('dockerode');
+var Container = require('dockerode/lib/container');
 var indexBy = require('101/index-by');
 var keypather = require('keypather')();
+var multiline = require('multiline');
 var pluck = require('101/pluck');
 var Lab = require('lab');
 var Modem = require('docker-modem');
 var path = require('path');
 var sinon = require('sinon');
+var through2 = require('through2');
 
 var Docker = require('models/apis/docker');
 
@@ -29,6 +33,30 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 var moduleName = path.relative(process.cwd(), __filename);
+
+var dockerLogs = {
+  success: multiline.stripIndent(function () {/*
+    {"type":"docker","content":"Step 1 : ADD ./ca.pem /ca.pem","timestamp":"2015-10-09T20:11:42.000Z"}
+    {"type":"docker","content":" ---> bf20e0312c8c","timestamp":"2015-10-09T20:11:42.319Z"}
+    {"type":"docker","content":"Step 2 : ADD ./cert.pem /cert.pem","timestamp":"2015-10-09T20:11:42.332Z"}
+    {"type":"docker","content":" ---> e1969cb6ba66","timestamp":"2015-10-09T20:11:42.556Z"}
+    {"type":"docker","content":"Successfully built 6853db027fad","timestamp":"2015-10-09T20:11:43.262Z"}
+    {"type":"log","content":"Runnable: Build completed successfully!","timestamp":"2015-10-09T20:11:43.657Z"}
+  */}),
+  successDockerImage: '6853db027fad', // must match id in log
+  failure: multiline.stripIndent(function () {/*
+    {"type":"docker","content":"Step 1 : ADD ./ca.pem /ca.pem","timestamp":"2015-10-09T20:11:42.000Z"}
+    {"type":"docker","content":" ---> bf20e0312c8c","timestamp":"2015-10-09T20:11:42.319Z"}
+    {"type":"docker","content":"Step 2 : RUN vim ./cert.pem","timestamp":"2015-10-09T20:11:42.332Z"}
+    {"type":"docker","content":" ---> e1969cb6ba66","timestamp":"2015-10-09T20:11:42.556Z"}
+    {"type":"docker","content":"\u001b[91m/bin/sh: 1: \u001b[0m"}
+    {"type":"docker","content":"\u001b[91mvim: not found\n\u001b[0m"}
+    {"type":"docker","content":"Runnable: The command [vim what] returned a non-zero code: 127\r\n","type":"error"}
+  */}),
+  jsonParseError: multiline.stripIndent(function () {/*
+    {"type":"docker",[]
+  */})
+};
 
 describe('docker: '+moduleName, function () {
   var model = new Docker('http://fake.host.com');
@@ -399,6 +427,89 @@ describe('docker: '+moduleName, function () {
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
         ]);
         done();
+      });
+    });
+  });
+
+  describe('getBuildInfo', function () {
+    beforeEach(function (done) {
+      sinon.stub(Container.prototype, 'logs');
+      done();
+    });
+    afterEach(function (done) {
+      Container.prototype.logs.restore();
+      done();
+    });
+
+    it('should cleanse and parse logs', function (done) {
+      var stream = through2();
+      Container.prototype.logs.yieldsAsync(null, stream);
+      model.getBuildInfo('containerId', function (err, buildInfo) {
+        if (err) { return done(err); }
+        expect(buildInfo.dockerImage).to.equal(dockerLogs.successDockerImage);
+        expect(buildInfo.failed).to.equal(false);
+        expect(buildInfo.log).to.deep.equal(
+          dockerLogs.success
+            .split('\n')
+            .map(JSON.parse.bind(JSON))
+        );
+        done();
+      });
+      stream.write(dockerFrame(1, dockerLogs.success));
+      stream.end();
+    });
+
+    describe('errors', function() {
+      it('should handle docker log stream err', function(done) {
+        var stream = through2();
+        Container.prototype.logs.yieldsAsync(null, stream);
+        var streamOn = stream.on;
+        var emitErr = new Error('boom');
+        sinon.stub(stream, 'on', streamErrHandlerAttached);
+        model.getBuildInfo('containerId', function (err) {
+          expect(err).to.exist();
+          expect(err.message).to.match(/docker logs/);
+          expect(err.message).to.match(new RegExp(emitErr.message));
+          done();
+        });
+        function streamErrHandlerAttached () {
+          var ret = streamOn.apply(stream, arguments);
+          stream.on.restore();
+          stream.emit('error', emitErr);
+          return ret;
+        }
+      });
+      it('should handle parse err', function(done) {
+        var stream = through2();
+        Container.prototype.logs.yieldsAsync(null, stream);
+        model.getBuildInfo('containerId', function (err) {
+          expect(err).to.exist();
+          expect(err.message).to.match(/json parse/);
+          done();
+        });
+        stream.write(dockerFrame(1, dockerLogs.jsonParseError));
+        stream.end();
+      });
+      it('should handle streamCleanser err', function(done) {
+        var stream = through2();
+        Container.prototype.logs.yieldsAsync(null, stream);
+        var emitErr = new Error('boom');
+        var streamPipe = stream.pipe;
+        sinon.stub(stream, 'pipe', handlePipe);
+        model.getBuildInfo('containerId', function (err) {
+          expect(err).to.exist();
+          expect(err.message).to.match(/cleanser/);
+          expect(err.message).to.match(new RegExp(emitErr.message));
+          done();
+        });
+        function handlePipe (streamCleanser) {
+          var ret = streamPipe.apply(stream, arguments);
+          stream.pipe.restore();
+          process.nextTick( // emit error on stream cleanser on next tick
+            streamCleanser.emit.bind(streamCleanser, 'error', emitErr)
+          );
+          return ret;
+        }
       });
     });
   });
