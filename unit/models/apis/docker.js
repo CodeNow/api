@@ -39,7 +39,9 @@ describe('docker: '+moduleName, function () {
         },
         context: 'contextId',
         toJSON: function () {
-          return {};
+          return {
+            '_id': 12345
+          };
         }
       },
       mockNetwork: {
@@ -178,7 +180,6 @@ describe('docker: '+moduleName, function () {
     });
 
     it('should cast all values of flattened labels object to strings', function (done) {
-      ctx.mockContextVersion._id = 555;
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
@@ -186,19 +187,23 @@ describe('docker: '+moduleName, function () {
         tid: '0000-0000-0000-0000'
       });
       expect(imageBuilderContainerLabels['contextVersion._id']).to.be.a.string();
-      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('555');
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('12345');
       done();
     });
 
-    it('should not error if value is can not be cast to string', function (done) {
-      ctx.mockContextVersion._id = undefined;
+    it('should not error if value is undefined', function (done) {
+      ctx.mockContextVersion.toJSON = function () {
+        return {
+          '_id': undefined
+        };
+      };
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
         sessionUser: ctx.mockSessionUser,
         tid: '0000-0000-0000-0000'
       });
-      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(undefined);
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('undefined');
       done();
     });
   });
