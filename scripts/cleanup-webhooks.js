@@ -7,12 +7,12 @@ Find all repos and runnable webhooks for this repo and do following:
 
 To run in test mode:
 
-  NODE_PATH=./lib node scrtips/cleanup-webhooks.js
+  NODE_PATH=./lib node scripts/cleanup-webhooks.js
   and please add appropriate NODE_ENV
 
 To run in prod mode:
 
-  NODE_PATH=./lib ACTUALLY_RUN=1  node scrtips/cleanup-webhooks.js
+  NODE_PATH=./lib ACTUALLY_RUN=1  node scripts/cleanup-webhooks.js
   and please add appropriate NODE_ENV
 
 */
