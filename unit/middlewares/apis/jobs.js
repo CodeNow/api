@@ -90,7 +90,9 @@ describe('lib/middlewares/apis/jobs.js unit test: '+moduleName, function () {
     it('should call publishClusterDeprovision for each user id', function (done) {
       jobs.publishClustersDeprovision({}, {}, function (err) {
         expect(err).to.not.exist();
-        var userIds = process.env.TEST_GITHUB_USER_IDS.split(',');
+        var userIds = process.env.TEST_GITHUB_USER_IDS.split(',').map(function (id) {
+          return id.trim();
+        });
         expect(rabbitMQ.publishClusterDeprovision.callCount).to.equal(userIds.length);
         expect(rabbitMQ.publishClusterDeprovision.getCall(0).args[0].githubId).to.equal(userIds[0]);
         expect(rabbitMQ.publishClusterDeprovision.getCall(userIds.length - 1).args[0].githubId)
