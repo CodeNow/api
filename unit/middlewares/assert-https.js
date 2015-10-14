@@ -37,11 +37,11 @@ describe('is https unit test: '+moduleName, function () {
 
   describe('ASSERT_HTTPS=true', function () {
     beforeEach(function (done) {
-      process.env.ASSERT_HTTPS = true;
+      process.env.ASSERT_HTTPS = 'true';
       done();
     });
     afterEach(function (done) {
-      process.env.ASSERT_HTTPS = false;
+      process.env.ASSERT_HTTPS = 'false';
       done();
     });
     it('should next no error if protocol was https', function(done) {
