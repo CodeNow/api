@@ -334,6 +334,33 @@ describe('docker: '+moduleName, function () {
       expect(labels.sessionUserGithubId).to.be.a.string();
       done();
     });
+
+    it('should cast all values of flattened labels object to strings', function (done) {
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: ctx.mockSessionUser,
+        tid: '0000-0000-0000-0000'
+      });
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id);
+      done();
+    });
+
+    it('should not error if value is undefined', function (done) {
+      ctx.mockContextVersion.toJSON = function () {
+        return {
+          '_id': undefined
+        };
+      };
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: ctx.mockSessionUser,
+        tid: '0000-0000-0000-0000'
+      });
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('undefined');
+      done();
+    });
   });
 
   describe('_createImageBuilderEnv', function () {
