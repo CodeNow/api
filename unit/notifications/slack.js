@@ -260,7 +260,7 @@ describe('Slack: '+moduleName, function () {
         repo: 'CodeNow/api',
         repoName: 'api',
         user: {
-          login: 'podviaznikov'
+          login: 'anton'
         }
       };
       sinon.stub(slack, 'sendDirectMessage').yieldsAsync(null);
@@ -269,7 +269,7 @@ describe('Slack: '+moduleName, function () {
         expect(resp).to.equal(undefined);
         expect(slack.sendDirectMessage.callCount).to.equal(1);
         var args = slack.sendDirectMessage.getCall(0).args;
-        expect(args[0]).to.equal(headCommit.committer.username);
+        expect(args[0]).to.equal(gitInfo.user.login);
         expect(args[1].text).to.exist();
         done();
       });
