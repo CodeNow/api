@@ -39,7 +39,9 @@ describe('docker: '+moduleName, function () {
         },
         context: 'contextId',
         toJSON: function () {
-          return {};
+          return {
+            '_id': 12345
+          };
         }
       },
       mockNetwork: {
@@ -174,6 +176,34 @@ describe('docker: '+moduleName, function () {
       expect(imageBuilderContainerLabels.tid).to.equal('0000-0000-0000-0000');
       //assert type casting to string for known value originally of type Number
       expect(imageBuilderContainerLabels.sessionUserGithubId).to.be.a.string();
+      done();
+    });
+
+    it('should cast all values of flattened labels object to strings', function (done) {
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: ctx.mockSessionUser,
+        tid: '0000-0000-0000-0000'
+      });
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.be.a.string();
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('12345');
+      done();
+    });
+
+    it('should not error if value is undefined', function (done) {
+      ctx.mockContextVersion.toJSON = function () {
+        return {
+          '_id': undefined
+        };
+      };
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: ctx.mockSessionUser,
+        tid: '0000-0000-0000-0000'
+      });
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('undefined');
       done();
     });
   });
