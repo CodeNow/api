@@ -1,6 +1,3 @@
-/**
- * @module unit/models/services/instance-service
- */
 'use strict';
 
 require('loadenv')();
@@ -18,7 +15,6 @@ var sinon = require('sinon');
 
 // internal
 var Context = require('models/mongo/context');
-var ContextVersion = require('models/mongo/context-version');
 var Runnable = require('models/apis/runnable');
 
 // internal (being tested)
