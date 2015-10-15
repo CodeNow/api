@@ -161,7 +161,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
         done();
       });
       it('should not publish a job without required data', function (done) {
-        ctx.rabbitMQ.deployInstance(ctx.invalidJobData);
+        expect(ctx.rabbitMQ.deployInstance.bind(ctx.rabbitMQ, ctx.invalidJobData))
+          .to.throw(Error, 'Validation failed');
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
         done();
       });
@@ -224,7 +225,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
         done();
       });
       it('should not publish a job without required data', function (done) {
-        ctx.rabbitMQ.createImageBuilderContainer(ctx.invalidJobData);
+        expect(ctx.rabbitMQ.createImageBuilderContainer.bind(ctx.rabbitMQ, ctx.invalidJobData))
+          .to.throw(Error, 'Validation failed');
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
         done();
       });
@@ -287,7 +289,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
         done();
       });
       it('should not publish a job without required data', function (done) {
-        ctx.rabbitMQ.startInstanceContainer(ctx.invalidJobData);
+        expect(ctx.rabbitMQ.startInstanceContainer.bind(ctx.rabbitMQ, ctx.invalidJobData))
+          .to.throw(Error, 'Validation failed');
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
         done();
       });
@@ -346,7 +349,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
         done();
       });
       it('should not publish a job without required data', function (done) {
-        ctx.rabbitMQ.createInstanceContainer(ctx.invalidJobData);
+        expect(ctx.rabbitMQ.createInstanceContainer.bind(ctx.rabbitMQ, ctx.invalidJobData))
+          .to.throw(Error, 'Validation failed');
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
         done();
       });
@@ -386,6 +390,22 @@ describe('RabbitMQ Model: '+moduleName, function () {
       it('should publish a job with required data', function (done) {
         ctx.rabbitMQ.deleteInstance(ctx.validJobData);
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1);
+        done();
+      });
+    });
+    describe('failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {});
+        done();
+      });
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore();
+        done();
+      });
+      it('should not publish a job without required data', function (done) {
+        expect(ctx.rabbitMQ.deleteInstance.bind(ctx.rabbitMQ, ctx.invalidJobData))
+          .to.throw(Error, 'Validation failed');
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
         done();
       });
     });
@@ -450,7 +470,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
         done();
       });
       it('should not publish a job without required data', function (done) {
-        ctx.rabbitMQ.deleteInstanceContainer(ctx.invalidJobData);
+        expect(ctx.rabbitMQ.deleteInstanceContainer.bind(ctx.rabbitMQ, ctx.invalidJobData))
+          .to.throw(Error, 'Validation failed');
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
         done();
       });
@@ -498,7 +519,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
         done();
       });
       it('should not publish a job without required data', function (done) {
-        ctx.rabbitMQ.publishClusterProvision({});
+        expect(ctx.rabbitMQ.publishClusterProvision.bind(ctx.rabbitMQ, {}))
+          .to.throw(Error, 'Validation failed');
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
         done();
       });
@@ -546,7 +568,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
         done();
       });
       it('should not publish a job without required data', function (done) {
-        ctx.rabbitMQ.publishClusterDeprovision({});
+        expect(ctx.rabbitMQ.publishClusterDeprovision.bind(ctx.rabbitMQ, {}))
+          .to.throw(Error, 'Validation failed');
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
         done();
       });
