@@ -139,7 +139,7 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
-    
+
     it('should return message that we cannot handle tags events', function (done) {
       var options = hooks().push;
       options.json.ref = 'refs/tags/v1';
@@ -155,12 +155,12 @@ describe('Github - /actions/github', function () {
   describe('wrong protocol: use https', function () {
     beforeEach(function (done) {
       ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS;
-      process.env.NODE_ENV = 'development';
+      process.env.ASSERT_HTTPS = 'true';
       process.env.ENABLE_GITHUB_HOOKS = 'true';
       done();
     });
     afterEach(function (done) {
-      process.env.NODE_ENV = 'test';
+      process.env.ASSERT_HTTPS = 'false';
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting;
       done();
     });
