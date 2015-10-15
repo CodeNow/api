@@ -15,6 +15,7 @@ var sinon = require('sinon');
 
 // internal
 var Context = require('models/mongo/context');
+var ContextVersion = require('models/mongo/context-version');
 var Runnable = require('models/apis/runnable');
 
 // internal (being tested)
@@ -27,11 +28,13 @@ describe('ContextService: ' + moduleName, function () {
   var ctx = {};
   beforeEach(function (done) {
     sinon.stub(Context.prototype, 'save').yieldsAsync();
+    sinon.stub(ContextVersion, 'createDeepCopy').yieldsAsync();
     sinon.stub(Runnable.prototype, 'copyVersionIcvFiles').yieldsAsync();
     done();
   });
   afterEach(function (done) {
     Context.prototype.save.restore();
+    ContextVersion.createDeepCopy.restore();
     Runnable.prototype.copyVersionIcvFiles.restore();
     done();
   });
@@ -39,7 +42,6 @@ describe('ContextService: ' + moduleName, function () {
   describe('.handleVersionDeepCopy', function () {
     beforeEach(function (done) {
       ctx.mockContextVersion = {
-        createDeepCopy: sinon.stub().yieldsAsync(),
         infraCodeVersion: 'pizza',
         owner: { github: 1234 }
       };
@@ -64,7 +66,7 @@ describe('ContextService: ' + moduleName, function () {
           save: sinon.stub().yieldsAsync()
         };
         ctx.mockContextVersion.owner.github = process.env.HELLO_RUNNABLE_GITHUB_ID;
-        ctx.mockContextVersion.createDeepCopy.yieldsAsync(null, ctx.returnedMockedContextVersion);
+        ContextVersion.createDeepCopy.yieldsAsync(null, ctx.returnedMockedContextVersion);
         ctx.mockContext.owner.github = process.env.HELLO_RUNNABLE_GITHUB_ID;
         done();
       });
@@ -72,9 +74,9 @@ describe('ContextService: ' + moduleName, function () {
       it('should do a hello runnable copy', function (done) {
         ContextService.handleVersionDeepCopy(ctx.mockContext, ctx.mockContextVersion, ctx.mockUser, function (err) {
           if (err) { return done(err); }
-          sinon.assert.calledOnce(ctx.mockContextVersion.createDeepCopy);
+          sinon.assert.calledOnce(ContextVersion.createDeepCopy);
           sinon.assert.calledWith(
-            ctx.mockContextVersion.createDeepCopy,
+            ContextVersion.createDeepCopy,
             ctx.mockUser,
             ctx.mockContextVersion,
             sinon.match.func);
@@ -104,10 +106,10 @@ describe('ContextService: ' + moduleName, function () {
 
       it('should propogate contextVersion.createDeepCopy failures', function (done) {
         var error = new Error('Whoa Nelly!');
-        ctx.mockContextVersion.createDeepCopy.yieldsAsync(error);
+        ContextVersion.createDeepCopy.yieldsAsync(error);
         ContextService.handleVersionDeepCopy(ctx.mockContext, ctx.mockContextVersion, ctx.mockUser, function (err) {
           expect(err).to.equal(error);
-          sinon.assert.calledOnce(ctx.mockContextVersion.createDeepCopy);
+          sinon.assert.calledOnce(ContextVersion.createDeepCopy);
           sinon.assert.notCalled(ctx.returnedMockedContextVersion.save);
           done();
         });
@@ -118,9 +120,9 @@ describe('ContextService: ' + moduleName, function () {
       it('should do a regular deep copy', function (done) {
         ContextService.handleVersionDeepCopy(ctx.mockContext, ctx.mockContextVersion, ctx.mockUser, function (err) {
           if (err) { return done(err); }
-          sinon.assert.calledOnce(ctx.mockContextVersion.createDeepCopy);
+          sinon.assert.calledOnce(ContextVersion.createDeepCopy);
           sinon.assert.calledWith(
-            ctx.mockContextVersion.createDeepCopy,
+            ContextVersion.createDeepCopy,
             ctx.mockUser,
             ctx.mockContextVersion,
             sinon.match.func);
@@ -129,10 +131,10 @@ describe('ContextService: ' + moduleName, function () {
       });
       it('should propogate copy failures', function (done) {
         var error = new Error('foobar');
-        ctx.mockContextVersion.createDeepCopy.yieldsAsync(error);
+        ContextVersion.createDeepCopy.yieldsAsync(error);
         ContextService.handleVersionDeepCopy(ctx.mockContext, ctx.mockContextVersion, ctx.mockUser, function (err) {
           expect(err).to.equal(error);
-          sinon.assert.calledOnce(ctx.mockContextVersion.createDeepCopy);
+          sinon.assert.calledOnce(ContextVersion.createDeepCopy);
           done();
         });
       });
