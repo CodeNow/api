@@ -46,7 +46,7 @@ describe('GET /actions/internal/deprovision-clusters', function () {
 
   it('should return 204 and create jobs for each userId', function (done) {
     var opts = {
-      method: 'GET',
+      method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/actions/internal/deprovision-clusters',
       json: true,
       jar: ctx.j
@@ -56,7 +56,9 @@ describe('GET /actions/internal/deprovision-clusters', function () {
       expect(res).to.exist();
       expect(res.statusCode).to.equal(204);
       expect(body).to.be.undefined();
-      var userIds = process.env.TEST_GITHUB_USER_IDS.split(',');
+      var userIds = process.env.TEST_GITHUB_USER_IDS.split(',').map(function (id) {
+        return id.trim();
+      });
       expect(rabbitMQ.publishClusterDeprovision.callCount).to.equal(userIds.length);
       expect(rabbitMQ.publishClusterDeprovision.getCall(0).args[0].githubId).to.equal(userIds[0]);
       expect(rabbitMQ.publishClusterDeprovision.getCall(userIds.length - 1).args[0].githubId)
