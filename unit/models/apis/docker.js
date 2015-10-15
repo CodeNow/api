@@ -13,7 +13,6 @@ var Code = require('code');
 var Container = require('dockerode/lib/container');
 var dockerFrame = require('docker-frame');
 var Dockerode = require('dockerode');
-var indexBy = require('101/index-by');
 var keypather = require('keypather')();
 var Lab = require('lab');
 var Modem = require('docker-modem');
@@ -80,7 +79,16 @@ describe('docker: '+moduleName, function () {
               sourcePath: 'sourcePath'
             };
           },
-          files: []
+          files: [{
+            Key: '/foo',
+            Version: '1111'
+          }, {
+            Key: '/bar',
+            Version: '2222'
+          }, {
+            Key: '/qux',
+            Version: '3333'
+          }]
         },
         appCodeVersions: [
           {
@@ -405,7 +413,7 @@ describe('docker: '+moduleName, function () {
           'RUNNABLE_AWS_SECRET_KEY=' + process.env.AWS_SECRET_ACCESS_KEY,
           'RUNNABLE_FILES_BUCKET='   + cv.infraCodeVersion.bucket().bucket,
           'RUNNABLE_PREFIX='         + path.join(cv.infraCodeVersion.bucket().sourcePath, '/'),
-          'RUNNABLE_FILES='          + JSON.stringify(indexBy(cv.infraCodeVersion.files, 'Key')),
+          'RUNNABLE_FILES='          + JSON.stringify(cv.infraCodeVersion.files.reduce(mapKeyToVersion, {})),
           'RUNNABLE_DOCKER='         + 'unix:///var/run/docker.sock',
           'RUNNABLE_DOCKERTAG='      + opts.dockerTag,
           'RUNNABLE_IMAGE_BUILDER_NAME=' + process.env.DOCKER_IMAGE_BUILDER_NAME,
@@ -425,6 +433,10 @@ describe('docker: '+moduleName, function () {
           'RUNNABLE_PUSH_IMAGE=true'
         ];
         expect(envs).to.deep.equal(expectedEnvs);
+        function mapKeyToVersion (memo, item) {
+          memo[item.Key] = item.Version;
+          return memo;
+        }
         done();
       });
     });
