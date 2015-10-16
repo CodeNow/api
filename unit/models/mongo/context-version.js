@@ -17,9 +17,11 @@ var isObject = require('101/is-object');
 var Github = require('models/apis/github');
 var messenger = require('socket/messenger');
 
+
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
+var User = require('models/mongo/user');
 
 var ctx = {};
 var path = require('path');
@@ -1040,4 +1042,49 @@ describe('Context Version: ' + moduleName, function () {
       });
     });
   }); // end 'dedupeBuild'
+
+  describe('populateOwner', function () {
+    beforeEach(function (done) {
+      ctx.c = new Context();
+      ctx.cv = new ContextVersion({
+        createdBy: { github: 1000 },
+        owner: { github: 2874589 },
+        context: ctx.c._id
+      });
+      done();
+    });
+    it('should return an error if user was not found', function (done) {
+      var sessionUser = new User();
+      sinon.stub(sessionUser, 'findGithubUserByGithubId').yieldsAsync(new Error('No user'));
+      ctx.cv.populateOwner(sessionUser, function (err) {
+        expect(err).to.exist();
+        expect(err.message).to.equal('No user');
+        done();
+      });
+    });
+    it('should return an error if session user was not provided', function (done) {
+      ctx.cv.populateOwner(null, function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(500);
+        expect(err.message).to.equal('SessionUser is required');
+        done();
+      });
+    });
+    it('should populate owner userane and gravatar', function (done) {
+      var sessionUser = new User();
+      var userData = {
+        login: 'anton',
+        avatar_url: 'https://avatars.githubusercontent.com/u/429706?v=3'
+      };
+      sinon.stub(sessionUser, 'findGithubUserByGithubId').yieldsAsync(null, userData);
+      ctx.cv.populateOwner(sessionUser, function (err, updatedCv) {
+        expect(err).to.not.exist();
+        expect(updatedCv.owner.username).to.equal(userData.login);
+        expect(updatedCv.owner.gravatar).to.equal(userData.avatar_url);
+        expect(ctx.cv.owner.username).to.equal(userData.login);
+        expect(ctx.cv.owner.gravatar).to.equal(userData.avatar_url);
+        done();
+      });
+    });
+  });  // end 'populateOwner'
 });
