@@ -424,7 +424,7 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
           'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
-          'RUNNABLE_CIDR=' + process.env.RUNNABLE_CIDR,
+          'RUNNABLE_CIDR=' + process.env.RUNNABLE_NETWORK_CIDR,
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
           'RUNNABLE_WEAVE_PATH=' + process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH,
           'RUNNABLE_HOST_IP=' + opts.hostIp,
