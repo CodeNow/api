@@ -250,7 +250,8 @@ describe('docker: ' + moduleName, function () {
                 Binds: [
                   process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
                   process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw',
-                  process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' + process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'
+                  process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' +
+                    process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'
                 ],
                 Volumes: volumes,
                 Labels: ctx.mockLabels
