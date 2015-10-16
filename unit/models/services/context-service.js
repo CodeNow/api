@@ -71,6 +71,28 @@ describe('ContextService: ' + moduleName, function () {
         done();
       });
 
+      it('should allow the body of the request to override the owner', function (done) {
+        // save's callback returns [ document, numberAffected ]
+        ctx.returnedMockedContextVersion.save.yields(null, ctx.returnedMockedContextVersion, 1);
+        var opts = {
+          owner: { github: 88 }
+        };
+        ContextService.handleVersionDeepCopy(
+          ctx.mockContext,
+          ctx.mockContextVersion,
+          ctx.mockUser,
+          opts,
+          function (err, contextVersion) {
+            if (err) { return done(err); }
+            expect(contextVersion).to.equal(ctx.returnedMockedContextVersion);
+            expect(contextVersion.owner.github).to.equal(opts.owner.github);
+            // createdBy should _not_ be overridden
+            expect(contextVersion.createdBy.github).to.not.equal(opts.owner.github);
+            expect(contextVersion.createdBy.github).to.equal(ctx.mockUser.accounts.github.id);
+            done();
+          });
+      });
+
       it('should do a hello runnable copy', function (done) {
         // save's callback returns [ document, numberAffected ]
         ctx.returnedMockedContextVersion.save.yields(null, ctx.returnedMockedContextVersion, 1);

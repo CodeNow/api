@@ -58,8 +58,8 @@ module.exports.setup = function (cb) {
     create: function () {
       var opts = optsForCreateOrUpdate.apply(this, arguments);
       if (ownerIsOrg.call(this, opts.json)) {
-        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
-        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+        require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
+        require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
       }
     }
   });
@@ -70,15 +70,15 @@ module.exports.setup = function (cb) {
       var opts = optsForCreateOrUpdate.apply(this, arguments);
       var contextId = this.path().split('/')[1];
       if (ownerIsOrg.call(this, opts.json)) {
-        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
-        require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+        require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
+        require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
       }
       require('../../fixtures/mocks/s3/put-object')(contextId, '/');
     },
     fetch: function () {
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+      require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
+      require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
       // FIXME: stores: uncomment if we start using stores in tests as we should
       // var user = this.opts.user;
       // var context = user.newContext(this.attrs.context);
@@ -102,7 +102,7 @@ module.exports.setup = function (cb) {
       require('../../fixtures/mocks/s3/put-object')(contextId, '/');
       require('../../fixtures/mocks/s3/put-object')(contextId, '/Dockerfile');
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+      require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
     },
     build: function () {
       // FIXME: stores: uncomment if we start using stores in tests as we should
@@ -131,13 +131,13 @@ module.exports.setup = function (cb) {
       var filepath = path.join(p, name);
       require('../../fixtures/mocks/s3/put-object')(contextId, filepath);
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+      require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
     },
     update: function () {
       var contextId = this.path().split('/')[1];
       require('../../fixtures/mocks/s3/put-object')(contextId, this.id());
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+      require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
     }
   });
 
@@ -153,7 +153,7 @@ module.exports.setup = function (cb) {
       }
 
       // in case owner is org
-      require('../../fixtures/mocks/github/user-orgs')(11111, 'Runnable1 (org from api-client.js)');
+      require('../../fixtures/mocks/github/user-orgs')(this.opts.user, 11111, 'Runnable1 (org from api-client.js)');
       require('../../fixtures/mocks/github/repos-username-repo')(1, username, repoName);
       require('../../fixtures/mocks/github/repos-hooks-get')(username, repoName);
       require('../../fixtures/mocks/github/repos-hooks-post')(username, repoName);
