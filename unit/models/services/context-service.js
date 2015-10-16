@@ -72,26 +72,33 @@ describe('ContextService: ' + moduleName, function () {
       });
 
       it('should do a hello runnable copy', function (done) {
-        ContextService.handleVersionDeepCopy(ctx.mockContext, ctx.mockContextVersion, ctx.mockUser, function (err) {
-          if (err) { return done(err); }
-          sinon.assert.calledOnce(ContextVersion.createDeepCopy);
-          sinon.assert.calledWith(
-            ContextVersion.createDeepCopy,
-            ctx.mockUser,
-            ctx.mockContextVersion,
-            sinon.match.func);
-          sinon.assert.calledOnce(ctx.returnedMockedContextVersion.save);
-          expect(ctx.returnedMockedContextVersion.owner.github).to.equal(ctx.mockUser.accounts.github.id);
-          sinon.assert.calledOnce(Context.prototype.save);
-          sinon.assert.calledOnce(Runnable.prototype.copyVersionIcvFiles);
-          sinon.assert.calledWith(
-            Runnable.prototype.copyVersionIcvFiles,
-            sinon.match.any,
-            ctx.returnedMockedContextVersion._id,
-            ctx.mockContextVersion.infraCodeVersion,
-            sinon.match.func);
-          done();
-        });
+        ctx.returnedMockedContextVersion.save.yields(null, null, ctx.returnedMockedContextVersion);
+        ContextService.handleVersionDeepCopy(
+          ctx.mockContext,
+          ctx.mockContextVersion,
+          ctx.mockUser,
+          function (err, contextVersion) {
+            if (err) { return done(err); }
+            // the contextVersion that we receive should be the new one we 'creatd'
+            expect(contextVersion).to.equal(ctx.returnedMockedContextVersion);
+            sinon.assert.calledOnce(ContextVersion.createDeepCopy);
+            sinon.assert.calledWith(
+              ContextVersion.createDeepCopy,
+              ctx.mockUser,
+              ctx.mockContextVersion,
+              sinon.match.func);
+            sinon.assert.calledOnce(ctx.returnedMockedContextVersion.save);
+            expect(ctx.returnedMockedContextVersion.owner.github).to.equal(ctx.mockUser.accounts.github.id);
+            sinon.assert.calledOnce(Context.prototype.save);
+            sinon.assert.calledOnce(Runnable.prototype.copyVersionIcvFiles);
+            sinon.assert.calledWith(
+              Runnable.prototype.copyVersionIcvFiles,
+              sinon.match.any,
+              ctx.returnedMockedContextVersion._id,
+              ctx.mockContextVersion.infraCodeVersion,
+              sinon.match.func);
+            done();
+          });
       });
 
       it('should propogate save contextVersion failures', function (done) {
