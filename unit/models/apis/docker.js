@@ -241,6 +241,7 @@ describe('docker: ' + moduleName, function () {
             var volumes = {};
             volumes['/cache'] = {};
             volumes['/layer-cache'] = {};
+            volumes[process.env.RUNNABLE_WEAVE_PATH] = {};
             expect(Docker.prototype.createContainer.firstCall.args[0])
               .to.deep.equal({
                 name: opts.contextVersion.build._id.toString(),
@@ -248,7 +249,8 @@ describe('docker: ' + moduleName, function () {
                 Env: ctx.mockEnv,
                 Binds: [
                   process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
-                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
+                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw',
+                  process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' + process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'
                 ],
                 Volumes: volumes,
                 Labels: ctx.mockLabels
@@ -421,10 +423,9 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
           'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
-          'RUNNABLE_NETWORK_DRIVER=' + process.env.RUNNABLE_NETWORK_DRIVER,
+          'RUNNABLE_CIDR=' + process.env.RUNNABLE_CIDR,
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
-          'RUNNABLE_SAURON_HOST=' + opts.sauronHost,
-          'RUNNABLE_NETWORK_IP=' + opts.networkIp,
+          'RUNNABLE_WEAVE_PATH=' + process.env.RUNNABLE_WEAVE_PATH,
           'RUNNABLE_HOST_IP=' + opts.hostIp,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
           'RUNNABLE_PUSH_IMAGE=true'
