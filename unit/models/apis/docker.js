@@ -241,7 +241,7 @@ describe('docker: ' + moduleName, function () {
             var volumes = {};
             volumes['/cache'] = {};
             volumes['/layer-cache'] = {};
-            volumes[process.env.RUNNABLE_WEAVE_PATH] = {};
+            volumes[process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH] = {};
             expect(Docker.prototype.createContainer.firstCall.args[0])
               .to.deep.equal({
                 name: opts.contextVersion.build._id.toString(),
@@ -426,7 +426,7 @@ describe('docker: ' + moduleName, function () {
           // network envs
           'RUNNABLE_CIDR=' + process.env.RUNNABLE_CIDR,
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
-          'RUNNABLE_WEAVE_PATH=' + process.env.RUNNABLE_WEAVE_PATH,
+          'RUNNABLE_WEAVE_PATH=' + process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH,
           'RUNNABLE_HOST_IP=' + opts.hostIp,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
           'RUNNABLE_PUSH_IMAGE=true'
