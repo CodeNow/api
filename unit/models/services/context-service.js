@@ -72,7 +72,8 @@ describe('ContextService: ' + moduleName, function () {
       });
 
       it('should do a hello runnable copy', function (done) {
-        ctx.returnedMockedContextVersion.save.yields(null, null, ctx.returnedMockedContextVersion);
+        // save's callback returns [ document, numberAffected ]
+        ctx.returnedMockedContextVersion.save.yields(null, ctx.returnedMockedContextVersion, 1);
         ContextService.handleVersionDeepCopy(
           ctx.mockContext,
           ctx.mockContextVersion,
