@@ -29,7 +29,8 @@ describe('messenger Unit Tests', function() {
 
   describe('send message to room', function () {
     it('should get joined room message', function(done) {
-      var url = process.env.FULL_API_DOMAIN ;
+      var token = process.env.PRIMUS_AUTH_TOKEN;
+      var url = process.env.FULL_API_DOMAIN + '?token=' + token;
       var primus = new Socket(url);
       primus.write({
         id: 1,
@@ -51,7 +52,8 @@ describe('messenger Unit Tests', function() {
       primus.on('end', done);
     });
     it('should get message from joined room', function(done) {
-      var url = process.env.FULL_API_DOMAIN;
+      var token = process.env.PRIMUS_AUTH_TOKEN;
+      var url = process.env.FULL_API_DOMAIN + '?token=' + token;
       var primus = new Socket(url);
       primus.write({
         id: 1421,
@@ -74,12 +76,12 @@ describe('messenger Unit Tests', function() {
         }
       });
       primus.on('end', function (err) {
-        // console.log('primus end', err);
         done(err);
       });
     });
     it('should not get events of another room or no room', function(done) {
-      var url = process.env.FULL_API_DOMAIN;
+      var token = process.env.PRIMUS_AUTH_TOKEN;
+      var url = process.env.FULL_API_DOMAIN + '?token=' + token;
       // room message will be sent to
       var primus1 = new Socket(url);
       // in no room
@@ -138,7 +140,8 @@ describe('messenger Unit Tests', function() {
       });
     });
    it('should send events to everyone in room', function(done) {
-     var url = process.env.FULL_API_DOMAIN;
+      var token = process.env.PRIMUS_AUTH_TOKEN;
+      var url = process.env.FULL_API_DOMAIN + '?token=' + token;
       var primus1 = new Socket(url);
       var primus2 = new Socket(url);
       var primus3 = new Socket(url);
@@ -191,7 +194,8 @@ describe('messenger Unit Tests', function() {
       });
     });
     it('should join and leave room', function(done) {
-      var url = process.env.FULL_API_DOMAIN;
+      var token = process.env.PRIMUS_AUTH_TOKEN;
+      var url = process.env.FULL_API_DOMAIN + '?token=' + token;
       var primus1 = new Socket(url);
 
       primus1.on('end', done);
