@@ -591,22 +591,25 @@ describe('RabbitMQ Model: '+moduleName, function () {
 
     it('should publish to the `metis-github-event` queue', function (done) {
       ctx.rabbitMQ.publishGithubEvent('push', {});
-      expect(ctx.rabbitMQ.publish.calledOnce).to.be.true();
-      expect(ctx.rabbitMQ.publish.firstCall.args[0]).to.equal(publishQueueName);
+      expect(ctx.rabbitMQ.hermesClient.publish.calledOnce).to.be.true();
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[0])
+        .to.equal(publishQueueName);
       done();
     });
 
     it('should publish the job with the correct type', function (done) {
       var type = 'wow-sksnka2090292';
       ctx.rabbitMQ.publishGithubEvent(type, {});
-      expect(ctx.rabbitMQ.publish.firstCall.args[1].type).to.equal(type);
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1].type)
+        .to.equal(type);
       done();
     });
 
     it('should publish the job with the correct data', function (done) {
       var job = { type: 'some-type-neat', data: { this_is: 'sparta' } };
       ctx.rabbitMQ.publishGithubEvent(job.type, job.data);
-      expect(ctx.rabbitMQ.publish.firstCall.args[1]).to.deep.equal(job);
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1])
+        .to.deep.equal(job);
       done();
     });
   });
