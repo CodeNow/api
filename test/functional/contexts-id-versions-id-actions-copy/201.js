@@ -78,12 +78,7 @@ describe('201 POST /contexts/:id/versions/:id/actions/copy', function () {
     describe('in an org', function () {
       it('should create a copy of the HR CV', function (done) {
         var body = { owner: { github: 444 } };
-        // require('../fixtures/mocks/github/user-orgs')(444, 'Runnable1');
-        // require('../fixtures/mocks/github/user-orgs')(444, 'Runnable1');
-        // require('../fixtures/mocks/github/user-orgs')(444, 'Runnable1');
-        // nock.cleanAll();
         require('../fixtures/mocks/github/user-orgs')(ctx.user, 444, 'Runnable1');
-        // nock.recorder.rec();
         var newCv = ctx.user
           .newContext(ctx.context.id())
           .newVersion(ctx.contextVersion.id())
@@ -104,12 +99,12 @@ describe('201 POST /contexts/:id/versions/:id/actions/copy', function () {
             expect(newCv.attrs.createdBy.github).to.equal(ctx.user.attrs.accounts.github.id);
             // cv should have a new infracode version
             expect(newCv.attrs.infraCodeVersion).to.not.equal(ctx.contextVersion.attrs.infraCodeVersion);
-            // var context = ctx.user.newContext(newCv.attrs.context).fetch(function (err) {
-            //   if (err) { return done(err); }
-            //   expect(context.owner.github).to.equal(body.owner.github);
-            //   expect(context.createdBy.owner).to.equal(ctx.user.attrs.accounts.github.id);
+            ctx.user.newContext(newCv.attrs.context).fetch(function (err, context) {
+              if (err) { return done(err); }
+              // the context should be owned by the overridden user
+              expect(context.owner.github).to.equal(body.owner.github);
               done();
-            // });
+            });
           });
       });
     });
