@@ -606,8 +606,11 @@ describe('RabbitMQ Model: '+moduleName, function () {
     });
 
     it('should publish the job with the correct data', function (done) {
-      var job = { type: 'some-type-neat', data: { this_is: 'sparta' } };
-      ctx.rabbitMQ.publishGithubEvent(job.type, job.data);
+      var job = {
+        type: 'some-type-neat',
+        githubEventData: { this_is: 'sparta' }
+      };
+      ctx.rabbitMQ.publishGithubEvent(job.type, job.githubEventData);
       expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1])
         .to.deep.equal(job);
       done();
