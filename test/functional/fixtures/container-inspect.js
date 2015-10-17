@@ -101,7 +101,7 @@ module.exports.getContainerInspect = function (instance) {
         PortMapping: null,
         Ports: null
       },
-      name: '554169c7dd3f3d21e1fb3810',
+      Name: '554169c7dd3f3d21e1fb3810',
       Binds: [
         '/var/run/docker.sock:/var/run/docker.sock',
         '/git-cache:/cache:rw',
