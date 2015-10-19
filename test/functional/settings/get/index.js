@@ -145,7 +145,7 @@ describe('GET /settings', function () {
       });
 
       it('should fail if permissions check failed', function (done) {
-        require('../../fixtures/mocks/github/user-orgs')(ctx.user);
+        require('../../fixtures/mocks/github/user-orgs')(9999, 'SomeOrg');
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
           var st = runnable.newSettings([], {qs: {owner: {github: settings.owner.github}}});
@@ -184,7 +184,7 @@ describe('GET /settings', function () {
         });
       });
       it('should fail if another user wanted to fetch settings without permissions', function (done) {
-        require('../../fixtures/mocks/github/user-orgs')(ctx.user);
+        require('../../fixtures/mocks/github/user-orgs')(9999, 'SomeOrg');
         multi.createUser(function (err, runnable) {
           if (err) { return done(err); }
           runnable.fetchSetting(settingsId, function (err) {
