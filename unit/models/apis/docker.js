@@ -81,13 +81,13 @@ describe('docker: '+moduleName, function () {
           },
           files: [{
             Key: '/foo',
-            Version: '1111'
+            VersionId: '1111'
           }, {
             Key: '/bar',
-            Version: '2222'
+            VersionId: '2222'
           }, {
             Key: '/qux',
-            Version: '3333'
+            VersionId: '3333'
           }]
         },
         appCodeVersions: [
