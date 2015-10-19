@@ -4,6 +4,8 @@
 'use strict';
 require('loadenv')();
 
+var Boom = require('dat-middleware').Boom;
+
 var Code = require('code');
 var Lab = require('lab');
 var path = require('path');
@@ -296,6 +298,34 @@ describe('github: '+moduleName, function () {
         expect(query.config.url).to.equal(hookUrl);
         expect(query.config.content_type).to.equal('json');
         expect(query.events[0]).to.equal('*');
+        done();
+      });
+    });
+  });
+  describe('createRepoHookIfNotAlready', function () {
+    it('should fail if listing hooks failed', function (done) {
+      var github = new Github({token: 'some-token'});
+      var err = Boom.notFound('Repo not found');
+      sinon.stub(github, '_listRepoHooks').yieldsAsync(err);
+      github.createRepoHookIfNotAlready('codenowapi', function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('Repo not found');
+        expect(github._listRepoHooks.callCount).to.equal(1);
+        done();
+      });
+    });
+    it('should fail if hook creation failed', function (done) {
+      var github = new Github({token: 'some-token'});
+      var err = Boom.notFound('Repo not found');
+      sinon.stub(github, '_listRepoHooks').yieldsAsync(null, []);
+      sinon.stub(github, '_createRepoHook').yieldsAsync(err);
+      github.createRepoHookIfNotAlready('codenowapi', function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(404);
+        expect(err.output.payload.message).to.equal('Repo not found');
+        expect(github._listRepoHooks.callCount).to.equal(1);
+        expect(github._createRepoHook.callCount).to.equal(1);
         done();
       });
     });
