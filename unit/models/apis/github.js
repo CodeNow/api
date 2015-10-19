@@ -345,7 +345,6 @@ describe('github: '+moduleName, function () {
     });
     it('should not fail if hook was found', function (done) {
       var github = new Github({token: 'some-token'});
-      var err = Boom.conflict('Hook exist');
       var hooks = [
         {
           config: {
