@@ -434,7 +434,7 @@ describe('docker: '+moduleName, function () {
         ];
         expect(envs).to.deep.equal(expectedEnvs);
         function mapKeyToVersion (memo, item) {
-          memo[item.Key] = item.Version;
+          memo[item.Key] = item.VersionId;
           return memo;
         }
         done();
