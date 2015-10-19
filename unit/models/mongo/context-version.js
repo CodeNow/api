@@ -9,25 +9,23 @@ var beforeEach = lab.beforeEach;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
-var sinon = require('sinon');
 
 var Boom = require('dat-middleware').Boom;
 var isObject = require('101/is-object');
-
-var Github = require('models/apis/github');
-var messenger = require('socket/messenger');
-
+var sinon = require('sinon');
 
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
+var Github = require('models/apis/github');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
+var messenger = require('socket/messenger');
 var User = require('models/mongo/user');
 
-var ctx = {};
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
 describe('Context Version: ' + moduleName, function () {
+  var ctx = {};
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
 
@@ -59,7 +57,7 @@ describe('Context Version: ' + moduleName, function () {
     done();
   });
 
-  describe('updateBuildErrorByBuildId', function () {
+  describe('.updateBuildErrorByBuildId', function () {
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields();
       ctx.mockContextVersions = [
@@ -113,7 +111,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   });
 
-  describe('updateBuildErrorByContainer', function () {
+  describe('.updateBuildErrorByContainer', function () {
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields();
       ctx.mockContextVersions = [
@@ -173,7 +171,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   });
 
-  describe('updateBuildCompletedByContainer', function () {
+  describe('.updateBuildCompletedByContainer', function () {
     beforeEach(function (done) {
       sinon.stub(Context, 'findById').yieldsAsync(null, ctx.mockContext);
       sinon.stub(ContextVersion, 'updateBy').yieldsAsync();
@@ -337,7 +335,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   });
 
-  describe('addGithubRepoToVersion', function () {
+  describe('.addGithubRepoToVersion', function () {
     beforeEach(function (done) {
       ctx.c = new Context();
       ctx.cv = new ContextVersion({
@@ -379,7 +377,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   });
 
-  describe('modifyAppCodeVersion', function () {
+  describe('#modifyAppCodeVersion', function () {
     it('should return cv updated with branch', function (done) {
       var c = new Context();
       var acv1 = {
@@ -518,7 +516,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   });
 
-  describe('modifyAppCodeVersionWithLatestCommit', function () {
+  describe('#modifyAppCodeVersionWithLatestCommit', function () {
     it('should return current same cv if no acs were found', function (done) {
       var c = new Context();
       var cv = new ContextVersion({
@@ -625,7 +623,60 @@ describe('Context Version: ' + moduleName, function () {
     });
   }); // end 'modifyAppCodeVersionWithLatestCommit'
 
-  describe('addAppCodeVersionQuery', function () {
+  describe('#modifyAppCodeVersionByRepo', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'findOneAndUpdate').yieldsAsync();
+      done();
+    });
+    afterEach(function (done) {
+      ContextVersion.findOneAndUpdate.restore();
+      done();
+    });
+
+    it('updates a context version with repo information and return it', function (done) {
+      var repo = 'CodeNow';
+      var branch = 'SAN-master';
+      var commit = 'deadbeef';
+      ContextVersion.findOneAndUpdate.yieldsAsync(null, ctx.mockContextVersion);
+      ContextVersion.modifyAppCodeVersionByRepo(
+        ctx.mockContextVersion._id,
+        repo,
+        branch,
+        commit,
+        function (err, doc) {
+          if (err) { return done(err); }
+          expect(doc).to.deep.equal(ctx.mockContextVersion);
+          sinon.assert.calledWith(
+            ContextVersion.findOneAndUpdate,
+            {
+              _id: ctx.mockContextVersion._id,
+              'appCodeVersions.lowerRepo': repo.toLowerCase()
+            },
+            {
+              $set: {
+                'appCodeVersions.$.branch': branch,
+                'appCodeVersions.$.lowerBranch': branch.toLowerCase(),
+                'appCodeVersions.$.commit': commit
+              }
+            },
+            sinon.match.func
+          );
+          done();
+        }
+      );
+    });
+
+    it('should bubble update errors', function (done) {
+      var error = new Error('KAAAHHHNNN');
+      ContextVersion.findOneAndUpdate.yieldsAsync(error);
+      ContextVersion.modifyAppCodeVersionByRepo('hi', 'hi', 'hi', 'hi', function (err) {
+        expect(err).to.equal(error);
+        done();
+      });
+    });
+  });
+
+  describe('.addAppCodeVersionQuery', function () {
     var cv;
     var cvNoAppCodeVersions;
     var query;
@@ -686,7 +737,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   }); // end 'addAppCodeVersionQuery'
 
-  describe('updateBuildHash', function () {
+  describe('#updateBuildHash', function () {
     var cv;
 
     beforeEach(function (done) {
@@ -737,7 +788,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   }); // end 'updateBuildHash'
 
-  describe('findPendingDupe', function () {
+  describe('#findPendingDupe', function () {
     var cv;
     var dupe;
     var cvTimestamp = 20;
@@ -845,7 +896,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   }); // end 'findPendingDupe'
 
-  describe('findCompletedDupe', function () {
+  describe('#findCompletedDupe', function () {
     var cv;
     var dupe;
 
@@ -912,7 +963,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   }); // end 'findCompletedDupe'
 
-  describe('dedupeBuild', function () {
+  describe('#dedupeBuild', function () {
     var cv;
     var dupe;
     var hash = 'icv-hash';
@@ -1043,7 +1094,7 @@ describe('Context Version: ' + moduleName, function () {
     });
   }); // end 'dedupeBuild'
 
-  describe('populateOwner', function () {
+  describe('#populateOwner', function () {
     beforeEach(function (done) {
       ctx.c = new Context();
       ctx.cv = new ContextVersion({
