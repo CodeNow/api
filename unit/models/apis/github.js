@@ -307,11 +307,13 @@ describe('github: '+moduleName, function () {
       var github = new Github({token: 'some-token'});
       var err = Boom.notFound('Repo not found');
       sinon.stub(github, '_listRepoHooks').yieldsAsync(err);
+      sinon.spy(github, '_createRepoHook');
       github.createRepoHookIfNotAlready('codenowapi', function (err) {
         expect(err).to.exist();
         expect(err.output.statusCode).to.equal(404);
         expect(err.output.payload.message).to.equal('Repo not found');
         expect(github._listRepoHooks.callCount).to.equal(1);
+        expect(github._createRepoHook.callCount).to.equal(0);
         done();
       });
     });
@@ -326,6 +328,39 @@ describe('github: '+moduleName, function () {
         expect(err.output.payload.message).to.equal('Repo not found');
         expect(github._listRepoHooks.callCount).to.equal(1);
         expect(github._createRepoHook.callCount).to.equal(1);
+        done();
+      });
+    });
+    it('should not fail if hook creation failed with 409', function (done) {
+      var github = new Github({token: 'some-token'});
+      var err = Boom.conflict('Hook exist');
+      sinon.stub(github, '_listRepoHooks').yieldsAsync(null, []);
+      sinon.stub(github, '_createRepoHook').yieldsAsync(err);
+      github.createRepoHookIfNotAlready('codenowapi', function (err) {
+        expect(err).to.not.exist();
+        expect(github._listRepoHooks.callCount).to.equal(1);
+        expect(github._createRepoHook.callCount).to.equal(1);
+        done();
+      });
+    });
+    it('should not fail if hook was found', function (done) {
+      var github = new Github({token: 'some-token'});
+      var err = Boom.conflict('Hook exist');
+      var hooks = [
+        {
+          config: {
+            url: process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH
+          },
+          active: true,
+          events: ['*']
+        }
+      ];
+      sinon.stub(github, '_listRepoHooks').yieldsAsync(null, hooks);
+      sinon.spy(github, '_createRepoHook');
+      github.createRepoHookIfNotAlready('codenowapi', function (err) {
+        expect(err).to.not.exist();
+        expect(github._listRepoHooks.callCount).to.equal(1);
+        expect(github._createRepoHook.callCount).to.equal(0);
         done();
       });
     });
