@@ -254,6 +254,32 @@ describe('github: '+moduleName, function () {
         done();
       });
     });
+    it('should return 409 if hook already exist', function (done) {
+      var github = new Github({token: 'some-token'});
+      var err = new Error('Validation Failed');
+      err.code = 422;
+      err.errors = [{
+        'resource': 'Hook',
+        'code': 'custom',
+        'message': 'Hook already exists on this repository'
+      }];
+      sinon.stub(github.repos, 'createHook').yieldsAsync(err);
+      github._createRepoHook('codenow/api', function (boomErr) {
+        expect(boomErr).to.exist();
+        expect(boomErr.output.statusCode).to.equal(409);
+        expect(boomErr.output.payload.message).to.equal('Github repo codenow/api already has a hook.');
+        expect(boomErr.data.err.message).to.equal(err.message);
+        var query = github.repos.createHook.getCall(0).args[0];
+        expect(query.user).to.equal('codenow');
+        expect(query.repo).to.equal('api');
+        expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME);
+        var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH;
+        expect(query.config.url).to.equal(hookUrl);
+        expect(query.config.content_type).to.equal('json');
+        expect(query.events[0]).to.equal('*');
+        done();
+      });
+    });
     it('should work if no errors occured', function (done) {
       var github = new Github({token: 'some-token'});
       sinon.stub(github.repos, 'createHook').yieldsAsync(null, {
