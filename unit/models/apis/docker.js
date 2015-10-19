@@ -57,7 +57,7 @@ var dockerLogs = {
   */})
 };
 
-describe('docker: '+moduleName, function () {
+describe('docker: ' + moduleName, function () {
   var model = new Docker('http://fake.host.com');
   var ctx;
 
@@ -134,7 +134,7 @@ describe('docker: '+moduleName, function () {
     beforeEach(function (done) {
       ctx.mockDockerTag = 'mockDockerTag';
       ctx.mockLabels = { label1: 1, label2: 2, label3: 3 };
-      ctx.mockEnv = ['env1', 'env2', 'env3'];
+      ctx.mockEnv = [ 'env1', 'env2', 'env3' ];
       sinon.stub(Docker.prototype, '_createImageBuilderValidateCV');
       sinon.stub(Docker, 'getDockerTag').returns(ctx.mockDockerTag);
       sinon.stub(Docker.prototype, '_createImageBuilderLabels').returns(ctx.mockLabels);
@@ -200,23 +200,28 @@ describe('docker: '+moduleName, function () {
               hostIp: opts.network.hostIp,
               networkIp: opts.network.networkIp,
               noCache: opts.noCache,
-              sauronHost: url.parse(model.dockerHost).hostname+':'+process.env.SAURON_PORT,
+              sauronHost: url.parse(model.dockerHost).hostname + ':' + process.env.SAURON_PORT,
               contextVersion: opts.contextVersion
             });
+
+          var expected = {
+            name: opts.contextVersion.build._id.toString(),
+            Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+            Env: ctx.mockEnv,
+            Binds: [process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' +
+              process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'],
+            Volumes: {},
+            Labels: ctx.mockLabels
+          };
+          expected.Volumes[process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH] = {};
+
           expect(Docker.prototype.createContainer.firstCall.args[0])
-            .to.deep.equal({
-              name: opts.contextVersion.build._id.toString(),
-              Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
-              Env: ctx.mockEnv,
-              Binds: [],
-              Volumes: {},
-              Labels: ctx.mockLabels
-            });
+            .to.deep.equal(expected);
           done();
         });
       });
 
-      describe('w/ image builder cache and layer cache', function() {
+      describe('w/ image builder cache and layer cache', function () {
         beforeEach(function (done) {
           ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
           process.env.DOCKER_IMAGE_BUILDER_CACHE = '/builder-cache';
@@ -244,6 +249,7 @@ describe('docker: '+moduleName, function () {
             var volumes = {};
             volumes['/cache'] = {};
             volumes['/layer-cache'] = {};
+            volumes[process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH] = {};
             expect(Docker.prototype.createContainer.firstCall.args[0])
               .to.deep.equal({
                 name: opts.contextVersion.build._id.toString(),
@@ -251,7 +257,9 @@ describe('docker: '+moduleName, function () {
                 Env: ctx.mockEnv,
                 Binds: [
                   process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
-                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
+                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw',
+                  process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' +
+                    process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'
                 ],
                 Volumes: volumes,
                 Labels: ctx.mockLabels
@@ -328,17 +336,17 @@ describe('docker: '+moduleName, function () {
           manualBuild: opts.manualBuild,
           networkIp: opts.network.networkIp,
           noCache: opts.noCache,
-          sauronHost: url.parse(model.dockerHost).hostname+':'+process.env.SAURON_PORT,
+          sauronHost: url.parse(model.dockerHost).hostname + ':' + process.env.SAURON_PORT,
           sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
-          sessionUserGithubId:    opts.sessionUser.accounts.github.id,
-          sessionUserUsername:    opts.sessionUser.accounts.github.username,
+          sessionUserGithubId: opts.sessionUser.accounts.github.id,
+          sessionUserUsername: opts.sessionUser.accounts.github.username,
           ownerUsername: opts.ownerUsername,
           tid: opts.tid,
           type: 'image-builder-container'
         }
       );
       expect(labels).to.deep.equal(expectedLabels);
-      //assert type casting to string for known value originally of type Number
+      // assert type casting to string for known value originally of type Number
       expect(labels.sessionUserGithubId).to.be.a.string();
       done();
     });
@@ -357,7 +365,7 @@ describe('docker: '+moduleName, function () {
     it('should not error if value is undefined', function (done) {
       ctx.mockContextVersion.toJSON = function () {
         return {
-          '_id': undefined
+          _id: undefined
         };
       };
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
@@ -383,7 +391,7 @@ describe('docker: '+moduleName, function () {
       };
       done();
     });
-    describe('no cache', function() {
+    describe('no cache', function () {
       beforeEach(function (done) {
         ctx.opts.noCache = true;
         ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
@@ -419,16 +427,15 @@ describe('docker: '+moduleName, function () {
           'RUNNABLE_IMAGE_BUILDER_NAME=' + process.env.DOCKER_IMAGE_BUILDER_NAME,
           'RUNNABLE_IMAGE_BUILDER_TAG=' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
           // acv envs
-          'RUNNABLE_REPO='        + 'git@github.com:'+appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
-          'RUNNABLE_COMMITISH='   + [appCodeVersions[0].commit, appCodeVersions[1].branch, 'master'].join(';'),
+          'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
+          'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(';'),
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
-          'RUNNABLE_DEPLOYKEY='   + appCodeVersions.map(pluck('privateKey')).join(';'),
+          'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
-          'RUNNABLE_NETWORK_DRIVER=' + process.env.RUNNABLE_NETWORK_DRIVER,
+          'RUNNABLE_CIDR=' + process.env.RUNNABLE_NETWORK_CIDR,
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
-          'RUNNABLE_SAURON_HOST='    + opts.sauronHost,
-          'RUNNABLE_NETWORK_IP='     + opts.networkIp,
-          'RUNNABLE_HOST_IP='        + opts.hostIp,
+          'RUNNABLE_WEAVE_PATH=' + process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH,
+          'RUNNABLE_HOST_IP=' + opts.hostIp,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
           'RUNNABLE_PUSH_IMAGE=true'
         ];
@@ -440,7 +447,7 @@ describe('docker: '+moduleName, function () {
         done();
       });
     });
-    describe('cache', function() {
+    describe('cache', function () {
       beforeEach(function (done) {
         ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
         process.env.DOCKER_IMAGE_BUILDER_CACHE = '/cache';
@@ -454,7 +461,7 @@ describe('docker: '+moduleName, function () {
         done();
       });
 
-      it('should return conditional container env', function(done) {
+      it('should return conditional container env', function (done) {
         var envs = model._createImageBuilderEnv(ctx.opts);
         var buildOpts = {
           Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES,
@@ -463,7 +470,7 @@ describe('docker: '+moduleName, function () {
         expect(envs).to.contain([
           'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
           'DOCKER_IMAGE_BUILDER_LAYER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE,
-          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
+          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts)
         ]);
         done();
       });
@@ -498,8 +505,8 @@ describe('docker: '+moduleName, function () {
       stream.end();
     });
 
-    describe('errors', function() {
-      it('should handle docker log stream err', function(done) {
+    describe('errors', function () {
+      it('should handle docker log stream err', function (done) {
         var stream = through2();
         Container.prototype.logs.yieldsAsync(null, stream);
         var streamOn = stream.on;
@@ -518,7 +525,7 @@ describe('docker: '+moduleName, function () {
           return ret;
         }
       });
-      it('should handle parse err', function(done) {
+      it('should handle parse err', function (done) {
         var stream = through2();
         Container.prototype.logs.yieldsAsync(null, stream);
         model.getBuildInfo('containerId', function (err) {
@@ -529,7 +536,7 @@ describe('docker: '+moduleName, function () {
         stream.write(dockerFrame(1, dockerLogs.jsonParseError));
         stream.end();
       });
-      it('should handle streamCleanser err', function(done) {
+      it('should handle streamCleanser err', function (done) {
         var stream = through2();
         Container.prototype.logs.yieldsAsync(null, stream);
         var emitErr = new Error('boom');
@@ -660,7 +667,7 @@ describe('docker: '+moduleName, function () {
 
       it('should return callback with', function (done) {
         var docker = new Docker('https://localhost:4242');
-        docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err, result) {
+        docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
           expect(err).to.be.undefined();
           expect(result.dockerContainer).to.equal('some-container-id');
           expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
@@ -683,7 +690,7 @@ describe('docker: '+moduleName, function () {
 
       it('should call original docker method 5 times and return error', function (done) {
         var docker = new Docker('https://localhost:4242');
-        docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err) {
+        docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err) {
           expect(err.output.statusCode).to.equal(404);
           expect(err.output.payload.message).to.equal('Docker error');
           expect(Docker.prototype.inspectContainer.callCount).to.equal(5);
@@ -693,7 +700,7 @@ describe('docker: '+moduleName, function () {
 
       it('should not retry if ignoreStatusCode was specified', function (done) {
         var docker = new Docker('https://localhost:4242');
-        docker.inspectContainerWithRetry({times: 6, ignoreStatusCode: 404}, 'some-container-id', function (err) {
+        docker.inspectContainerWithRetry({ times: 6, ignoreStatusCode: 404 }, 'some-container-id', function (err) {
           expect(err).to.be.null();
           expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
           done();
@@ -709,8 +716,7 @@ describe('docker: '+moduleName, function () {
           attemts++;
           if (attemts < 4) {
             cb(dockerErr);
-          }
-          else {
+          } else {
             cb(undefined, { dockerContainer: container });
           }
         });
@@ -723,10 +729,9 @@ describe('docker: '+moduleName, function () {
       });
 
       it('should call original docker method with retries on error and final success', function (done) {
-
         var docker = new Docker('https://localhost:4242');
 
-        docker.inspectContainerWithRetry({times: 6}, 'some-container-id', function (err, result) {
+        docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
           expect(err).to.be.undefined();
           expect(result.dockerContainer).to.equal('some-container-id');
           expect(Docker.prototype.inspectContainer.callCount).to.equal(4);

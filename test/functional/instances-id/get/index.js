@@ -149,7 +149,7 @@ describe('Instance - /instances/:id', function () {
         describe('non-owner', function () {
           beforeEach(function (done) {
             require('nock').cleanAll();
-            require('../../fixtures/mocks/github/user-orgs')(ctx.user);
+            require('../../fixtures/mocks/github/user-orgs')(ctx.nonOwner, 44, 'Nope');
             ctx.nonOwner = multi.createUser(done);
           });
           it('should not get the instance (403 forbidden)', function (done) {

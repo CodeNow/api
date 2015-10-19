@@ -178,7 +178,6 @@ describe('PATCH /settings/:id', function () {
 
 
     it('should not be possible to update setting using the wrong user', function (done) {
-      require('../../fixtures/mocks/github/user-orgs')(ctx.user);
       multi.createUser(function (err, runnable) {
         if (err) { return done(err); }
         var newSettings = {
@@ -192,6 +191,7 @@ describe('PATCH /settings/:id', function () {
             }
           }
         };
+        require('../../fixtures/mocks/github/user-orgs')(runnable, 9999, 'SomeOrg');
         runnable.newSetting(settingsId).update({json: newSettings}, function (err) {
           expect(err.output.payload.statusCode).to.equal(403);
           expect(err.output.payload.message).to.equal('Access denied (!owner)');

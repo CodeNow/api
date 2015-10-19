@@ -17,21 +17,23 @@ var isObject = require('101/is-object');
 var Github = require('models/apis/github');
 var messenger = require('socket/messenger');
 
+
 var Context = require('models/mongo/context');
 var ContextVersion = require('models/mongo/context-version');
 var InfraCodeVersion = require('models/mongo/infra-code-version');
+var User = require('models/mongo/user');
 
 var ctx = {};
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
-describe('Context Version: '+moduleName, function () {
+describe('Context Version: ' + moduleName, function () {
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
 
   beforeEach(function (done) {
     ctx.mockContextVersion = {
-      '_id': '55d3ef733e1b620e00eb6292',
+      _id: '55d3ef733e1b620e00eb6292',
       name: 'name1',
       owner: {
         github: '2335750'
@@ -45,7 +47,7 @@ describe('Context Version: '+moduleName, function () {
       }
     };
     ctx.mockContext = {
-      '_id': '55d3ef733e1b620e00eb6292',
+      _id: '55d3ef733e1b620e00eb6292',
       name: 'name1',
       owner: {
         github: '2335750'
@@ -191,7 +193,7 @@ describe('Context Version: '+moduleName, function () {
         log: 'adsfasdfasdfadsfadsf',
         failed: false
       };
-      var myCv = {id: 12341};
+      var myCv = { id: 12341 };
 
       sinon.stub(messenger, 'emitContextVersionUpdate', function () {
         done();
@@ -205,11 +207,10 @@ describe('Context Version: '+moduleName, function () {
         expect(args[1]).to.equal(myCv);
         expect(args[2].$set).to.contains({
           'build.dockerImage': opts.dockerImage,
-          'build.log'        : opts.log,
-          'build.failed'     : opts.failed
+          'build.log': opts.log,
+          'build.failed': opts.failed
         });
         expect(args[2].$set['build.completed']).to.exist();
-
       });
     });
     it('should save a failed build', function (done) {
@@ -220,7 +221,7 @@ describe('Context Version: '+moduleName, function () {
           message: 'jksdhfalskdjfhadsf'
         }
       };
-      var myCv = {id: 12341};
+      var myCv = { id: 12341 };
       sinon.stub(messenger, 'emitContextVersionUpdate', function () {
         done();
       });
@@ -232,9 +233,9 @@ describe('Context Version: '+moduleName, function () {
         expect(args[0]).to.equal('build.dockerContainer');
         expect(args[1]).to.equal(myCv);
         expect(args[2].$set).to.contains({
-          'build.log'        : opts.log,
-          'build.failed'     : opts.failed,
-          'error.message'    : opts.error.message
+          'build.log': opts.log,
+          'build.failed': opts.failed,
+          'error.message': opts.error.message
         });
         expect(args[2].$set['build.completed']).to.exist();
       });
@@ -282,16 +283,18 @@ describe('Context Version: '+moduleName, function () {
       cv.writeLogsToPrimusStream(stream, function (err) {
         if (err) { return done(err); }
         expect(cache).to.have.length(3);
-        expect(cache).to.deep.equal([{
-          type: 'log',
-          content: 'hello'
-        }, {
-          type: 'log',
-          content: 'world'
-        }, {
-          type: 'log',
-          content: ''
-        }]);
+        expect(cache).to.deep.equal([
+          {
+            type: 'log',
+            content: 'hello'
+          }, {
+            type: 'log',
+            content: 'world'
+          }, {
+            type: 'log',
+            content: ''
+          }
+        ]);
         expect(stream.end.callCount).to.equal(1);
         done();
       });
@@ -300,13 +303,15 @@ describe('Context Version: '+moduleName, function () {
     it('should return objects from an array of objects', function (done) {
       var cv = new ContextVersion({
         build: {
-          log: [{
-            type: 'log',
-            content: 'hello'
-          }, {
-            type: 'log',
-            content: 'world'
-          }]
+          log: [
+            {
+              type: 'log',
+              content: 'hello'
+            }, {
+              type: 'log',
+              content: 'world'
+            }
+          ]
         }
       });
       var cache = [];
@@ -317,13 +322,15 @@ describe('Context Version: '+moduleName, function () {
       cv.writeLogsToPrimusStream(stream, function (err) {
         if (err) { return done(err); }
         expect(cache).to.have.length(2);
-        expect(cache).to.deep.equal([{
-          type: 'log',
-          content: 'hello'
-        }, {
-          type: 'log',
-          content: 'world'
-        }]);
+        expect(cache).to.deep.equal([
+          {
+            type: 'log',
+            content: 'hello'
+          }, {
+            type: 'log',
+            content: 'world'
+          }
+        ]);
         expect(stream.end.callCount).to.equal(1);
         done();
       });
@@ -350,9 +357,9 @@ describe('Context Version: '+moduleName, function () {
         branch: 'master',
         commit: '1234abcd'
       };
-      sinon.stub(Github.prototype, 'getRepo', function (repo, cb) { cb(null, {
-        'default_branch': 'not-master'
-      }); });
+      sinon.stub(Github.prototype, 'getRepo').yieldsAsync(null, {
+        'default_branch': 'not-master' // eslint-disable-line quote-props
+      });
       sinon.stub(Github.prototype, 'createRepoHookIfNotAlready', function (repo, cb) { cb(); });
       sinon.stub(Github.prototype, 'addDeployKeyIfNotAlready', function (repo, cb) {
         cb(null, { privateKey: 'private', publicKey: 'public' });
@@ -384,11 +391,9 @@ describe('Context Version: '+moduleName, function () {
         owner: { github: 2874589 },
         context: c._id
       });
-      cv.save(function  (err) {
-        if (err) {
-          return done(err);
-        }
-        cv.update({$pushAll: {appCodeVersions: [acv1]}},{ safe: true, upsert: true },
+      cv.save(function (err) {
+        if (err) { return done(err); }
+        cv.update({ $pushAll: { appCodeVersions: [acv1] } },{ safe: true, upsert: true },
           function (err) {
             if (err) {
               return done(err);
@@ -420,11 +425,9 @@ describe('Context Version: '+moduleName, function () {
         owner: { github: 2874589 },
         context: c._id
       });
-      cv.save(function  (err) {
-        if (err) {
-          return done(err);
-        }
-        cv.update({$pushAll: {appCodeVersions: [acv1]}},{ safe: true, upsert: true },
+      cv.save(function (err) {
+        if (err) { return done(err); }
+        cv.update({ $pushAll: { appCodeVersions: [acv1] } },{ safe: true, upsert: true },
           function (err) {
             if (err) {
               return done(err);
@@ -433,8 +436,9 @@ describe('Context Version: '+moduleName, function () {
               if (err) {
                 return done(err);
               }
-              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id,
-                {commit: 'd5a527f959342c2e00151612be973c89b9fa7078'},
+              newCv.modifyAppCodeVersion(
+                newCv.appCodeVersions[0]._id,
+                { commit: 'd5a527f959342c2e00151612be973c89b9fa7078' },
                 function (err, updatedCv) {
                   expect(err).to.be.null();
                   expect(updatedCv.appCodeVersions[0].commit).to.equal('d5a527f959342c2e00151612be973c89b9fa7078');
@@ -452,14 +456,12 @@ describe('Context Version: '+moduleName, function () {
       };
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
+        owner: { github: 2874589 },
         context: c._id
       });
-      cv.save(function  (err) {
-        if (err) {
-          return done(err);
-        }
-        cv.update({$pushAll: {appCodeVersions: [acv1]}},{ safe: true, upsert: true },
+      cv.save(function (err) {
+        if (err) { return done(err); }
+        cv.update({ $pushAll: { appCodeVersions: [acv1] } }, { safe: true, upsert: true },
           function (err) {
             if (err) {
               return done(err);
@@ -468,7 +470,7 @@ describe('Context Version: '+moduleName, function () {
               if (err) {
                 return done(err);
               }
-              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id, {useLatest: true}, function (err, updatedCv) {
+              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id, { useLatest: true }, function (err, updatedCv) {
                 expect(err).to.be.null();
                 expect(updatedCv.appCodeVersions[0].useLatest).to.be.true();
                 done();
@@ -485,14 +487,12 @@ describe('Context Version: '+moduleName, function () {
       };
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
+        owner: { github: 2874589 },
         context: c._id
       });
-      cv.save(function  (err) {
-        if (err) {
-          return done(err);
-        }
-        cv.update({$pushAll: {appCodeVersions: [acv1]}},{ safe: true, upsert: true },
+      cv.save(function (err) {
+        if (err) { return done(err); }
+        cv.update({ $pushAll: { appCodeVersions: [acv1] } }, { safe: true, upsert: true },
           function (err) {
             if (err) {
               return done(err);
@@ -504,8 +504,9 @@ describe('Context Version: '+moduleName, function () {
               var transformRules = {
                 exclude: ['a.txt']
               };
-              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id,
-                {transformRules: transformRules},
+              newCv.modifyAppCodeVersion(
+                newCv.appCodeVersions[0]._id,
+                { transformRules: transformRules },
                 function (err, updatedCv) {
                   expect(err).to.be.null();
                   expect(updatedCv.appCodeVersions[0].transformRules.exclude).to.deep.equal(transformRules.exclude);
@@ -522,10 +523,10 @@ describe('Context Version: '+moduleName, function () {
       var c = new Context();
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
+        owner: { github: 2874589 },
         context: c._id
       });
-      cv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
+      cv.modifyAppCodeVersionWithLatestCommit({ id: 'some-id' }, function (err, updatedCv) {
         expect(err).to.be.null();
         expect(updatedCv).to.deep.equal(cv);
         done();
@@ -545,14 +546,12 @@ describe('Context Version: '+moduleName, function () {
       };
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
-        context: c._id,
+        owner: { github: 2874589 },
+        context: c._id
       });
-      cv.save(function  (err) {
-        if (err) {
-          return done(err);
-        }
-        cv.update({$pushAll: {appCodeVersions: [acv1, acv2]}},{ safe: true, upsert: true },
+      cv.save(function (err) {
+        if (err) { return done(err); }
+        cv.update({ $pushAll: { appCodeVersions: [ acv1, acv2 ] } }, { safe: true, upsert: true },
           function (err) {
             if (err) {
               return done(err);
@@ -561,7 +560,7 @@ describe('Context Version: '+moduleName, function () {
               if (err) {
                 return done(err);
               }
-              newCv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
+              newCv.modifyAppCodeVersionWithLatestCommit({ id: 'some-id' }, function (err, updatedCv) {
                 expect(err).to.be.null();
                 expect(updatedCv).to.deep.equal(newCv);
                 done();
@@ -596,14 +595,12 @@ describe('Context Version: '+moduleName, function () {
       };
       var cv = new ContextVersion({
         createdBy: { github: 1000 },
-        owner: {github: 2874589},
-        context: c._id,
+        owner: { github: 2874589 },
+        context: c._id
       });
-      cv.save(function  (err) {
-        if (err) {
-          return done(err);
-        }
-        cv.update({$pushAll: {appCodeVersions: [acv1, acv2, acv3, acv4]}},
+      cv.save(function (err) {
+        if (err) { return done(err); }
+        cv.update({ $pushAll: { appCodeVersions: [ acv1, acv2, acv3, acv4 ] } },
           { safe: true, upsert: true },
           function (err) {
             if (err) {
@@ -614,7 +611,7 @@ describe('Context Version: '+moduleName, function () {
                 return done(err);
               }
               require('../../../test/functional/fixtures/mocks/github/repos-username-repo-branches-branch')(newCv);
-              newCv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
+              newCv.modifyAppCodeVersionWithLatestCommit({ id: 'some-id' }, function (err, updatedCv) {
                 expect(err).to.be.null();
                 expect(updatedCv.appCodeVersions[0].commit).to.be.undefined();
                 expect(updatedCv.appCodeVersions[1].commit).to.be.undefined();
@@ -628,7 +625,7 @@ describe('Context Version: '+moduleName, function () {
     });
   }); // end 'modifyAppCodeVersionWithLatestCommit'
 
-  describe('addAppCodeVersionQuery', function() {
+  describe('addAppCodeVersionQuery', function () {
     var cv;
     var cvNoAppCodeVersions;
     var query;
@@ -645,13 +642,13 @@ describe('Context Version: '+moduleName, function () {
       done();
     });
 
-    it('should preserve original query conditions', function(done) {
+    it('should preserve original query conditions', function (done) {
       var result = ContextVersion.addAppCodeVersionQuery(cv, query);
       expect(result.infraCodeVersion).to.equal(infraCodeVersion);
       done();
     });
 
-    it('should add app code versions conditions when present', function(done) {
+    it('should add app code versions conditions when present', function (done) {
       var result = ContextVersion.addAppCodeVersionQuery(cv, query);
       expect(result.$and).to.be.an.array();
       expect(result.$and.every(isObject)).to.be.true();
@@ -659,7 +656,7 @@ describe('Context Version: '+moduleName, function () {
       done();
     });
 
-    it('should add the correct clause for each app code version', function(done) {
+    it('should add the correct clause for each app code version', function (done) {
       var result = ContextVersion.addAppCodeVersionQuery(cv, query);
       for (var i = 0; i < 2; i++) {
         expect(result.$and[i].appCodeVersions).to.be.an.object();
@@ -670,15 +667,15 @@ describe('Context Version: '+moduleName, function () {
       done();
     });
 
-    it('should add the correct size clause', function(done) {
+    it('should add the correct size clause', function (done) {
       var result = ContextVersion.addAppCodeVersionQuery(cv, query);
-      var clause = result.$and[result.$and.length-1];
+      var clause = result.$and[result.$and.length - 1];
       expect(clause.appCodeVersions).to.be.an.object();
       expect(clause.appCodeVersions.$size).to.equal(appCodeVersions.length);
       done();
     });
 
-    it('should only add the size clause without appCodeVersions', function(done) {
+    it('should only add the size clause without appCodeVersions', function (done) {
       var result = ContextVersion.addAppCodeVersionQuery(
         cvNoAppCodeVersions,
         query
@@ -689,7 +686,7 @@ describe('Context Version: '+moduleName, function () {
     });
   }); // end 'addAppCodeVersionQuery'
 
-  describe('updateBuildHash', function() {
+  describe('updateBuildHash', function () {
     var cv;
 
     beforeEach(function (done) {
@@ -705,11 +702,11 @@ describe('Context Version: '+moduleName, function () {
       done();
     });
 
-    it('should use the correct query', function(done) {
+    it('should use the correct query', function (done) {
       var hash = 'random-hash';
       var expectedQuery = {
         $set: {
-          'build.hash' : hash
+          'build.hash': hash
         }
       };
       cv.updateBuildHash(hash, function (err) {
@@ -720,7 +717,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should set the hash on the context version', function(done) {
+    it('should set the hash on the context version', function (done) {
       var hash = 'brand-new-hash';
       cv.updateBuildHash(hash, function (err) {
         if (err) { return done(err); }
@@ -729,7 +726,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should correctly handle update errors', function(done) {
+    it('should correctly handle update errors', function (done) {
       var updateError = new Error('Update is too cool to work right now.');
       cv.update.yieldsAsync(updateError);
       cv.updateBuildHash('rando', function (err) {
@@ -740,7 +737,7 @@ describe('Context Version: '+moduleName, function () {
     });
   }); // end 'updateBuildHash'
 
-  describe('findPendingDupe', function() {
+  describe('findPendingDupe', function () {
     var cv;
     var dupe;
     var cvTimestamp = 20;
@@ -760,7 +757,7 @@ describe('Context Version: '+moduleName, function () {
           started: new Date(cvTimestamp - 10)
         }
       });
-      sinon.stub(ContextVersion, 'find').yieldsAsync(null, [ dupe ]);
+      sinon.stub(ContextVersion, 'find').yieldsAsync(null, [dupe]);
       done();
     });
 
@@ -769,12 +766,12 @@ describe('Context Version: '+moduleName, function () {
       done();
     });
 
-    it('uses the correct ContextVersion.find query', function(done) {
+    it('uses the correct ContextVersion.find query', function (done) {
       var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
         'build.completed': { $exists: false },
         'build.hash': cv.build.hash,
         'build._id': { $ne: cv.build._id },
-        'advanced': false
+        advanced: false
       });
 
       cv.findPendingDupe(function (err) {
@@ -786,9 +783,9 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('uses the correct ContextVersion.find options', function(done) {
+    it('uses the correct ContextVersion.find options', function (done) {
       var expectedOptions = {
-        sort : 'build.started',
+        sort: 'build.started',
         limit: 1
       };
 
@@ -801,7 +798,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('handles ContextVersion.find errors', function(done) {
+    it('handles ContextVersion.find errors', function (done) {
       var findError = new Error('API is upset, and does not want to work.');
       ContextVersion.find.yieldsAsync(findError);
 
@@ -811,7 +808,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('yields null if oldest pending is younger than itself', function(done) {
+    it('yields null if oldest pending is younger than itself', function (done) {
       ContextVersion.find.yieldsAsync(null, [
         new ContextVersion({
           build: {
@@ -829,7 +826,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('yields nothing if the oldest pending is null', function(done) {
+    it('yields nothing if the oldest pending is null', function (done) {
       ContextVersion.find.yieldsAsync(null, []);
 
       cv.findPendingDupe(function (err, pendingDuplicate) {
@@ -839,7 +836,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('yields the oldest pending duplicate when applicable', function(done) {
+    it('yields the oldest pending duplicate when applicable', function (done) {
       cv.findPendingDupe(function (err, pendingDuplicate) {
         if (err) { return done(err); }
         expect(pendingDuplicate).to.equal(dupe);
@@ -848,7 +845,7 @@ describe('Context Version: '+moduleName, function () {
     });
   }); // end 'findPendingDupe'
 
-  describe('findCompletedDupe', function() {
+  describe('findCompletedDupe', function () {
     var cv;
     var dupe;
 
@@ -865,7 +862,7 @@ describe('Context Version: '+moduleName, function () {
           hash: 'hash-b'
         }
       });
-      sinon.stub(ContextVersion, 'find').yieldsAsync(null, [ dupe ]);
+      sinon.stub(ContextVersion, 'find').yieldsAsync(null, [dupe]);
       done();
     });
 
@@ -874,12 +871,12 @@ describe('Context Version: '+moduleName, function () {
       done();
     });
 
-    it('uses the correct ContextVersion.find query', function(done) {
+    it('uses the correct ContextVersion.find query', function (done) {
       var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
         'build.completed': { $exists: true },
         'build.hash': cv.build.hash,
         'build._id': { $ne: cv.build._id },
-        'advanced': false
+        advanced: false
       });
 
       cv.findCompletedDupe(function (err) {
@@ -891,9 +888,9 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('uses the correct ContextVersion.find options', function(done) {
+    it('uses the correct ContextVersion.find options', function (done) {
       var expectedOptions = {
-        sort : '-build.started',
+        sort: '-build.started',
         limit: 1
       };
 
@@ -906,7 +903,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('yields the correct duplicate', function(done) {
+    it('yields the correct duplicate', function (done) {
       cv.findCompletedDupe(function (err, completedDupe) {
         if (err) { return done(err); }
         expect(completedDupe).to.equal(dupe);
@@ -915,7 +912,7 @@ describe('Context Version: '+moduleName, function () {
     });
   }); // end 'findCompletedDupe'
 
-  describe('dedupeBuild', function() {
+  describe('dedupeBuild', function () {
     var cv;
     var dupe;
     var hash = 'icv-hash';
@@ -948,7 +945,7 @@ describe('Context Version: '+moduleName, function () {
       done();
     });
 
-    it('should find the hash via InfraCodeVersion', function(done) {
+    it('should find the hash via InfraCodeVersion', function (done) {
       cv.dedupeBuild(function (err) {
         if (err) { return done(err); }
         expect(InfraCodeVersion.findByIdAndGetHash.calledOnce).to.be.true();
@@ -959,7 +956,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should set the hash returned by InfraCodeVersion', function(done) {
+    it('should set the hash returned by InfraCodeVersion', function (done) {
       cv.dedupeBuild(function (err) {
         if (err) { return done(err); }
         expect(cv.updateBuildHash.calledOnce).to.be.true();
@@ -968,7 +965,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should find pending duplicates', function(done) {
+    it('should find pending duplicates', function (done) {
       cv.dedupeBuild(function (err) {
         if (err) { return done(err); }
         expect(cv.findPendingDupe.calledOnce).to.be.true();
@@ -976,7 +973,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should not find completed duplicates with one pending', function(done) {
+    it('should not find completed duplicates with one pending', function (done) {
       cv.dedupeBuild(function (err) {
         if (err) { return done(err); }
         expect(cv.findCompletedDupe.callCount).to.equal(0);
@@ -984,7 +981,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should find completed duplicates without one pending', function(done) {
+    it('should find completed duplicates without one pending', function (done) {
       cv.findPendingDupe.yieldsAsync(null, null);
 
       cv.dedupeBuild(function (err) {
@@ -994,7 +991,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should handle completed duplicate lookup errors', function(done) {
+    it('should handle completed duplicate lookup errors', function (done) {
       var completedErr = new Error('API is not feeling well, try later.');
       cv.findPendingDupe.yieldsAsync(null, null);
       cv.findCompletedDupe.yieldsAsync(completedErr, null);
@@ -1005,7 +1002,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should dedupe cvs with the same owner', function(done) {
+    it('should dedupe cvs with the same owner', function (done) {
       cv.dedupeBuild(function (err, result) {
         if (err) { done(err); }
         expect(result).to.equal(dupe);
@@ -1013,7 +1010,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should not dedupe a cv with a different owner', function(done) {
+    it('should not dedupe a cv with a different owner', function (done) {
       dupe.owner.github = 2;
       cv.dedupeBuild(function (err, result) {
         if (err) { done(err); }
@@ -1022,7 +1019,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should replace itself if a duplicate was found', function(done) {
+    it('should replace itself if a duplicate was found', function (done) {
       cv.dedupeBuild(function (err) {
         if (err) { done(err); }
         expect(cv.copyBuildFromContextVersion.calledOnce).to.be.true();
@@ -1032,7 +1029,7 @@ describe('Context Version: '+moduleName, function () {
       });
     });
 
-    it('should not replace itself without a duplicate', function(done) {
+    it('should not replace itself without a duplicate', function (done) {
       cv.findPendingDupe.yieldsAsync(null, null);
       cv.findCompletedDupe.yieldsAsync(null, null);
 
@@ -1045,4 +1042,49 @@ describe('Context Version: '+moduleName, function () {
       });
     });
   }); // end 'dedupeBuild'
+
+  describe('populateOwner', function () {
+    beforeEach(function (done) {
+      ctx.c = new Context();
+      ctx.cv = new ContextVersion({
+        createdBy: { github: 1000 },
+        owner: { github: 2874589 },
+        context: ctx.c._id
+      });
+      done();
+    });
+    it('should return an error if user was not found', function (done) {
+      var sessionUser = new User();
+      sinon.stub(sessionUser, 'findGithubUserByGithubId').yieldsAsync(new Error('No user'));
+      ctx.cv.populateOwner(sessionUser, function (err) {
+        expect(err).to.exist();
+        expect(err.message).to.equal('No user');
+        done();
+      });
+    });
+    it('should return an error if session user was not provided', function (done) {
+      ctx.cv.populateOwner(null, function (err) {
+        expect(err).to.exist();
+        expect(err.output.statusCode).to.equal(500);
+        expect(err.message).to.equal('SessionUser is required');
+        done();
+      });
+    });
+    it('should populate owner userane and gravatar', function (done) {
+      var sessionUser = new User();
+      var userData = {
+        login: 'anton',
+        avatar_url: 'https://avatars.githubusercontent.com/u/429706?v=3'
+      };
+      sinon.stub(sessionUser, 'findGithubUserByGithubId').yieldsAsync(null, userData);
+      ctx.cv.populateOwner(sessionUser, function (err, updatedCv) {
+        expect(err).to.not.exist();
+        expect(updatedCv.owner.username).to.equal(userData.login);
+        expect(updatedCv.owner.gravatar).to.equal(userData.avatar_url);
+        expect(ctx.cv.owner.username).to.equal(userData.login);
+        expect(ctx.cv.owner.gravatar).to.equal(userData.avatar_url);
+        done();
+      });
+    });
+  });  // end 'populateOwner'
 });
