@@ -211,4 +211,67 @@ describe('github: '+moduleName, function () {
       });
     });
   });
+  describe('_createRepoHook', function () {
+    it('should return 404 if repo wasnot found', function (done) {
+      var github = new Github({token: 'some-token'});
+      var err = new Error('Not found');
+      err.code = 404;
+      sinon.stub(github.repos, 'createHook').yieldsAsync(err);
+      github._createRepoHook('codenow/api', function (boomErr) {
+        expect(boomErr).to.exist();
+        expect(boomErr.output.statusCode).to.equal(404);
+        expect(boomErr.output.payload.message).to.equal('Github repo codenow/api not found.');
+        expect(boomErr.data.err.code).to.equal(err.code);
+        expect(boomErr.data.err.message).to.equal(err.message);
+        var query = github.repos.createHook.getCall(0).args[0];
+        expect(query.user).to.equal('codenow');
+        expect(query.repo).to.equal('api');
+        expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME);
+        var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH;
+        expect(query.config.url).to.equal(hookUrl);
+        expect(query.config.content_type).to.equal('json');
+        expect(query.events[0]).to.equal('*');
+        done();
+      });
+    });
+    it('should return 502 if some error happened', function (done) {
+      var github = new Github({token: 'some-token'});
+      var err = new Error('Some error');
+      sinon.stub(github.repos, 'createHook').yieldsAsync(err);
+      github._createRepoHook('codenow/api', function (boomErr) {
+        expect(boomErr).to.exist();
+        expect(boomErr.output.statusCode).to.equal(502);
+        expect(boomErr.output.payload.message).to.equal('Failed to create github repo hook for codenow/api');
+        expect(boomErr.data.err.message).to.equal(err.message);
+        var query = github.repos.createHook.getCall(0).args[0];
+        expect(query.user).to.equal('codenow');
+        expect(query.repo).to.equal('api');
+        expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME);
+        var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH;
+        expect(query.config.url).to.equal(hookUrl);
+        expect(query.config.content_type).to.equal('json');
+        expect(query.events[0]).to.equal('*');
+        done();
+      });
+    });
+    it('should work if no errors occured', function (done) {
+      var github = new Github({token: 'some-token'});
+      sinon.stub(github.repos, 'createHook').yieldsAsync(null, {
+        _id: 1
+      });
+      github._createRepoHook('codenow/api', function (err, hook) {
+        expect(err).to.not.exist();
+        expect(hook._id).to.equal(1);
+        var query = github.repos.createHook.getCall(0).args[0];
+        expect(query.user).to.equal('codenow');
+        expect(query.repo).to.equal('api');
+        expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME);
+        var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH;
+        expect(query.config.url).to.equal(hookUrl);
+        expect(query.config.content_type).to.equal('json');
+        expect(query.events[0]).to.equal('*');
+        done();
+      });
+    });
+  });
 });
