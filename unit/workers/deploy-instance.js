@@ -42,6 +42,7 @@ describe('DeployInstanceWorker', function () {
       sessionUserId: ctx.worker.sessionUserGithubId,
       buildId: keypather.get(ctx.mockContextVersion, 'build._id.toString()'),
       dockerHost: _dockerHost,
+      instanceId: instance._id.toString(),
       instanceEnvs: [
         instance.env[0],
         'RUNNABLE_CONTAINER_ID=' + instance.shortHash
