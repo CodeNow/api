@@ -155,6 +155,7 @@ describe('ContextService: ' + moduleName, function () {
             ContextVersion.createDeepCopy,
             ctx.mockUser,
             ctx.mockContextVersion,
+            { github: ctx.mockUser.accounts.github.id },
             sinon.match.func);
           done();
         });
