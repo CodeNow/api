@@ -47,24 +47,27 @@ describe('Worker: create-instance-container: '+moduleName, function () {
       });
     });
 
-    it('should call instance.modifyContainerCreateErr ', function (done) {
+    it('should call instance.modifyContainerCreateErr', function (done) {
       var worker = new CreateInstanceContainer();
       var error = Boom.badRequest('Some error');
       var inst = {
-        _id: 'some-instance-id',
-        modifyContainerCreateErr: function (cvId, err) {
-          expect(cvId).to.equal('some-cv-id');
-          expect(err).to.deep.equal(error);
-          Instance.findById.restore();
-          done();
-        }
+
       };
+      var inst= new Instance({
+        _id: '5625569bef60680c0050b4d6',
+      });
       sinon.stub(Instance, 'findById').yieldsAsync(null, inst);
-      worker._handleAppError('some-instance-id', 'some-cv-id', error, function (err) {
+      sinon.stub(inst, 'modifyContainerCreateErr');
+      worker._handleAppError('5625569bef60680c0050b4d6', 'some-cv-id', error, function (err) {
         expect(err).to.exist();
         expect(err.output.statusCode).to.equal(404);
         expect(err.output.payload.message)
           .to.equal('Instance was not found inside create container job');
+        expect(inst.modifyContainerCreateErr.callCount).to.equal(1);
+        var args = inst.modifyContainerCreateErr.getCall(0).args;
+        expect(args[0]).to.equal('some-cv-id');
+        expect(args[1]).to.equal(error);
+        done();
       });
     });
   });
