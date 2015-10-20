@@ -25,9 +25,7 @@ describe('Worker: create-instance-container: '+moduleName, function () {
   describe('#_handleAppError', function () {
     it('should return error if instance.findId returned error', function (done) {
       var worker = new CreateInstanceContainer();
-      sinon.stub(Instance, 'findById', function (id, cb) {
-        cb(new Error('Some mongo error'));
-      });
+      sinon.stub(Instance, 'findById').yieldsAsync(new Error('Some mongo error'));
       worker._handleAppError('some-instance-id', 'some-cv-id', {}, function (err) {
         expect(err).to.exist();
         expect(err.message).to.equal('Some mongo error');
@@ -38,9 +36,7 @@ describe('Worker: create-instance-container: '+moduleName, function () {
 
     it('should return error if instance was not found', function (done) {
       var worker = new CreateInstanceContainer();
-      sinon.stub(Instance, 'findById', function (id, cb) {
-        cb(null, null);
-      });
+      sinon.stub(Instance, 'findById').yieldsAsync(null, null);
       worker._handleAppError('some-instance-id', 'some-cv-id', {}, function (err) {
         expect(err).to.exist();
         expect(err.output.statusCode).to.equal(404);
@@ -63,10 +59,7 @@ describe('Worker: create-instance-container: '+moduleName, function () {
           done();
         }
       };
-      sinon.stub(Instance, 'findById', function (id, cb) {
-        cb(null, inst);
-      });
-
+      sinon.stub(Instance, 'findById').yieldsAsync(null, inst);
       worker._handleAppError('some-instance-id', 'some-cv-id', error, function (err) {
         expect(err).to.exist();
         expect(err.output.statusCode).to.equal(404);
@@ -166,9 +159,7 @@ describe('Worker: create-instance-container: '+moduleName, function () {
   describe('#handle', function () {
     it('should return nothing if context version was not found because of error', function (done) {
       var worker = new CreateInstanceContainer({});
-      sinon.stub(worker, '_findContextVersion', function (query, cb) {
-        cb(new Error('Some mongo error'));
-      });
+      sinon.stub(worker, '_findContextVersion');
       sinon.spy(Docker.prototype, 'createUserContainer');
       sinon.spy(worker, '_handleError');
       worker.handle(function (err) {
@@ -199,9 +190,8 @@ describe('Worker: create-instance-container: '+moduleName, function () {
         }
       };
       var worker = new CreateInstanceContainer(data);
-      sinon.stub(ContextVersion, 'findById', function (id, cb) {
-        cb(null, new ContextVersion({ _id: 'some-cv-id' }));
-      });
+      sinon.stub(ContextVersion, 'findById').yieldsAsync(null,
+        new ContextVersion({ _id: 'some-cv-id' }));
       sinon.stub(Docker.prototype, 'createUserContainer', function (cv, payload, cb) {
         expect(cv._id).to.equal(data.cvId);
         expect(payload.Env).to.deep.equal(data.instanceEnvs);
@@ -243,18 +233,14 @@ describe('Worker: create-instance-container: '+moduleName, function () {
         }
       };
       var worker = new CreateInstanceContainer(data);
-      sinon.stub(ContextVersion, 'findById', function (id, cb) {
-        cb(null, { _id: 'some-cv-id' });
-      });
+      sinon.stub(ContextVersion, 'findById').yieldsAsync(null, { _id: 'some-cv-id' });
       sinon.stub(Docker.prototype, 'createUserContainer', function (cv, payload, cb) {
         expect(cv._id).to.equal(data.cvId);
         expect(payload.Env).to.deep.equal(data.instanceEnvs);
         expect(payload.Labels).to.deep.equal(data.labels);
         cb(Boom.notFound('Docker error'));
       });
-      sinon.stub(worker, '_handle404', function (contextVersion, d, cb) {
-        cb(null);
-      });
+      sinon.stub(worker, '_handle404').yieldsAsync(null);
       sinon.spy(worker, '_handleAppError');
       worker.handle(function (err, cv) {
         expect(err).to.not.exist();
@@ -289,18 +275,14 @@ describe('Worker: create-instance-container: '+moduleName, function () {
         }
       };
       var worker = new CreateInstanceContainer(data);
-      sinon.stub(ContextVersion, 'findById', function (id, cb) {
-        cb(null, { _id: 'some-cv-id' });
-      });
+      sinon.stub(ContextVersion, 'findById').yieldsAsync(null, { _id: 'some-cv-id' });
       sinon.stub(Docker.prototype, 'createUserContainer', function (cv, payload, cb) {
         expect(cv._id).to.equal(data.cvId);
         expect(payload.Env).to.deep.equal(data.instanceEnvs);
         expect(payload.Labels).to.deep.equal(data.labels);
         cb(Boom.conflict('Some docker error'));
       });
-      sinon.stub(worker, '_handleAppError', function (instanceId, cvId, appError, cb) {
-        cb(null);
-      });
+      sinon.stub(worker, '_handleAppError').yieldsAsync(null);
       sinon.spy(worker, '_handle404');
       worker.handle(function (err, cv) {
         expect(err).to.not.exist();
@@ -334,9 +316,7 @@ describe('Worker: create-instance-container: '+moduleName, function () {
         }
       };
       var worker = new CreateInstanceContainer(data);
-      sinon.stub(ContextVersion, 'findById', function (id, cb) {
-        cb(null, { _id: 'some-cv-id' });
-      });
+      sinon.stub(ContextVersion, 'findById').yieldsAsync(null, { _id: 'some-cv-id' });
       sinon.stub(Docker.prototype, 'createUserContainer', function (cv, payload, cb) {
         expect(cv._id).to.equal(data.cvId);
         expect(payload.Env).to.deep.equal(data.instanceEnvs);
