@@ -50,9 +50,6 @@ describe('Worker: create-instance-container: '+moduleName, function () {
     it('should call instance.modifyContainerCreateErr', function (done) {
       var worker = new CreateInstanceContainer();
       var error = Boom.badRequest('Some error');
-      var inst = {
-
-      };
       var inst= new Instance({
         _id: '5625569bef60680c0050b4d6',
       });
