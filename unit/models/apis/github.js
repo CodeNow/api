@@ -97,7 +97,7 @@ describe('github: '+moduleName, function () {
 
 
   describe('_listRepoHooks', function () {
-    it('should return 404 if repo wasnot found', function (done) {
+    it('should return 404 if repo was not found', function (done) {
       var github = new Github({token: 'some-token'});
       var err = new Error('Not found');
       err.code = 404;
