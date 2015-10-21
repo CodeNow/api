@@ -71,7 +71,14 @@ describe('201 POST /contexts/:id/versions/:id/actions/copy', function () {
           expect(newCv.attrs.createdBy.github).to.equal(ctx.user.attrs.accounts.github.id);
           // cv should have a new infracode version
           expect(newCv.attrs.infraCodeVersion).to.not.equal(ctx.contextVersion.attrs.infraCodeVersion);
-          done();
+          ctx.user
+            .newContext(newCv.attrs.context)
+            .newVersion(newCv.attrs._id)
+            .fetch(function (err, cvData) {
+              if (err) { return done(err); }
+              expect(cvData.owner.github).to.equal(ctx.user.attrs.accounts.github.id);
+              done();
+            });
         });
     });
 
@@ -99,11 +106,16 @@ describe('201 POST /contexts/:id/versions/:id/actions/copy', function () {
             expect(newCv.attrs.createdBy.github).to.equal(ctx.user.attrs.accounts.github.id);
             // cv should have a new infracode version
             expect(newCv.attrs.infraCodeVersion).to.not.equal(ctx.contextVersion.attrs.infraCodeVersion);
-            ctx.user.newContext(newCv.attrs.context).fetch(function (err, context) {
+            var context = ctx.user.newContext(newCv.attrs.context);
+            context.fetch(function (err, contextData) {
               if (err) { return done(err); }
               // the context should be owned by the overridden user
-              expect(context.owner.github).to.equal(body.owner.github);
-              done();
+              expect(contextData.owner.github).to.equal(body.owner.github);
+              context.newVersion(newCv.attrs._id).fetch(function (err, cvData) {
+                if (err) { return done(err); }
+                expect(cvData.owner.github).to.equal(body.owner.github);
+                done();
+              });
             });
           });
       });
