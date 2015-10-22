@@ -29,8 +29,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242',
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
@@ -51,8 +49,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242'
         }
@@ -74,9 +70,7 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceName: 'api',
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
-        ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1'
+        ownerGithubId: 429706
       });
       sinon.spy(worker, '_handleError');
       worker.handle(function (jobErr) {
@@ -94,8 +88,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
         }
@@ -116,8 +108,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242'
         }
@@ -138,8 +128,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242',
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
@@ -164,8 +152,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242',
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
@@ -190,8 +176,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242',
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
@@ -219,8 +203,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242',
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
@@ -250,8 +232,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242',
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
@@ -279,8 +259,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242',
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
