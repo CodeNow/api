@@ -45,7 +45,7 @@
     "fn-object": "~0.2.2",
     "github": "git+ssh://git@github.com/podviaznikov/node-github.git#66dc2d069c59585cc166d87472fb22f7573f9ff5",
     "hashids": "^0.3.3",
-    "hermes-private": "git+ssh://git@github.com:CodeNow/hermes-private#v8.1.0",
+    "hermes-private": "git+ssh://git@github.com:CodeNow/hermes-private#metis-github-event",
     "http-proxy": "^1.5.3",
     "i": "^0.3.2",
     "ip": "^0.3.2",
