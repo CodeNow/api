@@ -2,6 +2,7 @@
 ./test/functional/actions-analyze/get/200.js
 ./test/functional/actions-analyze/get/400.js
 ./test/functional/actions-github.js
+./test/functional/actions-internal/deprovision-clusters.js
 ./test/functional/actions-moderate/delete/204.js
 ./test/functional/actions-moderate/post/200.js
 ./test/functional/actions-redirect.js
