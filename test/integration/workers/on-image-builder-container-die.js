@@ -105,7 +105,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 context: ctx.cv.context
               };// mock
               docker.createImageBuilder(opts, function (err, container) {
-                ContextVersion.findOne(ctx.cv._id, function (err, cv) {
+                if (err) { return done(err); }
+                ContextVersion.findById(ctx.cv._id, function (err) {
                   if (err) { return done(err); }
                   ContextVersion.updateById(ctx.cv._id, {
                     $set: {
