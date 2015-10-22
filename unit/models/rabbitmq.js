@@ -579,7 +579,7 @@ describe('RabbitMQ Model: '+moduleName, function () {
   describe('publishGithubEvent', function() {
     var publishQueueName = 'metis-github-event';
     var clock;
-    var fixedTimestamp = parseInt(new Date().getTime() / 1000);
+    var fixedTimestamp = new Date().getTime();
 
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish');
@@ -628,7 +628,7 @@ describe('RabbitMQ Model: '+moduleName, function () {
     it('should publish the job with the correct recordedAt time', function(done) {
       ctx.rabbitMQ.publishGithubEvent('', '', {});
       expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1].recordedAt)
-        .to.deep.equal(fixedTimestamp);
+        .to.deep.equal(parseInt(fixedTimestamp / 1000));
       done();
     });
   });
