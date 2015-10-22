@@ -14,7 +14,6 @@ var Boom = require('dat-middleware').Boom;
 var DeleteInstanceContainer = require('workers/delete-instance-container');
 var Docker = require('models/apis/docker');
 var Hosts = require('models/redis/hosts');
-var Sauron = require('models/apis/sauron');
 var User = require('models/mongo/user');
 
 var path = require('path');
@@ -158,32 +157,7 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         done();
       });
     });
-    it('should fail job if sauron call failed', function (done) {
-      var worker = new DeleteInstanceContainer({
-        instanceName: 'api',
-        instanceMasterPod: true,
-        instanceMasterBranch: 'master',
-        ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
-        hostIp: '10.0.1.1',
-        container: {
-          dockerHost: 'https://localhost:4242',
-          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
-        }
-      });
-      sinon.stub(worker, '_findGitHubUsername').yieldsAsync(null, 'podviaznikov');
-      sinon.spy(worker, '_handleError');
-      sinon.stub(Sauron.prototype, 'detachHostFromContainer')
-        .yieldsAsync(Boom.badRequest('Sauron error'));
-      worker.handle(function (jobErr) {
-        expect(jobErr).to.not.exist();
-        var err = worker._handleError.args[0][0];
-        expect(err.output.statusCode).to.equal(400);
-        expect(err.output.payload.message).to.equal('Sauron error');
-        Sauron.prototype.detachHostFromContainer.restore();
-        done();
-      });
-    });
+
     it('should fail job if hosts call failed', function (done) {
       var worker = new DeleteInstanceContainer({
         instanceName: 'api',
@@ -199,7 +173,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
       });
       sinon.spy(worker, '_handleError');
       sinon.stub(worker, '_findGitHubUsername').yieldsAsync(null, 'podviaznikov');
-      sinon.stub(Sauron.prototype, 'detachHostFromContainer').yieldsAsync(null);
       sinon.stub(Hosts.prototype, 'removeHostsForInstance')
         .yieldsAsync(Boom.badRequest('Hosts error'));
       worker.handle(function (jobErr) {
@@ -207,7 +180,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         var err = worker._handleError.args[0][0];
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Hosts error');
-        Sauron.prototype.detachHostFromContainer.restore();
         Hosts.prototype.removeHostsForInstance.restore();
         done();
       });
@@ -227,7 +199,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
       });
       sinon.spy(worker, '_handleError');
       sinon.stub(worker, '_findGitHubUsername').yieldsAsync(null, 'podviaznikov');
-      sinon.stub(Sauron.prototype, 'detachHostFromContainer').yieldsAsync(null);
       sinon.stub(Hosts.prototype, 'removeHostsForInstance').yieldsAsync(null);
       sinon.stub(Docker.prototype, 'stopContainer')
         .yieldsAsync(Boom.badRequest('Docker stopContainer error'));
@@ -237,7 +208,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Docker stopContainer error');
         expect(Docker.prototype.stopContainer.callCount).to.equal(5);
-        Sauron.prototype.detachHostFromContainer.restore();
         Hosts.prototype.removeHostsForInstance.restore();
         Docker.prototype.stopContainer.restore();
         done();
@@ -258,7 +228,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
       });
       sinon.spy(worker, '_handleError');
       sinon.stub(worker, '_findGitHubUsername').yieldsAsync(null, 'podviaznikov');
-      sinon.stub(Sauron.prototype, 'detachHostFromContainer').yieldsAsync(null);
       sinon.stub(Hosts.prototype, 'removeHostsForInstance').yieldsAsync(null);
       sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync(null);
       sinon.stub(Docker.prototype, 'removeContainer')
@@ -269,7 +238,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         expect(err.output.statusCode).to.equal(400);
         expect(err.output.payload.message).to.equal('Docker removeContainer error');
         expect(Docker.prototype.removeContainer.callCount).to.equal(5);
-        Sauron.prototype.detachHostFromContainer.restore();
         Hosts.prototype.removeHostsForInstance.restore();
         Docker.prototype.stopContainer.restore();
         Docker.prototype.removeContainer.restore();
@@ -291,7 +259,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
       });
       sinon.spy(worker, '_handleError');
       sinon.stub(worker, '_findGitHubUsername').yieldsAsync(null, 'podviaznikov');
-      sinon.stub(Sauron.prototype, 'detachHostFromContainer').yieldsAsync(null);
       sinon.stub(Hosts.prototype, 'removeHostsForInstance').yieldsAsync(null);
       sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync(null);
       sinon.stub(Docker.prototype, 'removeContainer')
@@ -300,7 +267,6 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         expect(jobErr).to.not.exist();
         expect(worker._handleError.callCount).to.equal(0);
         expect(Docker.prototype.removeContainer.callCount).to.equal(1);
-        Sauron.prototype.detachHostFromContainer.restore();
         Hosts.prototype.removeHostsForInstance.restore();
         Docker.prototype.stopContainer.restore();
         Docker.prototype.removeContainer.restore();
@@ -321,18 +287,15 @@ describe('Worker: delete-instance-container: '+moduleName, function () {
         }
       });
       sinon.stub(worker, '_findGitHubUsername').yieldsAsync(null, 'podviaznikov');
-      sinon.stub(Sauron.prototype, 'detachHostFromContainer').yieldsAsync(null);
       sinon.stub(Hosts.prototype, 'removeHostsForInstance').yieldsAsync(null);
       sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync(null);
       sinon.stub(Docker.prototype, 'removeContainer').yieldsAsync(null);
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist();
-        expect(Sauron.prototype.detachHostFromContainer.callCount).to.equal(1);
         expect(Hosts.prototype.removeHostsForInstance.callCount).to.equal(1);
         expect(Docker.prototype.stopContainer.callCount).to.equal(1);
         expect(Docker.prototype.removeContainer.callCount).to.equal(1);
 
-        Sauron.prototype.detachHostFromContainer.restore();
         Hosts.prototype.removeHostsForInstance.restore();
         Docker.prototype.stopContainer.restore();
         Docker.prototype.removeContainer.restore();
