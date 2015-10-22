@@ -87,9 +87,7 @@ describe('POST /instances', function () {
               build: exists,
               name: exists,
               'owner.github': ctx.user.attrs.accounts.github.id,
-              contextVersions: exists,
-              'network.networkIp': exists,
-              'network.hostIp': exists
+              contextVersions: exists
             };
 
             var json = { build: ctx.build.id(), name: randStr(5) };
@@ -544,9 +542,7 @@ describe('POST /instances', function () {
           'build._id': ctx.build.id(),
           containers: exists,
           parent: ctx.instance.attrs.shortHash,
-          shortHash: exists,
-          'network.networkIp': ctx.instance.attrs.network.networkIp, // same owner, same network
-          'network.hostIp': not(equals(ctx.instance.attrs.network.hostIp))
+          shortHash: exists
         };
         require('../../fixtures/mocks/github/user')(ctx.user);
         primus.expectAction('start', expected, done);
