@@ -28,6 +28,9 @@ describe('User Schema: ' + moduleName, function () {
       };
       var res = UserSchema._transformToJSON({}, ret);
       expect(res.accounts.github.accessToken).to.not.exist();
+      expect(res.accounts.github._json).to.not.exist();
+      expect(res.accounts.github._raw).to.not.exist();
+      expect(res.accounts.github.refreshToken).to.not.exist();
       done();
     });
   });
