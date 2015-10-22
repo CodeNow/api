@@ -87,6 +87,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           mavis.findDockForBuild(ctx.cv, ctx.cv, function (err, dockerHost) {
             if (err) { return done(err); }
             var docker = new Docker(dockerHost);
+            ctx.cv.dockerHost = dockerHost;
             var opts = {
               manualBuild: true,
               sessionUser: ctx.user,
@@ -98,13 +99,21 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               },
               tid: 1
             };
-            console.log(ctx.cv.build);
             ctx.cv.populate('infraCodeVersion', function () {
               if (err) { return done(err); }
               ctx.cv.infraCodeVersion = {
                 context: ctx.cv.context
               };// mock
-              docker.createImageBuilder(opts, done);
+              docker.createImageBuilder(opts, function (err, container) {
+                ContextVersion.findOne(ctx.cv._id, function (err, cv) {
+                  if (err) { return done(err); }
+                  ContextVersion.updateById(ctx.cv._id, {
+                    $set: {
+                      'build.dockerContainer': container.id
+                    }
+                  }, done);
+                });
+              });
             });
           });
         }
@@ -129,7 +138,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       describe('With a successful build', function () {
         it('should attempt to deploy', function (done) {
           dockerMockEvents.emitBuildComplete(ctx.cv);
-
           sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
             workerDone();
             if (err) { return done(err); }
@@ -146,7 +154,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             sinon.assert.calledOnce(Instance.findAndPopulate);
             ContextVersion.findOne(ctx.cv._id, function (err, cv) {
               if (err) { return done(err); }
-
               expect(cv.build.completed).to.exist();
               Build.findBy('contextVersions', cv._id, function (err, builds) {
                 if (err) { return done(err); }
