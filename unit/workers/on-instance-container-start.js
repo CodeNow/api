@@ -10,8 +10,6 @@ var Code = require('code');
 var sinon = require('sinon');
 
 var Hosts = require('models/redis/hosts');
-var Sauron = require('models/apis/sauron');
-
 var OnInstanceContainerStartWorker = require('workers/on-instance-container-start');
 
 var afterEach = lab.afterEach;
@@ -83,12 +81,10 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
   });
   describe('all together', function () {
     beforeEach(function (done) {
-      sinon.stub(Sauron.prototype, 'attachHostToContainer').yieldsAsync(null);
       sinon.stub(Hosts.prototype, 'upsertHostsForInstance').yieldsAsync(null);
       done();
     });
     afterEach(function (done) {
-      Sauron.prototype.attachHostToContainer.restore();
       Hosts.prototype.upsertHostsForInstance.restore();
       done();
     });
@@ -113,12 +109,6 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
             .to.equal(ctx.data.id);
           expect(ctx.mockInstance.modifyContainerInspect.args[0][1])
             .to.equal(ctx.data.inspectData);
-          expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
-          expect(Sauron.prototype.attachHostToContainer.args[0][0])
-            .to.equal(ctx.mockInstance.network.networkIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][1])
-            .to.equal(ctx.mockInstance.network.hostIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][2]).to.equal(ctx.data.id);
           expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
               .to.equal(ctx.labels.ownerUsername);
@@ -145,103 +135,12 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
           // This should never return an error
           expect(err).to.be.null();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
-          expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
-          expect(Sauron.prototype.attachHostToContainer.args[0][0])
-            .to.equal(ctx.mockInstance.network.networkIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][1])
-            .to.equal(ctx.mockInstance.network.hostIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][2]).to.equal(ctx.data.id);
           expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
               .to.equal(ctx.labels.ownerUsername);
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
           expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
-          done();
-        });
-      });
-    });
-  });
-
-
-  describe('_attachContainerToNetwork', function () {
-    beforeEach(function (done) {
-      // normally set by _baseWorkerFindInstance
-      ctx.worker.instance = ctx.mockInstance;
-      // normally set after _baseWorkerFindInstance
-      ctx.worker.hostIp = ctx.mockInstance.network.hostIp;
-      ctx.worker.networkIp = ctx.mockInstance.network.networkIp;
-      done();
-    });
-
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(Sauron.prototype, 'attachHostToContainer').yieldsAsync(null);
-        sinon.stub(Hosts.prototype, 'upsertHostsForInstance').yieldsAsync(null);
-        done();
-      });
-
-      afterEach(function (done) {
-        Sauron.prototype.attachHostToContainer.restore();
-        Hosts.prototype.upsertHostsForInstance.restore();
-        done();
-      });
-
-      it('should attach to weave and register with navi', function (done) {
-        ctx.worker._attachContainerToNetwork(function (err) {
-          expect(err).to.be.undefined();
-          expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
-          expect(Sauron.prototype.attachHostToContainer.args[0][0])
-              .to.equal(ctx.mockInstance.network.networkIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][1])
-              .to.equal(ctx.mockInstance.network.hostIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][2]).to.equal(ctx.data.id);
-          expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
-          expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
-              .to.equal(ctx.labels.ownerUsername);
-          expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
-          done();
-        });
-      });
-    });
-    describe('failure', function () {
-
-      afterEach(function (done) {
-        Sauron.prototype.attachHostToContainer.restore();
-        Hosts.prototype.upsertHostsForInstance.restore();
-        done();
-      });
-
-      it('should fail gracefully from attaching the host', function (done) {
-        sinon.stub(Sauron.prototype, 'attachHostToContainer').yieldsAsync(new Error('an error'));
-        sinon.stub(Hosts.prototype, 'upsertHostsForInstance').yieldsAsync(null);
-        ctx.worker._attachContainerToNetwork(function (err) {
-          expect(err.message).to.equal('an error');
-          expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
-          expect(Sauron.prototype.attachHostToContainer.args[0][0])
-            .to.equal(ctx.mockInstance.network.networkIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][1])
-            .to.equal(ctx.mockInstance.network.hostIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][2]).to.equal(ctx.data.id);
-          expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(0);
-          done();
-        });
-      });
-      it('should fail gracefully from attaching the host', function (done) {
-        sinon.stub(Hosts.prototype, 'upsertHostsForInstance').yieldsAsync(new Error('an error'));
-        sinon.stub(Sauron.prototype, 'attachHostToContainer').yieldsAsync(null);
-        ctx.worker._attachContainerToNetwork(function (err) {
-          expect(err.message).to.equal('an error');
-          expect(Sauron.prototype.attachHostToContainer.callCount).to.equal(1);
-          expect(Sauron.prototype.attachHostToContainer.args[0][0])
-            .to.equal(ctx.mockInstance.network.networkIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][1])
-            .to.equal(ctx.mockInstance.network.hostIp);
-          expect(Sauron.prototype.attachHostToContainer.args[0][2]).to.equal(ctx.data.id);
-          expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
-          expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
-            .to.equal(ctx.labels.ownerUsername);
-          expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
           done();
         });
       });
