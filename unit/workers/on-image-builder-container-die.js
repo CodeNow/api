@@ -73,9 +73,7 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
   describe('_getBuildInfo', function () {
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'getBuildInfo', function (containerId, cb) {
-          cb(null, {});
-        });
+        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(null, {});
         sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
           expect(data).to.be.an.object();
           cb();
@@ -103,11 +101,7 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
     });
     describe('build failure', function () {
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'getBuildInfo', function (containerId, cb) {
-          cb(null, {
-            failed: true
-          });
-        });
+        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(null, { failed: true });
         sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
           expect(data).to.be.an.object();
           cb();
@@ -135,9 +129,7 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
     });
     describe('fetch failure', function () {
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'getBuildInfo', function (containerId, cb) {
-          cb(new Error('docker error'));
-        });
+        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(new Error('docker error'));
         sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
           expect(data).to.be.an.object();
           cb();

@@ -481,6 +481,16 @@ describe('Instance Model Tests ' + moduleName, function () {
       });
     });
 
+    it('should not error if appError was empty', function (done) {
+      var error = {};
+      var cvId = savedInstance.contextVersion._id;
+      savedInstance.modifyContainerCreateErr(cvId, error, function (err, newInst) {
+        if (err) { return done(err); }
+        expect(newInst.container.error).to.not.exist();
+        done();
+      });
+    });
+
     describe('conflict error', function () {
       var origErrorLog = error.log;
       after(function (done) {
@@ -1427,4 +1437,3 @@ describe('Instance Model Tests ' + moduleName, function () {
     });
   });
 });
-
