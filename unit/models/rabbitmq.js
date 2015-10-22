@@ -617,11 +617,11 @@ describe('RabbitMQ Model: '+moduleName, function () {
       done();
     });
 
-    it('should publish the job with the correct event body', function (done) {
-      var eventBody = { this_is: 'sparta', neat: { cool: 'wow' } };
-      ctx.rabbitMQ.publishGithubEvent('', '', eventBody);
-      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1].eventBody)
-        .to.deep.equal(eventBody);
+    it('should publish the job with the correct payload', function (done) {
+      var payload = { this_is: 'sparta', neat: { cool: 'wow' } };
+      ctx.rabbitMQ.publishGithubEvent('', '', payload);
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1].payload)
+        .to.deep.equal(payload);
       done();
     });
 
