@@ -16,7 +16,6 @@ var ContextVersion = require('models/mongo/context-version');
 var Instance = require('models/mongo/instance');
 var User = require('models/mongo/user');
 var Docker = require('models/apis/docker');
-var Sauron = require('models/apis/sauron.js');
 var messenger = require('socket/messenger.js');
 var keypather = require('keypather')();
 
@@ -260,28 +259,6 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
         ctx.mockInstances.forEach(function (mockInstance, i) {
           expect(messenger.emitInstanceUpdate.args[i][0]).to.equal(mockInstance);
         });
-        done();
-      });
-    });
-  });
-
-  describe('_deallocImageBuilderNetwork', function () {
-    beforeEach(function (done) {
-      sinon.stub(Sauron, 'deleteHostFromContextVersion').yieldsAsync();
-      done();
-    });
-    afterEach(function (done) {
-      Sauron.deleteHostFromContextVersion.restore();
-      done();
-    });
-    it('should delete host from context version', function (done) {
-      ctx.worker._deallocImageBuilderNetwork(function (err) {
-        if (err) { return done(err); }
-        sinon.assert.calledWith(
-          Sauron.deleteHostFromContextVersion,
-          ctx.worker.contextVersions[0],
-          sinon.match.func
-        );
         done();
       });
     });
