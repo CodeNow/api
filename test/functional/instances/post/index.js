@@ -4,10 +4,8 @@ var Code = require('code');
 var Lab = require('lab');
 var clone = require('101/clone');
 var createCount = require('callback-count');
-var equals = require('101/equals');
 var exists = require('101/exists');
 var noop = require('101/noop');
-var not = require('101/not');
 var randStr = require('randomstring').generate;
 var uuid = require('uuid');
 
