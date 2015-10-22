@@ -478,7 +478,8 @@ describe('docker: ' + moduleName, function () {
     it('should cleanse and parse logs', function (done) {
       var stream = through2();
       Container.prototype.logs.yieldsAsync(null, stream);
-      model.getBuildInfo('containerId', function (err, buildInfo) {
+      var exitCode = 0;
+      model.getBuildInfo('containerId', exitCode, function (err, buildInfo) {
         if (err) { return done(err); }
         expect(buildInfo.dockerImage).to.equal(dockerLogs.successDockerImage);
         expect(buildInfo.failed).to.equal(false);
@@ -500,7 +501,7 @@ describe('docker: ' + moduleName, function () {
         var streamOn = stream.on;
         var emitErr = new Error('boom');
         sinon.stub(stream, 'on', streamErrHandlerAttached);
-        model.getBuildInfo('containerId', function (err) {
+        model.getBuildInfo('containerId', 0, function (err) {
           expect(err).to.exist();
           expect(err.message).to.match(/docker logs/);
           expect(err.message).to.match(new RegExp(emitErr.message));
@@ -516,7 +517,7 @@ describe('docker: ' + moduleName, function () {
       it('should handle parse err', function (done) {
         var stream = through2();
         Container.prototype.logs.yieldsAsync(null, stream);
-        model.getBuildInfo('containerId', function (err) {
+        model.getBuildInfo('containerId', 1, function (err) {
           expect(err).to.exist();
           expect(err.message).to.match(/json parse/);
           done();
@@ -530,7 +531,7 @@ describe('docker: ' + moduleName, function () {
         var emitErr = new Error('boom');
         var streamPipe = stream.pipe;
         sinon.stub(stream, 'pipe', handlePipe);
-        model.getBuildInfo('containerId', function (err) {
+        model.getBuildInfo('containerId', 1, function (err) {
           expect(err).to.exist();
           expect(err.message).to.match(/cleanser/);
           expect(err.message).to.match(new RegExp(emitErr.message));
