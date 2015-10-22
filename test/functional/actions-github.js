@@ -135,9 +135,11 @@ describe('Github - /actions/github', function () {
       request.post(options, function (err) {
         if (err) { return done(err); }
         expect(rabbitMQ.publishGithubEvent.calledOnce).to.be.true();
-        expect(rabbitMQ.publishGithubEvent.calledWith('issue_comment'))
-          .to.be.true();
+        expect(rabbitMQ.publishGithubEvent.firstCall.args[0])
+          .to.equal(options.headers['x-github-delivery']);
         expect(rabbitMQ.publishGithubEvent.firstCall.args[1])
+          .to.equal(options.headers['x-github-event']);
+        expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
           .to.deep.equal(options.json);
         done();
       });
@@ -171,9 +173,11 @@ describe('Github - /actions/github', function () {
       request.post(options, function (err) {
         if (err) { return done(err); }
         expect(rabbitMQ.publishGithubEvent.calledOnce).to.be.true();
-        expect(rabbitMQ.publishGithubEvent.calledWith('push'))
-          .to.be.true();
+        expect(rabbitMQ.publishGithubEvent.firstCall.args[0])
+          .to.equal(options.headers['x-github-delivery']);
         expect(rabbitMQ.publishGithubEvent.firstCall.args[1])
+          .to.equal(options.headers['x-github-event']);
+        expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
           .to.deep.equal(options.json);
         done();
       });
@@ -223,9 +227,11 @@ describe('Github - /actions/github', function () {
       request.post(options, function (err) {
         if (err) { return done(err); }
         expect(rabbitMQ.publishGithubEvent.calledOnce).to.be.true();
-        expect(rabbitMQ.publishGithubEvent.calledWith('push'))
-          .to.be.true();
+        expect(rabbitMQ.publishGithubEvent.firstCall.args[0])
+          .to.equal(options.headers['x-github-delivery']);
         expect(rabbitMQ.publishGithubEvent.firstCall.args[1])
+          .to.equal(options.headers['x-github-event']);
+        expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
           .to.deep.equal(options.json);
         done();
       });
