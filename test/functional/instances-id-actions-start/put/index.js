@@ -128,9 +128,7 @@ describe('PUT /instances/:id/actions/start', function () {
       expect(rabbitMQ.hermesClient.publish.args[0][1]).to.include({
         dockerContainer: ctx.instance.attrs.container.dockerContainer,
         dockerHost: ctx.instance.attrs.container.dockerHost,
-        hostIp: ctx.instance.attrs.network.hostIp,
         instanceId: ctx.instance.attrs._id,
-        networkIp: ctx.instance.attrs.network.networkIp,
         ownerUsername: ctx.instance.user.attrs.accounts.github.login,
         sessionUserGithubId: ctx.instance.user.attrs.accounts.github.id
       });
@@ -154,7 +152,6 @@ describe('PUT /instances/:id/actions/start', function () {
         github: ctx.instance.user.attrs.accounts.github.id
       },
       contextVersions: exists,
-      'network.networkIp': exists,
       'network.hostIp': exists
     }, done));
   });

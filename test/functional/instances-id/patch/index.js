@@ -139,7 +139,6 @@ describe('Instance - PATCH /instances/:id', function () {
                 'owner.username': ctx.user.attrs.accounts.github.login,
                 // this represents a new docker container! :)
                 // containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer)),
-                'network.networkIp': exists,
                 'network.hostIp': exists
               };
               require('../../fixtures/mocks/github/user')(ctx.user);
