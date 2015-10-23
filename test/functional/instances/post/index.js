@@ -115,9 +115,7 @@ describe('POST /instances', function () {
             'owner.github': ctx.user.attrs.accounts.github.id,
             contextVersions: exists,
             'contextVersions[0]._id': ctx.cv.id(),
-            'contextVersions[0].appCodeVersions[0]._id': ctx.cv.json().appCodeVersions[0]._id,
-            'network.networkIp': exists,
-            'network.hostIp': exists
+            'contextVersions[0].appCodeVersions[0]._id': ctx.cv.json().appCodeVersions[0]._id
           };
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
 
@@ -305,9 +303,7 @@ describe('POST /instances', function () {
             public: false,
             'build._id': ctx.build.id(),
             containers: exists,
-            'containers[0]': exists,
-            'network.networkIp': exists,
-            'network.hostIp': exists
+            'containers[0]': exists
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);

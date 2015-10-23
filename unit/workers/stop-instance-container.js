@@ -48,8 +48,6 @@ describe('StopInstanceContainerWorker: '+moduleName, function () {
       dockerHost: '0.0.0.0',
       instanceId: 'instanceid123',
       sessionUserGithubId: '12345'
-      //hostIp: req.instance.network.hostIp,
-      //networkIp: req.instance.network.networkIp,
       //ownerUsername: req.sessionUser.accounts.github.login,
       //tid: req.domain.runnableData.tid
     };
