@@ -189,8 +189,6 @@ describe('docker: ' + moduleName, function () {
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0])
             .to.deep.equal({
               dockerTag: ctx.mockDockerTag,
-              hostIp: opts.network.hostIp,
-              networkIp: opts.network.networkIp,
               noCache: opts.noCache,
               sauronHost: url.parse(model.dockerHost).hostname + ':' + process.env.SAURON_PORT,
               contextVersion: opts.contextVersion
@@ -324,9 +322,7 @@ describe('docker: ' + moduleName, function () {
         keypather.flatten(ctx.mockContextVersion.toJSON(), '.', 'contextVersion'),
         {
           dockerTag: opts.dockerTag,
-          hostIp: opts.network.hostIp,
           manualBuild: opts.manualBuild,
-          networkIp: opts.network.networkIp,
           noCache: opts.noCache,
           sauronHost: url.parse(model.dockerHost).hostname + ':' + process.env.SAURON_PORT,
           sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
