@@ -21,7 +21,6 @@ var ContextVersion = require('models/mongo/context-version.js');
 var Instance = require('models/mongo/instance.js');
 var User = require('models/mongo/user.js');
 var messenger = require('socket/messenger');
-var Sauron = require('models/apis/sauron.js');
 
 var mockFactory = require('../fixtures/factory');
 
@@ -121,7 +120,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       });
 
       beforeEach(function (done) {
-        sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync();
         sinon.stub(rabbitMQ, 'deployInstance');
         sinon.stub(messenger, 'emitContextVersionUpdate');
         sinon.stub(messenger, 'emitInstanceUpdate');
@@ -129,7 +127,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         done();
       });
       afterEach(function (done) {
-        Sauron.prototype.deleteHost.restore();
         rabbitMQ.deployInstance.restore();
         messenger.emitContextVersionUpdate.restore();
         messenger.emitInstanceUpdate.restore();
