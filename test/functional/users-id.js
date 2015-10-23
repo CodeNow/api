@@ -41,9 +41,9 @@ describe('User - /users/:id', function () {
       it('should get the user', function (done) {
         ctx.user.fetch(function (err, body, code) {
           if (err) { return done(err); }
-
           expect(code).to.equal(200);
           expectPrivateFields(body);
+          expectNoSensitiveFields(body);
           expect(body.gravatar.length).to.not.equal(0);
           expect(body.gravatar.slice(-1)).to.not.equal('/');
           done();
@@ -63,6 +63,7 @@ describe('User - /users/:id', function () {
 
           expect(code).to.equal(200);
           expectPublicFields(body);
+          expectNoSensitiveFields(body);
           done();
         });
       });
@@ -84,6 +85,7 @@ describe('User - /users/:id', function () {
           }
 
           expect(code).to.equal(200);
+          expectNoSensitiveFields(body);
           expect(body.userOptions).to.deep.equal({
             uiState: {
               shownCoachMarks: {
@@ -150,13 +152,22 @@ describe('User - /users/:id', function () {
   });
 });
 
+/**
+ * Validate route strips sensitive fields from response objects
+ */
+function expectNoSensitiveFields (user) {
+  var github = user.accounts.github;
+  expect(github.accessToken).to.not.exist();
+  expect(github._json).to.not.exist();
+}
+
 function expectPrivateFields (user) {
   expect(user).to.include(
-    ['_id', 'email', 'gravatar', 'userOptions']); // TODO: ? 'imagesCount', 'taggedImagesCount'
+    ['_id', 'email', 'gravatar', 'userOptions']);
   expect(user).to.not.include(['password']);
 }
 function expectPublicFields (user) {
   expect(user).to.not.include(
-    ['email', 'password', 'votes', 'userOptions']); // TODO: ? 'imagesCount', 'taggedImagesCount'
+    ['email', 'password', 'votes', 'userOptions']);
   expect(user).to.include(['_id', 'gravatar']);
 }
