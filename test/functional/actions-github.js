@@ -461,7 +461,6 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.started': exists,
               'contextVersion.build.completed': exists,
               'contextVersion.build.duration': exists,
-              'contextVersion.build.network': exists,
               'contextVersion.build.triggeredBy.github': exists,
               'contextVersion.appCodeVersions[0].lowerRepo':
                 options.json.repository.full_name.toLowerCase(),
