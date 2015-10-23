@@ -139,7 +139,6 @@ function buildTheBuildTests (ctx) {
       'build.dockerImage': exists,
       'build.dockerTag': exists,
       'build.log': exists,
-      'build.network': exists,
       'build.triggeredBy': ctx.bodyOwner
     });
     done();
