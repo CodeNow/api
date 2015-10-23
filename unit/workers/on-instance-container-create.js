@@ -109,9 +109,7 @@ describe('OnInstanceContainerCreateWorker: '+moduleName, function () {
         expect(rabbitMQ.startInstanceContainer.args[0][0]).to.contain({
           dockerContainer: ctx.data.id,
           dockerHost: ctx.data.host,
-          hostIp: ctx.mockInstance.network.hostIp,
           instanceId: ctx.mockInstance._id.toString(),
-          networkIp: ctx.mockInstance.network.networkIp,
           ownerUsername: ctx.data.inspectData.Config.Labels.ownerUsername,
           sessionUserGithubId: ctx.data.inspectData.Config.Labels.sessionUserGithubId,
           tid: ctx.worker.logData.uuid
