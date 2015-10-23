@@ -144,9 +144,6 @@ function expectKeypaths (body, expectedKeypaths) {
   }
 }
 
-// Specific expectation helpers
-var Sauron = require('models/apis/sauron');
-
 /**
  * assert updated hipache entries
  * NOTE: if instance is provided for instanceOrName args are: (user, instance, cb)
@@ -271,40 +268,6 @@ expects.deletedContainer = function (container, cb) {
   docker.inspectContainer(container, function (err) {
     expect(err, 'deleted container ' + container.dockerContainer).to.exist();
     expect(err.output.statusCode, 'deleted container ' + container.dockerContainer).to.equal(404);
-    cb();
-  });
-};
-
-/**
- * asserts container is attached to weave network hostIp
- * @param  {Container} container      container information
- * @param  {Object}    expectedHostIp expected host ip for container
- * @param  {Function}  cb             callback
- */
-expects.updatedWeaveHost = function (container, expectedHostIp, cb) {
-  container = container.toJSON();
-  var sauron = new Sauron(container.dockerHost);
-  sauron.getContainerIp(container.dockerContainer, function (err, hostIp) {
-    if (err) { return cb(err); }
-    expect(hostIp,
-      'Container ' + container.dockerContainer + ' to be attached to ' + expectedHostIp)
-      .to.equal(expectedHostIp);
-    cb();
-  });
-};
-
-/**
- * asserts container detached from all weave network hostIps
- * @param  {Container} container container information
- * @param  {Function}  cb        callback
- */
-expects.deletedWeaveHost = function (container, cb) {
-  container = container.toJSON();
-  var sauron = new Sauron(container.dockerHost);
-  sauron.getContainerIp(container.dockerContainer, function (err, val) {
-    if (err) { return cb(err); }
-    expect(val, 'Container ' + container.dockerContainer + ' to be unattached')
-      .to.not.exist();
     cb();
   });
 };
