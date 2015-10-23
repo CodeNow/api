@@ -94,7 +94,6 @@
         "manualBuild": "false",
         "networkIp": "10.255.244.0",
         "noCache": "body.noCache",
-        "sauronHost": "10.20.1.209:3200",
         "sessionUserDisplayName": "Ryan Sandor Richards",
         "sessionUserId": "146592",
         "sessionUserUsername": "rsandor",

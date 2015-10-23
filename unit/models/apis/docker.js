@@ -3,7 +3,6 @@
  */
 'use strict';
 require('loadenv')();
-var url = require('url');
 var path = require('path');
 
 var assign = require('101/assign');
@@ -190,7 +189,6 @@ describe('docker: ' + moduleName, function () {
             .to.deep.equal({
               dockerTag: ctx.mockDockerTag,
               noCache: opts.noCache,
-              sauronHost: url.parse(model.dockerHost).hostname + ':' + process.env.SAURON_PORT,
               contextVersion: opts.contextVersion
             });
 
@@ -324,7 +322,6 @@ describe('docker: ' + moduleName, function () {
           dockerTag: opts.dockerTag,
           manualBuild: opts.manualBuild,
           noCache: opts.noCache,
-          sauronHost: url.parse(model.dockerHost).hostname + ':' + process.env.SAURON_PORT,
           sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
           sessionUserGithubId: opts.sessionUser.accounts.github.id,
           sessionUserUsername: opts.sessionUser.accounts.github.username,
@@ -372,7 +369,6 @@ describe('docker: ' + moduleName, function () {
       ctx.opts = {
         contextVersion: ctx.mockContextVersion,
         dockerTag: 'dockerTag',
-        sauronHost: 'sauronHost',
         networkIp: 'networkIp',
         hostIp: 'hostIp',
         noCache: false
