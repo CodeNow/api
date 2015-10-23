@@ -22,7 +22,10 @@ describe('User Schema: ' + moduleName, function () {
       var ret = {
         accounts: {
           github: {
-            accessToken: '12345'
+            accessToken: '12345',
+            _json: {},
+            _raw: {},
+            refreshToken: '123'
           }
         }
       };
