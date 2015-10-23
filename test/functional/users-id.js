@@ -163,11 +163,10 @@ function expectNoSensitiveFields (user) {
 
 function expectPrivateFields (user) {
   expect(user).to.include(
-    ['_id', 'email', 'gravatar', 'userOptions']); // TODO: ? 'imagesCount', 'taggedImagesCount'
+    ['_id', 'email', 'gravatar', 'userOptions']);
   expect(user).to.not.include(['password']);
 }
 function expectPublicFields (user) {
-  // TODO: ? 'imagesCount', 'taggedImagesCount'
   expect(user).to.not.include(
     ['email', 'password', 'votes', 'userOptions']);
   expect(user).to.include(['_id', 'gravatar']);
