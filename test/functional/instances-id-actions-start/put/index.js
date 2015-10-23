@@ -151,8 +151,7 @@ describe('PUT /instances/:id/actions/start', function () {
         gravatar: ctx.instance.user.attrs.gravatar,
         github: ctx.instance.user.attrs.accounts.github.id
       },
-      contextVersions: exists,
-      'network.hostIp': exists
+      contextVersions: exists
     }, done));
   });
 

@@ -135,10 +135,7 @@ describe('Instance - PATCH /instances/:id', function () {
                 shortHash: ctx.instance.attrs.shortHash,
                 'build._id': ctx.newBuild.id(),
                 'owner.github': ctx.user.attrs.accounts.github.id,
-                'owner.username': ctx.user.attrs.accounts.github.login,
-                // this represents a new docker container! :)
-                // containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer)),
-                'network.hostIp': exists
+                'owner.username': ctx.user.attrs.accounts.github.login
               };
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);

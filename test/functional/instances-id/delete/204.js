@@ -90,7 +90,6 @@ describe('204 DELETE /instances/:id', function () {
       'owner.gravatar': ctx.user.json().accounts.github.avatar_url,
       'owner.github': ctx.user.json().accounts.github.id,
       contextVersions: exists,
-      'network.hostIp': exists,
       'build._id': ctx.build.id(),
       'contextVersions[0]._id': ctx.cv.id()
     };
