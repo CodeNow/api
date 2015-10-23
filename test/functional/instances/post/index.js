@@ -158,14 +158,8 @@ describe('POST /instances', function () {
               instance.fetch(function (err) {
                 if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.exist();
-                var count = createCount(2, done);
                 expects.updatedHosts(
-                  ctx.user, instance, count.next);
-                var container = instance.containers.models[0];
-                expects.updatedWeaveHost(
-                  container,
-                  instance.attrs.network.hostIp,
-                  count.next);
+                  ctx.user, instance, done);
               });
             }
           });
@@ -323,12 +317,8 @@ describe('POST /instances', function () {
             }));
           primus.expectAction('start', expected, function () {
             instance.fetch(function () {
-              var container = instance.containers.models[0];
-              var count = createCount(2, done);
               expects.updatedHosts(
-                ctx.user, instance, count.next);
-              expects.updatedWeaveHost(
-                container, instance.attrs.network.hostIp, count.next);
+                ctx.user, instance, done);
             });
           });
         });
