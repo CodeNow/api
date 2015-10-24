@@ -310,7 +310,7 @@ describe('InstanceService: '+moduleName, function () {
       done();
     });
 
-    it('should return and error if findOneAndUpdate failed', function (done) {
+    it('should return an error if findOneAndUpdate failed', function (done) {
       var instanceService = new InstanceService();
       var mongoErr = new Error('Mongo error');
       sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr);
@@ -319,12 +319,23 @@ describe('InstanceService: '+moduleName, function () {
         done();
       });
     });
-    it('should return and error if findOneAndUpdate returned nothing', function (done) {
+    it('should return an error if findOneAndUpdate returned nothing', function (done) {
       var instanceService = new InstanceService();
       sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null);
       instanceService.modifyContainerIp(ctx.instance, 'container-id', '127.0.0.1', function (err) {
         expect(err.output.statusCode).to.equal(409);
         expect(err.output.payload.message).to.equal('Container IP was not updated, instance\'s container has changed');
+        done();
+      });
+    });
+    it('should return modified instance', function (done) {
+      var instanceService = new InstanceService();
+      var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'});
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance);
+      instanceService.modifyContainerIp(ctx.instance, 'container-id', '127.0.0.1', function (err, updated) {
+        expect(err).to.not.exist();
+        expect(updated._id).to.equal(ctx.instance._id);
+        expect(updated.name).to.equal(instance.name);
         done();
       });
     });
