@@ -130,7 +130,6 @@ function createNewInstance (name, opts) {
     container: container,
     containers: [],
     network: {
-      networkIp: opts.networkIp || '1.1.1.1',
       hostIp: '1.1.1.100'
     }
   });
