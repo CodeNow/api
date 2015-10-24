@@ -308,7 +308,7 @@ describe('InstanceService: '+moduleName, function () {
       expect(Instance.findOneAndUpdate.calledOnce).to.be.true();
       var query = Instance.findOneAndUpdate.getCall(0).args[0];
       var setQuery = Instance.findOneAndUpdate.getCall(0).args[1];
-      expect(query['_id']).to.equal(ctx.instance._id);
+      expect(query._id).to.equal(ctx.instance._id);
       expect(query['container.dockerContainer']).to.equal('container-id');
       expect(setQuery.$set['network.hostIp']).to.equal('127.0.0.1');
       expect(setQuery.$set['container.inspect.NetworkSettings.IPAddress']).to.equal('127.0.0.1');
