@@ -615,10 +615,10 @@ describe('docker: ' + moduleName, function () {
     });
 
     it('should cb error if pull err', function (done) {
-      var testErr = 'sauron attacks';
+      var testErr = new Error('Docker pull error');
       Dockerode.prototype.pull.yieldsAsync(testErr);
       model.pullImage(testImage, function (err) {
-        expect(err).to.be.equal(testErr);
+        expect(err.message).to.be.equal(testErr.message);
         done();
       });
     });
