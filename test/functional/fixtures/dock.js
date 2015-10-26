@@ -3,7 +3,6 @@ var createCount = require('callback-count');
 var docker = require('./docker');
 var redis = require('models/redis');
 var mavisApp = require('mavis');
-var sauron = require('sauron');
 var dockerModuleMock = require('./mocks/docker-model');
 var sinon = require('sinon');
 
@@ -24,11 +23,8 @@ function startDock (done) {
   // FIXME: hack because docker-mock does not add image to its store for image-builder creates
   sinon.stub(dockerModel.prototype, 'pullImage').yieldsAsync();
   started = true;
-  var count = createCount(done);
-  ctx.sauron = sauron.listen(process.env.SAURON_PORT);
-  ctx.sauron.on('listening', count.inc().next);
-  dockerModuleMock.setup(count.inc().next);
-  count.inc();
+  var count = createCount(2, done);
+  dockerModuleMock.setup(count.next);
   ctx.docker = docker.start(function (err) {
     if (err) { return count.next(err); }
     ctx.mavis = mavisApp.listen(url.parse(process.env.MAVIS_HOST).port);
@@ -45,12 +41,10 @@ function stopDock (done) {
   if(!started) { return done(); }
   dockerModel.prototype.pullImage.restore();
   started = false;
-  var count = createCount(done);
-  ctx.mavis.close(count.inc().next);
-  ctx.sauron.close(count.inc().next);
+  var count = createCount(3, done);
+  ctx.mavis.close(count.next);
   redis.del(process.env.REDIS_HOST_KEYS, count.inc().next);
-  dockerModuleMock.clean(count.inc().next);
-  count.inc();
+  dockerModuleMock.clean(count.next);
   dockerListener.stop(function(err) {
     if (err) { return count.next(err); }
     docker.stop(count.next);
