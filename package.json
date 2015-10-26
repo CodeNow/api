@@ -82,7 +82,6 @@
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.6.2",
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "s3-stream-upload": "0.0.6",
-    "sauron-client": "git+ssh://git@github.com:codenow/sauron-client.git#v1.1.0",
     "shimmer": "^1.0.0",
     "simple-api-client": "^0.5.9",
     "slack-client": "^1.4.0",
