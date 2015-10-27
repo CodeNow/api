@@ -92,7 +92,6 @@
         "dockerTag": "registry.runnable.com/146592/55d2d0e93e1b620e00eb61bd:55d3ef733e1b620e00eb6292",
         "hostIp": "10.255.244.68",
         "manualBuild": "false",
-        "networkIp": "10.255.244.0",
         "noCache": "body.noCache",
         "sessionUserDisplayName": "Ryan Sandor Richards",
         "sessionUserId": "146592",

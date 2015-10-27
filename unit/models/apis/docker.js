@@ -105,8 +105,7 @@ describe('docker: ' + moduleName, function () {
         }
       },
       mockNetwork: {
-        hostIp: '0.0.0.0',
-        networkIp: '1.1.1.1'
+        hostIp: '0.0.0.0'
       },
       mockSessionUser: {
         accounts: {
@@ -364,7 +363,6 @@ describe('docker: ' + moduleName, function () {
       ctx.opts = {
         contextVersion: ctx.mockContextVersion,
         dockerTag: 'dockerTag',
-        networkIp: 'networkIp',
         hostIp: 'hostIp',
         noCache: false
       };
