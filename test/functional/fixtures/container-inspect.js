@@ -51,7 +51,6 @@ module.exports.getContainerInspect = function (instance) {
         'RUNNABLE_DEPLOYKEY=7d2f922a-a511-4fbc-bafa-02331b3edb6a/flaming-octo-nemesis.key',
         'DOCKER_IMAGE_BUILDER_CACHE=/git-cache',
         'RUNNABLE_WAIT_FOR_WEAVE=until grep -q ethwe /proc/net/dev; do sleep 1; done;',
-        'RUNNABLE_HOST_IP=10.255.120.1',
         'RUNNABLE_BUILD_FLAGS={"Memory":1000000000}'
       ],
       Cmd: [
