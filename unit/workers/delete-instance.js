@@ -128,7 +128,6 @@ describe('Worker: delete-instance: '+moduleName, function () {
           github: 429706
         },
         network: {
-          networkIp: '10.0.1.0',
           hostIp: '10.0.1.1'
         },
         container: {
@@ -191,7 +190,6 @@ describe('Worker: delete-instance: '+moduleName, function () {
           github: 429706
         },
         network: {
-          networkIp: '10.0.1.0',
           hostIp: '10.0.1.1'
         },
         container: {
@@ -218,7 +216,6 @@ describe('Worker: delete-instance: '+moduleName, function () {
         expect(task.instanceMasterBranch)
           .to.equal(instanceData.contextVersion.appCodeVersions[0].lowerBranch);
         expect(task.container).to.deep.equal(instanceData.container);
-        expect(task.networkIp).to.equal(instanceData.network.networkIp);
         expect(task.hostIp).to.equal(instanceData.network.hostIp);
         expect(task.ownerGithubId).to.equal(instanceData.owner.github);
         expect(task.sessionUserId).to.equal('507f191e810c19729de860ea');
