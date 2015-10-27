@@ -33,8 +33,7 @@ describe('OnInstanceContainerCreateWorker: '+moduleName, function () {
     ctx.mockInstance = {
       _id: 555,
       network: {
-        hostIp: '0.0.0.0',
-        networkIp: '1.1.1.1'
+        hostIp: '0.0.0.0'
       },
       toJSON: function () { return {}; }
     };
