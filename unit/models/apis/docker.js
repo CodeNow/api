@@ -196,12 +196,10 @@ describe('docker: ' + moduleName, function () {
             name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' +
-              process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'],
+            Binds: [],
             Volumes: {},
             Labels: ctx.mockLabels
           };
-          expected.Volumes[process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH] = {};
 
           expect(Docker.prototype.createContainer.firstCall.args[0])
             .to.deep.equal(expected);
@@ -237,7 +235,6 @@ describe('docker: ' + moduleName, function () {
             var volumes = {};
             volumes['/cache'] = {};
             volumes['/layer-cache'] = {};
-            volumes[process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH] = {};
             expect(Docker.prototype.createContainer.firstCall.args[0])
               .to.deep.equal({
                 name: opts.contextVersion.build._id.toString(),
@@ -245,9 +242,7 @@ describe('docker: ' + moduleName, function () {
                 Env: ctx.mockEnv,
                 Binds: [
                   process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
-                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw',
-                  process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' +
-                    process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'
+                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
                 ],
                 Volumes: volumes,
                 Labels: ctx.mockLabels
