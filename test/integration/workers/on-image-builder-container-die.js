@@ -93,7 +93,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               ownerUsername: ctx.user.accounts.github.username,
               contextVersion: ctx.cv,
               network: {
-                networkIp: '1.1.1.0',
                 hostIp: '1.1.1.1'
               },
               tid: 1
