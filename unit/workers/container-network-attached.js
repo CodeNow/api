@@ -142,7 +142,7 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
 
       it('should find and update instance with container', function (done) {
         ctx.worker._updateInstance(function (err) {
-          expect(err).to.be.undefined();
+          expect(err).to.be.null();
           expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
           var args = InstanceService.prototype.modifyContainerIp.getCall(0).args;
           expect(args[0]).to.equal(ctx.mockInstance);
