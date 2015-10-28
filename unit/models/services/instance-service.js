@@ -311,7 +311,7 @@ describe('InstanceService: '+moduleName, function () {
       expect(query._id).to.equal(ctx.instance._id);
       expect(query['container.dockerContainer']).to.equal('container-id');
       expect(setQuery.$set['network.hostIp']).to.equal('127.0.0.1');
-      expect(setQuery.$set['container.inspect.NetworkSettings.IPAddress']).to.equal('127.0.0.1');
+      expect(Object.keys(setQuery.$set).length).to.equal(1);
       ctx.instance.invalidateContainerDNS.restore();
       Instance.findOneAndUpdate.restore();
       done();
