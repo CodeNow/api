@@ -367,7 +367,8 @@ describe('InstanceService: '+moduleName, function () {
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null);
         instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err) {
           expect(err.output.statusCode).to.equal(409);
-          expect(err.output.payload.message).to.equal('Container IP was not updated, instance\'s container has changed');
+          var errMsg = 'Container IP was not updated, instance\'s container has changed'
+          expect(err.output.payload.message).to.equal(errMsg);
           done();
         });
       });
