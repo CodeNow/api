@@ -15,10 +15,13 @@ var validation = require('../../fixtures/validation')(lab);
 var Hashids = require('hashids');
 
 var afterEach = lab.afterEach;
+var after = lab.after;
 var beforeEach = lab.beforeEach;
+var before = lab.before;
 var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
+var dock = require('../../../test/functional/fixtures/dock');
 
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
@@ -117,6 +120,8 @@ function createNewInstance (name, opts) {
     }
   });
 }
+before(dock.start);
+after(dock.stop);
 
 describe('InstanceService: '+moduleName, function () {
 
@@ -294,56 +299,88 @@ describe('InstanceService: '+moduleName, function () {
   });
 
   describe('modifyContainerIp', function () {
-    var ctx = {};
+    describe('with db calls', function () {
+      var ctx = {};
 
-    beforeEach(function (done) {
-      ctx.instance = createNewInstance('testy', {});
-      sinon.spy(ctx.instance, 'invalidateContainerDNS');
-      done();
-    });
-
-    afterEach(function (done) {
-      // cache invalidation should be always called
-      expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true();
-      expect(Instance.findOneAndUpdate.calledOnce).to.be.true();
-      var query = Instance.findOneAndUpdate.getCall(0).args[0];
-      var setQuery = Instance.findOneAndUpdate.getCall(0).args[1];
-      expect(query._id).to.equal(ctx.instance._id);
-      expect(query['container.dockerContainer']).to.equal('container-id');
-      expect(setQuery.$set['network.hostIp']).to.equal('127.0.0.1');
-      expect(Object.keys(setQuery.$set).length).to.equal(1);
-      ctx.instance.invalidateContainerDNS.restore();
-      Instance.findOneAndUpdate.restore();
-      done();
-    });
-
-    it('should return an error if findOneAndUpdate failed', function (done) {
-      var instanceService = new InstanceService();
-      var mongoErr = new Error('Mongo error');
-      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr);
-      instanceService.modifyContainerIp(ctx.instance, 'container-id', '127.0.0.1', function (err) {
-        expect(err.message).to.equal('Mongo error');
+      beforeEach(function (done) {
+        var instance = createNewInstance('testy', {});
+        ctx.containerId = instance.container.dockerContainer;
+        sinon.spy(instance, 'invalidateContainerDNS');
+        expect(instance.network.hostIp).to.equal('1.1.1.100');
+        instance.save(function (err, instance) {
+          if (err) { return done(err); }
+          ctx.instance  = instance;
+          done();
+        });
+      });
+      afterEach(function (done) {
+        // cache invalidation should be always called
+        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true();
         done();
       });
-    });
-    it('should return an error if findOneAndUpdate returned nothing', function (done) {
-      var instanceService = new InstanceService();
-      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null);
-      instanceService.modifyContainerIp(ctx.instance, 'container-id', '127.0.0.1', function (err) {
-        expect(err.output.statusCode).to.equal(409);
-        expect(err.output.payload.message).to.equal('Container IP was not updated, instance\'s container has changed');
-        done();
+      it('should return modified instance from database', function (done) {
+        var instanceService = new InstanceService();
+        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.2', function (err, updated) {
+          expect(err).to.not.exist();
+          expect(updated._id.toString()).to.equal(ctx.instance._id.toString());
+          expect(updated.network.hostIp).to.equal('127.0.0.2');
+          done();
+        });
       });
     });
-    it('should return modified instance', function (done) {
-      var instanceService = new InstanceService();
-      var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'});
-      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance);
-      instanceService.modifyContainerIp(ctx.instance, 'container-id', '127.0.0.1', function (err, updated) {
-        expect(err).to.not.exist();
-        expect(updated._id).to.equal(ctx.instance._id);
-        expect(updated.name).to.equal(instance.name);
+    describe('without db calls', function () {
+      var ctx = {};
+
+      beforeEach(function (done) {
+        ctx.instance = createNewInstance('testy', {});
+        ctx.containerId = ctx.instance.container.dockerContainer;
+        sinon.spy(ctx.instance, 'invalidateContainerDNS');
         done();
+      });
+
+      afterEach(function (done) {
+        // cache invalidation should be always called
+        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true();
+        expect(Instance.findOneAndUpdate.calledOnce).to.be.true();
+        var query = Instance.findOneAndUpdate.getCall(0).args[0];
+        var setQuery = Instance.findOneAndUpdate.getCall(0).args[1];
+        expect(query._id).to.equal(ctx.instance._id);
+        expect(query['container.dockerContainer']).to.equal(ctx.containerId);
+        expect(setQuery.$set['network.hostIp']).to.equal('127.0.0.1');
+        expect(Object.keys(setQuery.$set).length).to.equal(1);
+        ctx.instance.invalidateContainerDNS.restore();
+        Instance.findOneAndUpdate.restore();
+        done();
+      });
+
+      it('should return an error if findOneAndUpdate failed', function (done) {
+        var instanceService = new InstanceService();
+        var mongoErr = new Error('Mongo error');
+        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr);
+        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err) {
+          expect(err.message).to.equal('Mongo error');
+          done();
+        });
+      });
+      it('should return an error if findOneAndUpdate returned nothing', function (done) {
+        var instanceService = new InstanceService();
+        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null);
+        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err) {
+          expect(err.output.statusCode).to.equal(409);
+          expect(err.output.payload.message).to.equal('Container IP was not updated, instance\'s container has changed');
+          done();
+        });
+      });
+      it('should return modified instance', function (done) {
+        var instanceService = new InstanceService();
+        var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'});
+        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance);
+        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err, updated) {
+          expect(err).to.not.exist();
+          expect(updated._id).to.equal(ctx.instance._id);
+          expect(updated.name).to.equal(instance.name);
+          done();
+        });
       });
     });
   });
