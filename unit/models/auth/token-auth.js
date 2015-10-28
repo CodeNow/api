@@ -50,7 +50,7 @@ describe('token.js unit test: '+moduleName, function () {
         expect(error.log.calledWith(testErr)).to.be.true();
         expect(RedisToken.prototype.setValue.calledWith(JSON.stringify({
           cookie: testCookie,
-          sessionId: sessionId
+          apiSessionRedisKey: process.env.REDIS_SESSION_STORE_PREFIX + sessionId
         }))).to.be.true();
         error.log.restore();
         done();
@@ -77,7 +77,7 @@ describe('token.js unit test: '+moduleName, function () {
         expect(err).to.not.exist();
         expect(RedisToken.prototype.setValue.calledWith(JSON.stringify({
           cookie: testCookie,
-          sessionId: sessionId
+          apiSessionRedisKey: process.env.REDIS_SESSION_STORE_PREFIX + sessionId
         }))).to.be.true();
         done();
       });
