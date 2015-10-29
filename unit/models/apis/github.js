@@ -260,11 +260,11 @@ describe('github: '+moduleName, function () {
       var github = new Github({token: 'some-token'});
       var err = new Error('Validation Failed');
       err.code = 422;
-      err.errors = [{
-        'resource': 'Hook',
-        'code': 'custom',
-        'message': 'Hook already exists on this repository'
-      }];
+      err.message = JSON.stringify({
+        "message":"Validation Failed",
+        "errors":[{"resource":"Hook","code":"custom","message":"Hook already exists on this repository"}],
+        "documentation_url":"https://developer.github.com/v3/repos/hooks/#create-a-hook"
+      });
       sinon.stub(github.repos, 'createHook').yieldsAsync(err);
       github._createRepoHook('codenow/api', function (boomErr) {
         expect(boomErr).to.exist();
