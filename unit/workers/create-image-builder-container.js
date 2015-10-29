@@ -203,7 +203,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
             buildId: ctx.mockContextVersion.build._id,
             buildContainerId: ctx.container.id,
             tag: Docker.getDockerTag(ctx.mockContextVersion),
-            host: ctx.data.dockerHost,
             network: ctx.sauronResult
           });
           expect(ContextVersion.updateContainerByBuildId.args[0][1], 'updateContainer')
@@ -551,7 +550,6 @@ describe('CreateImageBuilderContainerWorker: '+moduleName, function () {
               buildId: ctx.mockContextVersion.build._id,
               buildContainerId: ctx.container.id,
               tag: Docker.getDockerTag(ctx.mockContextVersion),
-              host: ctx.data.dockerHost,
               network: ctx.sauronResult
             });
             expect(ContextVersion.updateContainerByBuildId.args[0][1]).to.be.a.function();
