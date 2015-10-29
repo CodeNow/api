@@ -11,6 +11,7 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
+var Boom = require('dat-middleware').Boom;
 
 var Graph = require('models/apis/graph');
 var Neo4j = require('models/graph/neo4j');
@@ -24,6 +25,7 @@ var mongoose = require('mongoose');
 var pick = require('101/pick');
 var pluck = require('101/pluck');
 var noop = require('101/noop');
+var toObjectId = require('utils/to-object-id');
 
 var Docker = require('models/apis/docker');
 var Instance = require('models/mongo/instance');
@@ -306,45 +308,6 @@ describe('Instance Model Tests ' + moduleName, function () {
     });
   });
 
-  describe('modifyContainer', function () {
-    var savedInstance = null;
-    var instance = null;
-    before(function (done) {
-      instance = createNewInstance();
-      instance.save(function (err, instance) {
-        if (err) { return done(err); }
-        expect(instance).to.exist();
-        savedInstance = instance;
-        done();
-      });
-    });
-
-    it('should update instance.container', function (done) {
-      var cvId = savedInstance.contextVersion._id;
-      var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
-      var dockerHost = 'http://localhost:4243';
-      savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err, newInst) {
-        if (err) { return done(err); }
-        expect(newInst.container).to.deep.equal({
-          dockerContainer: dockerContainer,
-          dockerHost: dockerHost
-        });
-        done();
-      });
-    });
-
-    it('should conflict if the contextVersion has changed', function (done) {
-      var cvId = newObjectId();
-      var dockerContainer = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1';
-      var dockerHost = 'http://localhost:4243';
-      savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, function (err) {
-        expect(err).to.exist();
-        expect(err.output.statusCode).to.equal(409);
-        done();
-      });
-    });
-  });
-
   describe('inspectAndUpdate', function () {
     var savedInstance = null;
     var instance = null;
@@ -381,7 +344,25 @@ describe('Instance Model Tests ' + moduleName, function () {
         var cvId = savedInstance.contextVersion._id;
         var dockerContainer = container.Id;
         var dockerHost = 'http://localhost:4243';
-        savedInstance.modifyContainer(cvId, dockerContainer, dockerHost, cb);
+        var query = {
+          _id: savedInstance._id,
+          'contextVersion._id': toObjectId(cvId)
+        };
+        var $set = {
+          container: {
+            dockerHost: dockerHost,
+            dockerContainer: dockerContainer
+          }
+        };
+        Instance.findOneAndUpdate(query, { $set: $set }, function (err, instance) {
+          if (err) {
+            return cb(err);
+          }
+          if (!instance) { // changed or deleted
+            return cb(Boom.conflict('Container was not deployed, instance\'s build has changed'));
+          }
+            cb(err, instance);
+        });
       }
       function startContainer (savedInstance, cb) {
         docker.startContainer(savedInstance.container.dockerContainer, function (err) {
@@ -453,7 +434,8 @@ describe('Instance Model Tests ' + moduleName, function () {
   describe('modifyContainerCreateErr', function () {
     var savedInstance = null;
     var instance = null;
-    before(function (done) {
+    beforeEach(function (done) {
+      sinon.spy(error, 'log');
       instance = createNewInstance();
       instance.save(function (err, instance) {
         if (err) { return done(err); }
@@ -462,53 +444,83 @@ describe('Instance Model Tests ' + moduleName, function () {
         done();
       });
     });
+    afterEach(function (done) {
+      error.log.restore();
+      done();
+    });
+    it('should fail if error was not provided', function (done) {
+      var cvId = savedInstance.contextVersion._id;
+      savedInstance.modifyContainerCreateErr(cvId, null, function (err) {
+        expect(err.output.statusCode).to.equal(500);
+        expect(err.message).to.equal('Create container error was not defined');
+        done();
+      });
+    });
 
-    it('should pick message, stack and data fields', function (done) {
-      var error = {
+    it('should fail if error was empty object', function (done) {
+      var cvId = savedInstance.contextVersion._id;
+      savedInstance.modifyContainerCreateErr(cvId, {}, function (err) {
+        expect(err.output.statusCode).to.equal(500);
+        expect(err.message).to.equal('Create container error was not defined');
+        done();
+      });
+    });
+
+    it('should pick message, stack and data fields if cvId is ObjectId', function (done) {
+      var appError = {
+        message: 'random message',
+        data: 'random data',
+        stack: 'random stack',
+        field: 'random field'
+      };
+      var cvId = toObjectId(savedInstance.contextVersion._id);
+      savedInstance.modifyContainerCreateErr(cvId, appError, function (err, newInst) {
+        if (err) { return done(err); }
+        expect(newInst.container.error.message).to.equal(appError.message);
+        expect(newInst.container.error.data).to.equal(appError.data);
+        expect(newInst.container.error.stack).to.equal(appError.stack);
+        expect(newInst.container.error.field).to.not.exist();
+        expect(error.log.callCount).to.equal(0);
+        done();
+      });
+    });
+
+    it('should pick message, stack and data fields if cvId is string', function (done) {
+      var appError = {
         message: 'random message',
         data: 'random data',
         stack: 'random stack',
         field: 'random field'
       };
       var cvId = savedInstance.contextVersion._id;
-      savedInstance.modifyContainerCreateErr(cvId, error, function (err, newInst) {
+      savedInstance.modifyContainerCreateErr(cvId.toString(), appError, function (err, newInst) {
         if (err) { return done(err); }
-        expect(newInst.container.error.message).to.equal(error.message);
-        expect(newInst.container.error.data).to.equal(error.data);
-        expect(newInst.container.error.stack).to.equal(error.stack);
+        expect(newInst.container.error.message).to.equal(appError.message);
+        expect(newInst.container.error.data).to.equal(appError.data);
+        expect(newInst.container.error.stack).to.equal(appError.stack);
         expect(newInst.container.error.field).to.not.exist();
+        expect(error.log.callCount).to.equal(0);
         done();
       });
     });
 
-    describe('conflict error', function () {
-      var origErrorLog = error.log;
-      after(function (done) {
-        error.log = origErrorLog;
+    it('should conflict if the contextVersion has changed and return same instance', function (done) {
+      var appError = {
+        message: 'random message',
+        data: 'random data',
+        stack: 'random stack',
+        field: 'random field'
+      };
+      var cvId = newObjectId();
+      savedInstance.modifyContainerCreateErr(cvId, appError, function (err, inst) {
+        expect(err).to.not.exist();
+        expect(savedInstance.container.error).to.not.exist();
+        expect(inst.container.error).to.not.exist();
+        expect(savedInstance).to.deep.equal(inst);
+        expect(error.log.callCount).to.equal(1);
+        var errArg = error.log.getCall(0).args[0];
+        expect(errArg.output.statusCode).to.equal(409);
         done();
-      });
-
-      it('should conflict if the contextVersion has changed', function (done) {
-        var fakeError = {
-          message: 'random message',
-          data: 'random data',
-          stack: 'random stack',
-          field: 'random field'
-        };
-        /*
-         * Temporarily commented out pending error logging refactor
-         * Casey 10/15/2015
-        error.log = function (err) {
-          // first call
-          if (err === fakeError) { return count.next(); }
-          // second call
-          expect(err).to.exist();
-          expect(err.output.statusCode).to.equal(409);
-          count.next();
-        };
-        */
-        var cvId = newObjectId();
-        savedInstance.modifyContainerCreateErr(cvId, fakeError, done);
       });
     });
   });
@@ -1427,4 +1439,3 @@ describe('Instance Model Tests ' + moduleName, function () {
     });
   });
 });
-

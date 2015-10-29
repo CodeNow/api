@@ -575,4 +575,61 @@ describe('RabbitMQ Model: '+moduleName, function () {
       });
     });
   });
+
+  describe('publishGithubEvent', function() {
+    var publishQueueName = 'metis-github-event';
+    var clock;
+    var fixedTimestamp = new Date().getTime();
+
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish');
+      clock = sinon.useFakeTimers(fixedTimestamp);
+      done();
+    });
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore();
+      clock.restore();
+      done();
+    });
+
+    it('should publish to the `metis-github-event` queue', function (done) {
+      ctx.rabbitMQ.publishGithubEvent('delivery-id', 'push', {});
+      expect(ctx.rabbitMQ.hermesClient.publish.calledOnce).to.be.true();
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[0])
+        .to.equal(publishQueueName);
+      done();
+    });
+
+    it('should publish the job with the correct delivery id', function(done) {
+      var deliveryId = '1234-fnsnsnn';
+      ctx.rabbitMQ.publishGithubEvent(deliveryId, 'push', {});
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1].deliveryId)
+        .to.equal(deliveryId);
+      done();
+    });
+
+    it('should publish the job with the correct type', function (done) {
+      var eventType = 'wow-sksnka2090292';
+      ctx.rabbitMQ.publishGithubEvent('', eventType, {});
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1].eventType)
+        .to.equal(eventType);
+      done();
+    });
+
+    it('should publish the job with the correct payload', function (done) {
+      var payload = { this_is: 'sparta', neat: { cool: 'wow' } };
+      ctx.rabbitMQ.publishGithubEvent('', '', payload);
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1].payload)
+        .to.deep.equal(payload);
+      done();
+    });
+
+    it('should publish the job with the correct recordedAt time', function(done) {
+      ctx.rabbitMQ.publishGithubEvent('', '', {});
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1].recordedAt)
+        .to.deep.equal(parseInt(fixedTimestamp / 1000));
+      done();
+    });
+  });
 });
