@@ -348,8 +348,7 @@
       "openjdk-7u75-jre", 
       "7u75-jdk", 
       "6b34"
-      ]  
-    ,
+      ],
     "defaultVersion": "8",
     "ports": ", 80",
     "startCommand": ["/usr/lib/jvm/java-8-openjdk-amd64/bin/java -jar target/out-jar-with-dependencies.jar"],
