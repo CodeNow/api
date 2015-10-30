@@ -98,7 +98,6 @@ module.exports = {
         started : new Date(),
         hash : 'abcdef',
         network : {
-          networkIp: '127.0.0.1',
           hostIp: '127.0.0.1'
         },
         containerId : 'abcdef',
@@ -162,7 +161,6 @@ module.exports = {
       created: new Date(),
       env: [],
       network: {
-        networkIp: '127.0.0.1',
         hostIp: '127.0.0.1'
       }
     };

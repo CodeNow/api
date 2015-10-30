@@ -139,7 +139,6 @@ function buildTheBuildTests (ctx) {
       'build.dockerImage': exists,
       'build.dockerTag': exists,
       'build.log': exists,
-      'build.network': exists,
       'build.triggeredBy': ctx.bodyOwner
     });
     done();
@@ -309,11 +308,6 @@ function itShouldBuildTheBuild (ctx) {
                 expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'));
                 expectedVolumesKeys.push('/layer-cache');
               }
-              expectedBindsAndVolumesLength++;
-              expectedBindsValues.push(
-                new RegExp(process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' +
-                  process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'));
-              expectedVolumesKeys.push(process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH);
 
               expect(data.Binds).to.have.length(expectedBindsAndVolumesLength);
               expectedBindsValues.forEach(function (r, i) {

@@ -104,8 +104,7 @@ describe('DeployInstanceWorker', function () {
         gravatar: 'cdsfgsdfg'
       },
       network: {
-        hostIp: '0.0.0.0',
-        networkIp: '1.1.1.1'
+        hostIp: '0.0.0.0'
       },
       update: sinon.spy(function (query, opts, cb) {
         cb(null, ctx.mockInstance);

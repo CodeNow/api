@@ -10,20 +10,123 @@ var Code = require('code');
 var rabbitMQ = require('models/rabbitmq');
 var InstanceService = require('models/services/instance-service');
 var Instance = require('models/mongo/instance');
+var ContextVersion = require('models/mongo/context-version');
+var validation = require('../../fixtures/validation')(lab);
+var Hashids = require('hashids');
 
 var afterEach = lab.afterEach;
+var after = lab.after;
 var beforeEach = lab.beforeEach;
+var before = lab.before;
 var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
+var dock = require('../../../test/functional/fixtures/dock');
 
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
+var id = 0;
+function getNextId () {
+  id++;
+  return id;
+}
+function getNextHash () {
+  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
+  return hashids.encrypt(getNextId());
+}
+
+function createNewVersion (opts) {
+  return new ContextVersion({
+    message: 'test',
+    owner: { github: validation.VALID_GITHUB_ID },
+    createdBy: { github: validation.VALID_GITHUB_ID },
+    config: validation.VALID_OBJECT_ID,
+    created: Date.now(),
+    context: validation.VALID_OBJECT_ID,
+    files: [{
+      Key: 'test',
+      ETag: 'test',
+      VersionId: validation.VALID_OBJECT_ID
+    }],
+    build: {
+      dockerImage: 'testing',
+      dockerTag: 'adsgasdfgasdf'
+    },
+    appCodeVersions: [
+      {
+        additionalRepo: false,
+        repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+        lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+        branch: opts.branch || 'master',
+        defaultBranch: opts.defaultBranch || 'master',
+        commit: 'deadbeef'
+      },
+      {
+        additionalRepo: true,
+        commit: '4dd22d12b4b3b846c2e2bbe454b89cb5be68f71d',
+        branch: 'master',
+        lowerBranch: 'master',
+        repo: 'Nathan219/yash-node',
+        lowerRepo: 'nathan219/yash-node',
+        _id: '5575f6c43074151a000e8e27',
+        privateKey: 'Nathan219/yash-node.key',
+        publicKey: 'Nathan219/yash-node.key.pub',
+        defaultBranch: 'master',
+        transformRules: { rename: [], replace: [], exclude: [] }
+      }
+    ]
+  });
+}
+
+function createNewInstance (name, opts) {
+  // jshint maxcomplexity:10
+  opts = opts || {};
+  var container = {
+    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
+    dockerHost: opts.dockerHost || 'http://localhost:4243',
+    inspect: {
+      State: {
+        ExitCode: 0,
+        FinishedAt: '0001-01-01T00:00:00Z',
+        Paused: false,
+        Pid: 889,
+        Restarting: false,
+        Running: true,
+        StartedAt: '2014-11-25T22:29:50.23925175Z'
+      },
+      NetworkSettings: {
+        IPAddress: opts.IPAddress || '172.17.14.2'
+      }
+    }
+  };
+  return new Instance({
+    name: name || 'name',
+    shortHash: getNextHash(),
+    locked: opts.locked || false,
+    'public': false,
+    masterPod: opts.masterPod || false,
+    parent: opts.parent,
+    autoForked: opts.autoForked || false,
+    owner: { github: validation.VALID_GITHUB_ID },
+    createdBy: { github: validation.VALID_GITHUB_ID },
+    build: validation.VALID_OBJECT_ID,
+    created: Date.now(),
+    contextVersion: createNewVersion(opts),
+    container: container,
+    containers: [],
+    network: {
+      hostIp: '1.1.1.100'
+    }
+  });
+}
+before(dock.start);
+after(dock.stop);
+
 describe('InstanceService: '+moduleName, function () {
-  
+
   describe('#deploy', function () {
-    
+
     beforeEach(function (done) {
       sinon.spy(rabbitMQ, 'deployInstance');
       done();
@@ -94,7 +197,7 @@ describe('InstanceService: '+moduleName, function () {
       });
     });
   });
-  
+
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
 
     it('should return if instanceId param is missing', function (done) {
@@ -192,6 +295,94 @@ describe('InstanceService: '+moduleName, function () {
           rabbitMQ.deleteInstance.restore();
           done();
         });
+    });
+  });
+
+  describe('modifyContainerIp', function () {
+    describe('with db calls', function () {
+      var ctx = {};
+
+      beforeEach(function (done) {
+        var instance = createNewInstance('testy', {});
+        ctx.containerId = instance.container.dockerContainer;
+        sinon.spy(instance, 'invalidateContainerDNS');
+        expect(instance.network.hostIp).to.equal('1.1.1.100');
+        instance.save(function (err, instance) {
+          if (err) { return done(err); }
+          ctx.instance  = instance;
+          done();
+        });
+      });
+      afterEach(function (done) {
+        // cache invalidation should be always called
+        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true();
+        done();
+      });
+      it('should return modified instance from database', function (done) {
+        var instanceService = new InstanceService();
+        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.2', function (err, updated) {
+          expect(err).to.not.exist();
+          expect(updated._id.toString()).to.equal(ctx.instance._id.toString());
+          expect(updated.network.hostIp).to.equal('127.0.0.2');
+          done();
+        });
+      });
+    });
+    describe('without db calls', function () {
+      var ctx = {};
+
+      beforeEach(function (done) {
+        ctx.instance = createNewInstance('testy', {});
+        ctx.containerId = ctx.instance.container.dockerContainer;
+        sinon.spy(ctx.instance, 'invalidateContainerDNS');
+        done();
+      });
+
+      afterEach(function (done) {
+        // cache invalidation should be always called
+        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true();
+        expect(Instance.findOneAndUpdate.calledOnce).to.be.true();
+        var query = Instance.findOneAndUpdate.getCall(0).args[0];
+        var setQuery = Instance.findOneAndUpdate.getCall(0).args[1];
+        expect(query._id).to.equal(ctx.instance._id);
+        expect(query['container.dockerContainer']).to.equal(ctx.containerId);
+        expect(setQuery.$set['network.hostIp']).to.equal('127.0.0.1');
+        expect(Object.keys(setQuery.$set).length).to.equal(1);
+        ctx.instance.invalidateContainerDNS.restore();
+        Instance.findOneAndUpdate.restore();
+        done();
+      });
+
+      it('should return an error if findOneAndUpdate failed', function (done) {
+        var instanceService = new InstanceService();
+        var mongoErr = new Error('Mongo error');
+        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr);
+        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err) {
+          expect(err.message).to.equal('Mongo error');
+          done();
+        });
+      });
+      it('should return an error if findOneAndUpdate returned nothing', function (done) {
+        var instanceService = new InstanceService();
+        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null);
+        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err) {
+          expect(err.output.statusCode).to.equal(409);
+          var errMsg = 'Container IP was not updated, instance\'s container has changed';
+          expect(err.output.payload.message).to.equal(errMsg);
+          done();
+        });
+      });
+      it('should return modified instance', function (done) {
+        var instanceService = new InstanceService();
+        var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'});
+        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance);
+        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err, updated) {
+          expect(err).to.not.exist();
+          expect(updated._id).to.equal(ctx.instance._id);
+          expect(updated.name).to.equal(instance.name);
+          done();
+        });
+      });
     });
   });
 });
