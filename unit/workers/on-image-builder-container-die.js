@@ -19,6 +19,7 @@ var Docker = require('models/apis/docker');
 var Sauron = require('models/apis/sauron.js');
 var messenger = require('socket/messenger.js');
 var keypather = require('keypather')();
+var rabbitMQ = require('models/rabbitmq');
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die');
 
@@ -27,6 +28,12 @@ var beforeEach = lab.beforeEach;
 var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
+var expectErr = function (expectedErr, done) {
+  return function (err) {
+    expect(err).to.equal(expectedErr);
+    done();
+  };
+};
 
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
@@ -174,6 +181,92 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
         sinon.assert.calledWith(ContextVersion.updateBuildErrorByContainer, ctx.data.id);
         sinon.assert.calledWith(Build.updateFailedByContextVersionIds, [ctx.mockContextVersion._id]);
         done();
+      });
+    });
+  });
+
+  describe('_handleBuildSuccess', function () {
+    beforeEach(function (done) {
+      ctx.versionIds = [
+        '123456789012345678901234',
+        '1111111111111111111111111'
+      ];
+      ctx.mockInstances = [{
+        _id: '2222222222222222222222222',
+        build: '1222222222222222222222222'
+      }, {
+        _id: '3333333333333333333333333',
+        build: '1333333333333333333333333'
+      }];
+      ctx.worker.ownerUsername = 'runnable';
+      sinon.stub(Build, 'updateCompletedByContextVersionIds');
+      sinon.stub(Instance, 'emitInstanceUpdates');
+      sinon.stub(rabbitMQ, 'createInstanceContainer');
+      done();
+    });
+    afterEach(function (done) {
+      Build.updateCompletedByContextVersionIds.restore();
+      Instance.emitInstanceUpdates.restore();
+      rabbitMQ.createInstanceContainer.restore();
+      done();
+    });
+    describe('success', function() {
+      beforeEach(function (done) {
+        Build.updateCompletedByContextVersionIds.yieldsAsync();
+        Instance.emitInstanceUpdates.yieldsAsync(null, ctx.mockInstances);
+        done();
+      });
+
+      it('should create create-instance-container jobs', function(done) {
+        ctx.worker._handleBuildSuccess(ctx.versionIds, function (err) {
+          if (err) { return done(err); }
+          sinon.assert.calledWith(
+            Build.updateCompletedByContextVersionIds,
+            ctx.versionIds,
+            sinon.match.func
+          );
+          sinon.assert.calledWith(
+            Instance.emitInstanceUpdates,
+            { 'contextVersion._id': {$in: ctx.versionIds} },
+            sinon.match.func
+          );
+          ctx.mockInstances.forEach(function (instance) {
+            sinon.assert.calledWith(
+              rabbitMQ.createInstanceContainer,
+              {
+                instanceId: instance._id,
+                buildId: instance.build,
+                ownerUsername: ctx.worker.ownerUsername
+              }
+            );
+          });
+          done();
+        });
+      });
+    });
+    describe('error', function () {
+      beforeEach(function (done) {
+        ctx.err = new Error('boom');
+        done();
+      });
+      describe('updateCompletedByContextVersionIds errors', function () {
+        beforeEach(function (done) {
+          Build.updateCompletedByContextVersionIds.yieldsAsync(ctx.err);
+          done();
+        });
+        it('should callback the error', function(done) {
+          ctx.worker._handleBuildSuccess(ctx.versionIds, expectErr(ctx.err, done));
+        });
+      });
+      describe('emitInstanceUpdates errors', function () {
+        beforeEach(function (done) {
+          Build.updateCompletedByContextVersionIds.yieldsAsync();
+          Instance.emitInstanceUpdates.yieldsAsync(ctx.err);
+          done();
+        });
+        it('should callback the error', function(done) {
+          ctx.worker._handleBuildSuccess(ctx.versionIds, expectErr(ctx.err, done));
+        });
       });
     });
   });

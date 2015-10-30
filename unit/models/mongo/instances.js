@@ -33,6 +33,12 @@ var Version = require('models/mongo/context-version');
 var dock = require('../../../test/functional/fixtures/dock');
 var pubsub = require('models/redis/pubsub');
 var validation = require('../../fixtures/validation')(lab);
+var expectErr = function (expectedErr, done) {
+  return function (err) {
+    expect(err).to.equal(expectedErr);
+    done();
+  };
+};
 
 var id = 0;
 function getNextId () {
@@ -141,7 +147,12 @@ var moduleName = path.relative(process.cwd(), __filename);
 
 describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
+  var ctx;
   before(require('../../fixtures/mongo').connect);
+  beforeEach(function (done) {
+    ctx = {};
+    done();
+  });
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
 
   describe('starting or stopping state detection', function () {
@@ -1436,6 +1447,84 @@ describe('Instance Model Tests ' + moduleName, function () {
         ]
       });
       done();
+    });
+  });
+
+  describe('#emitInstanceUpdates', function () {
+    function createMockInstance () {
+      return new Instance();
+    }
+    beforeEach(function (done) {
+      ctx.query = {};
+      ctx.mockInstances = [
+        createMockInstance(),
+        createMockInstance(),
+        createMockInstance()
+      ];
+      sinon.stub(Instance, 'find');
+      sinon.stub(Instance.prototype, 'emitInstanceUpdate');
+      done();
+    });
+    afterEach(function (done) {
+      Instance.find.restore();
+      Instance.prototype.emitInstanceUpdate.restore();
+      done();
+    });
+
+    describe('success', function() {
+      beforeEach(function (done) {
+        var mockInstances = ctx.mockInstances;
+        Instance.find.yieldsAsync(null, mockInstances);
+        Instance.prototype.emitInstanceUpdate
+          .onCall(0).yieldsAsync(null, mockInstances[0])
+          .onCall(1).yieldsAsync(null, mockInstances[1])
+          .onCall(2).yieldsAsync(null, mockInstances[2]);
+        done();
+      });
+      it('should emit instance updates', function (done) {
+        Instance.emitInstanceUpdates(ctx.query, function (err, instances) {
+          if (err) { return done(err); }
+          sinon.assert.calledWith(
+            Instance.find,
+            ctx.query,
+            sinon.match.func
+          );
+          ctx.mockInstances.forEach(function (mockInstance) {
+            sinon.assert.calledOn(
+              Instance.prototype.emitInstanceUpdate,
+              mockInstance
+            );
+          });
+          expect(instances).to.deep.equal(ctx.mockInstances);
+          done();
+        });
+      });
+    });
+
+    describe('errors', function() {
+      beforeEach(function (done) {
+        ctx.err = new Error('boom');
+        done();
+      });
+      describe('find errors', function() {
+        beforeEach(function (done) {
+          Instance.find.yieldsAsync(ctx.err);
+          done();
+        });
+        it('should callback the error', function (done) {
+          Instance.emitInstanceUpdates(ctx.query, expectErr(ctx.err, done));
+        });
+      });
+      describe('emitInstanceUpdate errors', function() {
+        beforeEach(function (done) {
+          Instance.find.yieldsAsync(null, ctx.mockInstances);
+          Instance.prototype.emitInstanceUpdate.yieldsAsync(ctx.err);
+          done();
+        });
+        it('should callback the error', function (done) {
+          Instance.emitInstanceUpdates(ctx.query, expectErr(ctx.err, done));
+        });
+      });
     });
   });
 });
