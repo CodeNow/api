@@ -3,7 +3,6 @@
  */
 'use strict';
 require('loadenv')();
-var url = require('url');
 var path = require('path');
 
 var assign = require('101/assign');
@@ -106,8 +105,7 @@ describe('docker: ' + moduleName, function () {
         }
       },
       mockNetwork: {
-        hostIp: '0.0.0.0',
-        networkIp: '1.1.1.1'
+        hostIp: '0.0.0.0'
       },
       mockSessionUser: {
         accounts: {
@@ -189,10 +187,7 @@ describe('docker: ' + moduleName, function () {
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0])
             .to.deep.equal({
               dockerTag: ctx.mockDockerTag,
-              hostIp: opts.network.hostIp,
-              networkIp: opts.network.networkIp,
               noCache: opts.noCache,
-              sauronHost: url.parse(model.dockerHost).hostname + ':' + process.env.SAURON_PORT,
               contextVersion: opts.contextVersion
             });
 
@@ -200,12 +195,10 @@ describe('docker: ' + moduleName, function () {
             name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' +
-              process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'],
+            Binds: [],
             Volumes: {},
             Labels: ctx.mockLabels
           };
-          expected.Volumes[process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH] = {};
 
           expect(Docker.prototype.createContainer.firstCall.args[0])
             .to.deep.equal(expected);
@@ -241,7 +234,6 @@ describe('docker: ' + moduleName, function () {
             var volumes = {};
             volumes['/cache'] = {};
             volumes['/layer-cache'] = {};
-            volumes[process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH] = {};
             expect(Docker.prototype.createContainer.firstCall.args[0])
               .to.deep.equal({
                 name: opts.contextVersion.build._id.toString(),
@@ -249,9 +241,7 @@ describe('docker: ' + moduleName, function () {
                 Env: ctx.mockEnv,
                 Binds: [
                   process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
-                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw',
-                  process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':' +
-                    process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH + ':ro'
+                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
                 ],
                 Volumes: volumes,
                 Labels: ctx.mockLabels
@@ -324,11 +314,8 @@ describe('docker: ' + moduleName, function () {
         keypather.flatten(ctx.mockContextVersion.toJSON(), '.', 'contextVersion'),
         {
           dockerTag: opts.dockerTag,
-          hostIp: opts.network.hostIp,
           manualBuild: opts.manualBuild,
-          networkIp: opts.network.networkIp,
           noCache: opts.noCache,
-          sauronHost: url.parse(model.dockerHost).hostname + ':' + process.env.SAURON_PORT,
           sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
           sessionUserGithubId: opts.sessionUser.accounts.github.id,
           sessionUserUsername: opts.sessionUser.accounts.github.username,
@@ -376,8 +363,6 @@ describe('docker: ' + moduleName, function () {
       ctx.opts = {
         contextVersion: ctx.mockContextVersion,
         dockerTag: 'dockerTag',
-        sauronHost: 'sauronHost',
-        networkIp: 'networkIp',
         hostIp: 'hostIp',
         noCache: false
       };
@@ -424,10 +409,7 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
           'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
-          'RUNNABLE_CIDR=' + process.env.RUNNABLE_NETWORK_CIDR,
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
-          'RUNNABLE_WEAVE_PATH=' + process.env.DOCKER_IMAGE_BUILDER_WEAVE_PATH,
-          'RUNNABLE_HOST_IP=' + opts.hostIp,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
           'RUNNABLE_PUSH_IMAGE=true'
         ];
@@ -623,10 +605,10 @@ describe('docker: ' + moduleName, function () {
     });
 
     it('should cb error if pull err', function (done) {
-      var testErr = 'sauron attacks';
+      var testErr = new Error('Docker pull error');
       Dockerode.prototype.pull.yieldsAsync(testErr);
       model.pullImage(testImage, function (err) {
-        expect(err).to.be.equal(testErr);
+        expect(err.message).to.be.equal(testErr.message);
         done();
       });
     });

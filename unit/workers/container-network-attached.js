@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/on-instance-container-start
+ * @module unit/workers/container-network-attached
  */
 'use strict';
 
@@ -9,8 +9,8 @@ var lab = exports.lab = Lab.script();
 var Code = require('code');
 var sinon = require('sinon');
 
-var Hosts = require('models/redis/hosts');
-var OnInstanceContainerStartWorker = require('workers/on-instance-container-start');
+var ContainerNetworkAttached = require('workers/container-network-attached');
+var InstanceService = require('models/services/instance-service');
 
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
@@ -21,7 +21,7 @@ var it = lab.it;
 var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
-describe('OnInstanceContainerStartWorker: '+moduleName, function () {
+describe('ContainerNetworkAttached: '+moduleName, function () {
   var ctx;
 
   beforeEach(function (done) {
@@ -51,18 +51,10 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
       contextVersionId: 123
     };
     ctx.data = {
-      id: 111,
-      host: '10.0.0.1',
-      inspectData: {
-        NetworkSettings: {
-          Ports: []
-        },
-        Config: {
-          Labels: ctx.labels
-        }
-      }
+      containerId: 'container-id-1',
+      containerIp: '192.16.17.01'
     };
-    ctx.worker = new OnInstanceContainerStartWorker(ctx.data);
+    ctx.worker = new ContainerNetworkAttached(ctx.data);
     done();
   });
   beforeEach(function (done) {
@@ -79,23 +71,15 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
     done();
   });
   describe('all together', function () {
-    beforeEach(function (done) {
-      sinon.stub(Hosts.prototype, 'upsertHostsForInstance').yieldsAsync(null);
-      done();
-    });
-    afterEach(function (done) {
-      Hosts.prototype.upsertHostsForInstance.restore();
-      done();
-    });
 
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.mockInstance, 'modifyContainerInspect')
+        sinon.stub(InstanceService.prototype, 'modifyContainerIp')
           .yieldsAsync(null, ctx.mockInstance);
         done();
       });
       afterEach(function (done) {
-        ctx.mockInstance.modifyContainerInspect.restore();
+        InstanceService.prototype.modifyContainerIp.restore();
         done();
       });
 
@@ -103,15 +87,11 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
         ctx.worker.handle(function (err) {
           expect(err).to.be.null();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
-          expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
-          expect(ctx.mockInstance.modifyContainerInspect.args[0][0])
-            .to.equal(ctx.data.id);
-          expect(ctx.mockInstance.modifyContainerInspect.args[0][1])
-            .to.equal(ctx.data.inspectData);
-          expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
-          expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
-              .to.equal(ctx.labels.ownerUsername);
-          expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
+          expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
+          var args = InstanceService.prototype.modifyContainerIp.getCall(0).args;
+          expect(args[0]).to.equal(ctx.mockInstance);
+          expect(args[1]).to.equal(ctx.data.containerId);
+          expect(args[2]).to.equal(ctx.data.containerIp);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           done();
         });
@@ -119,13 +99,13 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
     });
     describe('failure', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.mockInstance, 'modifyContainerInspect')
+        sinon.stub(InstanceService.prototype, 'modifyContainerIp')
           .yieldsAsync(new Error('this is an error'));
         done();
       });
 
       afterEach(function (done) {
-        ctx.mockInstance.modifyContainerInspect.restore();
+        InstanceService.prototype.modifyContainerIp.restore();
         done();
       });
 
@@ -134,11 +114,7 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
           // This should never return an error
           expect(err).to.be.null();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
-          expect(Hosts.prototype.upsertHostsForInstance.callCount).to.equal(1);
-          expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
-              .to.equal(ctx.labels.ownerUsername);
-          expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance);
-          expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
+          expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           done();
         });
@@ -154,44 +130,44 @@ describe('OnInstanceContainerStartWorker: '+moduleName, function () {
     });
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.mockInstance, 'modifyContainerInspect')
+        sinon.stub(InstanceService.prototype, 'modifyContainerIp')
           .yieldsAsync(null, ctx.mockInstance);
         done();
       });
 
       afterEach(function (done) {
-        ctx.mockInstance.modifyContainerInspect.restore();
+        InstanceService.prototype.modifyContainerIp.restore();
         done();
       });
 
       it('should find and update instance with container', function (done) {
         ctx.worker._updateInstance(function (err) {
-          expect(err).to.be.undefined();
-          expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
-          expect(ctx.mockInstance.modifyContainerInspect.args[0][0])
-              .to.equal(ctx.data.id);
-          expect(ctx.mockInstance.modifyContainerInspect.args[0][1])
-              .to.equal(ctx.data.inspectData);
+          expect(err).to.be.null();
+          expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
+          var args = InstanceService.prototype.modifyContainerIp.getCall(0).args;
+          expect(args[0]).to.equal(ctx.mockInstance);
+          expect(args[1]).to.equal(ctx.data.containerId);
+          expect(args[2]).to.equal(ctx.data.containerIp);
           done();
         });
       });
     });
     describe('failure', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.mockInstance, 'modifyContainerInspect')
+        sinon.stub(InstanceService.prototype, 'modifyContainerIp')
           .yieldsAsync(new Error('this is an error'));
         done();
       });
 
       afterEach(function (done) {
-        ctx.mockInstance.modifyContainerInspect.restore();
+        InstanceService.prototype.modifyContainerIp.restore();
         done();
       });
 
       it('should find and update instance with container', function (done) {
         ctx.worker._updateInstance(function (err) {
           expect(err.message).to.equal('this is an error');
-          expect(ctx.mockInstance.modifyContainerInspect.callCount).to.equal(1);
+          expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
           done();
         });
       });

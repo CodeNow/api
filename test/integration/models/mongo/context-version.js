@@ -232,8 +232,7 @@ function cvTemplate (hash, started, completed) {
       started : started,
       hash : hash,
       network : {
-        hostIp : '10.250.197.190',
-        networkIp : '10.250.196.0'
+        hostIp : '10.250.197.190'
       }
     },
     advanced : true,

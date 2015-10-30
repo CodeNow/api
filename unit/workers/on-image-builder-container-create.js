@@ -13,7 +13,6 @@ var sinon = require('sinon');
 
 var ContextVersion = require('models/mongo/context-version');
 var Docker = require('models/apis/docker');
-var Sauron = require('models/apis/sauron');
 var messenger = require('socket/messenger');
 
 var OnCreateImageBuilderContainer = require('workers/on-image-builder-container-create');
@@ -130,7 +129,6 @@ describe('OnImageBuilderContainerCreate: '+moduleName, function () {
         ctx.worker = new OnCreateImageBuilderContainer(ctx.data);
 
         sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion);
-        sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
 
         sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync();
         sinon.stub(ContextVersion, 'updateBy').yieldsAsync(null, 1);
@@ -143,7 +141,6 @@ describe('OnImageBuilderContainerCreate: '+moduleName, function () {
       afterEach(function (done) {
         ContextVersion.findOne.restore();
         Docker.prototype.startImageBuilderContainer.restore();
-        Sauron.prototype.deleteHost.restore();
         ContextVersion.updateBuildErrorByBuildId.restore();
         ContextVersion.updateBy.restore();
         done();
@@ -172,11 +169,6 @@ describe('OnImageBuilderContainerCreate: '+moduleName, function () {
               .equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS);
           expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage').to.deep
               .equal(ctx.data.inspectData.Id);
-          expect(Sauron.prototype.deleteHost.callCount, 'deleteHost').to.equal(1);
-          expect(Sauron.prototype.deleteHost.args[0][0], 'deleteHost')
-              .to.equal(ctx.labels.networkIp);
-          expect(Sauron.prototype.deleteHost.args[0][1], 'deleteHost')
-              .to.equal(ctx.labels.hostIp);
           expect(ContextVersion.updateBuildErrorByBuildId.callCount, 'updateBuildError')
               .to.equal(1);
           expect(ContextVersion.updateBuildErrorByBuildId.args[0][0], 'updateBuildError')
@@ -308,26 +300,19 @@ describe('OnImageBuilderContainerCreate: '+moduleName, function () {
       });
 
       afterEach(function (done) {
-        Sauron.prototype.deleteHost.restore();
         ContextVersion.updateBuildErrorByBuildId.restore();
         done();
       });
 
       describe('basics', function () {
         beforeEach(function (done) {
-          sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(null);
-
           sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync(null);
           done();
         });
 
 
-        it('Should trigger the delete host and updateBuildError', function (done) {
+        it('should trigger the delete host and updateBuildError', function (done) {
           ctx.worker._onError(new Error('hello'), function () {
-
-            expect(Sauron.prototype.deleteHost.callCount).to.equal(1);
-            expect(Sauron.prototype.deleteHost.args[0][0]).to.equal(ctx.labels.networkIp);
-            expect(Sauron.prototype.deleteHost.args[0][1]).to.equal(ctx.labels.hostIp);
 
             expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1);
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
@@ -340,7 +325,6 @@ describe('OnImageBuilderContainerCreate: '+moduleName, function () {
 
       describe('failures', function () {
         beforeEach(function (done) {
-          sinon.stub(Sauron.prototype, 'deleteHost').yieldsAsync(new Error('Bryan\'s message'));
           sinon.stub(
             ContextVersion,
             'updateBuildErrorByBuildId'
@@ -349,12 +333,8 @@ describe('OnImageBuilderContainerCreate: '+moduleName, function () {
         });
 
 
-        it('Should log an error if sauron errors on the delete', function (done) {
+        it('should log an error if updateBuildErrorByBuildId errors', function (done) {
           ctx.worker._onError(new Error('hello'), function () {
-            expect(Sauron.prototype.deleteHost.callCount).to.equal(1);
-            expect(Sauron.prototype.deleteHost.args[0][0]).to.equal(ctx.labels.networkIp);
-            expect(Sauron.prototype.deleteHost.args[0][1]).to.equal(ctx.labels.hostIp);
-
             expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1);
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
               ctx.mockContextVersion.build._id

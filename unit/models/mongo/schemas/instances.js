@@ -87,7 +87,6 @@ describe('Instance Schema Isolation Tests: ' + moduleName, function () {
       },
       containers: [],
       network: {
-        networkIp: '1.1.1.1',
         hostIp: '1.1.1.100'
       }
     });
