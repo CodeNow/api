@@ -228,6 +228,7 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
           sinon.assert.calledWith(
             Instance.emitInstanceUpdates,
             { 'contextVersion._id': {$in: ctx.versionIds} },
+            'update',
             sinon.match.func
           );
           ctx.mockInstances.forEach(function (instance) {

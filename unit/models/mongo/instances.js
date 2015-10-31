@@ -1482,7 +1482,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         done();
       });
       it('should emit instance updates', function (done) {
-        Instance.emitInstanceUpdates(ctx.query, function (err, instances) {
+        Instance.emitInstanceUpdates(ctx.query, 'update', function (err, instances) {
           if (err) { return done(err); }
           sinon.assert.calledWith(
             Instance.find,
@@ -1495,6 +1495,10 @@ describe('Instance Model Tests ' + moduleName, function () {
               mockInstance
             );
           });
+          sinon.assert.calledWith(
+            Instance.prototype.emitInstanceUpdate,
+            'update'
+          );
           expect(instances).to.deep.equal(ctx.mockInstances);
           done();
         });
@@ -1512,7 +1516,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           done();
         });
         it('should callback the error', function (done) {
-          Instance.emitInstanceUpdates(ctx.query, expectErr(ctx.err, done));
+          Instance.emitInstanceUpdates(ctx.query, 'update', expectErr(ctx.err, done));
         });
       });
       describe('emitInstanceUpdate errors', function() {
@@ -1522,7 +1526,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           done();
         });
         it('should callback the error', function (done) {
-          Instance.emitInstanceUpdates(ctx.query, expectErr(ctx.err, done));
+          Instance.emitInstanceUpdates(ctx.query, 'update', expectErr(ctx.err, done));
         });
       });
     });
