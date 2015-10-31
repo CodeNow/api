@@ -111,65 +111,6 @@ describe('RabbitMQ Model: '+moduleName, function () {
       rabbit.hermesClient.emit('error', new Error('Some hermes error'));
     });
   });
-  describe('deployInstance', function () {
-    beforeEach(function (done) {
-      // this normally set after connect
-      ctx.rabbitMQ.hermesClient = {
-        publish: function () {}
-      };
-      ctx.validJobData = {
-        sessionUserGithubId: 'asdaSDFASDF',
-        instanceId: '4G23G243G4545',
-        ownerUsername: 'G45GH4GERGDSG'
-      };
-      ctx.validJobData2 = {
-        sessionUserGithubId: 'asdaSDFASDF',
-        buildId: '4G23G243G4545',
-        forceDock: '127.0.0.1',
-        ownerUsername: 'G45GH4GERGDSG'
-      };
-      ctx.invalidJobData = {
-        sessionUserGithubId: 'asdaSDFASDF',
-        ownerUsername: 'G45GH4GERGDSG'
-      };
-      done();
-    });
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
-          expect(eventName).to.equal('deploy-instance');
-          expect(eventData).to.equal(ctx.validJobData);
-        });
-        done();
-      });
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore();
-        done();
-      });
-      it('should publish a job with required data', function (done) {
-        ctx.rabbitMQ.deployInstance(ctx.validJobData);
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1);
-        done();
-      });
-    });
-
-    describe('failure', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {});
-        done();
-      });
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore();
-        done();
-      });
-      it('should not publish a job without required data', function (done) {
-        expect(ctx.rabbitMQ.deployInstance.bind(ctx.rabbitMQ, ctx.invalidJobData))
-          .to.throw(Error, /Validation failed/);
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0);
-        done();
-      });
-    });
-  });
   describe('CreateImageBuilderContainer', function () {
     beforeEach(function (done) {
       // this normally set after connect
