@@ -88,5 +88,4 @@
 ./test/functional/users-id.js
 ./test/integration/fixtures/factory.js
 ./test/integration/models/mongo/context-version.js
-./test/integration/workers/deploy-instance.js
 ./test/integration/workers/on-image-builder-container-die.js
