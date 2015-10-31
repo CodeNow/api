@@ -251,7 +251,7 @@ describe('Context Version: ' + moduleName, function () {
       });
       cv.save(function (err) {
         expect(err).to.exist();
-        expect(err.message).to.equal('Validation failed');
+        expect(err.message).to.match(/Validation failed/);
         expect(err.errors.owner.message).to.equal('ContextVersions require an Owner');
         done();
       });
