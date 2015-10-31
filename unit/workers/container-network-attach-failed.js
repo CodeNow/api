@@ -117,6 +117,8 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
           expect(setData.container.error.stack).to.exist();
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           var updateFrontendArgs = ctx.worker._baseWorkerUpdateInstanceFrontend.getCall(0).args;
+          expect(updateFrontendArgs[0]).to.equal(ctx.mockInstance._id);
+          expect(updateFrontendArgs[1]).to.equal(ctx.mockInstance.createdBy.github);
           expect(updateFrontendArgs[2]).to.equal('update');
           done();
         });
@@ -142,6 +144,8 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
           expect(Instance.findByIdAndUpdate.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           var updateFrontendArgs = ctx.worker._baseWorkerUpdateInstanceFrontend.getCall(0).args;
+          expect(updateFrontendArgs[0]).to.equal(ctx.mockInstance._id);
+          expect(updateFrontendArgs[1]).to.equal(ctx.mockInstance.createdBy.github);
           expect(updateFrontendArgs[2]).to.equal('update');
           done();
         });
