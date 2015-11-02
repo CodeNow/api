@@ -616,7 +616,7 @@ describe('docker: ' + moduleName, function () {
       var testErr = new Error('Docker pull error');
       Dockerode.prototype.pull.yieldsAsync(testErr);
       model.pullImage(testImage, function (err) {
-        expect(err.message).to.be.equal(testErr.message);
+        expect(err.message).to.be.equal('Pull image failed: '+testErr.message);
         done();
       });
     });
