@@ -33,8 +33,7 @@ describe('OnInstanceContainerCreateWorker: '+moduleName, function () {
     ctx.mockInstance = {
       _id: 555,
       network: {
-        hostIp: '0.0.0.0',
-        networkIp: '1.1.1.1'
+        hostIp: '0.0.0.0'
       },
       toJSON: function () { return {}; }
     };
@@ -109,9 +108,7 @@ describe('OnInstanceContainerCreateWorker: '+moduleName, function () {
         expect(rabbitMQ.startInstanceContainer.args[0][0]).to.contain({
           dockerContainer: ctx.data.id,
           dockerHost: ctx.data.host,
-          hostIp: ctx.mockInstance.network.hostIp,
           instanceId: ctx.mockInstance._id.toString(),
-          networkIp: ctx.mockInstance.network.networkIp,
           ownerUsername: ctx.data.inspectData.Config.Labels.ownerUsername,
           sessionUserGithubId: ctx.data.inspectData.Config.Labels.sessionUserGithubId,
           tid: ctx.worker.logData.uuid

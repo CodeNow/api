@@ -46,8 +46,6 @@ describe('StartInstanceContainerWorker: '+moduleName, function () {
           }
         }
       },
-      //networkIp: req.instance.network.networkIp,
-      //ownerUsername: req.sessionUser.accounts.github.login,
       //tid: req.domain.runnableData.tid
     };
     ctx.mockInstance = {

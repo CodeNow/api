@@ -19,7 +19,7 @@ var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
 describe('token.js unit test: '+moduleName, function () {
-  describe('createWithSessionCookie', function() {
+  describe('createWithSessionId', function() {
     beforeEach(function(done) {
       sinon.stub(RedisToken.prototype, 'setValue');
       done();
@@ -29,7 +29,7 @@ describe('token.js unit test: '+moduleName, function () {
       done();
     });
     it('should cb if not required', function(done) {
-      tokenAuth.createWithSessionCookie({}, {}, function (err) {
+      tokenAuth.createWithSessionId({}, {}, function (err) {
         expect(err).to.not.exist();
         expect(RedisToken.prototype.setValue.called).to.be.false();
         done();
@@ -38,16 +38,20 @@ describe('token.js unit test: '+moduleName, function () {
     it('should log error if setting token failed', function(done) {
       var testErr = 'whodateerr';
       var testCookie = 'yummy';
+      var sessionId = 12345;
       RedisToken.prototype.setValue.yields(testErr);
       sinon.stub(error, 'log').returns();
 
-      tokenAuth.createWithSessionCookie({
+      tokenAuth.createWithSessionId({
+        id: sessionId,
         requiresToken: true
       }, testCookie, function (err) {
         expect(err).to.not.exist();
         expect(error.log.calledWith(testErr)).to.be.true();
-        expect(RedisToken.prototype.setValue.calledWith(testCookie))
-          .to.be.true();
+        expect(RedisToken.prototype.setValue.calledWith(JSON.stringify({
+          cookie: testCookie,
+          apiSessionRedisKey: process.env.REDIS_SESSION_STORE_PREFIX + sessionId
+        }))).to.be.true();
         error.log.restore();
         done();
       });
@@ -55,13 +59,14 @@ describe('token.js unit test: '+moduleName, function () {
     it('should add runnableappAccessToken to callback url', function(done) {
       var testCookie = 'yummy';
       var testRedir = 'http://thisredir:9283/datPath?thisqs=great';
+      var sessionId = 12345;
       var session = {
+        id: sessionId,
         requiresToken: true,
         authCallbackRedirect: testRedir
       };
       RedisToken.prototype.setValue.yields();
-
-      tokenAuth.createWithSessionCookie(session, testCookie, function (err) {
+      tokenAuth.createWithSessionId(session, testCookie, function (err) {
         var testUrl = url.parse(session.authCallbackRedirect);
         var qs = querystring.parse(testUrl.query);
         expect(testUrl.protocol).to.equal('http:');
@@ -70,8 +75,10 @@ describe('token.js unit test: '+moduleName, function () {
         expect(qs.runnableappAccessToken).to.exist();
         expect(qs.thisqs).to.equal('great');
         expect(err).to.not.exist();
-        expect(RedisToken.prototype.setValue.calledWith(testCookie))
-          .to.be.true();
+        expect(RedisToken.prototype.setValue.calledWith(JSON.stringify({
+          cookie: testCookie,
+          apiSessionRedisKey: process.env.REDIS_SESSION_STORE_PREFIX + sessionId
+        }))).to.be.true();
         done();
       });
     });

@@ -136,7 +136,6 @@ function createNewInstance (name, opts) {
     container: container,
     containers: [],
     network: {
-      networkIp: opts.networkIp || '1.1.1.1',
       hostIp: '1.1.1.100'
     }
   });
@@ -1068,7 +1067,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         });
 
         it('should give the network for a dependency', function (done) {
-          var network = { hostIp: '1.2.3.4', networkIp: '1.2.3.0' };
+          var network = { hostIp: '1.2.3.4' };
           sinon.stub(Instance, 'findById').yieldsAsync(null, { network: network });
           var i = instances[0];
           i.getDependencies(function (err, deps) {
@@ -1331,9 +1330,8 @@ describe('Instance Model Tests ' + moduleName, function () {
   });
 
   describe('setDependenciesFromEnvironment', function () {
-    var networkIp = '10.20.10.20';
     var ownerName = 'someowner';
-    var instance = createNewInstance('wooosh', { networkIp: networkIp });
+    var instance = createNewInstance('wooosh');
 
     beforeEach(function (done) {
       sinon.spy(instance, 'invalidateContainerDNS');
@@ -1349,7 +1347,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       done();
     });
 
-    it('should invalidate dns cache entries for the networkIp', function (done) {
+    it('should invalidate dns cache entries', function (done) {
       instance.setDependenciesFromEnvironment(ownerName, function (err) {
         if (err) { done(err); }
         expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
@@ -1359,8 +1357,7 @@ describe('Instance Model Tests ' + moduleName, function () {
   });
 
   describe('addDependency', function () {
-    var networkIp = '120.220.120.220';
-    var instance = createNewInstance('goooush', { networkIp: networkIp });
+    var instance = createNewInstance('goooush');
     var dependant = createNewInstance('splooosh');
 
     beforeEach(function (done) {
@@ -1375,7 +1372,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       done();
     });
 
-    it('should invalidate dns cache entries for the networkIp', function (done) {
+    it('should invalidate dns cache entries', function (done) {
       instance.addDependency(dependant, 'wooo.com', function (err) {
         if (err) { done(err); }
         expect(instance.invalidateContainerDNS.calledOnce).to.be.true();
@@ -1386,8 +1383,7 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('removeDependency', function () {
     var Neo4j = require('models/graph/neo4j');
-    var networkIp = '2.3.5.7';
-    var instance = createNewInstance('boooush', { networkIp: networkIp });
+    var instance = createNewInstance('boooush');
     var dependant = createNewInstance('mighty');
 
     beforeEach(function (done) {
@@ -1402,7 +1398,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       done();
     });
 
-    it('should invalidate dns cache entries for the networkIp', function (done) {
+    it('should invalidate dns cache entries', function (done) {
       instance.removeDependency(dependant, function (err) {
         if (err) { done(err); }
         expect(instance.invalidateContainerDNS.calledOnce).to.be.true();

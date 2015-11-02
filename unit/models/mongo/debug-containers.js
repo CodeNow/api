@@ -48,7 +48,6 @@ describe('Debug Containers: '+moduleName, function () {
       createdBy: { github: 1 },
       build: cv._id,
       network: {
-        networkIp: '1.2.3.4',
         hostIp: '1.2.3.4'
       }
     });

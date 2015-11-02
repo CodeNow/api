@@ -66,8 +66,6 @@ describe('PUT /instances/:id/actions/restart', function () {
         github: ctx.user.json().accounts.github.id
       },
       contextVersions: exists,
-      'network.networkIp': exists,
-      'network.hostIp': exists,
       'build._id': ctx.build.id(),
       'contextVersions[0]._id': ctx.cv.id()
     };
@@ -304,11 +302,9 @@ describe('PUT /instances/:id/actions/restart', function () {
         if (err) { return done(err); }
         var count = createCount(done);
         var instance = ctx.instance;
-        var container = instance.containers.models[0];
 
         count.inc();
 
-        expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
         expects.updatedHosts(ctx.user, instance, count.inc().next);
         // try stop and start
 
@@ -332,7 +328,6 @@ describe('PUT /instances/:id/actions/restart', function () {
                 // expect temporary property to not be in final response
                 expect(instance.json().container.inspect.State.Stopping).to.be.undefined();
                 expect(instance.json().container.inspect.State.Starting).to.be.undefined();
-                expects.updatedWeaveHost(container, instance.attrs.network.hostIp, count.inc().next);
                 expects.updatedHosts(ctx.user, instance, count.next);
               });
             }));
