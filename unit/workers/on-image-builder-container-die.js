@@ -18,7 +18,6 @@ var User = require('models/mongo/user');
 var Docker = require('models/apis/docker');
 var messenger = require('socket/messenger.js');
 var keypather = require('keypather')();
-var rabbitMQ = require('models/rabbitmq');
 var toObjectId = require('utils/to-object-id');
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die');
