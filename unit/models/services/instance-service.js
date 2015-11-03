@@ -3,7 +3,7 @@
  */
 'use strict';
 
-var assign = require('101/assign');
+var clone = require('101/clone');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var sinon = require('sinon');
@@ -253,6 +253,13 @@ describe('InstanceService: '+moduleName, function () {
         contextVersionId: '123456789012345678901234',
         ownerUsername: 'runnable'
       };
+      ctx.mockContextVersion = {};
+      ctx.mockInstance = {};
+      ctx.mockContainer = {};
+      ctx.mockMongoData = {
+        instance: ctx.mockInstance,
+        contextVersion: ctx.mockContextVersion,
+      };
       done();
     });
     afterEach(function (done) {
@@ -263,13 +270,6 @@ describe('InstanceService: '+moduleName, function () {
     });
     describe('success', function() {
       beforeEach(function (done) {
-        ctx.mockContextVersion = {};
-        ctx.mockInstance = {};
-        ctx.mockContainer = {};
-        ctx.mockMongoData = {
-          instance: ctx.mockInstance,
-          contextVersion: ctx.mockContextVersion,
-        };
         sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
           cb(null, data);
         });
@@ -292,10 +292,13 @@ describe('InstanceService: '+moduleName, function () {
           );
           sinon.assert.calledWith(
             InstanceService._createDockerContainer,
-            ctx.opts.ownerUsername,
-            ctx.mockMongoData,
+            sinon.match.object,
             sinon.match.func
           );
+          var _createDockerContainerOpts = InstanceService._createDockerContainer.args[0][0];
+          expect(_createDockerContainerOpts)
+            .to.deep.contain(ctx.mockMongoData)
+            .to.deep.contain(ctx.opts);
           expect(container).to.equal(ctx.mockContainer);
           done();
         });
@@ -480,9 +483,11 @@ describe('InstanceService: '+moduleName, function () {
     beforeEach(function (done) {
       // correct opts
       ctx.ownerUsername = 'runnable';
-      ctx.mongoData = {
+      ctx.opts = {
         contextVersion: { _id: '123456789012345678901234' },
-        instance: {}
+        instance: {},
+        ownerUsername: 'runnable',
+        sessionUserGithubId: 10
       };
       // results
       ctx.mockContainer = {};
@@ -504,16 +509,13 @@ describe('InstanceService: '+moduleName, function () {
       });
 
       it('should create a docker container', function (done) {
-        InstanceService._createDockerContainer(ctx.ownerUsername, ctx.mongoData, function (err, container) {
+        InstanceService._createDockerContainer(ctx.opts, function (err, container) {
           if (err) { return done(err); }
           sinon.assert.calledWith(
             Mavis.prototype.findDockForContainer,
-            ctx.mongoData.contextVersion, sinon.match.func
+            ctx.opts.contextVersion, sinon.match.func
           );
-          // note: do not use any 101 util that clones mongoData, it will error
-          var createOpts = assign({
-            ownerUsername: ctx.ownerUsername
-          }, ctx.mongoData);
+          var createOpts = clone(ctx.opts);
           sinon.assert.calledWith(
             Docker.prototype.createUserContainer, createOpts, sinon.match.func
           );
@@ -537,7 +539,7 @@ describe('InstanceService: '+moduleName, function () {
         });
 
         it('should callback the error', function (done) {
-          InstanceService._createDockerContainer(ctx.ownerUsername, ctx.mongoData, expectErr(ctx.err, done));
+          InstanceService._createDockerContainer(ctx.opts, expectErr(ctx.err, done));
         });
       });
 
@@ -549,14 +551,14 @@ describe('InstanceService: '+moduleName, function () {
         });
 
         it('should callback the error', function (done) {
-          InstanceService._createDockerContainer(ctx.ownerUsername, ctx.mongoData, expectErr(ctx.err, done));
+          InstanceService._createDockerContainer(ctx.opts, expectErr(ctx.err, done));
         });
       });
 
       describe('4XX err', function() {
         beforeEach(function (done) {
           ctx.err = Boom.notFound('Image not found');
-          ctx.mongoData.instance = new Instance();
+          ctx.opts.instance = new Instance();
           Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242');
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer);
           done();
@@ -573,15 +575,15 @@ describe('InstanceService: '+moduleName, function () {
           });
 
           it('should callback the error', function (done) {
-            InstanceService._createDockerContainer(ctx.ownerUsername, ctx.mongoData, function (err) {
+            InstanceService._createDockerContainer(ctx.opts, function (err) {
               expect(err).to.equal(ctx.err);
               sinon.assert.calledWith(
                 Instance.prototype.modifyContainerCreateErr,
-                ctx.mongoData.contextVersion._id,
+                ctx.opts.contextVersion._id,
                 ctx.err,
                 sinon.match.func
               );
-              InstanceService._createDockerContainer(ctx.ownerUsername, ctx.mongoData, expectErr(ctx.err, done));
+              InstanceService._createDockerContainer(ctx.opts, expectErr(ctx.err, done));
             });
           });
         });
@@ -594,15 +596,15 @@ describe('InstanceService: '+moduleName, function () {
           });
 
           it('should callback the error', function (done) {
-            InstanceService._createDockerContainer(ctx.ownerUsername, ctx.mongoData, function (err) {
+            InstanceService._createDockerContainer(ctx.opts, function (err) {
               expect(err).to.equal(ctx.dbErr);
               sinon.assert.calledWith(
                 Instance.prototype.modifyContainerCreateErr,
-                ctx.mongoData.contextVersion._id,
+                ctx.opts.contextVersion._id,
                 ctx.err,
                 sinon.match.func
               );
-              InstanceService._createDockerContainer(ctx.ownerUsername, ctx.mongoData, expectErr(ctx.dbErr, done));
+              InstanceService._createDockerContainer(ctx.opts, expectErr(ctx.dbErr, done));
             });
           });
         });
