@@ -647,7 +647,8 @@ describe('docker: ' + moduleName, function () {
       ctx.opts = {
         instance: ctx.mockInstance,
         contextVersion: ctx.mockContextVersion,
-        ownerUsername: 'runnable'
+        ownerUsername: 'runnable',
+        sessionUserGithubId: 10
       };
       sinon.stub(Docker.prototype, '_createUserContainerLabels');
       sinon.stub(Docker.prototype, 'createContainer');
