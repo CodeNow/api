@@ -39,9 +39,6 @@ function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
   };
   expect(body._id).to.exist();
   expect(body.shortHash).to.exist();
-  expect(body.network).to.exist();
-  expect(body.network.networkIp).to.exist();
-  expect(body.network.hostIp).to.exist();
   expect(body.name).to.exist();
   expect(body.lowerName).to.equal(body.name.toLowerCase());
   var deepContain = {

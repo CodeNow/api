@@ -4,10 +4,8 @@ var Code = require('code');
 var Lab = require('lab');
 var clone = require('101/clone');
 var createCount = require('callback-count');
-var equals = require('101/equals');
 var exists = require('101/exists');
 var noop = require('101/noop');
-var not = require('101/not');
 var randStr = require('randomstring').generate;
 var uuid = require('uuid');
 
@@ -87,9 +85,7 @@ describe('POST /instances', function () {
               build: exists,
               name: exists,
               'owner.github': ctx.user.attrs.accounts.github.id,
-              contextVersions: exists,
-              'network.networkIp': exists,
-              'network.hostIp': exists
+              contextVersions: exists
             };
 
             var json = { build: ctx.build.id(), name: randStr(5) };
@@ -119,9 +115,7 @@ describe('POST /instances', function () {
             'owner.github': ctx.user.attrs.accounts.github.id,
             contextVersions: exists,
             'contextVersions[0]._id': ctx.cv.id(),
-            'contextVersions[0].appCodeVersions[0]._id': ctx.cv.json().appCodeVersions[0]._id,
-            'network.networkIp': exists,
-            'network.hostIp': exists
+            'contextVersions[0].appCodeVersions[0]._id': ctx.cv.json().appCodeVersions[0]._id
           };
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
 
@@ -162,14 +156,8 @@ describe('POST /instances', function () {
               instance.fetch(function (err) {
                 if (err) { return done(err); }
                 expect(instance.attrs.containers[0]).to.exist();
-                var count = createCount(2, done);
                 expects.updatedHosts(
-                  ctx.user, instance, count.next);
-                var container = instance.containers.models[0];
-                expects.updatedWeaveHost(
-                  container,
-                  instance.attrs.network.hostIp,
-                  count.next);
+                  ctx.user, instance, done);
               });
             }
           });
@@ -315,9 +303,7 @@ describe('POST /instances', function () {
             public: false,
             'build._id': ctx.build.id(),
             containers: exists,
-            'containers[0]': exists,
-            'network.networkIp': exists,
-            'network.hostIp': exists
+            'containers[0]': exists
           };
           require('../../fixtures/mocks/github/user')(ctx.user);
           require('../../fixtures/mocks/github/user')(ctx.user);
@@ -327,12 +313,8 @@ describe('POST /instances', function () {
             }));
           primus.expectAction('start', expected, function () {
             instance.fetch(function () {
-              var container = instance.containers.models[0];
-              var count = createCount(2, done);
               expects.updatedHosts(
-                ctx.user, instance, count.next);
-              expects.updatedWeaveHost(
-                container, instance.attrs.network.hostIp, count.next);
+                ctx.user, instance, done);
             });
           });
         });
@@ -544,9 +526,7 @@ describe('POST /instances', function () {
           'build._id': ctx.build.id(),
           containers: exists,
           parent: ctx.instance.attrs.shortHash,
-          shortHash: exists,
-          'network.networkIp': ctx.instance.attrs.network.networkIp, // same owner, same network
-          'network.hostIp': not(equals(ctx.instance.attrs.network.hostIp))
+          shortHash: exists
         };
         require('../../fixtures/mocks/github/user')(ctx.user);
         primus.expectAction('start', expected, done);

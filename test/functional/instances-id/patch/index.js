@@ -130,17 +130,12 @@ describe('Instance - PATCH /instances/:id', function () {
                 build: ctx.newBuild.id().toString()
               };
               var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
-              var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
                 shortHash: ctx.instance.attrs.shortHash,
                 'build._id': ctx.newBuild.id(),
                 'owner.github': ctx.user.attrs.accounts.github.id,
-                'owner.username': ctx.user.attrs.accounts.github.login,
-                // this represents a new docker container! :)
-                // containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer)),
-                'network.networkIp': exists,
-                'network.hostIp': exists
+                'owner.username': ctx.user.attrs.accounts.github.login
               };
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
@@ -157,10 +152,7 @@ describe('Instance - PATCH /instances/:id', function () {
                     expect(container.attrs.inspect.Env).to.deep.equal([
                       'RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash
                     ]);
-                    var count = createCount(2, done);
-                    expects.deletedWeaveHost(oldContainer, count.next);
-                    expects.updatedWeaveHost(
-                      container, ctx.instance.attrs.network.hostIp, count.next);
+                    done();
                   }));
                 });
                 ctx.instance.update({json: update}, expects.success(200, expected, noop));
@@ -187,7 +179,6 @@ describe('Instance - PATCH /instances/:id', function () {
                   // 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
                 };
                 var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer;
-                var oldContainer = ctx.instance.containers.models[0];
                 require('../../fixtures/mocks/github/user')(ctx.user);
                 require('../../fixtures/mocks/github/user')(ctx.user);
                 require('../../fixtures/mocks/github/user')(ctx.user);
@@ -204,10 +195,7 @@ describe('Instance - PATCH /instances/:id', function () {
                         'ONE=1',
                         'RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash
                       ]);
-                      var count = createCount(2, done);
-                      expects.deletedWeaveHost(oldContainer, count.next);
-                      expects.updatedWeaveHost(
-                        container, ctx.instance.attrs.network.hostIp, count.next);
+                      done();
                     }));
                   });
                   ctx.instance.update({json: update}, expects.success(200, expected, noop));
@@ -237,7 +225,6 @@ describe('Instance - PATCH /instances/:id', function () {
                 build: ctx.newBuild.id().toString()
               };
               var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
-              var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
                 shortHash: ctx.instance.attrs.shortHash,
@@ -257,10 +244,7 @@ describe('Instance - PATCH /instances/:id', function () {
                     if (err) { return done(err); }
                     var container = ctx.instance.containers.models[0];
                     expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
-                    var count = createCount(2, done);
-                    expects.deletedWeaveHost(oldContainer, count.next);
-                    expects.updatedWeaveHost(
-                      container, ctx.instance.attrs.network.hostIp, count.next);
+                    done();
                   }));
                 });
                 ctx.instance.update({json: update}, expects.success(200, expected, noop));
@@ -287,7 +271,6 @@ describe('Instance - PATCH /instances/:id', function () {
                 build: ctx.newBuild.id().toString()
               };
               var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
-              var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
                 shortHash: ctx.instance.attrs.shortHash,
@@ -307,10 +290,7 @@ describe('Instance - PATCH /instances/:id', function () {
                     if (err) { return done(err); }
                     var container = ctx.instance.containers.models[0];
                     expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
-                    var count = createCount(2, done);
-                    expects.deletedWeaveHost(oldContainer, count.next);
-                    expects.updatedWeaveHost(
-                      container, ctx.instance.attrs.network.hostIp, count.next);
+                    done();
                   }));
                 });
                 ctx.instance.update({json: update}, expects.success(200, expected, noop));
@@ -343,7 +323,6 @@ describe('Instance - PATCH /instances/:id', function () {
                 build: ctx.newBuild.id().toString()
               };
               var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
-              var oldContainer = ctx.instance.containers.models[0];
               var expected = {
                 _id: ctx.instance.json()._id,
                 shortHash: ctx.instance.attrs.shortHash,
@@ -363,10 +342,7 @@ describe('Instance - PATCH /instances/:id', function () {
                     if (err) { return done(err); }
                     var container = ctx.instance.containers.models[0];
                     expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
-                    var count = createCount(2, done);
-                    expects.deletedWeaveHost(oldContainer, count.next);
-                    expects.updatedWeaveHost(
-                      container, ctx.instance.attrs.network.hostIp, count.next);
+                    done();
                   }));
                 });
                 ctx.instance.update({json: update}, expects.success(200, expected, noop));
@@ -412,7 +388,6 @@ describe('Instance - PATCH /instances/:id', function () {
           });
           it('should allow a build that has everything started', function (done) {
             var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
-            var oldContainer = ctx.instance.containers.models[0];
             multi.buildTheBuild(ctx.user, ctx.otherBuild, function () {
               require('../../fixtures/mocks/github/user')(ctx.user);
               require('../../fixtures/mocks/github/user')(ctx.user);
@@ -437,10 +412,7 @@ describe('Instance - PATCH /instances/:id', function () {
                     if (err) { return done(err); }
                     var container = ctx.instance.containers.models[0];
                     expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
-                    var count = createCount(2, done);
-                    expects.deletedWeaveHost(oldContainer, count.next);
-                    expects.updatedWeaveHost(
-                      container, ctx.instance.attrs.network.hostIp, count.next);
+                    done();
                   }));
                 });
                 ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, noop));
@@ -461,7 +433,6 @@ describe('Instance - PATCH /instances/:id', function () {
           });
           it('should copy the context version app codes during the patch ', function (done) {
             var oldDockerContainer = ctx.instance.json().containers[0].dockerContainer;
-            var oldContainer = ctx.instance.containers.models[0];
             var acv = ctx.otherCv.attrs.appCodeVersions[0];
             var expected = {
               // Since the containers are not removed until the otherBuild has finished, we should
@@ -486,10 +457,7 @@ describe('Instance - PATCH /instances/:id', function () {
                   if (err) { return done(err); }
                   var container = ctx.instance.containers.models[0];
                   expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer);
-                  var count = createCount(2, done);
-                  expects.deletedWeaveHost(oldContainer, count.next);
-                  expects.updatedWeaveHost(
-                    container, ctx.instance.attrs.network.hostIp, count.next);
+                  done();
                 }));
               });
               ctx.instance.update({ build: ctx.otherBuild.id() }, expects.success(200, expected, noop));

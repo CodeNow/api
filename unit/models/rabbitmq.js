@@ -243,7 +243,6 @@ describe('RabbitMQ Model: '+moduleName, function () {
         dockerHost: 'http://0.0.0.0',
         hostIp: '0.0.0.0',
         instanceId: '55555',
-        networkIp: '0.0.0.0',
         ownerUsername: 'test1',
         sessionUserGithubId: '9494949',
         tid: '000000'
@@ -253,7 +252,6 @@ describe('RabbitMQ Model: '+moduleName, function () {
         dockerHost: 'http://0.0.0.0',
         hostIp: '0.0.0.0',
         instanceId: '55555',
-        networkIp: '0.0.0.0',
         ownerUsername: 'test1',
         sessionUserGithubId: '9494949',
         tid: '000000'
@@ -423,7 +421,6 @@ describe('RabbitMQ Model: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerGithubId: 429706,
-        networkIp: '10.0.1.0',
         hostIp: '10.0.1.1',
         container: {
           dockerHost: 'https://localhost:4242',
@@ -437,7 +434,6 @@ describe('RabbitMQ Model: '+moduleName, function () {
         instanceMasterPod: true,
         instanceMasterBranch: 'master',
         ownerUsername: 'podviaznikov',
-        networkIp: '10.0.1.0',
         hostIp: '10.0.1.1'
       };
       done();
