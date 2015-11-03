@@ -1452,6 +1452,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     }
     beforeEach(function (done) {
       ctx.query = {};
+      ctx.mockSessionUser = {};
       ctx.mockInstances = [
         createMockInstance(),
         createMockInstance(),
@@ -1478,7 +1479,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         done();
       });
       it('should emit instance updates', function (done) {
-        Instance.emitInstanceUpdates(ctx.query, 'update', function (err, instances) {
+        Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', function (err, instances) {
           if (err) { return done(err); }
           sinon.assert.calledWith(
             Instance.find,
@@ -1493,6 +1494,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           });
           sinon.assert.calledWith(
             Instance.prototype.emitInstanceUpdate,
+            ctx.mockSessionUser,
             'update'
           );
           expect(instances).to.deep.equal(ctx.mockInstances);
@@ -1512,7 +1514,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           done();
         });
         it('should callback the error', function (done) {
-          Instance.emitInstanceUpdates(ctx.query, 'update', expectErr(ctx.err, done));
+          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done));
         });
       });
       describe('emitInstanceUpdate errors', function() {
@@ -1522,7 +1524,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           done();
         });
         it('should callback the error', function (done) {
-          Instance.emitInstanceUpdates(ctx.query, 'update', expectErr(ctx.err, done));
+          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done));
         });
       });
     });

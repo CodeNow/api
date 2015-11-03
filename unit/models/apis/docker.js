@@ -778,9 +778,9 @@ describe('docker: ' + moduleName, function () {
         contextVersion: {
           _id: '123456789012345678901234'
         },
-        ownerUsername: 'runnable'
+        ownerUsername: 'runnable',
+        sessionUserGithubId: '10'
       };
-      keypather.set(ctx.opts, 'sessionUser.accounts.github.id', '1');
       done();
     });
     afterEach(function (done) {
@@ -799,7 +799,7 @@ describe('docker: ' + moduleName, function () {
             instanceShortHash: opts.instance.shortHash,
             contextVersionId: opts.contextVersion._id.toString(),
             ownerUsername: opts.ownerUsername,
-            sessionUserGithubId: keypather.get(opts, 'sessionUser.accounts.github.id'),
+            sessionUserGithubId: opts.sessionUserGithubId,
             tid: process.domain.runnableData.tid,
             type: 'user-container'
           });

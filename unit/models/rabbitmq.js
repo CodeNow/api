@@ -244,7 +244,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
       ctx.opts = {
         contextVersionId: '123456789012345678901234',
         instanceId: '123456789012345678901234',
-        ownerUsername: 'runnable'
+        ownerUsername: 'runnable',
+        sessionUserGithubId: '10'
       };
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish');
       done();
