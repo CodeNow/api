@@ -41,8 +41,7 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
       },
       network: {
         hostIp: '0.0.0.0'
-      },
-      modifyContainerInspect: function () {}
+      }
     };
     ctx.labels = {
       instanceId: ctx.mockInstance._id,
