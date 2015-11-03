@@ -51,7 +51,7 @@ describe('middlewares/domains unit test: '+moduleName, function () {
       };
       ctx.fakeRes = {
         '_headers': {},
-        set: function () {}
+        setHeader: function () {}
       };
       done();
     });
@@ -73,7 +73,7 @@ describe('middlewares/domains unit test: '+moduleName, function () {
       };
       ctx.fakeRes = {
         '_headers': {},
-        set: function () {}
+        setHeader: function () {}
       };
       done();
     });
