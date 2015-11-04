@@ -120,11 +120,7 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
           expect(err).to.be.undefined();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
-          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
-          var updateFrontendArgs = ctx.worker._baseWorkerUpdateInstanceFrontend.getCall(0).args;
-          expect(updateFrontendArgs[0]).to.equal(ctx.mockInstance._id);
-          expect(updateFrontendArgs[1]).to.equal(ctx.mockInstance.createdBy.github);
-          expect(updateFrontendArgs[2]).to.equal('network_attached');
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(0);
           done();
         });
       });
