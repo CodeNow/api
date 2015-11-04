@@ -104,7 +104,8 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
 
       it('should do everything', function (done) {
         ctx.worker.handle(function (err) {
-          expect(err).to.be.null();
+          // This should never return an error
+          expect(err).to.be.undefined();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           expect(Instance.findByIdAndUpdate.callCount).to.equal(1);
           var args = Instance.findByIdAndUpdate.getCall(0).args;
@@ -138,7 +139,7 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
       it('should get most of the way through, then fail', function (done) {
         ctx.worker.handle(function (err) {
           // This should never return an error
-          expect(err).to.be.null();
+          expect(err).to.be.undefined();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           expect(Instance.findByIdAndUpdate.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);

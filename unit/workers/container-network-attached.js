@@ -85,7 +85,8 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
 
       it('should do everything', function (done) {
         ctx.worker.handle(function (err) {
-          expect(err).to.be.null();
+          // This should never return an error
+          expect(err).to.be.undefined();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
           var args = InstanceService.prototype.modifyContainerIp.getCall(0).args;
@@ -116,7 +117,7 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
       it('should get most of the way through, then fail', function (done) {
         ctx.worker.handle(function (err) {
           // This should never return an error
-          expect(err).to.be.null();
+          expect(err).to.be.undefined();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
