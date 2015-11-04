@@ -51,6 +51,8 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
       contextVersionId: 123
     };
     ctx.data = {
+      instanceId: '5633e9273e2b5b0c0077fd41',
+      contextVersionId: '563a808f9359ef0c00df34e6',
       containerId: 'container-id-1',
       containerIp: '192.16.17.01'
     };
@@ -88,6 +90,9 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
           // This should never return an error
           expect(err).to.be.undefined();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
+          var queryArg = ctx.worker._baseWorkerFindInstance.getCall(0).args[0];
+          expect(queryArg._id).to.equal(ctx.data.instanceId);
+          expect(queryArg.$or.length).to.equal(2);
           expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
           var args = InstanceService.prototype.modifyContainerIp.getCall(0).args;
           expect(args[0]).to.equal(ctx.mockInstance);
