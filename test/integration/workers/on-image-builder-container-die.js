@@ -119,14 +119,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       });
 
       beforeEach(function (done) {
-        sinon.stub(rabbitMQ, 'deployInstance');
         sinon.stub(messenger, 'emitContextVersionUpdate');
         sinon.stub(messenger, 'emitInstanceUpdate');
         sinon.stub(Instance, 'findAndPopulate').yieldsAsync(null, [ctx.instance]);
         done();
       });
       afterEach(function (done) {
-        rabbitMQ.deployInstance.restore();
         messenger.emitContextVersionUpdate.restore();
         messenger.emitInstanceUpdate.restore();
         Instance.findAndPopulate.restore();
