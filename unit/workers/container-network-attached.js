@@ -97,7 +97,7 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
           var updateFrontendArgs = ctx.worker._baseWorkerUpdateInstanceFrontend.getCall(0).args;
           expect(updateFrontendArgs[0]).to.equal(ctx.mockInstance._id);
           expect(updateFrontendArgs[1]).to.equal(ctx.mockInstance.createdBy.github);
-          expect(updateFrontendArgs[2]).to.equal('network_attached');
+          expect(updateFrontendArgs[2]).to.equal('update');
           done();
         });
       });
