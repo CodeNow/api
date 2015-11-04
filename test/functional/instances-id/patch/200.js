@@ -59,7 +59,7 @@ function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
   expect(body).deep.contain(deepContain);
 }
 
-describe('200 PATCH /instances', function () {
+describe('200 PATCH /instances/:id', function () {
   var ctx = {};
   var docker;
   // before
@@ -79,13 +79,11 @@ describe('200 PATCH /instances', function () {
   before(function (done) {
     // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstance', function () {});
-    sinon.stub(rabbitMQ, 'deployInstance', function () {});
     done();
   });
 
   after(function (done) {
     rabbitMQ.deleteInstance.restore();
-    rabbitMQ.deployInstance.restore();
     done();
   });
   beforeEach(function (done) {
@@ -150,7 +148,7 @@ describe('200 PATCH /instances', function () {
         var count = createCount(2, done);
         sinon.spy(InstanceService.prototype, 'deleteForkedInstancesByRepoAndBranch');
         // Original patch from the update route, then the one at the end of the on-build-die
-        primus.expectActionCount('patch', 2, function () {
+        primus.expectAction('start', {}, function () {
           expect(InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1);
           var acv = ctx.cv.appCodeVersions.models[0].attrs;
           var args = InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.getCall(0).args;
@@ -179,7 +177,7 @@ describe('200 PATCH /instances', function () {
         var name = 'CustomName';
         var env = ['one=one','two=two','three=three'];
         // Original patch from the update route, then the one at the end of the on-build-die
-        primus.expectActionCount('patch', 2, count.next);
+        primus.expectAction('start', {}, count.next);
         ctx.instance.update({
           build: ctx.build.id(),
           name: name,
@@ -203,7 +201,7 @@ describe('200 PATCH /instances', function () {
           dockerContainer: ctx.container.Id
         };
         // Original patch from the update route, then the one at the end of the on-build-die
-        primus.expectActionCount('patch', 2, count.next);
+        primus.expectAction('start', {}, count.next);
         // required when updating container in PATCH route
         var contextVersion = ctx.cv.id();
         var opts = {
