@@ -36,7 +36,7 @@ describe('Navi Entry: '+moduleName, function () {
 
     describe('masterPod Instance', function (){
       beforeEach(function (done) {
-        ctx.mockInstance.masterPod = true
+        ctx.mockInstance.masterPod = true;
         sinon.stub(NaviEntry.prototype, 'save');
         done();
       });
@@ -73,6 +73,57 @@ describe('Navi Entry: '+moduleName, function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom');
           NaviEntry.prototype.save.yieldsAsync(ctx.err);
+          done();
+        });
+        it('should callback err if db errs', function (done) {
+          NaviEntry.createOrUpdateNaviInstanceEntry(ctx.mockInstance, function (err) {
+            expect(err).to.equal(ctx.err);
+            done();
+          });
+        });
+      });
+    });
+    describe('masterPod Instance', function (){
+      beforeEach(function (done) {
+        ctx.mockInstance.masterPod = false;
+        sinon.stub(NaviEntry, 'findOneAndUpdate');
+        done();
+      });
+      afterEach(function (done) {
+        NaviEntry.findOneAndUpdate.restore();
+        done();
+      });
+      describe('db success', function () {
+        beforeEach(function (done) {
+          NaviEntry.findOneAndUpdate.yieldsAsync();
+          done();
+        });
+        it('should create a navi entry', function (done) {
+          NaviEntry.createOrUpdateNaviInstanceEntry(ctx.mockInstance, function cb (err) {
+            if (err) { return done(err); }
+            sinon.assert.calledWith(
+              NaviEntry.findOneAndUpdate,
+              {
+                'elastic-url': 'elasticHostname.example.com'
+              }, {
+                $set: {
+                  'direct-urls.instanceID': {
+                    branch: 'branchName',
+                    url: 'directHostname.example.com',
+                    associations: [{dep: 1}]
+                  }
+                }
+              },
+              cb
+            );
+            done();
+          });
+        });
+      });
+      describe('db err', function () {
+        beforeEach(function (done) {
+          ctx.err = new Error('boom');
+          NaviEntry.findOneAndUpdate.yieldsAsync(ctx.err);
           done();
         });
         it('should callback err if db errs', function (done) {
