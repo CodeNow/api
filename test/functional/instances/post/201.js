@@ -81,7 +81,7 @@ describe('201 POST /instances', function () {
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
   afterEach(primus.disconnect);
-  afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  //afterEach(require('../../fixtures/clean-mongo').removeEverything);
   // afterEach(require('../../fixtures/clean-ctx')(ctx));
   // afterEach(require('../../fixtures/clean-nock'));
 
@@ -104,9 +104,6 @@ describe('201 POST /instances', function () {
           if (err) { return done(err); }
           ctx.cv.fetch(done); // used in assertions
         });
-      });
-      afterEach(function (done) {
-        require('../../fixtures/clean-mongo').removeEverything(done);
       });
       it('should create a private instance by default', function (done) {
         var name = uuid();
