@@ -12,7 +12,6 @@ var Code = require('code');
 var Container = require('dockerode/lib/container');
 var dockerFrame = require('docker-frame');
 var Dockerode = require('dockerode');
-var indexBy = require('101/index-by');
 var keypather = require('keypather')();
 var Lab = require('lab');
 var Modem = require('docker-modem');
@@ -79,7 +78,16 @@ describe('docker: ' + moduleName, function () {
               sourcePath: 'sourcePath'
             };
           },
-          files: []
+          files: [{
+            Key: '/foo',
+            VersionId: '1111'
+          }, {
+            Key: '/bar',
+            VersionId: '2222'
+          }, {
+            Key: '/qux',
+            VersionId: '3333'
+          }]
         },
         appCodeVersions: [
           {
@@ -396,11 +404,11 @@ describe('docker: ' + moduleName, function () {
         var expectedEnvs = [
           'RUNNABLE_AWS_ACCESS_KEY=' + process.env.AWS_ACCESS_KEY_ID,
           'RUNNABLE_AWS_SECRET_KEY=' + process.env.AWS_SECRET_ACCESS_KEY,
-          'RUNNABLE_FILES_BUCKET=' + cv.infraCodeVersion.bucket().bucket,
-          'RUNNABLE_PREFIX=' + path.join(cv.infraCodeVersion.bucket().sourcePath, '/'),
-          'RUNNABLE_FILES=' + JSON.stringify(indexBy(cv.infraCodeVersion.files, 'Key')),
-          'RUNNABLE_DOCKER=' + 'unix:///var/run/docker.sock',
-          'RUNNABLE_DOCKERTAG=' + opts.dockerTag,
+          'RUNNABLE_FILES_BUCKET='   + cv.infraCodeVersion.bucket().bucket,
+          'RUNNABLE_PREFIX='         + path.join(cv.infraCodeVersion.bucket().sourcePath, '/'),
+          'RUNNABLE_FILES='          + JSON.stringify(cv.infraCodeVersion.files.reduce(mapKeyToVersion, {})),
+          'RUNNABLE_DOCKER='         + 'unix:///var/run/docker.sock',
+          'RUNNABLE_DOCKERTAG='      + opts.dockerTag,
           'RUNNABLE_IMAGE_BUILDER_NAME=' + process.env.DOCKER_IMAGE_BUILDER_NAME,
           'RUNNABLE_IMAGE_BUILDER_TAG=' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
           // acv envs
@@ -414,6 +422,10 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_PUSH_IMAGE=true'
         ];
         expect(envs).to.deep.equal(expectedEnvs);
+        function mapKeyToVersion (memo, item) {
+          memo[item.Key] = item.VersionId;
+          return memo;
+        }
         done();
       });
     });
