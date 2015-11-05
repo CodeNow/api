@@ -17,23 +17,22 @@ var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
 describe('Navi Entry: '+moduleName, function () {
+  beforeEach(function (done) {
+    ctx.mockInstance = {
+      id: sinon.stub().returns('instanceID'),
+      getElasticHostname: sinon.stub().returns('elasticHostname.example.com'),
+      getDirectHostname: sinon.stub().returns('directHostname.example.com'),
+      getMainBranchName: sinon.stub().returns('branchName'),
+      getDependencies: sinon.stub().yieldsAsync(null, [{dep:1}]),
+      owner: {
+        github: 1234,
+        username: 'Myztiq'
+      },
+      masterPod: true
+    };
+    done();
+  });
   describe('handleNewInstance', function () {
-    beforeEach(function (done) {
-      ctx.mockInstance = {
-        id: sinon.stub().returns('instanceID'),
-        getElasticHostname: sinon.stub().returns('elasticHostname.example.com'),
-        getDirectHostname: sinon.stub().returns('directHostname.example.com'),
-        getMainBranchName: sinon.stub().returns('branchName'),
-        getDependencies: sinon.stub().yieldsAsync(null, [{dep:1}]),
-        owner: {
-          github: 1234,
-          username: 'Myztiq'
-        },
-        masterPod: true
-      };
-      done();
-    });
-
     describe('masterPod Instance', function (){
       beforeEach(function (done) {
         ctx.mockInstance.masterPod = true;
@@ -135,4 +134,86 @@ describe('Navi Entry: '+moduleName, function () {
       });
     });
   });
+  describe('handleInstanceStatusChange', function () {
+    beforeEach(function (done) {
+      sinon.stub(NaviEntry, 'findOneAndUpdate').yieldsAsync(null);
+      done();
+    });
+    afterEach(function (done) {
+      NaviEntry.findOneAndUpdate.restore();
+      done();
+    });
+
+    describe('db err', function () {
+      beforeEach(function (done) {
+        ctx.err = new Error('boom');
+        NaviEntry.findOneAndUpdate.yieldsAsync(ctx.err);
+        done();
+      });
+      it('should callback err if db errs', function (done) {
+        NaviEntry.handleInstanceStatusChange(ctx.mockInstance, function (err) {
+          expect(err).to.equal(ctx.err);
+          done();
+        });
+      });
+    });
+
+    describe('starting', function (){
+      beforeEach(function (done) {
+        ctx.mockInstance.status = 'starting';
+        ctx.mockInstance.container = {
+          dockerHost: '10.0.0.1',
+          ports: [80, 3000]
+        };
+        done();
+      });
+      it('should update the database', function (done) {
+        NaviEntry.handleInstanceStatusChange(ctx.mockInstance, function cb (err) {
+          if (err) { return done(err); }
+          sinon.assert.calledWith(
+            NaviEntry.findOneAndUpdate,
+            {
+              'elastic-url': 'elasticHostname.example.com'
+            }, {
+              $set: {
+                'direct-urls.instanceID.ports': ctx.mockInstance.container.ports,
+                'direct-urls.instanceID.dockerHost': ctx.mockInstance.container.dockerHost,
+                'direct-urls.instanceID.status': 'starting',
+                'direct-urls.instanceID.associations': [{dep:1}]
+              }
+            },
+            cb
+          );
+          done();
+        });
+      });
+    });
+    describe('crashed', function () {
+      beforeEach(function (done) {
+        ctx.mockInstance.status = 'crashed';
+        ctx.mockInstance.container = null;
+        done();
+      });
+      it('should update the database', function (done) {
+        NaviEntry.handleInstanceStatusChange(ctx.mockInstance, function cb (err) {
+          if (err) { return done(err); }
+          sinon.assert.calledWith(
+            NaviEntry.findOneAndUpdate,
+            {
+              'elastic-url': 'elasticHostname.example.com'
+            }, {
+              $set: {
+                'direct-urls.instanceID.ports': null,
+                'direct-urls.instanceID.dockerHost': null,
+                'direct-urls.instanceID.status': 'crashed',
+                'direct-urls.instanceID.associations': [{dep:1}]
+              }
+            },
+            cb
+          );
+          done();
+        });
+      });
+    });
+  })
 });
