@@ -94,7 +94,6 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user')(ctx.user);
 
             primus.expectAction('post', expected, countDown.next);
-            primus.expectAction('deploy', expected, countDown.next);
             primus.expectAction('start', expected, countDown.next);
             ctx.user.createInstance({ json: json }, function(err) {
               if (err) { return countDown.next(err); }
@@ -127,7 +126,6 @@ describe('POST /instances', function () {
             primus.expectAction('start', expected, countDown.next);
 
             ctx.user.createInstance({ json: json }, function (err) {
-              primus.expectAction('deploy', expected, countDown.next);
               countDown.next(err);
               dockerMockEvents.emitBuildComplete(ctx.cv);
             });
@@ -148,7 +146,6 @@ describe('POST /instances', function () {
             primus.expectAction('start', {}, count.next);
             var instance = ctx.user.createInstance({ json: json }, function(err) {
               if (err) { return done(err); }
-              primus.expectAction('deploy', {}, count.next);
               dockerMockEvents.emitBuildComplete(ctx.cv);
             });
             function fetchInstanceAndAssertHosts (err) {

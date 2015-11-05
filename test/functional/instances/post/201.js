@@ -208,7 +208,6 @@ describe('201 POST /instances', function () {
           rabbitMQ.createInstanceContainer.restore();
           count.next();
         });
-        primus.expectActionCount('deploy', 1, deployCount.next);
 
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err); }
