@@ -60,7 +60,7 @@ describe('Navi Entry: '+moduleName, function () {
             var naviEntryValue = NaviEntry.prototype.save.lastCall.thisValue;
             expect(naviEntryValue.elasticUrl, 'elastic URL').to.equal('elasticHostname.example.com');
             expect(naviEntryValue.ownerGithubId, 'ownerGithubId').to.equal(1234);
-            expect(naviEntryValue.directUrls['instanceID'], 'DirectUrls').to.deep.equal({
+            expect(naviEntryValue.directUrls.instanceID, 'DirectUrls').to.deep.equal({
               branch: 'branchName',
               url: 'directHostname.example.com',
               dependencies: [{dep: 1}]
