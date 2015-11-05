@@ -19,7 +19,7 @@ var moduleName = path.relative(process.cwd(), __filename);
 describe('Navi Entry: '+moduleName, function () {
   beforeEach(function (done) {
     ctx.mockInstance = {
-      id: sinon.stub().returns('instanceID'),
+      shortHash: 'instanceID',
       getElasticHostname: sinon.stub().returns('elasticHostname.example.com'),
       getDirectHostname: sinon.stub().returns('directHostname.example.com'),
       getMainBranchName: sinon.stub().returns('branchName'),
@@ -28,7 +28,8 @@ describe('Navi Entry: '+moduleName, function () {
         github: 1234,
         username: 'Myztiq'
       },
-      masterPod: true
+      masterPod: true,
+      status: sinon.stub().returns('running')
     };
     done();
   });
@@ -62,7 +63,7 @@ describe('Navi Entry: '+moduleName, function () {
             expect(naviEntryValue.directUrls['instanceID'], 'DirectUrls').to.deep.equal({
               branch: 'branchName',
               url: 'directHostname.example.com',
-              associations: [{dep: 1}]
+              dependencies: [{dep: 1}]
             });
             done();
           });
@@ -109,7 +110,7 @@ describe('Navi Entry: '+moduleName, function () {
                   'direct-urls.instanceID': {
                     branch: 'branchName',
                     url: 'directHostname.example.com',
-                    associations: [{dep: 1}]
+                    dependencies: [{dep: 1}]
                   }
                 }
               },
@@ -158,9 +159,9 @@ describe('Navi Entry: '+moduleName, function () {
       });
     });
 
-    describe('starting', function (){
+    describe('running', function (){
       beforeEach(function (done) {
-        ctx.mockInstance.status = 'starting';
+         ctx.mockInstance.status.returns('running');
         ctx.mockInstance.container = {
           dockerHost: '10.0.0.1',
           ports: [80, 3000]
@@ -178,8 +179,7 @@ describe('Navi Entry: '+moduleName, function () {
               $set: {
                 'direct-urls.instanceID.ports': ctx.mockInstance.container.ports,
                 'direct-urls.instanceID.dockerHost': ctx.mockInstance.container.dockerHost,
-                'direct-urls.instanceID.status': 'starting',
-                'direct-urls.instanceID.associations': [{dep:1}]
+                'direct-urls.instanceID.status': 'running'
               }
             },
             cb
@@ -190,7 +190,7 @@ describe('Navi Entry: '+moduleName, function () {
     });
     describe('crashed', function () {
       beforeEach(function (done) {
-        ctx.mockInstance.status = 'crashed';
+        ctx.mockInstance.status.returns('crashed');
         ctx.mockInstance.container = null;
         done();
       });
@@ -205,8 +205,7 @@ describe('Navi Entry: '+moduleName, function () {
               $set: {
                 'direct-urls.instanceID.ports': null,
                 'direct-urls.instanceID.dockerHost': null,
-                'direct-urls.instanceID.status': 'crashed',
-                'direct-urls.instanceID.associations': [{dep:1}]
+                'direct-urls.instanceID.status': 'crashed'
               }
             },
             cb
