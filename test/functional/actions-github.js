@@ -15,7 +15,6 @@ var describe = lab.describe;
 var expect = Code.expect;
 var it = lab.it;
 
-var SocketClient = require('socket/socket-client');
 var ContextVersion = require('models/mongo/context-version');
 var OnInstanceContainerDie = require('workers/on-instance-container-die');
 var Mixpanel = require('models/apis/mixpanel');
@@ -258,13 +257,11 @@ describe('Github - /actions/github', function () {
     describe('autofork', function () {
       var slackStub;
       beforeEach(function (done) {
-        sinon.spy(SocketClient.prototype, 'onInstanceDeployed');
         slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoFork');
         done();
       });
       afterEach(function (done) {
         slackStub.restore();
-        SocketClient.prototype.onInstanceDeployed.restore();
         done();
       });
       beforeEach(function (done) {
