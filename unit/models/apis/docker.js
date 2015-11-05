@@ -636,6 +636,7 @@ describe('docker: ' + moduleName, function () {
     beforeEach(function (done) {
       ctx.mockInstance = {
         _id: '123456789012345678901234',
+        shortHash: 'abcdef',
         env: []
       };
       ctx.mockContextVersion = {
@@ -677,7 +678,9 @@ describe('docker: ' + moduleName, function () {
           );
           var expectedCreateOpts = {
             Labels: ctx.mockLabels,
-            Env: ctx.mockInstance.env,
+            Env: ctx.mockInstance.env.concat([
+              'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
+            ]),
             Image: ctx.mockContextVersion.build.dockerTag
           };
           sinon.assert.calledWith(
