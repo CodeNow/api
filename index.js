@@ -1,12 +1,13 @@
 'use strict';
 
 require('loadenv')();
-var cluster = require('cluster');
-var numCPUs = require('os').cpus().length;
-var values = require('101/values');
-var pluck = require('101/pluck');
+
 var ClusterManager = require('cluster-man');
+var cluster = require('cluster');
 var log = require('middlewares/logger')(__filename).log;
+var numCPUs = require('os').cpus().length;
+var pluck = require('101/pluck');
+var values = require('101/values');
 
 var manager = new ClusterManager({
   // Worker processes execute this on process start:
