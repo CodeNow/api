@@ -17,7 +17,7 @@ var path = require('path');
 var moduleName = path.relative(process.cwd(), __filename);
 
 describe('Navi Entry: '+moduleName, function () {
-  describe('createOrUpdateNaviInstanceEntry', function () {
+  describe('handleNewInstance', function () {
     beforeEach(function (done) {
       ctx.mockInstance = {
         id: sinon.stub().returns('instanceID'),
@@ -50,7 +50,7 @@ describe('Navi Entry: '+moduleName, function () {
           done();
         });
         it('should create a navi entry', function (done) {
-          NaviEntry.createOrUpdateNaviInstanceEntry(ctx.mockInstance, function cb (err) {
+          NaviEntry.handleNewInstance(ctx.mockInstance, function cb (err) {
             if (err) { return done(err); }
             sinon.assert.calledOnce(ctx.mockInstance.getElasticHostname);
             sinon.assert.calledOnce(ctx.mockInstance.getDirectHostname);
@@ -76,7 +76,7 @@ describe('Navi Entry: '+moduleName, function () {
           done();
         });
         it('should callback err if db errs', function (done) {
-          NaviEntry.createOrUpdateNaviInstanceEntry(ctx.mockInstance, function (err) {
+          NaviEntry.handleNewInstance(ctx.mockInstance, function (err) {
             expect(err).to.equal(ctx.err);
             done();
           });
@@ -99,7 +99,7 @@ describe('Navi Entry: '+moduleName, function () {
           done();
         });
         it('should create a navi entry', function (done) {
-          NaviEntry.createOrUpdateNaviInstanceEntry(ctx.mockInstance, function cb (err) {
+          NaviEntry.handleNewInstance(ctx.mockInstance, function cb (err) {
             if (err) { return done(err); }
             sinon.assert.calledWith(
               NaviEntry.findOneAndUpdate,
@@ -127,7 +127,7 @@ describe('Navi Entry: '+moduleName, function () {
           done();
         });
         it('should callback err if db errs', function (done) {
-          NaviEntry.createOrUpdateNaviInstanceEntry(ctx.mockInstance, function (err) {
+          NaviEntry.handleNewInstance(ctx.mockInstance, function (err) {
             expect(err).to.equal(ctx.err);
             done();
           });
