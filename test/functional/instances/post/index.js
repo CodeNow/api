@@ -78,7 +78,7 @@ describe('POST /instances', function () {
           });
 
           it('should emit post and deploy events', function(done) {
-            var countDown = createCount(4, done);
+            var countDown = createCount(3, done);
             var expected = {
               shortHash: exists,
               'createdBy.github': ctx.user.attrs.accounts.github.id,
@@ -118,7 +118,7 @@ describe('POST /instances', function () {
           };
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv);
 
-          var countDown = createCount(4, done);
+          var countDown = createCount(3, done);
           primus.expectActionCount('build_running', 1, function () {
             require('../../fixtures/mocks/github/user')(ctx.user);
             require('../../fixtures/mocks/github/user')(ctx.user);
@@ -142,8 +142,7 @@ describe('POST /instances', function () {
           ctx.build.build({ message: uuid() }, function (err) {
             if (err) { return done(err); }
             require('../../fixtures/mocks/github/user')(ctx.user);
-            var count = createCount(2, fetchInstanceAndAssertHosts);
-            primus.expectAction('start', {}, count.next);
+            primus.expectAction('start', {}, fetchInstanceAndAssertHosts);
             var instance = ctx.user.createInstance({ json: json }, function(err) {
               if (err) { return done(err); }
               dockerMockEvents.emitBuildComplete(ctx.cv);
