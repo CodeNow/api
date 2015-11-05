@@ -214,5 +214,29 @@ describe('Navi Entry: '+moduleName, function () {
         });
       });
     });
-  })
+  });
+  describe('_getDirectURlObj', function (){
+    it('should handle error fetching dependencies', function (done) {
+      var err = new Error('Hello!');
+      ctx.mockInstance.getDependencies.yieldsAsync(err);
+
+      NaviEntry._getDirectURlObj(ctx.mockInstance, function (returnedError, data){
+        expect(data).to.not.exist();
+        expect(returnedError).to.equal(err);
+        done();
+      });
+    });
+    it('should return the direct url object', function (done) {
+      NaviEntry._getDirectURlObj(ctx.mockInstance, function (err, data){
+        sinon.assert.calledOnce(ctx.mockInstance.getDependencies);
+        expect(err).to.not.exist();
+        expect(data).to.deep.equal({
+          branch: 'branchName',
+          url: 'directHostname.example.com',
+          dependencies: [{dep: 1}]
+        });
+        done();
+      });
+    });
+  });
 });
