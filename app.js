@@ -104,20 +104,30 @@ Api.prototype.stop = function (cb) {
   apiServer.stop(count.inc().next);
 
   function closeDbConnections (err) {
+    log.info({ err: err }, 'close db connections');
     if (!err) {
       // so far the stop was successful
       // finally disconnect from he databases
       var dbCount = createCount(cb);
+      var next = dbCount.inc().next;
       // FIXME: redis clients cannot be reconnected once they are quit; this breaks the tests.
       if (!envIs('test')) {
         // disconnect from redis
+        dbCount.inc();
         redisClient.quit();
-        redisClient.on('end', dbCount.inc().next);
+        redisClient.on('end', function (err) {
+          log.info({ err: err }, 'redis client connections closed');
+          next(err);
+        });
+        dbCount.inc();
         redisPubSub.quit();
-        redisPubSub.on('end', dbCount.inc().inc().next); // calls twice
+        redisPubSub.on('end', function (err) {
+          log.info({ err: err }, 'redis pubsub connections closed');
+          next(err);
+        }); // calls twice
       }
-      var next = dbCount.inc().next;
       mongooseControl.stop(function (err) {
+        log.info({ err: err }, 'mongoose stopped');
         if (err) { return next(err); }
         self.stopListeningToSignals();
         next();
@@ -181,7 +191,7 @@ Api.prototype._waitForActiveHandlesAndExit = function (cb) {
       // 1 is the interval and 1 is the clustered process
       clearInterval(poller);
       log.info('Worker process exited gracefully');
-      process.exit(); // clean exit
+      process.exit(0); // clean exit
     }
   }, 1000);
 };
