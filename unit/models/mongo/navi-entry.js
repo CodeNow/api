@@ -29,7 +29,7 @@ describe('Navi Entry: '+moduleName, function () {
         username: 'Myztiq'
       },
       masterPod: true,
-      status: sinon.stub().returns('running')
+      status: sinon.stub().yieldsAsync(null, 'running')
     };
     done();
   });
@@ -160,7 +160,7 @@ describe('Navi Entry: '+moduleName, function () {
 
     describe('running', function (){
       beforeEach(function (done) {
-         ctx.mockInstance.status.returns('running');
+        ctx.mockInstance.status.yieldsAsync(null, 'running');
         ctx.mockInstance.container = {
           dockerHost: '10.0.0.1',
           ports: [80, 3000]
@@ -188,7 +188,7 @@ describe('Navi Entry: '+moduleName, function () {
     });
     describe('crashed', function () {
       beforeEach(function (done) {
-        ctx.mockInstance.status.returns('crashed');
+        ctx.mockInstance.status.yieldsAsync(null, 'crashed');
         ctx.mockInstance.container = null;
         done();
       });
