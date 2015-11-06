@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/container-network-attach-failed
+ * @module unit/workers/container.network.attach.failed
  */
 'use strict';
 
@@ -9,7 +9,7 @@ var lab = exports.lab = Lab.script();
 var Code = require('code');
 var sinon = require('sinon');
 
-var ContainerNetworkAttachFailed = require('workers/container-network-attach-failed');
+var ContainerNetworkAttachFailed = require('workers/container.network.attach.failed');
 var Instance = require('models/mongo/instance');
 
 var afterEach = lab.afterEach;

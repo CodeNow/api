@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/container-network-attached
+ * @module unit/workers/container.network.attached
  */
 'use strict';
 
@@ -9,7 +9,7 @@ var lab = exports.lab = Lab.script();
 var Code = require('code');
 var sinon = require('sinon');
 
-var ContainerNetworkAttached = require('workers/container-network-attached');
+var ContainerNetworkAttached = require('workers/container.network.attached');
 var InstanceService = require('models/services/instance-service');
 var Hosts = require('models/redis/hosts');
 
