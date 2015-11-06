@@ -48,7 +48,7 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
     ctx.data = {
       instanceId: '5633e9273e2b5b0c0077fd41',
       contextVersionId: '563a808f9359ef0c00df34e6',
-      containerId: 'container-id-1',
+      id: 'container-id-1',
       containerIp: '192.16.17.01'
     };
     ctx.data.inspectData = {
@@ -122,13 +122,12 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           var queryArg = ctx.worker._baseWorkerFindInstance.getCall(0).args[0];
           expect(queryArg._id).to.equal(ctx.data.instanceId);
-          expect(queryArg['container.dockerContainer']).to.equal(ctx.data.containerId);
+          expect(queryArg['container.dockerContainer']).to.equal(ctx.data.id);
           expect(InstanceService.prototype.updateOnContainerStart.callCount).to.equal(1);
           var args = InstanceService.prototype.updateOnContainerStart.getCall(0).args;
           expect(args[0]).to.equal(ctx.mockInstance);
-          expect(args[1]).to.equal(ctx.data.containerId);
+          expect(args[1]).to.equal(ctx.data.id);
           expect(args[2]).to.equal(ctx.data.containerIp);
-          // expect(args[2]).to.equal(ctx.data.containerIp);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           var updateFrontendArgs = ctx.worker._baseWorkerUpdateInstanceFrontend.getCall(0).args;
           expect(updateFrontendArgs[0]).to.equal(ctx.mockInstance._id);
@@ -187,7 +186,7 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
           expect(InstanceService.prototype.updateOnContainerStart.callCount).to.equal(1);
           var args = InstanceService.prototype.updateOnContainerStart.getCall(0).args;
           expect(args[0]).to.equal(ctx.mockInstance);
-          expect(args[1]).to.equal(ctx.data.containerId);
+          expect(args[1]).to.equal(ctx.data.id);
           expect(args[2]).to.equal(ctx.data.containerIp);
           done();
         });

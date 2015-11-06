@@ -43,17 +43,8 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
         hostIp: '0.0.0.0'
       }
     };
-    ctx.labels = {
-      instanceId: ctx.mockInstance._id,
-      ownerUsername: 'fifo',
-      sessionUserGithubId: 444,
-      contextVersionId: 123
-    };
-
     ctx.data = {
-      instanceId: '5633e9273e2b5b0c0077fd41',
-      contextVersionId: '563a808f9359ef0c00df34e6',
-      containerId: 'container-id-1',
+      id: 'container-id-1',
       err: {
         'data': {
           'cmd': '/usr/local/bin/weave attach 533da8aaa7d32cd6861b2248abffb3e78c51cacf1da7c67ccba05f44068acbb9',
@@ -72,6 +63,16 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
             'error': 'Internal Server Error',
             'message': 'An internal server error occurred'
           }
+        }
+      }
+    };
+    ctx.data.inspectData = {
+      Config: {
+        Labels: {
+          instanceId: ctx.data.instanceId,
+          ownerUsername: 'anton',
+          sessionUserGithubId: 111987,
+          contextVersionId: 'some-cv-id'
         }
       }
     };
@@ -111,7 +112,7 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           var queryArg = ctx.worker._baseWorkerFindInstance.getCall(0).args[0];
           expect(queryArg._id).to.equal(ctx.data.instanceId);
-          expect(queryArg['container.dockerContainer']).to.equal(ctx.data.containerId);
+          expect(queryArg['container.dockerContainer']).to.equal(ctx.data.id);
           expect(Instance.findByIdAndUpdate.callCount).to.equal(1);
           var args = Instance.findByIdAndUpdate.getCall(0).args;
           expect(args[0]).to.equal(ctx.mockInstance._id);
