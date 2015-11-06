@@ -48,7 +48,7 @@ function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
     owner: owner,
     containers: [ ],
     autoForked: false,
-    masterPod : false
+    masterPod : true
   };
   if (container) {
     delete deepContain.containers;
@@ -136,6 +136,7 @@ describe('200 PATCH /instances', function () {
         // create instance
         ctx.instance = ctx.user.createInstance({
           json: {
+            masterPod: true,
             build: ctx.build.id()
           }
         }, function (err) {
@@ -216,6 +217,7 @@ describe('200 PATCH /instances', function () {
         };
 
         ctx.instance.update(opts, function (err, body, statusCode) {
+          if (err) { return done(err); }
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv, ctx.container);
           // wait until build is ready to finish the test
           primus.onceVersionComplete(ctx.cv.id(), function () {

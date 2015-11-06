@@ -50,13 +50,13 @@ describe('Navi Entry: '+moduleName, function () {
           done();
         });
         it('should create a navi entry', function (done) {
-          NaviEntry.handleNewInstance(ctx.mockInstance, function cb (err) {
+          NaviEntry.handleNewInstance(ctx.mockInstance, function (err) {
             if (err) { return done(err); }
             sinon.assert.calledOnce(ctx.mockInstance.getElasticHostname);
             sinon.assert.calledOnce(ctx.mockInstance.getDirectHostname);
             sinon.assert.calledOnce(ctx.mockInstance.getMainBranchName);
             sinon.assert.calledOnce(ctx.mockInstance.getDependencies);
-            sinon.assert.calledWith(NaviEntry.prototype.save, cb);
+            sinon.assert.calledOnce(NaviEntry.prototype.save);
             var naviEntryValue = NaviEntry.prototype.save.lastCall.thisValue;
             expect(naviEntryValue.elasticUrl, 'elastic URL').to.equal('elasticHostname.example.com');
             expect(naviEntryValue.ownerGithubId, 'ownerGithubId').to.equal(1234);
@@ -99,12 +99,12 @@ describe('Navi Entry: '+moduleName, function () {
           done();
         });
         it('should create a navi entry', function (done) {
-          NaviEntry.handleNewInstance(ctx.mockInstance, function cb (err) {
+          NaviEntry.handleNewInstance(ctx.mockInstance, function (err) {
             if (err) { return done(err); }
             sinon.assert.calledWith(
               NaviEntry.findOneAndUpdate,
               {
-                'elastic-url': 'elasticHostname.example.com'
+                'direct-urls.instanceID': {$exists: true}
               }, {
                 $set: {
                   'direct-urls.instanceID': {
@@ -113,8 +113,7 @@ describe('Navi Entry: '+moduleName, function () {
                     dependencies: [{dep: 1}]
                   }
                 }
-              },
-              cb
+              }
             );
             done();
           });
@@ -169,20 +168,19 @@ describe('Navi Entry: '+moduleName, function () {
         done();
       });
       it('should update the database', function (done) {
-        NaviEntry.handleInstanceStatusChange(ctx.mockInstance, function cb (err) {
+        NaviEntry.handleInstanceStatusChange(ctx.mockInstance, function (err) {
           if (err) { return done(err); }
           sinon.assert.calledWith(
             NaviEntry.findOneAndUpdate,
             {
-              'elastic-url': 'elasticHostname.example.com'
+              'direct-urls.instanceID': {$exists: true}
             }, {
               $set: {
                 'direct-urls.instanceID.ports': ctx.mockInstance.container.ports,
                 'direct-urls.instanceID.dockerHost': ctx.mockInstance.container.dockerHost,
                 'direct-urls.instanceID.status': 'running'
               }
-            },
-            cb
+            }
           );
           done();
         });
@@ -195,20 +193,19 @@ describe('Navi Entry: '+moduleName, function () {
         done();
       });
       it('should update the database', function (done) {
-        NaviEntry.handleInstanceStatusChange(ctx.mockInstance, function cb (err) {
+        NaviEntry.handleInstanceStatusChange(ctx.mockInstance, function (err) {
           if (err) { return done(err); }
           sinon.assert.calledWith(
             NaviEntry.findOneAndUpdate,
             {
-              'elastic-url': 'elasticHostname.example.com'
+              'direct-urls.instanceID': {$exists: true}
             }, {
               $set: {
                 'direct-urls.instanceID.ports': null,
                 'direct-urls.instanceID.dockerHost': null,
                 'direct-urls.instanceID.status': 'crashed'
               }
-            },
-            cb
+            }
           );
           done();
         });
