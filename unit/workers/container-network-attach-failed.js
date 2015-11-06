@@ -111,7 +111,7 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           var queryArg = ctx.worker._baseWorkerFindInstance.getCall(0).args[0];
           expect(queryArg._id).to.equal(ctx.data.instanceId);
-          expect(queryArg.$or.length).to.equal(2);
+          expect(queryArg['container.dockerContainer']).to.equal(ctx.data.containerId);
           expect(Instance.findByIdAndUpdate.callCount).to.equal(1);
           var args = Instance.findByIdAndUpdate.getCall(0).args;
           expect(args[0]).to.equal(ctx.mockInstance._id);

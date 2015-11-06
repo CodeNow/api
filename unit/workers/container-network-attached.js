@@ -11,6 +11,7 @@ var sinon = require('sinon');
 
 var ContainerNetworkAttached = require('workers/container-network-attached');
 var InstanceService = require('models/services/instance-service');
+var Hosts = require('models/redis/hosts');
 
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
@@ -27,8 +28,9 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
   beforeEach(function (done) {
     ctx = {};
     ctx.mockInstance = {
-      '_id': 'adsfasdfasdfqwfqw cvasdvasDFV',
+      _id: '5633e9273e2b5b0c0077fd41',
       name: 'name1',
+      shortHash: 'asd51a1',
       owner: {
         github: '',
         username: 'foo',
@@ -41,20 +43,41 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
       },
       network: {
         hostIp: '0.0.0.0'
-      },
-      modifyContainerInspect: function () {}
-    };
-    ctx.labels = {
-      instanceId: ctx.mockInstance._id,
-      ownerUsername: 'fifo',
-      sessionUserGithubId: 444,
-      contextVersionId: 123
+      }
     };
     ctx.data = {
       instanceId: '5633e9273e2b5b0c0077fd41',
       contextVersionId: '563a808f9359ef0c00df34e6',
       containerId: 'container-id-1',
       containerIp: '192.16.17.01'
+    };
+    ctx.data.inspectData = {
+      Config: {
+        Labels: {
+          instanceId: ctx.data.instanceId,
+          ownerUsername: 'anton',
+          sessionUserGithubId: 111987,
+          contextVersionId: 'some-cv-id'
+        }
+      },
+      State: {
+        ExitCode: 0,
+        FinishedAt: '0001-01-01T00:00:00Z',
+        Paused: false,
+        Pid: 889,
+        Restarting: false,
+        Running: true,
+        StartedAt: '2014-11-25T22:29:50.23925175Z'
+      },
+      NetworkSettings: {
+        IPAddress: '172.17.14.13',
+        Ports: {
+          '3000/tcp': [{'HostIp': '0.0.0.0','HostPort': '34109'}],
+          '80/tcp': [{'HostIp': '0.0.0.0','HostPort': '34110'}],
+          '8000/tcp': [{'HostIp': '0.0.0.0','HostPort': '34111'}],
+          '8080/tcp': [{'HostIp': '0.0.0.0','HostPort': '34108'}]
+        }
+      }
     };
     ctx.worker = new ContainerNetworkAttached(ctx.data);
     done();
@@ -73,15 +96,22 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
     done();
   });
   describe('all together', function () {
-
+    beforeEach(function (done) {
+      sinon.stub(Hosts.prototype, 'upsertHostsForInstance').yieldsAsync(null);
+      done();
+    });
+    afterEach(function (done) {
+      Hosts.prototype.upsertHostsForInstance.restore();
+      done();
+    });
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(InstanceService.prototype, 'modifyContainerIp')
+        sinon.stub(InstanceService.prototype, 'updateOnContainerStart')
           .yieldsAsync(null, ctx.mockInstance);
         done();
       });
       afterEach(function (done) {
-        InstanceService.prototype.modifyContainerIp.restore();
+        InstanceService.prototype.updateOnContainerStart.restore();
         done();
       });
 
@@ -92,30 +122,31 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           var queryArg = ctx.worker._baseWorkerFindInstance.getCall(0).args[0];
           expect(queryArg._id).to.equal(ctx.data.instanceId);
-          expect(queryArg.$or.length).to.equal(2);
-          expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
-          var args = InstanceService.prototype.modifyContainerIp.getCall(0).args;
+          expect(queryArg['container.dockerContainer']).to.equal(ctx.data.containerId);
+          expect(InstanceService.prototype.updateOnContainerStart.callCount).to.equal(1);
+          var args = InstanceService.prototype.updateOnContainerStart.getCall(0).args;
           expect(args[0]).to.equal(ctx.mockInstance);
           expect(args[1]).to.equal(ctx.data.containerId);
           expect(args[2]).to.equal(ctx.data.containerIp);
+          // expect(args[2]).to.equal(ctx.data.containerIp);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1);
           var updateFrontendArgs = ctx.worker._baseWorkerUpdateInstanceFrontend.getCall(0).args;
           expect(updateFrontendArgs[0]).to.equal(ctx.mockInstance._id);
-          expect(updateFrontendArgs[1]).to.equal(ctx.mockInstance.createdBy.github);
-          expect(updateFrontendArgs[2]).to.equal('update');
+          expect(updateFrontendArgs[1]).to.equal(ctx.data.inspectData.Config.Labels.sessionUserGithubId);
+          expect(updateFrontendArgs[2]).to.equal('start');
           done();
         });
       });
     });
     describe('failure', function () {
       beforeEach(function (done) {
-        sinon.stub(InstanceService.prototype, 'modifyContainerIp')
+        sinon.stub(InstanceService.prototype, 'updateOnContainerStart')
           .yieldsAsync(new Error('this is an error'));
         done();
       });
 
       afterEach(function (done) {
-        InstanceService.prototype.modifyContainerIp.restore();
+        InstanceService.prototype.updateOnContainerStart.restore();
         done();
       });
 
@@ -124,7 +155,7 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
           // This should never return an error
           expect(err).to.be.undefined();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
-          expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
+          expect(InstanceService.prototype.updateOnContainerStart.callCount).to.equal(1);
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(0);
           done();
         });
@@ -140,21 +171,21 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
     });
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(InstanceService.prototype, 'modifyContainerIp')
+        sinon.stub(InstanceService.prototype, 'updateOnContainerStart')
           .yieldsAsync(null, ctx.mockInstance);
         done();
       });
 
       afterEach(function (done) {
-        InstanceService.prototype.modifyContainerIp.restore();
+        InstanceService.prototype.updateOnContainerStart.restore();
         done();
       });
 
       it('should find and update instance with container', function (done) {
         ctx.worker._updateInstance(function (err) {
           expect(err).to.be.null();
-          expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
-          var args = InstanceService.prototype.modifyContainerIp.getCall(0).args;
+          expect(InstanceService.prototype.updateOnContainerStart.callCount).to.equal(1);
+          var args = InstanceService.prototype.updateOnContainerStart.getCall(0).args;
           expect(args[0]).to.equal(ctx.mockInstance);
           expect(args[1]).to.equal(ctx.data.containerId);
           expect(args[2]).to.equal(ctx.data.containerIp);
@@ -164,20 +195,20 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
     });
     describe('failure', function () {
       beforeEach(function (done) {
-        sinon.stub(InstanceService.prototype, 'modifyContainerIp')
+        sinon.stub(InstanceService.prototype, 'updateOnContainerStart')
           .yieldsAsync(new Error('this is an error'));
         done();
       });
 
       afterEach(function (done) {
-        InstanceService.prototype.modifyContainerIp.restore();
+        InstanceService.prototype.updateOnContainerStart.restore();
         done();
       });
 
       it('should find and update instance with container', function (done) {
         ctx.worker._updateInstance(function (err) {
           expect(err.message).to.equal('this is an error');
-          expect(InstanceService.prototype.modifyContainerIp.callCount).to.equal(1);
+          expect(InstanceService.prototype.updateOnContainerStart.callCount).to.equal(1);
           done();
         });
       });
