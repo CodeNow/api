@@ -120,14 +120,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
 
       beforeEach(function (done) {
         sinon.stub(messenger, 'emitContextVersionUpdate');
-        sinon.stub(messenger, 'emitInstanceUpdate');
-        sinon.stub(Instance, 'findAndPopulate').yieldsAsync(null, [ctx.instance]);
+        sinon.stub(Instance, 'emitInstanceUpdates').yieldsAsync(null, [ctx.instance]);
         done();
       });
       afterEach(function (done) {
         messenger.emitContextVersionUpdate.restore();
-        messenger.emitInstanceUpdate.restore();
-        Instance.findAndPopulate.restore();
+        Instance.emitInstanceUpdates.restore();
         done();
       });
       describe('With a successful build', function () {
@@ -136,28 +134,27 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
             workerDone();
             if (err) { return done(err); }
-            sinon.assert.calledWith(
-              messenger.emitContextVersionUpdate,
-              sinon.match({_id: ctx.cv._id}),
-              'build_completed'
-            );
-            sinon.assert.calledWith(
-              messenger.emitInstanceUpdate,
-              sinon.match({_id: ctx.instance._id}),
-              'patch'
-            );
-            sinon.assert.calledOnce(Instance.findAndPopulate);
-            ContextVersion.findOne(ctx.cv._id, function (err, cv) {
-              if (err) { return done(err); }
-              expect(cv.build.completed).to.exist();
-              Build.findBy('contextVersions', cv._id, function (err, builds) {
+            try {
+              sinon.assert.calledWith(
+                messenger.emitContextVersionUpdate,
+                sinon.match({_id: ctx.cv._id}),
+                'build_completed'
+              );
+              sinon.assert.calledOnce(Instance.emitInstanceUpdates);
+              ContextVersion.findOne(ctx.cv._id, function (err, cv) {
                 if (err) { return done(err); }
-                builds.forEach(function (build) {
-                  expect(build.completed).to.exist();
+                expect(cv.build.completed).to.exist();
+                Build.findBy('contextVersions', cv._id, function (err, builds) {
+                  if (err) { return done(err); }
+                  builds.forEach(function (build) {
+                    expect(build.completed).to.exist();
+                  });
+                  done();
                 });
-                done();
               });
-            });
+            } catch(e) {
+              done(e);
+            }
           });// stub end
         });
       });
