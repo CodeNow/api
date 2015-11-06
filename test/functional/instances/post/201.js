@@ -191,7 +191,7 @@ describe('201 POST /instances', function () {
           expect(rabbitmqPublishSpy.calledOnce).to.be.true();
           expect(jobData.cvId).to.equal(ctx.cv.id());
           expect(jobData.dockerHost).to.exist();
-          expect(jobData.instanceEnvs[0]).to.equal('RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash);
+          expect(jobData.instanceEnvs[0]).to.equal('RUNNABLE_CONTAINER_ID=' + ctx.body.shortHash);
           expect(jobData.labels).to.deep.contain({
             contextVersionId: ctx.cv.id(),
             instanceId: ctx.body._id,
