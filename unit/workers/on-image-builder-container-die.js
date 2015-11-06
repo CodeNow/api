@@ -321,7 +321,7 @@ describe('OnImageBuilderContainerDie: '+moduleName, function () {
           {
             'contextVersion.build._id': toObjectId(ctx.worker.data.inspectData.Name.slice(1))
           },
-          'deploy',
+          'patch',
           sinon.match.func
         );
         sinon.assert.calledWith(
