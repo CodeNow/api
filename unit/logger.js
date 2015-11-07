@@ -57,7 +57,7 @@ describe('lib/logger.js unit test', function () {
           expect(serialized.txMSFromReqStart).to.be.a.number();
           // note(tj): js cannot be relied on to calculate timestamp differences w/ ms accuracy
           // gave it a second offset in case the ci service is going slow:
-          expect(serialized.txMSDelta).to.between(1000000, 1000000+1000);
+          expect(serialized.txMSDelta).to.about(1000000, 200);
           done();
         });
       });
