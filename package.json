@@ -121,7 +121,6 @@
     "randomstring": "^1.0.5",
     "require-inject": "^1.1.0",
     "rimraf": "^2.2.8",
-    "sauron": "git+ssh://git@github.com:codenow/sauron#v0.0.13",
     "server-destroy": "^1.0.0",
     "sinon": "^1.14.1",
     "through": "^2.3.8"
