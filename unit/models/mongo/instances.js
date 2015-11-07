@@ -33,6 +33,8 @@ var Version = require('models/mongo/context-version');
 var dock = require('../../../test/functional/fixtures/dock');
 var pubsub = require('models/redis/pubsub');
 var validation = require('../../fixtures/validation')(lab);
+var Build = require('models/mongo/build');
+var NaviEntry = require('models/mongo/navi-entry');
 
 var id = 0;
 function getNextId () {
@@ -142,6 +144,17 @@ describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect);
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
+
+  beforeEach(function (done) {
+    sinon.stub(NaviEntry, 'handleInstanceStatusChange').yieldsAsync(null);
+    sinon.stub(NaviEntry, 'handleNewInstance').yieldsAsync(null);
+    done();
+  });
+  afterEach(function (done) {
+    NaviEntry.handleInstanceStatusChange.restore();
+    NaviEntry.handleNewInstance.restore();
+    done();
+  });
 
   describe('starting or stopping state detection', function () {
     it('should not error if container is not starting or stopping', function (done) {
@@ -1432,6 +1445,123 @@ describe('Instance Model Tests ' + moduleName, function () {
         ]
       });
       done();
+    });
+  });
+
+
+
+  describe('status', function () {
+    beforeEach(function (done) {
+      sinon.stub(Build, 'findById').yieldsAsync(null);
+      done();
+    });
+
+    afterEach(function (done) {
+      Build.findById.restore();
+      done();
+    });
+
+    it('should correctly return starting', function (done) {
+      var instance = createNewInstance();
+      instance.container.inspect.State = {
+        Starting: true
+      };
+      instance.status(function (err, status) {
+        if (err) { return done(err); }
+        expect(status).to.equal('starting');
+        done();
+      });
+    });
+    it('should correctly return stopping', function (done) {
+      var instance = createNewInstance();
+      instance.container.inspect.State = {
+        Stopping: true
+      };
+      instance.status(function (err, status) {
+        if (err) { return done(err); }
+        expect(status).to.equal('stopping');
+        done();
+      });
+    });
+    it('should correctly return stopped', function (done) {
+      var instance = createNewInstance();
+      instance.container.inspect.State = {
+        Running: false,
+        ExitCode: -1
+      };
+      instance.status(function (err, status) {
+        if (err) { return done(err); }
+        expect(status).to.equal('stopped');
+        done();
+      });
+    });
+
+    it('should correctly return crashed', function (done) {
+      var instance = createNewInstance();
+      instance.container.inspect.State = {
+        Running: false,
+        ExitCode: 1
+      };
+      instance.status(function (err, status) {
+        if (err) { return done(err); }
+        expect(status).to.equal('crashed');
+        done();
+      });
+    });
+
+    it('should correctly return neverStarted', function (done) {
+      var instance = createNewInstance();
+      instance.container.inspect.State = {
+        Running: false,
+        ExitCode: 0,
+        StartedAt: '0001-01-01T00:00:00Z'
+      };
+      instance.status(function (err, status) {
+        if (err) { return done(err); }
+        expect(status).to.equal('neverStarted');
+        done();
+      });
+    });
+
+    it('should correctly return running', function (done) {
+      var instance = createNewInstance();
+      instance.container.inspect.State = {
+        Running: true,
+        ExitCode: 0,
+        StartedAt: new Date().toISOString()
+      };
+      instance.status(function (err, status) {
+        if (err) { return done(err); }
+        expect(status).to.equal('running');
+        done();
+      });
+    });
+
+    it('should correctly return buildFailed', function (done) {
+      Build.findById.yieldsAsync(null, {
+        completed: true,
+        failed: true
+      });
+      var instance = createNewInstance();
+      instance.container = null;
+      instance.status(function (err, status) {
+        if (err) { return done(err); }
+        expect(status).to.equal('buildFailed');
+        done();
+      });
+    });
+
+    it('should correctly return building', function (done) {
+      Build.findById.yieldsAsync(null, {
+        completed: false
+      });
+      var instance = createNewInstance();
+      instance.container = null;
+      instance.status(function (err, status) {
+        if (err) { return done(err); }
+        expect(status).to.equal('building');
+        done();
+      });
     });
   });
 });

@@ -81,7 +81,7 @@ describe('201 POST /instances', function () {
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
   afterEach(primus.disconnect);
-  afterEach(require('../../fixtures/clean-mongo').removeEverything);
+  //afterEach(require('../../fixtures/clean-mongo').removeEverything);
   // afterEach(require('../../fixtures/clean-ctx')(ctx));
   // afterEach(require('../../fixtures/clean-nock'));
 
@@ -104,9 +104,6 @@ describe('201 POST /instances', function () {
           if (err) { return done(err); }
           ctx.cv.fetch(done); // used in assertions
         });
-      });
-      afterEach(function (done) {
-        require('../../fixtures/clean-mongo').removeEverything(done);
       });
       it('should create a private instance by default', function (done) {
         var name = uuid();
@@ -194,7 +191,7 @@ describe('201 POST /instances', function () {
           expect(rabbitmqPublishSpy.calledOnce).to.be.true();
           expect(jobData.cvId).to.equal(ctx.cv.id());
           expect(jobData.dockerHost).to.exist();
-          expect(jobData.instanceEnvs[0]).to.equal('RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash);
+          expect(jobData.instanceEnvs[0]).to.equal('RUNNABLE_CONTAINER_ID=' + ctx.body.shortHash);
           expect(jobData.labels).to.deep.contain({
             contextVersionId: ctx.cv.id(),
             instanceId: ctx.body._id,
