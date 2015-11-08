@@ -391,8 +391,8 @@ function buildTheVersionTests (ctx) {
       Context.findById(cv.context, {owner: 1}, function (err, context) {
         if (err) { return done(err) }
         var ownerGithubId = context.owner.github
-        primus.joinOrgRoom(ownerGithubId, function (/* data */) {
-          primus.onceVersionComplete(cv._id, function (/* data */) {
+        primus.joinOrgRoom(ownerGithubId, function () {
+          primus.onceVersionComplete(cv._id, function () {
             cvModel.fetch(done)
           })
           dockerMockEvents.emitBuildComplete(cv)

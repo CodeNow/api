@@ -112,7 +112,9 @@ describe('Context - /contexts/:id', function () {
       describe('owner', function () {
         updates.forEach(function (json) {
           var keys = Object.keys(json)
-          var vals = keys.map(function (key) { return json[key] })
+          var vals = keys.map(function (key) {
+            return json[key]
+          })
           it("should update context's " + keys + ' to ' + vals, function (done) {
             ctx.context.update({ json: json }, expects.updateSuccess(json, done))
           })
@@ -125,7 +127,9 @@ describe('Context - /contexts/:id', function () {
         })
         updates.forEach(function (json) {
           var keys = Object.keys(json)
-          var vals = keys.map(function (key) { return json[key] })
+          var vals = keys.map(function (key) {
+            return json[key]
+          })
           it("should not update context's " + keys + ' to ' + vals + ' (403 forbidden)', function (done) {
             ctx.nonOwner.updateContext(ctx.context.id(), { json: json }, expects.errorStatus(403, done))
           })
@@ -137,7 +141,9 @@ describe('Context - /contexts/:id', function () {
         })
         updates.forEach(function (json) {
           var keys = Object.keys(json)
-          var vals = keys.map(function (key) { return json[key] })
+          var vals = keys.map(function (key) {
+            return json[key]
+          })
           it("should update context's " + keys + ' to ' + vals, function (done) {
             ctx.moderator.updateContext(ctx.context.id(), { json: json }, expects.updateSuccess(json, done))
           })
@@ -151,7 +157,9 @@ describe('Context - /contexts/:id', function () {
       })
       updates.forEach(function (json) {
         var keys = Object.keys(json)
-        var vals = keys.map(function (key) { return json[key] })
+        var vals = keys.map(function (key) {
+          return json[key]
+        })
         it("should not update context's " + keys + ' to ' + vals + ' (404 not found)', function (done) {
           ctx.user.updateContext(
             ctx.context.id(), { json: json }, expects.errorStatus(404, done))

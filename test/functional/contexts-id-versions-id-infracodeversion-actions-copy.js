@@ -87,11 +87,13 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
           require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
           require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt')
           require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt')
-          ctx.contextVersion.createFile({json: {
-            name: 'file.txt',
-            path: '/',
-            body: 'asdf'
-          }}, function () {
+          ctx.contextVersion.createFile({
+            json: {
+              name: 'file.txt',
+              path: '/',
+              body: 'asdf'
+            }
+          }, function () {
             // Ensure the flag changed
             var expected = { // ensure infraCodeVersions were copied
               edited: true
@@ -151,11 +153,13 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
         require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'brandNewFile.txt')
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'brandNewFile.txt')
-        ctx.contextVersion.createFile({json: {
-          name: 'brandNewFile.txt',
-          path: '/',
-          body: 'asdf'
-        }}, done)
+        ctx.contextVersion.createFile({
+          json: {
+            name: 'brandNewFile.txt',
+            path: '/',
+            body: 'asdf'
+          }
+        }, done)
       })
       it('should cause the icv to show edited', function (done) {
         var expected = { // ensure infraCodeVersions were copied

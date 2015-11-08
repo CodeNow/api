@@ -502,7 +502,9 @@ describe('Instance - PATCH /instances/:id', function () {
           })
           updates.forEach(function (json) {
             var keys = Object.keys(json)
-            var vals = keys.map(function (key) { return json[key] })
+            var vals = keys.map(function (key) {
+              return json[key]
+            })
             it("should update instance's " + keys + ' to ' + vals, function (done) {
               var expected = {
                 //  'containers[0].inspect.State.Running': true
@@ -603,7 +605,9 @@ describe('Instance - PATCH /instances/:id', function () {
         describe('owner', function () {
           updates.forEach(function (json) {
             var keys = Object.keys(json)
-            var vals = keys.map(function (key) { return json[key] })
+            var vals = keys.map(function (key) {
+              return json[key]
+            })
             it("should update instance's " + keys + ' to ' + vals, function (done) {
               var expected = extend(json, {
                 'containers[0].inspect.State.Running': true
@@ -622,7 +626,9 @@ describe('Instance - PATCH /instances/:id', function () {
           })
           updates.forEach(function (json) {
             var keys = Object.keys(json)
-            var vals = keys.map(function (key) { return json[key] })
+            var vals = keys.map(function (key) {
+              return json[key]
+            })
             it("should not update instance's " + keys + ' to ' + vals + ' (403 forbidden)', function (done) {
               ctx.instance.client = ctx.nonOwner.client // swap auth to nonOwner's
               require('../../fixtures/mocks/github/user')(ctx.user)
@@ -637,7 +643,9 @@ describe('Instance - PATCH /instances/:id', function () {
           })
           updates.forEach(function (json) {
             var keys = Object.keys(json)
-            var vals = keys.map(function (key) { return json[key] })
+            var vals = keys.map(function (key) {
+              return json[key]
+            })
             it("should update instance's " + keys + ' to ' + vals, function (done) {
               ctx.instance.client = ctx.moderator.client // swap auth to moderator's
               var expected = extend(json, {
@@ -657,7 +665,9 @@ describe('Instance - PATCH /instances/:id', function () {
         })
         updates.forEach(function (json) {
           var keys = Object.keys(json)
-          var vals = keys.map(function (key) { return json[key] })
+          var vals = keys.map(function (key) {
+            return json[key]
+          })
           it("should not update instance's " + keys + ' to ' + vals + ' (404 not found)', function (done) {
             require('../../fixtures/mocks/github/user')(ctx.user)
             // create a new instance bc the model is destroyed...
@@ -672,7 +682,7 @@ describe('Instance - PATCH /instances/:id', function () {
 function waitForVersionComplete (user, cv) {
   return function (cb) {
     primus.joinOrgRoom(user.attrs.accounts.github.id, function () {
-      primus.onceVersionComplete(cv.id(), function (/* data */) {
+      primus.onceVersionComplete(cv.id(), function () {
         cb()
       })
       dockerMockEvents.emitBuildComplete(cv)

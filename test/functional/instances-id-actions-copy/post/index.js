@@ -88,9 +88,11 @@ describe('POST /instances/:id/actions/copy', function () {
         }
         require('../../fixtures/mocks/github/user')(ctx.user)
         primus.expectActionCount('start', 1, count.next)
-        ctx.instance.copy({ json: {
-          name: 'new-name-fo-shizzle'
-        }}, expects.success(201, expected, count.next))
+        ctx.instance.copy({
+          json: {
+            name: 'new-name-fo-shizzle'
+          }
+        }, expects.success(201, expected, count.next))
       })
       describe('parent has env', function () {
         beforeEach(function (done) {

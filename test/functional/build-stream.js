@@ -134,7 +134,7 @@ describe('Build Stream', function () {
         var buildStream = client.substream(body.contextVersions[0])
         dockerMockEvents.emitBuildComplete(ctx.cv)
 
-        primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+        primus.onceVersionComplete(ctx.cv.id(), function () {
           count.next()
         })
 

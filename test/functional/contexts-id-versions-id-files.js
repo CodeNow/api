@@ -75,11 +75,13 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
         require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt')
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt')
-        ctx.contextVersion.rootDir.contents.create({json: {
-          name: 'file.txt',
-          path: '/',
-          body: 'asdf'
-        }}, count.next)
+        ctx.contextVersion.rootDir.contents.create({
+          json: {
+            name: 'file.txt',
+            path: '/',
+            body: 'asdf'
+          }
+        }, count.next)
         ctx.dockerfile = ctx.contextVersion.fetchFile('/Dockerfile', count.next)
       })
     })
@@ -159,11 +161,13 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt')
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt')
-      ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
-        name: 'file.txt',
-        path: '/',
-        body: 'content'
-      }}, expects.success(201, createExpected, function (err) {
+      ctx.file = ctx.contextVersion.rootDir.contents.create({
+        json: {
+          name: 'file.txt',
+          path: '/',
+          body: 'content'
+        }
+      }, expects.success(201, createExpected, function (err) {
         if (err) { return done(err) }
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
         ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done))
@@ -180,12 +184,14 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt')
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt')
-      ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
-        name: 'file.txt',
-        path: '/',
-        body: 'content',
-        fileType: fileType
-      }}, expects.success(201, createExpected, function (err) {
+      ctx.file = ctx.contextVersion.rootDir.contents.create({
+        json: {
+          name: 'file.txt',
+          path: '/',
+          body: 'content',
+          fileType: fileType
+        }
+      }, expects.success(201, createExpected, function (err) {
         if (err) { return done(err) }
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
         ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done))
@@ -200,11 +206,13 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       ]
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/')
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
-      ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
-        name: 'dir',
-        path: '/',
-        isDir: true
-      }}, expects.success(201, createExpected, function (err) {
+      ctx.file = ctx.contextVersion.rootDir.contents.create({
+        json: {
+          name: 'dir',
+          path: '/',
+          isDir: true
+        }
+      }, expects.success(201, createExpected, function (err) {
         if (err) { return done(err) }
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
         ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done))
@@ -218,11 +226,13 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       ]
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'dir/')
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
-      ctx.file = ctx.contextVersion.rootDir.contents.create({ json: {
-        name: 'dir/',
-        path: '/',
-        isDir: true
-      }}, expects.success(201, createExpected, function (err) {
+      ctx.file = ctx.contextVersion.rootDir.contents.create({
+        json: {
+          name: 'dir/',
+          path: '/',
+          isDir: true
+        }
+      }, expects.success(201, createExpected, function (err) {
         if (err) { return done(err) }
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
         ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done))

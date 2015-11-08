@@ -47,7 +47,7 @@ describe('400 POST /instances', function () {
     beforeEach(function (done) {
       ctx.build.build({ message: uuid() }, function (err) {
         if (err) { return done(err) }
-        primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+        primus.onceVersionComplete(ctx.cv.id(), function () {
           done()
         })
         dockerMockEvents.emitBuildComplete(ctx.cv)

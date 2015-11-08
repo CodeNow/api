@@ -98,7 +98,7 @@ describe('POST /instances', function () {
             primus.expectAction('start', expected, countDown.next)
             ctx.user.createInstance({ json: json }, function (err) {
               if (err) { return countDown.next(err) }
-              primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+              primus.onceVersionComplete(ctx.cv.id(), function () {
                 countDown.next()
               })
               dockerMockEvents.emitBuildComplete(ctx.cv)

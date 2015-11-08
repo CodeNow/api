@@ -559,8 +559,7 @@ describe('GET /instances', function () {
     })
 
     describe('exceptions', function () {
-      it('should list projects belonging to HelloRunnable for any unautheticated ' +
-      'or authenticated request from any user', function (done) {
+      it('should list projects belonging to HelloRunnable for any request from any user', function (done) {
         var query = {
           owner: {
             github: process.env.HELLO_RUNNABLE_GITHUB_ID

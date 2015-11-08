@@ -109,7 +109,7 @@ describe('Building - Context Version Deduping', function () {
           // Now tail the buildstream so we can check if the instances do not deploy
           dockerMockEvents.emitBuildComplete(ctx.cv, true)
           // since the build will fail we must rely on version complete, versus instance deploy socket event
-          primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+          primus.onceVersionComplete(ctx.cv.id(), function () {
             var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
             forkedInstance.fetch(assertInstanceHasNoContainers)
@@ -131,7 +131,7 @@ describe('Building - Context Version Deduping', function () {
         dockerMockEvents.emitBuildComplete(ctx.cv, true)
         // Now wait for the finished build
         // since the build will fail we must rely on version complete, versus instance deploy socket event
-        primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+        primus.onceVersionComplete(ctx.cv.id(), function () {
           var forkedInstance = instance.copy(function (err) {
             if (err) { return done(err) }
             var count = createCount(2, done)

@@ -89,8 +89,7 @@ describe('Analyze - /actions/analyze', function () {
    * but no dependencies
    */
   describe('Success conditions - unknown', function () {
-    it('should successfully identify language as JavaScript w/ no package.json ' +
-    'present & GitHub API indicates JavaScript', function (done) {
+    it('should successfully identify language as JavaScript w/ no package.json present & GitHub API indicates JavaScript', function (done) {
       repoContentsMock.repoContentsDirectory('unknown', {})
       repoMock.standardRepo({language: 'JavaScript'})
       ctx.request.get(
@@ -107,8 +106,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('should successfully identify language as Python w/ no requirements.txt ' +
-    'present & GitHub API indicates Python', function (done) {
+    it('should successfully identify language as Python w/ no requirements.txt present & GitHub API indicates Python', function (done) {
       repoContentsMock.repoContentsDirectory('unknown', {})
       repoMock.standardRepo({language: 'Python'})
       ctx.request.get(
@@ -125,8 +123,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('should successfully identify language as Ruby w/ no Gemfile ' +
-    'present & GitHub API indicates Ruby', function (done) {
+    it('should successfully identify language as Ruby w/ no Gemfile present & GitHub API indicates Ruby', function (done) {
       repoContentsMock.repoContentsDirectory('unknown', {})
       repoMock.standardRepo({language: 'Ruby'})
       ctx.request.get(
@@ -150,8 +147,7 @@ describe('Analyze - /actions/analyze', function () {
    */
   describe('Success conditions - python', function () {
     describe('matching against requirements.txt', function () {
-      it('returns 0 inferred suggestions for python ' +
-      'repository with 0 dependencies', function (done) {
+      it('returns 0 inferred suggestions for python repository with 0 dependencies', function (done) {
         var requirements = ''
         repoContentsMock.repoContentsDirectory('python', {})
         repoContentsMock.repoContentsFile('python', {
@@ -173,8 +169,7 @@ describe('Analyze - /actions/analyze', function () {
         )
       })
 
-      it('returns 0 inferred suggestions for python ' +
-      'repository with 0 MATCHING dependencies', function (done) {
+      it('returns 0 inferred suggestions for python repository with 0 MATCHING dependencies', function (done) {
         var requirements = 'Django==1.3\n' +
           'stripe\n' +
           'py-bcrypt'
@@ -198,8 +193,7 @@ describe('Analyze - /actions/analyze', function () {
         )
       })
 
-      it('returns 1 inferred suggestions for python ' +
-      'repository with 1 matching dependency', function (done) {
+      it('returns 1 inferred suggestions for python repository with 1 matching dependency', function (done) {
         var requirements = 'Django==1.3\n' +
           'stripe\n' +
           'Eve-Elastic\n' + // matching dependency
@@ -225,8 +219,7 @@ describe('Analyze - /actions/analyze', function () {
         )
       })
 
-      it('returns 3 inferred suggestions for python ' +
-      'repository with 3 matching dependency', function (done) {
+      it('returns 3 inferred suggestions for python repository with 3 matching dependency', function (done) {
         var requirements = 'Django==1.3\n' +
           'stripe\n' +
           'Eve-Elastic==0.10.0\n' + // matching dependency (ElasticSearch)
@@ -257,8 +250,7 @@ describe('Analyze - /actions/analyze', function () {
         )
       })
 
-      it('returns 0 inferred suggestions for python ' +
-      'repository with dependency that is a substring of matching dependency', function (done) {
+      it('returns 0 inferred suggestions for python repository with dependency that is a substring of matching dependency', function (done) {
         var requirements = 'Django==1.3\n' +
           'stripe\n' +
           'Eve-Ela==0.10.0\n' + // matching dependency SUBSTRING (ElasticSearch)
@@ -285,8 +277,7 @@ describe('Analyze - /actions/analyze', function () {
         )
       })
 
-      it('returns 1 inferred suggestions for python ' +
-      'repository with multiple matching known modules', function (done) {
+      it('returns 1 inferred suggestions for python repository with multiple matching known modules', function (done) {
         // 3 matching known dependencies
         var requirements = 'elasticstack\n' +
           'elasticsearch\n' +
@@ -313,8 +304,7 @@ describe('Analyze - /actions/analyze', function () {
     })
 
     describe('matching against setup.py', function () {
-      it('returns 0 inferred suggestions for python ' +
-      'repository with 0 dependencies', function (done) {
+      it('returns 0 inferred suggestions for python repository with 0 dependencies', function (done) {
         var requirements = ''
         repoContentsMock.repoContentsDirectory('python-setup.py', {})
         repoContentsMock.repoContentsFile('python-setup.py', {
@@ -336,8 +326,7 @@ describe('Analyze - /actions/analyze', function () {
         )
       })
 
-      it('returns 0 inferred suggestions for python ' +
-      'repository with 0 MATCHING dependencies', function (done) {
+      it('returns 0 inferred suggestions for python repository with 0 MATCHING dependencies', function (done) {
         repoContentsMock.repoContentsDirectory('python-setup.py', {})
         repoContentsMock.repoContentsFile('python-setup.py', {
           name: 'setup.py',
@@ -358,8 +347,7 @@ describe('Analyze - /actions/analyze', function () {
         )
       })
 
-      it('returns 2 inferred suggestions for python ' +
-      'repository with 2 matching dependency', function (done) {
+      it('returns 2 inferred suggestions for python repository with 2 matching dependency', function (done) {
         repoContentsMock.repoContentsDirectory('python-setup.py', {})
         repoContentsMock.repoContentsFile('python-setup.py', {
           name: 'setup.py',
@@ -389,8 +377,7 @@ describe('Analyze - /actions/analyze', function () {
    * -------------------------------------------------
    */
   describe('Success conditions - javascript', function () {
-    it('returns 0 inferred suggestions for JavaScript/NodeJS ' +
-    'repository with 0 dependencies', function (done) {
+    it('returns 0 inferred suggestions for JavaScript/NodeJS repository with 0 dependencies', function (done) {
       var packageFile = {
         dependencies: {}
       }
@@ -414,8 +401,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 0 inferred suggestions for JavaScript/NodeJS ' +
-    'repository with 0 matching dependencies and X non-matching dependencies', function (done) {
+    it('returns 0 inferred suggestions for JavaScript/NodeJS repository with 0 matching dependencies and X non-matching dependencies', function (done) {
       var packageFile = {
         dependencies: {
           '101': '>=5.0.0',
@@ -441,8 +427,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 1 inferred suggestion for JavaScript/NodeJS ' +
-    'repository with 1 matching dependency', function (done) {
+    it('returns 1 inferred suggestion for JavaScript/NodeJS repository with 1 matching dependency', function (done) {
       var packageFile = {
         dependencies: {
           'mongodb': '>=5.0.0'
@@ -467,8 +452,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 3 inferred suggestions for JavaScript/NodeJS ' +
-    'repository with 3 matching dependency', function (done) {
+    it('returns 3 inferred suggestions for JavaScript/NodeJS repository with 3 matching dependency', function (done) {
       var packageFile = {
         dependencies: {
           'mongodb': '>=5.0.0',
@@ -496,8 +480,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 0 inferred suggestions for JavaScript/NodeJS ' +
-    'repository with dependency that is a substring of matching dependency', function (done) {
+    it('returns 0 inferred suggestions for JavaScript/NodeJS repository with dependency that is a substring of matching dependency', function (done) {
       var packageFile = {
         dependencies: {
           'mongodude': '>=5.0.0'
@@ -522,8 +505,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 0 inferred suggestion for JavaScript/NodeJS ' +
-    'repository with no dependency property in package.json file', function (done) {
+    it('returns 0 inferred suggestion for JavaScript/NodeJS repository with no dependency property in package.json file', function (done) {
       var packageFile = {}
       repoContentsMock.repoContentsDirectory('nodejs', {})
       repoContentsMock.repoContentsFile('nodejs', {
@@ -544,8 +526,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 1 inferred suggestion for JavaScript/NodeJS ' +
-    'repository with multiple matching known modules', function (done) {
+    it('returns 1 inferred suggestion for JavaScript/NodeJS repository with multiple matching known modules', function (done) {
       var packageFile = {
         // 3 matching ElasticSearch dependencies
         dependencies: {
@@ -580,8 +561,7 @@ describe('Analyze - /actions/analyze', function () {
    * -------------------------------------------------
    */
   describe('Success conditions - ruby', function () {
-    it('returns 0 inferred suggestions for Ruby/RoR ' +
-    'repository with 0 dependencies', function (done) {
+    it('returns 0 inferred suggestions for Ruby/RoR repository with 0 dependencies', function (done) {
       var Gemfile = ''
       repoContentsMock.repoContentsDirectory('ruby', {})
       repoContentsMock.repoContentsFile('ruby', {
@@ -603,8 +583,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 0 inferred suggestions for Ruby/RoR ' +
-    'repository with 0 MATCHING dependencies', function (done) {
+    it('returns 0 inferred suggestions for Ruby/RoR repository with 0 MATCHING dependencies', function (done) {
       var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_nomatch'
       var Gemfile = fs.readFileSync(filePath)
       repoContentsMock.repoContentsDirectory('ruby', {})
@@ -626,8 +605,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 1 inferred suggestion for Ruby/RoR ' +
-    'repository with 1 matching dependency', function (done) {
+    it('returns 1 inferred suggestion for Ruby/RoR repository with 1 matching dependency', function (done) {
       var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_cassandra'
       var Gemfile = fs.readFileSync(filePath)
       repoContentsMock.repoContentsDirectory('ruby', {})
@@ -650,8 +628,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 3 inferred suggestions for Ruby/RoR ' +
-    'repository with 3 matching dependency', function (done) {
+    it('returns 3 inferred suggestions for Ruby/RoR repository with 3 matching dependency', function (done) {
       var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_3'
       var Gemfile = fs.readFileSync(filePath)
       repoContentsMock.repoContentsDirectory('ruby', {})
@@ -676,8 +653,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 0 inferred suggestions for Ruby/RoR ' +
-    'repository with dependency that is a substring of matching dependency', function (done) {
+    it('returns 0 inferred suggestions for Ruby/RoR repository with dependency that is a substring of matching dependency', function (done) {
       var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_substring'
       var Gemfile = fs.readFileSync(filePath)
       repoContentsMock.repoContentsDirectory('ruby', {})
@@ -699,10 +675,8 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 1 inferred suggestion for Ruby/RoR ' +
-    'repository with multiple matching known modules', function (done) {
-      var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/' +
-        'gemfiles/sample_gemfile_match_multiple_cassandra'
+    it('returns 1 inferred suggestion for Ruby/RoR repository with multiple matching known modules', function (done) {
+      var filePath = __dirname + '/../../fixtures/mocks/github/repos-contents/gemfiles/sample_gemfile_match_multiple_cassandra'
       var Gemfile = fs.readFileSync(filePath)
       repoContentsMock.repoContentsDirectory('ruby', {})
       repoContentsMock.repoContentsFile('ruby', {
@@ -730,8 +704,7 @@ describe('Analyze - /actions/analyze', function () {
    * -------------------------------------------------
    */
   describe('Success conditions - PHP', function () {
-    it('returns 0 inferred suggestions for php ' +
-    'repository with 0 dependencies', function (done) {
+    it('returns 0 inferred suggestions for php repository with 0 dependencies', function (done) {
       var composerFile = {
         require: {}
       }
@@ -755,8 +728,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 0 inferred suggestions for php ' +
-    'repository with 0 MATCHING dependencies', function (done) {
+    it('returns 0 inferred suggestions for php repository with 0 MATCHING dependencies', function (done) {
       var composerFile = {
         require: {
           'some-module1': '0.0',
@@ -783,8 +755,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 1 inferred suggestions for php ' +
-    'repository with 1 matching dependency', function (done) {
+    it('returns 1 inferred suggestions for php repository with 1 matching dependency', function (done) {
       var composerFile = {
         require: {
           'some-module1': '1.2.0',
@@ -813,8 +784,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 3 inferred suggestions for php ' +
-    'repository with 3 matching dependency', function (done) {
+    it('returns 3 inferred suggestions for php repository with 3 matching dependency', function (done) {
       var composerFile = {
         require: {
           'some-module1': '0.0',
@@ -847,8 +817,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 0 inferred suggestions for php ' +
-    'repository with dependency that is a substring of matching dependency', function (done) {
+    it('returns 0 inferred suggestions for php repository with dependency that is a substring of matching dependency', function (done) {
       var composerFile = {
         require: {
           'some-module1': '0',
@@ -875,8 +844,7 @@ describe('Analyze - /actions/analyze', function () {
       )
     })
 
-    it('returns 1 inferred suggestions for php ' +
-    'repository with multiple matching known modules', function (done) {
+    it('returns 1 inferred suggestions for php repository with multiple matching known modules', function (done) {
       // 3 mysql dependencies
       var composerFile = {
         require: {
