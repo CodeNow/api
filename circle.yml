@@ -5,7 +5,7 @@ dependencies:
   cache_directories:
     - neo4j-community-2.1.8
   pre:
-    - if [[ ! -e neo4j-community-2.1.8 ]]; then wget http://neo4j.com/artifact.php?name=neo4j-community-2.1.8-unix.tar.gz -O neo4j-community-2.1.8-unix.tar.gz && tar -xzvf neo4j-community-2.1.8-unix.tar.gz; fi
+    - if [[ ! -e neo4j-community-2.1.8 ]] then wget http://neo4j.com/artifact.php?name=neo4j-community-2.1.8-unix.tar.gz -O neo4j-community-2.1.8-unix.tar.gz && tar -xzvf neo4j-community-2.1.8-unix.tar.gz fi
     - neo4j-community-2.1.8/bin/neo4j start:
         background: true
     - timeout 1m ./scripts/set-neo4j-constraint.sh

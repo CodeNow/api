@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-if [[ ! -e /tmp/downloads/neo4j-community-2.1.8-unix.tar.gz ]]; then
+if [[ ! -e /tmp/downloads/neo4j-community-2.1.8-unix.tar.gz ]] then
   echo "Downloading neo4j"
   mkdir -p /tmp/downloads
   wget http://neo4j.com/artifact.php?name=neo4j-community-2.1.8-unix.tar.gz -O /tmp/downloads/neo4j-community-2.1.8-unix.tar.gz
@@ -11,4 +11,4 @@ else
 fi
 
 rm -rf /tmp/neo4j-community-2.1.8
-tar -C /tmp -xzf /tmp/downloads/neo4j-community-2.1.8-unix.tar.gz;
+tar -C /tmp -xzf /tmp/downloads/neo4j-community-2.1.8-unix.tar.gz

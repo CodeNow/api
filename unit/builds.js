@@ -1,113 +1,113 @@
-'use strict';
+'use strict'
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var afterEach = lab.afterEach;
-var Code = require('code');
-var expect = Code.expect;
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+var describe = lab.describe
+var it = lab.it
+var before = lab.before
+var beforeEach = lab.beforeEach
+var afterEach = lab.afterEach
+var Code = require('code')
+var expect = Code.expect
 
-var validation = require('./fixtures/validation')(lab);
+var validation = require('./fixtures/validation')(lab)
 
-var Build = require('models/mongo/build');
+var Build = require('models/mongo/build')
 
-var path = require('path');
-var moduleName = path.relative(process.cwd(), __filename);
+var path = require('path')
+var moduleName = path.relative(process.cwd(), __filename)
 
-describe('Build: '+moduleName, function () {
-  before(require('./fixtures/mongo').connect);
-  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything);
+describe('Build: ' + moduleName, function () {
+  before(require('./fixtures/mongo').connect)
+  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything)
 
-  function createNewBuild() {
+  function createNewBuild () {
     return new Build({
       owner: { github: validation.VALID_GITHUB_ID },
       contexts: [validation.VALID_OBJECT_ID],
       contextVersions: [validation.VALID_OBJECT_ID],
       created: Date.now(),
       createdBy: { github: validation.VALID_GITHUB_ID }
-    });
+    })
   }
 
-  function createNewUser() {
+  function createNewUser () {
     return {
-      password: "pass",
-      name: "test",
+      password: 'pass',
+      name: 'test',
       accounts: {
         github: {
           id: '1234'
         }
       }
-    };
+    }
   }
 
   it('should be able to save a build!', function (done) {
-    var build = createNewBuild();
+    var build = createNewBuild()
     build.save(function (err, build) {
-      if (err) { done(err); }
-      else {
-        expect(build).to.exist();
-        done();
-      }
-    });
-  });
+      if (err) { return done(err) }
+      expect(build).to.exist()
+      done()
+    })
+  })
 
   describe('CreatedBy Validation', function () {
-    validation.githubUserRefValidationChecking(createNewBuild, 'createdBy.github');
-    // validation.requiredValidationChecking(createNewBuild, 'createdBy');
-  });
+    validation.githubUserRefValidationChecking(createNewBuild, 'createdBy.github')
+  // validation.requiredValidationChecking(createNewBuild, 'createdBy')
+  })
 
   describe('Owner Validation', function () {
-    validation.githubUserRefValidationChecking(createNewBuild, 'owner.github');
-    validation.requiredValidationChecking(createNewBuild, 'owner');
-  });
+    validation.githubUserRefValidationChecking(createNewBuild, 'owner.github')
+    validation.requiredValidationChecking(createNewBuild, 'owner')
+  })
 
   describe('Context Ids Validation', function () {
-    validation.objectIdValidationChecking(createNewBuild, 'contexts', true);
-  });
+    validation.objectIdValidationChecking(createNewBuild, 'contexts', true)
+  })
 
   describe('Version Ids Validation', function () {
-    validation.objectIdValidationChecking(createNewBuild, 'contextVersions', true);
-  });
+    validation.objectIdValidationChecking(createNewBuild, 'contextVersions', true)
+  })
 
   describe('Testing SetInProgress', function () {
-    var ctx = {};
-    beforeEach(function(done) {
-      ctx.build = createNewBuild();
-      ctx.build.save(function(err, build) {
-        build.setInProgress(createNewUser(), function(err, newbuild) {
+    var ctx = {}
+    beforeEach(function (done) {
+      ctx.build = createNewBuild()
+      ctx.build.save(function (err, build) {
+        if (err) { return done(err) }
+        build.setInProgress(createNewUser(), function (err, newbuild) {
           if (err) {
-            done(err);
+            done(err)
           } else {
-            ctx.build = newbuild;
-            done();
+            ctx.build = newbuild
+            done()
           }
-        });
-      });
-    });
-    afterEach(function(done) {
-      delete ctx.build;
-      done();
-    });
+        })
+      })
+    })
+    afterEach(function (done) {
+      delete ctx.build
+      done()
+    })
     it('should be able to set the build in progress', function (done) {
-      expect(ctx.build).to.exist();
-      done();
-    });
+      expect(ctx.build).to.exist()
+      done()
+    })
     it('should create another build, and the buildNumber should be higher ', function (done) {
-      ctx.build2 = createNewBuild();
-      ctx.build2.save(function(err, build) {
-        build.setInProgress(createNewUser(), function(err, newbuild) {
+      ctx.build2 = createNewBuild()
+      ctx.build2.save(function (err, build) {
+        if (err) { return done(err) }
+        build.setInProgress(createNewUser(), function (err, newbuild) {
           if (err) {
-            done(err);
+            done(err)
           } else {
-            expect(newbuild).to.exist();
-            expect(ctx.build.buildNumber).to.be.below(newbuild.buildNumber);
-            done();
+            expect(newbuild).to.exist()
+            expect(ctx.build.buildNumber).to.be.below(newbuild.buildNumber)
+            done()
           }
-        });
-      });
-    });
-  });
-});
+        })
+      })
+    })
+  })
+})
