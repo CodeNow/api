@@ -37,7 +37,7 @@ then
 fi
 
 numTests=$(npm run _bdd -- --dry ${all_files[@]} | tail -7 | perl -n -e '/- (\d+)\)/ && print $1')
-if [[ $numTests == "" ]] then echo "could not get number of tests" exit 1 fi
+if [[ $numTests == "" ]]; then echo "could not get number of tests"; exit 1; fi
 echo $numTests to run
 
 if [[ $indexes == "" ]]
