@@ -55,11 +55,15 @@ describe('Github - /actions/github', function () {
     // Prevent worker creation and github event publishing by rabbit
     sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     sinon.stub(rabbitMQ, 'publishGithubEvent');
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
     done();
   });
   afterEach(function (done) {
     rabbitMQ.deleteInstance.restore();
     rabbitMQ.publishGithubEvent.restore();
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
     done();
   });
   beforeEach(function (done) {
