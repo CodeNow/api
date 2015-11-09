@@ -132,7 +132,7 @@
     "npm": "2.1.18"
   },
   "scripts": {
-    "_bdd": "NODE_PATH=./lib NODE_ENV=test node_modlues/.bin/lab --assert code --verbose --leaks --context-timeout 60000 --timeout 60000",
+    "_bdd": "NODE_PATH=./lib NODE_ENV=test ./node_modlues/.bin/lab --assert code --verbose --leaks --context-timeout 60000 --timeout 60000",
     "bdd": "CIRCLE_NODE_TOTAL=1 CIRCLE_NODE_INDEX=0 ./scripts/npm-bdd-split-files.sh",
     "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -a code -v -l --context-timeout 60000 --timeout 60000 -e test `cat test/whitelist.txt`",
     "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd-whitelist",
