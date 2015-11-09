@@ -14,7 +14,7 @@ var Faker = require('faker');
 var describe = lab.describe;
 var it = lab.it;
 var before = lab.before;
-var beforeEach = lab.afterEach;
+var beforeEach = lab.beforeEach;
 var afterEach = lab.afterEach;
 var expect = Code.expect;
 
