@@ -42,6 +42,17 @@ describe('PUT /instances/:id/actions/start', function () {
   after(require('../../fixtures/mocks/api-client').clean);
 
   beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
+
+  beforeEach(function (done) {
     multi.createBuiltBuild(function (err, build, user, modelsArr) {
       if (err) { return done(err); }
       ctx.build = build;

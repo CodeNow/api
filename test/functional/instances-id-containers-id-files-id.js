@@ -84,7 +84,7 @@ function createDir (ctx, dirName, dirPath, done) {
   });
 }
 
-describe('File System - /instances/:id/containers/:id/files/*path*', function () {
+describe('npm run File System - /instances/:id/containers/:id/files/*path*', function () {
   var ctx = {};
   var fileName = "file1.txt";
   var fileContent = "this is a test file";

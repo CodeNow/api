@@ -7,6 +7,7 @@ var createCount = require('callback-count');
 var exists = require('101/exists');
 var noop = require('101/noop');
 var randStr = require('randomstring').generate;
+var sinon = require('sinon');
 var uuid = require('uuid');
 
 var Build = require('models/mongo/build');
@@ -16,6 +17,7 @@ var dockerMockEvents = require('../../fixtures/docker-mock-events');
 var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
+var rabbitMQ = require('models/rabbitmq');
 
 var lab = exports.lab = Lab.script();
 
@@ -39,6 +41,17 @@ describe('POST /instances', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
 
   describe('POST', function () {
     describe('with unbuilt build', function () {
