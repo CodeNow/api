@@ -630,7 +630,6 @@ describe('RabbitMQ Model: '+moduleName, function () {
   });
 
   describe('instanceUpdated', function () {
-
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish');
       done();
@@ -657,8 +656,8 @@ describe('RabbitMQ Model: '+moduleName, function () {
       done();
     });
   });
-  describe('instanceCreated', function () {
 
+  describe('instanceCreated', function () {
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish');
       done();
