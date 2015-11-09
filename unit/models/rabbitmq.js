@@ -654,7 +654,7 @@ describe('RabbitMQ Model: '+moduleName, function () {
       var data = {};
       expect(ctx.rabbitMQ.instanceUpdated.bind(ctx.rabbitMQ, data))
         .to.throw(Error, 'Validation failed');
-      done()
+      done();
     });
   });
   describe('instanceCreated', function () {
@@ -682,7 +682,7 @@ describe('RabbitMQ Model: '+moduleName, function () {
       var data = {};
       expect(ctx.rabbitMQ.instanceCreated.bind(ctx.rabbitMQ, data))
         .to.throw(Error, 'Validation failed');
-      done()
+      done();
     });
-  })
+  });
 });
