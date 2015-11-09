@@ -1,6 +1,8 @@
 'use strict';
 
 var Lab = require('lab');
+var sinon = require('sinon');
+
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var before = lab.before;
@@ -13,6 +15,7 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 var primus = require('../../fixtures/primus');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('400  POST /instances/:id/actions/copy', function () {
   var ctx = {};
@@ -25,6 +28,18 @@ describe('400  POST /instances/:id/actions/copy', function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
+
+
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
 
   beforeEach(function (done) {
     multi.createAndTailInstance(primus, function (err, instance, build, user) {
