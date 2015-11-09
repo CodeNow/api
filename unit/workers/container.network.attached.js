@@ -45,16 +45,15 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
         hostIp: '0.0.0.0'
       }
     };
+    ctx.instanceId = '5633e9273e2b5b0c0077fd41';
     ctx.data = {
-      instanceId: '5633e9273e2b5b0c0077fd41',
-      contextVersionId: '563a808f9359ef0c00df34e6',
       id: 'container-id-1',
       containerIp: '192.16.17.01'
     };
     ctx.data.inspectData = {
       Config: {
         Labels: {
-          instanceId: ctx.data.instanceId,
+          instanceId: ctx.instanceId,
           ownerUsername: 'anton',
           sessionUserGithubId: 111987,
           contextVersionId: 'some-cv-id'
@@ -121,7 +120,7 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
           expect(err).to.be.undefined();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           var queryArg = ctx.worker._baseWorkerFindInstance.getCall(0).args[0];
-          expect(queryArg._id).to.equal(ctx.data.instanceId);
+          expect(queryArg._id).to.equal(ctx.instanceId);
           expect(queryArg['container.dockerContainer']).to.equal(ctx.data.id);
           expect(InstanceService.prototype.updateOnContainerStart.callCount).to.equal(1);
           var args = InstanceService.prototype.updateOnContainerStart.getCall(0).args;

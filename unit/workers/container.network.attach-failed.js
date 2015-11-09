@@ -43,6 +43,7 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
         hostIp: '0.0.0.0'
       }
     };
+    ctx.instanceId = '5633e9273e2b5b0c0077fd41';
     ctx.data = {
       id: 'container-id-1',
       err: {
@@ -69,7 +70,7 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
     ctx.data.inspectData = {
       Config: {
         Labels: {
-          instanceId: ctx.data.instanceId,
+          instanceId: ctx.instanceId,
           ownerUsername: 'anton',
           sessionUserGithubId: 111987,
           contextVersionId: 'some-cv-id'
@@ -111,7 +112,7 @@ describe('ContainerNetworkAttachFailed: '+moduleName, function () {
           expect(err).to.be.undefined();
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1);
           var queryArg = ctx.worker._baseWorkerFindInstance.getCall(0).args[0];
-          expect(queryArg._id).to.equal(ctx.data.instanceId);
+          expect(queryArg._id).to.equal(ctx.instanceId);
           expect(queryArg['container.dockerContainer']).to.equal(ctx.data.id);
           expect(Instance.findByIdAndUpdate.callCount).to.equal(1);
           var args = Instance.findByIdAndUpdate.getCall(0).args;
