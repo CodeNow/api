@@ -148,6 +148,16 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
         done();
       });
 
+      it('should do nothing if instanceId is null', function (done) {
+        ctx.worker.instanceId = null;
+        ctx.worker.handle(function (err) {
+          // This should never return an error
+          expect(err).to.be.undefined();
+          expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(0);
+          done();
+        });
+      });
+
       it('should get most of the way through, then fail', function (done) {
         ctx.worker.handle(function (err) {
           // This should never return an error
