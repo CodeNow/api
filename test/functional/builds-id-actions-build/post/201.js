@@ -10,6 +10,7 @@ var exists = require('101/exists');
 var extend = require('extend');
 var not = require('101/not');
 var uuid = require('uuid');
+var sinon = require('sinon');
 
 var lab = exports.lab = Lab.script();
 
@@ -29,6 +30,7 @@ var expects = require('./../../fixtures/expects');
 var multi = require('./../../fixtures/multi-factory');
 var primus = require('./../../fixtures/primus');
 var randStr = require('randomstring').generate;
+var rabbitMQ = require('models/rabbitmq');
 
 describe('201 POST /builds/:id/actions/build', function() {
   var ctx = {};
@@ -51,6 +53,17 @@ describe('201 POST /builds/:id/actions/build', function() {
   });
   beforeEach(function (done) {
     primus.joinOrgRoom(ctx.user.json().accounts.github.id, done);
+  });
+
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
   });
 
   describe('for User', function () {

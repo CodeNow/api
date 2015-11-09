@@ -22,6 +22,8 @@ var krain = require('krain');
 var path = require('path');
 var rimraf = require('rimraf');
 var fs = require('fs');
+var primus = require('./fixtures/primus');
+var rabbitMQ = require('models/rabbitmq');
 
 function containerRoot (inspect) {
   // this is dumb that we have to save it in krain's node_module folder
@@ -46,6 +48,18 @@ describe('BDD - Debug Containers', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
+
+
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
 
   beforeEach(function (done) {
     multi.createAndTailInstance(
