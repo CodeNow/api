@@ -106,10 +106,11 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 if (err) { return done(err); }
                 ContextVersion.findById(ctx.cv._id, function (err) {
                   if (err) { return done(err); }
-                  ContextVersion.updateById(ctx.cv._id, {
-                    $set: {
-                      'build.dockerContainer': container.id
-                    }
+                  ContextVersion.updateContainerByBuildId({
+                    buildId: opts.contextVersion.build._id,
+                    buildContainerId: container.id,
+                    tag: Docker.getDockerTag(opts.contextVersion),
+                    host: docker.dockerHost
                   }, done);
                 });
               });
