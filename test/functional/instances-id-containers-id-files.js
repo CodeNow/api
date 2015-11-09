@@ -10,6 +10,7 @@ var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
+var sinon = require('sinon');
 
 var rimraf = require('rimraf');
 var api = require('./fixtures/api-control');
@@ -18,6 +19,7 @@ var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
 var fs = require('fs');
 var path = require('path');
+var rabbitMQ = require('models/rabbitmq/index');
 
 describe('File System - /instances/:id/containers/:id/files', function () {
   var ctx = {};
@@ -52,6 +54,18 @@ describe('File System - /instances/:id/containers/:id/files', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
+
+  before(function (done) {
+    // prevent worker to be created
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  after(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
 
   beforeEach(function (done) {
     multi.createAndTailContainer(primus, function (err, container) {
