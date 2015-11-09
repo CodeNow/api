@@ -1,6 +1,7 @@
 'use strict';
 
 var Lab = require('lab');
+var sinon = require('sinon');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
 var it = lab.it;
@@ -10,6 +11,7 @@ var after = lab.after;
 var afterEach = lab.afterEach;
 
 var Code = require('code');
+var rabbitMQ = require('models/rabbitmq');
 var expect = Code.expect;
 
 var api = require('../../fixtures/api-control');
@@ -32,6 +34,17 @@ describe('Instance - /instances/:id', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
 
   describe('ORG INSTANCES', function () {
     beforeEach(function (done) {

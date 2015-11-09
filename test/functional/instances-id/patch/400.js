@@ -7,6 +7,7 @@ var before = lab.before;
 var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
+var sinon = require('sinon');
 
 var api = require('../../fixtures/api-control');
 var dock = require('../../fixtures/dock');
@@ -14,6 +15,7 @@ var multi = require('../../fixtures/multi-factory');
 var typesTests = require('../../fixtures/types-test-util');
 var primus = require('../../fixtures/primus');
 var noop = require('101/noop');
+var rabbitMQ = require('models/rabbitmq');
 
 describe('PATCH 400 - /instances/:id', function () {
   var ctx = {};
@@ -26,6 +28,18 @@ describe('PATCH 400 - /instances/:id', function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
+
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
+
 
   describe('invalid types', function () {
     beforeEach(function (done) {

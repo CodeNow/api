@@ -15,8 +15,10 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var expects = require('../../fixtures/expects');
 var primus = require('../../fixtures/primus');
+var sinon = require('sinon');
+var rabbitMQ = require('models/rabbitmq');
 
-describe('Dependencies - /instances/:id/dependencies', function () {
+describe('GET 200 Dependencies - /instances/:id/dependencies', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -28,6 +30,18 @@ describe('Dependencies - /instances/:id/dependencies', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
 
   describe('User Instances', function () {
     beforeEach(function (done) {

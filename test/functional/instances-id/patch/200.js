@@ -80,10 +80,14 @@ describe('200 PATCH /instances', function () {
     // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstance', function () {});
     sinon.stub(rabbitMQ, 'deployInstance', function () {});
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
     done();
   });
 
   after(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
     rabbitMQ.deleteInstance.restore();
     rabbitMQ.deployInstance.restore();
     done();
