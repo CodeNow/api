@@ -6,6 +6,7 @@ var async = require('async');
 var createCount = require('callback-count');
 var noop = require('101/noop');
 var pluck = require('101/pluck');
+var sinon = require('sinon');
 
 var Instance = require('models/mongo/instance');
 var api = require('../../fixtures/api-control');
@@ -13,6 +14,7 @@ var dock = require('../../fixtures/dock');
 var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
+var rabbitMQ = require('models/rabbitmq');
 
 var lab = exports.lab = Lab.script();
 
@@ -36,6 +38,17 @@ describe('GET /instances', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
+
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
 
   describe('GET', function () {
     beforeEach(function (done) {

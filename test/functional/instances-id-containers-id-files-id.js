@@ -10,6 +10,7 @@ var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
+var sinon = require('sinon');
 
 var rimraf = require('rimraf');
 var api = require('./fixtures/api-control');
@@ -19,6 +20,7 @@ var primus = require('./fixtures/primus');
 var fs = require('fs');
 var expects = require('./fixtures/expects');
 var path = require('path');
+var rabbitMQ = require('models/rabbitmq');
 
 function containerRoot (ctx) {
   if (ctx.container.attrs.dockerContainer) {
@@ -140,6 +142,17 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
   afterEach(require('./fixtures/clean-mongo').removeEverything);
   afterEach(require('./fixtures/clean-ctx')(ctx));
   afterEach(require('./fixtures/clean-nock'));
+
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  afterEach(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
 
   beforeEach(function (done) {
     multi.createAndTailContainer(primus, function (err, container, instance) {
