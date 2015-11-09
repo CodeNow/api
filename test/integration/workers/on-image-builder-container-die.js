@@ -120,11 +120,13 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       });
 
       beforeEach(function (done) {
+        sinon.stub(rabbitMQ, 'createInstanceContainer');
         sinon.stub(messenger, 'emitContextVersionUpdate');
         sinon.stub(Instance, 'emitInstanceUpdates').yieldsAsync(null, [ctx.instance]);
         done();
       });
       afterEach(function (done) {
+        rabbitMQ.createInstanceContainer.restore();
         messenger.emitContextVersionUpdate.restore();
         Instance.emitInstanceUpdates.restore();
         done();
@@ -136,6 +138,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             workerDone();
             if (err) { return done(err); }
             try {
+              sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+                contextVersionId: ctx.cv._id.toString(),
+                instanceId: ctx.instance._id.toString(),
+                ownerUsername: ctx.user.accounts.github.username,
+                sessionUserGithubId: ctx.user.accounts.github.id
+              });
               sinon.assert.calledWith(
                 messenger.emitContextVersionUpdate,
                 sinon.match({_id: ctx.cv._id}),
