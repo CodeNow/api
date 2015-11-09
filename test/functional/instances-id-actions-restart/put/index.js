@@ -53,6 +53,18 @@ describe('PUT /instances/:id/actions/restart', function () {
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
 
+  before(function (done) {
+    // prevent worker to be created
+    sinon.stub(rabbitMQ, 'instanceCreated');
+    sinon.stub(rabbitMQ, 'instanceUpdated');
+    done();
+  });
+  after(function (done) {
+    rabbitMQ.instanceCreated.restore();
+    rabbitMQ.instanceUpdated.restore();
+    done();
+  });
+
   function initExpected (done) {
     ctx.expected = {
       _id: exists,
