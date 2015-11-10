@@ -1,3 +1,4 @@
+var async = require('async');
 var dockerModel = require('models/apis/docker');
 var createCount = require('callback-count');
 var docker = require('./docker');
@@ -52,40 +53,25 @@ var sauronMock = {
     });
     this.rabbitSubscriber = rabbitSubscriber;
 
-    var count = createCount(2, cb);
-    rabbitPublisher.connect(count.next);
-    rabbitSubscriber.connect(function (err) {
-      if (err) {
-        return count.next(err);
+    async.series([
+      rabbitPublisher.connect.bind(rabbitPublisher),
+      rabbitSubscriber.connect.bind(rabbitSubscriber),
+      function (stepCb) {
+        rabbitSubscriber.subscribe('container.life-cycle.started', function (data, jobCb) {
+          data.containerIp = '10.12.10.121';
+          rabbitPublisher.publish('container.network.attached', data);
+          jobCb();
+        });
+        stepCb();
       }
-      rabbitSubscriber.subscribe('container.life-cycle.started', function (data, jobCb) {
-        data.containerIp = '10.12.10.121';
-        rabbitPublisher.publish('container.network.attached', data);
-        jobCb();
-      });
-      count.next();
-    });
+    ], cb);
   },
   stop: function (cb) {
-    var self = this;
-    var count = createCount(2, cb);
-    this.rabbitPublisher.close(function (err) {
-      if (err) {
-        console.log('dock sauronMock publisher close error', err);
-      }
-      count.next();
-    });
-    this.rabbitSubscriber.unsubscribe('container.life-cycle.started', null, function(err) {
-      if (err) {
-        console.log('dock sauronMock unsubscribe error', err);
-      }
-      self.rabbitSubscriber.close(function (err) {
-        if (err) {
-          console.log('dock sauronMock subscriber close error', err);
-        }
-        count.next();
-      });
-    });
+    async.series([
+      this.rabbitSubscriber.unsubscribe.bind(this.rabbitSubscriber, 'container.life-cycle.started', null),
+      this.rabbitSubscriber.close.bind(this.rabbitSubscriber),
+      this.rabbitPublisher.close.bind(this.rabbitPublisher)
+    ], cb);
   }
 };
 
