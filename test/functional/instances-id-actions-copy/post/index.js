@@ -8,7 +8,6 @@ var before = lab.before;
 var beforeEach = lab.beforeEach;
 var after = lab.after;
 var afterEach = lab.afterEach;
-var sinon = require('sinon');
 
 var createCount = require('callback-count');
 var exists = require('101/exists');
@@ -18,7 +17,6 @@ var dock = require('../../fixtures/dock');
 var expects = require('../../fixtures/expects');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
-var rabbitMQ = require('models/rabbitmq');
 
 describe('POST /instances/:id/actions/copy', function () {
   var ctx = {};
@@ -32,17 +30,6 @@ describe('POST /instances/:id/actions/copy', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
-
-  beforeEach(function (done) {
-    sinon.stub(rabbitMQ, 'instanceCreated');
-    sinon.stub(rabbitMQ, 'instanceUpdated');
-    done();
-  });
-  afterEach(function (done) {
-    rabbitMQ.instanceCreated.restore();
-    rabbitMQ.instanceUpdated.restore();
-    done();
-  });
 
   beforeEach(function (done) {
     multi.createAndTailInstance(primus, function (err, instance, build, user) {
