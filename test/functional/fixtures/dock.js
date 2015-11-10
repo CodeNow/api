@@ -67,24 +67,24 @@ var sauronMock = {
     });
   },
   stop: function (cb) {
-    var count = createCount(3, cb);
-    this.rabbitSubscriber.unsubscribe('container.life-cycle.started', null, function(err) {
-      if (err) {
-        console.log('dock sauronMock unsubscribe error', err);
-      }
-      count.next();
-    });
-    this.rabbitSubscriber.close(function (err) {
-      if (err) {
-        console.log('dock sauronMock subscriber close error', err);
-      }
-      count.next();
-    });
+    var self = this;
+    var count = createCount(2, cb);
     this.rabbitPublisher.close(function (err) {
       if (err) {
         console.log('dock sauronMock publisher close error', err);
       }
       count.next();
+    });
+    this.rabbitSubscriber.unsubscribe('container.life-cycle.started', null, function(err) {
+      if (err) {
+        console.log('dock sauronMock unsubscribe error', err);
+      }
+      self.rabbitSubscriber.close(function (err) {
+        if (err) {
+          console.log('dock sauronMock subscriber close error', err);
+        }
+        count.next();
+      });
     });
   }
 };
