@@ -153,7 +153,7 @@
     "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js 2>&1 | bunyan -o json-0 --strict",
     "todo": "grep -nR TODO lib test",
     "start-debug": "NODE_PATH=./lib node --debug index.js",
-    "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
+    "test": "npm run clear; npm run lint && npm run unit && npm run bdd",
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
     "unit": "npm run clear; NODE_PATH=./lib lab --threshold 82 --assert code --leaks --verbose unit/",
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
