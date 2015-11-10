@@ -85,17 +85,6 @@ describe('201 POST /instances', function () {
   // afterEach(require('../../fixtures/clean-ctx')(ctx));
   // afterEach(require('../../fixtures/clean-nock'));
 
-  beforeEach(function (done) {
-    sinon.stub(rabbitMQ, 'instanceCreated');
-    sinon.stub(rabbitMQ, 'instanceUpdated');
-    done();
-  });
-  afterEach(function (done) {
-    rabbitMQ.instanceCreated.restore();
-    rabbitMQ.instanceUpdated.restore();
-    done();
-  });
-
   describe('For User', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {
