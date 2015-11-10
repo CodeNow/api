@@ -25,31 +25,40 @@ describe('TeammateInvitation Schema: ' + moduleName, function () {
 
   function createNewInvite () {
     return new TeammateInvitation({
-      githubUserId: validation.VALID_GITHUB_ID,
+      recipient: {
+        github: {
+          id: validation.VALID_GITHUB_ID,
+        },
+        email: Faker.Internet.email(),
+      },
       createdBy: validation.VALID_OBJECT_ID,
       created: Date.now(),
-      email: Faker.Internet.email(),
-      orgName: 'CodeNow'
+      organization: {
+        github: {
+          id: validation.VALID_GITHUB_ID,
+        }
+      }
     });
   }
 
   describe('GithubUserID Validation', function () {
-    validation.requiredValidationChecking(createNewInvite, 'githubUserId');
-    validation.githubUserRefValidationChecking(createNewInvite, 'githubUserId');
+    validation.requiredValidationChecking(createNewInvite, 'recipient.github.id');
+    validation.githubUserRefValidationChecking(createNewInvite, 'recipient.github.id');
   });
 
   describe('Email Validation', function () {
-    validation.emailValidationChecking(createNewInvite, 'email');
-    validation.requiredValidationChecking(createNewInvite, 'email');
+    validation.requiredValidationChecking(createNewInvite, 'recipient.email');
+    validation.emailValidationChecking(createNewInvite, 'recipient.email');
   });
 
   describe('CreatedBy Validation', function () {
-    validation.objectIdValidationChecking(createNewInvite, 'createdBy');
     validation.requiredValidationChecking(createNewInvite, 'createdBy');
+    validation.objectIdValidationChecking(createNewInvite, 'createdBy');
   });
 
   describe('OrgName Validation', function () {
-    validation.requiredValidationChecking(createNewInvite, 'orgName');
+    validation.requiredValidationChecking(createNewInvite, 'organization.github.id');
+    validation.githubUserRefValidationChecking(createNewInvite, 'organization.github.id');
   });
 
 });
