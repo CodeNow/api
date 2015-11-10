@@ -50,7 +50,7 @@ describe('TeammateInvitation: ' + moduleName, function () {
     ], done);
   });
 
-  describe('findByGithubOrgName', function () {
+  describe('findByGithubOrg', function () {
 
     it('should fetch all inivitations within a particular org', function (done) {
       TeammateInvitation.findByGithubOrg(1, function (err, result) {

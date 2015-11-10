@@ -27,7 +27,7 @@ describe('TeammateInvitation Schema: ' + moduleName, function () {
     return new TeammateInvitation({
       recipient: {
         github: validation.VALID_GITHUB_ID,
-        email: Faker.Internet.email(),
+        email: Faker.Internet.email()
       },
       sender: validation.VALID_OBJECT_ID,
       created: Date.now(),
