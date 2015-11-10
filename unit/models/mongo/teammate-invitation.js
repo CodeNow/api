@@ -14,7 +14,7 @@ var Faker = require('faker');
 var describe = lab.describe;
 var it = lab.it;
 var before = lab.before;
-var beforeEach = lab.afterEach;
+var beforeEach = lab.beforeEach;
 var afterEach = lab.afterEach;
 var expect = Code.expect;
 
@@ -29,34 +29,43 @@ describe('TeammateInvitation: ' + moduleName, function () {
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
 
   beforeEach(function (done) {
-    function createNewInvite (orgName) {
+    function createNewInvite (orgGithubID) {
       return new TeammateInvitation({
-        githubUserId: validation.VALID_GITHUB_ID,
-        createdBy: validation.VALID_OBJECT_ID,
+        recipient: {
+          github: {
+            id: validation.VALID_GITHUB_ID,
+          },
+          email: Faker.Internet.email(),
+        },
+        sender: validation.VALID_OBJECT_ID,
         created: Date.now(),
-        email: Faker.Internet.email(),
-        orgName: orgName || 'CodeNow'
+        organization: {
+          github: {
+            id: orgGithubID
+          }
+        }
       });
     }
-    var runnableInvite = createNewInvite('Runnable');
-    var codeNowInvite = createNewInvite('CodeNow');
+    var invite1 = createNewInvite(1);
+    var invite2 = createNewInvite(2);
     async.series([
-      runnableInvite.save.bind(runnableInvite),
-      codeNowInvite.save.bind(codeNowInvite),
+      invite1.save.bind(invite1),
+      invite2.save.bind(invite2),
     ], done);
   });
 
   describe('findByGithubOrgName', function () {
 
     it('should fetch all inivitations within a particular org', function (done) {
-      TeammateInvitation.findByGithubOrgName('Runnable', function (err, result) {
+      TeammateInvitation.findByGithubOrg(1, function (err, result) {
         if (err) {
-          done(err);
+          return done(err);
         }
         expect(result).to.have.length(1);
         expect(result[0]).to.be.an.object();
-        expect(result[0].orgName).to.be.a.string();
-        expect(result[0].orgName).to.equal('Runnable');
+        expect(result[0].organization).to.be.an.object();
+        expect(result[0].organization.github).to.be.an.object();
+        expect(result[0].organization.github.id).to.equal(1);
         done();
       });
     });
