@@ -26,23 +26,19 @@ describe('TeammateInvitation Schema: ' + moduleName, function () {
   function createNewInvite () {
     return new TeammateInvitation({
       recipient: {
-        github: {
-          id: validation.VALID_GITHUB_ID,
-        },
+        github: validation.VALID_GITHUB_ID,
         email: Faker.Internet.email(),
       },
       sender: validation.VALID_OBJECT_ID,
       created: Date.now(),
       organization: {
-        github: {
-          id: validation.VALID_GITHUB_ID,
-        }
+        github: validation.VALID_GITHUB_ID,
       }
     });
   }
 
   describe('GithubUserID Validation', function () {
-    validation.githubUserRefValidationChecking(createNewInvite, 'recipient.github.id');
+    validation.githubUserRefValidationChecking(createNewInvite, 'recipient.github');
   });
 
   describe('Email Validation', function () {
@@ -55,7 +51,7 @@ describe('TeammateInvitation Schema: ' + moduleName, function () {
   });
 
   describe('OrgName Validation', function () {
-    validation.githubUserRefValidationChecking(createNewInvite, 'organization.github.id');
+    validation.githubUserRefValidationChecking(createNewInvite, 'organization.github');
   });
 
 });
