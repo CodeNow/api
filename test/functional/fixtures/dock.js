@@ -85,10 +85,11 @@ function stopDock (done) {
   if(!started) { return done(); }
   dockerModel.prototype.pullImage.restore();
   started = false;
-  var count = createCount(5, done);
+  var count = createCount(6, done);
   ctx.mavis.close(count.next);
-  rabbitPublisher.close(count.next);
+  rabbitSubscriber.unsubscribe('container.life-cycle.started', null, count.next);
   rabbitSubscriber.close(count.next);
+  rabbitPublisher.close(count.next);
   redis.del(process.env.REDIS_HOST_KEYS, count.inc().next);
   dockerModuleMock.clean(count.next);
   dockerListener.stop(function(err) {
