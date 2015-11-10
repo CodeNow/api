@@ -1,28 +1,28 @@
-'use strict';
+'use strict'
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+var describe = lab.describe
+var before = lab.before
+var beforeEach = lab.beforeEach
+var after = lab.after
 
-var api = require('../../fixtures/api-control');
-var multi = require('../../fixtures/multi-factory');
+var api = require('../../fixtures/api-control')
+var multi = require('../../fixtures/multi-factory')
 
-var typesTests = require('../../fixtures/types-test-util');
+var typesTests = require('../../fixtures/types-test-util')
 
 describe('400 POST /builds', function () {
-  var ctx = {};
+  var ctx = {}
 
-  before(api.start.bind(ctx));
-  before(require('../../fixtures/mocks/api-client').setup);
-  after(api.stop.bind(ctx));
-  after(require('../../fixtures/mocks/api-client').clean);
+  before(api.start.bind(ctx))
+  before(require('../../fixtures/mocks/api-client').setup)
+  after(api.stop.bind(ctx))
+  after(require('../../fixtures/mocks/api-client').clean)
 
   beforeEach(function (done) {
-    ctx.user = multi.createUser(done);
-  });
+    ctx.user = multi.createUser(done)
+  })
 
   describe('invalid types', function () {
     var def = {
@@ -38,12 +38,11 @@ describe('400 POST /builds', function () {
             }
           ]
         }
-      ],
-    };
+      ]
+    }
 
     typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
-      ctx.user.createBuild(body, cb);
-    });
-  });
-
-});
+      ctx.user.createBuild(body, cb)
+    })
+  })
+})

@@ -1,27 +1,27 @@
-var nock = require('nock');
-var multiline = require('multiline');
-var isObject = require('101/is-object');
-var hasKeypaths = require('101/has-keypaths');
-var find = require('101/find');
+var nock = require('nock')
+var multiline = require('multiline')
+var isObject = require('101/is-object')
+var hasKeypaths = require('101/has-keypaths')
+var find = require('101/find')
 
 module.exports = function (userModel, repoName) {
   if (!isObject(userModel)) {
-    throw new TypeError('user must be the user object');
+    throw new TypeError('user must be the user object')
   }
   // assume user model
-  var github = userModel.json().accounts.github;
-  var username = github.login;
-  var getBody = [];
+  var github = userModel.json().accounts.github
+  var username = github.login
+  var getBody = []
 
-  var urlPath = '\/repos\/'+username+'\/'+repoName+'\/hooks';
-  var urlRe = new RegExp(urlPath+'.*');
+  var urlPath = '\/repos\/' + username + '\/' + repoName + '\/hooks'
+  var urlRe = new RegExp(urlPath + '.*')
   nock('https://api.github.com:443')
     .filteringPath(urlRe, urlPath)
     .get(urlPath)
     .reply(200, getBody, {
       server: 'GitHub.com',
       date: new Date().toString(),
-      'content-type': 'application/json; charset=utf-8',
+      'content-type': 'application/json charset=utf-8',
       status: '200 OK',
       'x-ratelimit-limit': '5000',
       'x-ratelimit-remaining': '4969',
@@ -32,13 +32,13 @@ module.exports = function (userModel, repoName) {
       'x-oauth-scopes': 'read:repo_hook, repo, user:email',
       'x-accepted-oauth-scopes': '',
       vary: 'Accept, Authorization, Cookie, X-GitHub-OTP',
-      'x-github-media-type': 'github.v3; format=json',
-      'x-xss-protection': '1; mode=block',
+      'x-github-media-type': 'github.v3 format=json',
+      'x-xss-protection': '1 mode=block',
       'x-frame-options': 'deny',
-      'content-security-policy': 'default-src \'none\'',
+      'content-security-policy': "default-src 'none'",
       'content-length': '1158',
       'access-control-allow-credentials': 'true',
-      'access-control-expose-headers': multiline(function () {/*
+      'access-control-expose-headers': multiline(function () { /*
         'ETag,
         Link,
         X-GitHub-OTP,
@@ -55,36 +55,36 @@ module.exports = function (userModel, repoName) {
       'strict-transport-security': 'max-age=31536000',
       'x-content-type-options': 'nosniff',
       'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
-    });
+    })
 
   nock('https://api.github.com:443')
     .filteringPath(urlRe, urlPath)
     .post(urlPath)
     .reply(201, function (url, requestBody) {
-      requestBody = JSON.parse(requestBody);
+      requestBody = JSON.parse(requestBody)
       if (!requestBody.name) {
-        return 'name is required';
+        return 'name is required'
       }
       var body = {
-        "name": requestBody.name,
-        "active": requestBody.active || true,
-        "events": requestBody.events || ['push'],
-        "config": {
-          "url": requestBody.url,
-          "content_type": "json"
+        'name': requestBody.name,
+        'active': requestBody.active || true,
+        'events': requestBody.events || ['push'],
+        'config': {
+          'url': requestBody.url,
+          'content_type': 'json'
         }
-      };
-      var existing = find(getBody,
-        hasKeypaths({ 'config.url': requestBody.url }));
-      if (!existing) {
-        body.id = 1;
-        getBody.push(body);
       }
-      return body;
+      var existing = find(getBody,
+        hasKeypaths({ 'config.url': requestBody.url }))
+      if (!existing) {
+        body.id = 1
+        getBody.push(body)
+      }
+      return body
     }, {
       server: 'GitHub.com',
       date: new Date().toString(),
-      'content-type': 'application/json; charset=utf-8',
+      'content-type': 'application/json charset=utf-8',
       status: '200 OK',
       'x-ratelimit-limit': '5000',
       'x-ratelimit-remaining': '4969',
@@ -95,13 +95,13 @@ module.exports = function (userModel, repoName) {
       'x-oauth-scopes': 'read:repo_hook, repo, user:email',
       'x-accepted-oauth-scopes': '',
       vary: 'Accept, Authorization, Cookie, X-GitHub-OTP',
-      'x-github-media-type': 'github.v3; format=json',
-      'x-xss-protection': '1; mode=block',
+      'x-github-media-type': 'github.v3 format=json',
+      'x-xss-protection': '1 mode=block',
       'x-frame-options': 'deny',
-      'content-security-policy': 'default-src \'none\'',
+      'content-security-policy': "default-src 'none'",
       'content-length': '1158',
       'access-control-allow-credentials': 'true',
-      'access-control-expose-headers': multiline(function () {/*
+      'access-control-expose-headers': multiline(function () { /*
         'ETag,
         Link,
         X-GitHub-OTP,
@@ -118,8 +118,8 @@ module.exports = function (userModel, repoName) {
       'strict-transport-security': 'max-age=31536000',
       'x-content-type-options': 'nosniff',
       'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
-    });
-};
+    })
+}
 
 // example item
 // {

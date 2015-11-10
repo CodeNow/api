@@ -1,3 +1,3 @@
-var ip = require('ip');
+var ip = require('ip')
 
-module.exports = 'http://'+ip.address()+':4243';
+module.exports = 'http://' + ip.address() + ':4243'

@@ -6,20 +6,16 @@
  * NOTE: Must log in as HelloRunnable and populate user model in mongo before running this script
  */
 
-'use strict';
+'use strict'
 
-require('loadenv')();
+require('loadenv')()
 
-var fs = require('fs');
-var Context = require('models/mongo/context');
-var ContextVersion = require('models/mongo/context-version');
-var InfraCodeVersion = require('models/mongo/infra-code-version');
-var Instance = require('models/mongo/instance');
-var User = require('models/mongo/user');
-var async = require('async');
-var Runnable = require('runnable');
-var user = new Runnable(process.env.FULL_API_DOMAIN);
-var mongoose = require('mongoose');
+var Context = require('models/mongo/context')
+var User = require('models/mongo/user')
+var async = require('async')
+var Runnable = require('runnable')
+var user = new Runnable(process.env.FULL_API_DOMAIN)
+var mongoose = require('mongoose')
 var sources = [{
   name: 'PostgreSQL',
   description: 'An object-relational database management system'
@@ -50,101 +46,95 @@ var sources = [{
 }, {
   name: 'Memcached',
   description: 'A general-purpose distributed memory caching system'
-}];
-var createdBy = {github: process.env.HELLO_RUNNABLE_GITHUB_ID};
+}]
 
-
-var ctx = {};
-
+var ctx = {}
 
 /*
  * START SCRIPT
  */
-main();
+main()
 
-function main() {
+function main () {
   connectAndLoginAsHelloRunnable(function (err) {
     if (err) {
-      console.error('hello runnable error', err);
-      return process.exit(err ? 1 : 0);
+      console.error('hello runnable error', err)
+      return process.exit(err ? 1 : 0)
     }
     createOtherSources(function () {
-      process.exit(0);
-    });
-  });
+      process.exit(0)
+    })
+  })
 }
 
 /*
  * CONNECT AND LOGIN
  */
-function connectAndLoginAsHelloRunnable(cb) {
-  mongoose.connect(process.env.MONGO);
+function connectAndLoginAsHelloRunnable (cb) {
+  mongoose.connect(process.env.MONGO)
   async.series([
     ensureMongooseIsConnected,
     makeHelloRunnableAdmin,
-    loginAsHelloRunnable,
-  ], cb);
-
+    loginAsHelloRunnable
+  ], cb)
 }
-function ensureMongooseIsConnected(cb) {
-  console.log('ensureMongooseIsConnected');
+function ensureMongooseIsConnected (cb) {
+  console.log('ensureMongooseIsConnected')
   if (mongoose.connection.readyState === 1) {
-    cb();
-  }
-  else {
-    mongoose.connection.once('connected', cb);
+    cb()
+  } else {
+    mongoose.connection.once('connected', cb)
   }
 }
-function makeHelloRunnableAdmin(cb) {
-  console.log('makeHelloRunnableAdmin');
-  var $set = {permissionLevel: 5};
-  User.updateByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, {$set: $set}, cb);
+function makeHelloRunnableAdmin (cb) {
+  console.log('makeHelloRunnableAdmin')
+  var $set = {permissionLevel: 5}
+  User.updateByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, {$set: $set}, cb)
 }
-function loginAsHelloRunnable(cb) {
-  console.log('loginAsHelloRunnable');
+function loginAsHelloRunnable (cb) {
+  console.log('loginAsHelloRunnable')
   User.findByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, function (err, userData) {
     if (err) {
-      return cb(err);
+      return cb(err)
     }
-    ctx.user = user.githubLogin(userData.accounts.github.accessToken, cb);
-  });
+    ctx.user = user.githubLogin(userData.accounts.github.accessToken, cb)
+  })
 }
 
-
-function createOtherSources(cb) {
+function createOtherSources (cb) {
   async.forEach(sources, updateDescriptions, function () {
-    cb();
-  });
+    cb()
+  })
 }
 
-function updateDescriptions(data, done) {
+function updateDescriptions (data, done) {
   if (data.description) {
-    console.log('updating description for ', data.name);
+    console.log('updating description for ', data.name)
     var query = {
-        'lowerName': data.name.toLowerCase(),
-        'owner.github': process.env.HELLO_RUNNABLE_GITHUB_ID
-      };
+      'lowerName': data.name.toLowerCase(),
+      'owner.github': process.env.HELLO_RUNNABLE_GITHUB_ID
+    }
     if (!process.env.ACTUALLY_RUN) {
-      console.log('Nope, just a dry run');
+      console.log('Nope, just a dry run')
       Context.findOne(query, function (err, context) {
         if (err) {
-          console.error('Finding context err for ' + data.name, err);
-          return done(err);
+          console.error('Finding context err for ' + data.name, err)
+          return done(err)
         } else {
-          console.log('description would have been changed for ', context);
-          done();
+          console.log('description would have been changed for ', context)
+          done()
         }
-      });
+      })
     } else {
       Context.findOneAndUpdate(query, {
         $set: {
           description: data.description
         }
       }, function () {
-        done();
-      });
+        done()
+      })
     }
   } else {
-    done();
+    done()
   }
 }
