@@ -26,7 +26,6 @@ var sauronMock = {
     ];
 
     var subscribedEvents = [
-      'container.life-cycle.died',
       'container.life-cycle.started'
     ];
 
