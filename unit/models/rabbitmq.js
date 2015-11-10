@@ -684,4 +684,32 @@ describe('RabbitMQ Model: '+moduleName, function () {
       done();
     });
   });
+
+  describe('instanceDeleted', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish');
+      done();
+    });
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore();
+      done();
+    });
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        instance: {id: 1234}
+      };
+      ctx.rabbitMQ.instanceDeleted(data);
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish);
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance-deleted', data);
+      done();
+    });
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {};
+      expect(ctx.rabbitMQ.instanceDeleted.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, 'Validation failed');
+      done();
+    });
+  });
 });
