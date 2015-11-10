@@ -60,7 +60,7 @@ var moduleName = path.relative(process.cwd(), __filename);
       myObject.save(function (err) {
         expect(err).to.exist();
         expect(err.name).to.exist();
-        expect(err.name).to.equal('ValidationError');
+        expect(err.name).to.match(/(Validation|Cast)Error/);
         done();
       });
     });
