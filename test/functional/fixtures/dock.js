@@ -59,6 +59,9 @@ function startDock (done) {
   dockerModuleMock.setup(count.next);
   rabbitPublisher.connect(count.next);
   rabbitSubscriber.connect(function (err) {
+    if (err) {
+      return count.next(err);
+    }
     rabbitSubscriber.subscribe('container.life-cycle.started', function (data, jobCb) {
       data.containerIp = '10.12.10.121';
       rabbitPublisher.publish('container.network.attached', data);
