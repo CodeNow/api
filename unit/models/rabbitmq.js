@@ -11,7 +11,7 @@ var noop = require('101/noop');
 var sinon = require('sinon');
 var Code = require('code');
 var rabbitMQ = require('models/rabbitmq');
-var hermes = require('hermes-private');
+var hermes = require('runnable-hermes');
 
 var it = lab.it;
 var describe = lab.describe;
