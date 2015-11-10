@@ -24,6 +24,7 @@ var isFunction = require('101/is-function');
 
 var uuid = require('uuid');
 var createCount = require('callback-count');
+var uuid = require('uuid');
 var Docker = require('models/apis/docker');
 var Dockerode = require('dockerode');
 var extend = require('extend');
@@ -77,18 +78,6 @@ describe('204 DELETE /instances/:id', function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('../../fixtures/mocks/api-client').clean);
-
-  beforeEach(function (done) {
-    sinon.stub(rabbitMQ, 'instanceCreated');
-    sinon.stub(rabbitMQ, 'instanceUpdated');
-    done();
-  });
-  afterEach(function (done) {
-    rabbitMQ.instanceCreated.restore();
-    rabbitMQ.instanceUpdated.restore();
-    done();
-  });
-
 
   function initExpected (done) {
     ctx.expected = {
