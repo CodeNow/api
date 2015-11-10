@@ -37,7 +37,7 @@ describe('TeammateInvitation: ' + moduleName, function () {
           },
           email: Faker.Internet.email(),
         },
-        createdBy: validation.VALID_OBJECT_ID,
+        sender: validation.VALID_OBJECT_ID,
         created: Date.now(),
         organization: {
           github: {
