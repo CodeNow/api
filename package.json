@@ -8,14 +8,6 @@
   },
   "private": true,
   "standard": {
-    "globals": [
-      "describe",
-      "it",
-      "before",
-      "after",
-      "beforeEach",
-      "afterEach"
-    ],
     "ignore": [ "scripts/mongo/*" ]
   },
   "dependencies": {
