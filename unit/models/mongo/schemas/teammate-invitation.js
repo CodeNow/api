@@ -42,12 +42,10 @@ describe('TeammateInvitation Schema: ' + moduleName, function () {
   }
 
   describe('GithubUserID Validation', function () {
-    validation.requiredValidationChecking(createNewInvite, 'recipient.github.id');
     validation.githubUserRefValidationChecking(createNewInvite, 'recipient.github.id');
   });
 
   describe('Email Validation', function () {
-    validation.requiredValidationChecking(createNewInvite, 'recipient.email');
     validation.emailValidationChecking(createNewInvite, 'recipient.email');
   });
 
@@ -57,7 +55,6 @@ describe('TeammateInvitation Schema: ' + moduleName, function () {
   });
 
   describe('OrgName Validation', function () {
-    validation.requiredValidationChecking(createNewInvite, 'organization.github.id');
     validation.githubUserRefValidationChecking(createNewInvite, 'organization.github.id');
   });
 
