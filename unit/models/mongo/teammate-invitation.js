@@ -32,17 +32,13 @@ describe('TeammateInvitation: ' + moduleName, function () {
     function createNewInvite (orgGithubID) {
       return new TeammateInvitation({
         recipient: {
-          github: {
-            id: validation.VALID_GITHUB_ID,
-          },
+          github: validation.VALID_GITHUB_ID,
           email: Faker.Internet.email(),
         },
         sender: validation.VALID_OBJECT_ID,
         created: Date.now(),
         organization: {
-          github: {
-            id: orgGithubID
-          }
+          github: orgGithubID
         }
       });
     }
@@ -64,8 +60,8 @@ describe('TeammateInvitation: ' + moduleName, function () {
         expect(result).to.have.length(1);
         expect(result[0]).to.be.an.object();
         expect(result[0].organization).to.be.an.object();
-        expect(result[0].organization.github).to.be.an.object();
-        expect(result[0].organization.github.id).to.equal(1);
+        expect(result[0].organization.github).to.be.a.number();
+        expect(result[0].organization.github).to.equal(1);
         done();
       });
     });
