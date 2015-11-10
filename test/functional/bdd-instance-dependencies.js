@@ -34,21 +34,6 @@ describe('BDD - Instance Dependencies', function () {
   after(primus.disconnect);
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
-
-  before(function (done) {
-    // prevent worker to be created
-    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
-    sinon.stub(rabbitMQ, 'instanceCreated');
-    sinon.stub(rabbitMQ, 'instanceUpdated');
-    done();
-  });
-  after(function (done) {
-    rabbitMQ.deleteInstance.restore();
-    rabbitMQ.instanceCreated.restore();
-    rabbitMQ.instanceUpdated.restore();
-    done();
-  });
-
   // Uncomment if you want to clear the (graph) database every time
   beforeEach(function (done) {
     if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {

@@ -9,7 +9,6 @@ var async = require('async');
 var createCount = require('callback-count');
 var randStr = require('randomstring').generate;
 var uuid = require('uuid');
-var sinon = require('sinon');
 
 var lab = exports.lab = Lab.script();
 var after = lab.after;
@@ -25,7 +24,6 @@ var dock = require('./fixtures/dock');
 var dockerMockEvents = require('./fixtures/docker-mock-events');
 var multi = require('./fixtures/multi-factory');
 var primus = require('./fixtures/primus');
-var rabbitMQ = require('models/rabbitmq');
 
 /**
  * This tests many of the different possibilities that can happen during build, namely when deduping
@@ -54,17 +52,6 @@ describe('Building - Context Version Deduping', function () {
   after(api.stop.bind(ctx));
   after(dock.stop.bind(ctx));
   after(require('./fixtures/mocks/api-client').clean);
-
-  beforeEach(function (done) {
-    sinon.stub(rabbitMQ, 'instanceCreated');
-    sinon.stub(rabbitMQ, 'instanceUpdated');
-    done();
-  });
-  afterEach(function (done) {
-    rabbitMQ.instanceCreated.restore();
-    rabbitMQ.instanceUpdated.restore();
-    done();
-  });
 
   describe('In-progress build', function () {
     beforeEach(function (done) {
