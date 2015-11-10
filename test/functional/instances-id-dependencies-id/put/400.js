@@ -1,6 +1,5 @@
 'use strict';
 
-var sinon = require('sinon');
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -16,9 +15,8 @@ var dock = require('../../fixtures/dock');
 var multi = require('../../fixtures/multi-factory');
 var primus = require('../../fixtures/primus');
 var createCount = require('callback-count');
-var rabbitMQ = require('models/rabbitmq');
 
-describe('PUT 400 Dependencies - /instances/:id/dependencies', function () {
+describe('Dependencies - /instances/:id/dependencies', function () {
   var ctx = {};
 
   before(api.start.bind(ctx));
@@ -30,18 +28,6 @@ describe('PUT 400 Dependencies - /instances/:id/dependencies', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything);
   afterEach(require('../../fixtures/clean-ctx')(ctx));
   afterEach(require('../../fixtures/clean-nock'));
-
-  before(function (done) {
-    sinon.stub(rabbitMQ, 'instanceCreated');
-    sinon.stub(rabbitMQ, 'instanceUpdated');
-    done();
-  });
-
-  after(function (done) {
-    rabbitMQ.instanceCreated.restore();
-    rabbitMQ.instanceUpdated.restore();
-    done();
-  });
 
   describe('User Instances', function () {
     beforeEach(function (done) {
