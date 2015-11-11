@@ -32,7 +32,6 @@ function ensureIndexes (cb) {
   async.each(scripts, ensureIndex, cb)
 }
 
-
 // we need to setup this before starting api.
 // this create exchanges that is used by api
 var publishedEvents = [
@@ -48,7 +47,7 @@ var opts = {
   name: '10.12.13.11.sauron'
 }
 var rabbitPublisher = new Hermes(put({
-  publishedEvents: publishedEvents,
+  publishedEvents: publishedEvents
 }, opts))
 
 var started = false
@@ -76,3 +75,4 @@ function stopApi (done) {
     }
     api.stop(done)
   })
+}

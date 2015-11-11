@@ -22,7 +22,7 @@ var it = lab.it
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
-describe('ContainerNetworkAttached: '+moduleName, function () {
+describe('ContainerNetworkAttached: ' + moduleName, function () {
   var ctx
 
   beforeEach(function (done) {
@@ -71,10 +71,10 @@ describe('ContainerNetworkAttached: '+moduleName, function () {
       NetworkSettings: {
         IPAddress: '172.17.14.13',
         Ports: {
-          '3000/tcp': [{'HostIp': '0.0.0.0','HostPort': '34109'}],
-          '80/tcp': [{'HostIp': '0.0.0.0','HostPort': '34110'}],
-          '8000/tcp': [{'HostIp': '0.0.0.0','HostPort': '34111'}],
-          '8080/tcp': [{'HostIp': '0.0.0.0','HostPort': '34108'}]
+          '3000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34109'}],
+          '80/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34110'}],
+          '8000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34111'}],
+          '8080/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34108'}]
         }
       }
     }

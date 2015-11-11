@@ -16,7 +16,6 @@ var put = require('101/put')
 
 var Hermes = require('runnable-hermes')
 
-
 // Sauron mock listens for `container.life-cycle.started` event and
 // publsihes `container.network.attached`
 var sauronMock = {
@@ -38,7 +37,7 @@ var sauronMock = {
       name: '10.12.13.11.sauron'
     }
     var rabbitPublisher = new Hermes(put({
-      publishedEvents: publishedEvents,
+      publishedEvents: publishedEvents
     }, opts))
     .on('error', function (err) {
       console.log('rabbit publisher error', err)
@@ -46,7 +45,7 @@ var sauronMock = {
     this.rabbitPublisher = rabbitPublisher
 
     var rabbitSubscriber = new Hermes(put({
-      subscribedEvents: subscribedEvents,
+      subscribedEvents: subscribedEvents
     }, opts))
     .on('error', function (err) {
       console.log('rabbit subscriber error', err)
@@ -104,7 +103,7 @@ function startDock (done) {
   })
 }
 function stopDock (done) {
-  if(!started) { return done() }
+  if (!started) { return done() }
   dockerModel.prototype.pullImage.restore()
   started = false
   var count = createCount(4, done)
@@ -112,7 +111,7 @@ function stopDock (done) {
   sauronMock.stop(count.next)
   redis.del(process.env.REDIS_HOST_KEYS, count.inc().next)
   dockerModuleMock.clean(count.next)
-  dockerListener.stop(function(err) {
+  dockerListener.stop(function (err) {
     if (err) { return count.next(err) }
     docker.stop(count.next)
   })

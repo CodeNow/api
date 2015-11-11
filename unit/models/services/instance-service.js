@@ -108,10 +108,8 @@ function createNewInstance (name, opts) {
 before(dock.start)
 after(dock.stop)
 
-describe('InstanceService: '+moduleName, function () {
-
+describe('InstanceService: ' + moduleName, function () {
   describe('#deploy', function () {
-
     beforeEach(function (done) {
       sinon.spy(rabbitMQ, 'deployInstance')
       done()
@@ -184,7 +182,6 @@ describe('InstanceService: '+moduleName, function () {
   })
 
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
-
     it('should return if instanceId param is missing', function (done) {
       var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
@@ -294,7 +291,7 @@ describe('InstanceService: '+moduleName, function () {
         expect(instance.network.hostIp).to.equal('1.1.1.100')
         instance.save(function (err, instance) {
           if (err) { return done(err) }
-          ctx.instance  = instance
+          ctx.instance = instance
           ctx.inspect = {
             Config: {
               Labels: {
@@ -316,10 +313,10 @@ describe('InstanceService: '+moduleName, function () {
             NetworkSettings: {
               IPAddress: '172.17.14.13',
               Ports: {
-                '3000/tcp': [{'HostIp': '0.0.0.0','HostPort': '34109'}],
-                '80/tcp': [{'HostIp': '0.0.0.0','HostPort': '34110'}],
-                '8000/tcp': [{'HostIp': '0.0.0.0','HostPort': '34111'}],
-                '8080/tcp': [{'HostIp': '0.0.0.0','HostPort': '34108'}]
+                '3000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34109'}],
+                '80/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34110'}],
+                '8000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34111'}],
+                '8080/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34108'}]
               }
             }
           }
@@ -373,10 +370,10 @@ describe('InstanceService: '+moduleName, function () {
           NetworkSettings: {
             IPAddress: '172.17.14.13',
             Ports: {
-              '3000/tcp': [{'HostIp': '0.0.0.0','HostPort': '34109'}],
-              '80/tcp': [{'HostIp': '0.0.0.0','HostPort': '34110'}],
-              '8000/tcp': [{'HostIp': '0.0.0.0','HostPort': '34111'}],
-              '8080/tcp': [{'HostIp': '0.0.0.0','HostPort': '34108'}]
+              '3000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34109'}],
+              '80/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34110'}],
+              '8000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34111'}],
+              '8080/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34108'}]
             }
           }
         }
