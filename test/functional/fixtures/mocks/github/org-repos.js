@@ -1,16 +1,16 @@
-var nock = require('nock');
-var multiline = require('multiline');
-var randStr = require('randomstring').generate;
+var nock = require('nock')
+var multiline = require('multiline')
+var randStr = require('randomstring').generate
 
-var _orgId = 10000;
+var _orgId = 10000
 function nextOrgId () {
-  _orgId++;
-  return _orgId;
+  _orgId++
+  return _orgId
 }
 
 module.exports = function (orgId, orgName, repos) {
-  orgName = orgName || randStr(5);
-  orgId = orgId || nextOrgId();
+  orgName = orgName || randStr(5)
+  orgId = orgId || nextOrgId()
 
   repos = repos.map(function (repo, index) {
     return {
@@ -21,15 +21,15 @@ module.exports = function (orgId, orgName, repos) {
       },
       name: repo,
       full_name: orgName + '/' + repo
-    };
-  });
+    }
+  })
   nock('https://api.github.com:443')
     .filteringPath(/\/orgs\/[^\/]+\/repos\?.+/, '/orgs/' + orgName + '/repos')
     .get('/orgs/' + orgName + '/repos')
     .reply(200, repos, {
       server: 'GitHub.com',
       date: 'Tue, 24 Jun 2014 23:32:26 GMT',
-      'content-type': 'application/json; charset=utf-8',
+      'content-type': 'application/json charset=utf-8',
       status: '200 OK',
       'x-ratelimit-limit': '5000',
       'x-ratelimit-remaining': '4969',
@@ -40,13 +40,13 @@ module.exports = function (orgId, orgName, repos) {
       'x-oauth-scopes': 'read:repo_hook, repo, user:email',
       'x-accepted-oauth-scopes': '',
       vary: 'Accept, Authorization, Cookie, X-GitHub-OTP',
-      'x-github-media-type': 'github.v3; format=json',
-      'x-xss-protection': '1; mode=block',
+      'x-github-media-type': 'github.v3 format=json',
+      'x-xss-protection': '1 mode=block',
       'x-frame-options': 'deny',
-      'content-security-policy': 'default-src \'none\'',
+      'content-security-policy': "default-src 'none'",
       'content-length': '1158',
       'access-control-allow-credentials': 'true',
-      'access-control-expose-headers': multiline(function () {/*
+      'access-control-expose-headers': multiline(function () { /*
         'ETag,
         Link,
         X-GitHub-OTP,
@@ -63,5 +63,5 @@ module.exports = function (orgId, orgName, repos) {
       'strict-transport-security': 'max-age=31536000',
       'x-content-type-options': 'nosniff',
       'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
-    });
-};
+    })
+}

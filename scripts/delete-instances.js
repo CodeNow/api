@@ -1,7 +1,7 @@
 /**
  * @module scripts/delete-instances
  */
-'use strict';
+'use strict'
 
 var shortHashes = [
   'e5dkk2',
@@ -177,28 +177,28 @@ var shortHashes = [
   'ewp5g2',
   '176yre',
   '1m3o5e'
-];
+]
 
 // Taken from 'mbarrin' on 2015-10-20
-var userAccessToken = process.env.USER_ACCESS_TOKEN;
+var userAccessToken = process.env.USER_ACCESS_TOKEN
 
-var Runnable = require('runnable');
-var async = require('async');
+var Runnable = require('runnable')
+var async = require('async')
 
-var user = new Runnable(process.env.API_HOST);
+var user = new Runnable(process.env.API_HOST)
 user.githubLogin(userAccessToken, function (err) {
   if (err) {
-    return console.log('error', err);
+    return console.log('error', err)
   }
   async.forEach(shortHashes, function (shortHash, cb) {
-    console.log('DELETING ', shortHash);
+    console.log('DELETING ', shortHash)
     user.destroyInstance(shortHash, function (err) {
       if (err) {
-        console.log('DELETE '+shortHash+' error', err);
+        console.log('DELETE ' + shortHash + ' error', err)
       }
-      cb();
-    });
+      cb()
+    })
   }, function () {
-    console.log('done');
-  });
-});
+    console.log('done')
+  })
+})

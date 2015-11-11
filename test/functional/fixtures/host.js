@@ -1,1 +1,1 @@
-module.exports = 'http://localhost:'+process.env.PORT;
+module.exports = 'http://localhost:' + process.env.PORT

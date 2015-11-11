@@ -1,21 +1,21 @@
-'use strict';
-var createCount = require('callback-count');
-var redis = require('models/redis');
+'use strict'
+var createCount = require('callback-count')
+var redis = require('models/redis')
 
 exports.clean = function (pattern) {
   return function (cb) {
     redis.keys(pattern, function (err, keys) {
       if (err) {
-        return cb(err);
+        return cb(err)
       }
       if (keys.length === 0) {
-        return cb();
+        return cb()
       }
 
-      var count = createCount(cb);
+      var count = createCount(cb)
       keys.forEach(function (key) {
-        redis.del(key, count.inc().next);
-      });
-    });
-  };
-};
+        redis.del(key, count.inc().next)
+      })
+    })
+  }
+}

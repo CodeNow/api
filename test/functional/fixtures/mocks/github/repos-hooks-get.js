@@ -1,7 +1,6 @@
-var nock = require('nock');
+var nock = require('nock')
 
 module.exports = function (username, repo, cb) {
-
   // HOOKS
   nock('https://api.github.com:443')
     .filteringPath(/hooks\?.+/, 'hooks?options')
@@ -21,7 +20,7 @@ module.exports = function (username, repo, cb) {
         'content_type': 'json'
       },
       'id': 1
-    }]);
+    }])
 
-  if (cb) { cb(); }
-};
+  if (cb) { cb() }
+}
