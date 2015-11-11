@@ -5,10 +5,7 @@ var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
 var before = lab.before
-var before = lab.before
 var after = lab.after
-var beforeEach = lab.beforeEach
-// var afterEach = lab.afterEach
 
 var async = require('async')
 var Code = require('code')
@@ -48,15 +45,18 @@ describe('TeammateInvitation', function () {
     it('should create a new invitation', function (done) {
       var opts = {
         organization: {
-          github: ctx.orgGithubId,
+          github: ctx.orgGithubId
         },
         recipient: {
           email: ctx.user.attrs.email,
           github: ctx.githubUserId
         },
-        createdBy: ctx.user.attrs._id,
+        createdBy: ctx.user.attrs._id
       }
       ctx.user.createTeammateInvitation(opts, function (err, res, statusCode) {
+        if (err) {
+          done(err)
+        }
         expect(statusCode).to.equal(201)
         expect(res).to.be.an.object()
         expect(res.recipient).to.be.an.object()
@@ -73,6 +73,9 @@ describe('TeammateInvitation', function () {
   describe('GET /teammate-invitation/', function () {
     it('should get no results for an org that has no invitations', function (done) {
       ctx.user.fetchTeammateInvitations({ orgGithubId: 777 }, function (err, res, statusCode) {
+        if (err) {
+          done(err)
+        }
         expect(statusCode).to.equal(200)
         expect(res).to.be.an.array()
         expect(res.length).to.equal(0)
@@ -82,6 +85,9 @@ describe('TeammateInvitation', function () {
 
     it('should get the results for an org that has invitations', function (done) {
       ctx.user.fetchTeammateInvitations({ orgGithubId: ctx.orgGithubId }, function (err, res, statusCode) {
+        if (err) {
+          done(err)
+        }
         expect(statusCode).to.equal(200)
         expect(res).to.be.an.array()
         expect(res.length).to.equal(1)
@@ -97,7 +103,7 @@ describe('TeammateInvitation', function () {
 
   describe('DELETE /teammate-invitation/:orgName', function () {
     it('should delete invitations from the database', function (done) {
-      async.waterfall([function (cb) {
+      async.waterfall([ function (cb) {
         ctx.user.fetchTeammateInvitations({ orgGithubId: ctx.orgGithubId }, cb)
       }, function (collection, statusCode, res, cb) {
         expect(collection).to.be.an.array()
@@ -112,9 +118,6 @@ describe('TeammateInvitation', function () {
         expect(collection.length).to.equal(0)
         cb()
       }], done)
-
     })
-
   })
-
 })
