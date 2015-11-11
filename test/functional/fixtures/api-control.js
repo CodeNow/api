@@ -4,6 +4,8 @@ var async = require('async');
 var api = require('../../../app');
 var cleanMongo = require('./clean-mongo');
 var exec = require('child_process').exec;
+var put = require('101/put');
+var Hermes = require('runnable-hermes');
 
 module.exports = {
   start: startApi,
@@ -30,15 +32,34 @@ function ensureIndexes (cb) {
   async.each(scripts, ensureIndex, cb);
 }
 
+var publishedEvents = [
+  'container.network.attached',
+  'container.network.attach-failed'
+];
+
+var opts = {
+  hostname: process.env.RABBITMQ_HOSTNAME,
+  password: process.env.RABBITMQ_PASSWORD,
+  port: process.env.RABBITMQ_PORT,
+  username: process.env.RABBITMQ_USERNAME,
+  name: '10.12.13.11.sauron'
+};
+var rabbitPublisher = new Hermes(put({
+  publishedEvents: publishedEvents,
+}, opts));
+
 var started = false;
 function startApi (done) {
   if (started) { return done(); }
   started = true;
-  api.start(function (err) {
+  rabbitPublisher.connect(function (err) {
     if (err) { return done(err); }
-    cleanMongo.removeEverything(function (err) {
+    api.start(function (err) {
       if (err) { return done(err); }
-      ensureIndexes(done);
+      cleanMongo.removeEverything(function (err) {
+        if (err) { return done(err); }
+        ensureIndexes(done);
+      });
     });
   });
 }
@@ -46,5 +67,11 @@ function startApi (done) {
 function stopApi (done) {
   if (!started) { return done(); }
   started = false;
-  api.stop(done);
+  rabbitPublisher.close(function (err) {
+    if (err) {
+      return done();
+    }
+    api.stop(done);
+  });
+
 }
