@@ -305,8 +305,7 @@ function itShouldBuildTheBuild (ctx) {
               }
               if (process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE) {
                 expectedBindsAndVolumesLength++;
-                expectedBindsValues.push(
-                   new RegExp(process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'));
+                expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'));
                 expectedVolumesKeys.push('/layer-cache');
               }
 
