@@ -78,15 +78,13 @@ describe('Hasher: ' + moduleName, function () {
       it('should result in the same hashes', function (done) {
         async.each(equivalentDockerfiles, function (dockerfile, cb) {
           var streamHash, stringHash
-          var streamData, stringData
           var count = createCount(2, compareHashes)
           // hash file stream
           var fileStream = through(function (data) { this.queue(data) })
-          hasher(fileStream, function (err, hash, data) {
+          hasher(fileStream, function (err, hash) {
             if (err) { return count.next(err) }
             expect(hash).to.exist()
             streamHash = hash
-            streamData = data
             count.next()
           })
           dockerfile.split('').forEach(function (chunk) {
@@ -94,18 +92,15 @@ describe('Hasher: ' + moduleName, function () {
           })
           fileStream.end()
           // hash file string
-          hasher(dockerfile, function (err, hash, data) {
+          hasher(dockerfile, function (err, hash) {
             if (err) { return count.next(err) }
             expect(hash).to.exist()
             stringHash = hash
-            stringData = data
             count.next()
           })
           function compareHashes (err) {
             if (err) { return cb(err) }
             expect(streamHash).to.equal(stringHash)
-            expect(streamData).to.be.okay()
-            expect(stringData).to.be.okay()
             cb()
           }
         }, function (err) {
