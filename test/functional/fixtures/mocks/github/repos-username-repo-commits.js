@@ -1,8 +1,8 @@
-var nock = require('nock');
-var multiline = require('multiline');
+var nock = require('nock')
+var multiline = require('multiline')
 
 module.exports = function (username, repoName, commit, committerName) {
-  committerName = committerName || username;
+  committerName = committerName || username
   var getBody = {
     'url': 'https://api.github.com/repos/' + username + '/' + repoName + '/commits/' + commit + '',
     'sha': '' + commit + '',
@@ -90,17 +90,17 @@ module.exports = function (username, repoName, commit, committerName) {
         'patch': '@@ -29,7 +29,7 @@\n.....'
       }
     ]
-  };
+  }
 
-  var urlPath = '\/repos\/'+username+'\/'+repoName+'\/commits\/'+commit+'?';
-  var urlRe = new RegExp(urlPath+'.*');
+  var urlPath = '\/repos\/' + username + '\/' + repoName + '\/commits\/' + commit + '?'
+  var urlRe = new RegExp(urlPath + '.*')
   nock('https://api.github.com:443')
     .filteringPath(urlRe, urlPath)
     .get(urlPath)
     .reply(200, getBody, {
       server: 'GitHub.com',
       date: new Date().toString(),
-      'content-type': 'application/json; charset=utf-8',
+      'content-type': 'application/json charset=utf-8',
       status: '200 OK',
       'x-ratelimit-limit': '5000',
       'x-ratelimit-remaining': '4969',
@@ -111,13 +111,13 @@ module.exports = function (username, repoName, commit, committerName) {
       'x-oauth-scopes': 'read:repo_hook, repo, user:email',
       'x-accepted-oauth-scopes': '',
       vary: 'Accept, Authorization, Cookie, X-GitHub-OTP',
-      'x-github-media-type': 'github.v3; format=json',
-      'x-xss-protection': '1; mode=block',
+      'x-github-media-type': 'github.v3 format=json',
+      'x-xss-protection': '1 mode=block',
       'x-frame-options': 'deny',
-      'content-security-policy': 'default-src \'none\'',
+      'content-security-policy': "default-src 'none'",
       'content-length': '1158',
       'access-control-allow-credentials': 'true',
-      'access-control-expose-headers': multiline(function () {/*
+      'access-control-expose-headers': multiline(function () { /*
         'ETag,
         Link,
         X-GitHub-OTP,
@@ -134,6 +134,6 @@ module.exports = function (username, repoName, commit, committerName) {
       'strict-transport-security': 'max-age=31536000',
       'x-content-type-options': 'nosniff',
       'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
-    });
-  return getBody;
-};
+    })
+  return getBody
+}

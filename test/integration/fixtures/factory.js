@@ -1,17 +1,16 @@
-'use strict';
+'use strict'
 
-var assign = require('101/assign');
-var defaults = require('101/defaults');
-var isFunction = require('101/is-function');
-var assign = require('101/assign');
-var mongoose = require('mongoose');
-var uuid = require('uuid');
+var assign = require('101/assign')
+var defaults = require('101/defaults')
+var isFunction = require('101/is-function')
+var mongoose = require('mongoose')
+var uuid = require('uuid')
 
-var Build = require('models/mongo/build.js');
-var ContextVersion = require('models/mongo/context-version.js');
-var Instance = require('models/mongo/instance.js');
-var ObjectId = mongoose.Types.ObjectId;
-var User = require('models/mongo/user.js');
+var Build = require('models/mongo/build.js')
+var ContextVersion = require('models/mongo/context-version.js')
+var Instance = require('models/mongo/instance.js')
+var ObjectId = mongoose.Types.ObjectId
+var User = require('models/mongo/user.js')
 
 module.exports = {
   createUser: function (id, cb) {
@@ -27,22 +26,22 @@ module.exports = {
           ]
         }
       }
-    }, cb);
+    }, cb)
   },
   createInstance: function (ownerGithubId, build, locked, cv, cb) {
-    var data = this.instanceTemplate(ownerGithubId, build, locked, cv);
-    Instance.create(data, cb);
+    var data = this.instanceTemplate(ownerGithubId, build, locked, cv)
+    Instance.create(data, cb)
   },
   createBuild: function (ownerGithubId, cv, cb) {
-    var data = this.buildTemplate(ownerGithubId, cv);
-    Build.create(data, cb);
+    var data = this.buildTemplate(ownerGithubId, cv)
+    Build.create(data, cb)
   },
   createCompletedCv: function (ownerGithubId, props, cb) {
     if (isFunction(props)) {
-      cb = props;
-      props = null;
+      cb = props
+      props = null
     }
-    props = props || {build: {}};
+    props = props || {build: {}}
     defaults(props.build, {
       _id: '012345678901234567890123',
       hash: uuid(),
@@ -52,94 +51,94 @@ module.exports = {
         manual: false
       },
       dockerContainer: '012345678901234567890123'
-    });
+    })
     var data = this.cvTemplate(
       ownerGithubId,
       props.build
-    );
-    ContextVersion.create(data, cb);
+    )
+    ContextVersion.create(data, cb)
   },
   createStartedCv: function (ownerGithubId, props, cb) {
     if (isFunction(props)) {
-      cb = props;
-      props = null;
+      cb = props
+      props = null
     }
-    props = props || { build: {} };
+    props = props || { build: {} }
     defaults(props.build, {
       _id: '012345678901234567890123',
       hash: uuid(),
       started: new Date(),
       dockerContainer: '012345678901234567890123'
-    });
+    })
     var data = this.cvTemplate(
       ownerGithubId,
       props.build
-    );
-    ContextVersion.create(data, cb);
+    )
+    ContextVersion.create(data, cb)
   },
   cvTemplate: function (ownerGithubId, buildExtend) {
     var cv = {
-      infraCodeVersion : new ObjectId(),
-      createdBy : {
-        github : ownerGithubId
+      infraCodeVersion: new ObjectId(),
+      createdBy: {
+        github: ownerGithubId
       },
-      context : new ObjectId(),
-      owner : {
-        github : ownerGithubId
+      context: new ObjectId(),
+      owner: {
+        github: ownerGithubId
       },
       build: assign({
-        triggeredAction : {
-          manual : true
+        triggeredAction: {
+          manual: true
         },
-        _id : new ObjectId(),
-        triggeredBy : {
-          github : ownerGithubId
+        _id: new ObjectId(),
+        triggeredBy: {
+          github: ownerGithubId
         },
-        started : new Date(),
-        hash : 'abcdef',
-        network : {
+        started: new Date(),
+        hash: 'abcdef',
+        network: {
           hostIp: '127.0.0.1'
         },
-        containerId : 'abcdef',
-        dockerContainer : 'abcdef'
+        containerId: 'abcdef',
+        dockerContainer: 'abcdef'
       }, buildExtend),
-      advanced : true,
-      appCodeVersions : [],
-      __v : 0,
-      dockerHost : 'http://127.0.0.1:4242'
-    };
-    cv.created = new Date(cv.build.started - 60*1000);
+      advanced: true,
+      appCodeVersions: [],
+      __v: 0,
+      dockerHost: 'http://127.0.0.1:4242'
+    }
+    cv.created = new Date(cv.build.started - 60 * 1000)
     if (buildExtend.completed) {
       assign(cv.build, {
-        dockerTag : 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
-        dockerImage : 'bbbd03498dab',
-        completed : buildExtend.completed
-      });
+        dockerTag: 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
+        dockerImage: 'bbbd03498dab',
+        completed: buildExtend.completed
+      })
     }
-    return cv;
+    return cv
   },
   buildTemplate: function (ownerGithubId, cv) {
-    var completed = new Date();
-    var started = new Date(completed - 60*1000);
+    var completed = new Date()
+    var started = new Date(completed - 60 * 1000)
     return {
-      buildNumber : 1,
+      buildNumber: 1,
       disabled: false,
       contexts: [cv.context],
       contextVersions: [cv._id],
-      completed : completed,
-      created : new Date(started - 60*1000),
+      completed: completed,
+      created: new Date(started - 60 * 1000),
       started: started,
-      createdBy : {
-        github : ownerGithubId
+      createdBy: {
+        github: ownerGithubId
       },
-      context : new ObjectId(),
-      owner : {
-        github : ownerGithubId
+      context: new ObjectId(),
+      owner: {
+        github: ownerGithubId
       }
-    };
+    }
   },
   instanceTemplate: function (ownerGithubId, build, locked, cv) {
-    var name = uuid();
+    var name = uuid()
     return {
       shortHash: uuid(),
       name: name,
@@ -163,6 +162,6 @@ module.exports = {
       network: {
         hostIp: '127.0.0.1'
       }
-    };
+    }
   }
-};
+}

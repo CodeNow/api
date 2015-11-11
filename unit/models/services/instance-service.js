@@ -1,39 +1,39 @@
 /**
  * @module unit/models/services/instance-service
  */
-'use strict';
+'use strict'
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var sinon = require('sinon');
-var Code = require('code');
-var rabbitMQ = require('models/rabbitmq');
-var InstanceService = require('models/services/instance-service');
-var Instance = require('models/mongo/instance');
-var ContextVersion = require('models/mongo/context-version');
-var validation = require('../../fixtures/validation')(lab);
-var Hashids = require('hashids');
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+var sinon = require('sinon')
+var Code = require('code')
+var rabbitMQ = require('models/rabbitmq')
+var InstanceService = require('models/services/instance-service')
+var Instance = require('models/mongo/instance')
+var ContextVersion = require('models/mongo/context-version')
+var validation = require('../../fixtures/validation')(lab)
+var Hashids = require('hashids')
 
-var afterEach = lab.afterEach;
-var after = lab.after;
-var beforeEach = lab.beforeEach;
-var before = lab.before;
-var describe = lab.describe;
-var expect = Code.expect;
-var it = lab.it;
-var dock = require('../../../test/functional/fixtures/dock');
+var afterEach = lab.afterEach
+var after = lab.after
+var beforeEach = lab.beforeEach
+var before = lab.before
+var describe = lab.describe
+var expect = Code.expect
+var it = lab.it
+var dock = require('../../../test/functional/fixtures/dock')
 
-var path = require('path');
-var moduleName = path.relative(process.cwd(), __filename);
+var path = require('path')
+var moduleName = path.relative(process.cwd(), __filename)
 
-var id = 0;
+var id = 0
 function getNextId () {
-  id++;
-  return id;
+  id++
+  return id
 }
 function getNextHash () {
-  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
-  return hashids.encrypt(getNextId());
+  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH)
+  return hashids.encrypt(getNextId())
 }
 
 function createNewVersion (opts) {
@@ -76,30 +76,15 @@ function createNewVersion (opts) {
         transformRules: { rename: [], replace: [], exclude: [] }
       }
     ]
-  });
+  })
 }
 
 function createNewInstance (name, opts) {
   // jshint maxcomplexity:10
-  opts = opts || {};
+  opts = opts || {}
   var container = {
-    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
-    dockerHost: opts.dockerHost || 'http://localhost:4243',
-    inspect: {
-      State: {
-        ExitCode: 0,
-        FinishedAt: '0001-01-01T00:00:00Z',
-        Paused: false,
-        Pid: 889,
-        Restarting: false,
-        Running: true,
-        StartedAt: '2014-11-25T22:29:50.23925175Z'
-      },
-      NetworkSettings: {
-        IPAddress: opts.IPAddress || '172.17.14.2'
-      }
-    }
-  };
+    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID
+  }
   return new Instance({
     name: name || 'name',
     shortHash: getNextHash(),
@@ -118,38 +103,36 @@ function createNewInstance (name, opts) {
     network: {
       hostIp: '1.1.1.100'
     }
-  });
+  })
 }
-before(dock.start);
-after(dock.stop);
+before(dock.start)
+after(dock.stop)
 
-describe('InstanceService: '+moduleName, function () {
-
+describe('InstanceService: ' + moduleName, function () {
   describe('#deploy', function () {
-
     beforeEach(function (done) {
-      sinon.spy(rabbitMQ, 'deployInstance');
-      done();
-    });
+      sinon.spy(rabbitMQ, 'deployInstance')
+      done()
+    })
     afterEach(function (done) {
-      rabbitMQ.deployInstance.restore();
-      done();
-    });
+      rabbitMQ.deployInstance.restore()
+      done()
+    })
     it('should return if instanceId and buildId param is missing', function (done) {
-      var instanceService = new InstanceService();
+      var instanceService = new InstanceService()
       instanceService.deploy({
         instanceId: null,
         buildId: null,
         userId: 'user-id',
         ownerUsername: 'name'
       }, function (err) {
-        expect(err).to.not.exist();
-        expect(rabbitMQ.deployInstance.callCount).to.equal(0);
-        done();
-      });
-    });
+        expect(err).to.not.exist()
+        expect(rabbitMQ.deployInstance.callCount).to.equal(0)
+        done()
+      })
+    })
     it('should return if user-id param is missing', function (done) {
-      var instanceService = new InstanceService();
+      var instanceService = new InstanceService()
       instanceService.deploy({
         instanceId: 'instance',
         buildId: null,
@@ -157,26 +140,26 @@ describe('InstanceService: '+moduleName, function () {
         ownerUsername: 'name',
         forceDock: true
       }, function (err) {
-        expect(err).to.not.exist();
-        expect(rabbitMQ.deployInstance.callCount).to.equal(0);
-        done();
-      });
-    });
+        expect(err).to.not.exist()
+        expect(rabbitMQ.deployInstance.callCount).to.equal(0)
+        done()
+      })
+    })
     it('should return if username param is missing', function (done) {
-      var instanceService = new InstanceService();
+      var instanceService = new InstanceService()
       instanceService.deploy({
         instanceId: null,
         buildId: 'build',
         userId: 'user-id',
         ownerUsername: null
       }, function (err) {
-        expect(err).to.not.exist();
-        expect(rabbitMQ.deployInstance.callCount).to.equal(0);
-        done();
-      });
-    });
+        expect(err).to.not.exist()
+        expect(rabbitMQ.deployInstance.callCount).to.equal(0)
+        done()
+      })
+    })
     it('should create a worker for the deploy', function (done) {
-      var instanceService = new InstanceService();
+      var instanceService = new InstanceService()
       instanceService.deploy({
         instanceId: null,
         buildId: 'build',
@@ -184,205 +167,269 @@ describe('InstanceService: '+moduleName, function () {
         ownerUsername: 'name',
         forceDock: 'forceDock'
       }, function (err) {
-        expect(err).to.not.exist();
-        expect(rabbitMQ.deployInstance.callCount).to.equal(1);
+        expect(err).to.not.exist()
+        expect(rabbitMQ.deployInstance.callCount).to.equal(1)
         expect(rabbitMQ.deployInstance.args[0][0]).to.deep.equal({
           instanceId: null,
           buildId: 'build',
           forceDock: undefined,
           ownerUsername: 'name',
           sessionUserGithubId: 'user-id'
-        });
-        done();
-      });
-    });
-  });
+        })
+        done()
+      })
+    })
+  })
 
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
-
     it('should return if instanceId param is missing', function (done) {
-      var instanceService = new InstanceService();
-      sinon.spy(Instance, 'findForkedInstances');
+      var instanceService = new InstanceService()
+      sinon.spy(Instance, 'findForkedInstances')
       instanceService.deleteForkedInstancesByRepoAndBranch(null, 'user-id', 'api', 'master',
         function (err) {
-          expect(err).to.not.exist();
-          expect(Instance.findForkedInstances.callCount).to.equal(0);
-          Instance.findForkedInstances.restore();
-          done();
-        });
-    });
+          expect(err).to.not.exist()
+          expect(Instance.findForkedInstances.callCount).to.equal(0)
+          Instance.findForkedInstances.restore()
+          done()
+        })
+    })
 
     it('should return if user param is missing', function (done) {
-      var instanceService = new InstanceService();
-      sinon.spy(Instance, 'findForkedInstances');
+      var instanceService = new InstanceService()
+      sinon.spy(Instance, 'findForkedInstances')
       instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'api', 'master',
         function (err) {
-          expect(err).to.not.exist();
-          expect(Instance.findForkedInstances.callCount).to.equal(0);
-          Instance.findForkedInstances.restore();
-          done();
-        });
-    });
+          expect(err).to.not.exist()
+          expect(Instance.findForkedInstances.callCount).to.equal(0)
+          Instance.findForkedInstances.restore()
+          done()
+        })
+    })
 
     it('should return if repo param is missing', function (done) {
-      var instanceService = new InstanceService();
-      sinon.spy(Instance, 'findForkedInstances');
+      var instanceService = new InstanceService()
+      sinon.spy(Instance, 'findForkedInstances')
       instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', null, 'master',
         function (err) {
-          expect(err).to.not.exist();
-          expect(Instance.findForkedInstances.callCount).to.equal(0);
-          Instance.findForkedInstances.restore();
-          done();
-        });
-    });
+          expect(err).to.not.exist()
+          expect(Instance.findForkedInstances.callCount).to.equal(0)
+          Instance.findForkedInstances.restore()
+          done()
+        })
+    })
 
     it('should return if branch param is missing', function (done) {
-      var instanceService = new InstanceService();
-      sinon.spy(Instance, 'findForkedInstances');
+      var instanceService = new InstanceService()
+      sinon.spy(Instance, 'findForkedInstances')
       instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', 'api', null,
         function (err) {
-          expect(err).to.not.exist();
-          expect(Instance.findForkedInstances.callCount).to.equal(0);
-          Instance.findForkedInstances.restore();
-          done();
-        });
-    });
+          expect(err).to.not.exist()
+          expect(Instance.findForkedInstances.callCount).to.equal(0)
+          Instance.findForkedInstances.restore()
+          done()
+        })
+    })
 
     it('should return error if #findForkedInstances failed', function (done) {
-      var instanceService = new InstanceService();
+      var instanceService = new InstanceService()
       sinon.stub(Instance, 'findForkedInstances')
-        .yieldsAsync(new Error('Some error'));
+        .yieldsAsync(new Error('Some error'))
       instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', 'api', 'master',
         function (err) {
-          expect(err).to.exist();
-          expect(err.message).to.equal('Some error');
-          Instance.findForkedInstances.restore();
-          done();
-        });
-    });
+          expect(err).to.exist()
+          expect(err.message).to.equal('Some error')
+          Instance.findForkedInstances.restore()
+          done()
+        })
+    })
 
     it('should not create new jobs if instances were not found', function (done) {
-      var instanceService = new InstanceService();
+      var instanceService = new InstanceService()
       sinon.stub(Instance, 'findForkedInstances')
-        .yieldsAsync(null, []);
-      sinon.spy(rabbitMQ, 'deleteInstance');
+        .yieldsAsync(null, [])
+      sinon.spy(rabbitMQ, 'deleteInstance')
       instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', 'api', 'master',
         function (err) {
-          expect(err).to.not.exist();
-          expect(rabbitMQ.deleteInstance.callCount).to.equal(0);
-          Instance.findForkedInstances.restore();
-          rabbitMQ.deleteInstance.restore();
-          done();
-        });
-    });
+          expect(err).to.not.exist()
+          expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
+          Instance.findForkedInstances.restore()
+          rabbitMQ.deleteInstance.restore()
+          done()
+        })
+    })
 
     it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
-      var instanceService = new InstanceService();
+      var instanceService = new InstanceService()
       sinon.stub(Instance, 'findForkedInstances')
-        .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}]);
-      sinon.spy(rabbitMQ, 'deleteInstance');
+        .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
+      sinon.spy(rabbitMQ, 'deleteInstance')
       instanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'user-id', 'api', 'master',
         function (err) {
-          expect(err).to.not.exist();
-          expect(rabbitMQ.deleteInstance.callCount).to.equal(2);
-          var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0];
-          expect(arg1.instanceId).to.equal('inst-1');
-          expect(arg1.sessionUserId).to.equal('user-id');
-          var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0];
-          expect(arg2.instanceId).to.equal('inst-3');
-          expect(arg2.sessionUserId).to.equal('user-id');
-          Instance.findForkedInstances.restore();
-          rabbitMQ.deleteInstance.restore();
-          done();
-        });
-    });
-  });
+          expect(err).to.not.exist()
+          expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
+          var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
+          expect(arg1.instanceId).to.equal('inst-1')
+          expect(arg1.sessionUserId).to.equal('user-id')
+          var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0]
+          expect(arg2.instanceId).to.equal('inst-3')
+          expect(arg2.sessionUserId).to.equal('user-id')
+          Instance.findForkedInstances.restore()
+          rabbitMQ.deleteInstance.restore()
+          done()
+        })
+    })
+  })
 
-  describe('modifyContainerIp', function () {
+  describe('updateOnContainerStart', function () {
     describe('with db calls', function () {
-      var ctx = {};
+      var ctx = {}
 
       beforeEach(function (done) {
-        var instance = createNewInstance('testy', {});
-        ctx.containerId = instance.container.dockerContainer;
-        sinon.spy(instance, 'invalidateContainerDNS');
-        expect(instance.network.hostIp).to.equal('1.1.1.100');
+        var instance = createNewInstance('testy', {})
+        ctx.containerId = instance.container.dockerContainer
+        sinon.spy(instance, 'invalidateContainerDNS')
+        expect(instance.network.hostIp).to.equal('1.1.1.100')
         instance.save(function (err, instance) {
-          if (err) { return done(err); }
-          ctx.instance  = instance;
-          done();
-        });
-      });
+          if (err) { return done(err) }
+          ctx.instance = instance
+          ctx.inspect = {
+            Config: {
+              Labels: {
+                instanceId: ctx.instance._id,
+                ownerUsername: 'anton',
+                sessionUserGithubId: 111987,
+                contextVersionId: 'some-cv-id'
+              }
+            },
+            State: {
+              ExitCode: 0,
+              FinishedAt: '0001-01-01T00:00:00Z',
+              Paused: false,
+              Pid: 889,
+              Restarting: false,
+              Running: true,
+              StartedAt: '2014-11-25T22:29:50.23925175Z'
+            },
+            NetworkSettings: {
+              IPAddress: '172.17.14.13',
+              Ports: {
+                '3000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34109'}],
+                '80/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34110'}],
+                '8000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34111'}],
+                '8080/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34108'}]
+              }
+            }
+          }
+          done()
+        })
+      })
       afterEach(function (done) {
         // cache invalidation should be always called
-        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true();
-        done();
-      });
+        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true()
+        done()
+      })
       it('should return modified instance from database', function (done) {
-        var instanceService = new InstanceService();
-        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.2', function (err, updated) {
-          expect(err).to.not.exist();
-          expect(updated._id.toString()).to.equal(ctx.instance._id.toString());
-          expect(updated.network.hostIp).to.equal('127.0.0.2');
-          done();
-        });
-      });
-    });
+        var instanceService = new InstanceService()
+        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.2', ctx.inspect,
+          function (err, updated) {
+            expect(err).to.not.exist()
+            expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
+            expect(updated.network.hostIp).to.equal('127.0.0.2')
+            expect(updated.container.inspect.NetworkSettings.IPAddress).to.equal(ctx.inspect.NetworkSettings.IPAddress)
+            expect(updated.container.inspect.NetworkSettings.Ports).to.deep.equal(ctx.inspect.NetworkSettings.Ports)
+            expect(updated.container.inspect.Config.Labels).to.deep.equal(ctx.inspect.Config.Labels)
+            expect(updated.container.inspect.State).to.deep.equal(ctx.inspect.State)
+            expect(updated.container.ports).to.deep.equal(ctx.inspect.NetworkSettings.Ports)
+            done()
+          })
+      })
+    })
     describe('without db calls', function () {
-      var ctx = {};
+      var ctx = {}
 
       beforeEach(function (done) {
-        ctx.instance = createNewInstance('testy', {});
-        ctx.containerId = ctx.instance.container.dockerContainer;
-        sinon.spy(ctx.instance, 'invalidateContainerDNS');
-        done();
-      });
+        ctx.instance = createNewInstance('testy', {})
+        ctx.inspect = {
+          Config: {
+            Labels: {
+              instanceId: ctx.instance._id,
+              ownerUsername: 'anton',
+              sessionUserGithubId: 111987,
+              contextVersionId: 'some-cv-id'
+            }
+          },
+          State: {
+            ExitCode: 0,
+            FinishedAt: '0001-01-01T00:00:00Z',
+            Paused: false,
+            Pid: 889,
+            Restarting: false,
+            Running: true,
+            StartedAt: '2014-11-25T22:29:50.23925175Z'
+          },
+          NetworkSettings: {
+            IPAddress: '172.17.14.13',
+            Ports: {
+              '3000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34109'}],
+              '80/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34110'}],
+              '8000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34111'}],
+              '8080/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34108'}]
+            }
+          }
+        }
+        ctx.containerId = ctx.instance.container.dockerContainer
+        sinon.spy(ctx.instance, 'invalidateContainerDNS')
+        done()
+      })
 
       afterEach(function (done) {
         // cache invalidation should be always called
-        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true();
-        expect(Instance.findOneAndUpdate.calledOnce).to.be.true();
-        var query = Instance.findOneAndUpdate.getCall(0).args[0];
-        var setQuery = Instance.findOneAndUpdate.getCall(0).args[1];
-        expect(query._id).to.equal(ctx.instance._id);
-        expect(query['container.dockerContainer']).to.equal(ctx.containerId);
-        expect(setQuery.$set['network.hostIp']).to.equal('127.0.0.1');
-        expect(Object.keys(setQuery.$set).length).to.equal(1);
-        ctx.instance.invalidateContainerDNS.restore();
-        Instance.findOneAndUpdate.restore();
-        done();
-      });
+        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true()
+        expect(Instance.findOneAndUpdate.calledOnce).to.be.true()
+        var query = Instance.findOneAndUpdate.getCall(0).args[0]
+        var setQuery = Instance.findOneAndUpdate.getCall(0).args[1]
+        expect(query._id).to.equal(ctx.instance._id)
+        expect(query['container.dockerContainer']).to.equal(ctx.containerId)
+        expect(setQuery.$set['network.hostIp']).to.equal('127.0.0.1')
+        expect(setQuery.$set['container.inspect']).to.exist()
+        expect(setQuery.$set['container.ports']).to.exist()
+        expect(Object.keys(setQuery.$set).length).to.equal(3)
+        ctx.instance.invalidateContainerDNS.restore()
+        Instance.findOneAndUpdate.restore()
+        done()
+      })
 
       it('should return an error if findOneAndUpdate failed', function (done) {
-        var instanceService = new InstanceService();
-        var mongoErr = new Error('Mongo error');
-        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr);
-        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err) {
-          expect(err.message).to.equal('Mongo error');
-          done();
-        });
-      });
+        var instanceService = new InstanceService()
+        var mongoErr = new Error('Mongo error')
+        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
+        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect, function (err) {
+          expect(err.message).to.equal('Mongo error')
+          done()
+        })
+      })
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
-        var instanceService = new InstanceService();
-        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null);
-        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err) {
-          expect(err.output.statusCode).to.equal(409);
-          var errMsg = 'Container IP was not updated, instance\'s container has changed';
-          expect(err.output.payload.message).to.equal(errMsg);
-          done();
-        });
-      });
+        var instanceService = new InstanceService()
+        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
+        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect, function (err) {
+          expect(err.output.statusCode).to.equal(409)
+          var errMsg = 'Container IP was not updated, instance\'s container has changed'
+          expect(err.output.payload.message).to.equal(errMsg)
+          done()
+        })
+      })
       it('should return modified instance', function (done) {
-        var instanceService = new InstanceService();
-        var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'});
-        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance);
-        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err, updated) {
-          expect(err).to.not.exist();
-          expect(updated._id).to.equal(ctx.instance._id);
-          expect(updated.name).to.equal(instance.name);
-          done();
-        });
-      });
-    });
-  });
-});
+        var instanceService = new InstanceService()
+        var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
+        sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
+        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect,
+          function (err, updated) {
+            expect(err).to.not.exist()
+            expect(updated._id).to.equal(ctx.instance._id)
+            expect(updated.name).to.equal(instance.name)
+            done()
+          })
+      })
+    })
+  })
+})
