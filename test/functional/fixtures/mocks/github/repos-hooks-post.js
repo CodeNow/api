@@ -1,11 +1,10 @@
-var nock = require('nock');
+var nock = require('nock')
 
 module.exports = function (username, repo, cb) {
-
   nock('https://api.github.com:443')
     .filteringPath(/hooks\?.+/, 'hooks?access_token')
     .filteringRequestBody(function () {
-      return '*';
+      return '*'
     })
     .post('/repos/' + username + '/' + repo + '/hooks?access_token', '*')
     .reply(201, {
@@ -23,7 +22,7 @@ module.exports = function (username, repo, cb) {
         'content_type': 'json'
       },
       'id': 1
-    });
+    })
 
-  if (cb) { cb(); }
-};
+  if (cb) { cb() }
+}
