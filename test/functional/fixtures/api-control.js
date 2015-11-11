@@ -32,6 +32,8 @@ function ensureIndexes (cb) {
   async.each(scripts, ensureIndex, cb);
 }
 
+// we need to setup this before starting api.
+// this create exchanges that is used by api
 var publishedEvents = [
   'container.network.attached',
   'container.network.attach-failed'
