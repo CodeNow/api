@@ -83,7 +83,7 @@
     "regexp-quote": "0.0.0",
     "request": "2.42.0",
     "rollbar": "0.5.4",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.7.0",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.7.1",
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "s3-stream-upload": "0.0.6",
     "shimmer": "^1.0.0",
