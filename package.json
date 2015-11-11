@@ -1,14 +1,16 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.80.0",
+  "version": "2.81.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
   },
   "private": true,
   "standard": {
-    "ignore": [ "scripts/mongo/*" ]
+    "ignore": [
+      "scripts/mongo/*"
+    ]
   },
   "dependencies": {
     "101": "^1.0.0",
