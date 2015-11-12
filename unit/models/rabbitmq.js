@@ -646,7 +646,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       };
       ctx.rabbitMQ.instanceUpdated(data);
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish);
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance-updated', data);
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.updated', data);
       done();
     });
     it('should throw an error when parameters are missing', function (done) {
@@ -674,7 +674,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       };
       ctx.rabbitMQ.instanceCreated(data);
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish);
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance-created', data);
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.created', data);
       done();
     });
     it('should throw an error when parameters are missing', function (done) {
@@ -702,7 +702,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       };
       ctx.rabbitMQ.instanceDeleted(data);
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish);
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance-deleted', data);
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.deleted', data);
       done();
     });
     it('should throw an error when parameters are missing', function (done) {
