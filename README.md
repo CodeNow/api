@@ -1,3 +1,4 @@
+[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
 [![Circle CI](https://circleci.com/gh/CodeNow/api.svg?style=svg&circle-token=15c68bfd7d9ca99637f0c5a6e05505366f5d9fd3)](https://circleci.com/gh/CodeNow/api)
 [![lol Travis CI](https://magnum.travis-ci.com/CodeNow/api.svg?token=CEnbe3bPEVFTjYa2MCtJ&branch=master)](https://magnum.travis-ci.com/CodeNow/api)
 
@@ -18,8 +19,6 @@
   - [Prerequisites](#prerequisites)
   - [Tests](#tests-1)
   - [Formatting](#formatting)
-      - [jshint](#jshint)
-      - [eslint](#eslint)
 - [Opinions](#opinions)
       - [Restful resource urls](#restful-resource-urls)
       - [Middleware Patterns](#middleware-patterns)
@@ -28,7 +27,6 @@
 - [Help and Tips](#help-and-tips)
     - [Problems npm installing?](#problems-npm-installing)
     - [Rapid Prototyping with Runnable-Api-Client](#rapid-prototyping-with-runnable-api-client)
-  - [](#)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -96,17 +94,15 @@ Granular:
 
 ## Formatting
 
-#### jshint
+This repository is formatted using the Standard JS rules.
 
-We rely (and require) that `jshint` passes with flying colors: `npm run lint`.
+[![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
-#### eslint
+Some helpful tips:
 
-Additionally, `eslint` is available to help with formatting. It is not a tool that will format code _for you_, but provides suggestions at either a warning or error level. To run `eslint`, simply run `npm run eslint`, or ignore warnings, run `npm run eslint-errors`. These are not required to pass, but can be used as suggestions for formatting. Try it out and we can tweak it as needed, and maybe will require it at some point.
-
-`eslint`'s [rules](http://eslint.org/docs/rules/) are rather extensive, but are fairly well documented.
-
-If you would like to run `eslint` on a single file, run `./node_modules/.bin/eslint path/to/filename.js` (or install it with `npm -g eslint` and run `eslint path/to/filename.js`).
+- `npm run lint` runs the standard linter, and will not format your code
+- `npm run format` will run the standard formatter, attempting to fix various issues that are found
+- [standard's README](https://github.com/feross/standard/blob/master/README.md) has some good information about various [text editor plugins](https://github.com/feross/standard/blob/master/README.md#text-editor-plugins) as well, to make your life easier
 
 # Opinions
 
@@ -159,7 +155,8 @@ This may be because you're getting access denied from npm. Which is trying to cl
 ### Rapid Prototyping with Runnable-Api-Client
 
 If you find yourself working on a feature that constantly involves updating the runnable-api-client, use npm link.
-```bash
+
+```
 cd <runnable-api-client-path>
 npm link
 cd <runnable-api>
@@ -167,33 +164,30 @@ npm link runnable
 # ... after you've commited some runnable-client changes and updated the version
 npm run client-version # this will update the client's version to the latest in the package.json - remember to commit it.
 ```
-```
+
 Models:
 
-A context represents a project context (like redis)
-A version is a version of a particular context (build files, github commitHash)
- - can be built or unbuilt - built means it has docker image
+- A context represents a project context (like redis)
+- A version is a version of a particular context (build files, github commitHash)
+  - can be built or unbuilt - built means it has docker image
+- A build is a grouping built versions (for all contexts of a project)
 
-A build is a grouping built versions (for all contexts of a project)
-
---
-
-Instances (running builds)
+- Instances (running builds)
  - containers (subdoc)
 
-Pages
+- Pages
  - see client/config/routes.js of runnable-angular repository
 
-Build List Page - /project/anandkumar/filibuster/master
+- Build List Page - /project/anandkumar/filibuster/master
  - has a listing of builds for an environment
 
-Build Page - /project/anandkumar/filibuster/master/build/:id
+- Build Page - /project/anandkumar/filibuster/master/build/:id
  - is the most complex page
  - you can edit build files and create new builds
  - you can rebuild - create a new build from a build
  - shows logs if in progress, shows all logs if complete
  - [launch instance button]
 
-Instance Page - /project/anandkumar/filibuster/master/build/:id (just like our current container pages except supports multiple containers (full instance))
+- Instance Page - /project/anandkumar/filibuster/master/build/:id (just like our current container pages except supports multiple containers (full instance))
  - create an instance from a build (create containers for all build images (versions))
 ```

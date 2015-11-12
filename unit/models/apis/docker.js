@@ -1,9 +1,8 @@
 /**
  * @module unit/models/apis/docker
  */
-'use strict';
-require('loadenv')();
-var path = require('path');
+'use strict'
+require('loadenv')()
 
 var assign = require('101/assign');
 var Boom = require('dat-middleware').Boom;
@@ -24,9 +23,9 @@ var path = require('path');
 var sinon = require('sinon');
 var through2 = require('through2');
 
-var Docker = require('models/apis/docker');
+var Docker = require('models/apis/docker')
 
-var lab = exports.lab = Lab.script();
+var lab = exports.lab = Lab.script()
 
 var afterEach = lab.afterEach;
 var beforeEach = lab.beforeEach;
@@ -42,7 +41,7 @@ var expectErr = function (expectedErr, done) {
 };
 
 var dockerLogs = {
-  success: multiline.stripIndent(function () {/*
+  success: multiline.stripIndent(function () { /*
     {"type":"docker","content":"Step 1 : ADD ./ca.pem /ca.pem","timestamp":"2015-10-09T20:11:42.000Z"}
     {"type":"docker","content":" ---> bf20e0312c8c","timestamp":"2015-10-09T20:11:42.319Z"}
     {"type":"docker","content":"Step 2 : ADD ./cert.pem /cert.pem","timestamp":"2015-10-09T20:11:42.332Z"}
@@ -51,7 +50,7 @@ var dockerLogs = {
     {"type":"log","content":"Runnable: Build completed successfully!","timestamp":"2015-10-09T20:11:43.657Z"}
   */}),
   successDockerImage: '6853db027fad', // must match id in log
-  failure: multiline.stripIndent(function () {/*
+  failure: multiline.stripIndent(function () { /*
     {"type":"docker","content":"Step 1 : ADD ./ca.pem /ca.pem","timestamp":"2015-10-09T20:11:42.000Z"}
     {"type":"docker","content":" ---> bf20e0312c8c","timestamp":"2015-10-09T20:11:42.319Z"}
     {"type":"docker","content":"Step 2 : RUN vim ./cert.pem","timestamp":"2015-10-09T20:11:42.332Z"}
@@ -60,14 +59,14 @@ var dockerLogs = {
     {"type":"docker","content":"\u001b[91mvim: not found\n\u001b[0m"}
     {"type":"docker","content":"Runnable: The command [vim what] returned a non-zero code: 127\r\n","type":"error"}
   */}),
-  jsonParseError: multiline.stripIndent(function () {/*
+  jsonParseError: multiline.stripIndent(function () { /*
     {"type":"docker",[]
   */})
-};
+}
 
 describe('docker: ' + moduleName, function () {
-  var model = new Docker('http://fake.host.com');
-  var ctx;
+  var model = new Docker('http://fake.host.com')
+  var ctx
 
   beforeEach(function (done) {
     ctx = {
@@ -85,7 +84,7 @@ describe('docker: ' + moduleName, function () {
             return {
               bucket: 'bucket',
               sourcePath: 'sourcePath'
-            };
+            }
           },
           files: []
         },
@@ -106,10 +105,10 @@ describe('docker: ' + moduleName, function () {
           }
         ],
         toJSON: function () {
-          var json = clone(ctx.mockContextVersion);
-          delete json.toJSON;
-          delete json.infraCodeVersion.bucket;
-          return json;
+          var json = clone(ctx.mockContextVersion)
+          delete json.toJSON
+          delete json.infraCodeVersion.bucket
+          return json
         }
       },
       mockNetwork: {
@@ -124,43 +123,43 @@ describe('docker: ' + moduleName, function () {
           }
         }
       }
-    };
-    done();
-  });
+    }
+    done()
+  })
 
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
-      ctx.mockDockerTag = 'mockDockerTag';
-      ctx.mockLabels = { label1: 1, label2: 2, label3: 3 };
-      ctx.mockEnv = [ 'env1', 'env2', 'env3' ];
-      sinon.stub(Docker.prototype, '_createImageBuilderValidateCV');
-      sinon.stub(Docker, 'getDockerTag').returns(ctx.mockDockerTag);
-      sinon.stub(Docker.prototype, '_createImageBuilderLabels').returns(ctx.mockLabels);
-      sinon.stub(Docker.prototype, '_createImageBuilderEnv').returns(ctx.mockEnv);
-      sinon.stub(Docker.prototype, 'createContainer').yieldsAsync();
-      done();
-    });
+      ctx.mockDockerTag = 'mockDockerTag'
+      ctx.mockLabels = { label1: 1, label2: 2, label3: 3 }
+      ctx.mockEnv = [ 'env1', 'env2', 'env3' ]
+      sinon.stub(Docker.prototype, '_createImageBuilderValidateCV')
+      sinon.stub(Docker, 'getDockerTag').returns(ctx.mockDockerTag)
+      sinon.stub(Docker.prototype, '_createImageBuilderLabels').returns(ctx.mockLabels)
+      sinon.stub(Docker.prototype, '_createImageBuilderEnv').returns(ctx.mockEnv)
+      sinon.stub(Docker.prototype, 'createContainer').yieldsAsync()
+      done()
+    })
     afterEach(function (done) {
-      Docker.prototype._createImageBuilderLabels.restore();
-      Docker.getDockerTag.restore();
-      Docker.prototype._createImageBuilderEnv.restore();
-      Docker.prototype._createImageBuilderValidateCV.restore();
-      Docker.prototype.createContainer.restore();
-      done();
-    });
+      Docker.prototype._createImageBuilderLabels.restore()
+      Docker.getDockerTag.restore()
+      Docker.prototype._createImageBuilderEnv.restore()
+      Docker.prototype._createImageBuilderValidateCV.restore()
+      Docker.prototype.createContainer.restore()
+      done()
+    })
     describe('no cache', function () {
       beforeEach(function (done) {
-        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
-        delete process.env.DOCKER_IMAGE_BUILDER_CACHE;
-        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-        delete process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-        done();
-      });
+        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE
+        delete process.env.DOCKER_IMAGE_BUILDER_CACHE
+        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        delete process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        done()
+      })
       afterEach(function (done) {
-        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE;
-        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-        done();
-      });
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        done()
+      })
 
       it('should create an image builder container', function (done) {
         var opts = {
@@ -170,34 +169,32 @@ describe('docker: ' + moduleName, function () {
           network: ctx.mockNetwork,
           noCache: false,
           tid: '000-0000-0000-0000'
-        };
+        }
         model.createImageBuilder(opts, function (err) {
-          if (err) { return done(err); }
+          if (err) { return done(err) }
           sinon.assert.calledWith(
             Docker.prototype._createImageBuilderValidateCV,
             opts.contextVersion
-          );
+          )
           sinon.assert.calledWith(
             Docker.getDockerTag,
             opts.contextVersion
-          );
-          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0])
-            .to.deep.equal({
-              contextVersion: opts.contextVersion,
-              dockerTag: ctx.mockDockerTag,
-              manualBuild: opts.manualBuild,
-              network: opts.network,
-              noCache: opts.noCache,
-              sessionUser: opts.sessionUser,
-              ownerUsername: opts.ownerUsername,
-              tid: opts.tid
-            });
-          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0])
-            .to.deep.equal({
-              dockerTag: ctx.mockDockerTag,
-              noCache: opts.noCache,
-              contextVersion: opts.contextVersion
-            });
+          )
+          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.deep.equal({
+            contextVersion: opts.contextVersion,
+            dockerTag: ctx.mockDockerTag,
+            manualBuild: opts.manualBuild,
+            network: opts.network,
+            noCache: opts.noCache,
+            sessionUser: opts.sessionUser,
+            ownerUsername: opts.ownerUsername,
+            tid: opts.tid
+          })
+          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
+            dockerTag: ctx.mockDockerTag,
+            noCache: opts.noCache,
+            contextVersion: opts.contextVersion
+          })
 
           var expected = {
             name: opts.contextVersion.build._id.toString(),
@@ -206,27 +203,27 @@ describe('docker: ' + moduleName, function () {
             Binds: [],
             Volumes: {},
             Labels: ctx.mockLabels
-          };
+          }
 
           expect(Docker.prototype.createContainer.firstCall.args[0])
-            .to.deep.equal(expected);
-          done();
-        });
-      });
+            .to.deep.equal(expected)
+          done()
+        })
+      })
 
       describe('w/ image builder cache and layer cache', function () {
         beforeEach(function (done) {
-          ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
-          process.env.DOCKER_IMAGE_BUILDER_CACHE = '/builder-cache';
-          ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-          process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = '/builder-layer-cache';
-          done();
-        });
+          ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE
+          process.env.DOCKER_IMAGE_BUILDER_CACHE = '/builder-cache'
+          ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+          process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = '/builder-layer-cache'
+          done()
+        })
         afterEach(function (done) {
-          process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE;
-          process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-          done();
-        });
+          process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE
+          process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+          done()
+        })
 
         it('should create an image builder container', function (done) {
           var opts = {
@@ -236,30 +233,29 @@ describe('docker: ' + moduleName, function () {
             network: ctx.mockNetwork,
             noCache: false,
             tid: '000-0000-0000-0000'
-          };
+          }
           model.createImageBuilder(opts, function (err) {
-            if (err) { return done(err); }
-            var volumes = {};
-            volumes['/cache'] = {};
-            volumes['/layer-cache'] = {};
-            expect(Docker.prototype.createContainer.firstCall.args[0])
-              .to.deep.equal({
-                name: opts.contextVersion.build._id.toString(),
-                Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
-                Env: ctx.mockEnv,
-                Binds: [
-                  process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
-                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
-                ],
-                Volumes: volumes,
-                Labels: ctx.mockLabels
-              });
-            done();
-          });
-        });
-      });
-    });
-  });
+            if (err) { return done(err) }
+            var volumes = {}
+            volumes['/cache'] = {}
+            volumes['/layer-cache'] = {}
+            expect(Docker.prototype.createContainer.firstCall.args[0]).to.deep.equal({
+              name: opts.contextVersion.build._id.toString(),
+              Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+              Env: ctx.mockEnv,
+              Binds: [
+                process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
+                process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
+              ],
+              Volumes: volumes,
+              Labels: ctx.mockLabels
+            })
+            done()
+          })
+        })
+      })
+    })
+  })
 
   describe('_createImageBuilderValidateCV', function () {
     it('should return an error if contextVersion already built', function (done) {
@@ -267,20 +263,20 @@ describe('docker: ' + moduleName, function () {
         build: {
           completed: true
         }
-      });
-      expect(validationError.message).to.equal('Version already built');
-      done();
-    });
+      })
+      expect(validationError.message).to.equal('Version already built')
+      done()
+    })
 
     it('should return an error if contextVersion has no icv', function (done) {
       var validationError = model._createImageBuilderValidateCV({
         build: {
           completed: false
         }
-      });
-      expect(validationError.message).to.equal('Cannot build a version without a Dockerfile');
-      done();
-    });
+      })
+      expect(validationError.message).to.equal('Cannot build a version without a Dockerfile')
+      done()
+    })
 
     it('should return an error if contextVersion icv not populated', function (done) {
       var validationError = model._createImageBuilderValidateCV({
@@ -288,10 +284,10 @@ describe('docker: ' + moduleName, function () {
           completed: false
         },
         infraCodeVersion: '012345678901234567890123' // validation check regex string length 24
-      });
-      expect(validationError.message).to.equal('Populate infraCodeVersion before building it');
-      done();
-    });
+      })
+      expect(validationError.message).to.equal('Populate infraCodeVersion before building it')
+      done()
+    })
 
     it('should return falsy if no error condition present', function (done) {
       var validationError = model._createImageBuilderValidateCV({
@@ -299,11 +295,11 @@ describe('docker: ' + moduleName, function () {
           completed: false
         },
         infraCodeVersion: {}
-      });
-      expect(validationError).to.be.undefined();
-      done();
-    });
-  });
+      })
+      expect(validationError).to.be.undefined()
+      done()
+    })
+  })
 
   describe('_createImageBuilderLabels', function () {
     it('should return a hash of container labels', function (done) {
@@ -316,8 +312,8 @@ describe('docker: ' + moduleName, function () {
         sessionUser: ctx.mockSessionUser,
         ownerUsername: 'ownerUsername',
         tid: 'tid'
-      };
-      var labels = model._createImageBuilderLabels(opts);
+      }
+      var labels = model._createImageBuilderLabels(opts)
       var expectedLabels = assign(
         keypather.flatten(ctx.mockContextVersion.toJSON(), '.', 'contextVersion'),
         {
@@ -331,12 +327,12 @@ describe('docker: ' + moduleName, function () {
           tid: opts.tid,
           type: 'image-builder-container'
         }
-      );
-      expect(labels).to.deep.equal(expectedLabels);
+      )
+      expect(labels).to.deep.equal(expectedLabels)
       // assert type casting to string for known value originally of type Number
-      expect(labels.sessionUserGithubId).to.be.a.string();
-      done();
-    });
+      expect(labels.sessionUserGithubId).to.be.a.string()
+      done()
+    })
 
     it('should cast all values of flattened labels object to strings', function (done) {
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
@@ -344,27 +340,27 @@ describe('docker: ' + moduleName, function () {
         network: ctx.mockNetwork,
         sessionUser: ctx.mockSessionUser,
         tid: '0000-0000-0000-0000'
-      });
-      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id);
-      done();
-    });
+      })
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id)
+      done()
+    })
 
     it('should not error if value is undefined', function (done) {
       ctx.mockContextVersion.toJSON = function () {
         return {
           _id: undefined
-        };
-      };
+        }
+      }
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
         sessionUser: ctx.mockSessionUser,
         tid: '0000-0000-0000-0000'
-      });
-      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('undefined');
-      done();
-    });
-  });
+      })
+      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('undefined')
+      done()
+    })
+  })
 
   describe('_createImageBuilderEnv', function () {
     beforeEach(function (done) {
@@ -373,34 +369,34 @@ describe('docker: ' + moduleName, function () {
         dockerTag: 'dockerTag',
         hostIp: 'hostIp',
         noCache: false
-      };
-      done();
-    });
+      }
+      done()
+    })
     describe('no cache', function () {
       beforeEach(function (done) {
-        ctx.opts.noCache = true;
-        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
-        delete process.env.DOCKER_IMAGE_BUILDER_CACHE;
-        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-        delete process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-        done();
-      });
+        ctx.opts.noCache = true
+        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE
+        delete process.env.DOCKER_IMAGE_BUILDER_CACHE
+        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        delete process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        done()
+      })
       afterEach(function (done) {
-        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE;
-        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-        done();
-      });
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        done()
+      })
 
       it('should return an array of ENV for image builder container', function (done) {
-        var opts = ctx.opts;
+        var opts = ctx.opts
         var buildOpts = {
           Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES,
           forcerm: true,
           nocache: true
-        };
-        var envs = model._createImageBuilderEnv(opts);
-        var cv = ctx.mockContextVersion;
-        var appCodeVersions = cv.appCodeVersions;
+        }
+        var envs = model._createImageBuilderEnv(opts)
+        var cv = ctx.mockContextVersion
+        var appCodeVersions = cv.appCodeVersions
         var expectedEnvs = [
           'RUNNABLE_AWS_ACCESS_KEY=' + process.env.AWS_ACCESS_KEY_ID,
           'RUNNABLE_AWS_SECRET_KEY=' + process.env.AWS_SECRET_ACCESS_KEY,
@@ -412,209 +408,210 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_IMAGE_BUILDER_NAME=' + process.env.DOCKER_IMAGE_BUILDER_NAME,
           'RUNNABLE_IMAGE_BUILDER_TAG=' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
           // acv envs
-          'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
-          'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(';'),
+          'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join('git@github.com:'),
+          'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(''),
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
-          'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
+          'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(''),
           // network envs
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
           'RUNNABLE_PUSH_IMAGE=true'
-        ];
-        expect(envs).to.deep.equal(expectedEnvs);
-        done();
-      });
-    });
+        ]
+        expect(envs).to.deep.equal(expectedEnvs)
+        done()
+      })
+    })
     describe('cache', function () {
       beforeEach(function (done) {
-        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE;
-        process.env.DOCKER_IMAGE_BUILDER_CACHE = '/cache';
-        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = '/layer-cache';
-        done();
-      });
+        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = '/cache'
+        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = '/layer-cache'
+        done()
+      })
       afterEach(function (done) {
-        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE;
-        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE;
-        done();
-      });
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        done()
+      })
 
       it('should return conditional container env', function (done) {
-        var envs = model._createImageBuilderEnv(ctx.opts);
+        var envs = model._createImageBuilderEnv(ctx.opts)
         var buildOpts = {
           Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES,
           forcerm: true
-        };
+        }
         expect(envs).to.contain([
           'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
           'DOCKER_IMAGE_BUILDER_LAYER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts)
-        ]);
-        done();
-      });
-    });
-  });
+        ])
+        done()
+      })
+    })
+  })
 
   describe('getBuildInfo', function () {
     beforeEach(function (done) {
-      sinon.stub(Container.prototype, 'logs');
-      done();
-    });
+      sinon.stub(Container.prototype, 'logs')
+      done()
+    })
     afterEach(function (done) {
-      Container.prototype.logs.restore();
-      done();
-    });
+      Container.prototype.logs.restore()
+      done()
+    })
 
     it('should cleanse and parse logs', function (done) {
-      var stream = through2();
-      Container.prototype.logs.yieldsAsync(null, stream);
-      var exitCode = 0;
+      var stream = through2()
+      Container.prototype.logs.yieldsAsync(null, stream)
+      var exitCode = 0
       model.getBuildInfo('containerId', exitCode, function (err, buildInfo) {
-        if (err) { return done(err); }
-        expect(buildInfo.dockerImage).to.equal(dockerLogs.successDockerImage);
-        expect(buildInfo.failed).to.equal(false);
+        if (err) { return done(err) }
+        expect(buildInfo.dockerImage).to.equal(dockerLogs.successDockerImage)
+        expect(buildInfo.failed).to.equal(false)
         expect(buildInfo.log).to.deep.equal(
           dockerLogs.success
             .split('\n')
             .map(JSON.parse.bind(JSON))
-        );
-        done();
-      });
-      stream.write(dockerFrame(1, dockerLogs.success));
-      stream.end();
-    });
+        )
+        done()
+      })
+      stream.write(dockerFrame(1, dockerLogs.success))
+      stream.end()
+    })
 
     describe('errors', function () {
       it('should handle docker log stream err', function (done) {
-        var stream = through2();
-        Container.prototype.logs.yieldsAsync(null, stream);
-        var streamOn = stream.on;
-        var emitErr = new Error('boom');
-        sinon.stub(stream, 'on', streamErrHandlerAttached);
+        var stream = through2()
+        Container.prototype.logs.yieldsAsync(null, stream)
+        var streamOn = stream.on
+        var emitErr = new Error('boom')
+        sinon.stub(stream, 'on', streamErrHandlerAttached)
         model.getBuildInfo('containerId', 0, function (err) {
-          expect(err).to.exist();
-          expect(err.message).to.match(/docker logs/);
-          expect(err.message).to.match(new RegExp(emitErr.message));
-          done();
-        });
+          expect(err).to.exist()
+          expect(err.message).to.match(/docker logs/)
+          expect(err.message).to.match(new RegExp(emitErr.message))
+          done()
+        })
         function streamErrHandlerAttached () {
-          var ret = streamOn.apply(stream, arguments);
-          stream.on.restore();
-          stream.emit('error', emitErr);
-          return ret;
+          var ret = streamOn.apply(stream, arguments)
+          stream.on.restore()
+          stream.emit('error', emitErr)
+          return ret
         }
-      });
+      })
       it('should handle parse err', function (done) {
-        var stream = through2();
-        Container.prototype.logs.yieldsAsync(null, stream);
+        var stream = through2()
+        Container.prototype.logs.yieldsAsync(null, stream)
         model.getBuildInfo('containerId', 1, function (err) {
-          expect(err).to.exist();
-          expect(err.message).to.match(/json parse/);
-          done();
-        });
-        stream.write(dockerFrame(1, dockerLogs.jsonParseError));
-        stream.end();
-      });
+          expect(err).to.exist()
+          expect(err.message).to.match(/json parse/)
+          done()
+        })
+        stream.write(dockerFrame(1, dockerLogs.jsonParseError))
+        stream.end()
+      })
       it('should handle streamCleanser err', function (done) {
-        var stream = through2();
-        Container.prototype.logs.yieldsAsync(null, stream);
-        var emitErr = new Error('boom');
-        var streamPipe = stream.pipe;
-        sinon.stub(stream, 'pipe', handlePipe);
+        var stream = through2()
+        Container.prototype.logs.yieldsAsync(null, stream)
+        var emitErr = new Error('boom')
+        var streamPipe = stream.pipe
+        sinon.stub(stream, 'pipe', handlePipe)
         model.getBuildInfo('containerId', 1, function (err) {
-          expect(err).to.exist();
-          expect(err.message).to.match(/cleanser/);
-          expect(err.message).to.match(new RegExp(emitErr.message));
-          done();
-        });
+          expect(err).to.exist()
+          expect(err.message).to.match(/cleanser/)
+          expect(err.message).to.match(new RegExp(emitErr.message))
+          done()
+        })
         function handlePipe (streamCleanser) {
-          var ret = streamPipe.apply(stream, arguments);
-          stream.pipe.restore();
-          process.nextTick( // emit error on stream cleanser on next tick
+          var ret = streamPipe.apply(stream, arguments)
+          stream.pipe.restore()
+          // emit error on stream cleanser on next tick
+          process.nextTick(
             streamCleanser.emit.bind(streamCleanser, 'error', emitErr)
-          );
-          return ret;
+          )
+          return ret
         }
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('getLogs', function () {
     it('should call error handler and return error', function (done) {
       sinon.stub(Dockerode.prototype, 'getContainer', function () {
         return {
           logs: function (opts, cb) {
-            cb(new Error('Some docker error'));
+            cb(new Error('Some docker error'))
           }
-        };
-      });
-      sinon.spy(model, 'handleErr');
+        }
+      })
+      sinon.spy(model, 'handleErr')
       model.getLogs('some-container-id', function (err) {
-        expect(err).to.exist();
-        expect(err.isBoom).to.be.true();
-        expect(err.data.err.message).to.equal('Some docker error');
-        expect(err.data.docker.containerId).to.equal('some-container-id');
-        expect(Dockerode.prototype.getContainer.callCount).to.equal(1);
+        expect(err).to.exist()
+        expect(err.isBoom).to.be.true()
+        expect(err.data.err.message).to.equal('Some docker error')
+        expect(err.data.docker.containerId).to.equal('some-container-id')
+        expect(Dockerode.prototype.getContainer.callCount).to.equal(1)
         expect(Dockerode.prototype.getContainer.getCall(0).args[0])
-          .to.equal('some-container-id');
-        expect(model.handleErr.callCount).to.equal(1);
-        Dockerode.prototype.getContainer.restore();
-        model.handleErr.restore();
-        done();
-      });
-    });
+          .to.equal('some-container-id')
+        expect(model.handleErr.callCount).to.equal(1)
+        Dockerode.prototype.getContainer.restore()
+        model.handleErr.restore()
+        done()
+      })
+    })
     it('should call error but return success', function (done) {
       sinon.stub(Dockerode.prototype, 'getContainer', function () {
         return {
           logs: function (opts, cb) {
-            cb(null);
+            cb(null)
           }
-        };
-      });
-      sinon.spy(model, 'handleErr');
+        }
+      })
+      sinon.spy(model, 'handleErr')
       model.getLogs('some-container-id', function (err) {
-        expect(err).to.not.exist();
-        expect(Dockerode.prototype.getContainer.callCount).to.equal(1);
+        expect(err).to.not.exist()
+        expect(Dockerode.prototype.getContainer.callCount).to.equal(1)
         expect(Dockerode.prototype.getContainer.getCall(0).args[0])
-          .to.equal('some-container-id');
-        expect(model.handleErr.callCount).to.equal(1);
-        Dockerode.prototype.getContainer.restore();
-        model.handleErr.restore();
-        done();
-      });
-    });
-  });
+          .to.equal('some-container-id')
+        expect(model.handleErr.callCount).to.equal(1)
+        Dockerode.prototype.getContainer.restore()
+        model.handleErr.restore()
+        done()
+      })
+    })
+  })
 
   describe('pullImage', function () {
-    var testTag = 'lothlorien';
-    var testImageName = 'registy.runnable.com/1234/galadriel';
-    var testImage = testImageName + ':' + testTag;
+    var testTag = 'lothlorien'
+    var testImageName = 'registy.runnable.com/1234/galadriel'
+    var testImage = testImageName + ':' + testTag
     beforeEach(function (done) {
-      sinon.stub(Dockerode.prototype, 'pull');
-      sinon.stub(Modem.prototype, 'followProgress');
-      done();
-    });
+      sinon.stub(Dockerode.prototype, 'pull')
+      sinon.stub(Modem.prototype, 'followProgress')
+      done()
+    })
     afterEach(function (done) {
-      Dockerode.prototype.pull.restore();
-      Modem.prototype.followProgress.restore();
-      done();
-    });
+      Dockerode.prototype.pull.restore()
+      Modem.prototype.followProgress.restore()
+      done()
+    })
 
     it('should pull image', function (done) {
-      Dockerode.prototype.pull.yieldsAsync();
-      Modem.prototype.followProgress.yieldsAsync();
+      Dockerode.prototype.pull.yieldsAsync()
+      Modem.prototype.followProgress.yieldsAsync()
       model.pullImage(testImage, function (err) {
-        expect(err).to.not.exist();
+        expect(err).to.not.exist()
         expect(Dockerode.prototype.pull
           .withArgs(testImage)
-          .calledOnce).to.be.true();
-        done();
-      });
-    });
+          .calledOnce).to.be.true()
+        done()
+      })
+    })
 
     it('should cb error if pull err', function (done) {
-      var testErr = new Error('Docker pull error');
-      Dockerode.prototype.pull.yieldsAsync(testErr);
+      var testErr = new Error('Docker pull error')
+      Dockerode.prototype.pull.yieldsAsync(testErr)
       model.pullImage(testImage, function (err) {
         expect(err.message).to.be.equal('Pull image failed: '+testErr.message);
         done();
@@ -841,83 +838,83 @@ describe('docker: ' + moduleName, function () {
         done();
       });
       afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore();
-        done();
-      });
+        Docker.prototype.inspectContainer.restore()
+        done()
+      })
 
       it('should return callback with', function (done) {
-        var docker = new Docker('https://localhost:4242');
+        var docker = new Docker('https://localhost:4242')
         docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
-          expect(err).to.be.undefined();
-          expect(result.dockerContainer).to.equal('some-container-id');
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-          done();
-        });
-      });
-    });
+          expect(err).to.be.undefined()
+          expect(result.dockerContainer).to.equal('some-container-id')
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(1)
+          done()
+        })
+      })
+    })
 
     describe('and errors', function () {
       beforeEach(function (done) {
-        var dockerErr = Boom.notFound('Docker error');
-        sinon.stub(Docker.prototype, 'inspectContainer').yieldsAsync(dockerErr);
-        done();
-      });
+        var dockerErr = Boom.notFound('Docker error')
+        sinon.stub(Docker.prototype, 'inspectContainer').yieldsAsync(dockerErr)
+        done()
+      })
 
       afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore();
-        done();
-      });
+        Docker.prototype.inspectContainer.restore()
+        done()
+      })
 
       it('should call original docker method 5 times and return error', function (done) {
-        var docker = new Docker('https://localhost:4242');
+        var docker = new Docker('https://localhost:4242')
         docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err) {
-          expect(err.output.statusCode).to.equal(404);
-          expect(err.output.payload.message).to.equal('Docker error');
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(5);
-          done();
-        });
-      });
+          expect(err.output.statusCode).to.equal(404)
+          expect(err.output.payload.message).to.equal('Docker error')
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(5)
+          done()
+        })
+      })
 
       it('should not retry if ignoreStatusCode was specified', function (done) {
-        var docker = new Docker('https://localhost:4242');
+        var docker = new Docker('https://localhost:4242')
         docker.inspectContainerWithRetry({ times: 6, ignoreStatusCode: 404 }, 'some-container-id', function (err) {
-          expect(err).to.be.null();
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(1);
-          done();
-        });
-      });
-    });
+          expect(err).to.be.null()
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(1)
+          done()
+        })
+      })
+    })
 
     describe('with 4 errors and success', function () {
       beforeEach(function (done) {
-        var dockerErr = Boom.notFound('Docker error');
-        var attemts = 0;
+        var dockerErr = Boom.notFound('Docker error')
+        var attemts = 0
         sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
-          attemts++;
+          attemts++
           if (attemts < 4) {
-            cb(dockerErr);
+            cb(dockerErr)
           } else {
-            cb(undefined, { dockerContainer: container });
+            cb(undefined, { dockerContainer: container })
           }
-        });
-        done();
-      });
+        })
+        done()
+      })
 
       afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore();
-        done();
-      });
+        Docker.prototype.inspectContainer.restore()
+        done()
+      })
 
       it('should call original docker method with retries on error and final success', function (done) {
-        var docker = new Docker('https://localhost:4242');
+        var docker = new Docker('https://localhost:4242')
 
         docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
-          expect(err).to.be.undefined();
-          expect(result.dockerContainer).to.equal('some-container-id');
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(4);
-          done();
-        });
-      });
-    });
-  });
-});
+          expect(err).to.be.undefined()
+          expect(result.dockerContainer).to.equal('some-container-id')
+          expect(Docker.prototype.inspectContainer.callCount).to.equal(4)
+          done()
+        })
+      })
+    })
+  })
+})

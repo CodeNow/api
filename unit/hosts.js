@@ -1,40 +1,40 @@
-'use strict';
+'use strict'
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var beforeEach = lab.beforeEach;
-var afterEach = lab.afterEach;
-var Code = require('code');
-var expect = Code.expect;
-var keypather = require('keypather')();
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+var describe = lab.describe
+var it = lab.it
+var beforeEach = lab.beforeEach
+var afterEach = lab.afterEach
+var Code = require('code')
+var expect = Code.expect
+var keypather = require('keypather')()
 
-require('loadenv')();
+require('loadenv')()
 
-var Hosts = require('models/redis/hosts');
+var Hosts = require('models/redis/hosts')
 
-var path = require('path');
-var moduleName = path.relative(process.cwd(), __filename);
+var path = require('path')
+var moduleName = path.relative(process.cwd(), __filename)
 
-describe('Hosts: '+moduleName, function () {
+describe('Hosts: ' + moduleName, function () {
   describe('parseHostname', function () {
-    var ctx = {};
+    var ctx = {}
     beforeEach(function (done) {
-      ctx.hosts = new Hosts();
-      ctx.port = '80/tcp';
-      ctx.instance = { masterPod: true, owner: { github: 101 }, shortHash: 'abcdef' };
-      keypather.set(ctx.instance, 'container.dockerHost', 'http://10.0.0.1:4242');
-      keypather.set(ctx.instance, 'container.ports["80/tcp"][0].HostPort', 49201);
-      keypather.set(ctx.instance, 'network.hostIp', '10.6.4.1');
-      ctx.branch = 'some-branch';
-      keypather.set(ctx.instance, 'contextVersion.appCodeVersions[0].lowerBranch', ctx.branch);
+      ctx.hosts = new Hosts()
+      ctx.port = '80/tcp'
+      ctx.instance = { masterPod: true, owner: { github: 101 }, shortHash: 'abcdef' }
+      keypather.set(ctx.instance, 'container.dockerHost', 'http://10.0.0.1:4242')
+      keypather.set(ctx.instance, 'container.ports["80/tcp"][0].HostPort', 49201)
+      keypather.set(ctx.instance, 'network.hostIp', '10.6.4.1')
+      ctx.branch = 'some-branch'
+      keypather.set(ctx.instance, 'contextVersion.appCodeVersions[0].lowerBranch', ctx.branch)
 
-      ctx.instanceName = ctx.branch + '-instance-name';
-      ctx.username = 'user-name';
+      ctx.instanceName = ctx.branch + '-instance-name'
+      ctx.username = 'user-name'
       ctx.hosts.upsertHostsForInstance(
-        ctx.username, ctx.instance, ctx.instanceName, ctx.instance.container, done);
-    });
+        ctx.username, ctx.instance, ctx.instanceName, ctx.instance.container, done)
+    })
     afterEach(function (done) {
       var entry = {
         ownerUsername: ctx.username,
@@ -43,33 +43,33 @@ describe('Hosts: '+moduleName, function () {
         masterPod: ctx.instance.masterPod,
         instanceName: ctx.instanceName,
         shortHash: ctx.instance.shortHash
-      };
-      ctx.hosts.removeHostsForInstance(entry, ctx.instance.container, done);
-    });
+      }
+      ctx.hosts.removeHostsForInstance(entry, ctx.instance.container, done)
+    })
 
     it('should parse a username from a container hostname', function (done) {
       var hostname = [
         ctx.instance.shortHash, '-', ctx.instanceName, '-staging-', ctx.username, '.',
         process.env.USER_CONTENT_DOMAIN
-      ].join('');
+      ].join('')
       ctx.hosts.parseHostname(hostname, function (err, parsed) {
-        if (err) { return done(err); }
-        expect(parsed.instanceName).to.equal(ctx.instanceName);
-        expect(parsed.username).to.equal('user-name');
-        done();
-      });
-    });
+        if (err) { return done(err) }
+        expect(parsed.instanceName).to.equal(ctx.instanceName)
+        expect(parsed.username).to.equal('user-name')
+        done()
+      })
+    })
     it('should parse a username from a elastic hostname', function (done) {
       var hostname = [
         ctx.instanceName, '-staging-', ctx.username, '.',
         process.env.USER_CONTENT_DOMAIN
-      ].join('');
+      ].join('')
       ctx.hosts.parseHostname(hostname, function (err, parsed) {
-        if (err) { return done(err); }
-        expect(parsed.instanceName).to.equal(ctx.instanceName);
-        expect(parsed.username).to.equal('user-name');
-        done();
-      });
-    });
-  });
-});
+        if (err) { return done(err) }
+        expect(parsed.instanceName).to.equal(ctx.instanceName)
+        expect(parsed.username).to.equal('user-name')
+        done()
+      })
+    })
+  })
+})

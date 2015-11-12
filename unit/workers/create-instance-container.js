@@ -1,8 +1,6 @@
-'use strict';
-
+require('loadenv')();
 var path = require('path');
 
-require('loadenv')();
 var Lab = require('lab');
 var Boom = require('dat-middleware').Boom;
 var Code = require('code');
