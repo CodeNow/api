@@ -60,8 +60,8 @@ function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
 }
 
 describe('200 PATCH /instances/:id', function () {
-  var ctx = {};
-  var docker;
+  var ctx = {}
+  var docker
   // before
   before(api.start.bind(ctx))
   before(dock.start.bind(ctx))
@@ -78,14 +78,14 @@ describe('200 PATCH /instances/:id', function () {
   })
   before(function (done) {
     // prevent worker to be created
-    sinon.stub(rabbitMQ, 'deleteInstance', function () {});
-    done();
-  });
+    sinon.stub(rabbitMQ, 'deleteInstance', function () {})
+    done()
+  })
 
   after(function (done) {
-    rabbitMQ.deleteInstance.restore();
-    done();
-  });
+    rabbitMQ.deleteInstance.restore()
+    done()
+  })
   beforeEach(function (done) {
     docker.createContainer({
       Image: 'ubuntu',
@@ -149,16 +149,16 @@ describe('200 PATCH /instances/:id', function () {
         sinon.spy(InstanceService.prototype, 'deleteForkedInstancesByRepoAndBranch')
         // Original patch from the update route, then the one at the end of the on-build-die
         primus.expectAction('start', {}, function () {
-          expect(InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1);
-          var acv = ctx.cv.appCodeVersions.models[0].attrs;
-          var args = InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.getCall(0).args;
-          expect(args[0].toString()).to.equal(ctx.instance.id().toString());
-          expect(args[1]).to.equal(ctx.user.id());
-          expect(args[2]).to.equal(acv.lowerRepo);
-          expect(args[3]).to.equal(acv.lowerBranch);
-          InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.restore();
-          count.next();
-        });
+          expect(InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1)
+          var acv = ctx.cv.appCodeVersions.models[0].attrs
+          var args = InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.getCall(0).args
+          expect(args[0].toString()).to.equal(ctx.instance.id().toString())
+          expect(args[1]).to.equal(ctx.user.id())
+          expect(args[2]).to.equal(acv.lowerRepo)
+          expect(args[3]).to.equal(acv.lowerBranch)
+          InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.restore()
+          count.next()
+        })
         ctx.instance.update({
           env: ['ENV=OLD'],
           build: ctx.build.id()
@@ -178,7 +178,7 @@ describe('200 PATCH /instances/:id', function () {
         var name = 'CustomName'
         var env = ['one=one', 'two=two', 'three=three']
         // Original patch from the update route, then the one at the end of the on-build-die
-        primus.expectAction('start', {}, count.next);
+        primus.expectAction('start', {}, count.next)
         ctx.instance.update({
           build: ctx.build.id(),
           name: name,
@@ -202,7 +202,7 @@ describe('200 PATCH /instances/:id', function () {
           dockerContainer: ctx.container.Id
         }
         // Original patch from the update route, then the one at the end of the on-build-die
-        primus.expectAction('start', {}, count.next);
+        primus.expectAction('start', {}, count.next)
         // required when updating container in PATCH route
         var contextVersion = ctx.cv.id()
         var opts = {

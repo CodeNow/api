@@ -372,14 +372,14 @@ module.exports = {
           next()
         })
         ctx.instance = user.createInstance(body, function (err) {
-          log.trace({}, 'createAndTailInstance', 'created instance');
-          if (err) { return next(err); }
-          next();
-        });
-      });
+          log.trace({}, 'createAndTailInstance', 'created instance')
+          if (err) { return next(err) }
+          next()
+        })
+      })
       function done (err) {
-        if (err) { return done(err); }
-        log.trace({}, 'createAndTailInstance', 'done');
+        if (err) { return done(err) }
+        log.trace({}, 'createAndTailInstance', 'done')
         ctx.instance.fetch(function (err) {
           if (err) { return cb(err) }
           cb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.srcArr)

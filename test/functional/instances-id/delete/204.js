@@ -50,7 +50,7 @@ describe('204 DELETE /instances/:id', function () {
     var cb = last(arguments)
     var createErr = new Error('server error')
     extend(createErr, {
-      statusCode : 400, // 500s will be retried w/ ponos
+      statusCode: 400, // 500s will be retried w/ ponos
       reason: 'server error',
       json: 'No command specified\n'
     })

@@ -27,18 +27,18 @@ var pluck = require('101/pluck')
 var noop = require('101/noop')
 var toObjectId = require('utils/to-object-id')
 
-var Docker = require('models/apis/docker');
-var Instance = require('models/mongo/instance');
-var Version = require('models/mongo/context-version');
-var dock = require('../../../test/functional/fixtures/dock');
-var pubsub = require('models/redis/pubsub');
-var validation = require('../../fixtures/validation')(lab);
+var Docker = require('models/apis/docker')
+var Instance = require('models/mongo/instance')
+var Version = require('models/mongo/context-version')
+var dock = require('../../../test/functional/fixtures/dock')
+var pubsub = require('models/redis/pubsub')
+var validation = require('../../fixtures/validation')(lab)
 var expectErr = function (expectedErr, done) {
   return function (err) {
-    expect(err).to.equal(expectedErr);
-    done();
-  };
-};
+    expect(err).to.equal(expectedErr)
+    done()
+  }
+}
 
 var id = 0
 function getNextId () {
@@ -146,13 +146,13 @@ var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
-  var ctx;
-  before(require('../../fixtures/mongo').connect);
+  var ctx
+  before(require('../../fixtures/mongo').connect)
   beforeEach(function (done) {
-    ctx = {};
-    done();
-  });
-  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything);
+    ctx = {}
+    done()
+  })
+  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
 
   describe('starting or stopping state detection', function () {
     it('should not error if container is not starting or stopping', function (done) {
@@ -1440,92 +1440,92 @@ describe('Instance Model Tests ' + moduleName, function () {
           { isolated: { $exists: false } },
           { isIsolationGroupMaster: true }
         ]
-      });
-      done();
-    });
-  });
+      })
+      done()
+    })
+  })
 
   describe('#emitInstanceUpdates', function () {
     function createMockInstance () {
-      return new Instance();
+      return new Instance()
     }
     beforeEach(function (done) {
-      ctx.query = {};
-      ctx.mockSessionUser = {};
+      ctx.query = {}
+      ctx.mockSessionUser = {}
       ctx.mockInstances = [
         createMockInstance(),
         createMockInstance(),
         createMockInstance()
-      ];
-      sinon.stub(Instance, 'find');
-      sinon.stub(Instance.prototype, 'emitInstanceUpdate');
-      done();
-    });
+      ]
+      sinon.stub(Instance, 'find')
+      sinon.stub(Instance.prototype, 'emitInstanceUpdate')
+      done()
+    })
     afterEach(function (done) {
-      Instance.find.restore();
-      Instance.prototype.emitInstanceUpdate.restore();
-      done();
-    });
+      Instance.find.restore()
+      Instance.prototype.emitInstanceUpdate.restore()
+      done()
+    })
 
-    describe('success', function() {
+    describe('success', function () {
       beforeEach(function (done) {
-        var mockInstances = ctx.mockInstances;
-        Instance.find.yieldsAsync(null, mockInstances);
+        var mockInstances = ctx.mockInstances
+        Instance.find.yieldsAsync(null, mockInstances)
         Instance.prototype.emitInstanceUpdate
           .onCall(0).yieldsAsync(null, mockInstances[0])
           .onCall(1).yieldsAsync(null, mockInstances[1])
-          .onCall(2).yieldsAsync(null, mockInstances[2]);
-        done();
-      });
+          .onCall(2).yieldsAsync(null, mockInstances[2])
+        done()
+      })
       it('should emit instance updates', function (done) {
         Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', function (err, instances) {
-          if (err) { return done(err); }
+          if (err) { return done(err) }
           sinon.assert.calledWith(
             Instance.find,
             ctx.query,
             sinon.match.func
-          );
+          )
           ctx.mockInstances.forEach(function (mockInstance) {
             sinon.assert.calledOn(
               Instance.prototype.emitInstanceUpdate,
               mockInstance
-            );
-          });
+            )
+          })
           sinon.assert.calledWith(
             Instance.prototype.emitInstanceUpdate,
             ctx.mockSessionUser,
             'update'
-          );
-          expect(instances).to.deep.equal(ctx.mockInstances);
-          done();
-        });
-      });
-    });
+          )
+          expect(instances).to.deep.equal(ctx.mockInstances)
+          done()
+        })
+      })
+    })
 
-    describe('errors', function() {
+    describe('errors', function () {
       beforeEach(function (done) {
-        ctx.err = new Error('boom');
-        done();
-      });
-      describe('find errors', function() {
+        ctx.err = new Error('boom')
+        done()
+      })
+      describe('find errors', function () {
         beforeEach(function (done) {
-          Instance.find.yieldsAsync(ctx.err);
-          done();
-        });
+          Instance.find.yieldsAsync(ctx.err)
+          done()
+        })
         it('should callback the error', function (done) {
-          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done));
-        });
-      });
-      describe('emitInstanceUpdate errors', function() {
+          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done))
+        })
+      })
+      describe('emitInstanceUpdate errors', function () {
         beforeEach(function (done) {
-          Instance.find.yieldsAsync(null, ctx.mockInstances);
-          Instance.prototype.emitInstanceUpdate.yieldsAsync(ctx.err);
-          done();
-        });
+          Instance.find.yieldsAsync(null, ctx.mockInstances)
+          Instance.prototype.emitInstanceUpdate.yieldsAsync(ctx.err)
+          done()
+        })
         it('should callback the error', function (done) {
-          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done));
-        });
-      });
-    });
-  });
-});
+          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done))
+        })
+      })
+    })
+  })
+})

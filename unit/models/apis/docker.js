@@ -4,41 +4,41 @@
 'use strict'
 require('loadenv')()
 
-var assign = require('101/assign');
-var Boom = require('dat-middleware').Boom;
-var clone = require('101/clone');
-var Code = require('code');
-var Container = require('dockerode/lib/container');
-var createCount = require('callback-count');
-var dockerFrame = require('docker-frame');
-var Dockerode = require('dockerode');
-var indexBy = require('101/index-by');
-var joi = require('utils/joi');
-var keypather = require('keypather')();
-var Lab = require('lab');
-var Modem = require('docker-modem');
-var multiline = require('multiline');
-var pluck = require('101/pluck');
-var path = require('path');
-var sinon = require('sinon');
-var through2 = require('through2');
+var assign = require('101/assign')
+var Boom = require('dat-middleware').Boom
+var clone = require('101/clone')
+var Code = require('code')
+var Container = require('dockerode/lib/container')
+var createCount = require('callback-count')
+var dockerFrame = require('docker-frame')
+var Dockerode = require('dockerode')
+var indexBy = require('101/index-by')
+var joi = require('utils/joi')
+var keypather = require('keypather')()
+var Lab = require('lab')
+var Modem = require('docker-modem')
+var multiline = require('multiline')
+var pluck = require('101/pluck')
+var path = require('path')
+var sinon = require('sinon')
+var through2 = require('through2')
 
 var Docker = require('models/apis/docker')
 
 var lab = exports.lab = Lab.script()
 
-var afterEach = lab.afterEach;
-var beforeEach = lab.beforeEach;
-var describe = lab.describe;
-var expect = Code.expect;
-var it = lab.it;
-var moduleName = path.relative(process.cwd(), __filename);
+var afterEach = lab.afterEach
+var beforeEach = lab.beforeEach
+var describe = lab.describe
+var expect = Code.expect
+var it = lab.it
+var moduleName = path.relative(process.cwd(), __filename)
 var expectErr = function (expectedErr, done) {
   return function (err) {
-    expect(err).to.equal(expectedErr);
-    done();
-  };
-};
+    expect(err).to.equal(expectedErr)
+    done()
+  }
+}
 
 var dockerLogs = {
   success: multiline.stripIndent(function () { /*
@@ -613,21 +613,21 @@ describe('docker: ' + moduleName, function () {
       var testErr = new Error('Docker pull error')
       Dockerode.prototype.pull.yieldsAsync(testErr)
       model.pullImage(testImage, function (err) {
-        expect(err.message).to.be.equal('Pull image failed: '+testErr.message);
-        done();
-      });
-    });
+        expect(err.message).to.be.equal('Pull image failed: ' + testErr.message)
+        done()
+      })
+    })
 
     it('should cb error if follow err', function (done) {
-      var testErr = new Error('image: "foo" not found');
-      Dockerode.prototype.pull.yieldsAsync();
-      Modem.prototype.followProgress.yieldsAsync(testErr);
+      var testErr = new Error('image: "foo" not found')
+      Dockerode.prototype.pull.yieldsAsync()
+      Modem.prototype.followProgress.yieldsAsync(testErr)
       model.pullImage(testImage, function (err) {
-        expect(err.message).to.contain(testErr.message);
-        done();
-      });
-    });
-  }); // end pullImage
+        expect(err.message).to.contain(testErr.message)
+        done()
+      })
+    })
+  }) // end pullImage
 
   describe('createUserContainer', function () {
     beforeEach(function (done) {
@@ -635,138 +635,138 @@ describe('docker: ' + moduleName, function () {
         _id: '123456789012345678901234',
         shortHash: 'abcdef',
         env: []
-      };
+      }
       ctx.mockContextVersion = {
         _id: '123456789012345678901234',
         build: {
           dockerTag: 'dockerTag'
         }
-      };
+      }
       ctx.opts = {
         instance: ctx.mockInstance,
         contextVersion: ctx.mockContextVersion,
         ownerUsername: 'runnable',
         sessionUserGithubId: 10
-      };
-      sinon.stub(Docker.prototype, '_createUserContainerLabels');
-      sinon.stub(Docker.prototype, 'createContainer');
-      done();
-    });
+      }
+      sinon.stub(Docker.prototype, '_createUserContainerLabels')
+      sinon.stub(Docker.prototype, 'createContainer')
+      done()
+    })
     afterEach(function (done) {
-      Docker.prototype._createUserContainerLabels.restore();
-      Docker.prototype.createContainer.restore();
-      done();
-    });
+      Docker.prototype._createUserContainerLabels.restore()
+      Docker.prototype.createContainer.restore()
+      done()
+    })
 
-    describe('success', function() {
+    describe('success', function () {
       beforeEach(function (done) {
-        ctx.mockLabels = {};
-        ctx.mockContainer = {};
-        Docker.prototype._createUserContainerLabels.yieldsAsync(null, ctx.mockLabels);
-        Docker.prototype.createContainer.yieldsAsync(null, ctx.mockContainer);
-        done();
-      });
+        ctx.mockLabels = {}
+        ctx.mockContainer = {}
+        Docker.prototype._createUserContainerLabels.yieldsAsync(null, ctx.mockLabels)
+        Docker.prototype.createContainer.yieldsAsync(null, ctx.mockContainer)
+        done()
+      })
 
       it('should create a container', function (done) {
         model.createUserContainer(ctx.opts, function (err, container) {
-          if (err) { return done(err); }
+          if (err) { return done(err) }
           sinon.assert.calledWith(
             Docker.prototype._createUserContainerLabels, ctx.opts, sinon.match.func
-          );
+          )
           var expectedCreateOpts = {
             Labels: ctx.mockLabels,
             Env: ctx.mockInstance.env.concat([
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
             ]),
             Image: ctx.mockContextVersion.build.dockerTag
-          };
+          }
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
-          );
-          console.log(container, ctx.mockContainer);
-          expect(container).to.equal(ctx.mockContainer);
-          done();
-        });
-      });
-    });
+          )
+          console.log(container, ctx.mockContainer)
+          expect(container).to.equal(ctx.mockContainer)
+          done()
+        })
+      })
+    })
 
     describe('errors', function () {
       beforeEach(function (done) {
-        ctx.err = new Error('boom');
-        done();
-      });
+        ctx.err = new Error('boom')
+        done()
+      })
 
       describe('validateOrBoom error', function () {
         beforeEach(function (done) {
-          sinon.stub(joi, 'validateOrBoom');
-          joi.validateOrBoom.yieldsAsync(ctx.err);
-          done();
-        });
+          sinon.stub(joi, 'validateOrBoom')
+          joi.validateOrBoom.yieldsAsync(ctx.err)
+          done()
+        })
         afterEach(function (done) {
-          joi.validateOrBoom.restore();
-          done();
-        });
+          joi.validateOrBoom.restore()
+          done()
+        })
         it('should callback the error', function (done) {
-          model.createUserContainer(ctx.opts, expectErr(ctx.err, done));
-        });
-      });
+          model.createUserContainer(ctx.opts, expectErr(ctx.err, done))
+        })
+      })
 
       describe('unbuilt cv', function () {
         beforeEach(function (done) {
-          delete ctx.opts.contextVersion.build.dockerTag;
-          done();
-        });
+          delete ctx.opts.contextVersion.build.dockerTag
+          done()
+        })
         it('should callback the error', function (done) {
           model.createUserContainer(ctx.opts, function (err) {
-            expect(err).to.exist();
-            expect(err.isBoom).to.be.true();
-            expect(err.output.statusCode).to.equal(400);
-            expect(err.message).to.match(/unbuilt/);
-            done();
-          });
-        });
-      });
+            expect(err).to.exist()
+            expect(err.isBoom).to.be.true()
+            expect(err.output.statusCode).to.equal(400)
+            expect(err.message).to.match(/unbuilt/)
+            done()
+          })
+        })
+      })
 
       describe('no instance env', function () {
         beforeEach(function (done) {
-          delete ctx.opts.instance.env;
-          done();
-        });
+          delete ctx.opts.instance.env
+          done()
+        })
         it('should callback the error', function (done) {
           model.createUserContainer(ctx.opts, function (err) {
-            expect(err).to.exist();
-            expect(err.isBoom).to.be.true();
-            expect(err.output.statusCode).to.equal(400);
-            expect(err.message).to.match(/env.*required/);
-            done();
-          });
-        });
-      });
+            expect(err).to.exist()
+            expect(err.isBoom).to.be.true()
+            expect(err.output.statusCode).to.equal(400)
+            expect(err.message).to.match(/env.*required/)
+            done()
+          })
+        })
+      })
 
       describe('_createUserContainerLabels error', function () {
         beforeEach(function (done) {
-          Docker.prototype._createUserContainerLabels.yieldsAsync(ctx.err);
-          done();
-        });
+          Docker.prototype._createUserContainerLabels.yieldsAsync(ctx.err)
+          done()
+        })
         it('should callback the error', function (done) {
-          model.createUserContainer(ctx.opts, expectErr(ctx.err, done));
-        });
-      });
+          model.createUserContainer(ctx.opts, expectErr(ctx.err, done))
+        })
+      })
 
       describe('createContainer error', function () {
         beforeEach(function (done) {
-          ctx.mockLabels = {};
-          ctx.mockContainer = {};
-          Docker.prototype._createUserContainerLabels.yieldsAsync(null, ctx.mockLabels);
-          Docker.prototype.createContainer.yieldsAsync(ctx.err);
-          done();
-        });
+          ctx.mockLabels = {}
+          ctx.mockContainer = {}
+          Docker.prototype._createUserContainerLabels.yieldsAsync(null, ctx.mockLabels)
+          Docker.prototype.createContainer.yieldsAsync(ctx.err)
+          done()
+        })
         it('should callback the error', function (done) {
-          model.createUserContainer(ctx.opts, expectErr(ctx.err, done));
-        });
-      });
-    });
-  });
+          model.createUserContainer(ctx.opts, expectErr(ctx.err, done))
+        })
+      })
+    })
+  })
 
   describe('_createUserContainerLabels', function () {
     beforeEach(function (done) {
@@ -781,19 +781,19 @@ describe('docker: ' + moduleName, function () {
         },
         ownerUsername: 'runnable',
         sessionUserGithubId: '10'
-      };
-      done();
-    });
+      }
+      done()
+    })
     afterEach(function (done) {
-      done();
-    });
+      done()
+    })
 
     describe('success', function () {
       it('should callback labels', function (done) {
-        keypather.set(process, 'domain.runnableData.tid', 111);
+        keypather.set(process, 'domain.runnableData.tid', 111)
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
           if (err) { return done(err); }
-          var opts = ctx.opts;
+          var opts = ctx.opts
           expect(labels).to.deep.equal({
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
@@ -803,40 +803,40 @@ describe('docker: ' + moduleName, function () {
             sessionUserGithubId: opts.sessionUserGithubId,
             tid: process.domain.runnableData.tid,
             type: 'user-container'
-          });
-          done();
-        });
-      });
-    });
+          })
+          done()
+        })
+      })
+    })
 
     describe('errors', function () {
-      it('should callback opts validation error', function(done) {
-        var flatOpts = keypather.flatten(ctx.opts);
-        var keypaths = Object.keys(flatOpts);
-        var count = createCount(keypaths.length, done);
+      it('should callback opts validation error', function (done) {
+        var flatOpts = keypather.flatten(ctx.opts)
+        var keypaths = Object.keys(flatOpts)
+        var count = createCount(keypaths.length, done)
         keypaths.forEach(function (keypath) {
           // delete 1 required keypath and expect an error for that keypath
-          var opts = clone(ctx.opts);
-          keypather.del(opts, keypath);
+          var opts = clone(ctx.opts)
+          keypather.del(opts, keypath)
           model._createUserContainerLabels(opts, function (err) {
-            expect(err, 'should require '+keypath).to.exist();
-            expect(err.output.statusCode).to.equal(400);
-            expect(err.message).to.match(new RegExp(keypath));
-            count.next();
-          });
-        });
-      });
-    });
-  });
+            expect(err, 'should require ' + keypath).to.exist()
+            expect(err.output.statusCode).to.equal(400)
+            expect(err.message).to.match(new RegExp(keypath))
+            count.next()
+          })
+        })
+      })
+    })
+  })
 
   describe('with retries', function () {
     describe('and no errors', function () {
       beforeEach(function (done) {
         sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
-          cb(undefined, { dockerContainer: container });
-        });
-        done();
-      });
+          cb(undefined, { dockerContainer: container })
+        })
+        done()
+      })
       afterEach(function (done) {
         Docker.prototype.inspectContainer.restore()
         done()

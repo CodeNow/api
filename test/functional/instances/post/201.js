@@ -176,37 +176,37 @@ describe('201 POST /instances', function () {
 
     describe('with built build', function () {
       beforeEach(function (done) {
-        sinon.spy(rabbitMQ, 'createInstanceContainer');
+        sinon.spy(rabbitMQ, 'createInstanceContainer')
         multi.createBuiltBuild(function (err, build, user, models) {
-          if (err) { return done(err); }
-          ctx.user = user;
-          ctx.build = build;
-          ctx.cv = models[0];
-          done();
-        });
-      });
+          if (err) { return done(err) }
+          ctx.user = user
+          ctx.build = build
+          ctx.cv = models[0]
+          done()
+        })
+      })
       afterEach(function (done) {
-        rabbitMQ.createInstanceContainer.restore();
-        done();
-      });
+        rabbitMQ.createInstanceContainer.restore()
+        done()
+      })
 
       it('should create an instance with a build', function (done) {
-        var count = createCount(2, done);
+        var count = createCount(2, done)
 
-        primus.expectActionCount('start', 1, count.next);
+        primus.expectActionCount('start', 1, count.next)
         ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
-          if (err) { return done(err); }
-          expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv);
-          ctx.body = body;
-          var jobData = rabbitMQ.createInstanceContainer.getCall(0).args[0];
-          expect(rabbitMQ.createInstanceContainer.calledOnce).to.be.true();
-          expect(jobData.instanceId.toString()).to.equal(body._id.toString());
-          expect(jobData.contextVersionId.toString()).to.equal(ctx.cv.attrs._id.toString());
-          expect(jobData.sessionUserGithubId).to.equal(ctx.user.attrs.accounts.github.id);
-          expect(jobData.ownerUsername).to.equal(ctx.user.attrs.accounts.github.username);
-          count.next();
-        });
-      });
+          if (err) { return done(err) }
+          expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv)
+          ctx.body = body
+          var jobData = rabbitMQ.createInstanceContainer.getCall(0).args[0]
+          expect(rabbitMQ.createInstanceContainer.calledOnce).to.be.true()
+          expect(jobData.instanceId.toString()).to.equal(body._id.toString())
+          expect(jobData.contextVersionId.toString()).to.equal(ctx.cv.attrs._id.toString())
+          expect(jobData.sessionUserGithubId).to.equal(ctx.user.attrs.accounts.github.id)
+          expect(jobData.ownerUsername).to.equal(ctx.user.attrs.accounts.github.username)
+          count.next()
+        })
+      })
 
       it('should create an instance with a name, build, env', function (done) {
         var count = createCount(2, done)

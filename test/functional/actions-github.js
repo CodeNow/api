@@ -15,11 +15,11 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-var ContextVersion = require('models/mongo/context-version');
-var OnInstanceContainerDie = require('workers/on-instance-container-die');
-var Mixpanel = require('models/apis/mixpanel');
-var PullRequest = require('models/apis/pullrequest');
-var Slack = require('notifications/slack');
+var ContextVersion = require('models/mongo/context-version')
+var OnInstanceContainerDie = require('workers/on-instance-container-die')
+var Mixpanel = require('models/apis/mixpanel')
+var PullRequest = require('models/apis/pullrequest')
+var Slack = require('notifications/slack')
 
 var api = require('./fixtures/api-control')
 var createCount = require('callback-count')
@@ -256,13 +256,13 @@ describe('Github - /actions/github', function () {
     describe('autofork', function () {
       var slackStub
       beforeEach(function (done) {
-        slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoFork');
-        done();
-      });
+        slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoFork')
+        done()
+      })
       afterEach(function (done) {
-        slackStub.restore();
-        done();
-      });
+        slackStub.restore()
+        done()
+      })
       beforeEach(function (done) {
         multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
           if (err) { return done(err) }

@@ -249,13 +249,13 @@ describe('Context Version: ' + moduleName, function () {
         context: c._id
       })
       cv.save(function (err) {
-        expect(err).to.exist();
-        expect(err.message).to.match(/Validation failed/);
-        expect(err.errors.owner.message).to.equal('ContextVersions require an Owner');
-        done();
-      });
-    });
-  });
+        expect(err).to.exist()
+        expect(err.message).to.match(/Validation failed/)
+        expect(err.errors.owner.message).to.equal('ContextVersions require an Owner')
+        done()
+      })
+    })
+  })
 
   describe('log streams primus', function () {
     it('should be fine if we do not pass it a callback', function (done) {

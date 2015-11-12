@@ -105,68 +105,68 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               docker.createImageBuilder(opts, function (err, container) {
                 if (err) { return done(err) }
                 ContextVersion.findById(ctx.cv._id, function (err) {
-                  if (err) { return done(err); }
+                  if (err) { return done(err) }
                   ContextVersion.updateContainerByBuildId({
                     buildId: opts.contextVersion.build._id,
                     buildContainerId: container.id,
                     tag: Docker.getDockerTag(opts.contextVersion),
                     host: docker.dockerHost
-                  }, done);
-                });
-              });
-            });
-          });
+                  }, done)
+                })
+              })
+            })
+          })
         }
       })
 
       beforeEach(function (done) {
-        sinon.stub(rabbitMQ, 'createInstanceContainer');
-        sinon.stub(messenger, 'emitContextVersionUpdate');
-        sinon.stub(Instance, 'emitInstanceUpdates').yieldsAsync(null, [ctx.instance]);
-        done();
-      });
+        sinon.stub(rabbitMQ, 'createInstanceContainer')
+        sinon.stub(messenger, 'emitContextVersionUpdate')
+        sinon.stub(Instance, 'emitInstanceUpdates').yieldsAsync(null, [ctx.instance])
+        done()
+      })
       afterEach(function (done) {
-        rabbitMQ.createInstanceContainer.restore();
-        messenger.emitContextVersionUpdate.restore();
-        Instance.emitInstanceUpdates.restore();
-        done();
-      });
+        rabbitMQ.createInstanceContainer.restore()
+        messenger.emitContextVersionUpdate.restore()
+        Instance.emitInstanceUpdates.restore()
+        done()
+      })
       describe('With a successful build', function () {
         it('should attempt to deploy', function (done) {
           dockerMockEvents.emitBuildComplete(ctx.cv)
           sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-            workerDone();
-            if (err) { return done(err); }
+            workerDone()
+            if (err) { return done(err) }
             try {
               sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
                 contextVersionId: ctx.cv._id.toString(),
                 instanceId: ctx.instance._id.toString(),
                 ownerUsername: ctx.user.accounts.github.username,
                 sessionUserGithubId: ctx.user.accounts.github.id
-              });
+              })
               sinon.assert.calledWith(
                 messenger.emitContextVersionUpdate,
                 sinon.match({_id: ctx.cv._id}),
                 'build_completed'
-              );
-              sinon.assert.calledOnce(Instance.emitInstanceUpdates);
+              )
+              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
               ContextVersion.findOne(ctx.cv._id, function (err, cv) {
-                if (err) { return done(err); }
-                expect(cv.build.completed).to.exist();
+                if (err) { return done(err) }
+                expect(cv.build.completed).to.exist()
                 Build.findBy('contextVersions', cv._id, function (err, builds) {
-                  if (err) { return done(err); }
+                  if (err) { return done(err) }
                   builds.forEach(function (build) {
-                    expect(build.completed).to.exist();
-                  });
-                  done();
-                });
-              });
-            } catch(e) {
-              done(e);
+                    expect(build.completed).to.exist()
+                  })
+                  done()
+                })
+              })
+            } catch (e) {
+              done(e)
             }
-          });// stub end
-        });
-      });
-    });
-  });
-});
+          }) // stub end
+        })
+      })
+    })
+  })
+})

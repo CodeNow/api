@@ -52,15 +52,15 @@ describe('lib/logger.js unit test', function () {
           txTimestamp: new Date(new Date() - 1000000)
         }
         d.run(function () {
-          var serialized = logger._serializers.tx();
-          expect(serialized.txTimestamp).to.be.an.instanceOf(Date);
-          expect(serialized.txMSFromReqStart).to.be.a.number();
+          var serialized = logger._serializers.tx()
+          expect(serialized.txTimestamp).to.be.an.instanceOf(Date)
+          expect(serialized.txMSFromReqStart).to.be.a.number()
           // note(tj): js cannot be relied on to calculate timestamp differences w/ ms accuracy
           // gave it a second offset in case the ci service is going slow:
-          expect(serialized.txMSDelta).to.about(1000000, 200);
-          done();
-        });
-      });
+          expect(serialized.txMSDelta).to.about(1000000, 200)
+          done()
+        })
+      })
 
       it('should work when domain.runnableData not defined', function (done) {
         var serialized = logger._serializers.tx()

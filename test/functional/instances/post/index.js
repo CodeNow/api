@@ -77,8 +77,8 @@ describe('POST /instances', function () {
             multi.buildTheBuild(ctx.user, ctx.build, ctx.user.attrs.accounts.github.id, done)
           })
 
-          it('should emit post and deploy events', function(done) {
-            var countDown = createCount(3, done);
+          it('should emit post and deploy events', function (done) {
+            var countDown = createCount(3, done)
             var expected = {
               shortHash: exists,
               'createdBy.github': ctx.user.attrs.accounts.github.id,
@@ -93,19 +93,19 @@ describe('POST /instances', function () {
             require('../../fixtures/mocks/github/user')(ctx.user)
             require('../../fixtures/mocks/github/user')(ctx.user)
 
-            primus.expectAction('post', expected, countDown.next);
-            primus.expectAction('start', expected, countDown.next);
-            ctx.user.createInstance({ json: json }, function(err) {
-              if (err) { return countDown.next(err); }
-              primus.onceVersionComplete(ctx.cv.id(), function (/*data*/) {
-                countDown.next();
-              });
-              dockerMockEvents.emitBuildComplete(ctx.cv);
-            });
-          });
-        });
-        it('should create a new instance', function(done) {
-          var json = { build: ctx.build.id(), name: randStr(5) };
+            primus.expectAction('post', expected, countDown.next)
+            primus.expectAction('start', expected, countDown.next)
+            ctx.user.createInstance({ json: json }, function (err) {
+              if (err) { return countDown.next(err) }
+              primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
+                countDown.next()
+              })
+              dockerMockEvents.emitBuildComplete(ctx.cv)
+            })
+          })
+        })
+        it('should create a new instance', function (done) {
+          var json = { build: ctx.build.id(), name: randStr(5) }
           var expected = {
             shortHash: exists,
             'createdBy.github': ctx.user.attrs.accounts.github.id,
@@ -118,7 +118,7 @@ describe('POST /instances', function () {
           }
           require('../../fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.cv)
 
-          var countDown = createCount(3, done);
+          var countDown = createCount(3, done)
           primus.expectActionCount('build_running', 1, function () {
             require('../../fixtures/mocks/github/user')(ctx.user)
             require('../../fixtures/mocks/github/user')(ctx.user)
@@ -126,13 +126,13 @@ describe('POST /instances', function () {
             primus.expectAction('start', expected, countDown.next)
 
             ctx.user.createInstance({ json: json }, function (err) {
-              countDown.next(err);
-              dockerMockEvents.emitBuildComplete(ctx.cv);
-            });
-          });
-          require('../../fixtures/mocks/github/user')(ctx.user);
-          ctx.build.build({ message: uuid() }, countDown.next);
-        });
+              countDown.next(err)
+              dockerMockEvents.emitBuildComplete(ctx.cv)
+            })
+          })
+          require('../../fixtures/mocks/github/user')(ctx.user)
+          ctx.build.build({ message: uuid() }, countDown.next)
+        })
 
         it('should deploy the instance after the build finishes', function (done) {
           var json = { build: ctx.build.id(), name: randStr(5), masterPod: true }
@@ -140,13 +140,13 @@ describe('POST /instances', function () {
           require('../../fixtures/mocks/github/user')(ctx.user)
           require('../../fixtures/mocks/github/user')(ctx.user)
           ctx.build.build({ message: uuid() }, function (err) {
-            if (err) { return done(err); }
-            require('../../fixtures/mocks/github/user')(ctx.user);
-            primus.expectAction('start', {}, fetchInstanceAndAssertHosts);
-            var instance = ctx.user.createInstance({ json: json }, function(err) {
-              if (err) { return done(err); }
-              dockerMockEvents.emitBuildComplete(ctx.cv);
-            });
+            if (err) { return done(err) }
+            require('../../fixtures/mocks/github/user')(ctx.user)
+            primus.expectAction('start', {}, fetchInstanceAndAssertHosts)
+            var instance = ctx.user.createInstance({ json: json }, function (err) {
+              if (err) { return done(err) }
+              dockerMockEvents.emitBuildComplete(ctx.cv)
+            })
             function fetchInstanceAndAssertHosts (err) {
               if (err) { return done(err) }
               instance.fetch(function (err) {
