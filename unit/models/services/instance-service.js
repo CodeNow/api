@@ -83,22 +83,7 @@ function createNewInstance (name, opts) {
   // jshint maxcomplexity:10
   opts = opts || {}
   var container = {
-    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
-    dockerHost: opts.dockerHost || 'http://localhost:4243',
-    inspect: {
-      State: {
-        ExitCode: 0,
-        FinishedAt: '0001-01-01T00:00:00Z',
-        Paused: false,
-        Pid: 889,
-        Restarting: false,
-        Running: true,
-        StartedAt: '2014-11-25T22:29:50.23925175Z'
-      },
-      NetworkSettings: {
-        IPAddress: opts.IPAddress || '172.17.14.2'
-      }
-    }
+    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID
   }
   return new Instance({
     name: name || 'name',
@@ -295,7 +280,7 @@ describe('InstanceService: ' + moduleName, function () {
     })
   })
 
-  describe('modifyContainerIp', function () {
+  describe('updateOnContainerStart', function () {
     describe('with db calls', function () {
       var ctx = {}
 
@@ -307,6 +292,34 @@ describe('InstanceService: ' + moduleName, function () {
         instance.save(function (err, instance) {
           if (err) { return done(err) }
           ctx.instance = instance
+          ctx.inspect = {
+            Config: {
+              Labels: {
+                instanceId: ctx.instance._id,
+                ownerUsername: 'anton',
+                sessionUserGithubId: 111987,
+                contextVersionId: 'some-cv-id'
+              }
+            },
+            State: {
+              ExitCode: 0,
+              FinishedAt: '0001-01-01T00:00:00Z',
+              Paused: false,
+              Pid: 889,
+              Restarting: false,
+              Running: true,
+              StartedAt: '2014-11-25T22:29:50.23925175Z'
+            },
+            NetworkSettings: {
+              IPAddress: '172.17.14.13',
+              Ports: {
+                '3000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34109'}],
+                '80/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34110'}],
+                '8000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34111'}],
+                '8080/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34108'}]
+              }
+            }
+          }
           done()
         })
       })
@@ -317,12 +330,18 @@ describe('InstanceService: ' + moduleName, function () {
       })
       it('should return modified instance from database', function (done) {
         var instanceService = new InstanceService()
-        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.2', function (err, updated) {
-          expect(err).to.not.exist()
-          expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
-          expect(updated.network.hostIp).to.equal('127.0.0.2')
-          done()
-        })
+        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.2', ctx.inspect,
+          function (err, updated) {
+            expect(err).to.not.exist()
+            expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
+            expect(updated.network.hostIp).to.equal('127.0.0.2')
+            expect(updated.container.inspect.NetworkSettings.IPAddress).to.equal(ctx.inspect.NetworkSettings.IPAddress)
+            expect(updated.container.inspect.NetworkSettings.Ports).to.deep.equal(ctx.inspect.NetworkSettings.Ports)
+            expect(updated.container.inspect.Config.Labels).to.deep.equal(ctx.inspect.Config.Labels)
+            expect(updated.container.inspect.State).to.deep.equal(ctx.inspect.State)
+            expect(updated.container.ports).to.deep.equal(ctx.inspect.NetworkSettings.Ports)
+            done()
+          })
       })
     })
     describe('without db calls', function () {
@@ -330,6 +349,34 @@ describe('InstanceService: ' + moduleName, function () {
 
       beforeEach(function (done) {
         ctx.instance = createNewInstance('testy', {})
+        ctx.inspect = {
+          Config: {
+            Labels: {
+              instanceId: ctx.instance._id,
+              ownerUsername: 'anton',
+              sessionUserGithubId: 111987,
+              contextVersionId: 'some-cv-id'
+            }
+          },
+          State: {
+            ExitCode: 0,
+            FinishedAt: '0001-01-01T00:00:00Z',
+            Paused: false,
+            Pid: 889,
+            Restarting: false,
+            Running: true,
+            StartedAt: '2014-11-25T22:29:50.23925175Z'
+          },
+          NetworkSettings: {
+            IPAddress: '172.17.14.13',
+            Ports: {
+              '3000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34109'}],
+              '80/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34110'}],
+              '8000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34111'}],
+              '8080/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34108'}]
+            }
+          }
+        }
         ctx.containerId = ctx.instance.container.dockerContainer
         sinon.spy(ctx.instance, 'invalidateContainerDNS')
         done()
@@ -344,7 +391,9 @@ describe('InstanceService: ' + moduleName, function () {
         expect(query._id).to.equal(ctx.instance._id)
         expect(query['container.dockerContainer']).to.equal(ctx.containerId)
         expect(setQuery.$set['network.hostIp']).to.equal('127.0.0.1')
-        expect(Object.keys(setQuery.$set).length).to.equal(1)
+        expect(setQuery.$set['container.inspect']).to.exist()
+        expect(setQuery.$set['container.ports']).to.exist()
+        expect(Object.keys(setQuery.$set).length).to.equal(3)
         ctx.instance.invalidateContainerDNS.restore()
         Instance.findOneAndUpdate.restore()
         done()
@@ -354,7 +403,7 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var mongoErr = new Error('Mongo error')
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
-        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err) {
+        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect, function (err) {
           expect(err.message).to.equal('Mongo error')
           done()
         })
@@ -362,9 +411,9 @@ describe('InstanceService: ' + moduleName, function () {
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
         var instanceService = new InstanceService()
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
-        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err) {
+        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect, function (err) {
           expect(err.output.statusCode).to.equal(409)
-          var errMsg = "Container IP was not updated, instance's container has changed"
+          var errMsg = 'Container IP was not updated, instance\'s container has changed'
           expect(err.output.payload.message).to.equal(errMsg)
           done()
         })
@@ -373,12 +422,13 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
-        instanceService.modifyContainerIp(ctx.instance, ctx.containerId, '127.0.0.1', function (err, updated) {
-          expect(err).to.not.exist()
-          expect(updated._id).to.equal(ctx.instance._id)
-          expect(updated.name).to.equal(instance.name)
-          done()
-        })
+        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect,
+          function (err, updated) {
+            expect(err).to.not.exist()
+            expect(updated._id).to.equal(ctx.instance._id)
+            expect(updated.name).to.equal(instance.name)
+            done()
+          })
       })
     })
   })
