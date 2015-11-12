@@ -792,7 +792,7 @@ describe('docker: ' + moduleName, function () {
       it('should callback labels', function (done) {
         keypather.set(process, 'domain.runnableData.tid', 111)
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
-          if (err) { return done(err); }
+          if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.deep.equal({
             instanceId: opts.instance._id.toString(),
