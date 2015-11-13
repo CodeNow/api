@@ -50,8 +50,8 @@ describe('token.js unit test: ' + moduleName, function () {
         expect(error.log.calledWith(testErr)).to.be.true()
         sinon.assert.calledOnce(RedisToken.prototype.setValue)
         expect(JSON.parse(RedisToken.prototype.setValue.lastCall.args[0])).to.deep.equal({
-          userGithubOrgs:[],
-          userId:'',
+          userGithubOrgs: [],
+          userId: '',
           cookie: testCookie,
           apiSessionRedisKey: process.env.REDIS_SESSION_STORE_PREFIX + sessionId
         })
@@ -80,8 +80,8 @@ describe('token.js unit test: ' + moduleName, function () {
 
         sinon.assert.calledOnce(RedisToken.prototype.setValue)
         expect(JSON.parse(RedisToken.prototype.setValue.lastCall.args[0])).to.deep.equal({
-          userGithubOrgs:[],
-          userId:'',
+          userGithubOrgs: [],
+          userId: '',
           cookie: testCookie,
           apiSessionRedisKey: process.env.REDIS_SESSION_STORE_PREFIX + sessionId
         })
