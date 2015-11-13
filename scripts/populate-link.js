@@ -5,6 +5,10 @@
 
 require('loadenv')()
 
+var dryRun = !process.env.ACTUALLY_RUN
+
+console.log('dryRun?', !!dryRun)
+
 // Load all the things!
 require('express-app')
 
@@ -35,25 +39,25 @@ server.start(function () {
         throw err
       }
       console.log(instances.length + ' instances fetched')
-      console.log('About to go through each one and update them in 10 seconds. Now is your last chance to stop the onslaught!')
-      setTimeout(function () {
-        console.log('TOO LATE! Populating....')
-        async.eachSeries(instances, function (instance, cb) {
-          instance.emitInstanceUpdate('update', function (err) {
-            if (err) {
-              throw err
-            }
-            if (!instance.owner.username || !instance.createdBy.username) {
-              console.log('Instance did not populate owner username and createdBy username', instance._id)
-            }
-            console.log('updated: ', instance._id)
-            cb()
-          })
-        }, function () {
-          console.log('DONE!')
-          process.exit(1)
+      async.eachSeries(instances, function (instance, cb) {
+        if (dryRun) {
+          console.log('DRY RUN - Would update instance - ', instance._id)
+          return cb()
+        }
+        instance.emitInstanceUpdate('update', function (err) {
+          if (err) {
+            throw err
+          }
+          if (!instance.owner.username || !instance.createdBy.username) {
+            console.log('Instance did not populate owner username and createdBy username', instance._id)
+          }
+          console.log('updated: ', instance._id)
+          cb()
         })
-      }, 10000)
+      }, function () {
+        console.log('DONE!')
+        process.exit(1)
+      })
     })
   })
 })
