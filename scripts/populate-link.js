@@ -29,7 +29,7 @@ mongoose.connect(process.env.MONGO, function () {
     console.log('About to go through each one and update them in 10 seconds. Now is your last chance to stop the onslaught!');
     setTimeout(function () {
       console.log('TOO LATE! Populating....');
-      async.map(instances, function (instance, index) {
+      async.eachSeries(instances, function (instance, index) {
         instance.emitInstanceUpdate('update', function (err) {
           if (err) {
             throw err
