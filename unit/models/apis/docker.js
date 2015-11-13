@@ -118,7 +118,7 @@ describe('docker: ' + moduleName, function () {
         accounts: {
           github: {
             displayName: 'displayName',
-            id: '12345',
+            id: 12345,
             username: 'username'
           }
         }
@@ -321,7 +321,7 @@ describe('docker: ' + moduleName, function () {
           manualBuild: opts.manualBuild,
           noCache: opts.noCache,
           sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
-          sessionUserGithubId: opts.sessionUser.accounts.github.id,
+          sessionUserGithubId: opts.sessionUser.accounts.github.id.toString(),
           sessionUserUsername: opts.sessionUser.accounts.github.username,
           ownerUsername: opts.ownerUsername,
           tid: opts.tid,
@@ -780,7 +780,7 @@ describe('docker: ' + moduleName, function () {
           _id: '123456789012345678901234'
         },
         ownerUsername: 'runnable',
-        sessionUserGithubId: '10'
+        sessionUserGithubId: 10
       }
       done()
     })
@@ -790,7 +790,7 @@ describe('docker: ' + moduleName, function () {
 
     describe('success', function () {
       it('should callback labels', function (done) {
-        keypather.set(process, 'domain.runnableData.tid', 111)
+        keypather.set(process, 'domain.runnableData.tid', 'abcdef-abcdef-abcdef')
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
           if (err) { return done(err) }
           var opts = ctx.opts
@@ -800,7 +800,7 @@ describe('docker: ' + moduleName, function () {
             instanceShortHash: opts.instance.shortHash,
             contextVersionId: opts.contextVersion._id.toString(),
             ownerUsername: opts.ownerUsername,
-            sessionUserGithubId: opts.sessionUserGithubId,
+            sessionUserGithubId: opts.sessionUserGithubId.toString(),
             tid: process.domain.runnableData.tid,
             type: 'user-container'
           })
