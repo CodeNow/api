@@ -1,3 +1,6 @@
+/**
+ * LOG_LEVEL_STDOUT=none NODE_PATH=lib/ node scripts/populate-link.js
+ */
 'use strict';
 
 require('loadenv')();
