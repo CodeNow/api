@@ -34,6 +34,9 @@ mongoose.connect(process.env.MONGO, function () {
           if (err) {
             throw err
           }
+          if (!instance.owner.username || !instance.createdBy.username ) {
+            console.log('Instance did not populate owner username and createdBy username', instance._id);
+          }
           console.log('Updated', index, Math.floor(index/instances.length * 100));
         })
       }, function () {
