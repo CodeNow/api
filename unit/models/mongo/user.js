@@ -74,43 +74,6 @@ describe('User ' + moduleName, function () {
   })
 
   describe('findByGithubUsername', function () {
-    var user
-    var email
-    var name
-    var username
-    var githubId
-
-    function createNewUser (done) {
-      email = Faker.Internet.email()
-      name = Faker.Name.findName()
-      username = Faker.Internet.userName()
-      githubId = randomInt()
-      function createNewUserModel () {
-        return new User({
-          email: email,
-          name: name,
-          company: Faker.Company.companyName(),
-          accounts: {
-            github: {
-              id: githubId,
-              accessToken: randomInt(),
-              refreshToken: randomInt(),
-              username: username,
-              emails: Faker.Internet.email()
-            }
-          }
-        })
-      }
-      user = createNewUserModel()
-      user.save(done)
-    }
-
-    beforeEach(createNewUser)
-    afterEach(function (done) {
-      nock.cleanAll()
-      done()
-    })
-
     it('should have a `findByGithubUsername`', function (done) {
       expect(true).to.equal(true)
       expect(user.findByGithubUsername).to.be.a.function()
@@ -145,18 +108,13 @@ describe('User ' + moduleName, function () {
   })
 
   describe('findGithubOrgMembersByOrgName', function () {
-    beforeEach(function (done) {
-      githubAPIOrgMembersMock('empty-org', githubId, username, { returnEmpty: true })
-      githubAPIOrgMembersMock(orgName, githubId, username)
-      done()
-    })
-
     it('should have a `findByGithubOrgMembersByOrgName` method', function (done) {
       expect(user.findGithubOrgMembersByOrgName).to.be.a.function()
       done()
     })
 
     it('should return an empty list if no user exists', function (done) {
+      githubAPIOrgMembersMock('empty-org', githubId, username, { returnEmpty: true })
       user.findGithubOrgMembersByOrgName('empty-org', function (err, res) {
         if (err) { done(err) }
         expect(res).to.be.an.array()
@@ -166,7 +124,96 @@ describe('User ' + moduleName, function () {
     })
 
     it('should return an array of found users', function (done) {
+      githubAPIOrgMembersMock(orgName, githubId, username)
       user.findGithubOrgMembersByOrgName(orgName, function (err, res) {
+        if (err) { done(err) }
+        expect(res).to.be.an.array()
+        expect(res.length).to.greaterThan(0)
+        res.forEach(function (member) {
+          expect(member).to.be.an.object()
+          expect(member.login).to.be.a.string()
+          expect(member.id).to.be.a.number()
+        })
+        var user = res.filter(function (member) {
+          return member.login === username
+        })[0]
+        expect(user.login).to.equal(username)
+        expect(user.runnableUser).to.be.an.object()
+        expect(user.runnableUser.accounts.github).to.be.an.object()
+        expect(user.runnableUser.accounts.github.id).to.be.a.number()
+        expect(user.runnableUser.accounts.github.username).to.be.a.string()
+        expect(user.runnableUser.accounts.github.id).to.equal(githubId)
+        expect(user.runnableUser.accounts.github.username).to.equal(username)
+        done()
+      })
+    })
+  })
+
+  describe('findUsersByGithubOrgNameOrUsername', function () {
+    beforeEach(function (done) {
+      githubAPIOrgMembersMock('empty-org', githubId, username, { returnEmpty: true })
+      githubAPIOrgMembersMock(orgName, githubId, username)
+      done()
+    })
+
+    it('should have a `findUsersByGithubOrgNameOrUsername` method', function (done) {
+      expect(user.findUsersByGithubOrgNameOrUsername).to.be.a.function()
+      done()
+    })
+
+    it('should throw an error if the parameter passed is not an object', function (done) {
+      user.findUsersByGithubOrgNameOrUsername(null, function (err, res) {
+        expect(err).to.be.an.object()
+        expect(err.output).to.be.an.object()
+        expect(err.output.statusCode).to.be.a.number()
+        expect(err.output.statusCode).to.equal(400)
+        expect(err.message).to.be.a.string()
+        expect(err.message).to.be.match(/must be an object/)
+        done()
+      })
+    })
+
+    it('should throw an error if no query options are passed to it', function (done) {
+      user.findUsersByGithubOrgNameOrUsername({}, function (err, res) {
+        expect(err).to.be.an.object()
+        expect(err.output).to.be.an.object()
+        expect(err.output.statusCode).to.be.a.number()
+        expect(err.output.statusCode).to.equal(400)
+        expect(err.message).to.be.a.string()
+        expect(err.message).to.be.match(/enough parameters/)
+        done()
+      })
+    })
+
+    it('should throw an error if both query options are passed', function (done) {
+      user.findUsersByGithubOrgNameOrUsername({ githubUsername: username, githubOrgName: orgName }, function (err, res) {
+        expect(err).to.be.an.object()
+        expect(err.output).to.be.an.object()
+        expect(err.output.statusCode).to.be.a.number()
+        expect(err.output.statusCode).to.equal(400)
+        expect(err.message).to.be.a.string()
+        expect(err.message).to.be.match(/must contain only/)
+        done()
+      })
+    })
+
+    it('should find a user when passed a `githubUsername`', function (done) {
+      githubAPIUsernameQueryMock(githubId, username)
+      user.findUsersByGithubOrgNameOrUsername({ githubUsername: username }, function (err, res) {
+        if (err) { done(err) }
+        expect(res).to.be.an.array()
+        expect(res.length).to.equal(1)
+        expect(res[0]).to.be.an.object()
+        expect(res[0].name).to.equal(name)
+        expect(res[0].email).to.equal(email)
+        expect(res[0].accounts.github.id).to.equal(githubId)
+        expect(res[0].accounts.github.username).to.equal(username)
+        done()
+      })
+    })
+
+    it('should find a all users in an org when passed a `githubOrgName`', function (done) {
+      user.findUsersByGithubOrgNameOrUsername({ githubOrgName: orgName }, function (err, res) {
         if (err) { done(err) }
         expect(res).to.be.an.array()
         expect(res.length).to.greaterThan(0)
