@@ -74,6 +74,43 @@ describe('User ' + moduleName, function () {
   })
 
   describe('findByGithubUsername', function () {
+    var user
+    var email
+    var name
+    var username
+    var githubId
+
+    function createNewUser (done) {
+      email = Faker.Internet.email()
+      name = Faker.Name.findName()
+      username = Faker.Internet.userName()
+      githubId = randomInt()
+      function createNewUserModel () {
+        return new User({
+          email: email,
+          name: name,
+          company: Faker.Company.companyName(),
+          accounts: {
+            github: {
+              id: githubId,
+              accessToken: randomInt(),
+              refreshToken: randomInt(),
+              username: username,
+              emails: Faker.Internet.email()
+            }
+          }
+        })
+      }
+      user = createNewUserModel()
+      user.save(done)
+    }
+
+    beforeEach(createNewUser)
+    afterEach(function (done) {
+      nock.cleanAll()
+      done()
+    })
+
     it('should have a `findByGithubUsername`', function (done) {
       expect(true).to.equal(true)
       expect(user.findByGithubUsername).to.be.a.function()
@@ -81,9 +118,9 @@ describe('User ' + moduleName, function () {
     })
 
     it('should return an empty list if no user exists', function (done) {
-      var doesntExistUserName = 'user-that-doesnt-exist'
-      githubAPIUsernameQueryMock(1, doesntExistUserName, { returnEmpty: true })
-      user.findByGithubUsername('user-that-doesnt-exist', function (err, res) {
+      var nonexistantUsername = 'user-that-doesnt-exist'
+      githubAPIUsernameQueryMock(1, nonexistantUsername, { returnEmpty: true })
+      user.findByGithubUsername(nonexistantUsername, function (err, res) {
         if (err) { done(err) }
         expect(res).to.be.an.array()
         expect(res.length).to.equal(0)
