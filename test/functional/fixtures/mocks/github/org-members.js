@@ -1,5 +1,6 @@
 var nock = require('nock')
 var multiline = require('multiline')
+var assign = require('101/assign')
 var randStr = require('randomstring').generate
 
 var _orgId = 1000 // these should not intersect with github user-ids
@@ -29,22 +30,33 @@ function getUserObject (id, username) {
   }
 }
 
-module.exports = function (orgName, userId, username) {
+module.exports = function (orgName, userId, username, opts) {
+  opts = assign({
+    returnEmpty: false
+  }, opts)
   orgName = orgName || randStr(5)
-  console.log('orgName', orgName)
-  console.log('userId', userId)
-  console.log('username', username)
-  nock('https://api.github.com:443')
-    .log(console.log)
-    .filteringPath(/\/orgs\/[^\/]+\/members\?.+/, '/orgs/' + orgName + '/members')
-    .get('/orgs/' + orgName + '/members')
-    .reply(200, [
+  var result
+  if (opts.returnEmpty) {
+    result = []
+  } else {
+    result = [
       getUserObject(userId, username),
       getUserObject(nextOrgId(), randStr(4)),
       getUserObject(nextOrgId(), randStr(5)),
       getUserObject(nextOrgId(), randStr(6)),
       getUserObject(nextOrgId(), randStr(7))
-    ], {
+    ]
+  }
+  nock('https://api.github.com:443')
+    .filteringPath(function (path) {
+      var isMatch = path.match(/\/orgs\/[^\/]*\/members/) && path.indexOf(orgName) !== -1
+      if (isMatch) {
+        return '/orgs/' + orgName + '/members'
+      }
+      return false
+    }, orgName)
+    .get('/orgs/' + orgName + '/members')
+    .reply(200, result, {
       server: 'GitHub.com',
       date: 'Tue, 24 Jun 2014 23:32:26 GMT',
       'content-type': 'application/json charset=utf-8',
