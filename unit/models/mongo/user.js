@@ -131,19 +131,17 @@ describe('User ' + moduleName, function () {
         expect(res.length).to.greaterThan(0)
         res.forEach(function (member) {
           expect(member).to.be.an.object()
-          expect(member.login).to.be.a.string()
-          expect(member.id).to.be.a.number()
+          expect(member.accounts).to.be.an.object()
+          expect(member.accounts.github).to.be.an.object()
+          expect(member.accounts.github.id).to.be.a.number()
+          expect(member.accounts.github.username).to.be.a.string()
         })
-        var user = res.filter(function (member) {
-          return member.login === username
+        var runnableUser = res.filter(function (member) {
+          return member.accounts.github.username === username
         })[0]
-        expect(user.login).to.equal(username)
-        expect(user.runnableUser).to.be.an.object()
-        expect(user.runnableUser.accounts.github).to.be.an.object()
-        expect(user.runnableUser.accounts.github.id).to.be.a.number()
-        expect(user.runnableUser.accounts.github.username).to.be.a.string()
-        expect(user.runnableUser.accounts.github.id).to.equal(githubId)
-        expect(user.runnableUser.accounts.github.username).to.equal(username)
+        expect(runnableUser).to.be.an.object()
+        expect(runnableUser.accounts.github.id).to.equal(githubId)
+        expect(runnableUser.accounts.github.username).to.equal(username)
         done()
       })
     })
@@ -219,19 +217,17 @@ describe('User ' + moduleName, function () {
         expect(res.length).to.greaterThan(0)
         res.forEach(function (member) {
           expect(member).to.be.an.object()
-          expect(member.login).to.be.a.string()
-          expect(member.id).to.be.a.number()
+          expect(member.accounts).to.be.an.object()
+          expect(member.accounts.github).to.be.an.object()
+          expect(member.accounts.github.id).to.be.a.number()
+          expect(member.accounts.github.username).to.be.a.string()
         })
-        var user = res.filter(function (member) {
-          return member.login === username
+        var runnableUser = res.filter(function (member) {
+          return member.accounts.github.username === username
         })[0]
-        expect(user.login).to.equal(username)
-        expect(user.runnableUser).to.be.an.object()
-        expect(user.runnableUser.accounts.github).to.be.an.object()
-        expect(user.runnableUser.accounts.github.id).to.be.a.number()
-        expect(user.runnableUser.accounts.github.username).to.be.a.string()
-        expect(user.runnableUser.accounts.github.id).to.equal(githubId)
-        expect(user.runnableUser.accounts.github.username).to.equal(username)
+        expect(runnableUser).to.be.an.object()
+        expect(runnableUser.accounts.github.id).to.equal(githubId)
+        expect(runnableUser.accounts.github.username).to.equal(username)
         done()
       })
     })
