@@ -19,7 +19,7 @@ var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('token.js unit test: ' + moduleName, function () {
-  describe('addPropsToSession', function () {
+  describe('populateSharedSessionData', function () {
     beforeEach(function (done) {
       sinon.stub(RedisToken.prototype, 'setValue')
       sinon.stub(error, 'log').returns()
@@ -31,7 +31,7 @@ describe('token.js unit test: ' + moduleName, function () {
       done()
     })
     it('should cb if not required', function (done) {
-      tokenAuth.addPropsToSession([], '', {}, {}, function (err) {
+      tokenAuth.populateSharedSessionData([], '', {}, {}, function (err) {
         expect(err).to.not.exist()
         expect(RedisToken.prototype.setValue.called).to.be.false()
         done()
@@ -42,7 +42,7 @@ describe('token.js unit test: ' + moduleName, function () {
       var testCookie = 'yummy'
       var sessionId = 12345
       RedisToken.prototype.setValue.yields(testErr)
-      tokenAuth.addPropsToSession([], '', {
+      tokenAuth.populateSharedSessionData([], '', {
         id: sessionId,
         requiresToken: true
       }, testCookie, function (err) {
@@ -68,7 +68,7 @@ describe('token.js unit test: ' + moduleName, function () {
         authCallbackRedirect: testRedir
       }
       RedisToken.prototype.setValue.yields()
-      tokenAuth.addPropsToSession([], '', session, testCookie, function (err) {
+      tokenAuth.populateSharedSessionData([], '', session, testCookie, function (err) {
         var testUrl = url.parse(session.authCallbackRedirect)
         var qs = querystring.parse(testUrl.query)
         expect(testUrl.protocol).to.equal('http:')
