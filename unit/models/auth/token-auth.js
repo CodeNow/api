@@ -11,7 +11,6 @@ var afterEach = lab.afterEach
 var sinon = require('sinon')
 var tokenAuth = require('models/auth/token-auth')
 var RedisToken = require('models/redis/token')
-var error = require('error')
 var querystring = require('querystring')
 var url = require('url')
 
@@ -22,12 +21,10 @@ describe('token.js unit test: ' + moduleName, function () {
   describe('populateSharedSessionData', function () {
     beforeEach(function (done) {
       sinon.stub(RedisToken.prototype, 'setValue')
-      sinon.stub(error, 'log').returns()
       done()
     })
     afterEach(function (done) {
       RedisToken.prototype.setValue.restore()
-      error.log.restore()
       done()
     })
     it('should cb if not required', function (done) {
@@ -47,7 +44,6 @@ describe('token.js unit test: ' + moduleName, function () {
         requiresToken: true
       }, testCookie, function (err) {
         expect(err).to.not.exist()
-        expect(error.log.calledWith(testErr)).to.be.true()
         sinon.assert.calledOnce(RedisToken.prototype.setValue)
         expect(JSON.parse(RedisToken.prototype.setValue.lastCall.args[0])).to.deep.equal({
           userGithubOrgs: [],
