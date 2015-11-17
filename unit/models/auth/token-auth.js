@@ -43,7 +43,7 @@ describe('token.js unit test: ' + moduleName, function () {
         id: sessionId,
         requiresToken: true
       }, testCookie, function (err) {
-        expect(err).to.not.exist()
+        expect(err).to.equal(testErr)
         sinon.assert.calledOnce(RedisToken.prototype.setValue)
         expect(JSON.parse(RedisToken.prototype.setValue.lastCall.args[0])).to.deep.equal({
           userGithubOrgs: [],
