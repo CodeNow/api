@@ -64,4 +64,17 @@ describe('Error: ' + moduleName, function () {
       done()
     })
   })
+
+  describe('is4XX', function () {
+    it('should return true for 4XX err', function (done) {
+      expect(error.is4XX(Boom.badRequest('boom'))).to.be.true()
+      done()
+    })
+    it('should return false for other errs', function (done) {
+      expect(error.is4XX(null)).to.be.false()
+      expect(error.is4XX(new Error())).to.be.false()
+      expect(error.is4XX(Boom.badImplementation('boom'))).to.be.false()
+      done()
+    })
+  })
 })

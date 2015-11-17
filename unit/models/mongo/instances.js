@@ -33,6 +33,12 @@ var Version = require('models/mongo/context-version')
 var dock = require('../../../test/functional/fixtures/dock')
 var pubsub = require('models/redis/pubsub')
 var validation = require('../../fixtures/validation')(lab)
+var expectErr = function (expectedErr, done) {
+  return function (err) {
+    expect(err).to.equal(expectedErr)
+    done()
+  }
+}
 
 var id = 0
 function getNextId () {
@@ -131,7 +137,8 @@ function createNewInstance (name, opts) {
     containers: [],
     network: {
       hostIp: '1.1.1.100'
-    }
+    },
+    imagePull: opts.imagePull || null
   })
 }
 
@@ -140,7 +147,12 @@ var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
+  var ctx
   before(require('../../fixtures/mongo').connect)
+  beforeEach(function (done) {
+    ctx = {}
+    done()
+  })
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
 
   describe('starting or stopping state detection', function () {
@@ -1431,6 +1443,177 @@ describe('Instance Model Tests ' + moduleName, function () {
         ]
       })
       done()
+    })
+  })
+
+  describe('#emitInstanceUpdates', function () {
+    function createMockInstance () {
+      return new Instance()
+    }
+    beforeEach(function (done) {
+      ctx.query = {}
+      ctx.mockSessionUser = {}
+      ctx.mockInstances = [
+        createMockInstance(),
+        createMockInstance(),
+        createMockInstance()
+      ]
+      sinon.stub(Instance, 'find')
+      sinon.stub(Instance.prototype, 'emitInstanceUpdate')
+      done()
+    })
+    afterEach(function (done) {
+      Instance.find.restore()
+      Instance.prototype.emitInstanceUpdate.restore()
+      done()
+    })
+
+    describe('success', function () {
+      beforeEach(function (done) {
+        var mockInstances = ctx.mockInstances
+        Instance.find.yieldsAsync(null, mockInstances)
+        Instance.prototype.emitInstanceUpdate
+          .onCall(0).yieldsAsync(null, mockInstances[0])
+          .onCall(1).yieldsAsync(null, mockInstances[1])
+          .onCall(2).yieldsAsync(null, mockInstances[2])
+        done()
+      })
+      it('should emit instance updates', function (done) {
+        Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', function (err, instances) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Instance.find,
+            ctx.query,
+            sinon.match.func
+          )
+          ctx.mockInstances.forEach(function (mockInstance) {
+            sinon.assert.calledOn(
+              Instance.prototype.emitInstanceUpdate,
+              mockInstance
+            )
+          })
+          sinon.assert.calledWith(
+            Instance.prototype.emitInstanceUpdate,
+            ctx.mockSessionUser,
+            'update'
+          )
+          expect(instances).to.deep.equal(ctx.mockInstances)
+          done()
+        })
+      })
+    })
+
+    describe('errors', function () {
+      beforeEach(function (done) {
+        ctx.err = new Error('boom')
+        done()
+      })
+      describe('find errors', function () {
+        beforeEach(function (done) {
+          Instance.find.yieldsAsync(ctx.err)
+          done()
+        })
+        it('should callback the error', function (done) {
+          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done))
+        })
+      })
+      describe('emitInstanceUpdate errors', function () {
+        beforeEach(function (done) {
+          Instance.find.yieldsAsync(null, ctx.mockInstances)
+          Instance.prototype.emitInstanceUpdate.yieldsAsync(ctx.err)
+          done()
+        })
+        it('should callback the error', function (done) {
+          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done))
+        })
+      })
+    })
+  })
+
+  describe('modifyImagePull', function () {
+    beforeEach(function (done) {
+      ctx.instance = createNewInstance()
+      ctx.cvId = ctx.instance.contextVersion._id
+      ctx.imagePull = {
+        sessionUser: {
+          github: 10
+        },
+        dockerTag: 'dockerTag',
+        dockerHost: 'http://localhost:4243',
+        ownerUsername: 'ownerUsername'
+      }
+      ctx.instance.save(done)
+    })
+    afterEach(function (done) {
+      ctx.instance.remove(done)
+    })
+
+    it('should modify image pull', function (done) {
+      ctx.instance.modifyImagePull(ctx.cvId, ctx.imagePull, function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance.imagePull.toJSON()).to.deep.equal(ctx.imagePull)
+        done()
+      })
+    })
+    describe('validation errors', function () {
+      it('should require dockerTag', function (done) {
+        delete ctx.imagePull.dockerTag
+        ctx.instance.modifyImagePull(
+          ctx.cvId, ctx.imagePull, expectValidationErr(/dockerTag/, done))
+      })
+      it('should require dockerHost', function (done) {
+        delete ctx.imagePull.dockerHost
+        ctx.instance.modifyImagePull(
+          ctx.cvId, ctx.imagePull, expectValidationErr(/dockerHost/, done))
+      })
+      it('should require ownerUsername', function (done) {
+        delete ctx.imagePull.ownerUsername
+        ctx.instance.modifyImagePull(
+          ctx.cvId, ctx.imagePull, expectValidationErr(/ownerUsername/, done))
+      })
+      it('should require sessionUser.github', function (done) {
+        delete ctx.imagePull.sessionUser.github
+        ctx.instance.modifyImagePull(
+          ctx.cvId, ctx.imagePull, expectValidationErr(/sessionUser.github/, done))
+      })
+      function expectValidationErr (messageRegExp, done) {
+        return function (err) {
+          expect(err).to.exist()
+          expect(err.output.statusCode).to.equal(400)
+          expect(err.message).to.match(messageRegExp)
+          done()
+        }
+      }
+    })
+  })
+
+  describe('modifyUnsetImagePull', function () {
+    beforeEach(function (done) {
+      ctx.imagePull = {
+        sessionUser: {
+          github: '10'
+        },
+        dockerTag: 'dockerTag',
+        dockerHost: 'http://localhost:4243',
+        ownerUsername: 'ownerUsername'
+      }
+      ctx.instance = createNewInstance('name123', { imagePull: ctx.imagePull })
+      ctx.cvId = ctx.instance.contextVersion._id
+      ctx.instance.save(done)
+    })
+    afterEach(function (done) {
+      ctx.instance.remove(done)
+    })
+
+    it('should modify unset image pull', function (done) {
+      ctx.instance.modifyUnsetImagePull(
+        ctx.imagePull.dockerHost,
+        ctx.imagePull.dockerTag,
+        function (err, instance) {
+          if (err) { return done(err) }
+          expect(instance.toJSON().imagePull).to.not.exist()
+          done()
+        })
     })
   })
 })
