@@ -11,10 +11,9 @@ var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
-var Boom = require('dat-middleware').Boom
 
-var Graph = require('models/apis/graph')
 var Neo4j = require('models/graph/neo4j')
+var Graph = require('models/apis/graph')
 var Hashids = require('hashids')
 var async = require('async')
 var createCount = require('callback-count')
@@ -27,7 +26,6 @@ var pluck = require('101/pluck')
 var noop = require('101/noop')
 var toObjectId = require('utils/to-object-id')
 
-var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
 var Version = require('models/mongo/context-version')
 var dock = require('../../../test/functional/fixtures/dock')
@@ -46,9 +44,6 @@ function getNextHash () {
 function newObjectId () {
   return new mongoose.Types.ObjectId()
 }
-
-before(dock.start)
-after(dock.stop)
 
 function createNewVersion (opts) {
   return new Version({
@@ -138,10 +133,239 @@ function createNewInstance (name, opts) {
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
+
 describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
   before(require('../../fixtures/mongo').connect)
+  before(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
+
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
+
+  describe('#removeSelfFromGraph', function () {
+    var testInstance
+    beforeEach(function (done) {
+      testInstance = new Instance()
+      sinon.stub(testInstance, 'getDependents')
+      sinon.stub(testInstance, 'generateGraphNode').returns()
+      sinon.stub(testInstance, 'getParent')
+      sinon.stub(Instance, 'findById')
+      sinon.stub(Neo4j.prototype, 'deleteNodeAndConnections')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findById.restore()
+      Neo4j.prototype.deleteNodeAndConnections.restore()
+      done()
+    })
+
+    it('should cb not err for getDependents EntityNotFound', function (done) {
+      testInstance.getDependents.yieldsAsync({
+        code: 'Neo.ClientError.Statement.EntityNotFound'
+      })
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
+    it('should cb err for getDependents err', function (done) {
+      testInstance.getDependents.yieldsAsync(new Error('bud lite'))
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.exist()
+        done()
+      })
+    })
+
+    it('should cb not err for deleteNodeAndConnections EntityNotFound', function (done) {
+      testInstance.getDependents.yieldsAsync()
+      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync({
+        code: 'Neo.ClientError.Statement.EntityNotFound'
+      })
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
+    it('should cb err for deleteNodeAndConnections err', function (done) {
+      testInstance.getDependents.yieldsAsync()
+      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync(new Error('Guinness'))
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.exist()
+        done()
+      })
+    })
+
+    it('should cb if 0 dependents', function (done) {
+      testInstance.getDependents.yieldsAsync(null, [])
+      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
+    it('should cb err if getParent errs', function (done) {
+      testInstance.getDependents.yieldsAsync(null, [0])
+      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
+      testInstance.getParent.yieldsAsync(new Error('Blue Moon'))
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.exist()
+        done()
+      })
+    })
+
+    it('should cb if getParent returns null', function (done) {
+      testInstance.getDependents.yieldsAsync(null, [0])
+      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
+      testInstance.getParent.yieldsAsync(null, null)
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
+    it('should cb without err for findById err', function (done) {
+      testInstance.getDependents.yieldsAsync(null, [{}])
+      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
+      testInstance.getParent.yieldsAsync(null, 'masterInstance')
+      Instance.findById.yieldsAsync(new Error('Heineken'))
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
+    it('should cb without err if findById returns null', function (done) {
+      testInstance.getDependents.yieldsAsync(null, [{}])
+      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
+      testInstance.getParent.yieldsAsync(null, 'masterInstance')
+      Instance.findById.yieldsAsync(null, null)
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
+    it('should cb without err if addDependency returns errs', function (done) {
+      testInstance.getDependents.yieldsAsync(null, [{}], { b: [{}] })
+      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
+      testInstance.getParent.yieldsAsync(null, 'masterInstance')
+      Instance.findById.yieldsAsync(null, {
+        addDependency: sinon.stub().yieldsAsync(new Error('Samuel Adams Boston Lager'))
+      })
+
+      testInstance.removeSelfFromGraph(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
+    it('should cb with self', function (done) {
+      testInstance.getDependents.yieldsAsync(null, [{}], { b: [{}] })
+      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
+      testInstance.getParent.yieldsAsync(null, 'masterInstance')
+      Instance.findById.yieldsAsync(null, {
+        addDependency: sinon.stub().yieldsAsync()
+      })
+
+      testInstance.removeSelfFromGraph(function (err, i) {
+        expect(err).to.not.exist()
+        expect(i).to.deep.equal(testInstance);
+        done()
+      })
+    })
+  })
+
+  describe('inspectAndUpdate', function () {
+    var testInstance
+    beforeEach(function (done) {
+      testInstance = new Instance()
+      sinon.stub(Docker, 'inspectContainer')
+      sinon.stub(testInstance, 'modifyContainerInspectErr')
+      sinon.stub(testInstance, 'modifyContainerInspect')
+      done()
+    })
+
+    afterEach(function (done) {
+      Docker.inspectContainer.restore()
+      done()
+    })
+
+
+  }); // end inspectAndUpdate
+
+  describe('populateModels', function () {
+    var testInstance
+    beforeEach(function (done) {
+      testInstance = new Instance()
+      sinon.stub(testInstance, 'populate')
+      sinon.stub(testInstance, 'updateStaleCv')
+      sinon.stub(testInstance, 'toJSON')
+      done()
+    })
+
+    it('should cb json when no container', function (done) {
+      var testJson = { some: 'json' }
+      testInstance.populate.yieldsAsync()
+      testInstance.updateStaleCv.yieldsAsync()
+      testInstance.toJSON.returns(testJson)
+
+      testInstance.populateModels(function (err, json) {
+        expect(err).to.not.exist()
+        expect(json).to.deep.equal(testJson)
+        done()
+      })
+    })
+
+    it('should cb json', function (done) {
+      var testJson = { some: 'json' }
+      testInstance.populate.yieldsAsync()
+      testInstance.updateStaleCv.yieldsAsync()
+      testInstance.toJSON.returns(testJson)
+      testInstance.container = {
+        dockerContainer: 'container',
+        inspect: { data: 'budweiser' }
+      }
+
+      testInstance.populateModels(function (err, json) {
+        expect(err).to.not.exist()
+        expect(json).to.deep.equal(testJson)
+        done()
+      })
+    })
+
+    it('should cb err when missing inspect data', function (done) {
+      testInstance.container = {
+        dockerContainer: 'container'
+      }
+      testInstance.populateModels(function (err, json) {
+        expect(err).to.exist()
+        done()
+      })
+    })
+
+    it('should cb err when inspect has error', function (done) {
+      testInstance.container = {
+        dockerContainer: 'container',
+        inspect: { error: 'pale ale' }
+      }
+      testInstance.populateModels(function (err, json) {
+        expect(err).to.exist()
+        done()
+      })
+    })
+  }) // end populateModels
 
   describe('starting or stopping state detection', function () {
     it('should not error if container is not starting or stopping', function (done) {
@@ -274,20 +498,22 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  it('should not save an instance with the same (lower) name and owner', function (done) {
-    var instance = createNewInstance('hello')
-    instance.save(function (err, instance) {
-      if (err) { return done(err) }
-      expect(instance).to.exist()
-      var newInstance = createNewInstance('Hello')
-      newInstance.save(function (err, instance) {
-        expect(instance).to.not.exist()
-        expect(err).to.exist()
-        expect(err.code).to.equal(11000)
-        done()
+  describe('save', function () {
+    it('should not save an instance with the same (lower) name and owner', function (done) {
+      var instance = createNewInstance('hello')
+      instance.save(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.exist()
+        var newInstance = createNewInstance('Hello')
+        newInstance.save(function (err, instance) {
+          expect(instance).to.not.exist()
+          expect(err).to.exist()
+          expect(err.code).to.equal(11000)
+          done()
+        })
       })
     })
-  })
+  }); // end save
 
   describe('getMainBranchName', function () {
     it('should return null when there is no main AppCodeVersion', function (done) {
@@ -304,129 +530,6 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
       expect(Instance.getMainBranchName(instance)).to.equal(expectedBranchName)
       done()
-    })
-  })
-
-  describe('inspectAndUpdate', function () {
-    var savedInstance = null
-    var instance = null
-    beforeEach(function (done) {
-      instance = createNewInstance()
-      instance.save(function (err, instance) {
-        if (err) { return done(err) }
-        expect(instance).to.exist()
-        savedInstance = instance
-        done()
-      })
-    })
-
-    // changed behavior in SAN-1089 to prevent GET /instances 404 response
-    it('should not return error even if container not found', function (done) {
-      savedInstance.inspectAndUpdate(function (err) {
-        expect(err).to.equal(null)
-        done()
-      })
-    })
-
-    it('should work for real created container', function (done) {
-      var dockerHost = 'http://localhost:4243'
-      var docker = new Docker(dockerHost)
-      async.waterfall([
-        docker.createContainer.bind(docker, {}),
-        modifyContainer,
-        startContainer,
-        stopContainer,
-        inspectAndUpdate
-      ], done)
-
-      function modifyContainer (container, cb) {
-        var cvId = savedInstance.contextVersion._id
-        var dockerContainer = container.Id
-        var dockerHost = 'http://localhost:4243'
-        var query = {
-          _id: savedInstance._id,
-          'contextVersion._id': toObjectId(cvId)
-        }
-        var $set = {
-          container: {
-            dockerHost: dockerHost,
-            dockerContainer: dockerContainer
-          }
-        }
-        Instance.findOneAndUpdate(query, { $set: $set }, function (err, instance) {
-          if (err) {
-            return cb(err)
-          }
-          if (!instance) { // changed or deleted
-            return cb(Boom.conflict("Container was not deployed, instance's build has changed"))
-          }
-          cb(err, instance)
-        })
-      }
-      function startContainer (savedInstance, cb) {
-        docker.startContainer(savedInstance.container.dockerContainer, function (err) {
-          cb(err, savedInstance)
-        })
-      }
-      function stopContainer (savedInstance, cb) {
-        docker.stopContainer(savedInstance.container.dockerContainer, function (err) {
-          cb(err, savedInstance)
-        })
-      }
-      function inspectAndUpdate (savedInstance, cb) {
-        savedInstance.inspectAndUpdate(function (err, saved) {
-          if (err) { return done(err) }
-          expect(saved.container.inspect.State.Running).to.equal(false)
-          expect(saved.container.inspect.State.Pid).to.equal(0)
-          cb()
-        })
-      }
-    })
-  })
-
-  describe('inspectAndUpdateByContainer', function () {
-    var instance = null
-    beforeEach(function (done) {
-      instance = createNewInstance()
-      instance.save(done)
-    })
-
-    it('should fail if container is not found', function (done) {
-      var containerId = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1'
-      Instance.inspectAndUpdateByContainer(containerId, function (err) {
-        expect(err.output.statusCode).to.equal(404)
-        done()
-      })
-    })
-
-    it('should work for real created container', function (done) {
-      var docker = new Docker('http://localhost:4243')
-      docker.createContainer({}, function (err, cont) {
-        if (err) { return done(err) }
-        var container = {
-          dockerContainer: cont.id
-        }
-        var opts = {
-          dockerHost: 'http://localhost:4243',
-          containerId: cont.id
-        }
-        var instance = createNewInstance('new-inst', opts)
-        instance.save(function (err) {
-          if (err) { return done(err) }
-          docker.startContainer(container.dockerContainer, function (err) {
-            if (err) { return done(err) }
-            docker.stopContainer(container.dockerContainer, function (err) {
-              if (err) { return done(err) }
-              Instance.inspectAndUpdateByContainer(container.dockerContainer, function (err, saved) {
-                if (err) { return done(err) }
-                expect(saved.container.inspect.State.Running).to.equal(false)
-                expect(saved.container.inspect.State.Pid).to.equal(0)
-                done()
-              })
-            })
-          })
-        })
-      })
     })
   })
 
@@ -715,113 +818,6 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
   })
-  describe('#removeSelfFromGraph', { timeout: 10000 }, function () {
-    /*
-      instance2(C) is master pod of instance4(D)
-      instance0(A): dependsOn instance4(D)
-      instance1(B): dependsOn instance4(D)
-     */
-    var instances = []
-
-    beforeEach(function (done) {
-      var names = [ 'A', 'B', 'C', 'D' ]
-      while (instances.length < names.length) {
-        instances.push(createNewInstance(names[instances.length]))
-      }
-      done()
-    })
-    // instance2(C) is master pod of instance4(D)
-    beforeEach(function (done) {
-      var opts = {
-        autoForked: true,
-        masterPod: false,
-        branch: 'some-branch',
-        parent: instances[2].shortHash
-      }
-      instances.push(createNewInstance('B-some-branch', opts))
-      done()
-    })
-    beforeEach(function (done) {
-      async.each(instances, function (instance, cb) {
-        instance.save(cb)
-      }, done)
-    })
-    // instance0(A): dependsOn instance4(D)
-    beforeEach(function (done) {
-      instances[0].addDependency(instances[4], 'somehostname', done)
-    })
-    // instance1(B): dependsOn instance4(D)
-    beforeEach(function (done) {
-      instances[1].addDependency(instances[4], 'somehostname', done)
-    })
-    // TODO: why can you not removeSelfFromGraph if node has a dep
-    // // instance4(D): dependsOn instance3
-    // beforeEach(function (done) {
-    //   instances[4].addDependency(instances[3], 'otherhost', done)
-    // })
-
-    it('should remove itself from graph and reset dependents to master', function (done) {
-      /*
-      instance2(C) is master pod of instance4(D)
-      instance0(A): dependsOn instance2(C)
-      instance1(B): dependsOn instance2(C)
-       */
-      var node = instances[4]
-      var masterPod = instances[2]
-      var count = createCount(4, done)
-      node.removeSelfFromGraph(function (err) {
-        if (err) { return done(err) }
-        instances[0].getDependencies(function (err, deps) {
-          expect(err).to.be.null()
-          expect(deps).to.be.an.array()
-          expect(deps).to.have.length(1)
-          expect(deps[0].id.toString()).to.equal(masterPod._id.toString())
-          count.next()
-        })
-        instances[1].getDependencies(function (err, deps) {
-          expect(err).to.be.null()
-          expect(deps).to.be.an.array()
-          expect(deps).to.have.length(1)
-          expect(deps[0].id.toString()).to.equal(masterPod._id.toString())
-          count.next()
-        })
-        instances[2].getDependencies(function (err, deps) {
-          expect(err).to.be.null()
-          expect(deps.length).to.equal(0)
-          count.next()
-        })
-        instances[3].getDependencies(function (err, deps) {
-          expect(err).to.be.null()
-          expect(deps.length).to.equal(0)
-          count.next()
-        })
-      })
-    })
-    it('should swallow deleteNodeAndConnections EntityNotFound error', function (done) {
-      var node = instances[4]
-      var error = new Error('Neo4j error')
-      error.code = 'Neo.ClientError.Statement.EntityNotFound'
-      sinon.stub(Neo4j.prototype, 'deleteNodeAndConnections').yieldsAsync(error)
-      node.removeSelfFromGraph(function (err) {
-        expect(err).to.be.null()
-        expect(Neo4j.prototype.deleteNodeAndConnections.callCount).to.equal(1)
-        Neo4j.prototype.deleteNodeAndConnections.restore()
-        done()
-      })
-    })
-    it('should swallow getDependents EntityNotFound error', function (done) {
-      var node = instances[4]
-      var error = new Error('Neo4j error')
-      error.code = 'Neo.ClientError.Statement.EntityNotFound'
-      sinon.stub(node, 'getDependents').yieldsAsync(error)
-      node.removeSelfFromGraph(function (err) {
-        expect(err).to.be.null()
-        expect(node.getDependents.callCount).to.equal(1)
-        node.getDependents.restore()
-        done()
-      })
-    })
-  })
 
   describe('#findForkableMasterInstances', function () {
     it('should return empty [] for repo that has no instances', function (done) {
@@ -921,6 +917,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       }
       done()
     })
+
     beforeEach(function (done) {
       // this deletes all the things out of the graph
       var graph = new Graph()
