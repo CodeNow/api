@@ -50,8 +50,7 @@ describe('TeammateInvitation', function () {
         recipient: {
           email: ctx.user.attrs.email,
           github: ctx.githubUserId
-        },
-        createdBy: ctx.user.attrs._id
+        }
       }
       ctx.user.createTeammateInvitation(opts, function (err, res, statusCode) {
         if (err) {
@@ -64,7 +63,9 @@ describe('TeammateInvitation', function () {
         expect(res.recipient.github).to.equal(ctx.githubUserId)
         expect(res.recipient.email).to.equal(ctx.user.attrs.email)
         expect(res.organization.github).to.equal(ctx.orgGithubId)
-        expect(res.sender).to.equal(ctx.user.attrs._id)
+        expect(res.owner).to.be.an.object()
+        expect(res.owner.github).to.be.a.number()
+        expect(res.owner.github).to.equal(ctx.user.attrs.accounts.github.id)
         done()
       })
     })
@@ -95,7 +96,9 @@ describe('TeammateInvitation', function () {
         expect(res[0].recipient.github).to.equal(ctx.githubUserId)
         expect(res[0].recipient.email).to.equal(ctx.user.attrs.email)
         expect(res[0].organization.github).to.equal(ctx.orgGithubId)
-        expect(res[0].sender).to.equal(ctx.user.attrs._id)
+        expect(res[0].owner).to.be.an.object()
+        expect(res[0].owner.github).to.be.a.number()
+        expect(res[0].owner.github).to.equal(ctx.user.attrs.accounts.github.id)
         done()
       })
     })
