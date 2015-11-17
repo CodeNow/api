@@ -569,8 +569,9 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
       ctx.validData = {
         instanceId: '123456789012345678901234',
-        dockerTag: 'dockerTag',
-        dockerHost: 'http://localhost:4243'
+        buildId: '123456789012345678901111',
+        sessionUserGithubId: '10',
+        ownerUsername: 'ownerUsername'
       }
       done()
     })
@@ -590,8 +591,9 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       it('should error if data missing required key', function (done) {
         var requiredKeys = [
           'instanceId',
-          'dockerTag',
-          'dockerHost'
+          'buildId',
+          'sessionUserGithubId',
+          'ownerUsername'
         ]
         requiredKeys.forEach(function (requiredKey) {
           try {

@@ -37,7 +37,7 @@ var newMockInstance = function (job) {
   })
 }
 
-describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
+describe('OnInstanceImagePullWorker: ' + moduleName, function () {
   var ctx
 
   beforeEach(function (done) {
