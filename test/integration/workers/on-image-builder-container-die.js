@@ -142,7 +142,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 contextVersionId: ctx.cv._id.toString(),
                 instanceId: ctx.instance._id.toString(),
                 ownerUsername: ctx.user.accounts.github.username,
-                sessionUserGithubId: ctx.user.accounts.github.id
+                sessionUserGithubId: ctx.user.accounts.github.id.toString()
               })
               sinon.assert.calledWith(
                 messenger.emitContextVersionUpdate,
