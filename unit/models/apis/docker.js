@@ -317,7 +317,7 @@ describe('docker: ' + moduleName, function () {
           sessionUserUsername: opts.sessionUser.accounts.github.username,
           ownerUsername: opts.ownerUsername,
           tid: opts.tid,
-          'com.docker.swarm.constraints': 'org==ownerUsername',
+          'com.docker.swarm.constraints': 'org==owner',
           type: 'image-builder-container'
         }
       )
@@ -341,7 +341,8 @@ describe('docker: ' + moduleName, function () {
     it('should not error if value is undefined', function (done) {
       ctx.mockContextVersion.toJSON = function () {
         return {
-          _id: undefined
+          _id: undefined,
+          owner: { github: 'owner' }
         }
       }
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
