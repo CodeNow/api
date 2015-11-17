@@ -34,8 +34,7 @@ after_script:
 notifications:
   email: false
   slack:
-    rooms:
-    - SZMv1t5nvj0YktlyWrfTPQd95cfvz3dFxvb4+7Zq2qz/xHmo54SaoNkDESeR0EYBu1xQV0oBUIXEwXEpm7T7SCt7O9OYredA91Xslb6tIgzAwwEuohSjf0E6O5rXSE07IepUjSUAR1hvEcbPCrQuuUeyCU5ortfw8HAJTS9BRpQ=
-    - iWYjYkT1KFFAwwICseENreL4esXsLXcoIehxoYT3Voscw4P9h79LJyGf0fp4sx0w8qBN2oHrkQ0N9/K1Cu4hCaNSXjevhcQbyoJoWZPHa9/nP1VdFptiqJuw4iaMsisWXefVqk7+iW7agFF0NMjCnKZO0vE9wNTz35sQntfGguc=
     on_success: change
     on_failure: change
+    rooms:
+    - secure: Q8OJnQnA0a7pbVBOxwjOGhrwDXPkSGODndxFdeNI3Pfi2qgV+8AE/vJvKRlOw4Dv5BshdCD8ObAd4rU+bwjpRNt81fL7taIssOZ8YyeE34FAqo/ykLUXdIliuVWoCuT0H+OWKkSAhp6ltCG4rXOAUfuowUfb0d031YRWiu22jiI=
