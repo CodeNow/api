@@ -137,7 +137,8 @@ function createNewInstance (name, opts) {
     containers: [],
     network: {
       hostIp: '1.1.1.100'
-    }
+    },
+    imagePull: opts.imagePull || null
   })
 }
 
@@ -1526,6 +1527,93 @@ describe('Instance Model Tests ' + moduleName, function () {
           Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done))
         })
       })
+    })
+  })
+
+  describe('modifyImagePull', function () {
+    beforeEach(function (done) {
+      ctx.instance = createNewInstance()
+      ctx.cvId = ctx.instance.contextVersion._id
+      ctx.imagePull = {
+        sessionUser: {
+          github: 10
+        },
+        dockerTag: 'dockerTag',
+        dockerHost: 'http://localhost:4243',
+        ownerUsername: 'ownerUsername'
+      }
+      ctx.instance.save(done)
+    })
+    afterEach(function (done) {
+      ctx.instance.remove(done)
+    })
+
+    it('should modify image pull', function (done) {
+      ctx.instance.modifyImagePull(ctx.cvId, ctx.imagePull, function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance.imagePull.toJSON()).to.deep.equal(ctx.imagePull)
+        done()
+      })
+    })
+    describe('validation errors', function () {
+      it('should require dockerTag', function (done) {
+        delete ctx.imagePull.dockerTag
+        ctx.instance.modifyImagePull(
+          ctx.cvId, ctx.imagePull, expectValidationErr(/dockerTag/, done))
+      })
+      it('should require dockerHost', function (done) {
+        delete ctx.imagePull.dockerHost
+        ctx.instance.modifyImagePull(
+          ctx.cvId, ctx.imagePull, expectValidationErr(/dockerHost/, done))
+      })
+      it('should require ownerUsername', function (done) {
+        delete ctx.imagePull.ownerUsername
+        ctx.instance.modifyImagePull(
+          ctx.cvId, ctx.imagePull, expectValidationErr(/ownerUsername/, done))
+      })
+      it('should require sessionUser.github', function (done) {
+        delete ctx.imagePull.sessionUser.github
+        ctx.instance.modifyImagePull(
+          ctx.cvId, ctx.imagePull, expectValidationErr(/sessionUser.github/, done))
+      })
+      function expectValidationErr (messageRegExp, done) {
+        return function (err) {
+          expect(err).to.exist()
+          expect(err.output.statusCode).to.equal(400)
+          expect(err.message).to.match(messageRegExp)
+          done()
+        }
+      }
+    })
+  })
+
+  describe('modifyUnsetImagePull', function () {
+    beforeEach(function (done) {
+      ctx.imagePull = {
+        sessionUser: {
+          github: '10'
+        },
+        dockerTag: 'dockerTag',
+        dockerHost: 'http://localhost:4243',
+        ownerUsername: 'ownerUsername'
+      }
+      ctx.instance = createNewInstance('name123', { imagePull: ctx.imagePull })
+      ctx.cvId = ctx.instance.contextVersion._id
+      ctx.instance.save(done)
+    })
+    afterEach(function (done) {
+      ctx.instance.remove(done)
+    })
+
+    it('should modify unset image pull', function (done) {
+      ctx.instance.modifyUnsetImagePull(
+        ctx.imagePull.dockerHost,
+        ctx.imagePull.dockerTag,
+        function (err, instance) {
+          if (err) { return done(err) }
+          expect(instance.toJSON().imagePull).to.not.exist()
+          done()
+        })
     })
   })
 })
