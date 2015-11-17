@@ -619,7 +619,7 @@ describe('docker: ' + moduleName, function () {
     })
 
     it('should cb error if follow err', function (done) {
-      var testErr = new Error('image: "foo" not found')
+      var testErr = new Error('something bad happenned')
       Dockerode.prototype.pull.yieldsAsync()
       Modem.prototype.followProgress.yieldsAsync(testErr)
       model.pullImage(testImage, function (err) {
@@ -627,7 +627,79 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
+
+    it('should cast "image not found" error', function (done) {
+      var testErr = 'image: "foo" not found'
+      Dockerode.prototype.pull.yieldsAsync()
+      Modem.prototype.followProgress.yieldsAsync(testErr)
+      model.pullImage(testImage, function (err) {
+        expect(err.message).to.contain(testErr)
+        expect(err.output.statusCode).to.equal(404)
+        done()
+      })
+    })
+
+    // note: this test can be removed after docker 1.9+
+    it('should cast "already being pulled" error', function (done) {
+      var testErr = 'Repository ' + testTag + ' already being pulled by another client. Waiting.'
+      Dockerode.prototype.pull.yieldsAsync()
+      Modem.prototype.followProgress.yieldsAsync(null, [{
+        status: testErr
+      }])
+      model.pullImage(testImage, function (err) {
+        expect(err.isBoom).to.be.true()
+        console.log(err.message)
+        console.log(testErr)
+        expect(err.message).to.contain(testErr)
+        expect(err.output.statusCode).to.equal(409)
+        done()
+      })
+    })
   }) // end pullImage
+
+  describe('isImageNotFoundForCreateErr', function () {
+    it('should return true if it is', function (done) {
+      var err = new Error('no such container')
+      err.reason = err.message
+      err.statusCode = 404
+      var boomErr = Boom.notFound(
+        'Create container failed: ' + 'no such container', { err: err })
+      expect(Docker.isImageNotFoundForCreateErr(boomErr)).to.be.true()
+      expect(Docker.isImageNotFoundForCreateErr(boomErr.data.err)).to.be.true()
+      done()
+    })
+    it('should return false if not', function (done) {
+      expect(Docker.isImageNotFoundForCreateErr(null))
+        .to.be.false()
+      expect(Docker.isImageNotFoundForCreateErr({ statusCode: 500 }))
+        .to.be.false()
+      expect(Docker.isImageNotFoundForCreateErr({ statusCode: 404 }))
+        .to.be.false()
+      expect(Docker.isImageNotFoundForCreateErr({ statusCode: 404, reason: 'blah' }))
+        .to.be.false()
+      done()
+    })
+  })
+
+  describe('isImageNotFoundForPullErr', function () {
+    it('should return true if it is', function (done) {
+      var boomErr = Boom.notFound(
+        'Create container failed: ' + 'image: dockerTag not found')
+      expect(Docker.isImageNotFoundForPullErr(boomErr)).to.be.true()
+      done()
+    })
+    it('should return false if not', function (done) {
+      expect(Docker.isImageNotFoundForPullErr(new Error()))
+        .to.be.false()
+      var boomErr = Boom.conflict('foo')
+      expect(Docker.isImageNotFoundForPullErr(boomErr))
+        .to.be.false()
+      boomErr = Boom.notFound('bar')
+      expect(Docker.isImageNotFoundForPullErr(boomErr))
+        .to.be.false()
+      done()
+    })
+  })
 
   describe('createUserContainer', function () {
     beforeEach(function (done) {
