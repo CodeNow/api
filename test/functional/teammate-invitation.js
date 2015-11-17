@@ -43,6 +43,25 @@ describe('TeammateInvitation', function () {
   })
 
   describe('POST /teammate-invitation', function () {
+    it('should not create a new invitation if the user is not part of the original org', function (done) {
+      var opts = {
+        organization: {
+          github: 777
+        },
+        recipient: {
+          email: ctx.user.attrs.email,
+          github: ctx.githubUserId
+        }
+      }
+      ctx.user.createTeammateInvitation(opts, function (err, res, statusCode) {
+        if (err) {
+          expect(err).to.be.an.object()
+          expect(err.message).to.match(/access denied/ig)
+          return done()
+        }
+      })
+    })
+
     it('should create a new invitation', function (done) {
       var opts = {
         organization: {
@@ -109,9 +128,9 @@ describe('TeammateInvitation', function () {
         ctx.user.fetchTeammateInvitations({ orgGithubId: ctx.orgGithubId }, cb)
       }, function (collection, statusCode, res, cb) {
         expect(collection).to.be.an.array()
-        expect(collection.length).to.equal(1)
+        expect(collection.length).to.equal(1) // Invitation created by POST
         expect(collection[0]._id).to.be.a.string()
-        return ctx.user.destroyTeammateInvitation(collection[0]._id, {}, cb)
+        ctx.user.destroyTeammateInvitation(collection[0]._id, {}, cb)
       }, function (collection, statusCode, res, cb) {
         expect(statusCode).to.equal(204)
         ctx.user.fetchTeammateInvitations({ orgGithubId: ctx.orgGithubId }, cb)
