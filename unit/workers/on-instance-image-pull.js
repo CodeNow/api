@@ -95,70 +95,72 @@ describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
     })
   })
 
-  describe('instance with image pull not found', function () {
-    beforeEach(function (done) {
-      Instance.findAsync
-        .returns(Promise.resolve(ctx.mockInstances))
-      Instance.prototype.modifyUnsetImagePullAsync
-        .onCall(0).returns(Promise.resolve(null))
-        .onCall(1).returns(Promise.resolve(null))
-        .onCall(2).returns(Promise.resolve(null))
-      done()
-    })
-    it('should throw a TaskFatalError', function (done) {
-      OnInstanceImagePullWorker(ctx.job).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.match(/instance.*not found/)
+  describe('errors', function () {
+    describe('instance with image pull not found', function () {
+      beforeEach(function (done) {
+        Instance.findAsync
+          .returns(Promise.resolve(ctx.mockInstances))
+        Instance.prototype.modifyUnsetImagePullAsync
+          .onCall(0).returns(Promise.resolve(null))
+          .onCall(1).returns(Promise.resolve(null))
+          .onCall(2).returns(Promise.resolve(null))
         done()
       })
-    })
-  })
-
-  describe('findAsync error', function () {
-    beforeEach(function (done) {
-      ctx.err = new Error()
-      Instance.findAsync.throws(ctx.err)
-      done()
-    })
-
-    it('should throw the findAsync error', function (done) {
-      OnInstanceImagePullWorker(ctx.job).asCallback(expectErr(ctx.err, done))
-    })
-  })
-
-  describe('modifyUnsetImagePullAsync error', function () {
-    beforeEach(function (done) {
-      ctx.err = new Error()
-      Instance.findAsync
-        .returns(Promise.resolve(ctx.mockInstances))
-      Instance.prototype.modifyUnsetImagePullAsync
-        .onCall(0).throws(ctx.err)
-        .onCall(1).throws(ctx.err)
-        .onCall(2).throws(ctx.err)
-      done()
+      it('should throw a TaskFatalError', function (done) {
+        OnInstanceImagePullWorker(ctx.job).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.be.an.instanceOf(TaskFatalError)
+          expect(err.message).to.match(/instance.*not found/)
+          done()
+        })
+      })
     })
 
-    it('should throw the modifyUnsetImagePullAsync error', function (done) {
-      OnInstanceImagePullWorker(ctx.job).asCallback(expectErr(ctx.err, done))
-    })
-  })
+    describe('findAsync error', function () {
+      beforeEach(function (done) {
+        ctx.err = new Error()
+        Instance.findAsync.throws(ctx.err)
+        done()
+      })
 
-  describe('createInstanceContainer error', function () {
-    beforeEach(function (done) {
-      ctx.err = new Error()
-      Instance.findAsync
-        .returns(Promise.resolve(ctx.mockInstances))
-      Instance.prototype.modifyUnsetImagePullAsync
-        .onCall(0).returns(Promise.resolve(ctx.mockInstances[0]))
-        .onCall(1).returns(Promise.resolve(ctx.mockInstances[1]))
-        .onCall(2).returns(Promise.resolve(ctx.mockInstances[2]))
-      rabbitMQ.createInstanceContainer.throws(ctx.err)
-      done()
+      it('should throw the findAsync error', function (done) {
+        OnInstanceImagePullWorker(ctx.job).asCallback(expectErr(ctx.err, done))
+      })
     })
 
-    it('should throw the createInstanceContainer error', function (done) {
-      OnInstanceImagePullWorker(ctx.job).asCallback(expectErr(ctx.err, done))
+    describe('modifyUnsetImagePullAsync error', function () {
+      beforeEach(function (done) {
+        ctx.err = new Error()
+        Instance.findAsync
+          .returns(Promise.resolve(ctx.mockInstances))
+        Instance.prototype.modifyUnsetImagePullAsync
+          .onCall(0).throws(ctx.err)
+          .onCall(1).throws(ctx.err)
+          .onCall(2).throws(ctx.err)
+        done()
+      })
+
+      it('should throw the modifyUnsetImagePullAsync error', function (done) {
+        OnInstanceImagePullWorker(ctx.job).asCallback(expectErr(ctx.err, done))
+      })
+    })
+
+    describe('createInstanceContainer error', function () {
+      beforeEach(function (done) {
+        ctx.err = new Error()
+        Instance.findAsync
+          .returns(Promise.resolve(ctx.mockInstances))
+        Instance.prototype.modifyUnsetImagePullAsync
+          .onCall(0).returns(Promise.resolve(ctx.mockInstances[0]))
+          .onCall(1).returns(Promise.resolve(ctx.mockInstances[1]))
+          .onCall(2).returns(Promise.resolve(ctx.mockInstances[2]))
+        rabbitMQ.createInstanceContainer.throws(ctx.err)
+        done()
+      })
+
+      it('should throw the createInstanceContainer error', function (done) {
+        OnInstanceImagePullWorker(ctx.job).asCallback(expectErr(ctx.err, done))
+      })
     })
   })
 
