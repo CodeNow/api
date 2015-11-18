@@ -265,7 +265,6 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
         expect(ctx.worker._baseWorkerUpdateInstanceFrontend.calledOnce).to.be.true()
         var args = ctx.worker._baseWorkerUpdateInstanceFrontend.getCall(0).args
         expect(Object.keys(args[0]).length).to.equal(1)
-        console.log('aaaa', args[0]);
         var buildId = args[0]['contextVersion.build._id']
         expect(buildId.toString()).to.equal('507f1f77bcf86cd799439011')
         expect(args[1]).to.equal('1274567')
