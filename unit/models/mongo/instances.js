@@ -31,6 +31,12 @@ var Version = require('models/mongo/context-version')
 var dock = require('../../../test/functional/fixtures/dock')
 var pubsub = require('models/redis/pubsub')
 var validation = require('../../fixtures/validation')(lab)
+var expectErr = function (expectedErr, done) {
+  return function (err) {
+    expect(err).to.equal(expectedErr)
+    done()
+  }
+}
 
 var id = 0
 function getNextId () {
@@ -136,236 +142,15 @@ var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
+  var ctx
   before(require('../../fixtures/mongo').connect)
   before(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
 
-  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
-
-  describe('#removeSelfFromGraph', function () {
-    var testInstance
-    beforeEach(function (done) {
-      testInstance = new Instance()
-      sinon.stub(testInstance, 'getDependents')
-      sinon.stub(testInstance, 'generateGraphNode').returns()
-      sinon.stub(testInstance, 'getParent')
-      sinon.stub(Instance, 'findById')
-      sinon.stub(Neo4j.prototype, 'deleteNodeAndConnections')
-      done()
-    })
-
-    afterEach(function (done) {
-      Instance.findById.restore()
-      Neo4j.prototype.deleteNodeAndConnections.restore()
-      done()
-    })
-
-    it('should cb not err for getDependents EntityNotFound', function (done) {
-      testInstance.getDependents.yieldsAsync({
-        code: 'Neo.ClientError.Statement.EntityNotFound'
-      })
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should cb err for getDependents err', function (done) {
-      testInstance.getDependents.yieldsAsync(new Error('bud lite'))
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.exist()
-        done()
-      })
-    })
-
-    it('should cb not err for deleteNodeAndConnections EntityNotFound', function (done) {
-      testInstance.getDependents.yieldsAsync()
-      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync({
-        code: 'Neo.ClientError.Statement.EntityNotFound'
-      })
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should cb err for deleteNodeAndConnections err', function (done) {
-      testInstance.getDependents.yieldsAsync()
-      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync(new Error('Guinness'))
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.exist()
-        done()
-      })
-    })
-
-    it('should cb if 0 dependents', function (done) {
-      testInstance.getDependents.yieldsAsync(null, [])
-      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should cb err if getParent errs', function (done) {
-      testInstance.getDependents.yieldsAsync(null, [0])
-      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
-      testInstance.getParent.yieldsAsync(new Error('Blue Moon'))
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.exist()
-        done()
-      })
-    })
-
-    it('should cb if getParent returns null', function (done) {
-      testInstance.getDependents.yieldsAsync(null, [0])
-      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
-      testInstance.getParent.yieldsAsync(null, null)
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should cb without err for findById err', function (done) {
-      testInstance.getDependents.yieldsAsync(null, [{}])
-      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
-      testInstance.getParent.yieldsAsync(null, 'masterInstance')
-      Instance.findById.yieldsAsync(new Error('Heineken'))
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should cb without err if findById returns null', function (done) {
-      testInstance.getDependents.yieldsAsync(null, [{}])
-      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
-      testInstance.getParent.yieldsAsync(null, 'masterInstance')
-      Instance.findById.yieldsAsync(null, null)
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should cb without err if addDependency returns errs', function (done) {
-      testInstance.getDependents.yieldsAsync(null, [{}], { b: [{}] })
-      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
-      testInstance.getParent.yieldsAsync(null, 'masterInstance')
-      Instance.findById.yieldsAsync(null, {
-        addDependency: sinon.stub().yieldsAsync(new Error('Samuel Adams Boston Lager'))
-      })
-
-      testInstance.removeSelfFromGraph(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should cb with self', function (done) {
-      testInstance.getDependents.yieldsAsync(null, [{}], { b: [{}] })
-      Neo4j.prototype.deleteNodeAndConnections.yieldsAsync()
-      testInstance.getParent.yieldsAsync(null, 'masterInstance')
-      Instance.findById.yieldsAsync(null, {
-        addDependency: sinon.stub().yieldsAsync()
-      })
-
-      testInstance.removeSelfFromGraph(function (err, i) {
-        expect(err).to.not.exist()
-        expect(i).to.deep.equal(testInstance);
-        done()
-      })
-    })
+  beforeEach(function (done) {
+    ctx = {}
+    done()
   })
-
-  describe('inspectAndUpdate', function () {
-    var testInstance
-    beforeEach(function (done) {
-      testInstance = new Instance()
-      sinon.stub(Docker, 'inspectContainer')
-      sinon.stub(testInstance, 'modifyContainerInspectErr')
-      sinon.stub(testInstance, 'modifyContainerInspect')
-      done()
-    })
-
-    afterEach(function (done) {
-      Docker.inspectContainer.restore()
-      done()
-    })
-
-
-  }); // end inspectAndUpdate
-
-  describe('populateModels', function () {
-    var testInstance
-    beforeEach(function (done) {
-      testInstance = new Instance()
-      sinon.stub(testInstance, 'populate')
-      sinon.stub(testInstance, 'updateStaleCv')
-      sinon.stub(testInstance, 'toJSON')
-      done()
-    })
-
-    it('should cb json when no container', function (done) {
-      var testJson = { some: 'json' }
-      testInstance.populate.yieldsAsync()
-      testInstance.updateStaleCv.yieldsAsync()
-      testInstance.toJSON.returns(testJson)
-
-      testInstance.populateModels(function (err, json) {
-        expect(err).to.not.exist()
-        expect(json).to.deep.equal(testJson)
-        done()
-      })
-    })
-
-    it('should cb json', function (done) {
-      var testJson = { some: 'json' }
-      testInstance.populate.yieldsAsync()
-      testInstance.updateStaleCv.yieldsAsync()
-      testInstance.toJSON.returns(testJson)
-      testInstance.container = {
-        dockerContainer: 'container',
-        inspect: { data: 'budweiser' }
-      }
-
-      testInstance.populateModels(function (err, json) {
-        expect(err).to.not.exist()
-        expect(json).to.deep.equal(testJson)
-        done()
-      })
-    })
-
-    it('should cb err when missing inspect data', function (done) {
-      testInstance.container = {
-        dockerContainer: 'container'
-      }
-      testInstance.populateModels(function (err, json) {
-        expect(err).to.exist()
-        done()
-      })
-    })
-
-    it('should cb err when inspect has error', function (done) {
-      testInstance.container = {
-        dockerContainer: 'container',
-        inspect: { error: 'pale ale' }
-      }
-      testInstance.populateModels(function (err, json) {
-        expect(err).to.exist()
-        done()
-      })
-    })
-  }) // end populateModels
+  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
 
   describe('starting or stopping state detection', function () {
     it('should not error if container is not starting or stopping', function (done) {
@@ -1428,6 +1213,90 @@ describe('Instance Model Tests ' + moduleName, function () {
         ]
       })
       done()
+    })
+  })
+
+  describe('#emitInstanceUpdates', function () {
+    function createMockInstance () {
+      return new Instance()
+    }
+    beforeEach(function (done) {
+      ctx.query = {}
+      ctx.mockSessionUser = {}
+      ctx.mockInstances = [
+        createMockInstance(),
+        createMockInstance(),
+        createMockInstance()
+      ]
+      sinon.stub(Instance, 'find')
+      sinon.stub(Instance.prototype, 'emitInstanceUpdate')
+      done()
+    })
+    afterEach(function (done) {
+      Instance.find.restore()
+      Instance.prototype.emitInstanceUpdate.restore()
+      done()
+    })
+
+    describe('success', function () {
+      beforeEach(function (done) {
+        var mockInstances = ctx.mockInstances
+        Instance.find.yieldsAsync(null, mockInstances)
+        Instance.prototype.emitInstanceUpdate
+          .onCall(0).yieldsAsync(null, mockInstances[0])
+          .onCall(1).yieldsAsync(null, mockInstances[1])
+          .onCall(2).yieldsAsync(null, mockInstances[2])
+        done()
+      })
+      it('should emit instance updates', function (done) {
+        Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', function (err, instances) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Instance.find,
+            ctx.query,
+            sinon.match.func
+          )
+          ctx.mockInstances.forEach(function (mockInstance) {
+            sinon.assert.calledOn(
+              Instance.prototype.emitInstanceUpdate,
+              mockInstance
+            )
+          })
+          sinon.assert.calledWith(
+            Instance.prototype.emitInstanceUpdate,
+            ctx.mockSessionUser,
+            'update'
+          )
+          expect(instances).to.deep.equal(ctx.mockInstances)
+          done()
+        })
+      })
+    })
+
+    describe('errors', function () {
+      beforeEach(function (done) {
+        ctx.err = new Error('boom')
+        done()
+      })
+      describe('find errors', function () {
+        beforeEach(function (done) {
+          Instance.find.yieldsAsync(ctx.err)
+          done()
+        })
+        it('should callback the error', function (done) {
+          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done))
+        })
+      })
+      describe('emitInstanceUpdate errors', function () {
+        beforeEach(function (done) {
+          Instance.find.yieldsAsync(null, ctx.mockInstances)
+          Instance.prototype.emitInstanceUpdate.yieldsAsync(ctx.err)
+          done()
+        })
+        it('should callback the error', function (done) {
+          Instance.emitInstanceUpdates(ctx.mockSessionUser, ctx.query, 'update', expectErr(ctx.err, done))
+        })
+      })
     })
   })
 })

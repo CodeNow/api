@@ -377,7 +377,8 @@ module.exports = {
           next()
         })
       })
-      function done () {
+      function done (err) {
+        if (err) { return done(err) }
         log.trace({}, 'createAndTailInstance', 'done')
         ctx.instance.fetch(function (err) {
           if (err) { return cb(err) }

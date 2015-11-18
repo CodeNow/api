@@ -284,13 +284,13 @@ function itShouldBuildTheBuild (ctx) {
 
         primus.onceVersionComplete(ctx.cv.id(), function () {
           var count = createCount(done)
-          ctx.build.fetch(expects.success(200, ctx.expectBuilt, count.inc().next))
           count.inc()
           ctx.cv.fetch(expects.success(200, function (err, cv) {
-            if (err) { return done(err) }
+            if (err) { return count.next(err) }
+            ctx.build.fetch(expects.success(200, ctx.expectBuilt, count.inc().next))
             var docker = new Docker(cv.dockerHost)
             docker.docker.getContainer(cv.containerId).inspect(function (err, data) {
-              if (err) { return done(err) }
+              if (err) { return count.next(err) }
               var expectedBindsAndVolumesLength = 0
               var expectedBindsValues = []
               var expectedVolumesKeys = []
