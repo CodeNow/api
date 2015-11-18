@@ -77,7 +77,7 @@ describe('OnInstanceImagePullWorker: ' + moduleName, function () {
     it('should unset imagePull and create-instance-container jobs', function (done) {
       OnInstanceImagePullWorker(ctx.job).asCallback(function (err) {
         if (err) { return done(err) }
-        var dockerTag = ctx.job.id.split(':')[0]
+        var dockerTag = ctx.job.id
         sinon.assert.calledWith(Instance.findAsync, {
           'imagePull.dockerTag': dockerTag,
           'imagePull.dockerHost': ctx.job.host
