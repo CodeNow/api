@@ -21,6 +21,7 @@ var mongoose = require('mongoose')
 var async = require('async')
 
 var Instance = require('models/mongo/instance')
+var User = require('models/mongo/user')
 
 if (!process.env.MONGO) {
   throw new Error('process.env.MONGO does not exist!')
@@ -40,20 +41,25 @@ server.start(function () {
       }
       console.log(instances.length + ' instances fetched')
       async.eachSeries(instances, function (instance, cb) {
-        if (dryRun) {
-          console.log('DRY RUN - Would update instance - ', instance._id)
-          return cb()
-        }
-        instance.emitInstanceUpdate('update', function (err) {
-          if (err) {
-            throw err
+        User.find({
+          'accounts.github.id': instance.createdBy.github
+        }, function (err, user) {
+          if (err) { throw err; }
+          if (dryRun) {
+            console.log('DRY RUN - Would update instance - ', instance._id)
+            return cb()
           }
-          if (!instance.owner.username || !instance.createdBy.username) {
-            console.log('Instance did not populate owner username and createdBy username', instance._id)
-          }
-          console.log('updated: ', instance._id)
-          cb()
-        })
+          instance.emitInstanceUpdate(user, 'update', function (err) {
+            if (err) {
+              throw err
+            }
+            if (!instance.owner.username || !instance.createdBy.username) {
+              console.log('Instance did not populate owner username and createdBy username', instance._id)
+            }
+            console.log('updated: ', instance._id)
+            cb()
+          })
+        });
       }, function () {
         console.log('DONE!')
         process.exit(1)
