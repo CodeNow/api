@@ -1,10 +1,20 @@
 var nock = require('nock')
+var assign = require('101/assign')
 var multiline = require('multiline')
 
-module.exports = function (userId, username, isActuallyAnOrg, fail) {
-  var body = fail
-    ? { 'message': 'Not found', 'documentation_url': 'http:no.can.do' }
-    : {
+module.exports = function (userId, username, opts) {
+  opts = assign({
+    isActuallyAnOrg: false,
+    fail: false,
+    returnEmpty: false
+  }, opts)
+  var body
+  if (opts.fail) {
+    body = { 'message': 'Not found', 'documentation_url': 'http:no.can.do' }
+  } else if (opts.returnEmpty) {
+    body = {}
+  } else {
+    body = {
       'login': username,
       'id': userId,
       'avatar_url': 'https://avatars.githubusercontent.com/u/' + userId + '?',
@@ -20,7 +30,7 @@ module.exports = function (userId, username, isActuallyAnOrg, fail) {
       'repos_url': 'https://api.github.com/users/' + username + '/repos',
       'events_url': 'https://api.github.com/users/' + username + '/events{/privacy}',
       'received_events_url': 'https://api.github.com/users/' + username + '/received_events',
-      'type': isActuallyAnOrg ? 'Organization' : 'User',
+      'type': opts.isActuallyAnOrg ? 'Organization' : 'User',
       'site_admin': false,
       'name': username,
       'company': '',
@@ -36,12 +46,13 @@ module.exports = function (userId, username, isActuallyAnOrg, fail) {
       'created_at': '2011-02-27T01:20:41Z',
       'updated_at': '2014-06-24T23:28:16Z'
     }
+  }
 
   var headers = {
     server: 'GitHub.com',
     date: new Date().toString(),
     'content-type': 'application/json charset=utf-8',
-    status: fail ? '404 Not Found' : '200 OK',
+    status: opts.fail ? '404 Not Found' : '200 OK',
     'x-ratelimit-limit': '5000',
     'x-ratelimit-remaining': '4969',
     'x-ratelimit-reset': '1403655035',
@@ -79,5 +90,5 @@ module.exports = function (userId, username, isActuallyAnOrg, fail) {
   nock('https://api.github.com:443')
     .filteringPath(/\/users\/[^\/]+\?.+/, '/users/' + username)
     .get('/users/' + username)
-    .reply(fail ? 404 : 200, body, headers)
+    .reply(opts.fail ? 404 : 200, body, headers)
 }

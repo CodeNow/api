@@ -39,17 +39,17 @@ var sauronMock = {
     var rabbitPublisher = new Hermes(put({
       publishedEvents: publishedEvents
     }, opts))
-    .on('error', function (err) {
-      console.log('rabbit publisher error', err)
-    })
+      .on('error', function (err) {
+        console.log('rabbit publisher error', err)
+      })
     this.rabbitPublisher = rabbitPublisher
 
     var rabbitSubscriber = new Hermes(put({
       subscribedEvents: subscribedEvents
     }, opts))
-    .on('error', function (err) {
-      console.log('rabbit subscriber error', err)
-    })
+      .on('error', function (err) {
+        console.log('rabbit subscriber error', err)
+      })
     this.rabbitSubscriber = rabbitSubscriber
 
     async.series([
