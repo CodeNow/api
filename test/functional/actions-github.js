@@ -324,6 +324,7 @@ describe('Github - /actions/github', function () {
         })
 
         it('should fork instance from master', function (done) {
+          require('./fixtures/mocks/docker/build-logs')()
           // emulate instance deploy event
           var acv = ctx.contextVersion.attrs.appCodeVersions[0]
           var data = {
@@ -366,6 +367,7 @@ describe('Github - /actions/github', function () {
           })
 
           it('should return 1 instancesIds if 1 instance was deleted', function (done) {
+            require('./fixtures/mocks/docker/build-logs')()
             rabbitMQ.deleteInstance.restore()
             var acv = ctx.contextVersion.attrs.appCodeVersions[0]
             var user = ctx.user.attrs.accounts.github
@@ -483,6 +485,7 @@ describe('Github - /actions/github', function () {
       })
 
       it('should redeploy two instances with new build', function (done) {
+        require('./fixtures/mocks/docker/build-logs')()
         ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
           if (err) { return done(err) }
           var acv = ctx.contextVersion.attrs.appCodeVersions[0]
