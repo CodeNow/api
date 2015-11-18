@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "2.81.0",
+  "version": "2.82.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -19,7 +19,7 @@
     "aws-sdk": "^2.1.47",
     "batch": "^0.5.1",
     "blacklight": "^1.1.1",
-    "bluebird": "^2.10.0",
+    "bluebird": "^2.10.2",
     "body-parser": "^1.4.3",
     "bunyan": "^1.4.0",
     "bunyan-logentries": "^1.1.2",
@@ -55,6 +55,7 @@
     "http-proxy": "^1.5.3",
     "i": "^0.3.2",
     "ip": "^0.3.2",
+    "joi": "^6.9.1",
     "json-hash": "0.0.4",
     "json-stable-stringify": "^1.0.0",
     "keypather": "^1.10.1",
@@ -77,6 +78,7 @@
     "passport": "~0.2.0",
     "passport-github": "~0.1.5",
     "passport-strategy": "^1.0.0",
+    "ponos": "^1.1.0",
     "primus": "3.2.1",
     "primus-redis-rooms": "^0.3.1",
     "redis": "0.9.2",
@@ -85,7 +87,7 @@
     "regexp-quote": "0.0.0",
     "request": "2.42.0",
     "rollbar": "0.5.4",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.6.2",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.7.1",
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "s3-stream-upload": "0.0.6",
     "shimmer": "^1.0.0",
@@ -159,7 +161,7 @@
     "start-debug": "NODE_PATH=./lib node --debug index.js",
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "unit": "npm run clear; NODE_PATH=./lib lab --threshold 82 --assert code --leaks --verbose unit/",
+    "unit": "npm run clear; NODE_PATH=./lib lab --threshold 88 --assert code --leaks --verbose unit/",
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "unit-watch": "nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs index.js"

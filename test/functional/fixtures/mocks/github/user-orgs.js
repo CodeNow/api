@@ -26,7 +26,7 @@ module.exports = function (userObject, orgId, orgName) {
     n = n.filteringPath(/\/user\/orgs\?.+/, '/user/orgs')
       .get('/user/orgs')
   }
-  n.reply(200, [
+  n = n.reply(200, [
     {
       login: orgName,
       id: orgId,
@@ -72,6 +72,7 @@ module.exports = function (userObject, orgId, orgName) {
     'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
   })
   return {
+    scope: n,
     orgName: orgName,
     orgId: orgId
   }
