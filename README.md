@@ -1,5 +1,4 @@
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
-[![Circle CI](https://circleci.com/gh/CodeNow/api.svg?style=svg&circle-token=15c68bfd7d9ca99637f0c5a6e05505366f5d9fd3)](https://circleci.com/gh/CodeNow/api)
 [![lol Travis CI](https://magnum.travis-ci.com/CodeNow/api.svg?token=CEnbe3bPEVFTjYa2MCtJ&branch=master)](https://magnum.travis-ci.com/CodeNow/api)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
