@@ -13,7 +13,7 @@ var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
 var Mavis = require('models/apis/mavis')
 var PullInstanceImageWorker = require('workers/pull-instance-image')
-var rabbitMQ = require('models/rabbitMQ')
+var rabbitMQ = require('models/rabbitmq')
 var toObjectId = require('utils/to-object-id')
 
 var lab = exports.lab = Lab.script()
