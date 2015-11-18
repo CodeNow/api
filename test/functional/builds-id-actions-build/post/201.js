@@ -196,12 +196,16 @@ function buildTheBuildTests (ctx) {
 
       describe('when a duplicate exists (github build duplicate)', function () {
         it('should start building the build', function (done) {
-          ctx.build.build(ctx.body, expects.success(201, ctx.expectStarted, function (err) {
-            if (err) { return done(err) }
+          primus.onceVersionBuildRunning(ctx.cv.id(), function () {
             primus.onceVersionComplete(ctx.cv.id(), function () {
               done()
             })
+
             dockerMockEvents.emitBuildComplete(ctx.cv)
+          })
+
+          ctx.build.build(ctx.body, expects.success(201, ctx.expectStarted, function (err) {
+            if (err) { return done(err) }
           }))
         })
       })
@@ -278,19 +282,18 @@ function commonTests (ctx) {
 
 function itShouldBuildTheBuild (ctx) {
   it('should start building the build', function (done) {
-    ctx.build.build(ctx.body,
-      expects.success(201, ctx.expectStarted, function (err) {
-        if (err) { return done(err) }
+    primus.onceVersionBuildRunning(ctx.cv.id(), function () {
+      primus.onceVersionComplete(ctx.cv.id(), function () {
+        ctx.cv.fetch(expects.success(200, function (err, cv) {
+          if (err) { return done(err) }
 
-        primus.onceVersionComplete(ctx.cv.id(), function () {
-          var count = createCount(done)
-          count.inc()
-          ctx.cv.fetch(expects.success(200, function (err, cv) {
-            if (err) { return count.next(err) }
-            ctx.build.fetch(expects.success(200, ctx.expectBuilt, count.inc().next))
+          ctx.build.fetch(expects.success(200, ctx.expectBuilt, function (err) {
+            if (err) { return done(err) }
+
             var docker = new Docker(cv.dockerHost)
             docker.docker.getContainer(cv.containerId).inspect(function (err, data) {
-              if (err) { return count.next(err) }
+              if (err) { return done(err) }
+
               var expectedBindsAndVolumesLength = 0
               var expectedBindsValues = []
               var expectedVolumesKeys = []
@@ -299,6 +302,7 @@ function itShouldBuildTheBuild (ctx) {
                 expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw'))
                 expectedVolumesKeys.push('/cache')
               }
+
               if (process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE) {
                 expectedBindsAndVolumesLength++
                 expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'))
@@ -313,12 +317,17 @@ function itShouldBuildTheBuild (ctx) {
               expectedVolumesKeys.forEach(function (k) {
                 expect(data.Volumes[k]).to.deep.equal({})
               })
-              count.next(err)
+              done(err)
             })
           }))
-        })
+        }))
+      })
 
-        dockerMockEvents.emitBuildComplete(ctx.cv)
-      }))
+      dockerMockEvents.emitBuildComplete(ctx.cv)
+    })
+
+    ctx.build.build(ctx.body, expects.success(201, ctx.expectStarted, function (err) {
+      if (err) { return done(err) }
+    }))
   })
 }

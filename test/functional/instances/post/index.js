@@ -100,6 +100,7 @@ describe('POST /instances', function () {
               primus.onceVersionComplete(ctx.cv.id(), function (/* data */) {
                 countDown.next()
               })
+
               dockerMockEvents.emitBuildComplete(ctx.cv)
             })
           })
