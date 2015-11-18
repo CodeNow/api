@@ -599,7 +599,25 @@ describe('docker: ' + moduleName, function () {
 
     it('should pull image', function (done) {
       Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync()
+      Modem.prototype.followProgress.yieldsAsync(null, [
+        {}, {}, {}, {}, {}, {}, {}, {},
+        { status: 'Status: Downloaded newer image for ' + testTag }
+      ])
+      model.pullImage(testImage, function (err) {
+        expect(err).to.not.exist()
+        expect(Dockerode.prototype.pull
+          .withArgs(testImage)
+          .calledOnce).to.be.true()
+        done()
+      })
+    })
+
+    it('should successfully pull image (that already exists)', function (done) {
+      Dockerode.prototype.pull.yieldsAsync()
+      Modem.prototype.followProgress.yieldsAsync(null, [
+        {}, {}, {}, {}, {}, {}, {}, {},
+        { status: 'Status: Image is up to date for ' + testTag }
+      ])
       model.pullImage(testImage, function (err) {
         expect(err).to.not.exist()
         expect(Dockerode.prototype.pull
@@ -635,23 +653,6 @@ describe('docker: ' + moduleName, function () {
       model.pullImage(testImage, function (err) {
         expect(err.message).to.contain(testErr)
         expect(err.output.statusCode).to.equal(404)
-        done()
-      })
-    })
-
-    // note: this test can be removed after docker 1.9+
-    it('should cast "already being pulled" error', function (done) {
-      var testErr = 'Repository ' + testTag + ' already being pulled by another client. Waiting.'
-      Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync(null, [{
-        status: testErr
-      }])
-      model.pullImage(testImage, function (err) {
-        expect(err.isBoom).to.be.true()
-        console.log(err.message)
-        console.log(testErr)
-        expect(err.message).to.contain(testErr)
-        expect(err.output.statusCode).to.equal(409)
         done()
       })
     })
