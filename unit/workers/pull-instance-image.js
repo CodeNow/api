@@ -33,6 +33,9 @@ var newMockInstance = function (job) {
         dockerTag: 'dockerTag:latest'
       }
     },
+    imagePull: {
+      _id: new ObjectId()
+    },
     build: job.buildId
   })
 }
@@ -109,6 +112,18 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
         sinon.assert.calledWith(
           Docker.prototype.pullImageAsync,
           ctx.mockInstance.contextVersion.build.dockerTag
+        )
+        sinon.assert.calledWith(
+          Instance.prototype.modifyUnsetImagePullAsync,
+          ctx.mockInstance.imagePull._id
+        )
+        sinon.assert.calledWith(
+          rabbitMQ.createInstanceContainer, {
+            instanceId: ctx.mockInstance._id.toString(),
+            contextVersionId: ctx.mockInstance.contextVersion._id.toString(),
+            ownerUsername: ctx.job.ownerUsername,
+            sessionUserGithubId: ctx.job.sessionUserGithubId
+          }
         )
         done()
       })
