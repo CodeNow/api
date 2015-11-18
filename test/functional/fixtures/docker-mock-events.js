@@ -20,7 +20,7 @@ function emitBuildComplete (cv, failure) {
     })
     return
   }
-  var docker = new Docker(cv.dockerHost)
+  var docker = new Docker(process.env.SWARM_HOST)
   var signal = failure ? 'SIGKILL' : 'SIGINT'
   require('./mocks/docker/build-logs.js')(failure)
   // this will "kill" the container which will emit a die event
