@@ -130,7 +130,6 @@ function buildTheBuildTests (ctx) {
       'createdBy': { github: ctx.user.attrs.accounts.github.id },
       'created': exists,
       'context': ctx.context.id(),
-      'dockerHost': exists,
       'containerId': exists,
       'build.started': exists,
       'build.completed': exists,
@@ -283,8 +282,6 @@ function itShouldBuildTheBuild (ctx) {
       expects.success(201, ctx.expectStarted, function (err) {
         if (err) { return done(err) }
 
-        dockerMockEvents.emitBuildComplete(ctx.cv)
-
         primus.onceVersionComplete(ctx.cv.id(), function () {
           var count = createCount(done)
           ctx.build.fetch(expects.success(200, ctx.expectBuilt, count.inc().next))
@@ -320,6 +317,8 @@ function itShouldBuildTheBuild (ctx) {
             })
           }))
         })
+
+        dockerMockEvents.emitBuildComplete(ctx.cv)
       }))
   })
 }
