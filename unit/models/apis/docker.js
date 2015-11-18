@@ -317,7 +317,7 @@ describe('docker: ' + moduleName, function () {
           sessionUserUsername: opts.sessionUser.accounts.github.username,
           ownerUsername: opts.ownerUsername,
           tid: opts.tid,
-          'com.docker.swarm.constraints': 'org==owner',
+          'com.docker.swarm.constraints': '["org==owner"]',
           type: 'image-builder-container'
         }
       )
