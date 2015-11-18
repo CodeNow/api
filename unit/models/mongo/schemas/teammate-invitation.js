@@ -28,7 +28,9 @@ describe('TeammateInvitation Schema: ' + moduleName, function () {
         github: validation.VALID_GITHUB_ID,
         email: Faker.Internet.email()
       },
-      sender: validation.VALID_OBJECT_ID,
+      owner: {
+        github: validation.VALID_GITHUB_ID
+      },
       created: Date.now(),
       organization: {
         github: validation.VALID_GITHUB_ID
@@ -44,9 +46,8 @@ describe('TeammateInvitation Schema: ' + moduleName, function () {
     validation.emailValidationChecking(createNewInvite, 'recipient.email')
   })
 
-  describe('Sender Validation', function () {
-    validation.requiredValidationChecking(createNewInvite, 'sender')
-    validation.objectIdValidationChecking(createNewInvite, 'sender')
+  describe('Owner Validation', function () {
+    validation.githubUserRefValidationChecking(createNewInvite, 'owner.github')
   })
 
   describe('OrgName Validation', function () {
