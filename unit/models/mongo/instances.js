@@ -1535,12 +1535,8 @@ describe('Instance Model Tests ' + moduleName, function () {
       ctx.instance = createNewInstance()
       ctx.cvId = ctx.instance.contextVersion._id
       ctx.imagePull = {
-        sessionUser: {
-          github: 10
-        },
         dockerTag: 'dockerTag',
-        dockerHost: 'http://localhost:4243',
-        ownerUsername: 'ownerUsername'
+        dockerHost: 'http://localhost:4243'
       }
       ctx.instance.save(done)
     })
@@ -1551,7 +1547,9 @@ describe('Instance Model Tests ' + moduleName, function () {
     it('should modify image pull', function (done) {
       ctx.instance.modifyImagePull(ctx.cvId, ctx.imagePull, function (err, instance) {
         if (err) { return done(err) }
-        expect(instance.imagePull.toJSON()).to.deep.equal(ctx.imagePull)
+        var imagePullJSON = instance.imagePull.toJSON()
+        expect(imagePullJSON).to.deep.contain(ctx.imagePull)
+        expect(imagePullJSON._id).to.exist()
         done()
       })
     })
