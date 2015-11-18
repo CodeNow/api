@@ -119,6 +119,14 @@ describe('docker: ' + moduleName, function () {
     done()
   })
 
+  describe('createSwarmConstraint', function () {
+    it('should format constraints correctly', function (done) {
+      var out = Docker.createSwarmConstraint('org', 'default')
+      expect(out).to.equal('["org==default"]')
+      done()
+    })
+  }) // end createSwarmConstraint
+
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
       ctx.mockDockerTag = 'mockDockerTag'
