@@ -43,12 +43,14 @@ server.start(function () {
       async.eachSeries(instances, function (instance, cb) {
         User.find({
           'accounts.github.id': instance.createdBy.github
-        }, function (err, user) {
+        }, function (err, users) {
           if (err) { throw err; }
+          if (!users.length) { throw new Error('User not found'); }
           if (dryRun) {
             console.log('DRY RUN - Would update instance - ', instance._id)
             return cb()
           }
+          var user = users[0];
           instance.emitInstanceUpdate(user, 'update', function (err) {
             if (err) {
               throw err
