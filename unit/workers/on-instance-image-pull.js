@@ -43,8 +43,8 @@ describe('OnInstanceImagePullWorker: ' + moduleName, function () {
   beforeEach(function (done) {
     ctx = {}
     ctx.job = {
-      dockerTag: 'dockerTag',
-      dockerHost: 'http://localhost:4243'
+      id: 'dockerTag:version',
+      host: 'http://localhost:4243'
     }
     ctx.mockInstances = [
       newMockInstance(ctx.job),
@@ -77,9 +77,10 @@ describe('OnInstanceImagePullWorker: ' + moduleName, function () {
     it('should unset imagePull and create-instance-container jobs', function (done) {
       OnInstanceImagePullWorker(ctx.job).asCallback(function (err) {
         if (err) { return done(err) }
+        var dockerTag = ctx.job.id.split(':')[0]
         sinon.assert.calledWith(Instance.findAsync, {
-          'imagePull.dockerTag': ctx.job.dockerTag,
-          'imagePull.dockerHost': ctx.job.dockerHost
+          'imagePull.dockerTag': dockerTag,
+          'imagePull.dockerHost': ctx.job.host
         })
         sinon.assert.callCount(
           Instance.prototype.modifyUnsetImagePullAsync,
@@ -87,8 +88,8 @@ describe('OnInstanceImagePullWorker: ' + moduleName, function () {
         )
         sinon.assert.calledWith(
           Instance.prototype.modifyUnsetImagePullAsync,
-          ctx.job.dockerHost,
-          ctx.job.dockerTag
+          ctx.job.host,
+          dockerTag
         )
         done()
       })
