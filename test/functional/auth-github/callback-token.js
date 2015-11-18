@@ -54,5 +54,30 @@ describe('/auth/github routes', function () {
         done()
       })
     })
+    it('should pass one time use token', function (done) {
+      var j = request.jar()
+      var testRedir = 'http://thisredir:9283/datPath?thisqs=great'
+      require('../fixtures/mocks/github/user')(ctx.user, null, testToken)
+      request.get({
+        jar: j,
+        url: baseUrl,
+        followRedirect: false,
+        qs: {
+          requiresToken: 'true',
+          redirect: testRedir
+        }
+      }, function (err, res) {
+        if (err) { return done(err) }
+        expect(res.statusCode).to.equal(302)
+        var testUrl = url.parse(res.headers.location)
+        var qs = querystring.parse(testUrl.query)
+        expect(testUrl.protocol).to.equal('http:')
+        expect(testUrl.host).to.equal('thisredir:9283')
+        expect(testUrl.pathname).to.equal('/datPath')
+        expect(qs.runnableappAccessToken).to.exist()
+        expect(qs.thisqs).to.equal('great')
+        done()
+      })
+    })
   })
 })
