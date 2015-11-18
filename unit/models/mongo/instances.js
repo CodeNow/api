@@ -22,6 +22,7 @@ var error = require('error')
 var find = require('101/find')
 var hasProps = require('101/has-properties')
 var mongoose = require('mongoose')
+var ObjectId = require('mongoose').Types.ObjectId
 var pick = require('101/pick')
 var pluck = require('101/pluck')
 var noop = require('101/noop')
@@ -1578,12 +1579,9 @@ describe('Instance Model Tests ' + moduleName, function () {
   describe('modifyUnsetImagePull', function () {
     beforeEach(function (done) {
       ctx.imagePull = {
-        sessionUser: {
-          github: '10'
-        },
+        _id: new ObjectId(),
         dockerTag: 'dockerTag',
         dockerHost: 'http://localhost:4243',
-        ownerUsername: 'ownerUsername'
       }
       ctx.instance = createNewInstance('name123', { imagePull: ctx.imagePull })
       ctx.cvId = ctx.instance.contextVersion._id
@@ -1595,8 +1593,7 @@ describe('Instance Model Tests ' + moduleName, function () {
 
     it('should modify unset image pull', function (done) {
       ctx.instance.modifyUnsetImagePull(
-        ctx.imagePull.dockerHost,
-        ctx.imagePull.dockerTag,
+        ctx.imagePull._id,
         function (err, instance) {
           if (err) { return done(err) }
           expect(instance.toJSON().imagePull).to.not.exist()
