@@ -1581,7 +1581,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       ctx.imagePull = {
         _id: new ObjectId(),
         dockerTag: 'dockerTag',
-        dockerHost: 'http://localhost:4243',
+        dockerHost: 'http://localhost:4243'
       }
       ctx.instance = createNewInstance('name123', { imagePull: ctx.imagePull })
       ctx.cvId = ctx.instance.contextVersion._id
