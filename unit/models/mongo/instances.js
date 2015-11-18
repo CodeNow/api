@@ -1564,16 +1564,6 @@ describe('Instance Model Tests ' + moduleName, function () {
         ctx.instance.modifyImagePull(
           ctx.cvId, ctx.imagePull, expectValidationErr(/dockerHost/, done))
       })
-      it('should require ownerUsername', function (done) {
-        delete ctx.imagePull.ownerUsername
-        ctx.instance.modifyImagePull(
-          ctx.cvId, ctx.imagePull, expectValidationErr(/ownerUsername/, done))
-      })
-      it('should require sessionUser.github', function (done) {
-        delete ctx.imagePull.sessionUser.github
-        ctx.instance.modifyImagePull(
-          ctx.cvId, ctx.imagePull, expectValidationErr(/sessionUser.github/, done))
-      })
       function expectValidationErr (messageRegExp, done) {
         return function (err) {
           expect(err).to.exist()

@@ -770,6 +770,7 @@ describe('InstanceService: ' + moduleName, function () {
             expect(err).to.not.exist(ctx.err)
             sinon.assert.calledWith(
               InstanceService._handleImageNotFoundErr,
+              ctx.opts,
               ctx.err,
               sinon.match.func
             )

@@ -28,7 +28,10 @@ var newMockInstance = function (job) {
   return new Instance({
     _id: job.instanceId,
     contextVersion: {
-      _id: new ObjectId()
+      _id: new ObjectId(),
+      build: {
+        dockerTag: 'dockerTag:latest'
+      }
     },
     build: job.buildId
   })
@@ -44,12 +47,10 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
       sessionUserGithubId: '10',
       ownerUsername: 'ownerUsername'
     }
-    ctx.dockerTag = 'dockerTag'
     ctx.mockInstance = newMockInstance(ctx.job)
     sinon.stub(Instance, 'findOneAsync')
     sinon.stub(Mavis.prototype, 'findDockForContainerAsync')
     sinon.stub(Instance.prototype, 'modifyImagePullAsync')
-    sinon.stub(Docker, 'getDockerTag').returns(ctx.dockerTag)
     sinon.stub(Docker.prototype, 'pullImageAsync')
     sinon.stub(Instance.prototype, 'modifyUnsetImagePullAsync')
     sinon.stub(rabbitMQ, 'createInstanceContainer')
@@ -59,7 +60,6 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
     Instance.findOneAsync.restore()
     Instance.prototype.modifyImagePullAsync.restore()
     Mavis.prototype.findDockForContainerAsync.restore()
-    Docker.getDockerTag.restore()
     Docker.prototype.pullImageAsync.restore()
     Instance.prototype.modifyUnsetImagePullAsync.restore()
     rabbitMQ.createInstanceContainer.restore()
@@ -96,13 +96,9 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
           ctx.mockInstance.contextVersion
         )
         sinon.assert.calledWith(
-          Docker.getDockerTag,
-          ctx.mockInstance.contextVersion
-        )
-        sinon.assert.calledWith(
           Instance.prototype.modifyImagePullAsync,
           ctx.mockInstance.contextVersion._id, {
-            dockerTag: ctx.dockerTag,
+            dockerTag: ctx.mockInstance.contextVersion.build.dockerTag,
             dockerHost: ctx.dockerHost,
             sessionUser: {
               github: ctx.job.sessionUserGithubId
@@ -112,7 +108,7 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
         )
         sinon.assert.calledWith(
           Docker.prototype.pullImageAsync,
-          ctx.dockerTag
+          ctx.mockInstance.contextVersion.build.dockerTag
         )
         done()
       })
