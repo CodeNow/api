@@ -7,10 +7,11 @@ matrix:
 env:
   global:
   - LOG_LEVEL_STDOUT=error
-  - CIRCLE_NODE_TOTAL=2
+  - CIRCLE_NODE_TOTAL=3
   matrix:
   - CIRCLE_NODE_INDEX=0
   - CIRCLE_NODE_INDEX=1
+  - CIRCLE_NODE_INDEX=2
 cache:
 - directories:
   - /tmp/downloads
