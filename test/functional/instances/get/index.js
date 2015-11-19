@@ -605,7 +605,7 @@ describe('GET /instances', function () {
           githubUsername: ctx.user.json().accounts.github.username
         }
         // Make username fetch 404
-        require('../../fixtures/mocks/github/users-username')(null, null, null, true)
+        require('../../fixtures/mocks/github/users-username')(null, null, { fail: true })
         ctx.user.fetchInstances(query, expects.error(404, /Not found/, done))
       })
       it('should require owner.github', function (done) {
