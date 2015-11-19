@@ -659,6 +659,11 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
 
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
     it('should create a pull-instance-image job', function (done) {
       ctx.rabbitMQ.pullInstanceImage(ctx.validData)
       sinon.assert.calledWith(
