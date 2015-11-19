@@ -7,10 +7,11 @@ matrix:
 env:
   global:
   - LOG_LEVEL_STDOUT=error
-  - CIRCLE_NODE_TOTAL=2
+  - CIRCLE_NODE_TOTAL=3
   matrix:
   - CIRCLE_NODE_INDEX=0
   - CIRCLE_NODE_INDEX=1
+  - CIRCLE_NODE_INDEX=2
 cache:
 - directories:
   - /tmp/downloads
@@ -25,8 +26,9 @@ before_install:
 - ./scripts/download-neo4j.sh
 - /tmp/neo4j-community-2.1.8/bin/neo4j start
 - timeout 1m ./scripts/set-neo4j-constraint.sh
+before_script:
+- npm run lint
 script:
-- ./scripts/run-command-conditionally.sh npm run lint
 - timeout 3m ./scripts/run-command-conditionally.sh npm run unit
 - timeout 10m ./scripts/npm-bdd-split-files.sh
 after_script:
