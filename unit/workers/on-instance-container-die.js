@@ -1,236 +1,214 @@
 /**
- * @module unit/workers/on-instance-container-die
+ * @module unit/workers/container.network.attached
  */
 'use strict'
 
 var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+
 var Code = require('code')
-var Hashids = require('hashids')
 var sinon = require('sinon')
 
-var ContextVersion = require('models/mongo/context-version')
-var Instance = require('models/mongo/instance')
-var User = require('models/mongo/user')
 var OnInstanceContainerDie = require('workers/on-instance-container-die')
+var InstanceService = require('models/services/instance-service')
 
-var lab = exports.lab = Lab.script()
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
-var it = lab.it
 var expect = Code.expect
+var it = lab.it
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
-var validation = require('../fixtures/validation')(lab)
-
-var id = 0
-function getNextId () {
-  id++
-  return id
-}
-function getNextHash () {
-  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH)
-  return hashids.encrypt(getNextId())
-}
-function createNewVersion (opts) {
-  return new ContextVersion({
-    message: 'test',
-    owner: { github: validation.VALID_GITHUB_ID },
-    createdBy: { github: validation.VALID_GITHUB_ID },
-    config: validation.VALID_OBJECT_ID,
-    created: Date.now(),
-    context: validation.VALID_OBJECT_ID,
-    files: [{
-      Key: 'test',
-      ETag: 'test',
-      VersionId: validation.VALID_OBJECT_ID
-    }],
-    build: {
-      dockerImage: 'testing',
-      dockerTag: 'adsgasdfgasdf'
-    },
-    appCodeVersions: [
-      {
-        additionalRepo: false,
-        repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        branch: opts.branch || 'master',
-        defaultBranch: opts.defaultBranch || 'master',
-        commit: 'deadbeef'
-      },
-      {
-        additionalRepo: true,
-        commit: '4dd22d12b4b3b846c2e2bbe454b89cb5be68f71d',
-        branch: 'master',
-        lowerBranch: 'master',
-        repo: 'Nathan219/yash-node',
-        lowerRepo: 'nathan219/yash-node',
-        _id: '5575f6c43074151a000e8e27',
-        privateKey: 'Nathan219/yash-node.key',
-        publicKey: 'Nathan219/yash-node.key.pub',
-        defaultBranch: 'master',
-        transformRules: { rename: [], replace: [], exclude: [] }
-      }
-    ]
-  })
-}
-
-function createNewInstance (name, opts) {
-  opts = opts || {}
-  var container = {
-    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID
-  }
-  return new Instance({
-    name: name || 'name',
-    shortHash: getNextHash(),
-    locked: opts.locked || false,
-    'public': false,
-    masterPod: opts.masterPod || false,
-    parent: opts.parent,
-    autoForked: opts.autoForked || false,
-    owner: { github: validation.VALID_GITHUB_ID },
-    createdBy: { github: validation.VALID_GITHUB_ID },
-    build: validation.VALID_OBJECT_ID,
-    created: Date.now(),
-    contextVersion: createNewVersion(opts),
-    container: container,
-    containers: [],
-    network: {
-      hostIp: '1.1.1.100'
-    }
-  })
-}
-
-describe('OnInstanceContainerDie: ' + moduleName, function () {
+describe('OnInstanceContainerDieWorker: ' + moduleName, function () {
   var ctx
-  describe('handle', function () {
-    beforeEach(function (done) {
-      ctx = {}
-      ctx.worker = OnInstanceContainerDie.worker
-      ctx.job = {
-        id: 111,
-        host: '10.0.0.1',
-        inspectData: {
-          NetworkSettings: {
-            Ports: []
-          },
-          Config: {
-            Labels: {
-              instanceId: 111,
-              ownerUsername: 'fifo',
-              sessionUserGithubId: 444,
-              contextVersionId: 123
-            }
-          }
+
+  beforeEach(function (done) {
+    ctx = {}
+    ctx.mockInstance = {
+      _id: '5633e9273e2b5b0c0077fd41',
+      name: 'name1',
+      shortHash: 'asd51a1',
+      owner: {
+        github: '',
+        username: 'foo',
+        gravatar: ''
+      },
+      createdBy: {
+        github: '',
+        username: '',
+        gravatar: ''
+      },
+      network: {
+        hostIp: '0.0.0.0'
+      }
+    }
+    ctx.instanceId = '5633e9273e2b5b0c0077fd41'
+    ctx.data = {
+      id: 'container-id-1',
+      containerIp: '192.16.17.01'
+    }
+    ctx.data.inspectData = {
+      Config: {
+        Labels: {
+          instanceId: ctx.instanceId,
+          ownerUsername: 'anton',
+          sessionUserGithubId: 111987,
+          contextVersionId: 'some-cv-id'
+        }
+      },
+      State: {
+        ExitCode: 0,
+        FinishedAt: '0001-01-01T00:00:00Z',
+        Paused: false,
+        Pid: 889,
+        Restarting: false,
+        Running: true,
+        StartedAt: '2014-11-25T22:29:50.23925175Z'
+      },
+      NetworkSettings: {
+        IPAddress: '172.17.14.13',
+        Ports: {
+          '3000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34109'}],
+          '80/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34110'}],
+          '8000/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34111'}],
+          '8080/tcp': [{'HostIp': '0.0.0.0', 'HostPort': '34108'}]
         }
       }
-      ctx.mockInstance = createNewInstance()
-      ctx.mockUser = {}
-      sinon.stub(Instance, 'findOneByContainerId')
-      sinon.stub(Instance.prototype, 'modifyContainerInspect')
-      sinon.stub(User, 'findByGithubId')
-      sinon.stub(Instance.prototype, 'emitInstanceUpdate')
-      done()
+    }
+    ctx.worker = new OnInstanceContainerDie(ctx.data)
+    done()
+  })
+  beforeEach(function (done) {
+    sinon.stub(ctx.worker, '_baseWorkerFindInstance', function (query, cb) {
+      ctx.worker.instance = ctx.mockInstance
+      cb(null, ctx.mockInstance)
     })
-    afterEach(function (done) {
-      Instance.findOneByContainerId.restore()
-      Instance.prototype.modifyContainerInspect.restore()
-      User.findByGithubId.restore()
-      Instance.prototype.emitInstanceUpdate.restore()
-      done()
-    })
-
+    sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null)
+    done()
+  })
+  afterEach(function (done) {
+    ctx.worker._baseWorkerFindInstance.restore()
+    ctx.worker._baseWorkerUpdateInstanceFrontend.restore()
+    done()
+  })
+  describe('all together', function () {
     describe('success', function () {
       beforeEach(function (done) {
-        Instance.findOneByContainerId.yieldsAsync(null, ctx.mockInstance)
-        Instance.prototype.modifyContainerInspect.yieldsAsync(null, ctx.mockInstance)
-        User.findByGithubId.yieldsAsync(null, ctx.mockUser)
-        Instance.prototype.emitInstanceUpdate.yieldsAsync(null, ctx.mockInstance)
+        sinon.stub(InstanceService.prototype, 'updateOnContainerDie')
+          .yieldsAsync(null, ctx.mockInstance)
+        done()
+      })
+      afterEach(function (done) {
+        InstanceService.prototype.updateOnContainerDie.restore()
         done()
       })
 
-      it('should handle instance container die successfully', function (done) {
-        ctx.worker(ctx.job, function (err) {
-          sinon.assert.calledWith(
-            Instance.findOneByContainerId,
-            ctx.job.id,
-            sinon.match.func
-          )
-          sinon.assert.calledWith(
-            Instance.prototype.modifyContainerInspect,
-            ctx.job.id,
-            ctx.job.inspectData,
-            sinon.match.func
-          )
-          sinon.assert.calledWith(User.findByGithubId, ctx.mockInstance.createdBy.github, sinon.match.func)
-          sinon.assert.calledWith(ctx.mockInstance.emitInstanceUpdate, ctx.mockUser, 'container_inspect', sinon.match.func)
-          expect(err).to.not.exist()
+      it('should do everything', function (done) {
+        ctx.worker.handle(function (err) {
+          // This should never return an error
+          expect(err).to.be.undefined()
+          expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1)
+          var queryArg = ctx.worker._baseWorkerFindInstance.getCall(0).args[0]
+          expect(queryArg._id).to.equal(ctx.instanceId)
+          expect(queryArg['container.dockerContainer']).to.equal(ctx.data.id)
+          expect(InstanceService.prototype.updateOnContainerDie.callCount).to.equal(1)
+          var args = InstanceService.prototype.updateOnContainerDie.getCall(0).args
+          expect(args[0]).to.equal(ctx.mockInstance)
+          expect(args[1]).to.equal(ctx.data.id)
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1)
+          var updateFrontendArgs = ctx.worker._baseWorkerUpdateInstanceFrontend.getCall(0).args
+          expect(updateFrontendArgs[0]).to.equal(ctx.mockInstance._id)
+          expect(updateFrontendArgs[1]).to.equal(ctx.data.inspectData.Config.Labels.sessionUserGithubId)
+          expect(updateFrontendArgs[2]).to.equal('update')
           done()
         })
       })
     })
+    describe('failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(InstanceService.prototype, 'updateOnContainerDie')
+          .yieldsAsync(new Error('this is an error'))
+        done()
+      })
 
-    describe('errors', function () {
-      describe('Instance.findOneByContainerId err', function () {
-        beforeEach(function (done) {
-          ctx.err = new Error()
-          Instance.findOneByContainerId.yieldsAsync(ctx.err)
-          done()
-        })
-        it('should callback the err', function (done) {
-          ctx.worker(ctx.job, expectErr(ctx.err, done))
-        })
+      afterEach(function (done) {
+        InstanceService.prototype.updateOnContainerDie.restore()
+        done()
       })
-      describe('Instance.prototype.modifyContainerInspect err', function () {
-        beforeEach(function (done) {
-          ctx.err = new Error()
-          Instance.findOneByContainerId.yieldsAsync(null, ctx.mockInstance)
-          Instance.prototype.modifyContainerInspect.yieldsAsync(ctx.err)
+
+      it('should do nothing if instanceId is null', function (done) {
+        ctx.worker.instanceId = null
+        ctx.worker.handle(function (err) {
+          // This should never return an error
+          expect(err).to.be.undefined()
+          expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(0)
           done()
-        })
-        it('should callback the err', function (done) {
-          ctx.worker(ctx.job, expectErr(ctx.err, done))
-        })
-      })
-      describe('User.findByGithubId err', function () {
-        beforeEach(function (done) {
-          ctx.err = new Error()
-          Instance.findOneByContainerId.yieldsAsync(null, ctx.mockInstance)
-          Instance.prototype.modifyContainerInspect.yieldsAsync(null, ctx.mockInstance)
-          User.findByGithubId.yieldsAsync(ctx.err)
-          done()
-        })
-        it('should callback the err', function (done) {
-          ctx.worker(ctx.job, expectErr(ctx.err, done))
-        })
-      })
-      describe('Instance.prototype.emitInstanceUpdate err', function () {
-        beforeEach(function (done) {
-          ctx.err = new Error()
-          Instance.findOneByContainerId.yieldsAsync(null, ctx.mockInstance)
-          Instance.prototype.modifyContainerInspect.yieldsAsync(null, ctx.mockInstance)
-          User.findByGithubId.yieldsAsync(null, ctx.mockUser)
-          Instance.prototype.emitInstanceUpdate.yieldsAsync(ctx.err)
-          done()
-        })
-        it('should callback the err', function (done) {
-          ctx.worker(ctx.job, expectErr(ctx.err, done))
         })
       })
 
-      function expectErr (expectedErr, done) {
-        return function (err) {
-          try {
-            expect(err).to.exist()
-            expect(err).to.equal(expectedErr)
-            done()
-          } catch (e) {
-            done(e)
-          }
-        }
-      }
+      it('should get most of the way through, then fail', function (done) {
+        ctx.worker.handle(function (err) {
+          // This should never return an error
+          expect(err).to.be.undefined()
+          expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1)
+          expect(InstanceService.prototype.updateOnContainerDie.callCount).to.equal(1)
+          expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(0)
+          done()
+        })
+      })
+    })
+  })
+
+  describe('_updateInstance', function () {
+    beforeEach(function (done) {
+      // normally set by _baseWorkerFindInstance
+      ctx.worker.instance = ctx.mockInstance
+      done()
+    })
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(InstanceService.prototype, 'updateOnContainerDie')
+          .yieldsAsync(null, ctx.mockInstance)
+        done()
+      })
+
+      afterEach(function (done) {
+        InstanceService.prototype.updateOnContainerDie.restore()
+        done()
+      })
+
+      it('should find and update instance with container', function (done) {
+        ctx.worker._updateInstance(function (err) {
+          expect(err).to.be.null()
+          expect(InstanceService.prototype.updateOnContainerDie.callCount).to.equal(1)
+          var args = InstanceService.prototype.updateOnContainerDie.getCall(0).args
+          expect(args[0]).to.equal(ctx.mockInstance)
+          expect(args[1]).to.equal(ctx.data.id)
+          done()
+        })
+      })
+    })
+    describe('failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(InstanceService.prototype, 'updateOnContainerDie')
+          .yieldsAsync(new Error('this is an error'))
+        done()
+      })
+
+      afterEach(function (done) {
+        InstanceService.prototype.updateOnContainerDie.restore()
+        done()
+      })
+
+      it('should find and update instance with container', function (done) {
+        ctx.worker._updateInstance(function (err) {
+          expect(err.message).to.equal('this is an error')
+          expect(InstanceService.prototype.updateOnContainerDie.callCount).to.equal(1)
+          done()
+        })
+      })
     })
   })
 })

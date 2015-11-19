@@ -397,7 +397,6 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-
   describe('modifyContainerCreateErr', function () {
     var savedInstance = null
     var instance = null

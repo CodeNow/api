@@ -532,7 +532,6 @@ describe('InstanceService: ' + moduleName, function () {
     })
   })
 
-
   describe('#createContainer', function () {
     beforeEach(function (done) {
       sinon.stub(InstanceService, '_findInstanceAndContextVersion')
