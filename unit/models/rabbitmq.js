@@ -625,18 +625,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
       done()
     })
-
-  describe('pullInstanceImage', function () {
-    beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      ctx.validData = {
-        instanceId: '123456789012345678901234',
-        buildId: '123456789012345678901111',
-        sessionUserGithubId: '10',
-        ownerUsername: 'ownerUsername'
-      }
-      done()
-    })
     afterEach(function (done) {
       ctx.rabbitMQ.hermesClient.publish.restore()
       done()
@@ -655,6 +643,19 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       var data = {}
       expect(ctx.rabbitMQ.instanceDeleted.bind(ctx.rabbitMQ, data))
         .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
+  describe('pullInstanceImage', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      ctx.validData = {
+        instanceId: '123456789012345678901234',
+        buildId: '123456789012345678901111',
+        sessionUserGithubId: '10',
+        ownerUsername: 'ownerUsername'
+      }
       done()
     })
 
