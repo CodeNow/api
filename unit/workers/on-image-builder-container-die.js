@@ -310,7 +310,6 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     })
 
     it('should emit instance update events', function (done) {
-
       var sessionUserGithubId = keypather.get(ctx.worker.data,
         'inspectData.Config.Labels.sessionUserGithubId')
       ctx.worker._emitInstanceUpdateEvents(function (err) {
