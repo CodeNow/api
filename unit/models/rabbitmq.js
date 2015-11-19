@@ -587,7 +587,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     it('should throw an error when parameters are missing', function (done) {
       var data = {}
       expect(ctx.rabbitMQ.instanceUpdated.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, 'Validation failed')
+        .to.throw(Error, /^Validation failed/)
       done()
     })
   })
@@ -615,7 +615,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     it('should throw an error when parameters are missing', function (done) {
       var data = {}
       expect(ctx.rabbitMQ.instanceCreated.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, 'Validation failed')
+        .to.throw(Error, /^Validation failed/)
       done()
     })
   })
@@ -643,7 +643,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     it('should throw an error when parameters are missing', function (done) {
       var data = {}
       expect(ctx.rabbitMQ.instanceDeleted.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, 'Validation failed')
+        .to.throw(Error, /^Validation failed/)
       done()
     })
   })
