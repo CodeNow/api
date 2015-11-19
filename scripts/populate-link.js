@@ -1,4 +1,10 @@
 /**
+ * Triggers events which in turn enqueues link rabbitmq tasks which will seed/update navi's 
+ * database for routing.
+ *
+ * Server is initialized first because:
+ * various things are initialized when we start the server that must be initialized before we 
+ * can emit websocket events without triggering errors
  * LOG_LEVEL_STDOUT=none NODE_PATH=lib/ node scripts/populate-link.js
  */
 'use strict'
