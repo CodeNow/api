@@ -190,7 +190,6 @@ describe('TeammateInvitation', function () {
             done(err)
           }
           unauthorizedUser = user
-          githubUserOrgsMock(unauthorizedUser, 777, 'not-super-org')
           done()
         })
       })
@@ -200,6 +199,7 @@ describe('TeammateInvitation', function () {
           if (err) {
             done(err)
           }
+          githubUserOrgsMock(unauthorizedUser, 777, 'not-super-org')
           unauthorizedUser.destroyTeammateInvitation(collection[0]._id, {}, function (err, res) {
             if (err) {
               expect(err).to.be.an.object()

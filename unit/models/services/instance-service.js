@@ -728,7 +728,7 @@ describe('InstanceService: ' + moduleName, function () {
           })
         })
 
-        describe('modifyContainerCreateErr success', function () {
+        describe('modifyContainerCreateErr error', function () {
           beforeEach(function (done) {
             ctx.dbErr = new Error('boom')
             sinon.stub(Instance.prototype, 'modifyContainerCreateErr').yieldsAsync(ctx.dbErr)
@@ -748,6 +748,69 @@ describe('InstanceService: ' + moduleName, function () {
             })
           })
         })
+      })
+      describe('"image not found" for create err', function () {
+        beforeEach(function (done) {
+          ctx.err = Boom.notFound('Image not found')
+          ctx.opts.instance = new Instance()
+          Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242')
+          Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
+          sinon.stub(Docker, 'isImageNotFoundForCreateErr').returns(true)
+          sinon.stub(InstanceService, '_handleImageNotFoundErr').yieldsAsync()
+          done()
+        })
+        afterEach(function (done) {
+          Docker.isImageNotFoundForCreateErr.restore()
+          InstanceService._handleImageNotFoundErr.restore()
+          done()
+        })
+
+        it('should call _handleImageNotFoundErr', function (done) {
+          InstanceService._createDockerContainer(ctx.opts, function (err) {
+            expect(err).to.not.exist(ctx.err)
+            sinon.assert.calledWith(
+              InstanceService._handleImageNotFoundErr,
+              ctx.opts,
+              ctx.err,
+              sinon.match.func
+            )
+            done()
+          })
+        })
+      })
+    })
+  })
+
+  describe('#_handleImageNotFoundErr', function () {
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'pullInstanceImage')
+      ctx.opts = {
+        instance: {
+          _id: '23456789012345678901234',
+          build: '23456789012345678901111'
+        },
+        sessionUserGithubId: '10',
+        ownerUsername: 'ownerUsername'
+      }
+      done()
+    })
+    afterEach(function (done) {
+      rabbitMQ.pullInstanceImage.restore()
+      done()
+    })
+
+    it('should create a pull-instance-image job', function (done) {
+      InstanceService._handleImageNotFoundErr(ctx.opts, ctx.err, function (err) {
+        expect(err).to.equal(ctx.err)
+        sinon.assert.calledWith(
+          rabbitMQ.pullInstanceImage, {
+            instanceId: ctx.opts.instance._id,
+            buildId: ctx.opts.instance.build,
+            sessionUserGithubId: ctx.opts.sessionUserGithubId,
+            ownerUsername: ctx.opts.ownerUsername
+          }
+        )
+        done()
       })
     })
   })
