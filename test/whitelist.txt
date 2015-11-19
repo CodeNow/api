@@ -80,9 +80,11 @@
 ./test/functional/settings/patch/index.js
 ./test/functional/settings/post/201.js
 ./test/functional/settings/post/400.js
+./test/functional/teammate-invitation.js
 ./test/functional/templates/get/200.js
 ./test/functional/terminal-stream.js
 ./test/functional/test-errors.js
+./test/functional/user.js
 ./test/functional/users-id-routes-id/index.js
 ./test/functional/users-id-routes/index.js
 ./test/functional/users-id.js
