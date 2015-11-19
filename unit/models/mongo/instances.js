@@ -397,51 +397,6 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('inspectAndUpdateByContainer', function () {
-    var instance = null
-    beforeEach(function (done) {
-      instance = createNewInstance()
-      instance.save(done)
-    })
-
-    it('should fail if container is not found', function (done) {
-      var containerId = '985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452dd1'
-      Instance.inspectAndUpdateByContainer(containerId, function (err) {
-        expect(err.output.statusCode).to.equal(404)
-        done()
-      })
-    })
-
-    it('should work for real created container', function (done) {
-      var docker = new Docker('http://localhost:4243')
-      docker.createContainer({}, function (err, cont) {
-        if (err) { return done(err) }
-        var container = {
-          dockerContainer: cont.id
-        }
-        var opts = {
-          dockerHost: 'http://localhost:4243',
-          containerId: cont.id
-        }
-        var instance = createNewInstance('new-inst', opts)
-        instance.save(function (err) {
-          if (err) { return done(err) }
-          docker.startContainer(container.dockerContainer, function (err) {
-            if (err) { return done(err) }
-            docker.stopContainer(container.dockerContainer, function (err) {
-              if (err) { return done(err) }
-              Instance.inspectAndUpdateByContainer(container.dockerContainer, function (err, saved) {
-                if (err) { return done(err) }
-                expect(saved.container.inspect.State.Running).to.equal(false)
-                expect(saved.container.inspect.State.Pid).to.equal(0)
-                done()
-              })
-            })
-          })
-        })
-      })
-    })
-  })
 
   describe('modifyContainerCreateErr', function () {
     var savedInstance = null
