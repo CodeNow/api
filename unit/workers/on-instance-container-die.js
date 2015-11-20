@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/container.network.attached
+ * @module unit/workers/on-instance-container-die
  */
 'use strict'
 
