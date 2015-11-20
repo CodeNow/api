@@ -205,6 +205,11 @@ describe('Instance - PATCH /instances/:id', function () {
           })
           describe('WITH changes in appcodeversion', function () {
             beforeEach(function (done) {
+              primus.joinOrgRoom(ctx.user.json().accounts.github.id, function () {
+                done()
+              })
+            })
+            beforeEach(function (done) {
               ctx.newCV = ctx.user
                 .newContext(ctx.newBuild.contexts.models[0].id())
                 .newVersion(ctx.newBuild.contextVersions.models[0].id())
@@ -216,8 +221,16 @@ describe('Instance - PATCH /instances/:id', function () {
                     branch: randStr(5)
                   }, done)
                 },
-                ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
-                waitForVersionComplete(ctx.user, ctx.newBuild.contextVersions.models[0])
+                function (done) {
+                  primus.onceVersionBuildRunning(ctx.newBuild.contextVersions.models[0].id(), function () {
+                    primus.onceVersionComplete(ctx.newBuild.contextVersions.models[0].id(), function () {
+                      done()
+                    })
+                    dockerMockEvents.emitBuildComplete(ctx.newBuild.contextVersions.models[0])
+                  })
+                  require('../../fixtures/mocks/docker/build-logs')()
+                  ctx.newBuild.build({json: { message: uuid() }}, noop)
+                }
               ], done)
             })
             it('should deploy the copied (and modified) build', function (done) {
@@ -236,19 +249,17 @@ describe('Instance - PATCH /instances/:id', function () {
               require('../../fixtures/mocks/github/user')(ctx.user)
               require('../../fixtures/mocks/github/user')(ctx.user)
 
-              primus.joinOrgRoom(ctx.user.json().accounts.github.id, function (err) {
-                if (err) { return done(err) }
-                primus.expectAction('start', {}, function () {
-                  expected['containers[0].dockerContainer'] = not(equals(oldDockerContainer))
-                  ctx.instance.fetch(expects.success(200, expected, function (err) {
-                    if (err) { return done(err) }
-                    var container = ctx.instance.containers.models[0]
-                    expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer)
-                    done()
-                  }))
-                })
-                ctx.instance.update({json: update}, expects.success(200, expected, noop))
+              primus.expectAction('start', {}, function () {
+                expected['containers[0].dockerContainer'] = not(equals(oldDockerContainer))
+                ctx.instance.fetch(expects.success(200, expected, function (err) {
+                  if (err) { return done(err) }
+                  var container = ctx.instance.containers.models[0]
+                  expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer)
+                  done()
+                }))
               })
+              require('../../fixtures/mocks/docker/build-logs')()
+              ctx.instance.update({json: update}, expects.success(200, expected, noop))
             })
           })
           describe('WITH changes in infracodeversion', function () {

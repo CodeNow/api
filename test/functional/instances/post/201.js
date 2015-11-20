@@ -77,13 +77,14 @@ describe('201 POST /instances', function () {
   beforeEach(primus.connect)
   // after
 
+  afterEach(primus.disconnect)
+  afterEach(require('../../fixtures/clean-ctx')(ctx))
+  afterEach(require('../../fixtures/clean-nock'))
+  afterEach(require('../../fixtures/clean-mongo').removeEverything)
+
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
-  afterEach(primus.disconnect)
-  afterEach(require('../../fixtures/clean-mongo').removeEverything)
-  // afterEach(require('../../fixtures/clean-ctx')(ctx))
-  // afterEach(require('../../fixtures/clean-nock'))
 
   describe('For User', function () {
     describe('with in-progress build', function () {
@@ -100,14 +101,14 @@ describe('201 POST /instances', function () {
         primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, done)
       })
       beforeEach(function (done) {
-        ctx.build.build(function (err) {
-          if (err) { return done(err) }
+        primus.onceVersionBuildRunning(ctx.cv.id(), function () {
           ctx.cv.fetch(done) // used in assertions
         })
+        ctx.build.build(function (err) {
+          if (err) { return done(err) }
+        })
       })
-      afterEach(function (done) {
-        require('../../fixtures/clean-mongo').removeEverything(done)
-      })
+
       it('should create a private instance by default', function (done) {
         var name = uuid()
         var env = [
@@ -118,8 +119,7 @@ describe('201 POST /instances', function () {
           build: ctx.build.id(),
           env: env
         }
-        // ctx.expected.name = name
-        // ctx.expected.env = env
+
         assertCreate(body, function () {
           expect(ctx.instance.attrs.public).to.equal(false)
           expect(ctx.instance.attrs.masterPod).to.equal(false)
@@ -137,11 +137,8 @@ describe('201 POST /instances', function () {
           build: ctx.build.id(),
           masterPod: true
         }
-        // ctx.expected.name = name
-        // ctx.expected.masterPod = true
+
         assertCreate(body, function () {
-          // expect(ctx.instance.attrs.public).to.equal(false)
-          // expect(ctx.instance.attrs.masterPod).to.equal(true)
           primus.onceVersionComplete(ctx.cv.id(), function () {
             done()
           })
