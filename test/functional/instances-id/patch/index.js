@@ -222,14 +222,13 @@ describe('Instance - PATCH /instances/:id', function () {
                   }, done)
                 },
                 function (done) {
-                  primus.onceVersionBuildRunning(ctx.newBuild.contextVersions.models[0].id(), function () {
-                    primus.onceVersionComplete(ctx.newBuild.contextVersions.models[0].id(), function () {
-                      done()
-                    })
-                    dockerMockEvents.emitBuildComplete(ctx.newBuild.contextVersions.models[0])
+                  primus.onceVersionComplete(ctx.newBuild.contextVersions.models[0].id(), function () {
+                    done()
                   })
+
                   require('../../fixtures/mocks/docker/build-logs')()
                   ctx.newBuild.build({json: { message: uuid() }}, noop)
+                  dockerMockEvents.emitBuildComplete(ctx.newBuild.contextVersions.models[0])
                 }
               ], done)
             })

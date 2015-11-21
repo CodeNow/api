@@ -9,6 +9,11 @@ module.exports.emitBuildComplete = emitBuildComplete
 module.exports.emitContainerDie = emitContainerDie
 
 function emitBuildComplete (cv, failure) {
+  if (!cv) {
+    var err = new Error('you forgot to pass cv to emitBuildComplete')
+    console.error(err.stack)
+    throw err
+  }
   if (cv.toJSON) {
     cv = cv.toJSON()
   }
