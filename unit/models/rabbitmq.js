@@ -563,4 +563,135 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
   })
+
+  describe('instanceUpdated', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        instance: {id: 1234}
+      }
+      ctx.rabbitMQ.instanceUpdated(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.updated', data)
+      done()
+    })
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.instanceUpdated.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
+  describe('instanceCreated', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        instance: {id: 1234}
+      }
+      ctx.rabbitMQ.instanceCreated(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.created', data)
+      done()
+    })
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.instanceCreated.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
+  describe('instanceDeleted', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        instance: {id: 1234}
+      }
+      ctx.rabbitMQ.instanceDeleted(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.deleted', data)
+      done()
+    })
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.instanceDeleted.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
+  describe('pullInstanceImage', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      ctx.validData = {
+        instanceId: '123456789012345678901234',
+        buildId: '123456789012345678901111',
+        sessionUserGithubId: '10',
+        ownerUsername: 'ownerUsername'
+      }
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should create a pull-instance-image job', function (done) {
+      ctx.rabbitMQ.pullInstanceImage(ctx.validData)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish, 'pull-instance-image', ctx.validData)
+      done()
+    })
+
+    describe('validation errors', function () {
+      it('should error if data missing required key', function (done) {
+        var requiredKeys = [
+          'instanceId',
+          'buildId',
+          'sessionUserGithubId',
+          'ownerUsername'
+        ]
+        requiredKeys.forEach(function (requiredKey) {
+          try {
+            var data = clone(ctx.validData)
+            delete data[requiredKey]
+            ctx.rabbitMQ.pullInstanceImage(data)
+          } catch (err) {
+            expect(err).to.exist()
+            expect(err.output.statusCode).to.equal(400)
+            expect(err.message).to.match(new RegExp(requiredKey))
+          }
+        })
+        done()
+      })
+    })
+  })
 })
