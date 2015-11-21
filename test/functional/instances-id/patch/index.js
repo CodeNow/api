@@ -221,15 +221,8 @@ describe('Instance - PATCH /instances/:id', function () {
                     branch: randStr(5)
                   }, done)
                 },
-                function (done) {
-                  primus.onceVersionComplete(ctx.newBuild.contextVersions.models[0].id(), function () {
-                    done()
-                  })
-
-                  require('../../fixtures/mocks/docker/build-logs')()
-                  ctx.newBuild.build({json: { message: uuid() }}, noop)
-                  dockerMockEvents.emitBuildComplete(ctx.newBuild.contextVersions.models[0])
-                }
+                ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
+                waitForVersionComplete(ctx.user, ctx.newBuild.contextVersions.models[0])
               ], done)
             })
             it('should deploy the copied (and modified) build', function (done) {
