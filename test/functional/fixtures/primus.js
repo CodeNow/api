@@ -78,7 +78,7 @@ module.exports = {
     })
   },
   expectAction: function (action, expected, cb) {
-    log.trace('expectAction')
+    log.trace({expectedAction: action}, 'expectAction')
     if (isFunction(expected)) {
       cb = expected
       expected = null
@@ -160,7 +160,7 @@ module.exports = {
     }
   },
   onceVersionBuildRunning: function (versionId, cb) {
-    log.trace('onceVersionComplete')
+    log.trace('onceVersionBuildRunning')
     var self = this
     if (typeof versionId === 'function') {
       cb = versionId

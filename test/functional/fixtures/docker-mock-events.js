@@ -4,11 +4,13 @@ var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
 var dockerMock = require('docker-mock')
 var Docker = require('models/apis/docker')
+var log = require('middlewares/logger')(__filename).log
 
 module.exports.emitBuildComplete = emitBuildComplete
 module.exports.emitContainerDie = emitContainerDie
 
 function emitBuildComplete (cv, failure) {
+  log.trace({cv: cv, stack: new Error().stack}, 'emitBuildComplete')
   if (!cv) {
     var err = new Error('you forgot to pass cv to emitBuildComplete')
     console.error(err.stack)
@@ -35,6 +37,7 @@ function emitBuildComplete (cv, failure) {
   })
 }
 function emitContainerDie (instance) {
+  log.trace({instance: instance, stack: new Error().stack}, 'emitContainerDie')
   if (instance.toJSON) {
     instance = instance.toJSON()
   }

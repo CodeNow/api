@@ -221,8 +221,14 @@ describe('Instance - PATCH /instances/:id', function () {
                     branch: randStr(5)
                   }, done)
                 },
-                ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
-                waitForVersionComplete(ctx.user, ctx.newBuild.contextVersions.models[0])
+                function (cb) {
+                  var cv = ctx.newBuild.contextVersions.models[0]
+                  primus.onceVersionComplete(cv.id(), function () {
+                    cb()
+                  })
+                  dockerMockEvents.emitBuildComplete(cv)
+                  ctx.newBuild.build({json: { message: uuid() }}, noop)
+                }
               ], done)
             })
             it('should deploy the copied (and modified) build', function (done) {
@@ -264,8 +270,18 @@ describe('Instance - PATCH /instances/:id', function () {
               async.series([
                 ctx.newCV.fetch.bind(ctx.newCV),
                 ctx.newCV.rootDir.contents.createFile.bind(ctx.newCV.rootDir.contents, 'file.txt'),
-                ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
-                waitForVersionComplete(ctx.user, ctx.newBuild.contextVersions.models[0])
+                function (cb) {
+                  var cv = ctx.newBuild.contextVersions.models[0]
+                  primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, function () {
+                    primus.onceVersionBuildRunning(cv.id(), function () {
+                      primus.onceVersionComplete(cv.id(), function () {
+                        cb()
+                      })
+                      dockerMockEvents.emitBuildComplete(cv)
+                    })
+                    ctx.newBuild.build({json: { message: uuid() }}, noop)
+                  })
+                }
               ], done)
             })
             it('should deploy the copied (and modified) build', function (done) {
@@ -315,8 +331,18 @@ describe('Instance - PATCH /instances/:id', function () {
                   }, done)
                 },
                 ctx.newCV.rootDir.contents.createFile.bind(ctx.newCV.rootDir.contents, 'file.txt'),
-                ctx.newBuild.build.bind(ctx.newBuild, {json: { message: uuid() }}),
-                waitForVersionComplete(ctx.user, ctx.newBuild.contextVersions.models[0])
+                function (cb) {
+                  var cv = ctx.newBuild.contextVersions.models[0]
+                  primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, function () {
+                    primus.onceVersionBuildRunning(cv.id(), function () {
+                      primus.onceVersionComplete(cv.id(), function () {
+                        cb()
+                      })
+                      dockerMockEvents.emitBuildComplete(cv)
+                    })
+                    ctx.newBuild.build({json: { message: uuid() }}, noop)
+                  })
+                }
               ], done)
             })
             it('should deploy the copied (and modified) build', function (done) {
@@ -681,14 +707,3 @@ describe('Instance - PATCH /instances/:id', function () {
     })
   })
 })
-
-function waitForVersionComplete (user, cv) {
-  return function (cb) {
-    primus.joinOrgRoom(user.attrs.accounts.github.id, function () {
-      primus.onceVersionComplete(cv.id(), function () {
-        cb()
-      })
-      dockerMockEvents.emitBuildComplete(cv)
-    })
-  }
-}
