@@ -288,7 +288,7 @@ module.exports = {
     this.createContextVersion(ownerId, function (err, contextVersion, context, build, user, srcArray) {
       if (err) { return cb(err) }
       log.trace({}, 'self.buildTheBuild', user.id(), build.id(), ownerId)
-        self.buildTheBuild(user, build, ownerId, function (err) {
+      self.buildTheBuild(user, build, ownerId, function (err) {
         if (err) { return cb(err) }
         require('./mocks/github/user')(user)
         require('./mocks/github/user-orgs')(ownerId, 'Runnable')

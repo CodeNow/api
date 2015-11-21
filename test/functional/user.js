@@ -94,4 +94,3 @@ describe('User - /users/', function () {
     })
   })
 })
-

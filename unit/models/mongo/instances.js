@@ -12,7 +12,6 @@ var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
 
-var Neo4j = require('models/graph/neo4j')
 var Graph = require('models/apis/graph')
 var Hashids = require('hashids')
 var async = require('async')
@@ -29,7 +28,6 @@ var toObjectId = require('utils/to-object-id')
 
 var Instance = require('models/mongo/instance')
 var Version = require('models/mongo/context-version')
-var dock = require('../../../test/functional/fixtures/dock')
 var pubsub = require('models/redis/pubsub')
 var validation = require('../../fixtures/validation')(lab)
 var expectErr = function (expectedErr, done) {
@@ -140,7 +138,6 @@ function createNewInstance (name, opts) {
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
-
 
 describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
@@ -300,7 +297,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
       })
     })
-  }); // end save
+  }) // end save
 
   describe('getMainBranchName', function () {
     it('should return null when there is no main AppCodeVersion', function (done) {
