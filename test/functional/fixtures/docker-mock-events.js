@@ -13,7 +13,7 @@ function emitBuildComplete (cv, failure) {
   log.trace({cv: cv, stack: new Error().stack}, 'emitBuildComplete')
   if (!cv) {
     var err = new Error('you forgot to pass cv to emitBuildComplete')
-    console.error(err.stack)
+    log.fatal({err: err}, err.message)
     throw err
   }
   if (cv.toJSON) {

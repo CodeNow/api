@@ -1,4 +1,5 @@
 'use strict'
+require('loadenv')()
 
 var nock = require('nock')
 var dockerHost = require('../../docker-host')
