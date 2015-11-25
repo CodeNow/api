@@ -4,11 +4,18 @@ var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
 var dockerMock = require('docker-mock')
 var Docker = require('models/apis/docker')
+var log = require('middlewares/logger')(__filename).log
 
 module.exports.emitBuildComplete = emitBuildComplete
 module.exports.emitContainerDie = emitContainerDie
 
 function emitBuildComplete (cv, failure) {
+  log.trace({cv: cv, stack: new Error().stack}, 'emitBuildComplete')
+  if (!cv) {
+    var err = new Error('you forgot to pass cv to emitBuildComplete')
+    log.fatal({err: err}, err.message)
+    throw err
+  }
   if (cv.toJSON) {
     cv = cv.toJSON()
   }
@@ -20,7 +27,7 @@ function emitBuildComplete (cv, failure) {
     })
     return
   }
-  var docker = new Docker(cv.dockerHost)
+  var docker = new Docker(process.env.SWARM_HOST)
   var signal = failure ? 'SIGKILL' : 'SIGINT'
   require('./mocks/docker/build-logs.js')(failure)
   // this will "kill" the container which will emit a die event
@@ -30,6 +37,7 @@ function emitBuildComplete (cv, failure) {
   })
 }
 function emitContainerDie (instance) {
+  log.trace({instance: instance, stack: new Error().stack}, 'emitContainerDie')
   if (instance.toJSON) {
     instance = instance.toJSON()
   }

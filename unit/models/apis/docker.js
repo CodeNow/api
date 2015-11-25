@@ -127,6 +127,111 @@ describe('docker: ' + moduleName, function () {
     done()
   })
 
+  describe('createSwarmConstraint', function () {
+    it('should format constraints correctly', function (done) {
+      var out = Docker.createSwarmConstraint('org', 'default')
+      expect(out).to.equal('["org==default"]')
+      done()
+    })
+  }) // end createSwarmConstraint
+
+  describe('_handleImageBuilderError', function () {
+    beforeEach(function (done) {
+      sinon.stub(Docker, '_isConstraintFailure')
+      sinon.stub(Docker, '_isOutOfResources')
+      sinon.stub(Docker.prototype, 'createContainer')
+      done()
+    })
+
+    afterEach(function (done) {
+      Docker._isConstraintFailure.restore()
+      Docker._isOutOfResources.restore()
+      Docker.prototype.createContainer.restore()
+      done()
+    })
+
+    it('should create container with default org if constraint failure', function (done) {
+      var testOpts = {
+        Labels: {
+          'com.docker.swarm.constraints': 'fluff'
+        }
+      }
+      Docker._isConstraintFailure.returns(true)
+      Docker.prototype.createContainer.yieldsAsync()
+
+      model._handleImageBuilderError({}, testOpts, function (err) {
+        expect(err).to.not.exist()
+        expect(Docker.prototype.createContainer.withArgs({
+          Labels: {
+            'com.docker.swarm.constraints': '["org==default"]'
+          }
+        }).called).to.be.true()
+
+        done()
+      })
+    })
+
+    it('should create container without memory limit', function (done) {
+      var testOpts = {
+        Memory: 999999
+      }
+      Docker._isConstraintFailure.returns(false)
+      Docker._isOutOfResources.returns(true)
+      Docker.prototype.createContainer.yieldsAsync()
+
+      model._handleImageBuilderError({}, testOpts, function (err) {
+        expect(err).to.not.exist()
+        expect(Docker.prototype.createContainer.withArgs({}).called)
+          .to.be.true()
+
+        done()
+      })
+    })
+
+    it('should cb paseed err if not special', function (done) {
+      var testErr = 'unicorn'
+
+      Docker._isConstraintFailure.returns(false)
+      Docker._isOutOfResources.returns(false)
+
+      model._handleImageBuilderError(testErr, {}, function (err) {
+        expect(err).to.equal(testErr)
+        expect(Docker.prototype.createContainer.called)
+          .to.be.false()
+
+        done()
+      })
+    })
+  }) // end _handleImageBuilderError
+
+  describe('_isConstraintFailure', function () {
+    it('should return true if constraint failure', function (done) {
+      var out = Docker._isConstraintFailure(new Error('unable to find a node that satisfies'))
+      expect(out).to.be.true()
+      done()
+    })
+
+    it('should return false if not constraint failure', function (done) {
+      var out = Docker._isConstraintFailure(new Error('no resources available to schedule'))
+      expect(out).to.be.false()
+      done()
+    })
+  }) // end _isConstraintFailure
+
+  describe('_isOutOfResources', function () {
+    it('should return true if out of resources', function (done) {
+      var out = Docker._isOutOfResources(new Error('no resources available to schedule'))
+      expect(out).to.be.true()
+      done()
+    })
+
+    it('should return false if not constraint failure', function (done) {
+      var out = Docker._isOutOfResources(new Error('unable to find a node that satisfies'))
+      expect(out).to.be.false()
+      done()
+    })
+  }) // end _isOutOfResources
+
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
       ctx.mockDockerTag = 'mockDockerTag'
@@ -139,6 +244,7 @@ describe('docker: ' + moduleName, function () {
       sinon.stub(Docker.prototype, 'createContainer').yieldsAsync()
       done()
     })
+
     afterEach(function (done) {
       Docker.prototype._createImageBuilderLabels.restore()
       Docker.getDockerTag.restore()
@@ -147,17 +253,21 @@ describe('docker: ' + moduleName, function () {
       Docker.prototype.createContainer.restore()
       done()
     })
+
     describe('no cache', function () {
       beforeEach(function (done) {
         ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE
         delete process.env.DOCKER_IMAGE_BUILDER_CACHE
         ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
         delete process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        sinon.stub(Docker.prototype, '_handleImageBuilderError')
         done()
       })
+
       afterEach(function (done) {
         process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE
         process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        Docker.prototype._handleImageBuilderError.restore()
         done()
       })
 
@@ -207,6 +317,62 @@ describe('docker: ' + moduleName, function () {
 
           expect(Docker.prototype.createContainer.firstCall.args[0])
             .to.deep.equal(expected)
+          done()
+        })
+      })
+
+      it('should handle error if createContainer failed', function (done) {
+        Docker.prototype.createContainer.yieldsAsync(new Error('boo'))
+        Docker.prototype._handleImageBuilderError.yieldsAsync()
+
+        var opts = {
+          manualBuild: true,
+          sessionUser: ctx.mockSessionUser,
+          contextVersion: ctx.mockContextVersion,
+          network: ctx.mockNetwork,
+          noCache: false,
+          tid: '000-0000-0000-0000'
+        }
+        model.createImageBuilder(opts, function (err) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype._createImageBuilderValidateCV,
+            opts.contextVersion
+          )
+          sinon.assert.calledWith(
+            Docker.getDockerTag,
+            opts.contextVersion
+          )
+          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.deep.equal({
+            contextVersion: opts.contextVersion,
+            dockerTag: ctx.mockDockerTag,
+            manualBuild: opts.manualBuild,
+            network: opts.network,
+            noCache: opts.noCache,
+            sessionUser: opts.sessionUser,
+            ownerUsername: opts.ownerUsername,
+            tid: opts.tid
+          })
+          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
+            dockerTag: ctx.mockDockerTag,
+            noCache: opts.noCache,
+            contextVersion: opts.contextVersion
+          })
+
+          var expected = {
+            name: opts.contextVersion.build._id.toString(),
+            Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+            Env: ctx.mockEnv,
+            Binds: [],
+            Volumes: {},
+            Labels: ctx.mockLabels
+          }
+
+          expect(Docker.prototype.createContainer.firstCall.args[0])
+            .to.deep.equal(expected)
+          expect(Docker.prototype._handleImageBuilderError.firstCall.args[1])
+            .to.deep.equal(expected)
+
           done()
         })
       })
@@ -325,6 +491,7 @@ describe('docker: ' + moduleName, function () {
           sessionUserUsername: opts.sessionUser.accounts.github.username,
           ownerUsername: opts.ownerUsername,
           tid: opts.tid,
+          'com.docker.swarm.constraints': '["org==owner"]',
           type: 'image-builder-container'
         }
       )
@@ -348,7 +515,8 @@ describe('docker: ' + moduleName, function () {
     it('should not error if value is undefined', function (done) {
       ctx.mockContextVersion.toJSON = function () {
         return {
-          _id: undefined
+          _id: undefined,
+          owner: { github: 'owner' }
         }
       }
       var imageBuilderContainerLabels = model._createImageBuilderLabels({

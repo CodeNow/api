@@ -11,10 +11,8 @@ var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
-var Boom = require('dat-middleware').Boom
 
 var Graph = require('models/apis/graph')
-var Neo4j = require('models/graph/neo4j')
 var Hashids = require('hashids')
 var async = require('async')
 var createCount = require('callback-count')
@@ -28,10 +26,8 @@ var pluck = require('101/pluck')
 var noop = require('101/noop')
 var toObjectId = require('utils/to-object-id')
 
-var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
 var Version = require('models/mongo/context-version')
-var dock = require('../../../test/functional/fixtures/dock')
 var pubsub = require('models/redis/pubsub')
 var validation = require('../../fixtures/validation')(lab)
 var expectErr = function (expectedErr, done) {
@@ -53,9 +49,6 @@ function getNextHash () {
 function newObjectId () {
   return new mongoose.Types.ObjectId()
 }
-
-before(dock.start)
-after(dock.stop)
 
 function createNewVersion (opts) {
   return new Version({
@@ -150,6 +143,8 @@ describe('Instance Model Tests ' + moduleName, function () {
   // jshint maxcomplexity:5
   var ctx
   before(require('../../fixtures/mongo').connect)
+  before(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
+
   beforeEach(function (done) {
     ctx = {}
     done()
@@ -287,20 +282,22 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  it('should not save an instance with the same (lower) name and owner', function (done) {
-    var instance = createNewInstance('hello')
-    instance.save(function (err, instance) {
-      if (err) { return done(err) }
-      expect(instance).to.exist()
-      var newInstance = createNewInstance('Hello')
-      newInstance.save(function (err, instance) {
-        expect(instance).to.not.exist()
-        expect(err).to.exist()
-        expect(err.code).to.equal(11000)
-        done()
+  describe('save', function () {
+    it('should not save an instance with the same (lower) name and owner', function (done) {
+      var instance = createNewInstance('hello')
+      instance.save(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.exist()
+        var newInstance = createNewInstance('Hello')
+        newInstance.save(function (err, instance) {
+          expect(instance).to.not.exist()
+          expect(err).to.exist()
+          expect(err.code).to.equal(11000)
+          done()
+        })
       })
     })
-  })
+  }) // end save
 
   describe('getMainBranchName', function () {
     it('should return null when there is no main AppCodeVersion', function (done) {
@@ -317,83 +314,6 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
       expect(Instance.getMainBranchName(instance)).to.equal(expectedBranchName)
       done()
-    })
-  })
-
-  describe('inspectAndUpdate', function () {
-    var savedInstance = null
-    var instance = null
-    beforeEach(function (done) {
-      instance = createNewInstance()
-      instance.save(function (err, instance) {
-        if (err) { return done(err) }
-        expect(instance).to.exist()
-        savedInstance = instance
-        done()
-      })
-    })
-
-    // changed behavior in SAN-1089 to prevent GET /instances 404 response
-    it('should not return error even if container not found', function (done) {
-      savedInstance.inspectAndUpdate(function (err) {
-        expect(err).to.equal(null)
-        done()
-      })
-    })
-
-    it('should work for real created container', function (done) {
-      var dockerHost = 'http://localhost:4243'
-      var docker = new Docker(dockerHost)
-      async.waterfall([
-        docker.createContainer.bind(docker, {}),
-        modifyContainer,
-        startContainer,
-        stopContainer,
-        inspectAndUpdate
-      ], done)
-
-      function modifyContainer (container, cb) {
-        var cvId = savedInstance.contextVersion._id
-        var dockerContainer = container.Id
-        var dockerHost = 'http://localhost:4243'
-        var query = {
-          _id: savedInstance._id,
-          'contextVersion._id': toObjectId(cvId)
-        }
-        var $set = {
-          container: {
-            dockerHost: dockerHost,
-            dockerContainer: dockerContainer
-          }
-        }
-        Instance.findOneAndUpdate(query, { $set: $set }, function (err, instance) {
-          if (err) {
-            return cb(err)
-          }
-          if (!instance) { // changed or deleted
-            return cb(Boom.conflict("Container was not deployed, instance's build has changed"))
-          }
-          cb(err, instance)
-        })
-      }
-      function startContainer (savedInstance, cb) {
-        docker.startContainer(savedInstance.container.dockerContainer, function (err) {
-          cb(err, savedInstance)
-        })
-      }
-      function stopContainer (savedInstance, cb) {
-        docker.stopContainer(savedInstance.container.dockerContainer, function (err) {
-          cb(err, savedInstance)
-        })
-      }
-      function inspectAndUpdate (savedInstance, cb) {
-        savedInstance.inspectAndUpdate(function (err, saved) {
-          if (err) { return done(err) }
-          expect(saved.container.inspect.State.Running).to.equal(false)
-          expect(saved.container.inspect.State.Pid).to.equal(0)
-          cb()
-        })
-      }
     })
   })
 
@@ -682,113 +602,6 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
   })
-  describe('#removeSelfFromGraph', { timeout: 10000 }, function () {
-    /*
-      instance2(C) is master pod of instance4(D)
-      instance0(A): dependsOn instance4(D)
-      instance1(B): dependsOn instance4(D)
-     */
-    var instances = []
-
-    beforeEach(function (done) {
-      var names = [ 'A', 'B', 'C', 'D' ]
-      while (instances.length < names.length) {
-        instances.push(createNewInstance(names[instances.length]))
-      }
-      done()
-    })
-    // instance2(C) is master pod of instance4(D)
-    beforeEach(function (done) {
-      var opts = {
-        autoForked: true,
-        masterPod: false,
-        branch: 'some-branch',
-        parent: instances[2].shortHash
-      }
-      instances.push(createNewInstance('B-some-branch', opts))
-      done()
-    })
-    beforeEach(function (done) {
-      async.each(instances, function (instance, cb) {
-        instance.save(cb)
-      }, done)
-    })
-    // instance0(A): dependsOn instance4(D)
-    beforeEach(function (done) {
-      instances[0].addDependency(instances[4], 'somehostname', done)
-    })
-    // instance1(B): dependsOn instance4(D)
-    beforeEach(function (done) {
-      instances[1].addDependency(instances[4], 'somehostname', done)
-    })
-    // TODO: why can you not removeSelfFromGraph if node has a dep
-    // // instance4(D): dependsOn instance3
-    // beforeEach(function (done) {
-    //   instances[4].addDependency(instances[3], 'otherhost', done)
-    // })
-
-    it('should remove itself from graph and reset dependents to master', function (done) {
-      /*
-      instance2(C) is master pod of instance4(D)
-      instance0(A): dependsOn instance2(C)
-      instance1(B): dependsOn instance2(C)
-       */
-      var node = instances[4]
-      var masterPod = instances[2]
-      var count = createCount(4, done)
-      node.removeSelfFromGraph(function (err) {
-        if (err) { return done(err) }
-        instances[0].getDependencies(function (err, deps) {
-          expect(err).to.be.null()
-          expect(deps).to.be.an.array()
-          expect(deps).to.have.length(1)
-          expect(deps[0].id.toString()).to.equal(masterPod._id.toString())
-          count.next()
-        })
-        instances[1].getDependencies(function (err, deps) {
-          expect(err).to.be.null()
-          expect(deps).to.be.an.array()
-          expect(deps).to.have.length(1)
-          expect(deps[0].id.toString()).to.equal(masterPod._id.toString())
-          count.next()
-        })
-        instances[2].getDependencies(function (err, deps) {
-          expect(err).to.be.null()
-          expect(deps.length).to.equal(0)
-          count.next()
-        })
-        instances[3].getDependencies(function (err, deps) {
-          expect(err).to.be.null()
-          expect(deps.length).to.equal(0)
-          count.next()
-        })
-      })
-    })
-    it('should swallow deleteNodeAndConnections EntityNotFound error', function (done) {
-      var node = instances[4]
-      var error = new Error('Neo4j error')
-      error.code = 'Neo.ClientError.Statement.EntityNotFound'
-      sinon.stub(Neo4j.prototype, 'deleteNodeAndConnections').yieldsAsync(error)
-      node.removeSelfFromGraph(function (err) {
-        expect(err).to.be.null()
-        expect(Neo4j.prototype.deleteNodeAndConnections.callCount).to.equal(1)
-        Neo4j.prototype.deleteNodeAndConnections.restore()
-        done()
-      })
-    })
-    it('should swallow getDependents EntityNotFound error', function (done) {
-      var node = instances[4]
-      var error = new Error('Neo4j error')
-      error.code = 'Neo.ClientError.Statement.EntityNotFound'
-      sinon.stub(node, 'getDependents').yieldsAsync(error)
-      node.removeSelfFromGraph(function (err) {
-        expect(err).to.be.null()
-        expect(node.getDependents.callCount).to.equal(1)
-        node.getDependents.restore()
-        done()
-      })
-    })
-  })
 
   describe('#findForkableMasterInstances', function () {
     it('should return empty [] for repo that has no instances', function (done) {
@@ -888,6 +701,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       }
       done()
     })
+
     beforeEach(function (done) {
       // this deletes all the things out of the graph
       var graph = new Graph()
