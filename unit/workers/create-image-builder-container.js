@@ -76,7 +76,6 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
       sessionUserGithubId: ctx.mockUser.accounts.github.id,
       contextId: '55d3ef733e1b620e00eb6242',
       contextVersionId: '55d3ef733e1b620e00eb6292',
-      dockerHost: 'localhost:4243',
       noCache: false,
       tid: '123413423423423423423423'
     }
@@ -121,7 +120,6 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           expect(ctx.worker.sessionUser).to.equal(ctx.data.sessionUser)
           expect(ctx.worker.contextId).to.equal(ctx.data.contextId)
           expect(ctx.worker.contextVersionId).to.equal(ctx.data.contextVersionId)
-          expect(ctx.worker.dockerHost).to.equal(ctx.data.dockerHost)
           expect(ctx.worker.noCache).to.equal(ctx.data.noCache)
 
           expect(ctx.worker.context).to.equal(ctx.mockContext)
@@ -178,7 +176,6 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           expect(opts.buildId).to.equal(ctx.mockContextVersion.build._id)
           expect(opts.buildContainerId).to.equal(ctx.container.id)
           expect(opts.tag).to.equal(Docker.getDockerTag(ctx.mockContextVersion))
-          expect(opts.host).to.equal(ctx.data.dockerHost)
           expect(ContextVersion.updateContainerByBuildId.args[0][1], 'updateContainer')
             .to.be.a.function()
           expect(
@@ -457,7 +454,6 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
             expect(opts.buildId).to.equal(ctx.mockContextVersion.build._id)
             expect(opts.buildContainerId).to.equal(ctx.container.id)
             expect(opts.tag).to.equal(Docker.getDockerTag(ctx.mockContextVersion))
-            expect(opts.host).to.equal(ctx.data.dockerHost)
             expect(ContextVersion.updateContainerByBuildId.args[0][1]).to.be.a.function()
             done()
           })
