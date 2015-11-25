@@ -10,7 +10,6 @@ var path = require('path')
 var sinon = require('sinon')
 
 var SendGrid = require('models/apis/sendgrid')
-
 var Promise = require('bluebird')
 var lab = exports.lab = Lab.script()
 
@@ -19,7 +18,6 @@ var expect = Code.expect
 var it = lab.it
 var moduleName = path.relative(process.cwd(), __filename)
 
-
 function thisShouldNotBeCalled (cb) {
   return function () {
     cb(new Error('This shouldn\'t have been called'))
@@ -27,7 +25,6 @@ function thisShouldNotBeCalled (cb) {
 }
 describe('sendgrid: ' + moduleName, function () {
   describe('sendEmail', function () {
-
     it('should just send a normal email', function (done) {
       var sendgrid = new SendGrid()
       sendgrid._sendgrid.sendAsync = sinon.stub().returns(Promise.resolve(true))
@@ -38,8 +35,8 @@ describe('sendgrid: ' + moduleName, function () {
       }
       sendgrid.sendEmail(emailOpts)
         .then(function () {
-          sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync);
-          var emailObject = sendgrid._sendgrid.sendAsync.args[0][0];
+          sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
+          var emailObject = sendgrid._sendgrid.sendAsync.args[0][0]
           expect(emailObject.to, 'to').to.equal(emailOpts.email)
           expect(emailObject.subject, 'subject').to.equal(emailOpts.subject)
           expect(emailObject.text, 'text').to.equal(emailOpts.body)
@@ -60,8 +57,8 @@ describe('sendgrid: ' + moduleName, function () {
       }
       sendgrid.sendEmail(emailOpts)
         .then(function () {
-          sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync);
-          var emailObject = sendgrid._sendgrid.sendAsync.args[0][0];
+          sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
+          var emailObject = sendgrid._sendgrid.sendAsync.args[0][0]
           expect(emailObject.to, 'to').to.equal(emailOpts.email)
           expect(emailObject.subject, 'subject').to.equal(emailOpts.subject)
           expect(emailObject.text, 'text').to.equal(emailOpts.body)
@@ -88,7 +85,7 @@ describe('sendgrid: ' + moduleName, function () {
       })
         .then(thisShouldNotBeCalled(done))
         .catch(function (err) {
-          sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync);
+          sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
           expect(error).to.equal(err)
           done()
         })
