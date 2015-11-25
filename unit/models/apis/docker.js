@@ -408,10 +408,10 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_IMAGE_BUILDER_NAME=' + process.env.DOCKER_IMAGE_BUILDER_NAME,
           'RUNNABLE_IMAGE_BUILDER_TAG=' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
           // acv envs
-          'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join('git@github.com:'),
-          'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(''),
+          'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
+          'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(';'),
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
-          'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(''),
+          'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
