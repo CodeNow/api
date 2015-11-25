@@ -137,14 +137,14 @@ describe('docker: ' + moduleName, function () {
 
   describe('_handleImageBuilderError', function () {
     beforeEach(function (done) {
-      sinon.stub(Docker, '_isConstaintFailure')
+      sinon.stub(Docker, '_isConstraintFailure')
       sinon.stub(Docker, '_isOutOfResources')
       sinon.stub(Docker.prototype, 'createContainer')
       done()
     })
 
     afterEach(function (done) {
-      Docker._isConstaintFailure.restore()
+      Docker._isConstraintFailure.restore()
       Docker._isOutOfResources.restore()
       Docker.prototype.createContainer.restore()
       done()
@@ -156,7 +156,7 @@ describe('docker: ' + moduleName, function () {
           'com.docker.swarm.constraints': 'fluff'
         }
       }
-      Docker._isConstaintFailure.returns(true)
+      Docker._isConstraintFailure.returns(true)
       Docker.prototype.createContainer.yieldsAsync()
 
       model._handleImageBuilderError({}, testOpts, function (err) {
@@ -175,7 +175,7 @@ describe('docker: ' + moduleName, function () {
       var testOpts = {
         Memory: 999999
       }
-      Docker._isConstaintFailure.returns(false)
+      Docker._isConstraintFailure.returns(false)
       Docker._isOutOfResources.returns(true)
       Docker.prototype.createContainer.yieldsAsync()
 
@@ -191,7 +191,7 @@ describe('docker: ' + moduleName, function () {
     it('should cb paseed err if not special', function (done) {
       var testErr = 'unicorn'
 
-      Docker._isConstaintFailure.returns(false)
+      Docker._isConstraintFailure.returns(false)
       Docker._isOutOfResources.returns(false)
 
       model._handleImageBuilderError(testErr, {}, function (err) {
@@ -204,19 +204,19 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end _handleImageBuilderError
 
-  describe('_isConstaintFailure', function () {
+  describe('_isConstraintFailure', function () {
     it('should return true if constraint failure', function (done) {
-      var out = Docker._isConstaintFailure(new Error('unable to find a node that satisfies'))
+      var out = Docker._isConstraintFailure(new Error('unable to find a node that satisfies'))
       expect(out).to.be.true()
       done()
     })
 
     it('should return false if not constraint failure', function (done) {
-      var out = Docker._isConstaintFailure(new Error('no resources available to schedule'))
+      var out = Docker._isConstraintFailure(new Error('no resources available to schedule'))
       expect(out).to.be.false()
       done()
     })
-  }) // end _isConstaintFailure
+  }) // end _isConstraintFailure
 
   describe('_isOutOfResources', function () {
     it('should return true if out of resources', function (done) {
