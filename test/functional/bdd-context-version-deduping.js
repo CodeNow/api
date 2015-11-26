@@ -70,6 +70,11 @@ describe('Building - Context Version Deduping', function () {
     beforeEach(function (done) {
       ctx.build.build({ message: uuid() }, done)
     })
+    beforeEach(function (done) {
+      primus.onceVersionBuildRunning(ctx.cv.id(), function () {
+        done()
+      })
+    })
     it('should fork the instance, and both should be deployed when the build is finished', function (done) {
       // Add it to an instance
       var json = { build: ctx.build.id(), name: randStr(5) }
@@ -106,8 +111,6 @@ describe('Building - Context Version Deduping', function () {
         // Now fork that instance
         var forkedInstance = instance.copy(function (err) {
           if (err) { return done(err) }
-          // Now tail the buildstream so we can check if the instances do not deploy
-          dockerMockEvents.emitBuildComplete(ctx.cv, true)
           // since the build will fail we must rely on version complete, versus instance deploy socket event
           primus.onceVersionComplete(ctx.cv.id(), function () {
             var count = createCount(2, done)
@@ -119,6 +122,8 @@ describe('Building - Context Version Deduping', function () {
               count.next()
             }
           })
+          // Now tail the buildstream so we can check if the instances do not deploy
+          dockerMockEvents.emitBuildComplete(ctx.cv, true)
         })
       })
     })
@@ -127,8 +132,6 @@ describe('Building - Context Version Deduping', function () {
       var json = { build: ctx.build.id(), name: randStr(5) }
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
-        // finish the build
-        dockerMockEvents.emitBuildComplete(ctx.cv, true)
         // Now wait for the finished build
         // since the build will fail we must rely on version complete, versus instance deploy socket event
         primus.onceVersionComplete(ctx.cv.id(), function () {
@@ -144,6 +147,8 @@ describe('Building - Context Version Deduping', function () {
             }
           })
         })
+        // finish the build
+        dockerMockEvents.emitBuildComplete(ctx.cv, true)
       })
     })
   })

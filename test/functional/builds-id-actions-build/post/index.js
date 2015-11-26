@@ -56,12 +56,7 @@ describe('Build - /builds/:id/actions/build', function () {
 
       it('should start building the build - return in-progress build', function (done) {
         require('./../../fixtures/mocks/github/user')(ctx.user)
-        ctx.build.build({message: 'hello!'}, function (err, body, code) {
-          if (err) { return done(err) }
-
-          expect(code).to.equal(201)
-          expect(body).to.exist()
-          dockerMockEvents.emitBuildComplete(ctx.cv)
+        primus.onceVersionBuildRunning(ctx.cv.id(), function () {
           primus.onceVersionComplete(ctx.cv.id(), function (data) {
             expect(last(data.data.data.build.log).content).to.contain('Successfully built')
 
@@ -73,7 +68,6 @@ describe('Build - /builds/:id/actions/build', function () {
             }
             ctx.build.fetch(expects.success(200, buildExpected, count.next))
             var versionExpected = {
-              'dockerHost': exists,
               'build.message': exists,
               'build.started': exists,
               'build.completed': exists,
@@ -85,6 +79,14 @@ describe('Build - /builds/:id/actions/build', function () {
             require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org
             ctx.cv.fetch(expects.success(200, versionExpected, count.next))
           })
+
+          dockerMockEvents.emitBuildComplete(ctx.cv)
+        })
+        ctx.build.build({message: 'hello!'}, function (err, body, code) {
+          if (err) { return done(err) }
+
+          expect(code).to.equal(201)
+          expect(body).to.exist()
         })
       })
       it('copy build, then build both builds, should use same build', function (done) {
@@ -99,14 +101,8 @@ describe('Build - /builds/:id/actions/build', function () {
             }
             expect(code).to.equal(201)
             expect(body).to.exist()
-            require('./../../fixtures/mocks/github/user')(ctx.user)
-            ctx.buildCopy.build({message: 'hello!'}, function (err, body, code) {
-              expect(code).to.equal(201)
-              expect(body).to.exist()
-              expect(body.contextVersions[0]).to.equal(ctx.cv.attrs._id)
 
-              dockerMockEvents.emitBuildComplete(ctx.cv)
-
+            primus.onceVersionBuildRunning(ctx.cv.id(), function () {
               primus.onceVersionComplete(ctx.cv.id(), function (data) {
                 if (err) { return done(err) }
                 expect(last(data.data.data.build.log).content).to.contain('Successfully built')
@@ -123,7 +119,6 @@ describe('Build - /builds/:id/actions/build', function () {
                 ctx.buildCopy.fetch(expects.success(200, buildExpected, count.next))
 
                 var versionExpected = {
-                  'dockerHost': exists,
                   'build.message': exists,
                   'build.started': exists,
                   'build.completed': exists,
@@ -135,6 +130,16 @@ describe('Build - /builds/:id/actions/build', function () {
                 require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org
                 ctx.cv.fetch(expects.success(200, versionExpected, count.next))
               })
+
+              dockerMockEvents.emitBuildComplete(ctx.cv)
+            })
+
+            require('./../../fixtures/mocks/github/user')(ctx.user)
+            ctx.buildCopy.build({message: 'hello!'}, function (err, body, code) {
+              expect(err).to.not.exist()
+              expect(code).to.equal(201)
+              expect(body).to.exist()
+              expect(body.contextVersions[0]).to.equal(ctx.cv.attrs._id)
             })
           })
         })
@@ -151,27 +156,30 @@ describe('Build - /builds/:id/actions/build', function () {
             }
             expect(code).to.equal(201)
             expect(body).to.exist()
+
+            primus.onceVersionBuildRunning(ctx.cv.id(), function () {
+              primus.onceVersionComplete(ctx.cv.id(), function () {
+                var buildExpected = {
+                  duration: exists,
+                  failed: exists
+                }
+
+                require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org
+                ctx.build.fetch(expects.success(200, buildExpected, function () {
+                  require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org
+                  ctx.buildCopy.fetch(expects.success(200, buildExpected, done))
+                }))
+              })
+
+              dockerMockEvents.emitBuildComplete(ctx.cv, true)
+            })
+
             require('./../../fixtures/mocks/github/user')(ctx.user)
             ctx.buildCopy.build({ message: 'hello!' }, function (err, body, code) {
               if (err) { return done(err) }
               expect(code).to.equal(201)
               expect(body).to.exist()
               expect(body.contextVersions[0]).to.equal(ctx.cv.attrs._id)
-
-              dockerMockEvents.emitBuildComplete(ctx.cv, true)
-
-              primus.onceVersionComplete(ctx.cv.id(), function () {
-                var buildExpected = {
-                  duration: exists,
-                  failed: exists
-                }
-                var count = createCount(1, done)
-                require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org
-                ctx.build.fetch(expects.success(200, buildExpected, function () {
-                  require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org
-                  ctx.buildCopy.fetch(expects.success(200, buildExpected, count.next))
-                }))
-              })
             })
           })
         })
@@ -209,12 +217,8 @@ describe('Build - /builds/:id/actions/build', function () {
                   // Now remove the repo
                   newCv.destroyAppCodeVersion(ctx.appCodeVersion.id(), function () {
                     if (err) { return done(err) }
-                    // Build the build
-                    require('./../../fixtures/mocks/github/user')(ctx.user)
-                    ctx.buildCopy.build({message: 'hello!'}, function (err) {
-                      if (err) { return done(err) }
-                      dockerMockEvents.emitBuildComplete(newCv)
 
+                    primus.onceVersionBuildRunning(newCv.id(), function () {
                       primus.onceVersionComplete(newCv.id(), function () {
                         // Now refetch the build, and make sure the cv is different from the
                         // original ctx.build it was cloned from
@@ -224,6 +228,14 @@ describe('Build - /builds/:id/actions/build', function () {
                           done()
                         })
                       })
+
+                      dockerMockEvents.emitBuildComplete(newCv)
+                    })
+
+                    // Build the build
+                    require('./../../fixtures/mocks/github/user')(ctx.user)
+                    ctx.buildCopy.build({message: 'hello!'}, function (err) {
+                      if (err) { return done(err) }
                     })
                   })
                 })

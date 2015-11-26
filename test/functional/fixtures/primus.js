@@ -78,7 +78,7 @@ module.exports = {
     })
   },
   expectAction: function (action, expected, cb) {
-    log.trace('expectAction')
+    log.trace({expectedAction: action}, 'expectAction')
     if (isFunction(expected)) {
       cb = expected
       expected = null
@@ -156,6 +156,29 @@ module.exports = {
         cb(data)
       } else { // keep listening
         self.onceRoomMessage('CONTEXTVERSION_UPDATE', 'build_completed', handler)
+      }
+    }
+  },
+  onceVersionBuildRunning: function (versionId, cb) {
+    log.trace('onceVersionBuildRunning')
+    var self = this
+    if (typeof versionId === 'function') {
+      cb = versionId
+      versionId = null
+    } else {
+      versionId = versionId.toString()
+    }
+    this.onceRoomMessage('CONTEXTVERSION_UPDATE', 'build_running', handler)
+    function handler (data) {
+      if (data instanceof Error) {
+        throw data
+      }
+      if (!versionId) {
+        cb(data)
+      } else if (data.data.data._id.toString() === versionId) {
+        cb(data)
+      } else { // keep listening
+        self.onceRoomMessage('CONTEXTVERSION_UPDATE', 'build_running', handler)
       }
     }
   }
