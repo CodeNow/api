@@ -65,7 +65,7 @@ var dockerLogs = {
 }
 
 describe('docker: ' + moduleName, function () {
-  var model = new Docker('http://fake.host.com')
+  var model = new Docker()
   var ctx
 
   beforeEach(function (done) {
@@ -1114,7 +1114,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should return callback with', function (done) {
-        var docker = new Docker('https://localhost:4242')
+        var docker = new Docker()
         docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
           expect(err).to.be.undefined()
           expect(result.dockerContainer).to.equal('some-container-id')
@@ -1137,7 +1137,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should call original docker method 5 times and return error', function (done) {
-        var docker = new Docker('https://localhost:4242')
+        var docker = new Docker()
         docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err) {
           expect(err.output.statusCode).to.equal(404)
           expect(err.output.payload.message).to.equal('Docker error')
@@ -1147,7 +1147,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should not retry if ignoreStatusCode was specified', function (done) {
-        var docker = new Docker('https://localhost:4242')
+        var docker = new Docker()
         docker.inspectContainerWithRetry({ times: 6, ignoreStatusCode: 404 }, 'some-container-id', function (err) {
           expect(err).to.be.null()
           expect(Docker.prototype.inspectContainer.callCount).to.equal(1)
@@ -1177,7 +1177,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should call original docker method with retries on error and final success', function (done) {
-        var docker = new Docker('https://localhost:4242')
+        var docker = new Docker()
 
         docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
           expect(err).to.be.undefined()

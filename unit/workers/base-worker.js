@@ -605,7 +605,7 @@ describe('BaseWorker: ' + moduleName, function () {
       // normally set by _findInstance & _findUser
       ctx.worker.instance = ctx.mockInstance
       ctx.worker.user = ctx.mockUser
-      ctx.worker.docker = new Docker('0.0.0.0')
+      ctx.worker.docker = new Docker()
       done()
     })
 
