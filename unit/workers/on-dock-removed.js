@@ -13,6 +13,7 @@ var expect = Code.expect
 
 var sinon = require('sinon')
 var Instance = require('models/mongo/instance')
+var rabbitMQ = require('models/rabbitmq')
 var Worker = require('workers/on-dock-removed')
 
 var path = require('path')
@@ -106,55 +107,35 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
       })
     }) // end findActiveInstancesByDockerHost returns array
   }) // end #handle
-  //
-  // describe('#_redeployContainers', function () {
-  //   var testErr = 'fire'
-  //   var testData = [{
-  //     id: '1'
-  //   }, {
-  //     id: '2'
-  //   }]
-  //   var redeployStub
-  //   beforeEach(function (done) {
-  //     redeployStub = sinon.stub()
-  //     worker.runnableClient.newInstance = sinon.stub().returns({
-  //       redeploy: redeployStub
-  //     })
-  //     done()
-  //   })
-  //
-  //   describe('redeploy fails for one instance', function () {
-  //     beforeEach(function (done) {
-  //       redeployStub.onCall(0).yieldsAsync(testErr)
-  //       redeployStub.onCall(1).yieldsAsync()
-  //       done()
-  //     })
-  //
-  //     it('should callback with no error', function (done) {
-  //       worker._redeployContainers(testData, function (err) {
-  //         expect(err).to.be.undefined()
-  //         expect(redeployStub
-  //           .calledTwice).to.be.true()
-  //         done()
-  //       })
-  //     })
-  //   }) // end redeploy fails for one instance
-  //
-  //   describe('redeploy passes', function () {
-  //     beforeEach(function (done) {
-  //       redeployStub.onCall(0).yieldsAsync()
-  //       redeployStub.onCall(1).yieldsAsync()
-  //       done()
-  //     })
-  //
-  //     it('should callback with no error', function (done) {
-  //       worker._redeployContainers(testData, function (err) {
-  //         expect(err).to.be.undefined()
-  //         expect(redeployStub
-  //           .calledTwice).to.be.true()
-  //         done()
-  //       })
-  //     })
-  //   }) // end redeploy passes
-  // }) // end _redeployContainers
+
+  describe('#_redeployContainers', function () {
+    var instances = [{
+      _id: '1'
+    }, {
+      _id: '2'
+    }]
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      rabbitMQ.redeployInstanceContainer.restore()
+      done()
+    })
+
+    describe('redeploy passes', function () {
+      beforeEach(function (done) {
+        done()
+      })
+
+      it('should callback with no error', function (done) {
+        worker._redeployContainers(instances, function (err) {
+          expect(err).to.be.undefined()
+          expect(rabbitMQ.redeployInstanceContainer.calledTwice).to.be.true()
+          done()
+        })
+      })
+    }) // end redeploy passes
+  }) // end _redeployContainers
 }) // end worker: on-dock-removed unit test
