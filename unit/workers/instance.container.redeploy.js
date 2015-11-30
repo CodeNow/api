@@ -12,7 +12,7 @@ var sinon = require('sinon')
 var InstanceContainerRedeploy = require('workers/instance.container.redeploy')
 var Instance = require('models/mongo/instance')
 
-// var afterEach = lab.afterEach
+var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
 var expect = Code.expect
@@ -54,107 +54,76 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     ctx.worker = new InstanceContainerRedeploy(ctx.data)
     done()
   })
-  // beforeEach(function (done) {
-  //   sinon.stub(ctx.worker, '_baseWorkerFindInstance', function (query, cb) {
-  //     ctx.worker.instance = ctx.mockInstance
-  //     cb(null, ctx.mockInstance)
-  //   })
-  //   sinon.stub(ctx.worker, '_baseWorkerUpdateInstanceFrontend').yieldsAsync(null)
-  //   done()
-  // })
-  // afterEach(function (done) {
-  //   ctx.worker._baseWorkerFindInstance.restore()
-  //   ctx.worker._baseWorkerUpdateInstanceFrontend.restore()
-  //   done()
-  // })
-  // describe('all together', function () {
-  //   beforeEach(function (done) {
-  //     sinon.stub(Hosts.prototype, 'upsertHostsForInstance').yieldsAsync(null)
-  //     done()
-  //   })
-  //   afterEach(function (done) {
-  //     Hosts.prototype.upsertHostsForInstance.restore()
-  //     done()
-  //   })
-  //   describe('success', function () {
-  //     beforeEach(function (done) {
-  //       sinon.stub(InstanceService.prototype, 'updateOnContainerStart')
-  //         .yieldsAsync(null, ctx.mockInstance)
-  //       done()
-  //     })
-  //     afterEach(function (done) {
-  //       InstanceService.prototype.updateOnContainerStart.restore()
-  //       done()
-  //     })
-  //
-  //     it('should do everything', function (done) {
-  //       ctx.worker.handle(function (err) {
-  //         // This should never return an error
-  //         expect(err).to.be.undefined()
-  //         expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1)
-  //         var queryArg = ctx.worker._baseWorkerFindInstance.getCall(0).args[0]
-  //         expect(queryArg._id).to.equal(ctx.instanceId)
-  //         expect(queryArg['container.dockerContainer']).to.equal(ctx.data.id)
-  //         expect(InstanceService.prototype.updateOnContainerStart.callCount).to.equal(1)
-  //         var args = InstanceService.prototype.updateOnContainerStart.getCall(0).args
-  //         expect(args[0]).to.equal(ctx.mockInstance)
-  //         expect(args[1]).to.equal(ctx.data.id)
-  //         expect(args[2]).to.equal(ctx.data.containerIp)
-  //         expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1)
-  //         var updateFrontendArgs = ctx.worker._baseWorkerUpdateInstanceFrontend.getCall(0).args
-  //         expect(updateFrontendArgs[0]).to.equal(ctx.mockInstance._id)
-  //         expect(updateFrontendArgs[1]).to.equal(ctx.data.inspectData.Config.Labels.sessionUserGithubId)
-  //         expect(updateFrontendArgs[2]).to.equal('start')
-  //         done()
-  //       })
-  //     })
-  //   })
-  //   describe('failure', function () {
-  //     beforeEach(function (done) {
-  //       sinon.stub(InstanceService.prototype, 'updateOnContainerStart')
-  //         .yieldsAsync(new Error('this is an error'))
-  //       done()
-  //     })
-  //
-  //     afterEach(function (done) {
-  //       InstanceService.prototype.updateOnContainerStart.restore()
-  //       done()
-  //     })
-  //
-  //     it('should do nothing if instanceId is null', function (done) {
-  //       ctx.worker.instanceId = null
-  //       ctx.worker.handle(function (err) {
-  //         // This should never return an error
-  //         expect(err).to.be.undefined()
-  //         expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(0)
-  //         done()
-  //       })
-  //     })
-  //
-  //     it('should get most of the way through, then fail', function (done) {
-  //       ctx.worker.handle(function (err) {
-  //         // This should never return an error
-  //         expect(err).to.be.undefined()
-  //         expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1)
-  //         expect(InstanceService.prototype.updateOnContainerStart.callCount).to.equal(1)
-  //         expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(0)
-  //         done()
-  //       })
-  //     })
-  //   })
-  // })
+  describe('#handle', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.worker, '_baseWorkerFindInstance', function (query, cb) {
+        ctx.worker.instance = new Instance(ctx.mockInstance)
+        cb(null, ctx.mockInstance)
+      })
+      sinon.stub(ctx.worker, '_baseWorkerFindUser').yieldsAsync(null)
+      sinon.stub(ctx.worker, '_findBuild').yieldsAsync(null)
+      sinon.stub(ctx.worker, '_validateInstanceAndBuild').yieldsAsync(null)
+      sinon.stub(ctx.worker, '_updateInstance').yieldsAsync(null)
+      sinon.stub(ctx.worker, '_deleteOldContainer').yieldsAsync(null)
+      sinon.stub(ctx.worker, '_createNewContainer').yieldsAsync(null)
+      sinon.stub(ctx.worker, '_updateFrontend').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      ctx.worker._baseWorkerFindInstance.restore()
+      ctx.worker._baseWorkerFindUser.restore()
+      ctx.worker._findBuild.restore()
+      ctx.worker._validateInstanceAndBuild.restore()
+      ctx.worker._updateInstance.restore()
+      ctx.worker._deleteOldContainer.restore()
+      ctx.worker._createNewContainer.restore()
+      ctx.worker._updateFrontend.restore()
+      done()
+    })
+
+    it('should do everything if no errors', function (done) {
+      ctx.worker.handle(function (err) {
+        // This should never return an error
+        expect(err).to.be.undefined()
+        expect(ctx.worker._baseWorkerFindInstance.calledOnce).to.be.true()
+        expect(ctx.worker._baseWorkerFindUser.calledOnce).to.be.true()
+        expect(ctx.worker._findBuild.calledOnce).to.be.true()
+        expect(ctx.worker._validateInstanceAndBuild.calledOnce).to.be.true()
+        expect(ctx.worker._updateInstance.calledOnce).to.be.true()
+        expect(ctx.worker._deleteOldContainer.calledOnce).to.be.true()
+        expect(ctx.worker._createNewContainer.calledOnce).to.be.true()
+        expect(ctx.worker._updateFrontend.calledOnce).to.be.true()
+        done()
+      })
+    })
+    it('should not call methods after the failire', function (done) {
+      ctx.worker._deleteOldContainer.restore()
+      sinon.stub(ctx.worker, '_deleteOldContainer').yieldsAsync(new Error('delete error'))
+      ctx.worker.handle(function (err) {
+        // This should never return an error
+        expect(err).to.be.undefined()
+        expect(ctx.worker._baseWorkerFindInstance.calledOnce).to.be.true()
+        expect(ctx.worker._baseWorkerFindUser.calledOnce).to.be.true()
+        expect(ctx.worker._findBuild.calledOnce).to.be.true()
+        expect(ctx.worker._validateInstanceAndBuild.calledOnce).to.be.true()
+        expect(ctx.worker._updateInstance.calledOnce).to.be.true()
+        expect(ctx.worker._deleteOldContainer.calledOnce).to.be.true()
+        expect(ctx.worker._createNewContainer.calledOnce).to.be.false()
+        expect(ctx.worker._updateFrontend.calledOnce).to.be.false()
+        done()
+      })
+    })
+  })
 
   describe('_updateInstance', function () {
     beforeEach(function (done) {
       // normally set by _baseWorkerFindInstance
       ctx.worker.instance = new Instance(ctx.mockInstance)
-      ctx.worker.instance.build = ctx.mockInstance.build
       done()
     })
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(ctx.worker.instance, 'update')
-          .yieldsAsync(null, ctx.mockInstance)
+        sinon.stub(ctx.worker.instance, 'update').yieldsAsync(null)
         done()
       })
 
