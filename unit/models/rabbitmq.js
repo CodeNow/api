@@ -356,7 +356,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       }
       // missing sessionUserGithubId
       ctx.invalidJobData = {
-        instanceId: '507f191e810c19729de860ea',
+        instanceId: '507f191e810c19729de860ea'
       }
       done()
     })
