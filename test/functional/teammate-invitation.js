@@ -132,6 +132,7 @@ describe('TeammateInvitation', function () {
           email: ctx.user.attrs.email,
           github: ctx.githubUserId
         },
+        emailMessage: 'asdasdasd',
         admin: true
       }
       ctx.user.createTeammateInvitation(opts, function (err, res, statusCode) {
@@ -144,7 +145,7 @@ describe('TeammateInvitation', function () {
         var inviteAdminArgs = SendGrid.prototype.inviteAdmin.args[0]
         expect(inviteAdminArgs[0], 'recipient').to.deep.equal(opts.recipient)
         expect(inviteAdminArgs[1]._id.toString(), 'sessionUser').to.equal(ctx.user.id())
-        expect(inviteAdminArgs[2], 'organizationId').to.equal(ctx.orgGithubId)
+        expect(inviteAdminArgs[2], 'emailMessage').to.equal('asdasdasd')
         expect(inviteAdminArgs[3], 'cb').to.be.a.function()
         expect(res).to.be.an.object()
         expect(res.recipient).to.be.an.object()
