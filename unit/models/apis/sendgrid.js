@@ -100,8 +100,8 @@ describe('sendgrid: ' + moduleName, function () {
     var sessionUser = {
       accounts: {
         github: {
-          id: 'sadfasf23r2q31234',
-          displayName: 'nathan'
+          displayName: 'nathan',
+          id: 'sadfasf23r2q31234'
         }
       }
     }
@@ -186,11 +186,11 @@ describe('sendgrid: ' + moduleName, function () {
   })
   describe('inviteAdmin', function () {
     var sessionUser = {
+      email: 'ted@something.com',
       accounts: {
         github: {
-          email: 'ted@something.com',
-          id: 'sadfasf23r2q31234',
-          displayName: 'ted'
+          displayName: 'ted',
+          id: 'sadfasf23r2q31234'
         }
       }
     }
