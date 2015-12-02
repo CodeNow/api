@@ -21,9 +21,6 @@ var moduleName = path.relative(process.cwd(), __filename)
 
 describe('worker: on-dock-removed unit test: ' + moduleName, function () {
   var worker
-  beforeEach(function (done) {
-    done()
-  })
 
   describe('#handle', function () {
     var testHost = 'goku'
@@ -34,7 +31,7 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
     beforeEach(function (done) {
       worker = new Worker(testData)
       sinon.stub(Instance, 'findActiveInstancesByDockerHost')
-      sinon.stub(Worker.prototype, '_redeployContainers')
+      sinon.stub(Worker.prototype, '_redeployContainers').returns()
       done()
     })
 
@@ -87,7 +84,7 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
       var testArray = ['1', '2']
       beforeEach(function (done) {
         Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
-        Worker.prototype._redeployContainers.yieldsAsync()
+        Worker.prototype._redeployContainers.returns()
         done()
       })
 
@@ -125,16 +122,10 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
     })
 
     describe('redeploy passes', function () {
-      beforeEach(function (done) {
-        done()
-      })
-
       it('should callback with no error', function (done) {
-        worker._redeployContainers(instances, function (err) {
-          expect(err).to.be.undefined()
-          expect(rabbitMQ.redeployInstanceContainer.calledTwice).to.be.true()
-          done()
-        })
+        worker._redeployContainers(instances)
+        expect(rabbitMQ.redeployInstanceContainer.calledTwice).to.be.true()
+        done()
       })
     }) // end redeploy passes
   }) // end _redeployContainers
