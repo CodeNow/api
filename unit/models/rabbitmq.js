@@ -406,7 +406,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         instanceShortHash: 'd1as5f',
         instanceName: 'api',
         instanceMasterPod: true,
-        instanceMasterBranch: 'master',
         ownerGithubId: 429706,
         hostIp: '10.0.1.1',
         container: {
@@ -419,7 +418,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         instanceShortHash: 'd1as5f',
         instanceName: 'api',
         instanceMasterPod: true,
-        instanceMasterBranch: 'master',
         ownerUsername: 'podviaznikov',
         hostIp: '10.0.1.1'
       }
