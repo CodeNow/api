@@ -300,7 +300,7 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
       it('should re-enqueue a new build if the image cannot be found', function (done) {
         PullInstanceImageWorker(ctx.job).asCallback(function (err, res) {
           expect(err).to.equal(null)
-          sinon.assert.calledTwice(Instance.findOneAsync) // Also called at the begging of the function
+          sinon.assert.calledOnce(Instance.findOneAsync) // Also called at the begging of the function
           sinon.assert.calledOnce(Build.findOneAsync)
           sinon.assert.calledWith(Instance.findOneAsync, {
             _id: toObjectId(ctx.job.instanceId),
