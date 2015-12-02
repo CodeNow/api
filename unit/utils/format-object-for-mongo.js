@@ -12,12 +12,12 @@ var formatObjectForMongo = require('utils/format-object-for-mongo')
 describe('format-object-for-mongo unit test', function () {
   it('should format object correctly', function (done) {
     var testObject = {
-      'bad.key': 123,
+      'bad.key.boo': 123,
       goodKey: 555
     }
     formatObjectForMongo(testObject)
     expect(testObject).to.deep.equal({
-      'bad-key': 123,
+      'bad-key-boo': 123,
       goodKey: 555
     })
     done()
