@@ -1086,4 +1086,43 @@ describe('Context Version: ' + moduleName, function () {
       })
     })
   }) // end 'populateOwner'
+
+  describe('#markDockRemovedByDockerHost', function (){
+    var dockerHost = '1234'
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'update').yieldsAsync()
+      done()
+    })
+    afterEach(function (done) {
+      ContextVersion.update.restore()
+      done()
+    })
+    it('should call update with the right parameters', function (done) {
+      ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(ContextVersion.update)
+        sinon.assert.calledWith(ContextVersion.update,
+          { dockerHost: dockerHost },
+          { $set: {dockRemoved: true} },
+          { multi: true },
+          sinon.match.func
+        )
+        done()
+      })
+    })
+    describe('when the database errors', function () {
+      var error = 'Paintings'
+      beforeEach(function (done) {
+        ContextVersion.update.yieldsAsync(error)
+        done()
+      })
+      it('should pass the error through to the callback', function (done) {
+        ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
+          expect(err).to.equal(error)
+          sinon.assert.calledOnce(ContextVersion.update)
+          done()
+        })
+      })
+    })
+  })
 })
