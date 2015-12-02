@@ -344,6 +344,58 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   })
 
+  describe('redeployInstanceContainer', function () {
+    beforeEach(function (done) {
+      // this normally set after connect
+      ctx.rabbitMQ.hermesClient = {
+        publish: noop
+      }
+      ctx.validJobData = {
+        instanceId: '507f191e810c19729de860ea',
+        sessionUserGithubId: 429706
+      }
+      // missing sessionUserGithubId
+      ctx.invalidJobData = {
+        instanceId: '507f191e810c19729de860ea'
+      }
+      done()
+    })
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
+          expect(eventName).to.equal('instance.container.redeploy')
+          expect(eventData).to.equal(ctx.validJobData)
+        })
+        done()
+      })
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore()
+        done()
+      })
+      it('should publish a job with required data', function (done) {
+        ctx.rabbitMQ.redeployInstanceContainer(ctx.validJobData)
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1)
+        done()
+      })
+    })
+    describe('failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {})
+        done()
+      })
+      afterEach(function (done) {
+        ctx.rabbitMQ.hermesClient.publish.restore()
+        done()
+      })
+      it('should not publish a job without required data', function (done) {
+        expect(ctx.rabbitMQ.redeployInstanceContainer.bind(ctx.rabbitMQ, ctx.invalidJobData))
+          .to.throw(Error, /Validation failed/)
+        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
+        done()
+      })
+    })
+  })
+
   describe('deleteInstanceContainer', function () {
     beforeEach(function (done) {
       // this normally set after connect
@@ -354,7 +406,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         instanceShortHash: 'd1as5f',
         instanceName: 'api',
         instanceMasterPod: true,
-        instanceMasterBranch: 'master',
         ownerGithubId: 429706,
         hostIp: '10.0.1.1',
         container: {
@@ -367,7 +418,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         instanceShortHash: 'd1as5f',
         instanceName: 'api',
         instanceMasterPod: true,
-        instanceMasterBranch: 'master',
         ownerUsername: 'podviaznikov',
         hostIp: '10.0.1.1'
       }
