@@ -11,6 +11,7 @@ var TaskFatalError = require('ponos').TaskFatalError
 
 var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
+var Build = require('models/mongo/build')
 var Mavis = require('models/apis/mavis')
 var PullInstanceImageWorker = require('workers/pull-instance-image')
 var rabbitMQ = require('models/rabbitmq')
@@ -31,12 +32,20 @@ var newMockInstance = function (job) {
       _id: new ObjectId(),
       build: {
         dockerTag: 'dockerTag:latest'
-      }
+      },
+      context: new ObjectId()
     },
     imagePull: {
       _id: new ObjectId()
     },
     build: job.buildId
+  })
+}
+var newMockBuild = function (job, completed, failed) {
+  return new Build({
+    _id: job.buildId,
+    completed: (completed !== undefined) ? completed : (new Date()),
+    failed: (failed !== undefined) ? failed : false
   })
 }
 
@@ -51,21 +60,25 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
       ownerUsername: 'ownerUsername'
     }
     ctx.mockInstance = newMockInstance(ctx.job)
-    sinon.stub(Instance, 'findOneAsync')
-    sinon.stub(Mavis.prototype, 'findDockForContainerAsync')
-    sinon.stub(Instance.prototype, 'modifyImagePullAsync')
+    sinon.stub(Build, 'findOneAsync')
     sinon.stub(Docker.prototype, 'pullImageAsync')
+    sinon.stub(Instance, 'findOneAsync')
     sinon.stub(Instance.prototype, 'modifyUnsetImagePullAsync')
+    sinon.stub(Instance.prototype, 'modifyImagePullAsync')
+    sinon.stub(Mavis.prototype, 'findDockForContainerAsync')
     sinon.stub(rabbitMQ, 'createInstanceContainer')
+    sinon.stub(rabbitMQ, 'createImageBuilderContainer')
     done()
   })
   afterEach(function (done) {
+    Build.findOneAsync.restore()
+    Docker.prototype.pullImageAsync.restore()
     Instance.findOneAsync.restore()
     Instance.prototype.modifyImagePullAsync.restore()
-    Mavis.prototype.findDockForContainerAsync.restore()
-    Docker.prototype.pullImageAsync.restore()
     Instance.prototype.modifyUnsetImagePullAsync.restore()
+    Mavis.prototype.findDockForContainerAsync.restore()
     rabbitMQ.createInstanceContainer.restore()
+    rabbitMQ.createImageBuilderContainer.restore()
     done()
   })
 
@@ -169,24 +182,29 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
         })
       })
     })
+
     describe('instance.modifyUnsetImagePullAsync instance not found', function () {
       beforeEach(function (done) {
         ctx.dockerHost = 'http://localhost:4243'
+        Build.findOneAsync
+          .returns(Promise.resolve(newMockBuild(ctx.job)))
+        Docker.prototype.pullImageAsync
+          .returns(Promise.resolve())
         Instance.findOneAsync
           .returns(Promise.resolve(ctx.mockInstance))
         Instance.prototype.modifyImagePullAsync
           .returns(Promise.resolve(ctx.mockInstance))
-        Mavis.prototype.findDockForContainerAsync
-          .returns(Promise.resolve(ctx.dockerHost))
-        Docker.prototype.pullImageAsync
-          .returns(Promise.resolve())
         Instance.prototype.modifyUnsetImagePullAsync
           .returns(Promise.resolve(null))
+        Mavis.prototype.findDockForContainerAsync
+          .returns(Promise.resolve(ctx.dockerHost))
+        rabbitMQ.createImageBuilderContainer
+          .returns(Promise.resolve())
         done()
       })
 
       it('should throw the err', function (done) {
-        PullInstanceImageWorker(ctx.job).asCallback(function (err) {
+        PullInstanceImageWorker(ctx.job).asCallback(function (err, res) {
           expect(err).to.exist()
           expect(err).to.be.an.instanceOf(TaskFatalError)
           expect(err.data.originalError).to.exist()
@@ -264,6 +282,8 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
           err: 'image dockerTag: not found' // err is a string
         })
         ctx.dockerHost = 'http://localhost:4243'
+        Build.findOneAsync
+          .returns(Promise.resolve(newMockBuild(ctx.job)))
         Instance.findOneAsync
           .returns(Promise.resolve(ctx.mockInstance))
         Instance.prototype.modifyImagePullAsync
@@ -272,14 +292,30 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
           .returns(Promise.resolve(ctx.dockerHost))
         Docker.prototype.pullImageAsync
           .throws(ctx.err)
+        rabbitMQ.createImageBuilderContainer
+          .returns(Promise.resolve())
         done()
       })
 
-      it('docker.pullImageAsync', function (done) {
-        PullInstanceImageWorker(ctx.job).asCallback(function (err) {
+      it('should re-enqueue a new build if the image cannot be found', function (done) {
+        PullInstanceImageWorker(ctx.job).asCallback(function (err, res) {
+          expect(err).to.equal(null)
+          sinon.assert.calledTwice(Instance.findOneAsync) // Also called at the begging of the function
+          sinon.assert.calledOnce(Build.findOneAsync)
+          sinon.assert.calledWith(Instance.findOneAsync, {
+            _id: toObjectId(ctx.job.instanceId),
+            build: toObjectId(ctx.job.buildId)
+          })
+          sinon.assert.calledWith(Build.findOneAsync, { _id: toObjectId(ctx.job.buildId) })
+          done()
+        })
+      })
+
+      it('should throw an error in order to acknowledge the job as failed', function (done) {
+        Build.findOneAsync.returns(Promise.resolve(newMockBuild(ctx.job, null, null)))
+        PullInstanceImageWorker(ctx.job).asCallback(function (err, res) {
           expect(err).to.exist()
-          expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.data.originalError).to.equal(ctx.err)
+          expect(err).to.equal(ctx.err)
           done()
         })
       })
