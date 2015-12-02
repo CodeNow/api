@@ -10,9 +10,11 @@ var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var Code = require('code')
 var expect = Code.expect
+var Promise = require('bluebird')
 
 var sinon = require('sinon')
 var Instance = require('models/mongo/instance')
+var ContextVersion = require('models/mongo/context-version')
 var Worker = require('workers/on-dock-removed')
 
 var path = require('path')
@@ -33,13 +35,15 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
     beforeEach(function (done) {
       worker = new Worker(testData)
       sinon.stub(worker.runnableClient, 'githubLogin')
-      sinon.stub(Instance, 'findActiveInstancesByDockerHost')
+      sinon.stub(Instance, 'findActiveInstancesByDockerHostAsync').returns(Promise.resolve([]))
+      sinon.stub(ContextVersion, 'findByDockerHostAsync').returns(Promise.resolve([]))
       done()
     })
 
     afterEach(function (done) {
       worker.runnableClient.githubLogin.restore()
-      Instance.findActiveInstancesByDockerHost.restore()
+      Instance.findActiveInstancesByDockerHostAsync.restore()
+      ContextVersion.findByDockerHostAsync.restore()
       done()
     })
 
@@ -53,13 +57,10 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
       it('should cb err', function (done) {
         worker.handle(function (err) {
           expect(err).to.not.exist()
-          expect(
-            worker.runnableClient.githubLogin
-              .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
-              .calledOnce).to.be.true()
-          expect(
-            Instance.findActiveInstancesByDockerHost
-              .called).to.be.false()
+          sinon.assert.calledOnce(worker.runnableClient.githubLogin)
+          sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHostAsync)
+          sinon.assert.notCalled(ContextVersion.findByDockerHostAsync)
           done()
         })
       })
@@ -78,31 +79,27 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
         done()
       })
 
-      describe('findActiveInstancesByDockerHost errors', function () {
+      describe('findActiveInstancesByDockerHostAsync errors', function () {
         beforeEach(function (done) {
-          Instance.findActiveInstancesByDockerHost.yieldsAsync(testErr)
+          Instance.findActiveInstancesByDockerHostAsync.returns(Promise.reject(testErr))
           done()
         })
 
         it('should cb err', function (done) {
           worker.handle(function (err) {
-            expect(
-              worker.runnableClient.githubLogin
-                .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
-                .calledOnce).to.be.true()
-            expect(
-              Instance.findActiveInstancesByDockerHost
-                .withArgs(testHost)
-                .calledOnce).to.be.true()
-            expect(err).to.not.exist()
+            sinon.assert.calledOnce(worker.runnableClient.githubLogin)
+            sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
+            sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+            expect(err).to.equal(testErr)
             done()
           })
         })
-      }) // end findActiveInstancesByDockerHost error
+      }) // end findActiveInstancesByDockerHostAsync error
 
-      describe('findActiveInstancesByDockerHost return empty', function () {
+      describe('findActiveInstancesByDockerHostAsync return empty', function () {
         beforeEach(function (done) {
-          Instance.findActiveInstancesByDockerHost.yieldsAsync(null, [])
+          Instance.findActiveInstancesByDockerHostAsync.yieldsAsync(null, [])
           done()
         })
 
@@ -114,7 +111,7 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
                 .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
                 .calledOnce).to.be.true()
             expect(
-              Instance.findActiveInstancesByDockerHost
+              Instance.findActiveInstancesByDockerHostAsync
                 .withArgs(testHost)
                 .calledOnce).to.be.true()
             expect(
@@ -123,12 +120,12 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
             done()
           })
         })
-      }) // end findActiveInstancesByDockerHost return empty
+      }) // end findActiveInstancesByDockerHostAsync return empty
 
-      describe('findActiveInstancesByDockerHost returns array', function () {
+      describe('findActiveInstancesByDockerHostAsync returns array', function () {
         var testArray = ['1', '2']
         beforeEach(function (done) {
-          Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
+          Instance.findActiveInstancesByDockerHostAsync.yieldsAsync(null, testArray)
           Worker.prototype._redeployContainers.yieldsAsync()
           done()
         })
@@ -141,7 +138,7 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
                 .withArgs(process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
                 .calledOnce).to.be.true()
             expect(
-              Instance.findActiveInstancesByDockerHost
+              Instance.findActiveInstancesByDockerHostAsync
                 .withArgs(testHost)
                 .calledOnce).to.be.true()
             expect(
@@ -151,7 +148,7 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
             done()
           })
         })
-      }) // end findActiveInstancesByDockerHost returns array
+      }) // end findActiveInstancesByDockerHostAsync returns array
     }) // end github login works
   }) // end #handle
 
