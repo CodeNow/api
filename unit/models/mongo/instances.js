@@ -236,6 +236,59 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   }) // end findActiveInstancesByDockerHost
 
+  describe('#setStoppingAsStoppedByDockerHost', function () {
+    var dockerHost = '1234'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'update').yieldsAsync()
+      done()
+    })
+    afterEach(function (done) {
+      Instance.update.restore()
+      done()
+    })
+    it('should call update with the right parameters', function (done) {
+      Instance.setStoppingAsStoppedByDockerHost(dockerHost, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.update)
+        sinon.assert.calledWith(Instance.update,
+          {
+            'container.dockerHost': dockerHost,
+            'container.inspect.State.Stopping': true
+          }, {
+            $set: {
+              'container.inspect.State.Pid': 0,
+              'container.inspect.State.Running': false,
+              'container.inspect.State.Restarting': false,
+              'container.inspect.State.Paused': false,
+              'container.inspect.State.FinishedAt': sinon.match.string,
+              'container.inspect.State.ExitCode': 0
+            },
+            $unset: {
+              'container.inspect.State.Stopping': ''
+            }
+          }, {
+            multi: true
+          }
+        )
+        done()
+      })
+    })
+    describe('on mongoError', function () {
+      var error = 'heaters'
+      beforeEach(function (done) {
+        Instance.update.yieldsAsync(error)
+        done()
+      })
+      it('should propegate the error to the cb function', function (done) {
+        Instance.setStoppingAsStoppedByDockerHost(dockerHost, function (err) {
+          expect(err).to.equal(error)
+          sinon.assert.calledOnce(Instance.update)
+          done()
+        })
+      })
+    })
+  })
+
   describe('atomic set container state', function () {
     it('should not set container state to Starting if container on instance has changed', function (done) {
       var instance = createNewInstance('container-stopping')
