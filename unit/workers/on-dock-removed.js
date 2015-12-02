@@ -32,14 +32,16 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
     worker = new Worker(testData)
     sinon.stub(worker.runnableClient, 'githubLogin')
     sinon.stub(Instance, 'findActiveInstancesByDockerHostAsync').returns(Promise.resolve([]))
-    sinon.stub(ContextVersion, 'findByDockerHostAsync').returns(Promise.resolve([]))
+    sinon.stub(ContextVersion, 'markDockRemovedByDockerHostAsync').returns(Promise.resolve())
+    sinon.stub(Instance, 'setStoppingAsStoppedByDockerHostAsync').returns(Promise.resolve())
     done()
   })
 
   afterEach(function (done) {
     worker.runnableClient.githubLogin.restore()
     Instance.findActiveInstancesByDockerHostAsync.restore()
-    ContextVersion.findByDockerHostAsync.restore()
+    ContextVersion.markDockRemovedByDockerHostAsync.restore()
+    Instance.setStoppingAsStoppedByDockerHostAsync.restore()
     done()
   })
 
@@ -56,8 +58,8 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(worker.runnableClient.githubLogin)
           sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
-          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHostAsync)
-          sinon.assert.notCalled(ContextVersion.findByDockerHostAsync)
+          sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHostAsync)
+          sinon.assert.notCalled(ContextVersion.markDockRemovedByDockerHostAsync)
           done()
         })
       })
@@ -94,6 +96,16 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
             done()
           })
         })
+        it('should still run other sub-tasks', function (done) {
+          worker.handle(function (err) {
+            sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
+            sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
+            sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
+            sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
+            expect(err).to.equal(testErr)
+            done()
+          })
+        });
       }) // end findActiveInstancesByDockerHostAsync error
 
       describe('findActiveInstancesByDockerHostAsync return empty', function () {
@@ -102,7 +114,7 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
           done()
         })
 
-        it('should cb right away', function (done) {
+        it('should cb without calling redeploy containers', function (done) {
           worker.handle(function (err) {
             sinon.assert.calledOnce(worker.runnableClient.githubLogin)
             sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
@@ -136,6 +148,72 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
           })
         })
       }) // end findActiveInstancesByDockerHostAsync returns array
+
+      describe('ContextVersion.markDockRemovedByDockerHostAsync returns error', function () {
+        var testArray = ['1', '2']
+        beforeEach(function (done) {
+          var rejectionPromise = Promise.reject(testErr)
+          rejectionPromise.catch(function () {}) // Prevents an error from getting triggered
+          ContextVersion.markDockRemovedByDockerHostAsync.returns(rejectionPromise)
+          Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
+          Worker.prototype._redeployContainers.returns(Promise.resolve())
+          done()
+        })
+        it('should error', function (done) {
+          worker.handle(function (err) {
+            expect(err).to.equal(testErr)
+            done()
+          })
+        })
+        it('should run the other methods', function (done) {
+          worker.handle(function () {
+            sinon.assert.calledOnce(worker.runnableClient.githubLogin)
+            sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
+            sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+            sinon.assert.calledOnce(Worker.prototype._redeployContainers)
+            sinon.assert.calledWith(Worker.prototype._redeployContainers, testArray)
+            sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
+            sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
+            sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
+            sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
+            done()
+          })
+        })
+      })
+
+      describe('Instance.setStoppingAsStoppedByDockerHostAsync returns error', function () {
+        var testArray = ['1', '2']
+        beforeEach(function (done) {
+          var rejectionPromise = Promise.reject(testErr)
+          rejectionPromise.catch(function () {}) // Prevents an error from getting triggered
+          Instance.setStoppingAsStoppedByDockerHostAsync.returns(rejectionPromise)
+          Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
+          Worker.prototype._redeployContainers.returns(Promise.resolve())
+          done()
+        })
+        it('should error', function (done) {
+          worker.handle(function (err) {
+            expect(err).to.equal(testErr)
+            done()
+          })
+        })
+        it('should run the other methods', function (done) {
+          worker.handle(function () {
+            sinon.assert.calledOnce(worker.runnableClient.githubLogin)
+            sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
+            sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+            sinon.assert.calledOnce(Worker.prototype._redeployContainers)
+            sinon.assert.calledWith(Worker.prototype._redeployContainers, testArray)
+            sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
+            sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
+            sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
+            sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
+            done()
+          })
+        })
+      })
     }) // end github login works
   }) // end #handle
 
