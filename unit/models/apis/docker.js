@@ -127,13 +127,21 @@ describe('docker: ' + moduleName, function () {
     done()
   })
 
-  describe('createSwarmConstraint', function () {
+  describe('createSwarmConstraints', function () {
     it('should format constraints correctly', function (done) {
-      var out = Docker.createSwarmConstraint('org', 'default')
-      expect(out).to.equal('["org==default"]')
+      var out = Docker.createSwarmConstraints([{
+        name: 'org',
+        type: 'hard',
+        value: 1234
+      }, {
+        name: 'node',
+        type: 'soft',
+        value: 'ip-10-1-1-2'
+      }])
+      expect(out).to.equal('["org==1234","node==~ip-10-1-1-2"]')
       done()
     })
-  }) // end createSwarmConstraint
+  }) // end createSwarmConstraints
 
   describe('_handleImageBuilderError', function () {
     beforeEach(function (done) {
@@ -1018,19 +1026,20 @@ describe('docker: ' + moduleName, function () {
           shortHash: 'abcdef'
         },
         contextVersion: {
-          _id: '123456789012345678901234'
+          _id: '123456789012345678901234',
+          dockerHost: 'http://10.0.0.1:4242',
+          owner: {
+            github: 132456
+          }
         },
         ownerUsername: 'runnable',
         sessionUserGithubId: 10
       }
       done()
     })
-    afterEach(function (done) {
-      done()
-    })
 
     describe('success', function () {
-      it('should callback labels', function (done) {
+      it('should callback labels with node constraints', function (done) {
         keypather.set(process, 'domain.runnableData.tid', 'abcdef-abcdef-abcdef')
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
           if (err) { return done(err) }
@@ -1043,6 +1052,28 @@ describe('docker: ' + moduleName, function () {
             ownerUsername: opts.ownerUsername,
             sessionUserGithubId: opts.sessionUserGithubId.toString(),
             tid: process.domain.runnableData.tid,
+            'com.docker.swarm.constraints': '["org==132456","node==~ip-10-0-0-1"]',
+            type: 'user-container'
+          })
+          done()
+        })
+      })
+
+      it('should callback labels no node constraints', function (done) {
+        keypather.set(process, 'domain.runnableData.tid', 'abcdef-abcdef-abcdef')
+        delete ctx.opts.contextVersion.dockerHost
+        model._createUserContainerLabels(ctx.opts, function (err, labels) {
+          if (err) { return done(err) }
+          var opts = ctx.opts
+          expect(labels).to.deep.equal({
+            instanceId: opts.instance._id.toString(),
+            instanceName: opts.instance.name,
+            instanceShortHash: opts.instance.shortHash,
+            contextVersionId: opts.contextVersion._id.toString(),
+            ownerUsername: opts.ownerUsername,
+            sessionUserGithubId: opts.sessionUserGithubId.toString(),
+            tid: process.domain.runnableData.tid,
+            'com.docker.swarm.constraints': '["org==132456"]',
             type: 'user-container'
           })
           done()
@@ -1052,6 +1083,7 @@ describe('docker: ' + moduleName, function () {
 
     describe('errors', function () {
       it('should callback opts validation error', function (done) {
+        delete ctx.opts.contextVersion.dockerHost
         var flatOpts = keypather.flatten(ctx.opts)
         var keypaths = Object.keys(flatOpts)
         var count = createCount(keypaths.length, done)
