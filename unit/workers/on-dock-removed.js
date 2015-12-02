@@ -8,8 +8,6 @@ var describe = lab.describe
 var it = lab.it
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
-var before = lab.before
-var after = lab.after
 var Code = require('code')
 var expect = Code.expect
 var Promise = require('bluebird')
@@ -105,7 +103,7 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
             expect(err).to.equal(testErr)
             done()
           })
-        });
+        })
       }) // end findActiveInstancesByDockerHostAsync error
 
       describe('findActiveInstancesByDockerHostAsync return empty', function () {

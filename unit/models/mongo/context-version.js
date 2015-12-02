@@ -1087,7 +1087,7 @@ describe('Context Version: ' + moduleName, function () {
     })
   }) // end 'populateOwner'
 
-  describe('#markDockRemovedByDockerHost', function (){
+  describe('#markDockRemovedByDockerHost', function () {
     var dockerHost = '1234'
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'update').yieldsAsync()
@@ -1103,7 +1103,7 @@ describe('Context Version: ' + moduleName, function () {
         sinon.assert.calledOnce(ContextVersion.update)
         sinon.assert.calledWith(ContextVersion.update,
           { dockerHost: dockerHost },
-          { $set: {dockRemoved: true} },
+          { $set: { dockRemoved: true } },
           { multi: true },
           sinon.match.func
         )
