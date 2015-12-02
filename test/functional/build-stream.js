@@ -58,15 +58,8 @@ describe('Build Stream', function () {
     it('should get full logs from build stream', function (done) {
       require('./fixtures/mocks/docker/build-logs')()
       require('./fixtures/mocks/github/user')(ctx.user)
-      ctx.build.build(ctx.buildId, { message: 'hello!' }, function (err, body, code) {
-        if (err) {
-          return done(err)
-        }
-
-        expect(code).to.equal(201)
-        expect(body).to.exist()
-
-        dockerMockEvents.emitBuildComplete(ctx.cv)
+      var body
+      primus.onceVersionBuildRunning(ctx.cv.id(), function () {
         primus.onceVersionComplete(ctx.cv.id(), function () {
           var client = new PrimusClient('http://localhost:' + process.env.PORT)
           // start build stream
@@ -88,6 +81,17 @@ describe('Build Stream', function () {
             done()
           })
         })
+
+        dockerMockEvents.emitBuildComplete(ctx.cv)
+      })
+
+      ctx.build.build(ctx.buildId, { message: 'hello!' }, function (err, _body, code) {
+        if (err) {
+          return done(err)
+        }
+        body = _body
+        expect(code).to.equal(201)
+        expect(body).to.exist()
       })
     })
 
@@ -113,11 +117,9 @@ describe('Build Stream', function () {
     })
 
     it('should get logs from build stream', function (done) {
-      require('./fixtures/mocks/github/user')(ctx.user)
-      ctx.build.build(ctx.buildId, { message: 'hello!' }, function (err, body, code) {
-        if (err) { return done(err) }
-        expect(code).to.equal(201)
-        expect(body).to.exist()
+      var body
+
+      primus.onceVersionBuildRunning(ctx.cv.id(), function () {
         require('./fixtures/mocks/docker/build-logs.js')()
         var client = new PrimusClient('http://localhost:' + process.env.PORT)
         // start build stream
@@ -132,11 +134,12 @@ describe('Build Stream', function () {
         // create substream for build logs
         var count = createCount(2, done)
         var buildStream = client.substream(body.contextVersions[0])
-        dockerMockEvents.emitBuildComplete(ctx.cv)
 
         primus.onceVersionComplete(ctx.cv.id(), function () {
           count.next()
         })
+
+        dockerMockEvents.emitBuildComplete(ctx.cv)
 
         var objectBuffer = []
         buildStream.on('data', function (d) { objectBuffer.push(d) })
@@ -147,15 +150,20 @@ describe('Build Stream', function () {
           count.next()
         })
       })
+
+      require('./fixtures/mocks/github/user')(ctx.user)
+      ctx.build.build(ctx.buildId, { message: 'hello!' }, function (err, _body, code) {
+        if (err) { return done(err) }
+        body = _body
+        expect(code).to.equal(201)
+        expect(body).to.exist()
+      })
     })
 
     it('100 people should get the same logs', function (done) {
       var people = 100
-      require('./fixtures/mocks/github/user')(ctx.user)
-      ctx.build.build(ctx.buildId, { message: 'lots of people!' }, function (err, body, code) {
-        if (err) { return done(err) }
-        expect(code).to.equal(201)
-        expect(body).to.exist()
+      var body
+      primus.onceVersionBuildRunning(ctx.cv.id(), function () {
         primus.onceVersionComplete(ctx.cv.id(), function () {
           // start build stream
           var count = createCount(done)
@@ -186,7 +194,16 @@ describe('Build Stream', function () {
             })
           }
         })
+
         dockerMockEvents.emitBuildComplete(ctx.cv)
+      })
+
+      require('./fixtures/mocks/github/user')(ctx.user)
+      ctx.build.build(ctx.buildId, { message: 'lots of people!' }, function (err, _body, code) {
+        if (err) { return done(err) }
+        body = _body
+        expect(code).to.equal(201)
+        expect(body).to.exist()
       })
     })
   })

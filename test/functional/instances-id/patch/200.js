@@ -53,7 +53,6 @@ function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
   if (container) {
     delete deepContain.containers
     expect(body.containers[0].inspect.Id).to.equal(container.Id)
-    expect(body.containers[0].dockerHost).to.equal('http://127.0.0.1:4243')
     expect(body.containers[0].dockerContainer).to.equal(container.Id)
   }
   expect(body).deep.contain(deepContain)
@@ -198,8 +197,8 @@ describe('200 PATCH /instances/:id', function () {
       it('should update an instance with a container and context version', function (done) {
         var count = createCount(2, done)
         var container = {
-          dockerHost: 'http://127.0.0.1:4243',
-          dockerContainer: ctx.container.Id
+          dockerContainer: ctx.container.Id,
+          inspect: { Id: ctx.container.Id }
         }
         // Original patch from the update route, then the one at the end of the on-build-die
         primus.expectAction('start', {}, count.next)
