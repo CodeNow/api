@@ -32,6 +32,7 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
     sinon.stub(Instance, 'findActiveInstancesByDockerHostAsync').returns(Promise.resolve([]))
     sinon.stub(ContextVersion, 'markDockRemovedByDockerHostAsync').returns(Promise.resolve())
     sinon.stub(Instance, 'setStoppingAsStoppedByDockerHostAsync').returns(Promise.resolve())
+    sinon.stub(Instance, 'emitInstanceUpdatesAsync').returns(Promise.resolve())
     done()
   })
 
@@ -40,6 +41,7 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
     Instance.findActiveInstancesByDockerHostAsync.restore()
     ContextVersion.markDockRemovedByDockerHostAsync.restore()
     Instance.setStoppingAsStoppedByDockerHostAsync.restore()
+    Instance.emitInstanceUpdatesAsync.restore()
     done()
   })
 
@@ -142,6 +144,14 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
             sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
             sinon.assert.calledOnce(Worker.prototype._redeployContainers)
             sinon.assert.calledWith(Worker.prototype._redeployContainers, testArray)
+            sinon.assert.calledOnce(Instance.emitInstanceUpdatesAsync)
+            done()
+          })
+        })
+        it('should emit instance updates after everything has completed', function (done) {
+          worker.handle(function () {
+            sinon.assert.calledOnce(Instance.emitInstanceUpdatesAsync)
+            sinon.assert.calledWith(Instance.emitInstanceUpdatesAsync, null, {'container.dockerHost': testHost}, 'update')
             done()
           })
         })
@@ -175,6 +185,13 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
             sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
             sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
             sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
+            done()
+          })
+        })
+        it('should emit instance updates after everything has completed, even if there is a failure', function (done) {
+          worker.handle(function () {
+            sinon.assert.calledOnce(Instance.emitInstanceUpdatesAsync)
+            sinon.assert.calledWith(Instance.emitInstanceUpdatesAsync, null, {'container.dockerHost': testHost}, 'update')
             done()
           })
         })
