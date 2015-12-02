@@ -853,7 +853,8 @@ describe('docker: ' + moduleName, function () {
   describe('isImageNotFoundForPullErr', function () {
     it('should return true if it is', function (done) {
       var boomErr = Boom.notFound(
-        'Create container failed: ' + 'image: dockerTag not found')
+        'Follow pull image failed: ' +
+        'Error: image 1981198/565f7c592e035d1e00835e4f:565f7c592e035d1e00835e51 not found')
       expect(Docker.isImageNotFoundForPullErr(boomErr)).to.be.true()
       done()
     })
@@ -864,6 +865,12 @@ describe('docker: ' + moduleName, function () {
       expect(Docker.isImageNotFoundForPullErr(boomErr))
         .to.be.false()
       boomErr = Boom.notFound('bar')
+      expect(Docker.isImageNotFoundForPullErr(boomErr))
+        .to.be.false()
+      boomErr = Boom.notFound('instance not found (build has changed)')
+      expect(Docker.isImageNotFoundForPullErr(boomErr))
+        .to.be.false()
+      boomErr = Boom.notFound('instance with image pulling not found')
       expect(Docker.isImageNotFoundForPullErr(boomErr))
         .to.be.false()
       done()
