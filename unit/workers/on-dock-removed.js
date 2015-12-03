@@ -54,9 +54,26 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
         Worker({}).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
           expect(err.message).to.contain('host')
+          expect(err.message).to.contain('required')
           done()
         })
-      });
+      })
+      it('should throw a task fatal error if the job is missing a dockerhost', function (done) {
+        Worker({host: {}}).asCallback(function (err) {
+          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('host')
+          expect(err.message).to.contain('a string')
+          done()
+        })
+      })
+      it('should throw a task fatal error if the job is missing entirely', function (done) {
+        Worker().asCallback(function (err) {
+          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('host')
+          expect(err.message).to.contain('required')
+          done()
+        })
+      })
     })
 
     describe('findActiveInstancesByDockerHostAsync errors', function () {
