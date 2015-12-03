@@ -49,7 +49,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       done()
     })
 
-    describe('invalid Job', function (){
+    describe('invalid Job', function () {
       it('should throw a task fatal error if the job is missing a dockerhost', function (done) {
         Worker({}).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
