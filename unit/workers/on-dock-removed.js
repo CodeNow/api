@@ -69,8 +69,14 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       it('should throw a task fatal error if the job is missing entirely', function (done) {
         Worker().asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('host')
-          expect(err.message).to.contain('required')
+          expect(err.message).to.contain('must be an object')
+          done()
+        })
+      })
+      it('should throw a task fatal error if the job is not an object', function (done) {
+        Worker(true).asCallback(function (err) {
+          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('must be an object')
           done()
         })
       })
