@@ -1097,6 +1097,7 @@ describe('Context Version: ' + moduleName, function () {
       ContextVersion.update.restore()
       done()
     })
+
     it('should call update with the right parameters', function (done) {
       ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
         expect(err).to.not.exist()
@@ -1110,18 +1111,14 @@ describe('Context Version: ' + moduleName, function () {
         done()
       })
     })
-    describe('when the database errors', function () {
-      var error = 'Paintings'
-      beforeEach(function (done) {
-        ContextVersion.update.yieldsAsync(error)
+
+    it('should pass the database error through to the callback', function (done) {
+      var error = 'Mongo Error'
+      ContextVersion.update.yieldsAsync(error)
+      ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
+        expect(err).to.equal(error)
+        sinon.assert.calledOnce(ContextVersion.update)
         done()
-      })
-      it('should pass the error through to the callback', function (done) {
-        ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
-          expect(err).to.equal(error)
-          sinon.assert.calledOnce(ContextVersion.update)
-          done()
-        })
       })
     })
   })

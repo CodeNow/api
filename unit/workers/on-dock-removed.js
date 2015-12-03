@@ -32,7 +32,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
     var testErr = 'kamehameha'
 
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findActiveInstancesByDockerHostAsync').returns(Promise.resolve([]))
+      sinon.stub(Instance, 'findActiveInstancesByDockerHostAsync')
       sinon.stub(ContextVersion, 'markDockRemovedByDockerHostAsync').returns(Promise.resolve())
       sinon.stub(Instance, 'setStoppingAsStoppedByDockerHostAsync').returns(Promise.resolve())
       sinon.stub(Instance, 'emitInstanceUpdatesAsync').returns(Promise.resolve())
@@ -87,6 +87,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
         var rejectedPromise = Promise.reject(testErr)
         rejectedPromise.suppressUnhandledRejections()
         Instance.findActiveInstancesByDockerHostAsync.returns(rejectedPromise)
+        ContextVersion.markDockRemovedByDockerHostAsync.returns(Promise.resolve([]))
         done()
       })
 
@@ -242,7 +243,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
     var redeployStub
     beforeEach(function (done) {
       redeployStub = sinon.stub()
-      sinon.stub(Runnable.prototype, 'githubLogin').yieldsAsync()
+      sinon.stub(Runnable.prototype, 'githubLogin')
       sinon.stub(Runnable.prototype, 'newInstance').returns({
         redeployAsync: redeployStub
       })
@@ -273,6 +274,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
 
     describe('redeploy fails for one instance', function () {
       beforeEach(function (done) {
+        Runnable.prototype.githubLogin.yieldsAsync()
         var rejectionPromise = Promise.reject(testErr)
         rejectionPromise.suppressUnhandledRejections()
         redeployStub.onCall(0).returns(rejectionPromise)
@@ -280,11 +282,11 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
         done()
       })
 
-      it('should callback with error', function (done) {
+      it('should callback with error and execute on all instances', function (done) {
         Worker._redeployContainers(testData)
           .asCallback(function (err) {
             expect(err).to.equal(testErr)
-            sinon.assert.calledOnce(redeployStub)
+            sinon.assert.calledTwice(redeployStub)
             done()
           })
       })
@@ -292,6 +294,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
 
     describe('redeploy passes', function () {
       beforeEach(function (done) {
+        Runnable.prototype.githubLogin.yieldsAsync()
         redeployStub.returns(Promise.resolve())
         done()
       })
