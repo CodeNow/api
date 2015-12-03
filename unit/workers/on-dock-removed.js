@@ -17,6 +17,7 @@ var sinon = require('sinon')
 var Instance = require('models/mongo/instance')
 var ContextVersion = require('models/mongo/context-version')
 var Worker = require('workers/on-dock-removed')
+var TaskFatalError = require('ponos').TaskFatalError
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
@@ -46,6 +47,16 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       Instance.setStoppingAsStoppedByDockerHostAsync.restore()
       Instance.emitInstanceUpdatesAsync.restore()
       done()
+    })
+
+    describe('invalid Job', function (){
+      it('should throw a task fatal error if the job is missing a dockerhost', function (done) {
+        Worker({}).asCallback(function (err) {
+          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('host')
+          done()
+        })
+      });
     })
 
     describe('findActiveInstancesByDockerHostAsync errors', function () {
