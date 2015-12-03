@@ -16,7 +16,7 @@ var Runnable = require('runnable')
 var sinon = require('sinon')
 var Instance = require('models/mongo/instance')
 var ContextVersion = require('models/mongo/context-version')
-var Worker = require('Workers/on-dock-removed')
+var Worker = require('workers/on-dock-removed')
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
