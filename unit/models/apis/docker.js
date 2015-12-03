@@ -872,13 +872,32 @@ describe('docker: ' + moduleName, function () {
       boomErr = Boom.notFound('bar')
       expect(Docker.isImageNotFoundForPullErr(boomErr))
         .to.be.false()
-      boomErr = Boom.notFound('instance not found (build has changed)')
+      done()
+    })
+
+    it('should return false if its an instance error', function (done) {
+      var boomErr = Boom.notFound('instance not found (build has changed)')
       expect(Docker.isImageNotFoundForPullErr(boomErr))
         .to.be.false()
       boomErr = Boom.notFound('instance with image pulling not found')
       expect(Docker.isImageNotFoundForPullErr(boomErr))
         .to.be.false()
       done()
+    })
+
+    it('should return true if its gets a 500 error from Swarm', function (done) {
+      // Form error
+      var originalError = new Error()
+      originalError.statusCode = 500
+      originalError.reason = 'server error'
+      originalError.json = 'Error: image test/test:mee not found'
+      // Create Boom error
+      model.handleErr(callback, 'Create container failed', { opts: {} })(originalError)
+      function callback (err, container) {
+        expect(Docker.isImageNotFoundForPullErr(err))
+          .to.be.true()
+        done()
+      }
     })
   })
 
