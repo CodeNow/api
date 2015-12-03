@@ -21,7 +21,6 @@ var ContextVersion = require('models/mongo/context-version.js')
 var Instance = require('models/mongo/instance.js')
 var User = require('models/mongo/user.js')
 var messenger = require('socket/messenger')
-var uuid = require('uuid')
 var toObjectId = require('utils/to-object-id')
 
 var mockFactory = require('../fixtures/factory')
@@ -82,6 +81,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             }, {}, function (err) {
               if (err) { return count.next(err) }
               ContextVersion.findById(ctx.cv._id, function (err, cv) {
+                if (err) { return count.next(err) }
                 ctx.cv = cv
                 mockFactory.createInstance(ctx.githubId, build, false, cv, function (err, instance) {
                   ctx.instance = instance
@@ -124,6 +124,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 }, {}, function (err) {
                   if (err) { return done(err) }
                   ContextVersion.findById(ctx.cv._id, function (err, cv) {
+                    if (err) { return done(err) }
                     ctx.cv = cv
                     done()
                   })
