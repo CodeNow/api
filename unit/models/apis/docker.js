@@ -143,7 +143,7 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end createSwarmConstraints
 
-  describe('_handleImageBuilderError', function () {
+  describe('_handleCreateContainerError', function () {
     beforeEach(function (done) {
       sinon.stub(Docker, '_isConstraintFailure')
       sinon.stub(Docker, '_isOutOfResources')
@@ -167,7 +167,7 @@ describe('docker: ' + moduleName, function () {
       Docker._isConstraintFailure.returns(true)
       Docker.prototype.createContainer.yieldsAsync()
 
-      model._handleImageBuilderError({}, testOpts, function (err) {
+      model._handleCreateContainerError({}, testOpts, function (err) {
         expect(err).to.not.exist()
         expect(Docker.prototype.createContainer.withArgs({
           Labels: {
@@ -187,7 +187,7 @@ describe('docker: ' + moduleName, function () {
       Docker._isOutOfResources.returns(true)
       Docker.prototype.createContainer.yieldsAsync()
 
-      model._handleImageBuilderError({}, testOpts, function (err) {
+      model._handleCreateContainerError({}, testOpts, function (err) {
         expect(err).to.not.exist()
         expect(Docker.prototype.createContainer.withArgs({}).called)
           .to.be.true()
@@ -202,7 +202,7 @@ describe('docker: ' + moduleName, function () {
       Docker._isConstraintFailure.returns(false)
       Docker._isOutOfResources.returns(false)
 
-      model._handleImageBuilderError(testErr, {}, function (err) {
+      model._handleCreateContainerError(testErr, {}, function (err) {
         expect(err).to.equal(testErr)
         expect(Docker.prototype.createContainer.called)
           .to.be.false()
@@ -210,7 +210,7 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
-  }) // end _handleImageBuilderError
+  }) // end _handleCreateContainerError
 
   describe('_isConstraintFailure', function () {
     it('should return true if constraint failure', function (done) {
@@ -268,14 +268,12 @@ describe('docker: ' + moduleName, function () {
         delete process.env.DOCKER_IMAGE_BUILDER_CACHE
         ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
         delete process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
-        sinon.stub(Docker.prototype, '_handleImageBuilderError')
         done()
       })
 
       afterEach(function (done) {
         process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE
         process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE
-        Docker.prototype._handleImageBuilderError.restore()
         done()
       })
 
@@ -331,7 +329,6 @@ describe('docker: ' + moduleName, function () {
 
       it('should handle error if createContainer failed', function (done) {
         Docker.prototype.createContainer.yieldsAsync(new Error('boo'))
-        Docker.prototype._handleImageBuilderError.yieldsAsync()
 
         var opts = {
           manualBuild: true,
@@ -342,7 +339,7 @@ describe('docker: ' + moduleName, function () {
           tid: '000-0000-0000-0000'
         }
         model.createImageBuilder(opts, function (err) {
-          if (err) { return done(err) }
+          expect(err).to.exist()
           sinon.assert.calledWith(
             Docker.prototype._createImageBuilderValidateCV,
             opts.contextVersion
@@ -376,10 +373,10 @@ describe('docker: ' + moduleName, function () {
             Labels: ctx.mockLabels
           }
 
-          expect(Docker.prototype.createContainer.firstCall.args[0])
-            .to.deep.equal(expected)
-          expect(Docker.prototype._handleImageBuilderError.firstCall.args[1])
-            .to.deep.equal(expected)
+          sinon.assert.calledWith(
+            Docker.prototype.createContainer,
+            expected
+          )
 
           done()
         })
@@ -932,7 +929,7 @@ describe('docker: ' + moduleName, function () {
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
           )
-          console.log(container, ctx.mockContainer)
+
           expect(container).to.equal(ctx.mockContainer)
           done()
         })
