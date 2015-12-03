@@ -49,7 +49,6 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
     })
 
     describe('findActiveInstancesByDockerHostAsync errors', function () {
-
       beforeEach(function (done) {
         var rejectedPromise = Promise.reject(testErr)
         rejectedPromise.suppressUnhandledRejections()
@@ -97,7 +96,6 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
 
     describe('findActiveInstancesByDockerHostAsync returns array', function () {
       var testArray = ['1', '2']
-
       beforeEach(function (done) {
         Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
         Worker._redeployContainers.returns(Promise.resolve())
@@ -127,7 +125,6 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
 
     describe('ContextVersion.markDockRemovedByDockerHostAsync returns error', function () {
       var testArray = ['1', '2']
-
       beforeEach(function (done) {
         var rejectionPromise = Promise.reject(testErr)
         rejectionPromise.suppressUnhandledRejections()
@@ -169,7 +166,6 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
 
     describe('Instance.setStoppingAsStoppedByDockerHostAsync returns error', function () {
       var testArray = ['1', '2']
-
       beforeEach(function (done) {
         var rejectionPromise = Promise.reject(testErr)
         rejectionPromise.suppressUnhandledRejections()
@@ -210,7 +206,6 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       id: '2'
     }]
     var redeployStub
-
     beforeEach(function (done) {
       redeployStub = sinon.stub()
       sinon.stub(Runnable.prototype, 'githubLogin').yieldsAsync()
@@ -227,7 +222,6 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
     })
 
     describe('user login fails', function () {
-
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yieldsAsync(new Error(testErr))
         done()
@@ -244,7 +238,6 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
     })
 
     describe('redeploy fails for one instance', function () {
-
       beforeEach(function (done) {
         var rejectionPromise = Promise.reject(testErr)
         rejectionPromise.suppressUnhandledRejections()
@@ -264,7 +257,6 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
     })
 
     describe('redeploy passes', function () {
-
       beforeEach(function (done) {
         redeployStub.returns(Promise.resolve())
         done()
