@@ -32,7 +32,7 @@ var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die
 describe('OnImageBuilderContainerDie Integration Tests', function () {
   before(mongooseControl.start)
   var ctx = {}
-  before(function (done) {
+  beforeEach(function (done) {
     ctx = {}
     done()
   })
@@ -79,7 +79,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               $set: {
                 'build._id': toObjectId(ctx.build._id)
               }
-            }, { multi: true }, function (err) {
+            }, {}, function (err) {
               if (err) { return count.next(err) }
               ContextVersion.findById(ctx.cv._id, function (err, cv) {
                 ctx.cv = cv
@@ -121,7 +121,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                     'build.dockerContainer': container.id,
                     'build.dockerTag': Docker.getDockerTag(opts.contextVersion)
                   }
-                }, { multi: true }, function (err) {
+                }, {}, function (err) {
                   if (err) { return done(err) }
                   ContextVersion.findById(ctx.cv._id, function (err, cv) {
                     ctx.cv = cv
