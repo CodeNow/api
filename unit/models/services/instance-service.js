@@ -16,7 +16,6 @@ var mongo = require('../../fixtures/mongo')
 var Hashids = require('hashids')
 var InstanceService = require('models/services/instance-service')
 var Instance = require('models/mongo/instance')
-var Mavis = require('models/apis/mavis')
 var joi = require('utils/joi')
 var rabbitMQ = require('models/rabbitmq')
 var validation = require('../../fixtures/validation')(lab)
@@ -782,19 +781,16 @@ describe('InstanceService: ' + moduleName, function () {
       }
       // results
       ctx.mockContainer = {}
-      sinon.stub(Mavis.prototype, 'findDockForContainer')
       sinon.stub(Docker.prototype, 'createUserContainer')
       done()
     })
     afterEach(function (done) {
-      Mavis.prototype.findDockForContainer.restore()
       Docker.prototype.createUserContainer.restore()
       done()
     })
 
     describe('success', function () {
       beforeEach(function (done) {
-        Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242')
         Docker.prototype.createUserContainer.yieldsAsync(null, ctx.mockContainer)
         done()
       })
@@ -802,10 +798,6 @@ describe('InstanceService: ' + moduleName, function () {
       it('should create a docker container', function (done) {
         InstanceService._createDockerContainer(ctx.opts, function (err, container) {
           if (err) { return done(err) }
-          sinon.assert.calledWith(
-            Mavis.prototype.findDockForContainer,
-            ctx.opts.contextVersion, sinon.match.func
-          )
           var createOpts = clone(ctx.opts)
           sinon.assert.calledWith(
             Docker.prototype.createUserContainer, createOpts, sinon.match.func
@@ -822,21 +814,8 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
 
-      describe('mavis error', function () {
-        beforeEach(function (done) {
-          Mavis.prototype.findDockForContainer.yieldsAsync(ctx.err)
-          Docker.prototype.createUserContainer.yieldsAsync(null, ctx.mockContainer)
-          done()
-        })
-
-        it('should callback the error', function (done) {
-          InstanceService._createDockerContainer(ctx.opts, expectErr(ctx.err, done))
-        })
-      })
-
       describe('docker error', function () {
         beforeEach(function (done) {
-          Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242')
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
           done()
         })
@@ -850,7 +829,6 @@ describe('InstanceService: ' + moduleName, function () {
         beforeEach(function (done) {
           ctx.err = Boom.notFound('Image not found')
           ctx.opts.instance = new Instance()
-          Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242')
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
           done()
         })
@@ -904,7 +882,6 @@ describe('InstanceService: ' + moduleName, function () {
         beforeEach(function (done) {
           ctx.err = Boom.notFound('Image not found')
           ctx.opts.instance = new Instance()
-          Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242')
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
           sinon.stub(Docker, 'isImageNotFoundForCreateErr').returns(true)
           sinon.stub(InstanceService, '_handleImageNotFoundErr').yieldsAsync()
