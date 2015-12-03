@@ -11,226 +11,196 @@ var beforeEach = lab.beforeEach
 var Code = require('code')
 var expect = Code.expect
 var Promise = require('bluebird')
+var Runnable = require('runnable')
 
 var sinon = require('sinon')
 var Instance = require('models/mongo/instance')
 var ContextVersion = require('models/mongo/context-version')
-var Worker = require('workers/on-dock-removed')
+var Worker = require('Workers/on-dock-removed')
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
-describe('worker: on-dock-removed unit test: ' + moduleName, function () {
-  var worker
+describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
   var testHost = 'goku'
   var testData = {
     host: testHost
   }
-  beforeEach(function (done) {
-    worker = new Worker(testData)
-    sinon.stub(worker.runnableClient, 'githubLogin')
-    sinon.stub(Instance, 'findActiveInstancesByDockerHostAsync').returns(Promise.resolve([]))
-    sinon.stub(ContextVersion, 'markDockRemovedByDockerHostAsync').returns(Promise.resolve())
-    sinon.stub(Instance, 'setStoppingAsStoppedByDockerHostAsync').returns(Promise.resolve())
-    sinon.stub(Instance, 'emitInstanceUpdatesAsync').returns(Promise.resolve())
-    done()
-  })
 
-  afterEach(function (done) {
-    worker.runnableClient.githubLogin.restore()
-    Instance.findActiveInstancesByDockerHostAsync.restore()
-    ContextVersion.markDockRemovedByDockerHostAsync.restore()
-    Instance.setStoppingAsStoppedByDockerHostAsync.restore()
-    Instance.emitInstanceUpdatesAsync.restore()
-    done()
-  })
+  describe('worker', function () {
+    var testErr = 'kamehameha'
 
-  describe('#handle', function () {
-    describe('github login fails', function () {
-      var testErr = 'spirit bomb'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findActiveInstancesByDockerHostAsync').returns(Promise.resolve([]))
+      sinon.stub(ContextVersion, 'markDockRemovedByDockerHostAsync').returns(Promise.resolve())
+      sinon.stub(Instance, 'setStoppingAsStoppedByDockerHostAsync').returns(Promise.resolve())
+      sinon.stub(Instance, 'emitInstanceUpdatesAsync').returns(Promise.resolve())
+      sinon.stub(Worker, '_redeployContainers')
+      done()
+    })
+
+    afterEach(function (done) {
+      Worker._redeployContainers.restore()
+      Instance.findActiveInstancesByDockerHostAsync.restore()
+      ContextVersion.markDockRemovedByDockerHostAsync.restore()
+      Instance.setStoppingAsStoppedByDockerHostAsync.restore()
+      Instance.emitInstanceUpdatesAsync.restore()
+      done()
+    })
+
+    describe('findActiveInstancesByDockerHostAsync errors', function () {
+
       beforeEach(function (done) {
-        worker.runnableClient.githubLogin.yieldsAsync(testErr)
+        var rejectedPromise = Promise.reject(testErr)
+        rejectedPromise.suppressUnhandledRejections()
+        Instance.findActiveInstancesByDockerHostAsync.returns(rejectedPromise)
         done()
       })
 
       it('should cb err', function (done) {
-        worker.handle(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(worker.runnableClient.githubLogin)
-          sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
-          sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHostAsync)
-          sinon.assert.notCalled(ContextVersion.markDockRemovedByDockerHostAsync)
+        Worker(testData).asCallback(function (err) {
+          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
+          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+          expect(err).to.equal(testErr)
           done()
         })
       })
-    }) // end github login fails
 
-    describe('github login works', function () {
-      var testErr = 'kamehameha'
+      it('should still run other sub-tasks', function (done) {
+        Worker(testData).asCallback(function (err) {
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
+          expect(err).to.equal(testErr)
+          done()
+        })
+      })
+    })
+
+    describe('findActiveInstancesByDockerHostAsync return empty', function () {
       beforeEach(function (done) {
-        worker.runnableClient.githubLogin.yieldsAsync()
-        sinon.stub(Worker.prototype, '_redeployContainers')
+        Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve([]))
         done()
       })
 
-      afterEach(function (done) {
-        Worker.prototype._redeployContainers.restore()
+      it('should cb without calling redeploy containers', function (done) {
+        Worker(testData).asCallback(function (err) {
+          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
+          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+          sinon.assert.notCalled(Worker._redeployContainers)
+          expect(err).to.not.exist()
+          done()
+        })
+      })
+    })
+
+    describe('findActiveInstancesByDockerHostAsync returns array', function () {
+      var testArray = ['1', '2']
+
+      beforeEach(function (done) {
+        Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
+        Worker._redeployContainers.returns(Promise.resolve())
         done()
       })
 
-      describe('findActiveInstancesByDockerHostAsync errors', function () {
-        beforeEach(function (done) {
-          var rejectedPromise = Promise.reject(testErr)
-          rejectedPromise.catch(function () {}) // Prevents an error from getting triggered
-          Instance.findActiveInstancesByDockerHostAsync.returns(rejectedPromise)
+      it('should call _redeployContainers', function (done) {
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
+          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+          sinon.assert.calledOnce(Worker._redeployContainers)
+          sinon.assert.calledWith(Worker._redeployContainers, testArray)
+          sinon.assert.calledOnce(Instance.emitInstanceUpdatesAsync)
           done()
-        })
-
-        it('should cb err', function (done) {
-          worker.handle(function (err) {
-            sinon.assert.calledOnce(worker.runnableClient.githubLogin)
-            sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
-            sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
-            sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
-            expect(err).to.equal(testErr)
-            done()
-          })
-        })
-        it('should still run other sub-tasks', function (done) {
-          worker.handle(function (err) {
-            sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
-            sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
-            sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
-            sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
-            expect(err).to.equal(testErr)
-            done()
-          })
-        })
-      }) // end findActiveInstancesByDockerHostAsync error
-
-      describe('findActiveInstancesByDockerHostAsync return empty', function () {
-        beforeEach(function (done) {
-          Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve([]))
-          done()
-        })
-
-        it('should cb without calling redeploy containers', function (done) {
-          worker.handle(function (err) {
-            sinon.assert.calledOnce(worker.runnableClient.githubLogin)
-            sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
-            sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
-            sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
-            sinon.assert.notCalled(Worker.prototype._redeployContainers)
-            expect(err).to.not.exist()
-            done()
-          })
-        })
-      }) // end findActiveInstancesByDockerHostAsync return empty
-
-      describe('findActiveInstancesByDockerHostAsync returns array', function () {
-        var testArray = ['1', '2']
-        beforeEach(function (done) {
-          Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
-          Worker.prototype._redeployContainers.returns(Promise.resolve())
-          done()
-        })
-
-        it('should call _redeployContainers', function (done) {
-          worker.handle(function (err) {
-            expect(err).to.not.exist()
-            sinon.assert.calledOnce(worker.runnableClient.githubLogin)
-            sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
-            sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
-            sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
-            sinon.assert.calledOnce(Worker.prototype._redeployContainers)
-            sinon.assert.calledWith(Worker.prototype._redeployContainers, testArray)
-            sinon.assert.calledOnce(Instance.emitInstanceUpdatesAsync)
-            done()
-          })
-        })
-        it('should emit instance updates after everything has completed', function (done) {
-          worker.handle(function () {
-            sinon.assert.calledOnce(Instance.emitInstanceUpdatesAsync)
-            sinon.assert.calledWith(Instance.emitInstanceUpdatesAsync, null, {'container.dockerHost': testHost}, 'update')
-            done()
-          })
-        })
-      }) // end findActiveInstancesByDockerHostAsync returns array
-
-      describe('ContextVersion.markDockRemovedByDockerHostAsync returns error', function () {
-        var testArray = ['1', '2']
-        beforeEach(function (done) {
-          var rejectionPromise = Promise.reject(testErr)
-          rejectionPromise.catch(function () {}) // Prevents an error from getting triggered
-          ContextVersion.markDockRemovedByDockerHostAsync.returns(rejectionPromise)
-          Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
-          Worker.prototype._redeployContainers.returns(Promise.resolve())
-          done()
-        })
-        it('should error', function (done) {
-          worker.handle(function (err) {
-            expect(err).to.equal(testErr)
-            done()
-          })
-        })
-        it('should run the other methods', function (done) {
-          worker.handle(function () {
-            sinon.assert.calledOnce(worker.runnableClient.githubLogin)
-            sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
-            sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
-            sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
-            sinon.assert.calledOnce(Worker.prototype._redeployContainers)
-            sinon.assert.calledWith(Worker.prototype._redeployContainers, testArray)
-            sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
-            sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
-            sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
-            sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
-            done()
-          })
-        })
-        it('should emit instance updates after everything has completed, even if there is a failure', function (done) {
-          worker.handle(function () {
-            sinon.assert.calledOnce(Instance.emitInstanceUpdatesAsync)
-            sinon.assert.calledWith(Instance.emitInstanceUpdatesAsync, null, {'container.dockerHost': testHost}, 'update')
-            done()
-          })
         })
       })
 
-      describe('Instance.setStoppingAsStoppedByDockerHostAsync returns error', function () {
-        var testArray = ['1', '2']
-        beforeEach(function (done) {
-          var rejectionPromise = Promise.reject(testErr)
-          rejectionPromise.catch(function () {}) // Prevents an error from getting triggered
-          Instance.setStoppingAsStoppedByDockerHostAsync.returns(rejectionPromise)
-          Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
-          Worker.prototype._redeployContainers.returns(Promise.resolve())
+      it('should emit instance updates after everything has completed', function (done) {
+        Worker(testData).asCallback(function () {
+          sinon.assert.calledOnce(Instance.emitInstanceUpdatesAsync)
+          sinon.assert.calledWith(Instance.emitInstanceUpdatesAsync, null, {'container.dockerHost': testHost}, 'update')
           done()
         })
-        it('should error', function (done) {
-          worker.handle(function (err) {
-            expect(err).to.equal(testErr)
-            done()
-          })
-        })
-        it('should run the other methods', function (done) {
-          worker.handle(function () {
-            sinon.assert.calledOnce(worker.runnableClient.githubLogin)
-            sinon.assert.calledWith(worker.runnableClient.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
-            sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
-            sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
-            sinon.assert.calledOnce(Worker.prototype._redeployContainers)
-            sinon.assert.calledWith(Worker.prototype._redeployContainers, testArray)
-            sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
-            sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
-            sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
-            sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
-            done()
-          })
+      })
+    })
+
+    describe('ContextVersion.markDockRemovedByDockerHostAsync returns error', function () {
+      var testArray = ['1', '2']
+
+      beforeEach(function (done) {
+        var rejectionPromise = Promise.reject(testErr)
+        rejectionPromise.suppressUnhandledRejections()
+        ContextVersion.markDockRemovedByDockerHostAsync.returns(rejectionPromise)
+        Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
+        Worker._redeployContainers.returns(Promise.resolve())
+        done()
+      })
+
+      it('should error', function (done) {
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          done()
         })
       })
-    }) // end github login works
-  }) // end #handle
+
+      it('should run the other methods', function (done) {
+        Worker(testData).asCallback(function () {
+          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
+          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+          sinon.assert.calledOnce(Worker._redeployContainers)
+          sinon.assert.calledWith(Worker._redeployContainers, testArray)
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
+          done()
+        })
+      })
+
+      it('should emit instance updates after everything has completed, even if there is a failure', function (done) {
+        Worker(testData).asCallback(function () {
+          sinon.assert.calledOnce(Instance.emitInstanceUpdatesAsync)
+          sinon.assert.calledWith(Instance.emitInstanceUpdatesAsync, null, {'container.dockerHost': testHost}, 'update')
+          done()
+        })
+      })
+    })
+
+    describe('Instance.setStoppingAsStoppedByDockerHostAsync returns error', function () {
+      var testArray = ['1', '2']
+
+      beforeEach(function (done) {
+        var rejectionPromise = Promise.reject(testErr)
+        rejectionPromise.suppressUnhandledRejections()
+        Instance.setStoppingAsStoppedByDockerHostAsync.returns(rejectionPromise)
+        Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
+        Worker._redeployContainers.returns(Promise.resolve())
+        done()
+      })
+
+      it('should error', function (done) {
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          done()
+        })
+      })
+
+      it('should run the other methods', function (done) {
+        Worker(testData).asCallback(function () {
+          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
+          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+          sinon.assert.calledOnce(Worker._redeployContainers)
+          sinon.assert.calledWith(Worker._redeployContainers, testArray)
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
+          done()
+        })
+      })
+    })
+  })
 
   describe('#_redeployContainers', function () {
     var testErr = 'fire'
@@ -240,47 +210,74 @@ describe('worker: on-dock-removed unit test: ' + moduleName, function () {
       id: '2'
     }]
     var redeployStub
+
     beforeEach(function (done) {
       redeployStub = sinon.stub()
-      worker.runnableClient.newInstance = sinon.stub().returns({
+      sinon.stub(Runnable.prototype, 'githubLogin').yieldsAsync()
+      sinon.stub(Runnable.prototype, 'newInstance').returns({
         redeployAsync: redeployStub
       })
       done()
     })
 
+    afterEach(function (done) {
+      Runnable.prototype.githubLogin.restore()
+      Runnable.prototype.newInstance.restore()
+      done()
+    })
+
+    describe('user login fails', function () {
+
+      beforeEach(function (done) {
+        Runnable.prototype.githubLogin.yieldsAsync(new Error(testErr))
+        done()
+      })
+
+      it('should callback with error', function (done) {
+        Worker._redeployContainers(testData)
+          .asCallback(function (err) {
+            expect(err.message).to.equal(testErr)
+            sinon.assert.notCalled(redeployStub)
+            done()
+          })
+      })
+    })
+
     describe('redeploy fails for one instance', function () {
+
       beforeEach(function (done) {
         var rejectionPromise = Promise.reject(testErr)
-        rejectionPromise.catch(function () {}) // Prevents an error from getting triggered
+        rejectionPromise.suppressUnhandledRejections()
         redeployStub.onCall(0).returns(rejectionPromise)
         redeployStub.onCall(1).returns(Promise.resolve())
         done()
       })
 
       it('should callback with error', function (done) {
-        worker._redeployContainers(testData)
+        Worker._redeployContainers(testData)
           .asCallback(function (err) {
             expect(err).to.equal(testErr)
             sinon.assert.calledOnce(redeployStub)
             done()
           })
       })
-    }) // end redeploy fails for one instance
+    })
 
     describe('redeploy passes', function () {
+
       beforeEach(function (done) {
         redeployStub.returns(Promise.resolve())
         done()
       })
 
       it('should callback with no error', function (done) {
-        worker._redeployContainers(testData)
+        Worker._redeployContainers(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledTwice(redeployStub)
             done()
           })
       })
-    }) // end redeploy passes
-  }) // end _redeployContainers
-}) // end worker: on-dock-removed unit test
+    })
+  })
+})
