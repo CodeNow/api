@@ -143,8 +143,10 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         sinon.spy(messenger, '_emitInstanceUpdateAction')
         sinon.spy(messenger, 'emitContextVersionUpdate')
         sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildComplete')
+        sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildError')
         sinon.spy(Build, 'updateFailedByContextVersionIds')
         sinon.spy(Build, 'updateCompletedByContextVersionIds')
+        sinon.spy(ContextVersion, 'updateBuildErrorByContainer')
         sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, {
           login: 'nathan219',
           avatar_url: 'testingtesting123'
@@ -161,8 +163,10 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         Instance.prototype.emitInstanceUpdate.restore()
         OnImageBuilderContainerDie.prototype._finalSeriesHandler.restore()
         OnImageBuilderContainerDie.prototype._handleBuildComplete.restore()
+        OnImageBuilderContainerDie.prototype._handleBuildError.restore()
         Build.updateFailedByContextVersionIds.restore()
         Build.updateCompletedByContextVersionIds.restore()
+        ContextVersion.updateBuildErrorByContainer.restore()
         User.prototype.findGithubUserByGithubId.restore()
         done()
       })
@@ -344,6 +348,97 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             }
           }) // stub end
           dockerMockEvents.emitBuildComplete(ctx.cv, 'This is an error')
+        })
+      })
+      describe('With an errored build', function () {
+        it('should still update the UI with a socket event', function (done) {
+          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
+            workerDone()
+            if (err) { return done(err) }
+            try {
+              sinon.assert.notCalled(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildError)
+              sinon.assert.calledOnce(ContextVersion.updateBuildErrorByContainer)
+
+              sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
+              // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
+              sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
+              sinon.assert.calledWith(
+                messenger.emitContextVersionUpdate,
+                sinon.match({_id: ctx.cv._id}),
+                'build_completed'
+              )
+              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
+              sinon.assert.calledWith(
+                Instance.emitInstanceUpdates,
+                sinon.match({
+                  _id: ctx.user._id
+                }), {
+                  'contextVersion.build._id': toObjectId(ctx.cv.build._id)
+                },
+                'patch'
+              )
+              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
+              sinon.assert.calledTwice(messenger.messageRoom)
+
+              // the first call is a build_running
+              var cvCall = messenger.messageRoom.getCall(0)
+              sinon.assert.calledWith(
+                cvCall,
+                'org',
+                ctx.githubId,
+                sinon.match({
+                  event: 'CONTEXTVERSION_UPDATE',
+                  action: 'build_completed',
+                  data: sinon.match({_id: ctx.cv._id})
+                })
+              )
+              sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
+
+              var instanceCall = messenger.messageRoom.getCall(1)
+              sinon.assert.calledWith(
+                instanceCall,
+                'org',
+                ctx.githubId,
+                sinon.match({
+                  event: 'INSTANCE_UPDATE',
+                  action: 'patch',
+                  data: sinon.match({
+                    _id: ctx.instance._id,
+                    owner: {
+                      github: ctx.githubId,
+                      username: 'nathan219',
+                      gravatar: 'testingtesting123'
+                    },
+                    createdBy: {
+                      github: ctx.githubId,
+                      username: 'nathan219',
+                      gravatar: 'testingtesting123'
+                    }
+                  })
+                })
+              )
+              sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
+
+              sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+              ContextVersion.findOne(ctx.cv._id, function (err, cv) {
+                if (err) { return done(err) }
+                expect(cv.build.completed).to.exist()
+                expect(cv.build.failed).to.be.true()
+                Build.findBy('contextVersions', cv._id, function (err, builds) {
+                  if (err) { return done(err) }
+                  builds.forEach(function (build) {
+                    expect(build.completed).to.exist()
+                    expect(build.failed).to.be.true()
+                  })
+                  done()
+                })
+              })
+            } catch (e) {
+              done(e)
+            }
+          }) // stub end
+          dockerMockEvents.emitBuildComplete(ctx.cv, false, true)
         })
       })
       describe('With 2 CVs, one that dedups', function () {
