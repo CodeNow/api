@@ -910,6 +910,52 @@ describe('docker: ' + moduleName, function () {
         .to.be.true()
       done()
     })
+
+    it('should return true if its gets a 500 error from Swarm and the error is not wrapped', function (done) {
+      var err = {
+        'data': {
+          'docker': {
+            'host': 'http://10.20.1.59:2375',
+            'port': '2375',
+            'opts': {
+              'Labels': {
+                'instanceId': '566207a63dc9f41e0083056e',
+                'instanceName': 'realtime-photo',
+                'instanceShortHash': '2z05xe',
+                'contextVersionId': '566207923dc9f41e00830542',
+                'ownerUsername': 'thejsj',
+                'sessionUserGithubId': '1981198',
+                'tid': null,
+                'com.docker.swarm.constraints': '[\'org==default\']',
+                'type': 'user-container'
+              },
+              'Env': [
+                'RUNNABLE_CONTAINER_ID=2z05xe'
+              ],
+              'Image': 'registry.runnable.com/1981198/566207923dc9f41e00830540:566207923dc9f41e00830542'
+            }
+          },
+          'err': {
+            'reason': 'server error',
+            'statusCode': 500,
+            'json': 'Error: image 1981198/566207923dc9f41e00830540:566207923dc9f41e00830542 not found\n'
+          }
+        },
+        'isBoom': true,
+        'output': {
+          'statusCode': 502,
+          'payload': {
+            'statusCode': 502,
+            'error': 'Bad Gateway',
+            'message': 'Create container failed: Error: image 1981198/566207923dc9f41e00830540:566207923dc9f41e00830542 not found\n'
+          },
+          'headers': {}
+        }
+      }
+      expect(Docker.isImageNotFoundForPullErr(err))
+        .to.be.true()
+      done()
+    })
   })
 
   describe('createUserContainer', function () {
