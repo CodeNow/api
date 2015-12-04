@@ -11,7 +11,7 @@ var createFrame = require('docker-frame')
 // Mavis get's it's docker host info from docker listener.
 // Docker listener uses emits data with docker's external host
 
-module.exports = function (failure) {
+module.exports = function (failure, error) {
   var failString = JSON.stringify({
     type: 'log',
     content: 'failfailfail failf failfailfailfailfailfailfailfailfailfailfailfailfailfailfailfail'
@@ -20,11 +20,20 @@ module.exports = function (failure) {
     type: 'log',
     content: 'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c048080d32980521e743'
   })
+  var causeAnErrorString = 'This should cause a parsing issue'
+  var reply = null
+  if (failure) {
+    reply = createFrame(1, failString)
+  } else if (error) {
+    reply = causeAnErrorString
+  } else {
+    reply = createFrame(1, successString)
+  }
   nock(process.env.SWARM_HOST, { allowUnmocked: true })
     .filteringPath(/\/containers\/[0-9a-f]+\/logs\?.+/,
       '/containers/284912fa2cf26d40cc262798ecbb483b58f222d42ab1551e818afe35744688f7/logs')
     .get('/containers/284912fa2cf26d40cc262798ecbb483b58f222d42ab1551e818afe35744688f7/logs')
-    .reply(200, (failure ? createFrame(1, failString) : createFrame(1, successString)))
+    .reply(200, reply)
 
   nock(dockerHost, { allowUnmocked: true })
     .filteringPath(/\/images\/.+\/push/, '/images/repo/push')
