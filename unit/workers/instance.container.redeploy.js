@@ -12,6 +12,7 @@ var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
 var InstanceContainerRedeploy = require('workers/instance.container.redeploy')
 var Instance = require('models/mongo/instance')
+var ContextVersion = require('models/mongo/context-version')
 var User = require('models/mongo/user')
 
 var afterEach = lab.afterEach
@@ -164,10 +165,46 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
         done()
       })
 
-      it('should find and update instance with container', function (done) {
+      it('should callback with an error', function (done) {
         ctx.worker._updateInstance(function (err) {
           expect(err.message).to.equal('this is an error')
           expect(ctx.worker.instance.update.callCount).to.equal(1)
+          done()
+        })
+      })
+    })
+  })
+
+  describe('_updateContextVersion', function () {
+    beforeEach(function (done) {
+      // normally set by _baseWorkerFindInstance
+      ctx.worker.contextVersion = new ContextVersion({_id: '507f191e810c19729de860ec'})
+      done()
+    })
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.worker.contextVersion, 'clearDockerHost').yieldsAsync(null)
+        done()
+      })
+
+      it('should call clearDockerHost', function (done) {
+        ctx.worker._updateContextVersion(function (err) {
+          expect(err).to.be.null()
+          expect(ctx.worker.contextVersion.clearDockerHost.calledOnce).to.be.true()
+          done()
+        })
+      })
+    })
+    describe('failure', function () {
+      beforeEach(function (done) {
+        sinon.stub(ctx.worker.contextVersion, 'clearDockerHost').yieldsAsync(new Error('this is an error'))
+        done()
+      })
+
+      it('should callback with an error', function (done) {
+        ctx.worker._updateContextVersion(function (err) {
+          expect(err.message).to.equal('this is an error')
+          expect(ctx.worker.contextVersion.clearDockerHost.calledOnce).to.be.true()
           done()
         })
       })
@@ -206,6 +243,53 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           expect(jobData.container).to.equal(ctx.worker.oldContainer)
           expect(jobData.ownerGithubId).to.equal(ctx.worker.instance.owner.github)
           expect(jobData.sessionUserId).to.equal(ctx.worker.user._id)
+          done()
+        })
+      })
+    })
+  })
+
+  describe('_createNewContainer', function () {
+    beforeEach(function (done) {
+      // normally set by _baseWorkerFindInstance
+      ctx.worker.instance = new Instance(ctx.mockInstance)
+      ctx.worker.oldContainer = {
+        dockerContainer: '46080d6253c8db55b8bbb9408654896964b86c63e863f1b3b0301057d1ad92ba'
+      }
+      ctx.worker.user = new User({_id: '507f191e810c19729de860eb'})
+      ctx.worker.build = {
+        contextVersions: ['507f191e810c19729de860ev']
+      }
+      done()
+    })
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(rabbitMQ, 'createInstanceContainer').returns()
+        sinon.stub(ctx.worker.user, 'findGithubUsernameByGithubId').yieldsAsync(null, 'codenow')
+        done()
+      })
+      afterEach(function (done) {
+        rabbitMQ.createInstanceContainer.restore()
+        done()
+      })
+      it('should publish new job', function (done) {
+        ctx.worker._createNewContainer(function (err) {
+          expect(err).to.not.exist()
+          expect(rabbitMQ.createInstanceContainer.calledOnce).to.be.true()
+          var jobData = rabbitMQ.createInstanceContainer.getCall(0).args[0]
+          expect(jobData.instanceId).to.equal(ctx.worker.instance._id)
+          expect(jobData.contextVersionId).to.equal('507f191e810c19729de860ev')
+          expect(jobData.sessionUserGithubId).to.equal(ctx.data.sessionUserGithubId)
+          expect(jobData.ownerUsername).to.equal('codenow')
+          done()
+        })
+      })
+    })
+    describe('failure', function () {
+      it('should error if findGithubUsernameByGithubId errored', function (done) {
+        sinon.stub(ctx.worker.user, 'findGithubUsernameByGithubId').yieldsAsync(new Error('Cannot find an owner'))
+        ctx.worker._createNewContainer(function (err) {
+          expect(err.message).to.equal('Cannot find an owner')
           done()
         })
       })
