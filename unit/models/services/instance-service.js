@@ -7,6 +7,7 @@ var lab = exports.lab = Lab.script()
 var sinon = require('sinon')
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
+var Promise = require('bluebird')
 
 var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
 var ContextVersion = require('models/mongo/context-version')
@@ -20,6 +21,8 @@ var Mavis = require('models/apis/mavis')
 var joi = require('utils/joi')
 var rabbitMQ = require('models/rabbitmq')
 var validation = require('../../fixtures/validation')(lab)
+var messenger = require('socket/messenger')
+var User = require('models/mongo/user')
 
 var afterEach = lab.afterEach
 var after = lab.after
@@ -964,5 +967,146 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
     })
+  })
+
+  describe('emitInstanceUpdate', function () {
+    var instance
+
+    beforeEach(function (done) {
+      sinon.stub(User, 'findByGithubIdAsync').returns(Promise.resolve())
+      sinon.stub(messenger, 'emitInstanceUpdateAsync')
+      instance = {
+        createdBy: {
+          github: 123454
+        },
+        populateModelsAsync: sinon.stub().returns(Promise.resolve()),
+        populateOwnerAndCreatedByAsync: sinon.stub().returns(Promise.resolve())
+      }
+      done()
+    })
+
+    afterEach(function (done) {
+      User.findByGithubIdAsync.restore()
+      messenger.emitInstanceUpdateAsync.restore()
+      done()
+    })
+
+    it('should fail when findBygithubId fails', function (done) {
+      var testErr = 'Find By GithubID Failed'
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      User.findByGithubIdAsync.returns(rejectionPromise)
+
+      InstanceService.emitInstanceUpdate(instance, null)
+        .asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          sinon.assert.notCalled(instance.populateModelsAsync)
+          sinon.assert.notCalled(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          done()
+        })
+    })
+
+    it('should use the passed in github user if one is provided', function (done) {
+      var testUser = 1234
+      InstanceService.emitInstanceUpdate(instance, testUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(User.findByGithubIdAsync)
+          sinon.assert.calledWith(User.findByGithubIdAsync, testUser)
+          done()
+        })
+    })
+
+    it('should use the created by github userId if one is not passed', function (done) {
+      InstanceService.emitInstanceUpdate(instance)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(User.findByGithubIdAsync)
+          sinon.assert.calledWith(User.findByGithubIdAsync, instance.createdBy.github)
+          done()
+        })
+    })
+
+    it('should fail when populateModels fails', function (done) {
+      var testErr = 'Populate Models Failed'
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      instance.populateModelsAsync.returns(rejectionPromise)
+
+      InstanceService.emitInstanceUpdate(instance, null)
+        .asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          done()
+        })
+    })
+
+    it('should fail when populateOwnerAndCreatedByAsync fails', function (done) {
+      var testErr = 'Populate Owner Failed'
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      instance.populateOwnerAndCreatedByAsync.returns(rejectionPromise)
+
+      InstanceService.emitInstanceUpdate(instance, null)
+        .asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          done()
+        })
+    })
+
+    it('should pass the results of findByGithubID into populateOwnerAndCreatedByAsync', function (done) {
+      var findResults = {key: 'value'}
+      User.findByGithubIdAsync.returns(Promise.resolve(findResults))
+      InstanceService.emitInstanceUpdate(instance, null)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.calledWith(instance.populateOwnerAndCreatedByAsync, findResults)
+          done()
+        })
+    })
+
+    it('should fail is the messenger fails', function (done) {
+      var testErr = 'Emit Instance Update Failed'
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      messenger.emitInstanceUpdateAsync.returns(rejectionPromise)
+
+      InstanceService.emitInstanceUpdate(instance)
+        .asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          done()
+        })
+    })
+    it('should pass the instance into emitInstanceUpdateAsync', function (done) {
+      InstanceService.emitInstanceUpdate(instance)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
+          sinon.assert.calledWith(messenger.emitInstanceUpdateAsync, instance)
+          done()
+        })
+    })
+
+    it('should pass if everything passes', function (done) {
+      InstanceService.emitInstanceUpdate(instance)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
+          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, messenger.emitInstanceUpdateAsync)
+          done()
+        })
+    })
+
   })
 })
