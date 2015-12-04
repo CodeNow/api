@@ -899,6 +899,17 @@ describe('docker: ' + moduleName, function () {
         done()
       }
     })
+
+    it('should return true if its gets a 500 error from Swarm and the error is not wrapped', function (done) {
+      var err = {
+        'reason': 'server error',
+        'statusCode': 500,
+        'json': 'Error: image 1981198/5661e2356f99eb1f00d62669:5661e2356f99eb1f00d6266b not found\n'
+      }
+      expect(Docker.isImageNotFoundForPullErr(err))
+        .to.be.true()
+      done()
+    })
   })
 
   describe('createUserContainer', function () {
