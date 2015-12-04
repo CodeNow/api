@@ -9,8 +9,10 @@ var lab = exports.lab = Lab.script()
 var Code = require('code')
 var sinon = require('sinon')
 
+var rabbitMQ = require('models/rabbitmq')
 var InstanceContainerRedeploy = require('workers/instance.container.redeploy')
 var Instance = require('models/mongo/instance')
+var User = require('models/mongo/user')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -45,6 +47,14 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       },
       build: {
         contextVersions: ['565bb8a5d22c1e1f00cdbcb2']
+      },
+      contextVersion: {
+        appCodeVersions: [
+          {
+            lowerBranch: 'develop',
+            additionalRepo: false
+          }
+        ]
       }
     }
     ctx.data = {
@@ -158,6 +168,80 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
         ctx.worker._updateInstance(function (err) {
           expect(err.message).to.equal('this is an error')
           expect(ctx.worker.instance.update.callCount).to.equal(1)
+          done()
+        })
+      })
+    })
+  })
+
+  describe('_deleteOldContainer', function () {
+    beforeEach(function (done) {
+      // normally set by _baseWorkerFindInstance
+      ctx.worker.instance = new Instance(ctx.mockInstance)
+      ctx.worker.oldContainer = {
+        dockerContainer: '46080d6253c8db55b8bbb9408654896964b86c63e863f1b3b0301057d1ad92ba'
+      }
+      ctx.worker.user = new User({_id: '507f191e810c19729de860eb'})
+      done()
+    })
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
+        done()
+      })
+      afterEach(function (done) {
+        rabbitMQ.deleteInstanceContainer.restore()
+        done()
+      })
+      it('should find and update instance', function (done) {
+        ctx.worker._deleteOldContainer(function (err) {
+          expect(err).to.not.exist()
+          expect(rabbitMQ.deleteInstanceContainer.calledOnce).to.be.true()
+          var jobData = rabbitMQ.deleteInstanceContainer.getCall(0).args[0]
+          expect(jobData.instanceShortHash).to.equal(ctx.worker.instance.shortHash)
+          expect(jobData.instanceName).to.equal(ctx.worker.instance.name)
+          expect(jobData.instanceName).to.equal(ctx.worker.instance.name)
+          expect(jobData.instanceMasterPod).to.equal(ctx.worker.instance.masterPod)
+          expect(jobData.instanceMasterBranch).to.equal('develop')
+          expect(jobData.container).to.equal(ctx.worker.oldContainer)
+          expect(jobData.ownerGithubId).to.equal(ctx.worker.instance.owner.github)
+          expect(jobData.sessionUserId).to.equal(ctx.worker.user._id)
+          done()
+        })
+      })
+    })
+  })
+
+  describe('_validateInstanceAndBuild', function () {
+    describe('success', function () {
+      it('should pass validation', function (done) {
+        ctx.worker.instance = {
+          container: {}
+        }
+        ctx.worker.build = {
+          successful: true
+        }
+        ctx.worker._validateInstanceAndBuild(function (err) {
+          expect(err).to.not.exist()
+          done()
+        })
+      })
+    })
+    describe('failure', function () {
+      it('should fail if instance has no container', function (done) {
+        ctx.worker.instance = {}
+        ctx.worker._validateInstanceAndBuild(function (err) {
+          expect(err.message).to.equal('Cannot redeploy an instance without a container')
+          done()
+        })
+      })
+      it('should fail if build was not successfull', function (done) {
+        ctx.worker.instance = {
+          container: {}
+        }
+        ctx.worker.build = {}
+        ctx.worker._validateInstanceAndBuild(function (err) {
+          expect(err.message).to.equal('Cannot redeploy an instance with an unsuccessful build')
           done()
         })
       })
