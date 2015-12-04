@@ -1121,5 +1121,13 @@ describe('Context Version: ' + moduleName, function () {
         done()
       })
     })
+
+    it('should be asyncified properly!', function (done) {
+      ContextVersion.markDockRemovedByDockerHostAsync.bind(ContextVersion, dockerHost)()
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          done()
+        })
+    })
   })
 })
