@@ -9,9 +9,12 @@ var lab = exports.lab = Lab.script()
 var Code = require('code')
 var sinon = require('sinon')
 
+var Promise = require('bluebird')
+
 var rabbitMQ = require('models/rabbitmq')
 var InstanceContainerRedeploy = require('workers/instance.container.redeploy')
 var Instance = require('models/mongo/instance')
+var InstanceService = require('models/services/instance-service')
 var ContextVersion = require('models/mongo/context-version')
 var User = require('models/mongo/user')
 var Build = require('models/mongo/build')
@@ -373,6 +376,24 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           expect(err.message).to.equal('Cannot redeploy an instance with an unsuccessful build')
           done()
         })
+      })
+    })
+  })
+  describe('_updateFrontend', function () {
+    beforeEach(function (done) {
+      sinon.stub(InstanceService, 'emitInstanceUpdate').returns(Promise.resolve())
+      done()
+    })
+    afterEach(function (done) {
+      InstanceService.emitInstanceUpdate.restore()
+      done()
+    })
+
+    it('should return successfully', function (done) {
+      ctx.worker._updateFrontend(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
+        done()
       })
     })
   })
