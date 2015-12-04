@@ -956,6 +956,7 @@ describe('InstanceService: ' + moduleName, function () {
         createdBy: {
           github: 123454
         },
+        updateCvAsync: sinon.stub().returns(Promise.resolve()),
         populateModelsAsync: sinon.stub().returns(Promise.resolve()),
         populateOwnerAndCreatedByAsync: sinon.stub().returns(Promise.resolve())
       }
@@ -979,6 +980,7 @@ describe('InstanceService: ' + moduleName, function () {
           expect(err).to.equal(testErr)
           sinon.assert.notCalled(instance.populateModelsAsync)
           sinon.assert.notCalled(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(instance.updateCvAsync)
           sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
           done()
         })
@@ -1016,6 +1018,7 @@ describe('InstanceService: ' + moduleName, function () {
           expect(err).to.equal(testErr)
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(instance.updateCvAsync)
           sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
           done()
         })
@@ -1032,6 +1035,7 @@ describe('InstanceService: ' + moduleName, function () {
           expect(err).to.equal(testErr)
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(instance.updateCvAsync)
           sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
           done()
         })
@@ -1060,6 +1064,7 @@ describe('InstanceService: ' + moduleName, function () {
           expect(err).to.equal(testErr)
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(instance.updateCvAsync)
           done()
         })
     })
@@ -1075,15 +1080,33 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should pass if everything passes', function (done) {
-      InstanceService.emitInstanceUpdate(instance)
+      var updateMessage = 'update'
+      InstanceService.emitInstanceUpdate(instance, null, updateMessage)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
+          sinon.assert.calledWith(messenger.emitInstanceUpdateAsync, instance, updateMessage)
+          sinon.assert.notCalled(instance.updateCvAsync)
           sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, messenger.emitInstanceUpdateAsync)
           done()
         })
     })
+
+    it('should force update the context version if flag is set', function (done) {
+      InstanceService.emitInstanceUpdate(instance, null, 'update', true)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
+          sinon.assert.calledOnce(instance.updateCvAsync)
+          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCvAsync, messenger.emitInstanceUpdateAsync)
+          done()
+        })
+    })
+
+
   })
 })
