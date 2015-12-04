@@ -84,7 +84,8 @@ describe('flattenMongooseDoc: ' + moduleName, function () {
       'appCodeVersions[2].repo': 'github.com/user/repo2',
       'appCodeVersions[2].lowerRepo': 'github.com/user/repo2',
       'appCodeVersions[2].privateKey': 'private2',
-      'appCodeVersions[2].useLatest': false
+      'appCodeVersions[2].useLatest': false,
+      dockRemoved: false
     })
     done()
   })
@@ -155,7 +156,8 @@ describe('flattenMongooseDoc: ' + moduleName, function () {
       'appCodeVersions[2].repo': 'github.com/user/repo2',
       'appCodeVersions[2].lowerRepo': 'github.com/user/repo2',
       'appCodeVersions[2].privateKey': 'private2',
-      'appCodeVersions[2].useLatest': false
+      'appCodeVersions[2].useLatest': false,
+      dockRemoved: false
     })
     done()
   })
@@ -226,7 +228,8 @@ describe('flattenMongooseDoc: ' + moduleName, function () {
       'initKeypath.appCodeVersions[2].repo': 'github.com/user/repo2',
       'initKeypath.appCodeVersions[2].lowerRepo': 'github.com/user/repo2',
       'initKeypath.appCodeVersions[2].privateKey': 'private2',
-      'initKeypath.appCodeVersions[2].useLatest': false
+      'initKeypath.appCodeVersions[2].useLatest': false,
+      'initKeypath.dockRemoved': false
     })
     done()
   })
