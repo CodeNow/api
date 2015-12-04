@@ -1086,6 +1086,7 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
     })
+
     it('should pass the instance into emitInstanceUpdateAsync', function (done) {
       InstanceService.emitInstanceUpdate(instance)
         .asCallback(function (err) {
@@ -1107,6 +1108,5 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
     })
-
   })
 })
