@@ -231,7 +231,14 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                       github: ctx.githubId,
                       username: 'nathan219',
                       gravatar: 'testingtesting123'
-                    }
+                    },
+                    contextVersion: sinon.match({
+                      _id: ctx.cv._id,
+                      build: sinon.match({
+                        failed: sinon.match.falsy,
+                        completed: sinon.match.truthy
+                      })
+                    })
                   })
                 })
               )
@@ -324,7 +331,14 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                       github: ctx.githubId,
                       username: 'nathan219',
                       gravatar: 'testingtesting123'
-                    }
+                    },
+                    contextVersion: sinon.match({
+                      _id: ctx.cv._id,
+                      build: sinon.match({
+                        failed: sinon.match.truthy,
+                        completed: sinon.match.truthy
+                      })
+                    })
                   })
                 })
               )
@@ -415,7 +429,13 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                       github: ctx.githubId,
                       username: 'nathan219',
                       gravatar: 'testingtesting123'
-                    }
+                    },
+                    contextVersion: sinon.match({
+                      _id: ctx.cv._id,
+                      build: sinon.match({
+                        completed: sinon.match.truthy
+                      })
+                    })
                   })
                 })
               )
@@ -553,7 +573,11 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                         gravatar: 'testingtesting123'
                       },
                       contextVersion: sinon.match({
-                        _id: ctx.cv2._id
+                        _id: ctx.cv2._id,
+                        build: sinon.match({
+                          failed: sinon.match.falsy,
+                          completed: sinon.match.truthy
+                        })
                       })
                     })
                   })
@@ -567,18 +591,28 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   ownerUsername: ctx.user.accounts.github.username,
                   sessionUserGithubId: ctx.user.accounts.github.id.toString()
                 })
-                ContextVersion.findBy('build._id', ctx.build._id, function (err, cvs) {
-                  if (err) { return done(err) }
-                  expect(cvs.length).to.equal(2)
-                  cvs.forEach(function (cv) {
-                    expect(cv.build.completed).to.exist()
-                  })
-                  Build.findBy('contextVersions', ctx.cv2._id, function (err, builds) {
-                    if (err) { return done(err) }
-                    builds.forEach(function (build) {
-                      expect(build.completed).to.exist()
+                Instance.findById(ctx.instance._id, function (err, instance) {
+                  if (err) {
+                    return done(err)
+                  }
+                  expect(instance.contextVersion.build.completed).to.exist()
+                  ContextVersion.findBy('build._id', ctx.build._id, function (err, cvs) {
+                    if (err) {
+                      return done(err)
+                    }
+                    expect(cvs.length).to.equal(2)
+                    cvs.forEach(function (cv) {
+                      expect(cv.build.completed).to.exist()
                     })
-                    done()
+                    Build.findBy('contextVersions', ctx.cv2._id, function (err, builds) {
+                      if (err) {
+                        return done(err)
+                      }
+                      builds.forEach(function (build) {
+                        expect(build.completed).to.exist()
+                      })
+                      done()
+                    })
                   })
                 })
               } catch (e) {
