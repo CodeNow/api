@@ -38,11 +38,19 @@ describe('format-object-for-mongo unit test', function () {
         goodKey: 555,
         '.an.even.worse.object': {
           'bad.key.boo': 123,
-          goodKey: 555
+          goodKey: 555,
+          array: ['test'],
+          wtf: undefined,
+          haha: null,
+          str: 'coolString'
         }
       },
       'bad.key.boo': 123,
-      goodKey: 555
+      goodKey: 555,
+      array: ['test'],
+      wtf: undefined,
+      haha: null,
+      str: 'coolString'
     }
     formatObjectForMongo(testObject)
     expect(testObject).to.deep.equal({
@@ -51,11 +59,19 @@ describe('format-object-for-mongo unit test', function () {
         goodKey: 555,
         '-an-even-worse-object': {
           'bad-key-boo': 123,
-          goodKey: 555
+          goodKey: 555,
+          array: ['test'],
+          wtf: undefined,
+          haha: null,
+          str: 'coolString'
         }
       },
       'bad-key-boo': 123,
-      goodKey: 555
+      goodKey: 555,
+      array: ['test'],
+      wtf: undefined,
+      haha: null,
+      str: 'coolString'
     })
     done()
   })
