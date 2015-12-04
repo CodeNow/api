@@ -1104,7 +1104,7 @@ describe('Context Version: ' + moduleName, function () {
         sinon.assert.calledOnce(ContextVersion.update)
         sinon.assert.calledWith(ContextVersion.update,
           { dockerHost: dockerHost },
-          { $set: { dockRemoved: true } },
+          { $set: { dockRemoved: true, dockRemovedConfirmedByUser: true } },
           { multi: true },
           sinon.match.func
         )
