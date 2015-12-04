@@ -14,6 +14,7 @@ var InstanceContainerRedeploy = require('workers/instance.container.redeploy')
 var Instance = require('models/mongo/instance')
 var ContextVersion = require('models/mongo/context-version')
 var User = require('models/mongo/user')
+var Build = require('models/mongo/build')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -128,6 +129,50 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
         expect(ctx.worker._deleteOldContainer.calledOnce).to.be.true()
         expect(ctx.worker._createNewContainer.calledOnce).to.be.false()
         expect(ctx.worker._updateFrontend.calledOnce).to.be.false()
+        done()
+      })
+    })
+  })
+  describe('_findBuild', function () {
+    beforeEach(function (done) {
+      // normally set by _baseWorkerFindInstance
+      ctx.worker.instance = new Instance(ctx.mockInstance)
+      done()
+    })
+    it('should fail if db call failed', function (done) {
+      sinon.stub(Build, 'findById').yieldsAsync(new Error('Mongo error'))
+      ctx.worker._findBuild(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal('Mongo error')
+        expect(Build.findById.calledOnce).to.be.true()
+        expect(Build.findById.getCall(0).args[0])
+          .to.equal(ctx.worker.instance.build)
+        Build.findById.restore()
+        done()
+      })
+    })
+    it('should fail if no build found', function (done) {
+      sinon.stub(Build, 'findById').yieldsAsync(null)
+      ctx.worker._findBuild(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal('Build not found')
+        expect(Build.findById.calledOnce).to.be.true()
+        expect(Build.findById.getCall(0).args[0])
+          .to.equal(ctx.worker.instance.build)
+        Build.findById.restore()
+        done()
+      })
+    })
+    it('should work if build was found', function (done) {
+      var build = new Build({_id: '507f191e810c19729de860ed'})
+      sinon.stub(Build, 'findById').yieldsAsync(null, build)
+      ctx.worker._findBuild(function (err) {
+        expect(err).to.not.exist()
+        expect(Build.findById.calledOnce).to.be.true()
+        expect(Build.findById.getCall(0).args[0])
+          .to.equal(ctx.worker.instance.build)
+        Build.findById.restore()
+        expect(ctx.worker.build._id).to.equal(build._id)
         done()
       })
     })
