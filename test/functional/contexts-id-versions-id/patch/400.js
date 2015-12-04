@@ -11,7 +11,6 @@ var after = lab.after
 var Code = require('code')
 var expect = Code.expect
 
-var put = require('101/put')
 var api = require('../../fixtures/api-control')
 var multi = require('../../fixtures/multi-factory')
 
