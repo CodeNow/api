@@ -5,8 +5,10 @@ var clone = require('101/clone')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var sinon = require('sinon')
+var toObjectId = require('utils/to-object-id')
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
+var Promise = require('bluebird')
 
 var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
 var ContextVersion = require('models/mongo/context-version')
@@ -16,6 +18,7 @@ var mongo = require('../../fixtures/mongo')
 var Hashids = require('hashids')
 var InstanceService = require('models/services/instance-service')
 var Instance = require('models/mongo/instance')
+var Build = require('models/mongo/build')
 var joi = require('utils/joi')
 var rabbitMQ = require('models/rabbitmq')
 var validation = require('../../fixtures/validation')(lab)
@@ -114,6 +117,14 @@ function createNewInstance (name, opts) {
     network: {
       hostIp: '1.1.1.100'
     }
+  })
+}
+
+var createNewBuild = function (id, completed, failed) {
+  return new Build({
+    _id: id,
+    completed: (completed !== undefined) ? completed : (new Date()),
+    failed: (failed !== undefined) ? failed : false
   })
 }
 
@@ -884,7 +895,7 @@ describe('InstanceService: ' + moduleName, function () {
           ctx.opts.instance = new Instance()
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
           sinon.stub(Docker, 'isImageNotFoundForCreateErr').returns(true)
-          sinon.stub(InstanceService, '_handleImageNotFoundErr').yieldsAsync()
+          sinon.stub(InstanceService, '_handleImageNotFoundErr').returns(Promise.resolve())
           done()
         })
         afterEach(function (done) {
@@ -899,8 +910,7 @@ describe('InstanceService: ' + moduleName, function () {
             sinon.assert.calledWith(
               InstanceService._handleImageNotFoundErr,
               ctx.opts,
-              ctx.err,
-              sinon.match.func
+              ctx.err
             )
             done()
           })
@@ -911,33 +921,55 @@ describe('InstanceService: ' + moduleName, function () {
 
   describe('#_handleImageNotFoundErr', function () {
     beforeEach(function (done) {
-      sinon.stub(rabbitMQ, 'pullInstanceImage')
       ctx.opts = {
         instance: {
-          _id: '23456789012345678901234',
-          build: '23456789012345678901111'
+          _id: '123456789012345678901234',
+          build: '012345678901234567890123'
+        },
+        contextVersion: {
+          _id: toObjectId('123456789012345678901234'),
+          context: toObjectId('012345678901234567890123')
         },
         sessionUserGithubId: '10',
         ownerUsername: 'ownerUsername'
       }
+      ctx.err = new Error('This is an error created for testing')
+      sinon.stub(rabbitMQ, 'createImageBuilderContainer')
       done()
     })
     afterEach(function (done) {
-      rabbitMQ.pullInstanceImage.restore()
+      rabbitMQ.createImageBuilderContainer.restore()
+      Build.findOne.restore()
       done()
     })
 
-    it('should create a pull-instance-image job', function (done) {
-      InstanceService._handleImageNotFoundErr(ctx.opts, ctx.err, function (err) {
-        expect(err).to.equal(ctx.err)
+    it('should create a `createImageBuilderContainer` job if the build has finnished', function (done) {
+      sinon.stub(Build, 'findOne').yieldsAsync(null, createNewBuild(ctx.opts.instance._id))
+      InstanceService._handleImageNotFoundErr(ctx.opts, ctx.err).asCallback(function (err) {
+        expect(err).to.equal(null)
+        sinon.assert.calledOnce(Build.findOne)
+        sinon.assert.calledWith(Build.findOne, { _id: toObjectId(ctx.opts.instance.build) })
         sinon.assert.calledWith(
-          rabbitMQ.pullInstanceImage, {
-            instanceId: ctx.opts.instance._id,
-            buildId: ctx.opts.instance.build,
+          rabbitMQ.createImageBuilderContainer, {
+            manualBuild: false,
+            contextId: ctx.opts.contextVersion.context.toString(),
+            contextVersionId: ctx.opts.contextVersion._id.toString(),
             sessionUserGithubId: ctx.opts.sessionUserGithubId,
-            ownerUsername: ctx.opts.ownerUsername
+            ownerUsername: ctx.opts.ownerUsername,
+            noCache: true,
+            tid: sinon.match.string
           }
         )
+        done()
+      })
+    })
+
+    it('should return the original error if the build has already completed', function (done) {
+      sinon.stub(Build, 'findOne').yieldsAsync(null, createNewBuild(ctx.opts.instance._id, false, false))
+      InstanceService._handleImageNotFoundErr(ctx.opts, ctx.err).asCallback(function (err) {
+        expect(err).to.equal(ctx.err)
+        sinon.assert.calledOnce(Build.findOne)
+        sinon.assert.calledWith(Build.findOne, { _id: toObjectId(ctx.opts.instance.build) })
         done()
       })
     })
