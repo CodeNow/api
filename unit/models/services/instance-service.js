@@ -1106,7 +1106,5 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
     })
-
-
   })
 })
