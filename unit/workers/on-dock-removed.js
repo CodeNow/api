@@ -37,13 +37,13 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       sinon.stub(ContextVersion, 'markDockRemovedByDockerHostAsync').returns(Promise.resolve())
       sinon.stub(Instance, 'setStoppingAsStoppedByDockerHostAsync').returns(Promise.resolve())
       sinon.stub(Worker, '_redeployContainers')
-      sinon.stub(Worker, '_updateInstances')
+      sinon.stub(Worker, '_updateFrontendInstances')
       done()
     })
 
     afterEach(function (done) {
       Worker._redeployContainers.restore()
-      Worker._updateInstances.restore()
+      Worker._updateFrontendInstances.restore()
       Instance.findActiveInstancesByDockerHostAsync.restore()
       ContextVersion.markDockRemovedByDockerHostAsync.restore()
       Instance.setStoppingAsStoppedByDockerHostAsync.restore()
@@ -124,7 +124,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
           sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
           sinon.assert.notCalled(Worker._redeployContainers)
-          sinon.assert.notCalled(Worker._updateInstances)
+          sinon.assert.notCalled(Worker._updateFrontendInstances)
           expect(err).to.not.exist()
           done()
         })
@@ -152,8 +152,8 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
 
       it('should emit instance updates after everything has completed', function (done) {
         Worker(testData).asCallback(function () {
-          sinon.assert.calledOnce(Worker._updateInstances)
-          sinon.assert.calledWith(Worker._updateInstances, testArray)
+          sinon.assert.calledOnce(Worker._updateFrontendInstances)
+          sinon.assert.calledWith(Worker._updateFrontendInstances, testArray)
           done()
         })
       })
@@ -184,7 +184,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
           sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHostAsync)
           sinon.assert.notCalled(Instance.findActiveInstancesByDockerHostAsync)
           sinon.assert.notCalled(Worker._redeployContainers)
-          sinon.assert.notCalled(Worker._updateInstances)
+          sinon.assert.notCalled(Worker._updateFrontendInstances)
           done()
         })
       })
@@ -216,7 +216,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
           sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
           sinon.assert.notCalled(Instance.findActiveInstancesByDockerHostAsync)
           sinon.assert.notCalled(Worker._redeployContainers)
-          sinon.assert.notCalled(Worker._updateInstances)
+          sinon.assert.notCalled(Worker._updateFrontendInstances)
           done()
         })
       })
@@ -300,7 +300,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
     })
   })
 
-  describe('#__updateInstances', function () {
+  describe('#_updateFrontendInstances', function () {
     var testErr = 'Problem!'
     var testData = [{
       id: '1'
@@ -327,7 +327,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       })
 
       it('should callback with error', function (done) {
-        Worker._updateInstances(testData)
+        Worker._updateFrontendInstances(testData)
           .asCallback(function (err) {
             expect(err).to.equal(testErr)
             sinon.assert.called(InstanceService.emitInstanceUpdate)
@@ -343,7 +343,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       })
 
       it('should return successfully', function (done) {
-        Worker._updateInstances(testData)
+        Worker._updateFrontendInstances(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledTwice(InstanceService.emitInstanceUpdate)
