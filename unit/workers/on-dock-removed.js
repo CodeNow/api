@@ -33,9 +33,9 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
     var testErr = 'kamehameha'
 
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findActiveInstancesByDockerHostAsync')
-      sinon.stub(ContextVersion, 'markDockRemovedByDockerHostAsync').returns(Promise.resolve())
-      sinon.stub(Instance, 'setStoppingAsStoppedByDockerHostAsync').returns(Promise.resolve())
+      sinon.stub(Instance, 'findActiveInstancesByDockerHost')
+      sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').yieldsAsync()
+      sinon.stub(Instance, 'setStoppingAsStoppedByDockerHost').yieldsAsync()
       sinon.stub(Worker, '_redeployContainers')
       sinon.stub(Worker, '_updateFrontendInstances')
       done()
@@ -44,9 +44,9 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
     afterEach(function (done) {
       Worker._redeployContainers.restore()
       Worker._updateFrontendInstances.restore()
-      Instance.findActiveInstancesByDockerHostAsync.restore()
-      ContextVersion.markDockRemovedByDockerHostAsync.restore()
-      Instance.setStoppingAsStoppedByDockerHostAsync.restore()
+      Instance.findActiveInstancesByDockerHost.restore()
+      ContextVersion.markDockRemovedByDockerHost.restore()
+      Instance.setStoppingAsStoppedByDockerHost.restore()
       done()
     })
 
@@ -83,46 +83,44 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       })
     })
 
-    describe('findActiveInstancesByDockerHostAsync errors', function () {
+    describe('findActiveInstancesByDockerHost errors', function () {
       beforeEach(function (done) {
-        var rejectedPromise = Promise.reject(testErr)
-        rejectedPromise.suppressUnhandledRejections()
-        Instance.findActiveInstancesByDockerHostAsync.returns(rejectedPromise)
-        ContextVersion.markDockRemovedByDockerHostAsync.returns(Promise.resolve([]))
+        Instance.findActiveInstancesByDockerHost.yieldsAsync(testErr)
+        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null, [])
         done()
       })
 
       it('should cb err', function (done) {
         Worker(testData).asCallback(function (err) {
-          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
-          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
-          expect(err).to.equal(testErr)
+          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHost)
+          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHost, testHost)
+          expect(err.message).to.equal(testErr)
           done()
         })
       })
 
       it('should still run other sub-tasks', function (done) {
         Worker(testData).asCallback(function (err) {
-          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
-          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
-          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
-          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
-          expect(err).to.equal(testErr)
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
+          expect(err.message).to.equal(testErr)
           done()
         })
       })
     })
 
-    describe('findActiveInstancesByDockerHostAsync return empty', function () {
+    describe('findActiveInstancesByDockerHost return empty', function () {
       beforeEach(function (done) {
-        Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve([]))
+        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, [])
         done()
       })
 
       it('should cb without calling redeploy containers', function (done) {
         Worker(testData).asCallback(function (err) {
-          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
-          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHost)
+          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHost, testHost)
           sinon.assert.notCalled(Worker._redeployContainers)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
           expect(err).to.not.exist()
@@ -131,10 +129,10 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       })
     })
 
-    describe('findActiveInstancesByDockerHostAsync returns array', function () {
+    describe('findActiveInstancesByDockerHost returns array', function () {
       var testArray = ['1', '2']
       beforeEach(function (done) {
-        Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
+        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
         Worker._redeployContainers.returns(Promise.resolve())
         done()
       })
@@ -142,8 +140,8 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       it('should call _redeployContainers', function (done) {
         Worker(testData).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHostAsync)
-          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHostAsync, testHost)
+          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHost)
+          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeployContainers)
           sinon.assert.calledWith(Worker._redeployContainers, testArray)
           done()
@@ -159,30 +157,28 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       })
     })
 
-    describe('ContextVersion.markDockRemovedByDockerHostAsync returns error', function () {
+    describe('ContextVersion.markDockRemovedByDockerHost returns error', function () {
       var testArray = ['1', '2']
       beforeEach(function (done) {
-        var rejectionPromise = Promise.reject(testErr)
-        rejectionPromise.suppressUnhandledRejections()
-        ContextVersion.markDockRemovedByDockerHostAsync.returns(rejectionPromise)
-        Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
-        Worker._redeployContainers.returns(Promise.resolve())
+        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(testErr)
+        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
+        Worker._redeployContainers.yieldsAsync()
         done()
       })
 
       it('should error', function (done) {
         Worker(testData).asCallback(function (err) {
-          expect(err).to.equal(testErr)
+          expect(err.message).to.equal(testErr)
           done()
         })
       })
 
       it('should not run the other methods', function (done) {
         Worker(testData).asCallback(function () {
-          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
-          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
-          sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHostAsync)
-          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHostAsync)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
+          sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHost)
+          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHost)
           sinon.assert.notCalled(Worker._redeployContainers)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
           done()
@@ -190,31 +186,29 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       })
     })
 
-    describe('Instance.setStoppingAsStoppedByDockerHostAsync returns error', function () {
+    describe('Instance.setStoppingAsStoppedByDockerHost returns error', function () {
       var testArray = ['1', '2']
       beforeEach(function (done) {
-        var rejectionPromise = Promise.reject(testErr)
-        rejectionPromise.suppressUnhandledRejections()
-        Instance.setStoppingAsStoppedByDockerHostAsync.returns(rejectionPromise)
-        Instance.findActiveInstancesByDockerHostAsync.returns(Promise.resolve(testArray))
-        Worker._redeployContainers.returns(Promise.resolve())
+        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(testErr)
+        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
+        Worker._redeployContainers.yieldsAsync()
         done()
       })
 
       it('should error', function (done) {
         Worker(testData).asCallback(function (err) {
-          expect(err).to.equal(testErr)
+          expect(err.message).to.equal(testErr)
           done()
         })
       })
 
       it('should not run the other methods', function (done) {
         Worker(testData).asCallback(function () {
-          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHostAsync)
-          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHostAsync, testHost)
-          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHostAsync)
-          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHostAsync, testHost)
-          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHostAsync)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
+          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHost)
           sinon.assert.notCalled(Worker._redeployContainers)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
           done()
@@ -235,7 +229,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       redeployStub = sinon.stub()
       sinon.stub(Runnable.prototype, 'githubLogin')
       sinon.stub(Runnable.prototype, 'newInstance').returns({
-        redeployAsync: redeployStub
+        redeploy: redeployStub
       })
       done()
     })
@@ -248,7 +242,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
 
     describe('user login fails', function () {
       beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yieldsAsync(new Error(testErr))
+        Runnable.prototype.githubLogin.yields(new Error(testErr))
         done()
       })
 
@@ -264,18 +258,16 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
 
     describe('redeploy fails for one instance', function () {
       beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yieldsAsync()
-        var rejectionPromise = Promise.reject(testErr)
-        rejectionPromise.suppressUnhandledRejections()
-        redeployStub.onCall(0).returns(rejectionPromise)
-        redeployStub.onCall(1).returns(Promise.resolve())
+        Runnable.prototype.githubLogin.yields()
+        redeployStub.onCall(0).yieldsAsync(testErr)
+        redeployStub.onCall(1).yieldsAsync()
         done()
       })
 
       it('should callback with error', function (done) {
         Worker._redeployContainers(testData)
           .asCallback(function (err) {
-            expect(err).to.equal(testErr)
+            expect(err.message).to.equal(testErr)
             sinon.assert.called(redeployStub)
             done()
           })
@@ -284,8 +276,8 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
 
     describe('redeploy passes', function () {
       beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yieldsAsync()
-        redeployStub.returns(Promise.resolve())
+        Runnable.prototype.githubLogin.yields()
+        redeployStub.yieldsAsync()
         done()
       })
 
