@@ -45,7 +45,7 @@ var opts = {
   password: process.env.RABBITMQ_PASSWORD,
   port: process.env.RABBITMQ_PORT,
   username: process.env.RABBITMQ_USERNAME,
-  name: 'mavis/sauron'
+  name: 'mavis-sauron'
 }
 var rabbitPublisher = new Hermes(put({
   publishedEvents: publishedEvents

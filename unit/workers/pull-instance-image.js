@@ -11,7 +11,6 @@ var TaskFatalError = require('ponos').TaskFatalError
 
 var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
-var Mavis = require('models/apis/mavis')
 var PullInstanceImageWorker = require('workers/pull-instance-image')
 var rabbitMQ = require('models/rabbitmq')
 var toObjectId = require('utils/to-object-id')
@@ -52,7 +51,6 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
     }
     ctx.mockInstance = newMockInstance(ctx.job)
     sinon.stub(Instance, 'findOneAsync')
-    sinon.stub(Mavis.prototype, 'findDockForContainerAsync')
     sinon.stub(Instance.prototype, 'modifyImagePullAsync')
     sinon.stub(Docker.prototype, 'pullImageAsync')
     sinon.stub(Instance.prototype, 'modifyUnsetImagePullAsync')
@@ -62,7 +60,6 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
   afterEach(function (done) {
     Instance.findOneAsync.restore()
     Instance.prototype.modifyImagePullAsync.restore()
-    Mavis.prototype.findDockForContainerAsync.restore()
     Docker.prototype.pullImageAsync.restore()
     Instance.prototype.modifyUnsetImagePullAsync.restore()
     rabbitMQ.createInstanceContainer.restore()
@@ -71,13 +68,10 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
 
   describe('success', function () {
     beforeEach(function (done) {
-      ctx.dockerHost = 'http://localhost:4243'
       Instance.findOneAsync
         .returns(Promise.resolve(ctx.mockInstance))
       Instance.prototype.modifyImagePullAsync
         .returns(Promise.resolve(ctx.mockInstance))
-      Mavis.prototype.findDockForContainerAsync
-        .returns(Promise.resolve(ctx.dockerHost))
       Docker.prototype.pullImageAsync
         .returns(Promise.resolve())
       Instance.prototype.modifyUnsetImagePullAsync
@@ -95,14 +89,10 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
           build: toObjectId(ctx.job.buildId)
         })
         sinon.assert.calledWith(
-          Mavis.prototype.findDockForContainerAsync,
-          ctx.mockInstance.contextVersion
-        )
-        sinon.assert.calledWith(
           Instance.prototype.modifyImagePullAsync,
           ctx.mockInstance.contextVersion._id, {
             dockerTag: ctx.mockInstance.contextVersion.build.dockerTag,
-            dockerHost: ctx.dockerHost,
+            dockerHost: process.env.SWARM_HOST,
             sessionUser: {
               github: ctx.job.sessionUserGithubId
             },
@@ -133,7 +123,6 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
   describe('db state changed', function () {
     describe('instance.findOneAsync instance not found', function () {
       beforeEach(function (done) {
-        ctx.dockerHost = 'http://localhost:4243'
         Instance.findOneAsync
           .returns(Promise.resolve(null))
         done()
@@ -171,13 +160,10 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
     })
     describe('instance.modifyUnsetImagePullAsync instance not found', function () {
       beforeEach(function (done) {
-        ctx.dockerHost = 'http://localhost:4243'
         Instance.findOneAsync
           .returns(Promise.resolve(ctx.mockInstance))
         Instance.prototype.modifyImagePullAsync
           .returns(Promise.resolve(ctx.mockInstance))
-        Mavis.prototype.findDockForContainerAsync
-          .returns(Promise.resolve(ctx.dockerHost))
         Docker.prototype.pullImageAsync
           .returns(Promise.resolve())
         Instance.prototype.modifyUnsetImagePullAsync
@@ -223,32 +209,13 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
         PullInstanceImageWorker(ctx.job).asCallback(expectErr(ctx.err, done))
       })
     })
-    describe('mavis.findDockForContainerAsync err', function () {
-      beforeEach(function (done) {
-        ctx.err = new Error()
-        Instance.findOneAsync
-          .returns(Promise.resolve(ctx.mockInstance))
-        Instance.prototype.modifyImagePullAsync
-          .returns(Promise.resolve(ctx.mockInstance))
-        Mavis.prototype.findDockForContainerAsync
-          .throws(ctx.err)
-        done()
-      })
-
-      it('should throw the err', function (done) {
-        PullInstanceImageWorker(ctx.job).asCallback(expectErr(ctx.err, done))
-      })
-    })
     describe('docker.pullImageAsync err', function () {
       beforeEach(function (done) {
         ctx.err = new Error()
-        ctx.dockerHost = 'http://localhost:4243'
         Instance.findOneAsync
           .returns(Promise.resolve(ctx.mockInstance))
         Instance.prototype.modifyImagePullAsync
           .returns(Promise.resolve(ctx.mockInstance))
-        Mavis.prototype.findDockForContainerAsync
-          .returns(Promise.resolve(ctx.dockerHost))
         Docker.prototype.pullImageAsync
           .throws(ctx.err)
         done()
@@ -263,13 +230,10 @@ describe('pullInstanceImageWorker: ' + moduleName, function () {
         ctx.err = Boom.notFound('Follow pull image failed: image dockerTag: not found', {
           err: 'image dockerTag: not found' // err is a string
         })
-        ctx.dockerHost = 'http://localhost:4243'
         Instance.findOneAsync
           .returns(Promise.resolve(ctx.mockInstance))
         Instance.prototype.modifyImagePullAsync
           .returns(Promise.resolve(ctx.mockInstance))
-        Mavis.prototype.findDockForContainerAsync
-          .returns(Promise.resolve(ctx.dockerHost))
         Docker.prototype.pullImageAsync
           .throws(ctx.err)
         done()
