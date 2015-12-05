@@ -44,7 +44,8 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
       },
       populate: function (id, cb) {
         cb()
-      }
+      },
+      handleRecovery: sinon.stub().yieldsAsync()
     }
     ctx.mockContext = {
       '_id': '55d3ef733e1b620e00eb6242',
@@ -116,6 +117,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined()
 
+          sinon.assert.calledOnce(ctx.mockContextVersion.handleRecovery)
           expect(ctx.worker.manualBuild).to.equal(ctx.data.manualBuild)
           expect(ctx.worker.sessionUser).to.equal(ctx.data.sessionUser)
           expect(ctx.worker.contextId).to.equal(ctx.data.contextId)
