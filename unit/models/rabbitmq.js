@@ -506,7 +506,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
   })
 
   describe('publishInstanceRebuild', function () {
-
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
       done()
@@ -525,13 +524,13 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       expect(ctx.rabbitMQ.hermesClient.publish.calledOnce).to.be.true()
       expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[0])
         .to.equal('instance.rebuild')
-        expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1])
-          .to.deep.equal(payload)
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1])
+        .to.deep.equal(payload)
       done()
     })
     it('should fail to publish to the `instance.rebuild` queue if validation failed', function (done) {
-      var payload = { }
-      expect(ctx.rabbitMQ.publishInstanceRebuild.bind(ctx.rabbitMQ, {}))
+      var payload = {}
+      expect(ctx.rabbitMQ.publishInstanceRebuild.bind(ctx.rabbitMQ, payload))
         .to.throw(Error, /Validation failed/)
       expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
       done()
