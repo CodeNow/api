@@ -505,6 +505,39 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   })
 
+  describe('publishInstanceRebuild', function () {
+
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish to the `instance.rebuild` queue', function (done) {
+      var payload = {
+        instanceId: '507f1f77bcf86cd799439011'
+      }
+      ctx.rabbitMQ.publishInstanceRebuild(payload)
+      expect(ctx.rabbitMQ.hermesClient.publish.calledOnce).to.be.true()
+      expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[0])
+        .to.equal('instance.rebuild')
+        expect(ctx.rabbitMQ.hermesClient.publish.firstCall.args[1])
+          .to.deep.equal(payload)
+      done()
+    })
+    it('should fail to publish to the `instance.rebuild` queue if validation failed', function (done) {
+      var payload = { }
+      expect(ctx.rabbitMQ.publishInstanceRebuild.bind(ctx.rabbitMQ, {}))
+        .to.throw(Error, /Validation failed/)
+      expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
+      done()
+    })
+  })
+
   describe('publishGithubEvent', function () {
     var publishQueueName = 'metis-github-event'
     var clock
