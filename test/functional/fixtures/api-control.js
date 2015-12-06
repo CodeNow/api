@@ -37,7 +37,7 @@ function ensureIndexes (cb) {
 var publishedEvents = [
   'container.network.attached',
   'container.network.attach-failed',
-  'dock-removed'
+  'dock.removed'
 ]
 
 var opts = {

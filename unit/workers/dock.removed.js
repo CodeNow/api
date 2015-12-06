@@ -17,13 +17,13 @@ var sinon = require('sinon')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var ContextVersion = require('models/mongo/context-version')
-var Worker = require('workers/dock-removed')
+var Worker = require('workers/dock.removed')
 var TaskFatalError = require('ponos').TaskFatalError
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
-describe('Worker: dock-removed unit test: ' + moduleName, function () {
+describe('Worker: dock.removed unit test: ' + moduleName, function () {
   var testHost = 'goku'
   var testData = {
     host: testHost
