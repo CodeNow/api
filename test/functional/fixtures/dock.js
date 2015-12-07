@@ -1,9 +1,9 @@
+
 var async = require('async')
 var dockerModel = require('models/apis/docker')
 var createCount = require('callback-count')
 var docker = require('./docker')
 var redis = require('models/redis')
-var mavisApp = require('mavis')
 var dockerModuleMock = require('./mocks/docker-model')
 var sinon = require('sinon')
 
@@ -11,13 +11,12 @@ process.env.AUTO_RECONNECT = false // needed for test
 process.env.HOST_TAGS = 'default' // needed for test
 var dockerListener = require('docker-listener')
 
-var url = require('url')
 var put = require('101/put')
 
 var Hermes = require('runnable-hermes')
 
 // Sauron mock listens for `container.life-cycle.started` event and
-// publsihes `container.network.attached`
+// publishes `container.network.attached`
 var sauronMock = {
   start: function (cb) {
     var publishedEvents = [
@@ -92,13 +91,9 @@ function startDock (done) {
 
   ctx.docker = docker.start(function (err) {
     if (err) { return count.next(err) }
-    ctx.mavis = mavisApp.listen(url.parse(process.env.MAVIS_HOST).port)
-    ctx.mavis.on('listening', function (err) {
+    dockerListener.start(process.env.DOCKER_LISTENER_PORT, function (err) {
       if (err) { return count.next(err) }
-      dockerListener.start(process.env.DOCKER_LISTENER_PORT, function (err) {
-        if (err) { return count.next(err) }
-        count.next()
-      })
+      count.next()
     })
   })
 }
@@ -107,9 +102,8 @@ function stopDock (done) {
   dockerModel.prototype.pullImage.restore()
   started = false
   var count = createCount(4, done)
-  ctx.mavis.close(count.next)
   sauronMock.stop(count.next)
-  redis.del(process.env.REDIS_HOST_KEYS, count.inc().next)
+  redis.del(process.env.REDIS_HOST_KEYS, count.next)
   dockerModuleMock.clean(count.next)
   dockerListener.stop(function (err) {
     if (err) { return count.next(err) }
