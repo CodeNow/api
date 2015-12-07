@@ -1,3 +1,4 @@
+
 var async = require('async')
 var dockerModel = require('models/apis/docker')
 var createCount = require('callback-count')
@@ -15,7 +16,7 @@ var put = require('101/put')
 var Hermes = require('runnable-hermes')
 
 // Sauron mock listens for `container.life-cycle.started` event and
-// publsihes `container.network.attached`
+// publishes `container.network.attached`
 var sauronMock = {
   start: function (cb) {
     var publishedEvents = [
@@ -100,9 +101,9 @@ function stopDock (done) {
   if (!started) { return done() }
   dockerModel.prototype.pullImage.restore()
   started = false
-  var count = createCount(3, done)
+  var count = createCount(4, done)
   sauronMock.stop(count.next)
-  redis.del(process.env.REDIS_HOST_KEYS, count.inc().next)
+  redis.del(process.env.REDIS_HOST_KEYS, count.next)
   dockerModuleMock.clean(count.next)
   dockerListener.stop(function (err) {
     if (err) { return count.next(err) }
