@@ -35,7 +35,6 @@ describe('200 PATCH /contexts/:contextid/versions/:id', function () {
   })
 
   it('should update advanced', function (done) {
-    // I believe this expect has to be first since `put` modifies the target...
     expect(ctx.cv.json().advanced).to.be.false()
     var expected = put(ctx.cv.json(), 'advanced', true)
     ctx.cv.update({ advanced: true }, function (err, body, statusCode) {
@@ -47,7 +46,6 @@ describe('200 PATCH /contexts/:contextid/versions/:id', function () {
   })
 
   it('should update dockRemovedNeedsUserConfirmation', function (done) {
-    // I believe this expect has to be first since `put` modifies the target...
     expect(ctx.cv.json().dockRemovedNeedsUserConfirmation).to.be.false()
     var expected = put(ctx.cv.json(), 'dockRemovedNeedsUserConfirmation', true)
     ctx.cv.update({ dockRemovedNeedsUserConfirmation: true }, function (err, body, statusCode) {
