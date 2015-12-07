@@ -858,7 +858,8 @@ describe('docker: ' + moduleName, function () {
   describe('isImageNotFoundForPullErr', function () {
     it('should return true if it is', function (done) {
       var boomErr = Boom.notFound(
-        'Create container failed: ' + 'image: dockerTag not found')
+        'Follow pull image failed: ' +
+        'Error: image 1981198/565f7c592e035d1e00835e4f:565f7c592e035d1e00835e51 not found')
       expect(Docker.isImageNotFoundForPullErr(boomErr)).to.be.true()
       done()
     })
@@ -871,6 +872,88 @@ describe('docker: ' + moduleName, function () {
       boomErr = Boom.notFound('bar')
       expect(Docker.isImageNotFoundForPullErr(boomErr))
         .to.be.false()
+      done()
+    })
+
+    it('should return false if its an instance error', function (done) {
+      var boomErr = Boom.notFound('instance not found (build has changed)')
+      expect(Docker.isImageNotFoundForPullErr(boomErr))
+        .to.be.false()
+      boomErr = Boom.notFound('instance with image pulling not found')
+      expect(Docker.isImageNotFoundForPullErr(boomErr))
+        .to.be.false()
+      done()
+    })
+
+    it('should return true if its gets a 500 error from Swarm', function (done) {
+      // Form error
+      var originalError = new Error()
+      originalError.statusCode = 500
+      originalError.reason = 'server error'
+      originalError.json = 'Error: image test/test:mee not found'
+      // Create Boom error
+      model.handleErr(callback, 'Create container failed', { opts: {} })(originalError)
+      function callback (err, container) {
+        expect(Docker.isImageNotFoundForPullErr(err))
+          .to.be.true()
+        done()
+      }
+    })
+
+    it('should return true if its gets a 500 error from Swarm and the error is not wrapped', function (done) {
+      var err = {
+        'reason': 'server error',
+        'statusCode': 500,
+        'json': 'Error: image 1981198/5661e2356f99eb1f00d62669:5661e2356f99eb1f00d6266b not found\n'
+      }
+      expect(Docker.isImageNotFoundForPullErr(err))
+        .to.be.true()
+      done()
+    })
+
+    it('should return true if its gets a 500 error from Swarm and the error is not wrapped', function (done) {
+      var err = {
+        'data': {
+          'docker': {
+            'host': 'http://10.20.1.59:2375',
+            'port': '2375',
+            'opts': {
+              'Labels': {
+                'instanceId': '566207a63dc9f41e0083056e',
+                'instanceName': 'realtime-photo',
+                'instanceShortHash': '2z05xe',
+                'contextVersionId': '566207923dc9f41e00830542',
+                'ownerUsername': 'thejsj',
+                'sessionUserGithubId': '1981198',
+                'tid': null,
+                'com.docker.swarm.constraints': '[\'org==default\']',
+                'type': 'user-container'
+              },
+              'Env': [
+                'RUNNABLE_CONTAINER_ID=2z05xe'
+              ],
+              'Image': 'registry.runnable.com/1981198/566207923dc9f41e00830540:566207923dc9f41e00830542'
+            }
+          },
+          'err': {
+            'reason': 'server error',
+            'statusCode': 500,
+            'json': 'Error: image 1981198/566207923dc9f41e00830540:566207923dc9f41e00830542 not found\n'
+          }
+        },
+        'isBoom': true,
+        'output': {
+          'statusCode': 502,
+          'payload': {
+            'statusCode': 502,
+            'error': 'Bad Gateway',
+            'message': 'Create container failed: Error: image 1981198/566207923dc9f41e00830540:566207923dc9f41e00830542 not found\n'
+          },
+          'headers': {}
+        }
+      }
+      expect(Docker.isImageNotFoundForPullErr(err))
+        .to.be.true()
       done()
     })
   })

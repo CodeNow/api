@@ -9,6 +9,7 @@
 *.pid
 *.gz
 *.sublime-workspace
+.vimrc
 
 pids
 logs
