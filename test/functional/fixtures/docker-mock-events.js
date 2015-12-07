@@ -9,7 +9,7 @@ var log = require('middlewares/logger')(__filename).log
 module.exports.emitBuildComplete = emitBuildComplete
 module.exports.emitContainerDie = emitContainerDie
 
-function emitBuildComplete (cv, failure) {
+function emitBuildComplete (cv, failure, error) {
   log.trace({cv: cv, stack: new Error().stack}, 'emitBuildComplete')
   if (!cv) {
     var err = new Error('you forgot to pass cv to emitBuildComplete')
@@ -29,7 +29,7 @@ function emitBuildComplete (cv, failure) {
   }
   var docker = new Docker(process.env.SWARM_HOST)
   var signal = failure ? 'SIGKILL' : 'SIGINT'
-  require('./mocks/docker/build-logs.js')(failure)
+  require('./mocks/docker/build-logs.js')(failure, error)
   // this will "kill" the container which will emit a die event
   // and exitCode will be 0 for SIGINT and 1 for SIGKILL .. docker-mock
   docker.docker.getContainer(containerId).kill({ signal: signal }, function (err) {
