@@ -12,6 +12,7 @@ var Code = require('code')
 var expect = Code.expect
 var Promise = require('bluebird')
 var Runnable = require('runnable')
+var rabbitMQ = require('models/rabbitmq')
 
 var sinon = require('sinon')
 var Instance = require('models/mongo/instance')
@@ -128,6 +129,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
         Worker(testData).asCallback(function (err) {
           sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
           sinon.assert.calledWith(Instance.findInstancesByDockerHost, testHost)
+          sinon.assert.calledOnce(Worker._populateInstancesBuilds)
           sinon.assert.notCalled(Worker._rebuildInstances)
           sinon.assert.notCalled(Worker._redeployContainers)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
@@ -150,6 +152,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
           sinon.assert.calledWith(Instance.findInstancesByDockerHost, testHost)
+          sinon.assert.calledOnce(Worker._populateInstancesBuilds)
           sinon.assert.calledOnce(Worker._rebuildInstances)
           sinon.assert.calledOnce(Worker._redeployContainers)
           sinon.assert.calledWith(Worker._redeployContainers, testArray)
@@ -188,6 +191,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
           sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHost)
           sinon.assert.notCalled(Instance.findInstancesByDockerHost)
+          sinon.assert.notCalled(Worker._populateInstancesBuilds)
           sinon.assert.notCalled(Worker._rebuildInstances)
           sinon.assert.notCalled(Worker._redeployContainers)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
@@ -219,6 +223,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
           sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
           sinon.assert.notCalled(Instance.findInstancesByDockerHost)
+          sinon.assert.notCalled(Worker._populateInstancesBuilds)
           sinon.assert.notCalled(Worker._rebuildInstances)
           sinon.assert.notCalled(Worker._redeployContainers)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
@@ -300,6 +305,93 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
             done()
           })
       })
+    })
+  })
+
+  describe('#_populateInstancesBuilds', function () {
+    var testData = [new Instance({ _id: '1' }), new Instance({ _id: '2' })]
+    beforeEach(function (done) {
+      sinon.stub(Instance.prototype, 'populateModels')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.prototype.populateModels.restore()
+      done()
+    })
+
+    describe('failis if populate fails', function () {
+      beforeEach(function (done) {
+        Instance.prototype.populateModels.yieldsAsync(new Error('Mongo error'))
+        done()
+      })
+
+      it('should callback with error', function (done) {
+        Worker._populateInstancesBuilds(testData)
+          .asCallback(function (err) {
+            expect(err.message).to.equal('Mongo error')
+            sinon.assert.calledTwice(Instance.prototype.populateModels)
+            done()
+          })
+      })
+    })
+
+    describe('populate pass', function () {
+      beforeEach(function (done) {
+        Instance.prototype.populateModels.yieldsAsync(null)
+        done()
+      })
+
+      it('should return successfully', function (done) {
+        Worker._populateInstancesBuilds(testData)
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            sinon.assert.calledTwice(Instance.prototype.populateModels)
+            done()
+          })
+      })
+      it('should do nothing if input data was null', function (done) {
+        Worker._populateInstancesBuilds(null)
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            sinon.assert.notCalled(Instance.prototype.populateModels)
+            done()
+          })
+      })
+    })
+  })
+
+  describe('#_rebuildInstances', function () {
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'publishInstanceRebuild')
+      done()
+    })
+
+    afterEach(function (done) {
+      rabbitMQ.publishInstanceRebuild.restore()
+      done()
+    })
+
+    it('should should filter instances and publish relevant jobs', function (done) {
+      var instances = [
+        {_id: '1', build: { completed: true, failed: false }},
+        {_id: '2', build: { completed: false, failed: false }},
+        {_id: '3', build: { completed: true, failed: true }},
+        {_id: '4', build: { completed: false, failed: true }},
+        {_id: '5', build: { completed: false, failed: false }}
+      ]
+      Worker._rebuildInstances(instances)
+      sinon.assert.calledTwice(rabbitMQ.publishInstanceRebuild)
+      sinon.assert.calledTwice(rabbitMQ.publishInstanceRebuild)
+      expect(rabbitMQ.publishInstanceRebuild.getCall(0).args[0].instanceId).to.equal('2')
+      expect(rabbitMQ.publishInstanceRebuild.getCall(1).args[0].instanceId).to.equal('5')
+      done()
+    })
+    it('should not publish jobs if nothing was passed', function (done) {
+      var instances = null
+      Worker._rebuildInstances(instances)
+      sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
+      done()
     })
   })
 
