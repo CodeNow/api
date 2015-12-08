@@ -70,7 +70,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       it('should throw a task fatal error if the job is missing entirely', function (done) {
         Worker().asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('must be an object')
+          expect(err.message).to.contain('Value does not exist')
           done()
         })
       })
