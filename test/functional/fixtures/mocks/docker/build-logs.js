@@ -7,8 +7,7 @@ var createFrame = require('docker-frame')
 
 // This mock is currently used with docker container die event
 // for an image builder container.
-// The docker host information is used from the instance document mongo (mavis).
-// Mavis get's it's docker host info from docker listener.
+// The docker host information is used from the instance document mongo.
 // Docker listener uses emits data with docker's external host
 
 module.exports = function (failure, error) {

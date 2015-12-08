@@ -11,11 +11,10 @@ var after = lab.after
 var Code = require('code')
 var expect = Code.expect
 
-var put = require('101/put')
 var api = require('../../fixtures/api-control')
 var multi = require('../../fixtures/multi-factory')
 
-describe('200 PATCH /contexts/:contextid/versions/:id', function () {
+describe('400 PATCH /contexts/:contextid/versions/:id', function () {
   var ctx = {}
 
   before(api.start.bind(ctx))
@@ -34,24 +33,18 @@ describe('200 PATCH /contexts/:contextid/versions/:id', function () {
     })
   })
 
-  it('should update advanced', function (done) {
-    expect(ctx.cv.json().advanced).to.be.false()
-    var expected = put(ctx.cv.json(), 'advanced', true)
-    ctx.cv.update({ advanced: true }, function (err, body, statusCode) {
-      if (err) { return done(err) }
-      expect(statusCode).to.equal(200)
-      expect(body).to.deep.equal(expected)
+  it('should handle error with dockRemovedNeedsUserConfirmation', function (done) {
+    ctx.cv.update({ dockRemovedNeedsUserConfirmation: '1234' }, function (err) {
+      expect(err.message).to.contain('must be a boolean')
+      expect(err.message).to.contain('dockRemovedNeedsUserConfirmation')
       done()
     })
   })
 
-  it('should update dockRemovedNeedsUserConfirmation', function (done) {
-    expect(ctx.cv.json().dockRemovedNeedsUserConfirmation).to.be.false()
-    var expected = put(ctx.cv.json(), 'dockRemovedNeedsUserConfirmation', true)
-    ctx.cv.update({ dockRemovedNeedsUserConfirmation: true }, function (err, body, statusCode) {
-      if (err) { return done(err) }
-      expect(statusCode).to.equal(200)
-      expect(body).to.deep.equal(expected)
+  it('should handle error with advanced', function (done) {
+    ctx.cv.update({ advanced: '1234' }, function (err) {
+      expect(err.message).to.contain('must be a boolean')
+      expect(err.message).to.contain('advanced')
       done()
     })
   })
