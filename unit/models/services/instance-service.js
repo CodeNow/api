@@ -544,7 +544,9 @@ describe('InstanceService: ' + moduleName, function () {
         contextVersionId: '123456789012345678901234',
         ownerUsername: 'runnable'
       }
-      ctx.mockContextVersion = {}
+      ctx.mockContextVersion = {
+        handleRecovery: sinon.stub().yieldsAsync()
+      }
       ctx.mockInstance = {}
       ctx.mockContainer = {}
       ctx.mockMongoData = {
@@ -586,6 +588,7 @@ describe('InstanceService: ' + moduleName, function () {
             sinon.match.object,
             sinon.match.func
           )
+          sinon.assert.calledOnce(ctx.mockContextVersion.handleRecovery)
           var _createDockerContainerOpts = InstanceService._createDockerContainer.args[0][0]
           expect(_createDockerContainerOpts)
             .to.deep.contain(ctx.mockMongoData)
@@ -633,6 +636,21 @@ describe('InstanceService: ' + moduleName, function () {
           InstanceService._createDockerContainer.yieldsAsync(ctx.err)
           done()
         })
+        it('should callback the error', function (done) {
+          InstanceService.createContainer(ctx.opts, expectErr(ctx.err, done))
+        })
+      })
+      describe('contextVersion.handleRecovery error', function () {
+        beforeEach(function (done) {
+          sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
+            cb(null, data)
+          })
+          InstanceService._findInstanceAndContextVersion.yieldsAsync(null, ctx.mockMongoData)
+          InstanceService._createDockerContainer.yieldsAsync(null, ctx.mockContainer)
+          ctx.mockContextVersion.handleRecovery.yieldsAsync(ctx.err)
+          done()
+        })
+
         it('should callback the error', function (done) {
           InstanceService.createContainer(ctx.opts, expectErr(ctx.err, done))
         })
