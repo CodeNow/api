@@ -143,6 +143,14 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           done()
         })
       })
+      it('should throw a task fatal error if the deploymentUuid is not a string', function (done) {
+        Worker({instanceId: '1', sessionUserGithubId: 1, deploymentUuid: {}}).asCallback(function (err) {
+          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('deploymentUuid')
+          expect(err.message).to.contain('a string')
+          done()
+        })
+      })
     })
 
     describe('instance lookup fails', function () {
