@@ -70,7 +70,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     }
     beforeEach(function (done) {
       sinon.stub(Instance, 'findById')
-      sinon.stub(User, 'findById')
+      sinon.stub(User, 'findByGithubId')
       sinon.stub(Build, 'findById')
       sinon.stub(ContextVersion, 'findById')
       sinon.stub(ContextVersion.prototype, 'clearDockerHost')
@@ -84,7 +84,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
 
     afterEach(function (done) {
       Instance.findById.restore()
-      User.findById.restore()
+      User.findByGithubId.restore()
       Build.findById.restore()
       ContextVersion.findById.restore()
       ContextVersion.prototype.clearDockerHost.restore()
@@ -208,7 +208,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       var mongoError = new Error('Mongo failed')
       beforeEach(function (done) {
         Instance.findById.yields(null, new Instance(ctx.mockInstance))
-        User.findById.yields(mongoError)
+        User.findByGithubId.yields(mongoError)
         done()
       })
 
@@ -217,7 +217,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.equal(mongoError.message)
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             done()
           })
       })
@@ -226,7 +226,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     describe('user was not found', function () {
       beforeEach(function (done) {
         Instance.findById.yields(null, new Instance(ctx.mockInstance))
-        User.findById.yields(null, null)
+        User.findByGithubId.yields(null, null)
         done()
       })
 
@@ -236,7 +236,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.message).to.contain('User not found')
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             done()
           })
       })
@@ -246,7 +246,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       var mongoError = new Error('Mongo failed')
       beforeEach(function (done) {
         Instance.findById.yields(null, new Instance(ctx.mockInstance))
-        User.findById.yields(null, new User({_id: '507f191e810c19729de860eb'}))
+        User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
         Build.findById.yields(mongoError)
         done()
       })
@@ -256,7 +256,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.equal(mongoError.message)
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             sinon.assert.calledOnce(Build.findById)
             done()
           })
@@ -266,7 +266,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     describe('build was not found', function () {
       beforeEach(function (done) {
         Instance.findById.yields(null, new Instance(ctx.mockInstance))
-        User.findById.yields(null, new User({_id: '507f191e810c19729de860eb'}))
+        User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
         Build.findById.yields(null, null)
         done()
       })
@@ -277,7 +277,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.message).to.contain('Build not found')
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             sinon.assert.calledOnce(Build.findById)
             done()
           })
@@ -287,7 +287,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     describe('build was not successfull', function () {
       beforeEach(function (done) {
         Instance.findById.yields(null, new Instance(ctx.mockInstance))
-        User.findById.yields(null, new User({_id: '507f191e810c19729de860eb'}))
+        User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
         Build.findById.yields(null, { successful: false })
         done()
       })
@@ -298,7 +298,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.message).to.contain('Cannot redeploy an instance with an unsuccessful build')
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             sinon.assert.calledOnce(Build.findById)
             done()
           })
@@ -309,7 +309,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       var mongoError = new Error('Mongo failed')
       beforeEach(function (done) {
         Instance.findById.yields(null, new Instance(ctx.mockInstance))
-        User.findById.yields(null, new User({_id: '507f191e810c19729de860eb'}))
+        User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
         Build.findById.yields(null, { successful: true,
           contextVersions: ['507f191e810c19729de860e1'] })
         ContextVersion.findById.yields(mongoError)
@@ -321,7 +321,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.equal(mongoError.message)
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             sinon.assert.calledOnce(Build.findById)
             sinon.assert.calledOnce(ContextVersion.findById)
             done()
@@ -332,7 +332,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     describe('cv was not found', function () {
       beforeEach(function (done) {
         Instance.findById.yields(null, new Instance(ctx.mockInstance))
-        User.findById.yields(null, new User({_id: '507f191e810c19729de860eb'}))
+        User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
         Build.findById.yields(null, { successful: true,
           contextVersions: ['507f191e810c19729de860e1'] })
         ContextVersion.findById.yields(null, null)
@@ -345,7 +345,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.message).to.contain('ContextVersion not found')
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             sinon.assert.calledOnce(Build.findById)
             sinon.assert.calledOnce(ContextVersion.findById)
             done()
@@ -356,7 +356,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     describe('cv updated failed', function () {
       beforeEach(function (done) {
         Instance.findById.yields(null, new Instance(ctx.mockInstance))
-        User.findById.yields(null, new User({_id: '507f191e810c19729de860eb'}))
+        User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
         Build.findById.yields(null, { successful: true,
           contextVersions: ['507f191e810c19729de860e1'] })
         ContextVersion.findById.yields(null, new ContextVersion({}))
@@ -369,7 +369,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.contain('Mongo error')
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             sinon.assert.calledOnce(Build.findById)
             sinon.assert.calledOnce(ContextVersion.findById)
             sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
@@ -381,7 +381,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     describe('instance update failed', function () {
       beforeEach(function (done) {
         Instance.findById.yields(null, new Instance(ctx.mockInstance))
-        User.findById.yields(null, new User({_id: '507f191e810c19729de860eb'}))
+        User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
         Build.findById.yields(null, { successful: true,
           contextVersions: ['507f191e810c19729de860e1'] })
         var cv = new ContextVersion({})
@@ -396,7 +396,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.contain('Mongo error')
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             sinon.assert.calledOnce(Build.findById)
             sinon.assert.calledOnce(ContextVersion.findById)
             sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
@@ -410,7 +410,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       beforeEach(function (done) {
         var instance = new Instance(ctx.mockInstance)
         Instance.findById.yields(null, instance)
-        User.findById.yields(null, new User({_id: '507f191e810c19729de860eb'}))
+        User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
         Build.findById.yields(null, { successful: true,
           contextVersions: ['507f191e810c19729de860e1'] })
         var cv = new ContextVersion({})
@@ -426,7 +426,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.contain('Mongo error')
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             sinon.assert.calledOnce(Build.findById)
             sinon.assert.calledOnce(ContextVersion.findById)
             sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
@@ -442,7 +442,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
         var instance = new Instance(ctx.mockInstance)
         Instance.findById.yields(null, instance)
         var user = new User({_id: '507f191e810c19729de860eb'})
-        User.findById.yields(null, user)
+        User.findByGithubId.yields(null, user)
         Build.findById.yields(null, { successful: true,
           contextVersions: ['507f191e810c19729de860e1'] })
         var cv = new ContextVersion({})
@@ -461,7 +461,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.contain('Primus error')
             sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledOnce(User.findById)
+            sinon.assert.calledOnce(User.findByGithubId)
             sinon.assert.calledOnce(Build.findById)
             sinon.assert.calledOnce(ContextVersion.findById)
             sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
@@ -486,7 +486,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       var cv = new ContextVersion({_id: '507f191e810c19729de860e1'})
       beforeEach(function (done) {
         Instance.findById.yields(null, instance)
-        User.findById.yields(null, user)
+        User.findByGithubId.yields(null, user)
         Build.findById.yields(null, build)
         ContextVersion.findById.yields(null, cv)
         ContextVersion.prototype.clearDockerHost.yields(null, cv)
@@ -503,8 +503,8 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledWith(Instance.findById, testData.instanceId)
 
-            sinon.assert.calledOnce(User.findById)
-            sinon.assert.calledWith(User.findById, testData.sessionUserGithubId)
+            sinon.assert.calledOnce(User.findByGithubId)
+            sinon.assert.calledWith(User.findByGithubId, testData.sessionUserGithubId)
 
             sinon.assert.calledOnce(Build.findById)
             sinon.assert.calledWith(Build.findById, instance.build)
