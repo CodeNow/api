@@ -12,7 +12,6 @@ var createCount = require('callback-count')
 var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
 var Docker = require('models/apis/docker')
-var Mavis = require('models/apis/mavis')
 var dock = require('../../functional/fixtures/dock')
 var dockerMockEvents = require('../../functional/fixtures/docker-mock-events')
 var mongooseControl = require('models/mongo/mongoose-control.js')
@@ -93,41 +92,37 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         })
         function createImageBuilder (err) {
           if (err) { return done(err) }
-          var mavis = new Mavis()
-          mavis.findDockForBuild(ctx.cv, ctx.cv, function (err, dockerHost) {
+          var docker = new Docker(process.env.SWARM_HOST)
+          ctx.cv.dockerHost = process.env.SWARM_HOST
+          var opts = {
+            manualBuild: true,
+            sessionUser: ctx.user,
+            ownerUsername: ctx.user.accounts.github.username,
+            contextVersion: ctx.cv,
+            network: {
+              hostIp: '1.1.1.1'
+            },
+            tid: 1
+          }
+          ctx.cv.populate('infraCodeVersion', function () {
             if (err) { return done(err) }
-            var docker = new Docker(dockerHost)
-            ctx.cv.dockerHost = dockerHost
-            var opts = {
-              manualBuild: true,
-              sessionUser: ctx.user,
-              ownerUsername: ctx.user.accounts.github.username,
-              contextVersion: ctx.cv,
-              network: {
-                hostIp: '1.1.1.1'
-              },
-              tid: 1
-            }
-            ctx.cv.populate('infraCodeVersion', function () {
+            ctx.cv.infraCodeVersion = {
+              context: ctx.cv.context
+            } // mock
+            docker.createImageBuilder(opts, function (err, container) {
               if (err) { return done(err) }
-              ctx.cv.infraCodeVersion = {
-                context: ctx.cv.context
-              } // mock
-              docker.createImageBuilder(opts, function (err, container) {
+              ctx.usedDockerContainer = container
+              ContextVersion.updateBy('_id', ctx.cv._id, {
+                $set: {
+                  'build.dockerContainer': container.id,
+                  'build.dockerTag': Docker.getDockerTag(opts.contextVersion)
+                }
+              }, {}, function (err) {
                 if (err) { return done(err) }
-                ctx.usedDockerContainer = container
-                ContextVersion.updateBy('_id', ctx.cv._id, {
-                  $set: {
-                    'build.dockerContainer': container.id,
-                    'build.dockerTag': Docker.getDockerTag(opts.contextVersion)
-                  }
-                }, {}, function (err) {
+                ContextVersion.findById(ctx.cv._id, function (err, cv) {
                   if (err) { return done(err) }
-                  ContextVersion.findById(ctx.cv._id, function (err, cv) {
-                    if (err) { return done(err) }
-                    ctx.cv = cv
-                    done()
-                  })
+                  ctx.cv = cv
+                  done()
                 })
               })
             })
