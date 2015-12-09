@@ -987,7 +987,7 @@ describe('InstanceService: ' + moduleName, function () {
       done()
     })
 
-    it('should fail when findBygithubId fails', function (done) {
+    it('should fail when findByGithubId fails', function (done) {
       var testErr = 'Find By GithubID Failed'
       var rejectionPromise = Promise.reject(testErr)
       rejectionPromise.suppressUnhandledRejections()
