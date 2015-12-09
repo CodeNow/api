@@ -12,6 +12,7 @@ var Code = require('code')
 var expect = Code.expect
 
 var api = require('../../fixtures/api-control')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 
 describe('GET /settings', function () {
@@ -24,6 +25,15 @@ describe('GET /settings', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return [{
+        id: 9999,
+        username: 'SomeOrg'
+      }]
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   describe('create and get', function () {
     var settings = {

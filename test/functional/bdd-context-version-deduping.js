@@ -22,6 +22,7 @@ var it = lab.it
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
 var dockerMockEvents = require('./fixtures/docker-mock-events')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 
@@ -52,7 +53,12 @@ describe('Building - Context Version Deduping', function () {
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   after(require('./fixtures/mocks/api-client').clean)
-
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('In-progress build', function () {
     beforeEach(function (done) {
       multi.createContextVersion(function (err, contextVersion, context, build, user) {

@@ -12,6 +12,7 @@ var afterEach = lab.afterEach
 var expects = require('./fixtures/expects')
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 
@@ -27,6 +28,31 @@ describe('Version - /contexts/:contextId/versions/:id', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = []
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      if (ctx.moderator) {
+        array.push({
+          id: ctx.moderator.attrs.accounts.github.id,
+          username: ctx.moderator.attrs.accounts.github.username
+        })
+      }
+      if (ctx.nonOwner) {
+        array.push({
+          id: ctx.nonOwner.attrs.accounts.github.id,
+          username: ctx.nonOwner.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   /**
    * Helper BeforeEach function to create a moderator user.

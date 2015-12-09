@@ -13,6 +13,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
+var mockGetUserById = require('../fixtures/mocks/github/getByUserId')
 var mongoose = require('models/mongo/mongoose-control')
 var Template = require('models/mongo/template')
 require('loadenv')()
@@ -41,6 +42,12 @@ describe('template update script', function () {
   beforeEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   after(mongoose.stop.bind(mongoose))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   beforeEach(function (done) {
     var nodejsData = require(path.resolve(__dirname, '../../../scripts/templates/nodejs.json'))

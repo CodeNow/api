@@ -13,6 +13,7 @@ var afterEach = lab.afterEach
 var Instance = require('models/mongo/instance')
 var api = require('../../fixtures/api-control')
 var dock = require('../../fixtures/dock')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var expects = require('../../fixtures/expects')
 var primus = require('../../fixtures/primus')
@@ -42,6 +43,22 @@ describe('DELETE /instances/:id', function () {
     done()
   })
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 11111,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createAndTailInstance(primus, function (err, instance, build, user) {
       if (err) { return done(err) }
