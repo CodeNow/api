@@ -14,6 +14,7 @@ var expect = Code.expect
 var expects = require('./fixtures/expects')
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var exists = require('101/exists')
 var ContextVersions = require('models/mongo/context-version')
@@ -35,6 +36,12 @@ describe('Versions - /contexts/:contextid/versions', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   describe('POST', function () {
     beforeEach(function (done) {

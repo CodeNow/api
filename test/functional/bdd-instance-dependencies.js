@@ -14,6 +14,7 @@ var expect = Code.expect
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 // var expects = require('./fixtures/expects')
 var async = require('async')
@@ -52,6 +53,12 @@ describe('BDD - Instance Dependencies', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   beforeEach(function (done) {
     multi.createAndTailInstance(primus, { name: 'web-instance' }, function (err, instance, build, user) {
