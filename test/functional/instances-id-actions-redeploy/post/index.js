@@ -28,6 +28,7 @@ var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var rabbitMQ = require('models/rabbitmq/index')
 var redisCleaner = require('../../fixtures/redis-cleaner')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 describe('POST /instances/:id/actions/redeploy', function () {
   var ctx = {}
@@ -36,6 +37,19 @@ describe('POST /instances/:id/actions/redeploy', function () {
   before(api.start.bind(ctx))
   before(dock.start.bind(ctx))
   before(require('../../fixtures/mocks/api-client').setup)
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = []
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   beforeEach(primus.connect)
   afterEach(primus.disconnect)
   after(api.stop.bind(ctx))
@@ -105,7 +119,6 @@ describe('POST /instances/:id/actions/redeploy', function () {
   })
 
   it('should return error if build was not successful', function (done) {
-    console.log('aaaaa', ctx.instance.attrs)
     Build.findOneAndUpdate({
       '_id': ctx.instance.attrs.build._id
     }, {
