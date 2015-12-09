@@ -219,9 +219,35 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
 
   describe('#_redeployContainers', function () {
     var instances = [{
-      _id: '1'
+      _id: '1',
+      container: {
+        inspect: {
+          dockerContainer: '1b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
+          State: {
+            Running: true
+          }
+        }
+      }
     }, {
-      _id: '2'
+      _id: '2',
+      container: {
+        inspect: {
+          dockerContainer: '2b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
+          State: {
+            Running: false
+          }
+        }
+      }
+    }, {
+      _id: '3',
+      container: {
+        inspect: {
+          dockerContainer: '3b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
+          State: {
+            Running: true
+          }
+        }
+      }
     }]
     beforeEach(function (done) {
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
