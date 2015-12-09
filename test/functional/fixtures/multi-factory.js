@@ -10,7 +10,6 @@ var isObject = require('101/is-object')
 var randStr = require('randomstring').generate
 var uuid = require('uuid')
 var defaults = require('101/defaults')
-var Github = require('models/apis/github')
 
 var MongoUser = require('models/mongo/user')
 var dockerMockEvents = require('./docker-mock-events')

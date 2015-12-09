@@ -2,7 +2,6 @@
 
 var sinon = require('sinon')
 var Github = require('models/apis/github')
-var uuid = require('uuid')
 var User = require('models/mongo/user.js')
 
 function getUserResult (userId, username) {

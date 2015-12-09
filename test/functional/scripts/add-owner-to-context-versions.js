@@ -46,7 +46,7 @@ describe('template update script', function () {
       return [{
         id: 99999999,
         username: 'someOrg'
-      }, ]
+      }]
     })
   )
   afterEach(mockGetUserById.stubAfter)

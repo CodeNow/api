@@ -10,7 +10,6 @@ var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
-var sinon = require('sinon')
 
 var ObjectId = require('mongoose').Types.ObjectId
 var mockGetUserById = require('../fixtures/mocks/github/getByUserId')
