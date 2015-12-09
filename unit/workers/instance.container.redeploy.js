@@ -525,6 +525,8 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             sinon.assert.calledOnce(Worker._deleteOldContainer)
             sinon.assert.calledOnce(Worker._createNewContainer)
             sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
+            sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
+              instance, testData.sessionUserGithubId, 'redeploy', true)
             done()
           })
       })
