@@ -33,7 +33,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     var testErr = 'kamehameha'
 
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findActiveInstancesByDockerHost')
+      sinon.stub(Instance, 'findInstancesByDockerHost')
       sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').yieldsAsync()
       sinon.stub(Instance, 'setStoppingAsStoppedByDockerHost').yieldsAsync()
       sinon.stub(Worker, '_redeployContainers')
@@ -44,7 +44,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     afterEach(function (done) {
       Worker._redeployContainers.restore()
       Worker._updateFrontendInstances.restore()
-      Instance.findActiveInstancesByDockerHost.restore()
+      Instance.findInstancesByDockerHost.restore()
       ContextVersion.markDockRemovedByDockerHost.restore()
       Instance.setStoppingAsStoppedByDockerHost.restore()
       done()
@@ -83,17 +83,17 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
     })
 
-    describe('findActiveInstancesByDockerHost errors', function () {
+    describe('findInstancesByDockerHost errors', function () {
       beforeEach(function (done) {
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(testErr)
+        Instance.findInstancesByDockerHost.yieldsAsync(testErr)
         ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null, [])
         done()
       })
 
       it('should cb err', function (done) {
         Worker(testData).asCallback(function (err) {
-          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHost)
-          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHost, testHost)
+          sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
+          sinon.assert.calledWith(Instance.findInstancesByDockerHost, testHost)
           expect(err.message).to.equal(testErr)
           done()
         })
@@ -111,16 +111,16 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
     })
 
-    describe('findActiveInstancesByDockerHost return empty', function () {
+    describe('findInstancesByDockerHost return empty', function () {
       beforeEach(function (done) {
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, [])
+        Instance.findInstancesByDockerHost.yieldsAsync(null, [])
         done()
       })
 
       it('should cb without calling redeploy containers', function (done) {
         Worker(testData).asCallback(function (err) {
-          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHost)
-          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHost, testHost)
+          sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
+          sinon.assert.calledWith(Instance.findInstancesByDockerHost, testHost)
           sinon.assert.notCalled(Worker._redeployContainers)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
           expect(err).to.not.exist()
@@ -129,10 +129,10 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
     })
 
-    describe('findActiveInstancesByDockerHost returns array', function () {
+    describe('findInstancesByDockerHost returns array', function () {
       var testArray = ['1', '2']
       beforeEach(function (done) {
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
+        Instance.findInstancesByDockerHost.yieldsAsync(null, testArray)
         Worker._redeployContainers.returns(Promise.resolve())
         done()
       })
@@ -140,8 +140,8 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       it('should call _redeployContainers', function (done) {
         Worker(testData).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHost)
-          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHost, testHost)
+          sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
+          sinon.assert.calledWith(Instance.findInstancesByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeployContainers)
           sinon.assert.calledWith(Worker._redeployContainers, testArray)
           done()
@@ -161,7 +161,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       var testArray = ['1', '2']
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.yieldsAsync(testErr)
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
+        Instance.findInstancesByDockerHost.yieldsAsync(null, testArray)
         Worker._redeployContainers.returns()
         done()
       })
@@ -178,7 +178,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
           sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHost)
-          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHost)
+          sinon.assert.notCalled(Instance.findInstancesByDockerHost)
           sinon.assert.notCalled(Worker._redeployContainers)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
           done()
@@ -190,7 +190,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       var testArray = ['1', '2']
       beforeEach(function (done) {
         Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(testErr)
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
+        Instance.findInstancesByDockerHost.yieldsAsync(null, testArray)
         Worker._redeployContainers.returns()
         done()
       })
@@ -208,7 +208,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
           sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
           sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
-          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHost)
+          sinon.assert.notCalled(Instance.findInstancesByDockerHost)
           sinon.assert.notCalled(Worker._redeployContainers)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
           done()
