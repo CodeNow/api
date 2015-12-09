@@ -11,6 +11,7 @@ var Instance = require('models/mongo/instance')
 var api = require('../../fixtures/api-control')
 var dock = require('../../fixtures/dock')
 var expects = require('../../fixtures/expects')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 
@@ -37,6 +38,31 @@ describe('GET /instances', function () {
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 11111,
+        username: 'Runnable'
+      }, {
+        id: 12345,
+        username: 'Not Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      if (ctx.user2) {
+        array.push({
+          id: ctx.user2.attrs.accounts.github.id,
+          username: ctx.user2.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('GET', function () {
     beforeEach(function (done) {
       multi.createAndTailInstance(primus, { name: 'InstanceNumber1' }, function (err, instance, build, user) {
@@ -625,9 +651,8 @@ describe('GET /instances', function () {
 
   describe('Org Get', function () {
     beforeEach(function (done) {
-      var orgInfo = require('../../fixtures/mocks/github/user-orgs')()
-      ctx.orgId = orgInfo.orgId
-      ctx.orgName = orgInfo.orgName
+      ctx.orgId = 12345
+      ctx.orgName = 'Not Runnable'
       multi.createAndTailInstance(primus, ctx.orgId, ctx.orgName, function (err, instance, build, user) {
         ctx.user = user
         ctx.instance = instance

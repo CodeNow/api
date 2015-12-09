@@ -7,7 +7,6 @@ var Code = require('code')
 var createInstanceContainer = require('workers/create-instance-container')
 var InstanceService = require('models/services/instance-service')
 var sinon = require('sinon')
-var TaskFatalError = require('ponos').TaskFatalError
 
 var expect = Code.expect
 var lab = exports.lab = Lab.script()
@@ -15,12 +14,6 @@ var describe = lab.describe
 var it = lab.it
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
-var expectErr = function (expectedErr, done) {
-  return function (err) {
-    expect(err).to.equal(expectedErr)
-    done()
-  }
-}
 
 var moduleName = path.relative(process.cwd(), __filename)
 
@@ -50,11 +43,11 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
 
     it('should call InstanceService.createContainer', function (done) {
       createInstanceContainer(ctx.job)
-        .then(function () {
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
           sinon.assert.calledWith(InstanceService.createContainer, ctx.job)
           done()
         })
-        .catch(done)
     })
   })
 
@@ -68,7 +61,10 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
 
       it('should call InstanceService.createContainer', function (done) {
         createInstanceContainer(ctx.job)
-          .catch(expectErr(ctx.err, done))
+          .asCallback(function (err) {
+            expect(err.cause).to.equal(ctx.err)
+            done()
+          })
       })
     })
 
@@ -81,11 +77,10 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
 
       it('should call InstanceService.createContainer', function (done) {
         createInstanceContainer(ctx.job)
-          .catch(TaskFatalError, function (err) {
-            expect(err.data.originalError).to.equal(ctx.err)
+          .asCallback(function (err) {
+            expect(err.data.originalError.cause).to.equal(ctx.err)
             done()
           })
-          .catch(done)
       })
     })
   })

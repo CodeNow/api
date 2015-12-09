@@ -14,6 +14,7 @@ var expect = Code.expect
 var expects = require('../../fixtures/expects')
 var api = require('../../fixtures/api-control')
 var dock = require('../../fixtures/dock')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var dockerMockEvents = require('../../fixtures/docker-mock-events')
 var primus = require('../../fixtures/primus')
@@ -78,6 +79,22 @@ describe('204 DELETE /instances/:id', function () {
   after(dock.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 11111,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   function initExpected (done) {
     ctx.expected = {
       _id: exists,

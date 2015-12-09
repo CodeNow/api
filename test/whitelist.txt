@@ -43,6 +43,7 @@
 ./test/functional/contexts-id-versions-id-infracodeversion-actions-copy.js
 ./test/functional/contexts-id-versions-id.js
 ./test/functional/contexts-id-versions-id/patch/200.js
+./test/functional/contexts-id-versions-id/patch/400.js
 ./test/functional/contexts-id-versions.js
 ./test/functional/contexts-id-versions/post/400.js
 ./test/functional/contexts-id.js
@@ -52,6 +53,7 @@
 ./test/functional/instance-dependency-health.js
 ./test/functional/instances-id-actions-copy/post/400.js
 ./test/functional/instances-id-actions-copy/post/index.js
+./test/functional/instances-id-actions-redeploy/post/index.js
 ./test/functional/instances-id-actions-restart/put/index.js
 ./test/functional/instances-id-actions-start/put/index.js
 ./test/functional/instances-id-actions-stop/put/index.js

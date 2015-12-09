@@ -11,20 +11,19 @@ var beforeEach = lab.beforeEach
 var Code = require('code')
 var expect = Code.expect
 var Promise = require('bluebird')
-var Runnable = require('runnable')
 var rabbitMQ = require('models/rabbitmq')
 
 var sinon = require('sinon')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var ContextVersion = require('models/mongo/context-version')
-var Worker = require('workers/on-dock-removed')
+var Worker = require('workers/dock.removed')
 var TaskFatalError = require('ponos').TaskFatalError
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
-describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
+describe('Worker: dock.removed unit test: ' + moduleName, function () {
   var testHost = 'goku'
   var testData = {
     host: testHost
@@ -41,8 +40,8 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
         return Promise.resolve(instances)
       })
       sinon.stub(Worker, '_redeployContainers')
+      sinon.stub(Worker, '_rebuildInstances')
       sinon.stub(Worker, '_updateFrontendInstances')
-      sinon.stub(Worker, '_rebuildInstances').returns()
       done()
     })
 
@@ -78,7 +77,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       it('should throw a task fatal error if the job is missing entirely', function (done) {
         Worker().asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('must be an object')
+          expect(err.message).to.contain('Value does not exist')
           done()
         })
       })
@@ -130,8 +129,8 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
           sinon.assert.calledWith(Instance.findInstancesByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._populateInstancesBuilds)
-          sinon.assert.notCalled(Worker._rebuildInstances)
           sinon.assert.notCalled(Worker._redeployContainers)
+          sinon.assert.notCalled(Worker._rebuildInstances)
           sinon.assert.notCalled(Worker._updateFrontendInstances)
           expect(err).to.not.exist()
           done()
@@ -144,6 +143,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       beforeEach(function (done) {
         Instance.findInstancesByDockerHost.yieldsAsync(null, testArray)
         Worker._redeployContainers.returns(Promise.resolve())
+        Worker._rebuildInstances.returns(Promise.resolve())
         done()
       })
 
@@ -154,6 +154,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
           sinon.assert.calledWith(Instance.findInstancesByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._populateInstancesBuilds)
           sinon.assert.calledOnce(Worker._rebuildInstances)
+          sinon.assert.calledWith(Worker._rebuildInstances, testArray)
           sinon.assert.calledOnce(Worker._redeployContainers)
           sinon.assert.calledWith(Worker._redeployContainers, testArray)
           done()
@@ -174,7 +175,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.yieldsAsync(testErr)
         Instance.findInstancesByDockerHost.yieldsAsync(null, testArray)
-        Worker._redeployContainers.yieldsAsync()
+        Worker._redeployContainers.returns()
         done()
       })
 
@@ -205,7 +206,7 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
       beforeEach(function (done) {
         Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(testErr)
         Instance.findInstancesByDockerHost.yieldsAsync(null, testArray)
-        Worker._redeployContainers.yieldsAsync()
+        Worker._redeployContainers.returns()
         done()
       })
 
@@ -234,79 +235,53 @@ describe('Worker: on-dock-removed unit test: ' + moduleName, function () {
   })
 
   describe('#_redeployContainers', function () {
-    var testErr = 'fire'
-    var testData = [{
-      id: '1'
+    var instances = [{
+      _id: '1',
+      container: {
+        inspect: {
+          dockerContainer: '1b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
+          State: {
+            Running: true
+          }
+        }
+      }
     }, {
-      id: '2'
+      _id: '2',
+      container: {
+        inspect: {
+          dockerContainer: '2b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
+          State: {
+            Running: false
+          }
+        }
+      }
+    }, {
+      _id: '3',
+      container: {
+        inspect: {
+          dockerContainer: '3b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
+          State: {
+            Running: true
+          }
+        }
+      }
     }]
-    var redeployStub
     beforeEach(function (done) {
-      redeployStub = sinon.stub()
-      sinon.stub(Runnable.prototype, 'githubLogin')
-      sinon.stub(Runnable.prototype, 'newInstance').returns({
-        redeploy: redeployStub
-      })
+      sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       done()
     })
 
     afterEach(function (done) {
-      Runnable.prototype.githubLogin.restore()
-      Runnable.prototype.newInstance.restore()
+      rabbitMQ.redeployInstanceContainer.restore()
       done()
     })
 
-    describe('user login fails', function () {
-      beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yields(new Error(testErr))
-        done()
-      })
-
-      it('should callback with error', function (done) {
-        Worker._redeployContainers(testData)
-          .asCallback(function (err) {
-            expect(err.message).to.equal(testErr)
-            sinon.assert.notCalled(redeployStub)
-            done()
-          })
-      })
+    it('should callback with no error', function (done) {
+      Worker._redeployContainers(instances)
+      expect(rabbitMQ.redeployInstanceContainer.calledTwice).to.be.true()
+      done()
     })
-
-    describe('redeploy fails for one instance', function () {
-      beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yields()
-        redeployStub.onCall(0).yieldsAsync(testErr)
-        redeployStub.onCall(1).yieldsAsync()
-        done()
-      })
-
-      it('should callback with error', function (done) {
-        Worker._redeployContainers(testData)
-          .asCallback(function (err) {
-            expect(err.message).to.equal(testErr)
-            sinon.assert.called(redeployStub)
-            done()
-          })
-      })
-    })
-
-    describe('redeploy passes', function () {
-      beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yields()
-        redeployStub.yieldsAsync()
-        done()
-      })
-
-      it('should callback with no error', function (done) {
-        Worker._redeployContainers(testData)
-          .asCallback(function (err) {
-            expect(err).to.not.exist()
-            sinon.assert.calledTwice(redeployStub)
-            done()
-          })
-      })
-    })
-  })
+  }) // end _redeployContainers
 
   describe('#_populateInstancesBuilds', function () {
     var testData = [new Instance({ _id: '1' }), new Instance({ _id: '2' })]

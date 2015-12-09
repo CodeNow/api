@@ -15,6 +15,7 @@ var join = require('path').join
 var expects = require('./fixtures/expects')
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var createCount = require('callback-count')
 var primus = require('./fixtures/primus')
@@ -45,6 +46,12 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, user, others) {

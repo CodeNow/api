@@ -243,6 +243,7 @@ describe('Worker: delete-instance-container: ' + moduleName, function () {
       worker.handle(function (jobErr) {
         expect(jobErr).to.not.exist()
         expect(worker._handleError.callCount).to.equal(0)
+        expect(Docker.prototype.stopContainer.callCount).to.equal(1)
         expect(Docker.prototype.removeContainer.callCount).to.equal(1)
         Hosts.prototype.removeHostsForInstance.restore()
         Docker.prototype.stopContainer.restore()
@@ -269,7 +270,11 @@ describe('Worker: delete-instance-container: ' + moduleName, function () {
         expect(jobErr).to.not.exist()
         expect(Hosts.prototype.removeHostsForInstance.callCount).to.equal(1)
         expect(Docker.prototype.stopContainer.callCount).to.equal(1)
+        expect(Docker.prototype.stopContainer.getCall(0).args[0])
+          .to.equal(worker.data.container.dockerContainer)
         expect(Docker.prototype.removeContainer.callCount).to.equal(1)
+        expect(Docker.prototype.removeContainer.getCall(0).args[0])
+          .to.equal(worker.data.container.dockerContainer)
 
         Hosts.prototype.removeHostsForInstance.restore()
         Docker.prototype.stopContainer.restore()
