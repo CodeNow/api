@@ -16,6 +16,7 @@ var dock = require('../../fixtures/dock')
 var expects = require('../../fixtures/expects')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var dockerMockEvents = require('../../fixtures/docker-mock-events')
 var lab = exports.lab = Lab.script()
 
@@ -68,6 +69,23 @@ function expectInstanceCreated (body, statusCode, user, build, cv) {
     masterPod: false
   })
 }
+
+beforeEach(
+  mockGetUserById.stubBefore(function () {
+    var array = [{
+      id: 11111,
+      username: 'Runnable'
+    }]
+    if (ctx.user) {
+      array.push({
+        id: ctx.user.attrs.accounts.github.id,
+        username: ctx.user.attrs.accounts.github.username
+      })
+    }
+    return array
+  })
+)
+afterEach(mockGetUserById.stubAfter)
 
 describe('201 POST /instances', function () {
   // before

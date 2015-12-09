@@ -26,6 +26,7 @@ var it = lab.it
 var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
 var InstanceService = require('models/services/instance-service')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
   user = user.json()
@@ -109,6 +110,22 @@ describe('200 PATCH /instances/:id', function () {
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 1001,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('For User', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {

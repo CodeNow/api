@@ -11,6 +11,7 @@ var afterEach = lab.afterEach
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var expects = require('./fixtures/expects')
 var exists = require('101/exists')
@@ -32,6 +33,18 @@ describe('Builds - /builds', function () {
   beforeEach(function (done) {
     ctx.user = multi.createUser(done)
   })
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return [{
+        id: 1,
+        username: 'Runnable'
+      }, {
+        id: 2,
+        username: 'otherOrg'
+      }]
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   describe('POST', function () {
     describe('empty body', function () {

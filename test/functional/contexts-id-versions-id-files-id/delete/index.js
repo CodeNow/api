@@ -15,6 +15,7 @@ var expects = require('../../fixtures/expects')
 var multi = require('../../fixtures/multi-factory')
 var uuid = require('uuid')
 var primus = require('../../fixtures/primus')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', function () {
   var ctx = {}
@@ -29,6 +30,34 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 11111,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      if (ctx.moderator) {
+        array.push({
+          id: ctx.moderator.attrs.accounts.github.id,
+          username: ctx.moderator.attrs.accounts.github.username
+        })
+      }
+      if (ctx.nonOwner) {
+        array.push({
+          id: ctx.nonOwner.attrs.accounts.github.id,
+          username: ctx.nonOwner.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   function createModUser (done) {
     ctx.moderator = multi.createModerator(function (err) {
       require('../../fixtures/mocks/github/user-orgs')(ctx.moderator) // non owner org

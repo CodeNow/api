@@ -19,6 +19,7 @@ var expects = require('../../fixtures/expects')
 var primus = require('../../fixtures/primus')
 var exists = require('101/exists')
 var Instance = require('models/mongo/instance')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 describe('Instance - /instances/:id', function () {
   var ctx = {}
@@ -33,6 +34,34 @@ describe('Instance - /instances/:id', function () {
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 1001,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      if (ctx.moderator) {
+        array.push({
+          id: ctx.moderator.attrs.accounts.github.id,
+          username: ctx.moderator.attrs.accounts.github.username
+        })
+      }
+      if (ctx.nonOwner) {
+        array.push({
+          id: ctx.nonOwner.attrs.accounts.github.id,
+          username: ctx.nonOwner.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('ORG INSTANCES', function () {
     beforeEach(function (done) {
       ctx.orgId = 1001
@@ -118,6 +147,7 @@ describe('Instance - /instances/:id', function () {
             ctx.nonOwner = multi.createUser(done)
           })
           it('should get the instance', function (done) {
+            require('../../fixtures/mocks/github/user-id')(ctx.nonOwner.id, ctx.nonOwner.login, ctx.nonOwner)
             ctx.nonOwner.fetchInstance(ctx.instance.attrs.shortHash, expects.success(200, ctx.expected, done))
           })
         })

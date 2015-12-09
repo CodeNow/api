@@ -22,6 +22,7 @@ var exists = require('101/exists')
 var equals = require('101/equals')
 var last = require('101/last')
 var uuid = require('uuid')
+var mockGetUserById = require('./../../fixtures/mocks/github/getByUserId')
 
 describe('Build - /builds/:id/actions/build', function () {
   var ctx = {}
@@ -38,6 +39,22 @@ describe('Build - /builds/:id/actions/build', function () {
   afterEach(require('./../../fixtures/clean-nock'))
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 11111,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   describe('POST', function () {
     describe('unbuilt build', function () {

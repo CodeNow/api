@@ -14,6 +14,7 @@ var expect = Code.expect
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
 var multi = require('./fixtures/multi-factory')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var primus = require('./fixtures/primus')
 var createCount = require('callback-count')
 var Docker = require('models/apis/docker')
@@ -46,7 +47,12 @@ describe('BDD - Debug Containers', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
-
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createAndTailInstance(
       primus,

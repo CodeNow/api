@@ -23,6 +23,7 @@ var expects = require('../../fixtures/expects')
 var Instance = require('models/mongo/instance')
 var api = require('../../fixtures/api-control')
 var dock = require('../../fixtures/dock')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var rabbitMQ = require('models/rabbitmq/index')
@@ -40,7 +41,19 @@ describe('PUT /instances/:id/actions/start', function () {
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
-
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = []
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createBuiltBuild(function (err, build, user, modelsArr) {
       if (err) { return done(err) }
