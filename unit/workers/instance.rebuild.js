@@ -192,6 +192,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         Worker(testData)
           .asCallback(function (err) {
             expect(err.message).to.contain('Build failed')
+            sinon.assert.calledOnce(Runnable.prototype.newInstance)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
             sinon.assert.calledOnce(Instance.findById)
             done()
@@ -238,6 +239,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.contain('Update failed')
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
+            sinon.assert.calledOnce(Runnable.prototype.newInstance)
             sinon.assert.calledOnce(Instance.findById)
             done()
           })
@@ -283,6 +285,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
+            sinon.assert.calledOnce(Runnable.prototype.newInstance)
             sinon.assert.calledOnce(Instance.findById)
             done()
           })
